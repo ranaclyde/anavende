@@ -3,33 +3,48 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Etiqueta de estado — DESIGN-REFERENCE §6.4.
+ * Píldora, caption 12px peso 500, fondo de tinte y texto semántico.
+ *
+ * NUNCA solo color: toda etiqueta lleva texto. Quien no distingue rojo de
+ * verde tiene que poder operar el panel igual (§9, RNF-02). Por eso el
+ * componente no acepta un modo «solo punto de color».
+ */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center gap-1 rounded-pill px-2.5 py-0.5 text-caption font-medium whitespace-nowrap [&_svg]:size-3",
   {
     variants: {
-      variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-        outline: "text-foreground",
+      tone: {
+        /** Orden activa. */
+        info: "bg-info-tint text-info",
+        /** Orden finalizada. */
+        success: "bg-success-tint text-success",
+        /** Origen manual · stock bajo. */
+        warning: "bg-warning-tint text-warning",
+        /** Sin stock · usuario bloqueado. */
+        danger: "bg-danger-tint text-danger",
+        /** Orden cancelada · producto inactivo. */
+        neutral: "bg-surface-sunken text-ink-secondary",
+        /** Identidad: destacado, oferta. */
+        brand: "bg-brand-tint text-brand",
       },
     },
-    defaultVariants: {
-      variant: "default",
-    },
+    defaultVariants: { tone: "neutral" },
   },
 );
 
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
-
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({
+  className,
+  tone,
+  ...props
+}: React.ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <span
+      data-slot="badge"
+      className={cn(badgeVariants({ tone }), className)}
+      {...props}
+    />
   );
 }
 

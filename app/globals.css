@@ -1,68 +1,242 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
 
+/*
+ * Sistema de diseño de AnaVende.
+ * Contrato: DESIGN-REFERENCE.md §3 (tokens), §4 (escalas), §12.1 (Tailwind 4).
+ * Las variables crudas viven en :root y se redefinen en [data-theme="dark"];
+ * @theme inline las expone como utilidades de Tailwind.
+ */
+
+/* El modo oscuro existe solo en /admin y se activa con data-theme en <html>. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Las dos escalas de densidad de §4 son una variante, no una prop:
+   el panel marca data-scale="admin" en su raíz y los componentes
+   compartidos se adaptan solos. Así no hay dos Button ni dos Input. */
+@custom-variant admin (&:where([data-scale="admin"], [data-scale="admin"] *));
+
+/* ═══ Tokens crudos — tienda y panel en claro (§3.1) ═══════════════════ */
+:root {
+  /* Marca */
+  --brand: #832833; /* acción principal, identidad, precio en oferta */
+  --brand-hover: #9d3040; /* MÁS CLARO: el color base ya es oscuro */
+  --brand-active: #6b202a;
+  --brand-tint: #fdf2f3; /* fondo de etiquetas y estados suaves */
+  --brand-tint-border: #f2dcdf;
+  --brand-shadow: rgb(131 40 51 / 0.26);
+
+  /* Superficies */
+  --canvas: #f2f4f5; /* fondo de página */
+  --surface: #ffffff; /* tarjetas, campos, encabezado */
+  --surface-sunken: #fafbfb; /* filas alternadas, bloques embebidos */
+
+  /* Texto */
+  --ink: #16181a; /* primario — casi negro, no negro puro (§3.1) */
+  --ink-secondary: #6b6f73; /* secundario, etiquetas */
+  --ink-tertiary: #9aa0a5; /* metadatos, marcadores de posición */
+  --ink-inverse: #ffffff;
+
+  /* Líneas */
+  --border: #e8eaeb; /* divisorias, contorno de campos */
+  --border-strong: #d3d7d9; /* campo con foco, separadores marcados */
+
+  /* Semánticos */
+  --success: #15803d;
+  --success-tint: #f0fdf4;
+  --warning: #b45309;
+  --warning-tint: #fffbeb;
+  --danger: #dc2626;
+  --danger-tint: #fef2f2;
+  --info: #0369a1;
+  --info-tint: #f0f9ff;
+}
+
+/* ═══ Tokens crudos — modo oscuro del panel (§3.2) ═════════════════════ */
+[data-theme="dark"] {
+  --brand: #d4697a; /* ACLARADO: #832833 da 1,83:1 en oscuro, ilegible */
+  --brand-hover: #e08a97;
+  --brand-active: #c04a5c;
+  --brand-tint: #2a1a1d;
+  --brand-tint-border: #3d2429;
+  --brand-shadow: rgb(212 105 122 / 0.2);
+
+  --canvas: #141416;
+  --surface: #1e1e21;
+  --surface-sunken: #18181b;
+
+  --ink: #ececee;
+  --ink-secondary: #a1a1a6;
+  --ink-tertiary: #6e6e73;
+  --ink-inverse: #141416;
+
+  --border: #2e2e33;
+  --border-strong: #43434a;
+
+  --success: #4ade80;
+  --success-tint: #052e16;
+  --warning: #fbbf24;
+  --warning-tint: #2a1d05;
+  --danger: #f87171;
+  --danger-tint: #2a1213;
+  --info: #38bdf8;
+  --info-tint: #05202e;
+}
+
+/* ═══ Exposición como utilidades de Tailwind (§12.1) ═══════════════════ */
+@theme inline {
+  /* Color */
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-active: var(--brand-active);
+  --color-brand-tint: var(--brand-tint);
+  --color-brand-tint-border: var(--brand-tint-border);
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+
+  --color-ink: var(--ink);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-tertiary: var(--ink-tertiary);
+  --color-ink-inverse: var(--ink-inverse);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+  --color-info: var(--info);
+  --color-info-tint: var(--info-tint);
+
+  /* Tipografía (§3.3) — una sola familia, pesos 400/500/600 */
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+
+  /* Escala tipográfica: tamaño / interlínea / tracking / peso.
+     La firma del sistema es el tracking negativo: lo grande se comprime. */
+  --text-display: 2.25rem; /* 36px — hero de la home, solo ahí */
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.035em;
+  --text-display--font-weight: 600;
+
+  --text-title: 1.5rem; /* 24px — nombre de producto en ficha, títulos */
+  --text-title--line-height: 1.2;
+  --text-title--letter-spacing: -0.03em;
+  --text-title--font-weight: 600;
+
+  --text-heading: 1.25rem; /* 20px — encabezados de sección */
+  --text-heading--line-height: 1.25;
+  --text-heading--letter-spacing: -0.025em;
+  --text-heading--font-weight: 600;
+
+  --text-body-lg: 1.125rem; /* 18px — descripción, texto legal */
+  --text-body-lg--line-height: 1.45;
+  --text-body-lg--letter-spacing: -0.015em;
+  --text-body-lg--font-weight: 400;
+
+  --text-body: 1rem; /* 16px — BASE de la tienda */
+  --text-body--line-height: 1.5;
+  --text-body--letter-spacing: -0.011em;
+  --text-body--font-weight: 400;
+
+  --text-body-sm: 0.875rem; /* 14px — BASE del panel; etiquetas, celdas */
+  --text-body-sm--line-height: 1.45;
+  --text-body-sm--letter-spacing: -0.006em;
+  --text-body-sm--font-weight: 400;
+
+  --text-caption: 0.75rem; /* 12px — PISO ABSOLUTO (§3.3 regla 1) */
+  --text-caption--line-height: 1.35;
+  --text-caption--letter-spacing: 0;
+  --text-caption--font-weight: 500;
+
+  /* Espaciado (§3.4) — escala de base 4px */
+  --spacing: 0.25rem;
+
+  /* Radios (§3.5) — la tienda es generosa, el panel es denso */
+  --radius-card: 24px; /* tarjeta de producto, tienda */
+  --radius-image: 16px; /* imagen dentro de tarjeta: ~8px menos (§3.5) */
+  --radius-modal: 20px;
+  --radius-panel-card: 12px; /* tarjeta del panel */
+  --radius-panel-image: 8px;
+  --radius-panel-control: 8px; /* botón y campo del panel */
+  --radius-pill: 9999px; /* botón, campo y buscador de la tienda */
+
+  /* Sombras (§3.6) — las tarjetas se separan por sombra, nunca por borde */
+  --shadow-sm: 0 2px 8px rgb(22 24 26 / 0.06);
+  --shadow-md: 0 4px 6px -1px rgb(22 24 26 / 0.1), 0 2px 4px -2px
+    rgb(22 24 26 / 0.1);
+  --shadow-lg: 0 4px 24px rgb(22 24 26 / 0.12);
+  --shadow-brand: 0 4px 20px var(--brand-shadow);
+
+  /* Anchos máximos (§4) */
+  --container-shop: 1200px;
+}
+
+/* ═══ Base ═════════════════════════════════════════════════════════════ */
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
   }
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    letter-spacing: var(--text-body--letter-spacing);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* El panel corre a 14px de base (§4). */
+  [data-scale="admin"] {
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm--line-height);
+    letter-spacing: var(--text-body-sm--letter-spacing);
+  }
+
+  /* Anillo de foco único para todo elemento interactivo (§3.6, §9).
+     Se muestra solo ante teclado: :focus-visible, no :focus. */
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
+
+  /* Los precios y toda columna de números usan variantes tabulares (§3.3). */
+  [data-numeric="tabular"] {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
+/* ═══ Utilidades propias ═══════════════════════════════════════════════ */
+
+/* Anillo de foco como sombra, para cuando el outline no sirve
+   (elementos con overflow recortado). Equivale a --shadow-focus (§3.6). */
+@utility ring-focus {
+  box-shadow:
+    0 0 0 3px var(--brand-tint),
+    0 0 0 1px var(--brand);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -1,57 +1,125 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Botón — DESIGN-REFERENCE §6.3.
+ *
+ * Las variantes destructivas se separan de la de marca por FORMA, no por
+ * color (§2.2): el burdeos y el rojo de peligro están a 7 grados de matiz.
+ * `destructive` es contorno; `destructive-solid` es relleno y vive
+ * únicamente dentro del diálogo de confirmación, donde no hay un botón de
+ * marca al lado con el cual confundirlo.
+ */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  [
+    "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap",
+    "font-medium transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
+    "outline-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    // Deshabilitado: 40% de opacidad, sin cambiar de color (§6.3).
+    "disabled:cursor-not-allowed disabled:opacity-40",
+  ],
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        // Una sola por pantalla.
+        brand:
+          "bg-brand text-ink-inverse hover:bg-brand-hover active:bg-brand-active",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border border-border bg-surface text-ink hover:bg-surface-sunken hover:border-border-strong",
+        tertiary: "bg-transparent text-ink-secondary hover:text-ink",
+        destructive:
+          "border border-danger bg-transparent text-danger hover:bg-danger-tint",
+        "destructive-solid": "bg-danger text-white hover:opacity-90",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9",
+        // Tienda: píldora. Panel: 8px de radio (§3.5).
+        sm: "h-8 rounded-pill px-3 text-body-sm admin:rounded-panel-control",
+        md: "h-10 rounded-pill px-4 text-body-sm admin:rounded-panel-control",
+        lg: "h-12 rounded-pill px-6 text-body admin:h-10 admin:rounded-panel-control admin:text-body-sm",
+        // Cuadrado para acciones de solo ícono. 44px de área táctil en móvil (§9).
+        icon: "size-11 rounded-pill admin:size-9 admin:rounded-panel-control",
+      },
+      emphasis: {
+        // --shadow-brand: solo el envío del buscador y el principal del hero (§3.6).
+        none: "",
+        glow: "shadow-brand",
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: "secondary",
+      size: "md",
+      emphasis: "none",
     },
   },
 );
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-}
+type ButtonProps = React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+    /**
+     * Reemplaza el texto por un indicador conservando el ancho del botón,
+     * para que la interfaz no salte (§6.3).
+     */
+    loading?: boolean;
+    /** Qué se está haciendo, para el lector de pantalla. */
+    loadingLabel?: string;
+  };
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
+function Button({
+  className,
+  variant,
+  size,
+  emphasis,
+  asChild = false,
+  loading = false,
+  loadingLabel = "Procesando",
+  disabled,
+  children,
+  ...props
+}: ButtonProps) {
+  const Comp = asChild ? Slot : "button";
+
+  if (asChild) {
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
+        data-slot="button"
+        className={cn(buttonVariants({ variant, size, emphasis, className }))}
         {...props}
-      />
+      >
+        {children}
+      </Comp>
     );
-  },
-);
-Button.displayName = "Button";
+  }
+
+  return (
+    <button
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, emphasis, className }))}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}
+    >
+      {/* El contenido se mantiene en el flujo para conservar el ancho. */}
+      <span
+        className={cn(
+          "inline-flex items-center gap-2",
+          loading && "invisible",
+        )}
+      >
+        {children}
+      </span>
+      {loading && (
+        <span className="absolute inline-flex items-center gap-2">
+          <Loader2 aria-hidden className="size-4 animate-spin" />
+          <span className="sr-only">{loadingLabel}</span>
+        </span>
+      )}
+    </button>
+  );
+}
 
 export { Button, buttonVariants };

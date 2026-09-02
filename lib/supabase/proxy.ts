@@ -1,20 +1,32 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { hasEnvVars } from "../utils";
+
+import { hasSupabaseEnvVars } from "@/lib/env";
+
+/**
+ * Redirección temprana por sesión ausente — TECHNICAL-SPEC §6.1 y §13.7.
+ *
+ * ESTO NO ES EL CONTROL DE ACCESO. Solo evita que alguien sin cookie llegue
+ * a pintar una pantalla privada. La autorización real se verifica:
+ *   - en el layout de /admin, contra `user_profiles` (F1.7c);
+ *   - en cada Server Action, con el envoltorio de §6.2, siempre;
+ *   - en cada consulta, filtrando por el id de la sesión.
+ *
+ * Una guardia que vive únicamente acá es una guardia que se puede saltear.
+ */
+
+/** Prefijos que exigen sesión. Todo lo demás de la tienda es público. */
+const RUTAS_PRIVADAS = ["/admin", "/mi-cuenta", "/carrito", "/checkout"];
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  let response = NextResponse.next({ request });
 
-  // If the env vars are not set, skip proxy check. You can remove this
-  // once you setup the project.
-  if (!hasEnvVars) {
-    return supabaseResponse;
+  // Sin variables de entorno no hay a quién preguntarle: se deja pasar y las
+  // guardias reales de servidor se encargan. Aplica al desarrollo previo a F0.
+  if (!hasSupabaseEnvVars) {
+    return response;
   }
 
-  // With Fluid compute, don't put this client in a global environment
-  // variable. Always create a new one on each request.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -27,50 +39,34 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
+          response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
+            response.cookies.set(name, value, options),
           );
         },
       },
     },
   );
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: If you remove getClaims() and you use server-side rendering
-  // with the Supabase client, your users may be randomly logged out.
+  // No se ejecuta nada entre createServerClient y getClaims(): un descuido acá
+  // produce cierres de sesión aleatorios muy difíciles de depurar.
   const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+  const hayIdentidad = Boolean(data?.claims);
 
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  const { pathname } = request.nextUrl;
+  const esPrivada = RUTAS_PRIVADAS.some(
+    (prefijo) => pathname === prefijo || pathname.startsWith(`${prefijo}/`),
+  );
+
+  if (esPrivada && !hayIdentidad) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = "/ingresar";
+    // Para volver a donde estaba después de entrar (RF-07, F5.2).
+    url.searchParams.set("volver", pathname + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
-
-  return supabaseResponse;
+  // El objeto de respuesta se devuelve tal cual: si se arma uno nuevo hay que
+  // copiarle las cookies, o el navegador y el servidor quedan desincronizados.
+  return response;
 }
