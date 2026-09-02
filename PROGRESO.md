@@ -95,9 +95,8 @@ Cada una se escribió primero en la especificación y después en el código
 
 ---
 
-## Una advertencia sobre este repositorio
+## Las especificaciones están versionadas
 
-`sdd/*` está en `.gitignore`. Las cuatro especificaciones —y todos los cambios
-de la tabla de arriba— **viven solo en este disco, sin versionar**. Si se
-pierde la carpeta, se pierde el porqué de cada decisión y queda el código sin
-su fundamento. Vale la pena decidir si se versionan o si se respaldan aparte.
+`sdd/` entró al repositorio el 2026-09-02 (commit `bd58808`). Las cuatro
+especificaciones y el porqué de cada decisión viajan ahora con el código: el
+único punto del proyecto sin red quedó cerrado.
