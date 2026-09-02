@@ -31,7 +31,12 @@ export default function RootLayout({
   // El modo oscuro vive solo en /admin (DESIGN-REFERENCE §3.2): la raíz
   // no declara data-theme y la tienda es siempre clara.
   return (
-    <html lang="es-AR" className={inter.variable}>
+    // `suppressHydrationWarning` cubre SOLO los atributos de <html>, y hace
+    // falta: el script anti-destello del panel escribe `data-theme` antes de
+    // que React hidrate (DESIGN-REFERENCE §3.2), así que el servidor y el
+    // cliente difieren a propósito. Sin esto, cada visita al panel deja una
+    // advertencia en la consola que después tapa las de verdad.
+    <html lang="es-AR" className={inter.variable} suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

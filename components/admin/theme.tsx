@@ -32,6 +32,14 @@ try {
 } catch (e) {}
 `;
 
+function aplicar(tema: Tema) {
+  if (tema === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+}
+
 export function ThemeToggle({
   className,
   soloIcono = false,
@@ -49,7 +57,15 @@ export function ThemeToggle({
     } catch {
       // Navegador con el almacenamiento bloqueado: se queda en claro.
     }
-    setTema(guardado === "dark" ? "dark" : "light");
+    const elegido: Tema = guardado === "dark" ? "dark" : "light";
+    setTema(elegido);
+
+    // Se APLICA, no solo se recuerda. El script de bloqueo de arriba corre
+    // una vez, en la primera carga del documento; volver al panel desde la
+    // tienda es una navegación de cliente, sin recarga, y ahí el script no
+    // vuelve a correr. Sin esta línea la preferencia queda guardada y
+    // desatendida: el panel aparece claro con `dark` en el almacenamiento.
+    aplicar(elegido);
 
     // Al salir del panel el atributo se retira: la tienda no hereda el
     // modo oscuro cuando se navega desde acá sin recargar.
@@ -59,11 +75,7 @@ export function ThemeToggle({
   const cambiar = () => {
     const nuevo: Tema = tema === "dark" ? "light" : "dark";
     setTema(nuevo);
-    if (nuevo === "dark") {
-      document.documentElement.setAttribute("data-theme", "dark");
-    } else {
-      document.documentElement.removeAttribute("data-theme");
-    }
+    aplicar(nuevo);
     try {
       localStorage.setItem(CLAVE, nuevo);
     } catch {

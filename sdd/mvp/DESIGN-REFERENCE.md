@@ -78,7 +78,9 @@ La tercera es segura porque dentro del diálogo **no hay ningún botón de marca
 
 ### 2.3 El logo
 
-Cuadrado de esquinas redondeadas, fondo burdeos, letras blancas. La forma conversa naturalmente con los radios generosos del sistema.
+Una cuadrícula de cuatro celdas —**A**, un joystick, unos auriculares y una **V**— dibujada a trazo burdeos sobre transparente. Dice de qué es el negocio sin escribirlo, y el trazo abierto convive con los radios generosos del sistema.
+
+> **Corregido en F2.1, al recibir el archivo.** Esta sección describía «un cuadrado de esquinas redondeadas, fondo burdeos, letras blancas», que era lo que había implementado como marcador de posición mientras no estaba el logo. El logo real es lo contrario: trazo burdeos sobre fondo transparente. El color medido en el archivo es `#822733`, a un punto por canal del `#832833` que §3.1 fija como token — se conserva el token, la diferencia no es visible.
 
 | Uso | Tamaño | Tratamiento |
 |---|---|---|
@@ -86,9 +88,15 @@ Cuadrado de esquinas redondeadas, fondo burdeos, letras blancas. La forma conver
 | Encabezado móvil | 32px | Solo isotipo |
 | Favicon | 32 / 16px | Solo isotipo |
 | Emails | 40px | Isotipo + palabra, centrado |
-| Fondo oscuro | — | Versión con fondo transparente y letras blancas |
+| Fondo oscuro | — | Versión de trazo **blanco**, mismo dibujo |
 
-**Nunca:** deformar la proporción, cambiarle el color, ponerle sombra, rotarlo, ni apoyarlo sobre una foto sin una superficie sólida debajo.
+**La versión clara no es opcional.** El burdeos sobre la superficie oscura da 1,83:1 —el mismo motivo por el que §3.2 aclara `--brand` en modo oscuro—, así que el pie del sitio y el panel en modo oscuro usan el trazo blanco. Se deriva del original con `scripts/derivar-logo.mts` en vez de mantenerse a mano: si el logo cambia, las dos versiones cambian juntas.
+
+**El original no es cuadrado** (1180×1128). Va siempre dentro de una caja cuadrada con `object-contain`, nunca estirado.
+
+**A 16px la cuadrícula no se lee**: las cuatro celdas se funden. Es aceptable en el favicon, donde de todos modos se reconoce por color y silueta, pero **no** se usa el isotipo por debajo de 24px en ningún otro lado.
+
+**Nunca:** deformar la proporción, cambiarle el color —salvo la versión clara de esta tabla—, ponerle sombra, rotarlo, ni apoyarlo sobre una foto sin una superficie sólida debajo.
 
 ---
 

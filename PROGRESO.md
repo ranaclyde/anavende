@@ -71,7 +71,7 @@ probó en local vive en `VERSIONS.md`.
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
 | F2.1 | ABM de marcas, categorías y colores | ✅ | Probado en el navegador: alta, edición, unicidad sin distinguir mayúsculas, baja, y las dos reglas de RN-11/RN-11b |
-| F2.2 | Canalización de imágenes | ⬜ | El logo de marca (RF-18) espera acá: no hay dónde subirlo hasta que exista |
+| F2.2 | Canalización de imágenes | ⬜ | `sharp` ya está instalado (0.35.4). El logo de marca (RF-18) espera acá: no hay dónde subirlo hasta que exista |
 | F2.3 | ABM de productos | ⬜ | Tiene que verificar RN-11b al revés: no activar un producto de marca inactiva |
 | F2.4 | Variantes de color | ⬜ | |
 | F2.5 | Listado de productos | ⬜ | |
@@ -95,6 +95,7 @@ Cada una se escribió primero en la especificación y después en el código
 | **Producción es el entorno de verdad** | `TECHNICAL-SPEC.md` §18.2, `VERSIONS.md` | El stack local es una comodidad de desarrollo. Nada verificado ahí cierra una tarea de F0 |
 | **Código de error `INTERNAL`** | `TECHNICAL-SPEC.md` §6.3 | El envoltorio necesitaba un código para lo que no previó |
 | **RN-11b**: ningún producto activo puede tener marca, categoría o color inactivos | `FUNCTIONAL-SPEC.md` RN-11b y RF-18, `TECHNICAL-SPEC.md` §5.4 | Las especificaciones no decían qué le pasaba a los productos de una marca desactivada, y la consulta de §10.1 no miraba `b.is_active`. En vez de agregar ese filtro a cada consulta pública —una condición que el día que se olvida muestra de más—, se prohíbe desactivar algo que esté en uso por algo activo |
+| **§2.3 corregida al recibir el logo real** | `DESIGN-REFERENCE.md` §2.3 | Describía un cuadrado burdeos con letras blancas, que era el marcador de posición. El logo real es trazo burdeos sobre transparente; se agregó la versión clara obligatoria para fondo oscuro y el piso de 24px |
 | **El slug no cambia al renombrar** | `components/admin/catalogo/dialogo.tsx` | Es la dirección pública: si cambiara, todo enlace ya compartido dejaría de funcionar sin aviso |
 
 ---

@@ -19,7 +19,7 @@ Las piezas de infraestructura se completan cuando F0 esté hecha.
 | @supabase/supabase-js | Últimas | 2.114.0 |
 | Drizzle ORM | 0.45.x | 0.45.2 (`drizzle-kit` 0.31.10, `postgres` 3.4.9) |
 | Zod | 4.x | 4.5.4 |
-| sharp | 0.35.x | pendiente F2.2 |
+| sharp | 0.35.x | 0.35.4 |
 | Resend + React Email | resend 6.x | pendiente F1.8 |
 | ExcelJS | 4.x | pendiente F9.2 |
 | Sentry | @sentry/nextjs | 10.73.0 |

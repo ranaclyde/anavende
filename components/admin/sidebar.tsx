@@ -19,6 +19,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ThemeToggle } from "@/components/admin/theme";
+import { IsotipoSegunTema } from "@/components/shop/logo";
 import { cn } from "@/lib/utils";
 
 /**
@@ -133,12 +134,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
             className="inline-flex items-center gap-2.5 rounded-panel-control"
             aria-label="AnaVende, inicio del panel"
           >
-            <span
-              aria-hidden
-              className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-brand text-caption font-semibold text-ink-inverse"
-            >
-              AV
-            </span>
+            <IsotipoSegunTema />
             {(!colapsado || abiertoEnMovil) && (
               <span aria-hidden className="text-body font-medium text-ink">
                 AnaVende

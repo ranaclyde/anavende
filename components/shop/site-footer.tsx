@@ -1,6 +1,8 @@
 import { Truck } from "lucide-react";
 import Link from "next/link";
 
+import { Isotipo } from "@/components/shop/logo";
+
 /**
  * Pie de la tienda — DESIGN-REFERENCE §5.1.
  * Pie oscuro con el aviso de PedidosYa, los medios de pago y los legales.
@@ -32,12 +34,9 @@ export function SiteFooter({
         <div className="flex flex-col gap-10 md:flex-row md:justify-between">
           <div className="flex max-w-sm flex-col gap-3">
             <div className="flex items-center gap-2.5">
-              <span
-                aria-hidden
-                className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-brand text-caption font-semibold text-ink-inverse"
-              >
-                AV
-              </span>
+              {/* Versión clara: el burdeos del original no se lee sobre
+                  esta superficie (§2.3). */}
+              <Isotipo claro />
               <span className="text-heading">AnaVende</span>
             </div>
             <p className="text-body-sm text-white/65">
