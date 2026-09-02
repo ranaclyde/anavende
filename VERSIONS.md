@@ -25,6 +25,25 @@ Las piezas de infraestructura se completan cuando F0 esté hecha.
 | Sentry | @sentry/nextjs | 10.73.0 |
 | decimal.js (aritmética de montos, §7.1) | — | 10.6.0 |
 | Vitest + Playwright | — | pendiente F4.6 / F10.2 |
-| PostgreSQL | 15+ | **pendiente F0.3** |
-| Supabase auto-hospedado | — | **pendiente F0.3** |
+| PostgreSQL | 15+ | **pendiente F0.3** — en local corre 17.6 (dev) |
+| Supabase auto-hospedado | — | **pendiente F0.3** — en local, el stack del CLI (dev) |
 | Coolify | — | **pendiente F0.2** |
+
+---
+
+## Verificaciones de F0: qué se comprobó y dónde
+
+Lo comprobado contra el stack local **no cierra una tarea de F0**
+(`TECHNICAL-SPEC.md` §18.2). Producción es el entorno de verdad.
+
+| Tarea | Local | Producción |
+|---|---|---|
+| F0.6 `pg_trgm` y `unaccent` con similitud real | ✅ comprobado | ⬜ pendiente |
+| F0.7 Storage: subir, leer, borrar | ⬜ | ⬜ pendiente |
+| F0.12 Admin API de Auth | ⬜ | ⬜ pendiente |
+| F0.13 *Send Email Hook* auto-hospedado | ⬜ | ⬜ pendiente |
+| F0.1 – F0.5, F0.8, F0.10, F0.11 | — sin equivalente local | ⬜ pendiente |
+
+**F0.11 es la que muerde primero.** Sin Resend como SMTP no hay registro
+posible en producción, y no se descubre hasta que alguien intenta crearse
+una cuenta. En local no se nota: Mailpit captura todo.
