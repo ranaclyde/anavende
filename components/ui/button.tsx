@@ -18,7 +18,7 @@ const buttonVariants = cva(
   [
     "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap",
     "font-medium transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
-    "outline-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     // Deshabilitado: 40% de opacidad, sin cambiar de color (§6.3).
     "disabled:cursor-not-allowed disabled:opacity-40",
   ],
@@ -46,7 +46,8 @@ const buttonVariants = cva(
       emphasis: {
         // --shadow-brand: solo el envío del buscador y el principal del hero (§3.6).
         none: "",
-        glow: "shadow-brand",
+        // La sombra propia pisa la del anillo de foco: se vuelve a pedir.
+        glow: "shadow-brand focus-visible:shadow-focus",
       },
     },
     defaultVariants: {

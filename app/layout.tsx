@@ -31,8 +31,8 @@ export default function RootLayout({
   // El modo oscuro vive solo en /admin (DESIGN-REFERENCE §3.2): la raíz
   // no declara data-theme y la tienda es siempre clara.
   return (
-    <html lang="es-AR">
-      <body className={inter.variable}>{children}</body>
+    <html lang="es-AR" className={inter.variable}>
+      <body>{children}</body>
     </html>
   );
 }

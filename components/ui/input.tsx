@@ -15,7 +15,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       data-slot="input"
       className={cn(
         "h-12 w-full rounded-pill border border-border bg-surface px-4 text-body text-ink",
-        "transition-colors duration-150 outline-none",
+        "transition-colors duration-150",
         "placeholder:text-ink-tertiary",
         "focus:border-border-strong",
         "aria-invalid:border-danger",
@@ -39,7 +39,7 @@ function Textarea({
       data-slot="textarea"
       className={cn(
         "min-h-24 w-full rounded-image border border-border bg-surface px-4 py-3 text-body text-ink",
-        "transition-colors duration-150 outline-none field-sizing-content",
+        "transition-colors duration-150 field-sizing-content",
         "placeholder:text-ink-tertiary",
         "focus:border-border-strong",
         "aria-invalid:border-danger",

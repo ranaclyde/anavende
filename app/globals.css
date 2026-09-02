@@ -25,6 +25,7 @@
   --brand-tint: #fdf2f3; /* fondo de etiquetas y estados suaves */
   --brand-tint-border: #f2dcdf;
   --brand-shadow: rgb(131 40 51 / 0.26);
+  --shadow-focus-raw: 0 0 0 3px #fdf2f3, 0 0 0 1px #832833;
 
   /* Superficies */
   --canvas: #f2f4f5; /* fondo de página */
@@ -60,6 +61,7 @@
   --brand-tint: #2a1a1d;
   --brand-tint-border: #3d2429;
   --brand-shadow: rgb(212 105 122 / 0.2);
+  --shadow-focus-raw: 0 0 0 3px #2a1a1d, 0 0 0 1px #d4697a;
 
   --canvas: #141416;
   --surface: #1e1e21;
@@ -113,6 +115,15 @@
   --color-info: var(--info);
   --color-info-tint: var(--info-tint);
 
+}
+
+/*
+ * El resto NO va inline: `@theme inline` no emite la variable a :root, la
+ * sustituye dentro de cada utilidad. Sirve para los colores, que tienen que
+ * apuntar a las variables crudas que cambian con el tema, pero deja
+ * `var(--font-sans)` sin definir para quien la lea desde CSS propio.
+ */
+@theme {
   /* Tipografía (§3.3) — una sola familia, pesos 400/500/600 */
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI",
     sans-serif;
@@ -172,6 +183,7 @@
     rgb(22 24 26 / 0.1);
   --shadow-lg: 0 4px 24px rgb(22 24 26 / 0.12);
   --shadow-brand: 0 4px 20px var(--brand-shadow);
+  --shadow-focus: var(--shadow-focus-raw);
 
   /* Anchos máximos (§4) */
   --container-shop: 1200px;
@@ -207,27 +219,20 @@
   }
 
   /* Anillo de foco único para todo elemento interactivo (§3.6, §9).
-     Se muestra solo ante teclado: :focus-visible, no :focus. */
+     Se muestra solo ante teclado: :focus-visible, no :focus.
+
+     El outline transparente no es decorativo: en el modo de alto contraste
+     de Windows las sombras no se pintan y el outline es lo único que queda. */
   :focus-visible {
-    outline: 2px solid var(--brand);
+    box-shadow: var(--shadow-focus);
+    outline: 2px solid transparent;
     outline-offset: 2px;
-    border-radius: inherit;
   }
 
   /* Los precios y toda columna de números usan variantes tabulares (§3.3). */
   [data-numeric="tabular"] {
     font-variant-numeric: tabular-nums;
   }
-}
-
-/* ═══ Utilidades propias ═══════════════════════════════════════════════ */
-
-/* Anillo de foco como sombra, para cuando el outline no sirve
-   (elementos con overflow recortado). Equivale a --shadow-focus (§3.6). */
-@utility ring-focus {
-  box-shadow:
-    0 0 0 3px var(--brand-tint),
-    0 0 0 1px var(--brand);
 }
 
 @media (prefers-reduced-motion: reduce) {
