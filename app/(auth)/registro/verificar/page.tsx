@@ -1,28 +1,14 @@
 import type { Metadata } from "next";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { AvisoDeVerificacion } from "@/components/shop/aviso-verificacion";
 
 export const metadata: Metadata = { title: "Revisá tu email" };
 
-export default function Verificar() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Revisá tu email</CardTitle>
-        <CardDescription>Te mandamos un enlace para confirmar la cuenta</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-body-sm text-ink-secondary">
-          Abrí el enlace desde el mismo dispositivo, así quedás dentro. Si no
-          te llega en unos minutos, fijate en el correo no deseado.
-        </p>
-      </CardContent>
-    </Card>
-  );
+export default async function Verificar({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string }>;
+}) {
+  const { email } = await searchParams;
+  return <AvisoDeVerificacion email={email} />;
 }

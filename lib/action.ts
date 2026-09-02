@@ -139,6 +139,14 @@ class ActionBuilder<TInput, L extends AuthLevel> {
 
         // Inesperado. Se reporta con contexto, pero el cliente recibe una
         // frase, jamás el mensaje de Postgres ni un stack trace.
+        //
+        // En desarrollo además se imprime: sin esto el error queda invisible
+        // —Sentry no está configurado en local— y depurar una acción se
+        // vuelve adivinar.
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[server action] error inesperado:", e);
+        }
+
         Sentry.captureException(e, {
           tags: { capa: "server-action", auth: level },
           user: session ? { id: session.identity.userId } : undefined,

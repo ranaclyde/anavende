@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
+import { getSession } from "@/lib/session";
 
 /**
  * Layout de la tienda — DESIGN-REFERENCE §5.1.
@@ -11,17 +12,22 @@ import { SiteHeader } from "@/components/shop/site-header";
  * el encabezado ya recibe los dos, para que sumarlos sea pasar datos y no
  * rehacer el layout.
  */
-export default function ShopLayout({
+export default async function ShopLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Guardia de página: paso 1 de §13.3, más el perfil para el nombre. No es
+  // control de acceso —eso lo hace cada página y cada acción—, es el saludo
+  // del encabezado.
+  const sesion = await getSession();
+
   return (
     <div className="flex min-h-svh flex-col bg-canvas">
       {/* El buscador lee la URL, así que el encabezado necesita el límite
           de Suspense que Next exige alrededor de useSearchParams. */}
       <Suspense fallback={<div className="h-14 bg-surface" />}>
-        <SiteHeader />
+        <SiteHeader userName={sesion?.profile.fullName ?? null} />
       </Suspense>
 
       <main className="flex-1">{children}</main>

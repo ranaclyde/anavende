@@ -27,6 +27,11 @@ export type Identity = {
   userId: string;
   email: string | null;
   emailVerified: boolean;
+  /**
+   * Nombre que trae el proveedor social, para precargar «completá tu perfil»
+   * (RF-06). No reemplaza al del perfil: es solo una sugerencia del alta.
+   */
+  nombreSugerido: string | null;
 };
 
 export type Session = {
@@ -46,15 +51,18 @@ export async function getIdentity(): Promise<Identity | null> {
 
   if (!claims?.sub) return null;
 
+  const metadata = claims.user_metadata as
+    | { email_verified?: boolean; full_name?: string; name?: string }
+    | undefined;
+
   return {
     userId: claims.sub,
     email: typeof claims.email === "string" ? claims.email : null,
-    // GoTrue lo publica como email_verified dentro de user_metadata o suelto,
+    // GoTrue lo publica como email_verified suelto o dentro de user_metadata,
     // según la versión; se acepta cualquiera de las dos formas.
     emailVerified:
-      claims.email_verified === true ||
-      (claims.user_metadata as { email_verified?: boolean } | undefined)
-        ?.email_verified === true,
+      claims.email_verified === true || metadata?.email_verified === true,
+    nombreSugerido: metadata?.full_name ?? metadata?.name ?? null,
   };
 }
 

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
+import { ProveedoresSociales } from "@/components/shop/proveedores-sociales";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,52 +16,46 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { registrar } from "@/modules/users/actions";
+
+type Campo = "fullName" | "email" | "phone" | "password";
 
 /**
- * Alta de cuenta con email y contraseña.
+ * Alta de cuenta — RF-05, TECHNICAL-SPEC §13.4.
  *
- * PENDIENTE F1.7b / F1.9 / F5.1: falta el teléfono obligatorio (RF-05), la
- * creación compensada del perfil, Google y Facebook, y el paso por Server
- * Action con Zod. Sin F0.11 (Resend como SMTP) el email de verificación no
- * llega, así que esta pantalla no se puede dar por probada.
+ * El envío va a una Server Action, no al `signUp` del cliente: el perfil con
+ * teléfono es obligatorio y el alta tiene que poder compensarse si falla a
+ * mitad. La validación se repite en el servidor aunque acá ya haya pasado.
  */
-export function SignUpForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [repetida, setRepetida] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [enviando, setEnviando] = useState(false);
+export function SignUpForm({ volver }: { volver?: string }) {
   const router = useRouter();
+  const [enviando, iniciar] = useTransition();
+  const [errores, setErrores] =
+    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
 
-  const noCoinciden = repetida.length > 0 && password !== repetida;
-
-  const registrar = async (e: React.FormEvent) => {
+  const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
+    const datos = new FormData(e.currentTarget);
+    setErrores(SIN_ERRORES);
 
-    if (password !== repetida) {
-      setError("Las dos contraseñas tienen que ser iguales.");
-      return;
-    }
+    iniciar(async () => {
+      const r = await registrar({
+        fullName: String(datos.get("fullName") ?? ""),
+        email: String(datos.get("email") ?? ""),
+        phone: String(datos.get("phone") ?? ""),
+        password: String(datos.get("password") ?? ""),
+      });
 
-    setEnviando(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/api/auth/confirmar?next=/mi-cuenta`,
-      },
+      if (!r.ok) {
+        setErrores(leerErrores<Campo>(r));
+        return;
+      }
+
+      const destino = new URLSearchParams({ email: r.data.email });
+      if (volver) destino.set("volver", volver);
+      router.push(`/registro/verificar?${destino}`);
     });
-
-    if (error) {
-      setError("No pudimos crear la cuenta. Probá de nuevo en un momento.");
-      setEnviando(false);
-      return;
-    }
-
-    router.push("/registro/verificar");
   };
 
   return (
@@ -71,8 +66,23 @@ export function SignUpForm() {
           Te sirve para guardar el carrito y seguir tus compras
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={registrar} className="flex flex-col gap-5" noValidate>
+      <CardContent className="flex flex-col gap-5">
+        <ProveedoresSociales volver={volver} accion="registro" />
+
+        <form onSubmit={enviar} className="flex flex-col gap-5" noValidate>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="fullName">Nombre y apellido</Label>
+            <Input
+              id="fullName"
+              name="fullName"
+              autoComplete="name"
+              required
+              aria-invalid={!!errores.campos.fullName || undefined}
+              aria-describedby={errores.campos.fullName ? "e-fullName" : undefined}
+            />
+            <FieldError id="e-fullName">{errores.campos.fullName}</FieldError>
+          </div>
+
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -81,9 +91,35 @@ export function SignUpForm() {
               type="email"
               autoComplete="email"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={!!errores.campos.email || undefined}
+              aria-describedby={errores.campos.email ? "e-email" : undefined}
             />
+            <FieldError id="e-email">{errores.campos.email}</FieldError>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="phone">Teléfono</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="11 5555 5555"
+              required
+              aria-invalid={!!errores.campos.phone || undefined}
+              aria-describedby={errores.campos.phone ? "e-phone" : "ayuda-phone"}
+            />
+            {errores.campos.phone ? (
+              <FieldError id="e-phone">{errores.campos.phone}</FieldError>
+            ) : (
+              // RF-05: el teléfono es obligatorio porque es el canal por el
+              // que se coordina la venta. Decir para qué sirve evita que
+              // parezca un dato que pedimos porque sí.
+              <FieldHint id="ayuda-phone">
+                Por acá coordinamos la entrega y el pago.
+              </FieldHint>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -95,36 +131,19 @@ export function SignUpForm() {
               autoComplete="new-password"
               minLength={8}
               required
-              aria-describedby="password-ayuda"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              aria-invalid={!!errores.campos.password || undefined}
+              aria-describedby={
+                errores.campos.password ? "e-password" : "ayuda-password"
+              }
             />
-            <FieldHint id="password-ayuda">Al menos 8 caracteres.</FieldHint>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="repetida">Repetí la contraseña</Label>
-            <Input
-              id="repetida"
-              name="repetida"
-              type="password"
-              autoComplete="new-password"
-              required
-              aria-invalid={noCoinciden || undefined}
-              aria-describedby={noCoinciden ? "repetida-error" : undefined}
-              value={repetida}
-              onChange={(e) => setRepetida(e.target.value)}
-            />
-            {/* La confirmación de contraseña es la única excepción a validar
-                al salir del campo y no mientras se escribe (§6.6). */}
-            {noCoinciden && (
-              <FieldError id="repetida-error">
-                Las dos contraseñas tienen que ser iguales.
-              </FieldError>
+            {errores.campos.password ? (
+              <FieldError id="e-password">{errores.campos.password}</FieldError>
+            ) : (
+              <FieldHint id="ayuda-password">Al menos 8 caracteres.</FieldHint>
             )}
           </div>
 
-          <FieldError>{error}</FieldError>
+          <FieldError>{errores.general}</FieldError>
 
           <Button
             type="submit"
@@ -140,7 +159,7 @@ export function SignUpForm() {
           <p className="text-center text-body-sm text-ink-secondary">
             ¿Ya tenés cuenta?{" "}
             <Link
-              href="/ingresar"
+              href={volver ? `/ingresar?volver=${encodeURIComponent(volver)}` : "/ingresar"}
               className="rounded-pill text-ink underline underline-offset-4"
             >
               Ingresá

@@ -75,12 +75,23 @@ export function isDomainError(e: unknown): e is DomainError {
   return e instanceof DomainError;
 }
 
-/** Atajo: `throw domainError("INSUFFICIENT_STOCK", { quedan: 2 })`. */
+/**
+ * Atajo: `throw domainError("INSUFFICIENT_STOCK", { quedan: 2 })`.
+ *
+ * `message` en las opciones reemplaza al mensaje por omisión del código. Se
+ * usa cuando la misma situación necesita decir algo más preciso —«ese email y
+ * esa contraseña no coinciden» en vez del genérico de VALIDATION— sin inventar
+ * un código nuevo. El resto de las claves son contexto para la vista.
+ */
 export function domainError(
   code: DomainErrorCode,
-  details?: Record<string, unknown>,
+  detalles?: Record<string, unknown> & { message?: string },
 ): DomainError {
-  return new DomainError(code, { details });
+  const { message, ...details } = detalles ?? {};
+  return new DomainError(code, {
+    message,
+    details: Object.keys(details).length ? details : undefined,
+  });
 }
 
 export function domainMessage(code: DomainErrorCode): string {

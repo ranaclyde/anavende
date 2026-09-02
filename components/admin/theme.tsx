@@ -32,7 +32,14 @@ try {
 } catch (e) {}
 `;
 
-export function ThemeToggle({ className }: { className?: string }) {
+export function ThemeToggle({
+  className,
+  soloIcono = false,
+}: {
+  className?: string;
+  /** Menú colapsado: la etiqueta se retira entera, no se recorta. */
+  soloIcono?: boolean;
+}) {
   const [tema, setTema] = useState<Tema | null>(null);
 
   useEffect(() => {
@@ -73,10 +80,12 @@ export function ThemeToggle({ className }: { className?: string }) {
       type="button"
       onClick={cambiar}
       aria-pressed={tema === null ? undefined : esOscuro}
+      title={soloIcono ? (esOscuro ? "Modo oscuro" : "Modo claro") : undefined}
       className={cn(
         "flex h-9 items-center gap-2 rounded-panel-control px-2.5",
         "text-body-sm text-ink-secondary transition-colors duration-150",
         "hover:bg-surface-sunken hover:text-ink",
+        soloIcono && "justify-center px-0",
         className,
       )}
     >
@@ -85,9 +94,15 @@ export function ThemeToggle({ className }: { className?: string }) {
       ) : (
         <Sun aria-hidden className="size-4 shrink-0" />
       )}
-      <span className="truncate">
-        {esOscuro ? "Modo oscuro" : "Modo claro"}
-      </span>
+      {soloIcono ? (
+        <span className="sr-only">
+          {esOscuro ? "Modo oscuro" : "Modo claro"}
+        </span>
+      ) : (
+        <span className="truncate">
+          {esOscuro ? "Modo oscuro" : "Modo claro"}
+        </span>
+      )}
     </button>
   );
 }

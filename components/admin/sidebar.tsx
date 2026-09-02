@@ -191,9 +191,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
         </nav>
 
         <div className="flex flex-col gap-1 border-t border-border p-2">
-          <ThemeToggle
-            className={cn(colapsado && !abiertoEnMovil && "justify-center px-0")}
-          />
+          <ThemeToggle soloIcono={colapsado && !abiertoEnMovil} />
 
           <Link
             href="/"
