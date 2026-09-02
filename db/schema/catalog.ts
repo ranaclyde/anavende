@@ -200,10 +200,16 @@ export const productVariants = pgTable(
       .defaultNow(),
   },
   (t) => [
-    // Lo que SÍ es invariante: la reserva nunca es negativa ni supera al
-    // total. Es la base del UPDATE condicional atómico de §8.2.
+    // La reserva nunca es negativa, en ninguna circunstancia.
     check("reserved_not_negative", sql`${t.reservedStock} >= 0`),
-    check("reserved_within_total", sql`${t.reservedStock} <= ${t.stockTotal}`),
+    // Y no supera al total MIENTRAS el total no sea negativo. La guarda no es
+    // un descuido: sin ella, junto con la restricción de arriba, implicaría
+    // `stock_total >= 0` e impondría el CHECK que §5.4 decidió NO poner,
+    // rompiendo RF-24. Ver el recuadro de §5.4.
+    check(
+      "reserved_within_total",
+      sql`${t.stockTotal} < 0 OR ${t.reservedStock} <= ${t.stockTotal}`,
+    ),
     check("images_source_not_self", sql`${t.imagesSourceId} <> ${t.id}`),
     // Un color por producto. El COALESCE hace que la variante única
     // (color_id NULL) también quede sujeta a la unicidad.

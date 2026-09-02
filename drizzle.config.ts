@@ -1,5 +1,13 @@
 import { defineConfig } from "drizzle-kit";
 
+// drizzle-kit corre fuera de Next, así que no hereda las variables de
+// .env.local. Node 22 puede cargarlas solo.
+try {
+  process.loadEnvFile(".env.local");
+} catch {
+  // En CI y en el servidor las variables ya vienen del entorno.
+}
+
 /**
  * TECHNICAL-SPEC §5, §18.2.
  * Las migraciones se generan con `drizzle-kit generate` y se revisan a mano

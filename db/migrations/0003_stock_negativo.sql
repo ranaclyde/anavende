@@ -1,0 +1,2 @@
+ALTER TABLE "product_variants" DROP CONSTRAINT "reserved_within_total";--> statement-breakpoint
+ALTER TABLE "product_variants" ADD CONSTRAINT "reserved_within_total" CHECK ("product_variants"."stock_total" < 0 OR "product_variants"."reserved_stock" <= "product_variants"."stock_total");
