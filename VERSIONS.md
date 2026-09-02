@@ -17,12 +17,13 @@ Las piezas de infraestructura se completan cuando F0 esté hecha.
 | Tailwind CSS | 4.x | 4.3.3 |
 | @supabase/ssr | Últimas | 0.12.5 |
 | @supabase/supabase-js | Últimas | 2.114.0 |
-| Drizzle ORM | 0.45.x | pendiente F1.4 |
-| Zod | 4.x | pendiente F1.10 |
+| Drizzle ORM | 0.45.x | 0.45.2 (`drizzle-kit` 0.31.10, `postgres` 3.4.9) |
+| Zod | 4.x | 4.5.4 |
 | sharp | 0.35.x | pendiente F2.2 |
 | Resend + React Email | resend 6.x | pendiente F1.8 |
 | ExcelJS | 4.x | pendiente F9.2 |
-| Sentry | @sentry/nextjs | pendiente F1.15 |
+| Sentry | @sentry/nextjs | 10.73.0 |
+| decimal.js (aritmética de montos, §7.1) | — | 10.6.0 |
 | Vitest + Playwright | — | pendiente F4.6 / F10.2 |
 | PostgreSQL | 15+ | **pendiente F0.3** |
 | Supabase auto-hospedado | — | **pendiente F0.3** |
