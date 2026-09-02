@@ -81,6 +81,7 @@ Ver detalle en §12 (Fuera de alcance).
 | **RN-09** | El carrito refleja siempre el **precio vigente** del producto. Los cambios de precio, stock o disponibilidad respecto de la última vista se comunican explícitamente al comprador. |
 | **RN-10** | Los envíos se realizan por **PedidosYa**; su costo no se calcula ni se cobra en la web y se coordina por WhatsApp. |
 | **RN-11** | Nunca se elimina físicamente un producto, marca, categoría o color que esté referenciado por una orden. Se desactiva (borrado lógico). |
+| **RN-11b** | **Ningún producto activo puede pertenecer a una marca o categoría inactiva, ni tener variantes activas de un color inactivo.** No se puede desactivar una marca, categoría o color que esté en uso por algo activo: primero se desactiva lo que la usa. Tampoco se puede activar un producto cuya marca o categoría esté inactiva. |
 | **RN-12** | Las órdenes conservan una copia del nombre y precio del producto al momento de crearse (snapshot), para que cambios posteriores del catálogo no alteren el historial. |
 
 ---
@@ -470,9 +471,22 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] ABM de **categorías** (nombre, slug, activa, **categorías relacionadas** — ver RF-31) — enlazadas a productos.
 - [ ] ABM de **marcas** (nombre, slug, logo opcional, activa).
 - [ ] ABM de **colores** (nombre y valor hexadecimal para mostrar la muestra de color).
-- [ ] Cada listado muestra cuántos productos usan el ítem.
+- [ ] Cada listado muestra cuántos productos usan el ítem, distinguiendo los activos de los inactivos.
 - [ ] No se puede eliminar un ítem en uso: se ofrece desactivarlo (RN-11).
+- [ ] **No se puede desactivar un ítem que tenga productos activos** (RN-11b). El aviso dice cuántos son y qué hacer: desactivarlos primero.
 - [ ] Nombres únicos, sin distinción de mayúsculas.
+- [ ] La **dirección** (el `slug`) se deriva del nombre al crear el ítem y **no cambia al renombrarlo**: es la URL pública, y cambiarla rompería en silencio todo enlace ya compartido. No es un campo del formulario —«slug» es jerga (`DESIGN-REFERENCE.md` §10)—; se muestra para leer.
+
+> **Por qué desactivar exige que no quede nada activo usándolo.** La
+> alternativa era que desactivar una marca escondiera sus productos del sitio
+> público. Es cómodo pero traicionero: un clic esconde una cantidad de
+> productos que nadie contó, y cada consulta pública tendría que acordarse de
+> mirar el estado de la marca además del del producto —una condición que el
+> día que se olvida no falla, sino que muestra de más—. Con RN-11b el estado
+> del producto es la única verdad sobre su visibilidad, y las consultas de
+> `TECHNICAL-SPEC.md` §10.1 y §11.2 pueden seguir filtrando solo por
+> `p.is_active`. El costo es un paso más para la vendedora cuando deja de
+> trabajar con una marca: desactivar sus productos y después la marca.
 
 ---
 

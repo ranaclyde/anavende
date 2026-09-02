@@ -452,6 +452,15 @@ CREATE INDEX variant_images_variant_idx ON variant_images (variant_id, sort_orde
 
 Lo que sigue siendo invariante en toda circunstancia es que `reserved_stock` **nunca es negativo**. Y mientras el stock no sea negativo, tampoco supera al total.
 
+**Sobre el estado activo de marcas, categorías y colores (RN-11b).** Ningún producto activo puede pertenecer a una marca o categoría inactiva, ni tener variantes activas de un color inactivo. La invariante se sostiene desde los dos lados y **se verifica en la aplicación**, no en la base:
+
+- al **desactivar** una marca, categoría o color se cuenta lo activo que la usa; si hay algo, se rechaza con `ENTITY_IN_USE` diciendo cuántos son;
+- al **activar** un producto se verifica que su marca y su categoría estén activas.
+
+> **Por qué en la aplicación y no como restricción de la base.** Es una condición entre dos tablas: en Postgres exigiría un `TRIGGER` en ambas —o una clave foránea compuesta con `is_active` replicado en `products`, que sería un dato duplicado y una fuente de divergencia—. Un `CHECK` no puede consultar otra tabla. Se prefiere un `TRIGGER` explícito solo cuando la invariante protege dinero o stock; ésta protege visibilidad, y toda escritura al catálogo pasa por el envoltorio de Server Actions (§6.2), que es un cuello único y verificable.
+>
+> **Lo que compra:** que `is_active` del producto sea la única verdad sobre su visibilidad. Las consultas públicas de §10.1 y §11.2 filtran solo por `p.is_active` y no necesitan mirar el estado de la marca; una condición que hay que recordar en cada consulta es una condición que el día que se olvida **muestra de más**, en silencio. La alternativa descartada —que desactivar una marca escondiera sus productos— está discutida en `FUNCTIONAL-SPEC.md` RF-18.
+
 **Sobre `images_source_id`.** Una variante con `images_source_id` no nulo no tiene imágenes propias: las toma de la variante apuntada. La resolución es de **un solo salto** (no se sigue una cadena); si la variante origen tampoco tiene imágenes, se cae al estado sin imagen. Esto se valida al guardar.
 
 ### 5.5 Carrito, direcciones y favoritos

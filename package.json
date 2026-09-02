@@ -12,6 +12,7 @@
     "db:verificar": "tsx scripts/verificar-esquema.mts",
     "db:restricciones": "tsx scripts/verificar-restricciones.mts",
     "db:drizzle": "tsx scripts/verificar-drizzle.mts",
+    "db:catalogo": "tsx scripts/verificar-catalogo.mts",
     "db:reset": "supabase db reset && drizzle-kit migrate && tsx scripts/verificar-esquema.mts",
     "dev:stack": "supabase start",
     "dev:stack:stop": "supabase stop"
