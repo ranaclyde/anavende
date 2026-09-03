@@ -359,12 +359,13 @@ Ordenado por relación entre valor y esfuerzo, no por entusiasmo. Nada de esto e
 | 3 | Expiración automática de reservas de stock | FA-05 |
 | 4 | Caché del catálogo con `cacheComponents`, **con medición previa** | TS §12 |
 | 5 | **Etiquetas de producto (*tags*) y filtro por etiqueta** | FA-20 |
-| 6 | Relacionados curados producto a producto | FA-18 |
-| 7 | Recomendados por co-compra, cuando haya volumen de órdenes | FA-17 |
-| 8 | Cupones y promociones | FA-09 |
-| 9 | Pago en línea | FA-01 |
-| 10 | Más atributos de variante además de color | FA-16 |
-| 11 | Entorno de staging | TS §18.2 |
+| 6 | **Imagen de categoría y portada de marca** | FA-21 |
+| 7 | Relacionados curados producto a producto | FA-18 |
+| 8 | Recomendados por co-compra, cuando haya volumen de órdenes | FA-17 |
+| 9 | Cupones y promociones | FA-09 |
+| 10 | Pago en línea | FA-01 |
+| 11 | Más atributos de variante además de color | FA-16 |
+| 12 | Entorno de staging | TS §18.2 |
 
 > **Por qué las etiquetas están quintas y no últimas.** Son la respuesta a un problema que llega solo: una categoría que crece más que la página. Hoy «Cables» se subdivide por el nombre del producto y la búsqueda tolerante alcanza; el día que «Cables» pase los 24 productos, deja de alcanzar. Es la única de esta lista cuyo momento **lo fija el catálogo y no nosotros**, así que conviene tenerla pensada antes de necesitarla.
 

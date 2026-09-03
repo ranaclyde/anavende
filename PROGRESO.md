@@ -97,6 +97,7 @@ Cada una se escribió primero en la especificación y después en el código
 | **RN-11b**: ningún producto activo puede tener marca, categoría o color inactivos | `FUNCTIONAL-SPEC.md` RN-11b y RF-18, `TECHNICAL-SPEC.md` §5.4 | Las especificaciones no decían qué le pasaba a los productos de una marca desactivada, y la consulta de §10.1 no miraba `b.is_active`. En vez de agregar ese filtro a cada consulta pública —una condición que el día que se olvida muestra de más—, se prohíbe desactivar algo que esté en uso por algo activo |
 | **§2.3 corregida al recibir el logo real** | `DESIGN-REFERENCE.md` §2.3 | Describía un cuadrado burdeos con letras blancas, que era el marcador de posición. El logo real es trazo burdeos sobre transparente; se agregó la versión clara obligatoria para fondo oscuro y el piso de 24px |
 | **El slug no cambia al renombrar** | `components/admin/catalogo/dialogo.tsx` | Es la dirección pública: si cambiara, todo enlace ya compartido dejaría de funcionar sin aviso |
+| **La imagen de categoría queda post-MVP, sexta** | `FUNCTIONAL-SPEC.md` FA-21; `DEVELOPMENT-PLAN.md` §6 | Pedido tuyo. Hoy la categoría se muestra como texto en las tres superficies —chips, portada, filtros— y sumarle una foto abre secciones que no se pueden dibujar sin ella. Va junto con una portada de marca porque **un logo y una portada no son lo mismo**: el logo es una marca gráfica, suele traer transparencia y se muestra chico; la portada es una foto apaisada y grande. Comparten la canalización de F2.2 pero **no** la tabla de tamaños de §9.2, que está calculada para la foto de un producto — 1400px de un logo es absurdo |
 | **El bucket acepta `image/webp` y nada más** | `supabase/config.toml`, `TECHNICAL-SPEC.md` §9.4 | De ese bucket solo sale lo que produjo sharp (§9.0). Restringir el tipo en el bucket es la última barrera si algún día alguien escribe una subida que se saltea la canalización — la clase de error que no se ve al escribirlo y se descubre sirviendo un archivo que no debía existir |
 | **La subida es un Route Handler y no una Server Action** | `app/api/admin/upload/route.ts`, `TECHNICAL-SPEC.md` §9.1 | Las Server Actions serializan su entrada: mandarle 8 MB de binario significa pasarlo a base64 y crecerlo un tercio en el camino. Es la única mutación del proyecto fuera del envoltorio de §6.2, así que sus garantías —rol, validación, traducción de errores, Sentry solo para lo inesperado— se repiten a mano ahí, en el mismo orden |
 | **La descripción del producto lleva formato, en Markdown** | `FUNCTIONAL-SPEC.md` RF-03 y RF-15; `TECHNICAL-SPEC.md` §5.4, §10.1 y §16; `DESIGN-REFERENCE.md` §6.10 | Decisión tuya: la vendedora tiene que poder poner negrita, cursiva y listas. Se eligió **Markdown y no HTML** porque §16 ya había elegido Markdown sanitizado para las páginas legales — un formato, un sanitizador y un renderizador en todo el proyecto en vez de dos tuberías para el mismo problema. La vendedora nunca ve la sintaxis: el editor es visual. Se dejaron **afuera** imágenes, enlaces, tablas y HTML crudo, cada uno con su motivo escrito en RF-15. Efecto lateral que había que resolver: `%cable hdmi%` no encuentra `Cable **HDMI**`, así que se agrega `description_text`, columna generada como `final_price`, que es lo que busca §10.1 y no se muestra nunca |
@@ -123,6 +124,14 @@ Cada una se escribió primero en la especificación y después en el código
 ---
 
 ## Pendiente detectado, sin tarea propia
+
+**El logo de marca de RF-18 no tiene tarea.** RF-18 pide «logo opcional» y
+`brands.logo_url` existe desde F1.5, pero el «Hecho cuando» de F2.1 sólo habla
+de alta, edición y baja, y el de F2.2 sólo de la canalización. El logo cayó
+justo en el medio: F2.1 está cerrada sin él y F2.2 no lo incluye. **F2.2 lo
+desbloqueó** —la canalización ya existe— así que ahora es trabajo, no espera.
+Hay que decidir dónde entra: reabrir F2.1 como se hizo con «destacada», o
+sumarlo a F2.3 junto con el resto del ABM.
 
 **El bucket declarativo no se aplica sobre un stack que ya existe.**
 `[storage.buckets.productos]` en `supabase/config.toml` es lo correcto para
