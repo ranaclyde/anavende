@@ -72,9 +72,9 @@ probó en local vive en `VERSIONS.md`.
 |---|---|---|---|
 | F2.1 | ABM de marcas, categorías y colores, con el **logo de marca** | ✅ | Reabierta dos veces: **categoría destacada** y el **logo de marca** que RF-18 pedía y no tenía tarea. Probado en el navegador: alta con logo, el chip en el listado, reemplazar, quitar —que borra los archivos, no solo la referencia—, borrar la marca llevándose su logo, y el rechazo **antes de subir** de un `.txt` y de un archivo de 11 MB |
 | F2.2 | Canalización de imágenes | ✅ | Su «Hecho cuando» está cumplido y verificado: `db:imagenes` prueba contra Storage de verdad que un JPG de 8 MB sale como tres WEBP y que una subida cortada a mitad no deja huérfanos; el rechazo **antes de subir** se probó en el navegador con el logo de marca, que fue su primer consumidor real. De RF-17 quedan las piezas que **necesitan varias imágenes por variante** —arrastre, progreso, reordenar y elegir la principal—: caen en F2.4, que es donde tienen sentido |
-| F2.3 | ABM de productos | ⬜ | Cuando agregue `description_text`, **el índice `products_description_trgm_idx` tiene que mudarse a esa columna**: hoy indexa `description`, que §10.1 ya no consulta. Creció de M a L: suma la **descripción con formato** (RF-15, DR §6.11). Tiene que verificar RN-11b al revés: no activar un producto de marca inactiva |
+| F2.3 | ABM de productos | ✅ | Alta, edición, activar/desactivar, destacar y baja, con la **descripción con formato**. `description_text` y su índice quedaron en la migración `0006`. Verificado con tres scripts (`db:descripcion`, `db:markdown`, `db:productos`) y en el navegador: se cargó un producto real, se editó, se rechazó activarlo con la marca desactivada (RN-11b al revés) y se borró. **La búsqueda del «Hecho cuando» se probó contra el producto de verdad**: «cable hdmi» encuentra `Cable **HDMI** 2.1`. Necesitó un **listado mínimo** que el plan tenía en F2.5 |
 | F2.4 | Variantes de color | ⬜ | |
-| F2.5 | Listado de productos | ⬜ | |
+| F2.5 | Listado de productos | ⬜ | El listado **existe** desde F2.3, con lo mínimo para llegar al formulario y volver. Falta lo que le da nombre a la tarea: búsqueda, filtros por categoría/marca/estado, orden, y stock total/reservado/disponible con el cero destacado |
 | F2.6 | ABM de medios de pago | ⬜ | |
 | F2.7 | Configuración del sitio | ⬜ | |
 | F2.8 | Cargar el catálogo real | ⬜ | |
@@ -105,7 +105,12 @@ Cada una se escribió primero en la especificación y después en el código
 | **La descripción del producto lleva formato, en Markdown** | `FUNCTIONAL-SPEC.md` RF-03 y RF-15; `TECHNICAL-SPEC.md` §5.4, §10.1 y §16; `DESIGN-REFERENCE.md` §6.11 | Decisión tuya: la vendedora tiene que poder poner negrita, cursiva y listas. Se eligió **Markdown y no HTML** porque §16 ya había elegido Markdown sanitizado para las páginas legales — un formato, un sanitizador y un renderizador en todo el proyecto en vez de dos tuberías para el mismo problema. La vendedora nunca ve la sintaxis: el editor es visual. Se dejaron **afuera** imágenes, enlaces, tablas y HTML crudo, cada uno con su motivo escrito en RF-15. Efecto lateral que había que resolver: `%cable hdmi%` no encuentra `Cable **HDMI**`, así que se agrega `description_text`, columna generada como `final_price`, que es lo que busca §10.1 y no se muestra nunca |
 | **Las etiquetas (*tags*) quedan para después del MVP, quintas** | `FUNCTIONAL-SPEC.md` FA-20; `DEVELOPMENT-PLAN.md` §6 | Un producto tiene **una** categoría y `categories` no tiene jerarquía. Mientras una categoría entre en una página (24 productos), subdividirla por el nombre del producto más la búsqueda tolerante alcanza. Cuando no entre, la respuesta son etiquetas y **no** partir la categoría en hermanas: seis «Cables …» al lado de «Teclados» arruinan la fila del encabezado, que es la navegación principal. Va quinta porque es la única de esa lista cuyo momento lo fija el catálogo y no nosotros |
 | **Las categorías también se destacan** | `FUNCTIONAL-SPEC.md` RF-01, RF-02, RF-15 y RF-18; `TECHNICAL-SPEC.md` §5.4 y §10.2 | Los productos ya tenían `is_featured`; las categorías no, y sin eso el orden del menú de la tienda y de los chips de la portada era alfabético y nada más. Se agrega como **bandera, no como orden**: un `sort_order` obligaría a renumerar al insertar en el medio para un puñado de filas que desempatan solas por nombre. Destacar **no publica** —`is_active` sigue siendo la única verdad sobre la visibilidad—, y no hay tope: destacarlas todas es reversible con un clic, y un límite del servidor sería una regla que se choca sin haberla pedido |
-
+| **Lexical para el editor, mdast para el sanitizador** | `TECHNICAL-SPEC.md` §2.1 y §16; `VERSIONS.md` | RF-15 pedía un editor visual y §16 un sanitizador, y ninguna especificación decía con qué. Se eligió **Lexical** por sobre Tiptap/ProseMirror —pedido tuyo, y con un motivo que lo sostiene: su lista de *transformers* de Markdown **es** la lista blanca de §16, no una copia, así que un formato que no está no tiene ida ni vuelta posible. Del lado del servidor, `mdast-util-*` parsea, filtra y vuelve a serializar; la ficha va a renderizar el árbol a React **sin pasar por HTML**, así que no queda un `dangerouslySetInnerHTML` en ninguna parte del proyecto |
+| **Lo descartado no siempre se borra** | `TECHNICAL-SPEC.md` §16; `modules/content/markdown.ts` | RF-15 pide descartar «sin romper el resto del texto». Un enlace, una cita o un tachado pierden el formato y **conservan las palabras**; se borra entero solo lo que no es texto legible —imágenes, HTML y tablas—. Pegar una nota de Word con tres enlaces tiene que dejar la nota, no tres agujeros |
+| **El sanitizador parsea GFM aunque GFM no esté permitido** | `TECHNICAL-SPEC.md` §2.1; `modules/content/markdown.ts` | Para descartar una tabla primero hay que verla. Sin la extensión, `\| Tecla \| Vida útil \|` no era una tabla para el parseador sino un párrafo, y salía del sanitizador **con los pipes a la vista**: justo el «resto roto» que RF-15 no quiere. Al serializar no se agrega el lado GFM, porque del filtro no sale ninguno de esos nodos |
+| **El límite de 5.000 se mide en texto, y el servidor cuenta menos que el editor** | `modules/content/markdown.ts`, `limites.ts` | Si contara el Markdown, poner un párrafo en negrita acercaría al tope sin agregar una letra. Y el servidor **no suma los saltos entre bloques** mientras que el editor sí: la diferencia va a propósito en esa dirección, para que todo lo que el editor acepta se pueda guardar. Al revés, el contador diría que entra y el guardado lo negaría |
+| **El subtítulo tiene un solo nivel, y es `h3`** | `modules/content/markdown.ts`; DR §6.11 | RF-15 permite «un nivel de subtítulo» y no dice cuál. En la ficha el nombre del producto es el `h1` y «Descripción» el `h2` (DR §7.3), así que un subtítulo dentro de la descripción es el escalón siguiente. Todo encabezado pegado de afuera —venga como `#` o como `######`— se normaliza a ese nivel: no hay jerarquía que preservar |
+| **«Eliminar» un producto tiene dos finales, y la pantalla dice cuál pasó** | `modules/catalog/products/actions.ts` | RF-15 pide que un producto nombrado por una orden se desactive en vez de borrarse. La acción devuelve **cuál de los dos ocurrió** en vez de un «listo» genérico: decir «lo borramos» sobre algo que sigue en el listado es peor que no decir nada |
 ---
 
 ## Qué está esperando algo tuyo
@@ -150,6 +155,23 @@ justo en el medio: F2.1 está cerrada sin él y F2.2 no lo incluye. **F2.2 lo
 desbloqueó** —la canalización ya existe— así que ahora es trabajo, no espera.
 Hay que decidir dónde entra: reabrir F2.1 como se hizo con «destacada», o
 sumarlo a F2.3 junto con el resto del ABM.
+
+**La descripción todavía no se renderiza en ningún lado.** El sanitizador
+expone `nodosDeMarkdown`, que es el árbol ya filtrado listo para pintar, pero
+el componente que lo convierte en elementos de React —con la medida, el aire y
+los pesos de `DESIGN-REFERENCE.md` §6.11— no se escribió: **no hay ficha
+todavía**, y código sin consumidor es código que nadie prueba. Cae en F3.5. Lo
+que hay que respetar ahí es la segunda pasada de §16: la ficha vuelve a
+filtrar, para que ampliar la lista blanca mañana no publique lo que ya estaba
+guardado.
+
+**`rounded-panel` no existía como token.** Cuatro usos en el catálogo de F2.1
+—la tabla de escritorio, las tarjetas de móvil, el esqueleto de carga y el
+listado— pedían una clase que Tailwind no genera: el token es
+`--radius-panel-card`, así que esos contenedores se venían dibujando con las
+esquinas cuadradas. Se corrigió al escribir el listado de productos, que
+copiaba el mismo patrón. Es de F2.1 y no de F2.3, y se anota acá para que
+quede el rastro.
 
 **El bucket declarativo no se aplica sobre un stack que ya existe.**
 `[storage.buckets.productos]` en `supabase/config.toml` es lo correcto para

@@ -43,12 +43,18 @@
 | **shadcn/ui** | — | Componentes base sobre Radix UI |
 | **Zod** | 4.x | Validación de entrada, compartida cliente/servidor |
 | **sharp** | 0.35.x | Conversión y redimensionado de imágenes |
+| **Lexical** | 0.50.x (`lexical`, `@lexical/react`, `@lexical/list`, `@lexical/rich-text`, `@lexical/markdown`, `@lexical/utils`) | El editor visual de la descripción de producto (RF-15) y de las páginas legales (§5.9). Corre solo en el panel |
+| **mdast** | `mdast-util-from-markdown` 2.x, `mdast-util-to-markdown` 2.x, `mdast-util-gfm` 3.x, `micromark-extension-gfm` 3.x | El sanitizador del servidor (§16): parsea el Markdown, filtra contra la lista blanca y lo vuelve a serializar |
 | **Resend** + **React Email** | `resend` 6.x | Emails transaccionales |
 | **ExcelJS** | 4.x | Exportación de reportes a `.xlsx` |
 | **Sentry** | `@sentry/nextjs` | Captura de errores |
 | **Vitest** + **Playwright** | — | Tests unitarios y E2E |
 
 > **Esta tabla es el parámetro de las consultas de documentación.** Al escribir código contra cualquiera de estas piezas se consulta la skill `context7` fijada a la versión de esta columna, no a la última publicada (`DEVELOPMENT-PLAN.md` §1.2, regla 6). Las versiones exactas instaladas se registran en F0.9; si difieren de las de referencia, **manda lo registrado en F0.9** y esta tabla se actualiza.
+
+> **Por qué Lexical y no un editor de HTML.** RF-15 pide que la vendedora escriba con formato sin ver nunca la sintaxis, y §16 ya había elegido Markdown sanitizado. Lexical serializa a Markdown con una lista de *transformers* que se pasa explícitamente: **esa lista es la lista blanca**, no una copia de ella. Un formato que no está en la lista no tiene ida ni vuelta posible, así que la regla no se sostiene sobre que alguien se acuerde de filtrarlo. Se prefirió a Tiptap/ProseMirror por peso (§20) y porque ahí el Markdown es de terceros o hay que escribirlo. Lo que cuesta más es la barra de herramientas: marcar el formato activo bajo el cursor se resuelve con un *listener* de selección, unas cuarenta líneas.
+
+> **Por qué el sanitizador parsea GFM si GFM no está permitido.** Para descartar una tabla primero hay que verla. Sin la extensión, `| Tecla | Vida útil |` no es una tabla para el parseador sino un párrafo, y sale del sanitizador con los pipes a la vista — que es exactamente el «resto roto» que RF-15 no quiere. Se parsea GFM para reconocer tabla, tachado, nota al pie, lista de tareas y URL suelta, y se los descarta o desenvuelve con todo lo demás. Al **serializar** no se agrega el lado GFM: del filtro no sale ninguno de esos nodos, y un serializador que supiera escribirlos solo agregaría la posibilidad de que algún día salga uno.
 
 > **Nota sobre ExcelJS:** se elige por sobre `xlsx`/SheetJS porque este último dejó de publicarse en npm y arrastra vulnerabilidades conocidas en las versiones que sí están allí.
 
@@ -1237,7 +1243,7 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 | **Entrada** | Zod en el servidor sobre absolutamente toda entrada, incluida la que ya validó el cliente |
 | **SQL** | Drizzle parametriza. Los fragmentos `sql` de búsqueda usan parámetros, nunca interpolación de strings |
 | **Subida de archivos** | Tipo verificado por *magic bytes*, no por `Content-Type`; tamaño limitado; nombre generado por el servidor; sin ejecución del contenido |
-| **XSS** | React escapa por omisión. El Markdown de las páginas legales **y el de las descripciones de producto (RF-15)** pasa por el mismo sanitizador, con una lista blanca de nodos: párrafo, salto, negrita, cursiva, lista con viñetas, lista numerada, ítem y un nivel de subtítulo. Todo lo demás —HTML crudo, `script`, imágenes, enlaces, tablas, atributos de estilo— se descarta **al guardar y otra vez al renderizar**: al guardar para que la base nunca contenga lo que no debe, al renderizar para que un cambio futuro de la lista blanca no publique lo que ya está guardado |
+| **XSS** | React escapa por omisión. El Markdown de las páginas legales **y el de las descripciones de producto (RF-15)** pasa por el mismo sanitizador, con una lista blanca de nodos: párrafo, salto, negrita, cursiva, lista con viñetas, lista numerada, ítem y un nivel de subtítulo. Todo lo demás —HTML crudo, `script`, imágenes, enlaces, tablas, atributos de estilo— se descarta **al guardar y otra vez al renderizar**: al guardar para que la base nunca contenga lo que no debe, al renderizar para que un cambio futuro de la lista blanca no publique lo que ya está guardado. La lista blanca es **una sola** y vive en `modules/content/markdown.ts`: el mismo sanitizador para la descripción de producto y para las páginas legales. **Lo descartado no siempre se borra:** un enlace, una cita o un tachado pierden el formato y conservan las palabras (RF-15 pide descartar «sin romper el resto del texto»); se borra entero solo lo que no es texto legible — imágenes, HTML y tablas. El árbol filtrado se renderiza a elementos de React **sin pasar por HTML**: no hay `dangerouslySetInnerHTML` en ningún punto del proyecto, así que no queda una segunda superficie que sanitizar |
 | **Contraseñas** | Hash a cargo de Supabase Auth. La aplicación nunca las almacena ni las registra |
 | **Datos personales** | Filtrados del contexto que se envía a Sentry (email, teléfono, dirección) |
 | **Secretos** | Solo en variables de entorno de Coolify. **La clave de servicio de Supabase nunca lleva prefijo `NEXT_PUBLIC_`**: es la única credencial que puede administrar usuarios |

@@ -43,6 +43,13 @@
       "when": 1788460626816,
       "tag": "0005_logo_key",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788464139787,
+      "tag": "0006_descripcion_buscable",
+      "breakpoints": true
     }
   ]
 }

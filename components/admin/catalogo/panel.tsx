@@ -136,7 +136,7 @@ export function PanelDeCatalogo({
       ) : (
         <>
           {/* Escritorio */}
-          <div className="hidden overflow-hidden rounded-panel border border-border bg-surface md:block">
+          <div className="hidden overflow-hidden rounded-panel-card border border-border bg-surface md:block">
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-surface-sunken">
@@ -201,7 +201,7 @@ export function PanelDeCatalogo({
             {items.map((item) => (
               <li
                 key={item.id}
-                className="flex flex-col gap-3 rounded-panel border border-border bg-surface p-3"
+                className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <Nombre item={item} tipo={tipo} />
@@ -449,7 +449,7 @@ function Vacio({
 }) {
   const palabras = PALABRAS[tipo];
   return (
-    <div className="flex flex-col items-center gap-3 rounded-panel border border-dashed border-border bg-surface px-6 py-12 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
       <span
         aria-hidden
         className="grid size-12 place-items-center rounded-full bg-surface-sunken text-ink-tertiary"

@@ -11,7 +11,7 @@ export default function CargandoCatalogo() {
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-8 w-32 rounded-panel-control" />
       </div>
-      <div className="overflow-hidden rounded-panel border border-border bg-surface">
+      <div className="overflow-hidden rounded-panel-card border border-border bg-surface">
         <div className="h-9 border-b border-border bg-surface-sunken" />
         {Array.from({ length: 6 }).map((_, i) => (
           <div

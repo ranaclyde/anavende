@@ -20,6 +20,8 @@ Las piezas de infraestructura se completan cuando F0 esté hecha.
 | Drizzle ORM | 0.45.x | 0.45.2 (`drizzle-kit` 0.31.10, `postgres` 3.4.9) |
 | Zod | 4.x | 4.5.4 |
 | sharp | 0.35.x | 0.35.4 |
+| Lexical (editor de la descripción, RF-15) | 0.50.x | 0.50.0 (`@lexical/react`, `list`, `rich-text`, `markdown`, `utils`) |
+| mdast (sanitizador del servidor, §16) | — | `from-markdown` 2.0.3, `to-markdown` 2.1.2, `gfm` 3.1.0, `micromark-extension-gfm` 3.0.0 |
 | Resend + React Email | resend 6.x | pendiente F1.8 |
 | ExcelJS | 4.x | pendiente F9.2 |
 | Sentry | @sentry/nextjs | 10.73.0 |

@@ -118,7 +118,23 @@ export const products = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
+    /** RF-15: Markdown acotado. La vendedora nunca ve la sintaxis (§5.4). */
     description: text("description").notNull().default(""),
+    /**
+     * Columna GENERADA, igual que `finalPrice`: la proyección en texto plano
+     * de la descripción, SOLO para buscar (§10.1). Se calcula en la base para
+     * que sea imposible que la consulta y el contenido discrepen.
+     *
+     * Se quitan `* _ # \``, que es la sintaxis que parte una subcadena:
+     * `%cable hdmi%` no encuentra `Cable **HDMI**`. El guion NO se quita,
+     * porque «USB-C» tiene que seguir siendo «USB-C».
+     *
+     * NO SE MUESTRA NUNCA. Si una descripción con `XT_500` pierde el guion
+     * bajo, afecta a qué encuentra la búsqueda, jamás a lo que el comprador lee.
+     */
+    descriptionText: text("description_text").generatedAlwaysAs(
+      sql`regexp_replace(description, '[*_#\`]', '', 'g')`,
+    ),
     brandId: uuid("brand_id")
       .notNull()
       .references(() => brands.id, { onDelete: "restrict" }),
@@ -158,9 +174,12 @@ export const products = pgTable(
       "gin",
       sql`immutable_unaccent(lower(${t.name})) gin_trgm_ops`,
     ),
+    // Sobre la PROYECCIÓN, no sobre `description`: §10.1 busca en
+    // `description_text` y un índice sobre la columna con sintaxis no lo
+    // usaría nunca.
     index("products_description_trgm_idx").using(
       "gin",
-      sql`immutable_unaccent(lower(${t.description})) gin_trgm_ops`,
+      sql`immutable_unaccent(lower(${t.descriptionText})) gin_trgm_ops`,
     ),
     // Filtros y orden del catálogo (RF-02). Los índices son PARCIALES: el
     // sitio público nunca consulta productos inactivos (RN-05), así que el
