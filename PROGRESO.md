@@ -71,8 +71,8 @@ probó en local vive en `VERSIONS.md`.
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
 | F2.1 | ABM de marcas, categorías y colores | ✅ | Reabierta para agregar **categoría destacada** (RF-18) y vuelta a probar en el navegador: alta destacada, la estrella en los dos sentidos, el orden con tres categorías cuyo alfabeto lo contradice, edición que quita la marca, «Inactiva + Destacada» conviviendo, y las tarjetas de móvil |
-| F2.2 | Canalización de imágenes | ⬜ | `sharp` ya está instalado (0.35.4). El logo de marca (RF-18) espera acá: no hay dónde subirlo hasta que exista |
-| F2.3 | ABM de productos | ⬜ | Creció de M a L: suma la **descripción con formato** (RF-15, DR §6.10). Tiene que verificar RN-11b al revés: no activar un producto de marca inactiva |
+| F2.2 | Canalización de imágenes | 🟡 | **La mitad del servidor está entera y verificada** contra Storage de verdad con `db:imagenes`: un JPG de 8 MB sale como tres WEBP, y una subida cortada a mitad no deja huérfanos ni en Storage ni en la base. Falta **la mitad del cliente**: sin pantalla donde montarla no hay arrastre, vista previa, progreso ni el rechazo *antes* de subir que pide RF-17. Cae en F2.4, que es la que le da un lugar |
+| F2.3 | ABM de productos | ⬜ | Cuando agregue `description_text`, **el índice `products_description_trgm_idx` tiene que mudarse a esa columna**: hoy indexa `description`, que §10.1 ya no consulta. Creció de M a L: suma la **descripción con formato** (RF-15, DR §6.10). Tiene que verificar RN-11b al revés: no activar un producto de marca inactiva |
 | F2.4 | Variantes de color | ⬜ | |
 | F2.5 | Listado de productos | ⬜ | |
 | F2.6 | ABM de medios de pago | ⬜ | |
@@ -97,6 +97,8 @@ Cada una se escribió primero en la especificación y después en el código
 | **RN-11b**: ningún producto activo puede tener marca, categoría o color inactivos | `FUNCTIONAL-SPEC.md` RN-11b y RF-18, `TECHNICAL-SPEC.md` §5.4 | Las especificaciones no decían qué le pasaba a los productos de una marca desactivada, y la consulta de §10.1 no miraba `b.is_active`. En vez de agregar ese filtro a cada consulta pública —una condición que el día que se olvida muestra de más—, se prohíbe desactivar algo que esté en uso por algo activo |
 | **§2.3 corregida al recibir el logo real** | `DESIGN-REFERENCE.md` §2.3 | Describía un cuadrado burdeos con letras blancas, que era el marcador de posición. El logo real es trazo burdeos sobre transparente; se agregó la versión clara obligatoria para fondo oscuro y el piso de 24px |
 | **El slug no cambia al renombrar** | `components/admin/catalogo/dialogo.tsx` | Es la dirección pública: si cambiara, todo enlace ya compartido dejaría de funcionar sin aviso |
+| **El bucket acepta `image/webp` y nada más** | `supabase/config.toml`, `TECHNICAL-SPEC.md` §9.4 | De ese bucket solo sale lo que produjo sharp (§9.0). Restringir el tipo en el bucket es la última barrera si algún día alguien escribe una subida que se saltea la canalización — la clase de error que no se ve al escribirlo y se descubre sirviendo un archivo que no debía existir |
+| **La subida es un Route Handler y no una Server Action** | `app/api/admin/upload/route.ts`, `TECHNICAL-SPEC.md` §9.1 | Las Server Actions serializan su entrada: mandarle 8 MB de binario significa pasarlo a base64 y crecerlo un tercio en el camino. Es la única mutación del proyecto fuera del envoltorio de §6.2, así que sus garantías —rol, validación, traducción de errores, Sentry solo para lo inesperado— se repiten a mano ahí, en el mismo orden |
 | **La descripción del producto lleva formato, en Markdown** | `FUNCTIONAL-SPEC.md` RF-03 y RF-15; `TECHNICAL-SPEC.md` §5.4, §10.1 y §16; `DESIGN-REFERENCE.md` §6.10 | Decisión tuya: la vendedora tiene que poder poner negrita, cursiva y listas. Se eligió **Markdown y no HTML** porque §16 ya había elegido Markdown sanitizado para las páginas legales — un formato, un sanitizador y un renderizador en todo el proyecto en vez de dos tuberías para el mismo problema. La vendedora nunca ve la sintaxis: el editor es visual. Se dejaron **afuera** imágenes, enlaces, tablas y HTML crudo, cada uno con su motivo escrito en RF-15. Efecto lateral que había que resolver: `%cable hdmi%` no encuentra `Cable **HDMI**`, así que se agrega `description_text`, columna generada como `final_price`, que es lo que busca §10.1 y no se muestra nunca |
 | **Las etiquetas (*tags*) quedan para después del MVP, quintas** | `FUNCTIONAL-SPEC.md` FA-20; `DEVELOPMENT-PLAN.md` §6 | Un producto tiene **una** categoría y `categories` no tiene jerarquía. Mientras una categoría entre en una página (24 productos), subdividirla por el nombre del producto más la búsqueda tolerante alcanza. Cuando no entre, la respuesta son etiquetas y **no** partir la categoría en hermanas: seis «Cables …» al lado de «Teclados» arruinan la fila del encabezado, que es la navegación principal. Va quinta porque es la única de esa lista cuyo momento lo fija el catálogo y no nosotros |
 | **Las categorías también se destacan** | `FUNCTIONAL-SPEC.md` RF-01, RF-02, RF-15 y RF-18; `TECHNICAL-SPEC.md` §5.4 y §10.2 | Los productos ya tenían `is_featured`; las categorías no, y sin eso el orden del menú de la tienda y de los chips de la portada era alfabético y nada más. Se agrega como **bandera, no como orden**: un `sort_order` obligaría a renumerar al insertar en el medio para un puñado de filas que desempatan solas por nombre. Destacar **no publica** —`is_active` sigue siendo la única verdad sobre la visibilidad—, y no hay tope: destacarlas todas es reversible con un clic, y un límite del servidor sería una regla que se choca sin haberla pedido |
@@ -113,10 +115,22 @@ Cada una se escribió primero en la especificación y después en el código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
 3. **F0.13 — el *Send Email Hook*.** Su respuesta define cómo se hace F1.8.
+4. **F0.7 — el bucket en producción.** `supabase/config.toml` declara
+   `productos` para el stack local, pero eso no lo crea en el VPS. En
+   producción lo crea F0.7, con los mismos tres valores: público en lectura,
+   10 MiB de tope y `image/webp` como único tipo permitido.
 
 ---
 
 ## Pendiente detectado, sin tarea propia
+
+**El bucket declarativo no se aplica sobre un stack que ya existe.**
+`[storage.buckets.productos]` en `supabase/config.toml` es lo correcto para
+una máquina nueva o un `supabase db reset`, pero `supabase start` sobre un
+stack con datos restaura del backup y no lo crea. En esta máquina se creó a
+mano una vez. Vale saberlo antes de que alguien clone el repo, levante el
+stack sobre datos viejos y no entienda por qué falla la subida.
+
 
 **Los botones de ícono del panel miden 36×36 también en móvil.** `§9` de
 `DESIGN-REFERENCE.md` pide 44px de área táctil ahí, y el propio comentario de

@@ -128,6 +128,23 @@ file_size_limit = "10MiB"
 # allowed_mime_types = ["image/png", "image/jpeg"]
 # objects_path = "./images"
 
+# El bucket de las imágenes de producto (TECHNICAL-SPEC §9.4).
+#
+# Se declara acá y no se crea con un script: así `supabase db reset` y una
+# máquina nueva lo tienen sin que nadie se acuerde de un paso manual. En
+# producción lo crea F0.7, con estos mismos tres valores.
+#
+# Público en LECTURA —el navegador baja las imágenes directo, sin pasar por el
+# servidor APP—, y la escritura solo con la clave de servicio.
+#
+# `allowed_mime_types` es webp y nada más: de este bucket sale únicamente lo
+# que produjo sharp (§9.0). Es la última barrera si algún día alguien escribe
+# una subida que se saltea la canalización.
+[storage.buckets.productos]
+public = true
+file_size_limit = "10MiB"
+allowed_mime_types = ["image/webp"]
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true
