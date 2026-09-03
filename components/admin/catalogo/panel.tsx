@@ -1,6 +1,7 @@
 "use client";
 
 import { Eye, EyeOff, Pencil, Plus, Star, Tags, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { useState, useTransition } from "react";
 
 import {
@@ -262,6 +263,25 @@ export function PanelDeCatalogo({
 function Nombre({ item, tipo }: { item: ItemDeCatalogo; tipo: TipoDeItem }) {
   return (
     <span className="flex items-center gap-2">
+      {/* El logo es decorativo acá: el nombre está al lado, en texto, y
+          repetirlo en el `alt` se lo haría leer dos veces a un lector de
+          pantalla (§9). Las marcas sin logo no dejan un hueco: la fila no
+          reserva lugar para algo que la mayoría no va a tener. */}
+      {tipo === "marca" && item.logoUrl && (
+        // Chip CLARO en los dos modos (§6.10). Un logo de marca es trazo
+        // sobre transparente, casi siempre oscuro: sobre el panel en modo
+        // oscuro desaparece. Y a diferencia del logo de AnaVende, el de una
+        // marca ajena no se puede derivar en versión clara.
+        <span className="grid size-6 shrink-0 place-items-center overflow-hidden rounded-[4px] border border-border bg-logo-chip">
+          <Image
+            src={item.logoUrl}
+            alt=""
+            width={24}
+            height={24}
+            className="size-full object-contain p-[2px]"
+          />
+        </span>
+      )}
       {tipo === "color" && item.hexCode && (
         <span
           aria-hidden

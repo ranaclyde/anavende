@@ -85,5 +85,8 @@ export const cambioDeDestacada = z.object({
   destacada: destacada,
 });
 
+/** Para las acciones que solo necesitan saber sobre cuál operan. */
+export const soloId = z.object({ id: z.uuid() });
+
 export type CrearColor = z.infer<typeof crearColor>;
 export type EditarColor = z.infer<typeof editarColor>;

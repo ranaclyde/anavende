@@ -489,6 +489,10 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 **Criterios de aceptación:**
 - [ ] ABM de **categorías** (nombre, slug, activa, **destacada**, **categorías relacionadas** — ver RF-31) — enlazadas a productos.
 - [ ] ABM de **marcas** (nombre, slug, logo opcional, activa).
+- [ ] El **logo de marca** se sube desde el mismo diálogo donde se carga el nombre, con las reglas de RF-17: JPG, PNG o WEBP, hasta 10 MB, y sale WEBP. Se muestra en el listado del panel, al lado del nombre.
+- [ ] Es **opcional y reversible**: una marca puede no tener logo, se le puede poner uno después y se le puede quitar. Quitarlo borra los archivos, no solo la referencia.
+- [ ] **Reemplazar un logo borra el anterior.** Un logo que ya nadie muestra pero sigue ocupando lugar es basura que no se ve en ninguna pantalla.
+- [ ] Borrar la marca se lleva su logo. Vale también para desactivarla, con la diferencia de que ahí el logo **se conserva**: desactivar es reversible, borrar no.
 - [ ] ABM de **colores** (nombre y valor hexadecimal para mostrar la muestra de color).
 - [ ] Cada listado muestra cuántos productos usan el ítem, distinguiendo los activos de los inactivos.
 - [ ] No se puede eliminar un ítem en uso: se ofrece desactivarlo (RN-11).

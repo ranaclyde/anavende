@@ -32,6 +32,17 @@
   --surface: #ffffff; /* tarjetas, campos, encabezado */
   --surface-sunken: #fafbfb; /* filas alternadas, bloques embebidos */
 
+  /*
+   * Fondo del logo de una marca (§6.10). NO se redefine en modo oscuro, y esa
+   * es toda la razón por la que existe como token propio en vez de usar
+   * `--canvas`: un logo ajeno llega como trazo sobre transparente, casi
+   * siempre oscuro, y sobre la superficie oscura desaparece. No se lo puede
+   * repintar como al de AnaVende. Claro y no oscuro porque es el fondo que va
+   * a tener en la tienda, que es acromática sobre `--canvas`.
+   */
+  --logo-chip: #f2f4f5;
+  --logo-chip-ink: #6b6f73; /* el ícono de «sin logo», sobre ese fondo */
+
   /* Texto */
   --ink: #16181a; /* primario — casi negro, no negro puro (§3.1) */
   --ink-secondary: #6b6f73; /* secundario, etiquetas */
@@ -95,6 +106,8 @@
   --color-brand-tint-border: var(--brand-tint-border);
 
   --color-canvas: var(--canvas);
+  --color-logo-chip: var(--logo-chip);
+  --color-logo-chip-ink: var(--logo-chip-ink);
   --color-surface: var(--surface);
   --color-surface-sunken: var(--surface-sunken);
 

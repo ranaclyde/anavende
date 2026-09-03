@@ -492,7 +492,22 @@ Con oferta:      $ 24.500,00              burdeos, peso 600
 
 **En móvil las tablas se vuelven tarjetas**, no un scroll horizontal. Una tabla de siete columnas en un teléfono es inoperable.
 
-### 6.10 Editor de descripción y texto con formato
+### 6.10 Logo de marca
+
+**El recuadro del logo es siempre claro, en los dos modos.** Un logo de marca llega casi siempre como trazo sobre fondo transparente, y el trazo suele ser oscuro: sobre la superficie del panel en modo oscuro desaparece —es el mismo 1,83:1 de §2.3—. Con el logo de AnaVende eso se resuelve derivando una versión clara (`scripts/derivar-logo.mts`), pero el logo de Logitech no es nuestro y no se puede repintar.
+
+La salida es no depender del modo: el logo va sobre un chip claro fijo, con el borde de §3. Se elige claro y no oscuro porque **es el fondo que va a tener en la tienda**, que es acromática sobre `--canvas`. Un logo que se ve bien acá se ve bien allá.
+
+| Elemento | Especificación |
+|---|---|
+| Chip del listado | 24px, radio 4px, `--logo-chip`, `object-contain` |
+| Chip del diálogo | 64px, radio de control del panel, `--logo-chip`, 4px de aire interior |
+| Sin logo | El listado **no reserva lugar**; el diálogo muestra el recuadro vacío con su ícono, del mismo tamaño que con logo |
+| Texto alternativo | Vacío: es decorativo. El nombre de la marca está al lado, en texto, y repetirlo se lo haría leer dos veces (§9) |
+
+El recuadro del diálogo **no cambia de tamaño** al elegir un logo. Si creciera, el diálogo entero saltaría bajo el cursor justo cuando hay que apretar «Guardar».
+
+### 6.11 Editor de descripción y texto con formato
 
 Dos piezas de la misma decisión (FS RF-15): dónde se escribe la descripción y cómo se lee después.
 
@@ -762,7 +777,7 @@ Se usa como base y se le mapean los tokens en lugar de reescribir componentes.
 | `Table` | Alto de fila 44px, cabecera fija |
 | `Skeleton` | Con la forma real del contenido |
 
-**Componentes propios, que no vienen de shadcn:** tarjeta de producto, precio, selector de color, galería, buscador con botón de envío, el bloque de avisos del carrito, y el editor de descripción con su bloque de texto renderizado (§6.10).
+**Componentes propios, que no vienen de shadcn:** tarjeta de producto, precio, selector de color, galería, buscador con botón de envío, el bloque de avisos del carrito, y el chip de logo (§6.10) y el editor de descripción con su bloque de texto renderizado (§6.11).
 
 ### 12.3 Tipografía
 
@@ -786,7 +801,7 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 **Momentos en que su uso no es opcional:**
 
 1. Primera implementación de cada pantalla de §7.
-2. Componentes propios de §12.2 (tarjeta de producto, precio, selector de color, galería, buscador, avisos del carrito, editor de descripción).
+2. Componentes propios de §12.2 (tarjeta de producto, precio, selector de color, galería, buscador, avisos del carrito, editor de descripción, chip de logo).
 3. Estados vacíos, de carga y de error (§8).
 4. Cualquier ajuste que el equipo perciba como "quedó bien pero soso".
 

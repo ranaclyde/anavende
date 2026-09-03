@@ -35,6 +35,24 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: origenesDeImagen(),
+
+    /**
+     * SOLO EN DESARROLLO, y el nombre asustador está puesto por algo.
+     *
+     * Next 16 se niega a que su optimizador busque una imagen en una IP
+     * privada: es la defensa contra usarlo como puente para pedir direcciones
+     * internas (SSRF). En local eso choca de frente con el stack, que sirve
+     * Storage desde `127.0.0.1:54321`, y el panel muestra el ícono de imagen
+     * rota sin ninguna pista en pantalla — el motivo sale por la consola del
+     * servidor.
+     *
+     * En producción queda apagado y el problema no existe: el subdominio de
+     * Storage resuelve a una IP pública. **Si algún día `NEXT_PUBLIC_SUPABASE_URL`
+     * apuntara a la IP de la LAN privada entre los dos servidores (§2.2), esto
+     * volvería a fallar, y ahí sí en producción.** La entrega al navegador
+     * tiene que salir por el subdominio público (§9.4).
+     */
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
     // `images.qualities` NO se declara todavía. En Next 16 su valor por
     // omisión pasó a ser `[75]`, y hay que declarar cualquier otra calidad
     // que se use; pero las calidades de §9.2 —75, 78, 82— son las de sharp

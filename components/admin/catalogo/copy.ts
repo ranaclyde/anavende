@@ -80,3 +80,18 @@ export const DESTACADO = {
   destacar: "Destacar",
   quitar: "Quitar de destacadas",
 } as const;
+
+/** El logo de marca — RF-18. Solo las marcas llevan, como con `DESTACADO`. */
+export const LOGO = {
+  etiqueta: "Logo",
+  opcional: "(opcional)",
+  elegir: "Elegir archivo",
+  cambiar: "Cambiar",
+  quitar: "Quitar",
+  ayuda: "JPG, PNG o WEBP, hasta 10 MB. Se guarda optimizado.",
+  sinLogo: "Sin logo",
+  subiendo: "Subiendo el logo",
+  /** Cuando la marca se creó pero su logo no pudo subirse. */
+  falloTrasCrear:
+    "La marca se creó, pero el logo no se pudo subir. Editala para intentar de nuevo.",
+} as const;

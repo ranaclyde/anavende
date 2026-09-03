@@ -11,10 +11,21 @@ export const TAMANOS = [
   { sufijo: "detail", ancho: 1400, calidad: 82 },
 ] as const;
 
+export type Tamano = { sufijo: string; ancho: number; calidad: number };
 export type Sufijo = (typeof TAMANOS)[number]["sufijo"];
 
-/** El que se muestra en la ficha, y del que se registran alto y ancho. */
-export const SUFIJO_MAYOR: Sufijo = "detail";
+/**
+ * El logo de marca (RF-18) usa la misma convención con DOS tamaños.
+ *
+ * `-detail` está pensado para la galería de una ficha a 1400px y un logo no
+ * tiene dónde usarlo: hoy se muestra chico y solo en el listado del panel. Se
+ * reutilizan los anchos de los otros dos en vez de inventar números nuevos —
+ * 200px cubre el listado en cualquier densidad de pantalla, y 600px queda
+ * para el día que haya una franja de marcas.
+ */
+export const TAMANOS_LOGO = TAMANOS.filter(
+  (t) => t.sufijo !== "detail",
+) as unknown as readonly Tamano[];
 
 /** Formatos que se aceptan en la subida (RF-17). El de salida es siempre WEBP. */
 export const TIPOS_ACEPTADOS = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -39,7 +50,12 @@ export function claveBase(
   return `productos/${productId}/${variantId}/${imageId}`;
 }
 
+/** `marcas/{brandId}/{imageId}` — la base del logo (§9.2). */
+export function claveDeLogo(brandId: string, imageId: string): string {
+  return `marcas/${brandId}/${imageId}`;
+}
+
 /** `…/{imageId}-card.webp` */
-export function clave(base: string, sufijo: Sufijo): string {
+export function clave(base: string, sufijo: string): string {
   return `${base}-${sufijo}.webp`;
 }

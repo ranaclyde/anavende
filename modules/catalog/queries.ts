@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { brands, categories, colors } from "@/db/schema/catalog";
+import { urlDeLogo } from "@/modules/media/subir";
 import type { TipoDeItem } from "@/modules/catalog/schemas";
 
 /**
@@ -30,6 +31,13 @@ export type ItemDeCatalogo = {
    * dato y no por el tipo.
    */
   isFeatured: boolean | null;
+  /**
+   * La URL del logo, ya resuelta. `null` = la marca no tiene, o el tipo no
+   * lleva logo. La vista recibe una URL y no una clave a propósito: armarla
+   * necesita el adaptador de almacenamiento (§9.4), que es código de
+   * servidor, y el panel es un componente de cliente.
+   */
+  logoUrl: string | null;
   isActive: boolean;
   /** Productos activos que lo usan. Si es > 0, no se puede desactivar. */
   activos: number;
@@ -38,9 +46,10 @@ export type ItemDeCatalogo = {
 };
 
 export async function listarMarcas(): Promise<ItemDeCatalogo[]> {
-  return db.execute<ItemDeCatalogo>(sql`
+  const filas = await db.execute<ItemDeCatalogo & { logoKey: string | null }>(sql`
     SELECT b.id, b.name, b.slug, NULL::text AS "hexCode",
            NULL::boolean AS "isFeatured",
+           b.logo_key AS "logoKey",
            b.is_active AS "isActive",
            count(p.id) FILTER (WHERE p.is_active)     ::int AS activos,
            count(p.id) FILTER (WHERE NOT p.is_active) ::int AS inactivos
@@ -49,6 +58,13 @@ export async function listarMarcas(): Promise<ItemDeCatalogo[]> {
      GROUP BY b.id
      ORDER BY immutable_unaccent(lower(b.name))
   `);
+
+  // La clave se convierte en URL acá y no en la consulta: la base guarda
+  // claves justamente para no saber en qué servidor vive Storage (§9.4).
+  return filas.map(({ logoKey, ...fila }) => ({
+    ...fila,
+    logoUrl: urlDeLogo(logoKey, "thumb"),
+  }));
 }
 
 /**
@@ -61,6 +77,7 @@ export async function listarCategorias(): Promise<ItemDeCatalogo[]> {
   return db.execute<ItemDeCatalogo>(sql`
     SELECT c.id, c.name, c.slug, NULL::text AS "hexCode",
            c.is_featured AS "isFeatured",
+           NULL::text AS "logoUrl",
            c.is_active AS "isActive",
            count(p.id) FILTER (WHERE p.is_active)     ::int AS activos,
            count(p.id) FILTER (WHERE NOT p.is_active) ::int AS inactivos
@@ -79,6 +96,7 @@ export async function listarColores(): Promise<ItemDeCatalogo[]> {
   return db.execute<ItemDeCatalogo>(sql`
     SELECT c.id, c.name, c.slug, c.hex_code AS "hexCode",
            NULL::boolean AS "isFeatured",
+           NULL::text AS "logoUrl",
            c.is_active AS "isActive",
            count(DISTINCT p.id) FILTER (WHERE p.is_active)     ::int AS activos,
            count(DISTINCT p.id) FILTER (WHERE NOT p.is_active) ::int AS inactivos

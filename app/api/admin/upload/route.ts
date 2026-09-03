@@ -1,10 +1,14 @@
 import * as Sentry from "@sentry/nextjs";
+import { revalidatePath } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { isDomainError } from "@/lib/errors";
 import { getSession } from "@/lib/session";
-import { publicarImagenDeVariante } from "@/modules/media/subir";
+import {
+  publicarImagenDeVariante,
+  publicarLogoDeMarca,
+} from "@/modules/media/subir";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
 
 /**
@@ -23,11 +27,26 @@ import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
  */
 export const runtime = "nodejs";
 
-const entrada = z.object({
-  productId: z.uuid(),
-  variantId: z.uuid(),
-  altText: z.string().trim().max(200).optional(),
-});
+/**
+ * Un solo punto de entrada para toda imagen, con el destino discriminado.
+ *
+ * Dos rutas separadas duplicarían lo único que de verdad importa acá —el
+ * control de rol, el corte por tamaño y la traducción de errores—, y el día
+ * que una de las dos copias se olvidara de uno de los tres no fallaría: se
+ * abriría.
+ */
+const entrada = z.discriminatedUnion("destino", [
+  z.object({
+    destino: z.literal("variante"),
+    productId: z.uuid(),
+    variantId: z.uuid(),
+    altText: z.string().trim().max(200).optional(),
+  }),
+  z.object({
+    destino: z.literal("marca"),
+    brandId: z.uuid(),
+  }),
+]);
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -49,8 +68,10 @@ export async function POST(request: NextRequest) {
   }
 
   const campos = entrada.safeParse({
-    productId: form.get("productId"),
-    variantId: form.get("variantId"),
+    destino: form.get("destino"),
+    productId: form.get("productId") ?? undefined,
+    variantId: form.get("variantId") ?? undefined,
+    brandId: form.get("brandId") ?? undefined,
     altText: form.get("altText") ?? undefined,
   });
 
@@ -83,14 +104,29 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const imagen = await publicarImagenDeVariante({
-      productId: campos.data.productId,
-      variantId: campos.data.variantId,
-      archivo: Buffer.from(await archivo.arrayBuffer()),
-      altText: campos.data.altText,
-    });
+    const bytes = Buffer.from(await archivo.arrayBuffer());
 
-    return NextResponse.json({ ok: true, data: imagen }, { status: 201 });
+    const data =
+      campos.data.destino === "marca"
+        ? await publicarLogoDeMarca({
+            brandId: campos.data.brandId,
+            archivo: bytes,
+          })
+        : await publicarImagenDeVariante({
+            productId: campos.data.productId,
+            variantId: campos.data.variantId,
+            archivo: bytes,
+            altText: campos.data.altText,
+          });
+
+    // Invalidar acá es la mitad del trabajo: una Server Action refresca al
+    // cliente con su respuesta, pero un `fetch` a un Route Handler no. La
+    // otra mitad es el `router.refresh()` de quien llama.
+    if (campos.data.destino === "marca") {
+      revalidatePath("/admin/catalogo", "layout");
+    }
+
+    return NextResponse.json({ ok: true, data }, { status: 201 });
   } catch (e) {
     // Un archivo que no era una imagen es un resultado esperado, no un
     // incidente: se responde y no se reporta (§6.3).

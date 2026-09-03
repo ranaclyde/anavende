@@ -3,7 +3,7 @@ import "server-only";
 import sharp from "sharp";
 
 import { domainError } from "@/lib/errors";
-import { SUFIJO_MAYOR, TAMANOS, type Sufijo } from "@/modules/media/tamanos";
+import { TAMANOS, type Tamano } from "@/modules/media/tamanos";
 import { validarArchivo } from "@/modules/media/validar";
 
 /**
@@ -18,7 +18,7 @@ import { validarArchivo } from "@/modules/media/validar";
  */
 
 export type Version = {
-  sufijo: Sufijo;
+  sufijo: string;
   cuerpo: Buffer;
   ancho: number;
   alto: number;
@@ -27,13 +27,22 @@ export type Version = {
 
 export type ImagenProcesada = {
   versiones: Version[];
-  /** Los del tamaño mayor: es el que ve el comprador en la ficha (§9.2). */
+  /** Los del tamaño mayor de la tabla que se haya usado (§9.2). */
   ancho: number;
   alto: number;
   bytes: number;
 };
 
-export async function procesarImagen(entrada: Buffer): Promise<ImagenProcesada> {
+/**
+ * `tamanos` se pasa porque no toda imagen quiere los mismos: el logo de marca
+ * usa dos y no tres (§9.2). Lo que NO cambia con el destino es todo lo demás
+ * —validación, orientación, WEBP, descarte del EXIF—, y por eso vive acá una
+ * sola vez.
+ */
+export async function procesarImagen(
+  entrada: Buffer,
+  tamanos: readonly Tamano[] = TAMANOS,
+): Promise<ImagenProcesada> {
   validarArchivo(entrada);
 
   // Segunda puerta, después de los magic bytes: un archivo con la firma
@@ -53,7 +62,7 @@ export async function procesarImagen(entrada: Buffer): Promise<ImagenProcesada> 
   }
 
   const versiones = await Promise.all(
-    TAMANOS.map(async ({ sufijo, ancho, calidad }) => {
+    tamanos.map(async ({ sufijo, ancho, calidad }) => {
       // `autoOrient` aplica la orientación del EXIF ANTES de redimensionar:
       // una foto sacada con el teléfono de costado se guarda derecha. Es el
       // único dato del EXIF que sobrevive — al no llamar a `keepMetadata`,
@@ -78,7 +87,9 @@ export async function procesarImagen(entrada: Buffer): Promise<ImagenProcesada> 
     }),
   );
 
-  const mayor = versiones.find((v) => v.sufijo === SUFIJO_MAYOR)!;
+  // El mayor se busca por ancho y no por un sufijo fijo: con dos tablas de
+  // tamaños distintas, «el más grande» no siempre se llama igual.
+  const mayor = versiones.reduce((a, b) => (b.ancho > a.ancho ? b : a));
 
   return {
     versiones,

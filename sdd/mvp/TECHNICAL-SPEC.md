@@ -918,6 +918,15 @@ productos/{productId}/{variantId}/{imageId}-thumb.webp
                                   {imageId}-detail.webp
 ```
 
+**El logo de marca usa la misma convención con otra tabla de tamaños:**
+
+```
+marcas/{brandId}/{imageId}-thumb.webp
+                 {imageId}-card.webp
+```
+
+Dos tamaños y no tres: un logo se muestra chico —hoy solo en el listado del panel (RF-18)— y `-detail`, pensado para la galería de una ficha a 1400px, no tiene dónde usarse. Se reutilizan los anchos de `-thumb` y `-card` en vez de inventar dos números nuevos: 200px cubre el listado en cualquier densidad de pantalla, y 600px queda para el día que haya una franja de marcas. `brands.logo_key` guarda la base, igual que `variant_images.storage_key`.
+
 `variant_images.storage_key` guarda la base (`…/{imageId}`) y el sufijo se agrega al construir la URL. Se redimensiona con `fit: 'inside'` y sin ampliar (`withoutEnlargement`), preservando la relación de aspecto. Se descartan los metadatos EXIF, salvo la orientación, que se aplica antes de recortar.
 
 ### 9.3 Entrega

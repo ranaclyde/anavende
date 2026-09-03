@@ -9,8 +9,14 @@ import { action } from "@/lib/action";
 import { domainError } from "@/lib/errors";
 import { slugificar } from "@/lib/slug";
 import {
+  borrarArchivos,
+  clavesDelLogo,
+  quitarLogoDeMarca,
+} from "@/modules/media/subir";
+import {
   cambioDeDestacada,
   cambioDeEstado,
+  soloId,
   crearCategoria,
   crearColor,
   crearMarca,
@@ -300,6 +306,21 @@ export const cambiarDestacada = action
     return { id: input.id, destacada: input.destacada };
   });
 
+// ── Logo de marca (RF-18) ───────────────────────────────────────────────
+//
+// SUBIRLO no pasa por acá: va por `POST /api/admin/upload`, porque una Server
+// Action serializa su entrada y mandarle un archivo de 8 MB significa pasarlo
+// a base64 (§9.1). QUITARLO sí, que es un booleano y no un binario.
+
+export const quitarElLogo = action
+  .input(soloId)
+  .auth("admin")
+  .handler(async ({ input }) => {
+    await quitarLogoDeMarca(input.id);
+    refrescar();
+    return { id: input.id };
+  });
+
 // ── Baja (RN-11) ────────────────────────────────────────────────────────
 
 export const eliminar = action
@@ -323,6 +344,11 @@ export const eliminar = action
       });
     }
 
+    // Las claves del logo se leen ANTES del DELETE: después la fila ya no
+    // está y se perdieron con ella. Es la única forma de que borrar una marca
+    // no deje sus archivos dando vueltas en Storage (RF-18).
+    const archivos = tipo === "marca" ? await clavesDelLogo(id) : [];
+
     const tabla = TABLAS[tipo];
     const filas = await db
       .delete(tabla)
@@ -330,6 +356,11 @@ export const eliminar = action
       .returning({ id: tabla.id });
 
     if (!filas.length) throw domainError("NOT_FOUND");
+
+    // Después del DELETE, y sin poder fallar hacia afuera: la marca ya no
+    // existe: un archivo que sobreviva es basura, no un motivo para decirle a
+    // la vendedora que no se pudo borrar algo que sí se borró.
+    if (archivos.length) await borrarArchivos(archivos);
 
     refrescar();
     return { id };

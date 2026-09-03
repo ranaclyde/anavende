@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useId, useState, useTransition } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { ImageOff, Upload } from "lucide-react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 
-import { DESTACADO, PALABRAS } from "@/components/admin/catalogo/copy";
+import { DESTACADO, LOGO, PALABRAS } from "@/components/admin/catalogo/copy";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -27,6 +30,8 @@ import {
   editarUnaMarca,
   editarUnColor,
 } from "@/modules/catalog/actions";
+import { quitarElLogo } from "@/modules/catalog/actions";
+import { TAMANO_MAXIMO, TIPOS_ACEPTADOS } from "@/modules/media/tamanos";
 import type { TipoDeItem } from "@/modules/catalog/schemas";
 
 type Campo = "name" | "hexCode";
@@ -44,6 +49,47 @@ const EDITAR = {
 };
 
 const HEX_POR_OMISION = "#8a8a8a";
+
+/**
+ * Qué hacer con el logo al guardar. Se decide acá y se aplica en el envío, en
+ * vez de subir o borrar en cuanto se toca el botón: así «Cancelar» cancela de
+ * verdad, incluido el logo.
+ */
+type AccionDeLogo =
+  | { tipo: "mantener" }
+  | { tipo: "reemplazar"; archivo: File; vistaPrevia: string }
+  | { tipo: "quitar" };
+
+/**
+ * La misma comprobación que hace el servidor (`modules/media/validar.ts`),
+ * repetida acá para responder sin esperar la subida — RF-17 pide que un
+ * archivo inválido se rechace ANTES de subirse. No es una barrera: el
+ * servidor vuelve a mirar, y además mira los bytes y no el tipo declarado.
+ */
+function motivoDeRechazo(archivo: File): string | null {
+  if (!(TIPOS_ACEPTADOS as readonly string[]).includes(archivo.type)) {
+    return "Ese archivo no es una imagen JPG, PNG ni WEBP.";
+  }
+  if (archivo.size > TAMANO_MAXIMO) {
+    const mb = (archivo.size / 1024 / 1024).toFixed(1);
+    return `La imagen pesa ${mb} MB y el máximo son 10 MB. Probá con una más chica.`;
+  }
+  return null;
+}
+
+/** Sube el logo por el Route Handler (§9.1). */
+async function subirLogo(brandId: string, archivo: File): Promise<string | null> {
+  const cuerpo = new FormData();
+  cuerpo.set("destino", "marca");
+  cuerpo.set("brandId", brandId);
+  cuerpo.set("archivo", archivo);
+
+  const r = await fetch("/api/admin/upload", { method: "POST", body: cuerpo });
+  if (r.ok) return null;
+
+  const json = await r.json().catch(() => null);
+  return json?.message ?? "No pudimos subir el logo. Probá de nuevo.";
+}
 
 /**
  * Alta y edición de un ítem del catálogo — RF-18.
@@ -67,6 +113,7 @@ export function DialogoDeItem({
   alCerrar: () => void;
 }) {
   const palabras = PALABRAS[tipo];
+  const router = useRouter();
   const idBase = useId();
   const [enviando, iniciar] = useTransition();
   const [errores, setErrores] =
@@ -74,6 +121,9 @@ export function DialogoDeItem({
   const [nombre, setNombre] = useState("");
   const [hex, setHex] = useState(HEX_POR_OMISION);
   const [destacada, setDestacada] = useState(false);
+  const [logo, setLogo] = useState<AccionDeLogo>({ tipo: "mantener" });
+  const [errorDelLogo, setErrorDelLogo] = useState<string | null>(null);
+  const campoDeArchivo = useRef<HTMLInputElement>(null);
 
   // Al abrir se carga lo que hay: en alta, vacío; en edición, el ítem. Sin
   // esto el diálogo conserva lo que se escribió la vez anterior.
@@ -85,7 +135,44 @@ export function DialogoDeItem({
     // Una categoría nueva no nace destacada: destacar es elegir un puñado, y
     // un valor por omisión que destaca todo vacía la distinción.
     setDestacada(item?.isFeatured ?? false);
+    setLogo({ tipo: "mantener" });
+    setErrorDelLogo(null);
   }, [abierto, item]);
+
+  // La vista previa es un objeto en memoria del navegador; si no se libera,
+  // el archivo entero queda retenido hasta que se recargue la página.
+  useEffect(() => {
+    if (logo.tipo !== "reemplazar") return;
+    return () => URL.revokeObjectURL(logo.vistaPrevia);
+  }, [logo]);
+
+  const elegirArchivo = (archivo: File | null) => {
+    setErrorDelLogo(null);
+    if (!archivo) return;
+
+    const motivo = motivoDeRechazo(archivo);
+    if (motivo) {
+      setErrorDelLogo(motivo);
+      // Se limpia el input: si no, elegir el MISMO archivo otra vez no
+      // dispara `change` y parece que el botón dejó de andar.
+      if (campoDeArchivo.current) campoDeArchivo.current.value = "";
+      return;
+    }
+
+    setLogo({
+      tipo: "reemplazar",
+      archivo,
+      vistaPrevia: URL.createObjectURL(archivo),
+    });
+  };
+
+  /** Lo que se ve ahora: el elegido, el guardado, o nada. */
+  const logoVisible =
+    logo.tipo === "reemplazar"
+      ? logo.vistaPrevia
+      : logo.tipo === "quitar"
+        ? null
+        : (item?.logoUrl ?? null);
 
   const direccion = item ? item.slug : slugificar(nombre);
 
@@ -114,6 +201,38 @@ export function DialogoDeItem({
         setErrores(leerErrores<Campo>(resultado));
         return;
       }
+
+      // El logo va después de guardar el nombre, y por dos caminos distintos:
+      // subirlo necesita mandar un archivo, así que va por el Route Handler
+      // (§9.1); quitarlo es un booleano y va por una Server Action.
+      if (tipo === "marca" && logo.tipo !== "mantener") {
+        const id = item?.id ?? resultado.data.id;
+
+        if (logo.tipo === "reemplazar") {
+          const fallo = await subirLogo(id, logo.archivo);
+          if (!fallo) {
+            // El Route Handler invalida la caché del servidor, pero un
+            // `fetch` —a diferencia de una Server Action— no trae la vista
+            // nueva de vuelta. Sin esto el logo está guardado y el listado
+            // sigue mostrando la fila sin él.
+            router.refresh();
+          }
+          if (fallo) {
+            // La marca YA se guardó. Decirlo tal cual es más honesto que
+            // fingir que no pasó nada o que falló todo: el diálogo queda
+            // abierto con el error y el nombre ya está a salvo.
+            setErrorDelLogo(item ? fallo : `${LOGO.falloTrasCrear} (${fallo})`);
+            return;
+          }
+        } else {
+          const r = await quitarElLogo({ id });
+          if (!r.ok) {
+            setErrorDelLogo(r.message);
+            return;
+          }
+        }
+      }
+
       alCerrar();
     });
   };
@@ -195,6 +314,93 @@ export function DialogoDeItem({
             </div>
           )}
 
+          {tipo === "marca" && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`${idBase}-logo`}>
+                {LOGO.etiqueta}{" "}
+                <span className="font-normal text-ink-tertiary">
+                  {LOGO.opcional}
+                </span>
+              </Label>
+
+              <div className="flex items-center gap-3">
+                {/* El recuadro tiene el mismo tamaño con logo y sin logo: si
+                    creciera al elegir uno, el diálogo entero saltaría bajo el
+                    cursor justo cuando hay que apretar «Guardar». */}
+                <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-panel-control border border-border bg-logo-chip">
+                  {logoVisible ? (
+                    <Image
+                      src={logoVisible}
+                      alt=""
+                      width={64}
+                      height={64}
+                      unoptimized={logo.tipo === "reemplazar"}
+                      className="size-full object-contain p-1"
+                    />
+                  ) : (
+                    // Sobre el chip claro, el ícono también tiene que ser
+                    // oscuro: `--ink-tertiary` se aclara en modo oscuro.
+                    <ImageOff aria-hidden className="size-5 text-logo-chip-ink" />
+                  )}
+                </span>
+
+                <div className="flex flex-col items-start gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => campoDeArchivo.current?.click()}
+                      disabled={enviando}
+                    >
+                      <Upload aria-hidden />
+                      {logoVisible ? LOGO.cambiar : LOGO.elegir}
+                    </Button>
+
+                    {logoVisible && (
+                      <Button
+                        type="button"
+                        variant="tertiary"
+                        size="sm"
+                        onClick={() => {
+                          setErrorDelLogo(null);
+                          if (campoDeArchivo.current)
+                            campoDeArchivo.current.value = "";
+                          setLogo({ tipo: "quitar" });
+                        }}
+                        disabled={enviando}
+                      >
+                        {LOGO.quitar}
+                      </Button>
+                    )}
+                  </div>
+
+                  <FieldHint>
+                    {logo.tipo === "reemplazar"
+                      ? logo.archivo.name
+                      : logoVisible
+                        ? LOGO.ayuda
+                        : `${LOGO.sinLogo}. ${LOGO.ayuda}`}
+                  </FieldHint>
+                </div>
+              </div>
+
+              {/* El input nativo va oculto y no `display:none`: escondido así
+                  sigue siendo alcanzable por el `click()` del botón y por los
+                  lectores de pantalla. */}
+              <input
+                ref={campoDeArchivo}
+                id={`${idBase}-logo`}
+                type="file"
+                accept={TIPOS_ACEPTADOS.join(",")}
+                className="sr-only"
+                onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
+              />
+
+              <FieldError>{errorDelLogo}</FieldError>
+            </div>
+          )}
+
           {tipo === "categoria" && (
             <div className="flex flex-col gap-2">
               {/* La casilla y su etiqueta son un solo blanco: `htmlFor` sobre
@@ -227,7 +433,9 @@ export function DialogoDeItem({
               type="submit"
               variant="brand"
               loading={enviando}
-              loadingLabel="Guardando"
+              loadingLabel={
+                logo.tipo === "reemplazar" ? LOGO.subiendo : "Guardando"
+              }
             >
               {item ? "Guardar" : "Crear"}
             </Button>
