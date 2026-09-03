@@ -359,7 +359,7 @@ Ordenado por relación entre valor y esfuerzo, no por entusiasmo. Nada de esto e
 | 3 | Expiración automática de reservas de stock | FA-05 |
 | 4 | Caché del catálogo con `cacheComponents`, **con medición previa** | TS §12 |
 | 5 | **Etiquetas de producto (*tags*) y filtro por etiqueta** | FA-20 |
-| 6 | **Imagen de categoría y portada de marca** | FA-21 |
+| 6 | **Imagen chica de categoría**, como referencia en el listado | FA-21 |
 | 7 | Relacionados curados producto a producto | FA-18 |
 | 8 | Recomendados por co-compra, cuando haya volumen de órdenes | FA-17 |
 | 9 | Cupones y promociones | FA-09 |
