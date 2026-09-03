@@ -362,6 +362,7 @@ CREATE TABLE categories (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name        text NOT NULL,
   slug        text NOT NULL UNIQUE,
+  is_featured boolean NOT NULL DEFAULT false,   -- RF-18: se muestra primero
   is_active   boolean NOT NULL DEFAULT true,
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now()
@@ -392,7 +393,10 @@ CREATE TABLE products (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name         text NOT NULL,
   slug         text NOT NULL UNIQUE,
-  description  text NOT NULL DEFAULT '',
+  description  text NOT NULL DEFAULT '',           -- RF-15: Markdown acotado
+  -- Proyección en texto plano, SOLO para buscar (§10.1). Ver la nota.
+  description_text text GENERATED ALWAYS AS (
+                 regexp_replace(description, '[*_#`]', '', 'g')) STORED,
   brand_id     uuid NOT NULL REFERENCES brands(id) ON DELETE RESTRICT,
   category_id  uuid NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
   price        numeric(12,2) NOT NULL,
@@ -407,6 +411,12 @@ CREATE TABLE products (
   CONSTRAINT discount_valid     CHECK (discount >= 0 AND discount < price)
 );
 ```
+
+> **La descripción se guarda en Markdown, y se busca por una proyección aparte.** RF-15 pide formato —negrita, cursiva, listas, un subtítulo—, y §16 ya había elegido Markdown sanitizado para las páginas legales: reusar esa tubería deja **un** formato, **un** sanitizador y **un** renderizador en todo el proyecto, en vez de abrir una segunda para el mismo problema. La vendedora nunca ve la sintaxis: el editor es visual (RF-15) y serializa a Markdown.
+>
+> El costo es que `description` deja de ser buscable tal cual: `%cable hdmi%` no encuentra `Cable **HDMI** 2.1`, porque los asteriscos parten la subcadena. Por eso existe `description_text`, **columna generada** igual que `final_price` — la proyección se calcula en la base, nunca en JavaScript, y es imposible que la consulta y el contenido discrepen. Se quitan solo `* _ # \``: el guion **no**, porque «USB-C» tiene que seguir siendo «USB-C». Un viñeta `- ` sobrevive como texto y no molesta a una búsqueda por subcadena. `description_text` **no se muestra nunca**: si una descripción con `XT_500` pierde el guion bajo, afecta a qué encuentra la búsqueda, jamás a lo que el comprador lee.
+
+> **`is_featured` es una bandera, no un orden.** RF-18 pide poder adelantar categorías, no numerarlas una por una. Un `sort_order` obligaría a mantener una secuencia y a renumerar al insertar en el medio, para un puñado de filas que ya se ordenan solas por nombre; la bandera es un clic y el desempate alfabético es estable. Es la misma decisión que `products.is_featured`, y por eso las dos superficies se comportan igual. **Sin índice, a propósito:** son decenas de filas y cualquier plan las recorre enteras — un índice ahí es costo de escritura sin beneficio de lectura.
 
 > **`final_price` es una columna generada.** El precio final se calcula en la base, nunca en JavaScript: así filtrar y ordenar por precio con descuento (RF-02) es un índice y no un cálculo por fila, y es imposible que la vista y la consulta discrepen.
 
@@ -973,7 +983,7 @@ SELECT p.*, GREATEST(
  WHERE p.is_active
    AND ( immutable_unaccent(lower(p.name)) ILIKE '%' || q.term || '%'
       OR immutable_unaccent(lower(b.name)) ILIKE '%' || q.term || '%'
-      OR immutable_unaccent(lower(p.description)) ILIKE '%' || q.term || '%'
+      OR immutable_unaccent(lower(p.description_text)) ILIKE '%' || q.term || '%'
       OR immutable_unaccent(lower(p.name)) % q.term
       OR immutable_unaccent(lower(b.name)) % q.term )
  ORDER BY score DESC, p.is_featured DESC, p.created_at DESC;
@@ -986,6 +996,7 @@ El umbral de similitud se fija con `pg_trgm.similarity_threshold` (arranca en `0
 - El estado del catálogo (búsqueda, filtros, orden, página) vive **en la URL** (`searchParams`), no en estado de cliente: así es compartible y funciona con el botón atrás (RF-02).
 - **En Next 16, `searchParams` y `params` son asíncronos**: hay que hacerles `await`. El acceso sincrónico fue removido.
 - Los filtros se traducen a una sola consulta con `WHERE` compuesto; los conteos de facetas se resuelven en una segunda consulta agregada.
+- Las **categorías que se ofrecen** —chips del encabezado (`DESIGN-REFERENCE.md` §5.1), accesos rápidos de la home (RF-01) y filtro del listado (RF-02)— se leen con un solo orden: `WHERE is_active ORDER BY is_featured DESC, immutable_unaccent(lower(name))`. Una sola consulta compartida, para que las tres superficies no puedan discrepar sobre qué va primero.
 - Paginación por `LIMIT/OFFSET` con 24 por página. Es adecuada al volumen esperado (S-05); si el catálogo creciera, se migra a paginación por cursor.
 
 ---
@@ -1215,7 +1226,7 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 | **Entrada** | Zod en el servidor sobre absolutamente toda entrada, incluida la que ya validó el cliente |
 | **SQL** | Drizzle parametriza. Los fragmentos `sql` de búsqueda usan parámetros, nunca interpolación de strings |
 | **Subida de archivos** | Tipo verificado por *magic bytes*, no por `Content-Type`; tamaño limitado; nombre generado por el servidor; sin ejecución del contenido |
-| **XSS** | React escapa por omisión. El Markdown de las páginas legales se sanitiza al renderizar |
+| **XSS** | React escapa por omisión. El Markdown de las páginas legales **y el de las descripciones de producto (RF-15)** pasa por el mismo sanitizador, con una lista blanca de nodos: párrafo, salto, negrita, cursiva, lista con viñetas, lista numerada, ítem y un nivel de subtítulo. Todo lo demás —HTML crudo, `script`, imágenes, enlaces, tablas, atributos de estilo— se descarta **al guardar y otra vez al renderizar**: al guardar para que la base nunca contenga lo que no debe, al renderizar para que un cambio futuro de la lista blanca no publique lo que ya está guardado |
 | **Contraseñas** | Hash a cargo de Supabase Auth. La aplicación nunca las almacena ni las registra |
 | **Datos personales** | Filtrados del contexto que se envía a Sentry (email, teléfono, dirección) |
 | **Secretos** | Solo en variables de entorno de Coolify. **La clave de servicio de Supabase nunca lleva prefijo `NEXT_PUBLIC_`**: es la única credencial que puede administrar usuarios |

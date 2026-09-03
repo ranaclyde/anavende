@@ -43,12 +43,25 @@ const hex = z
 export const TIPOS = ["marca", "categoria", "color"] as const;
 export type TipoDeItem = (typeof TIPOS)[number];
 
+/**
+ * RF-18: destacar adelanta la categoría en la tienda. Es opcional al crear
+ * —una categoría nueva no se destaca sola— y explícito al editar.
+ */
+const destacada = z.boolean();
+
 export const crearMarca = z.object({ name: nombre });
-export const crearCategoria = z.object({ name: nombre });
+export const crearCategoria = z.object({
+  name: nombre,
+  isFeatured: destacada.default(false),
+});
 export const crearColor = z.object({ name: nombre, hexCode: hex });
 
 export const editarMarca = z.object({ id: z.uuid(), name: nombre });
-export const editarCategoria = z.object({ id: z.uuid(), name: nombre });
+export const editarCategoria = z.object({
+  id: z.uuid(),
+  name: nombre,
+  isFeatured: destacada,
+});
 export const editarColor = z.object({
   id: z.uuid(),
   name: nombre,
@@ -61,6 +74,16 @@ export const referencia = z.object({
 });
 
 export const cambioDeEstado = referencia.extend({ activo: z.boolean() });
+
+/**
+ * Destacar no lleva `tipo`: sólo las categorías se destacan. Un esquema con
+ * `tipo` obligaría al servidor a rechazar dos de los tres valores en tiempo
+ * de ejecución; sin él, pedir destacar una marca no compila.
+ */
+export const cambioDeDestacada = z.object({
+  id: z.uuid(),
+  destacada: destacada,
+});
 
 export type CrearColor = z.infer<typeof crearColor>;
 export type EditarColor = z.infer<typeof editarColor>;

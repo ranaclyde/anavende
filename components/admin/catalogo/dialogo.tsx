@@ -2,8 +2,9 @@
 
 import { useEffect, useId, useState, useTransition } from "react";
 
-import { PALABRAS } from "@/components/admin/catalogo/copy";
+import { DESTACADO, PALABRAS } from "@/components/admin/catalogo/copy";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +73,7 @@ export function DialogoDeItem({
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
   const [nombre, setNombre] = useState("");
   const [hex, setHex] = useState(HEX_POR_OMISION);
+  const [destacada, setDestacada] = useState(false);
 
   // Al abrir se carga lo que hay: en alta, vacío; en edición, el ítem. Sin
   // esto el diálogo conserva lo que se escribió la vez anterior.
@@ -80,6 +82,9 @@ export function DialogoDeItem({
     setErrores(SIN_ERRORES);
     setNombre(item?.name ?? "");
     setHex(item?.hexCode ?? HEX_POR_OMISION);
+    // Una categoría nueva no nace destacada: destacar es elegir un puñado, y
+    // un valor por omisión que destaca todo vacía la distinción.
+    setDestacada(item?.isFeatured ?? false);
   }, [abierto, item]);
 
   const direccion = item ? item.slug : slugificar(nombre);
@@ -92,10 +97,18 @@ export function DialogoDeItem({
       const resultado = item
         ? tipo === "color"
           ? await EDITAR.color({ id: item.id, name: nombre, hexCode: hex })
-          : await EDITAR[tipo]({ id: item.id, name: nombre })
+          : tipo === "categoria"
+            ? await EDITAR.categoria({
+                id: item.id,
+                name: nombre,
+                isFeatured: destacada,
+              })
+            : await EDITAR.marca({ id: item.id, name: nombre })
         : tipo === "color"
           ? await CREAR.color({ name: nombre, hexCode: hex })
-          : await CREAR[tipo]({ name: nombre });
+          : tipo === "categoria"
+            ? await CREAR.categoria({ name: nombre, isFeatured: destacada })
+            : await CREAR.marca({ name: nombre });
 
       if (!resultado.ok) {
         setErrores(leerErrores<Campo>(resultado));
@@ -179,6 +192,28 @@ export function DialogoDeItem({
               <FieldError id={`${idBase}-e-hex`}>
                 {errores.campos.hexCode}
               </FieldError>
+            </div>
+          )}
+
+          {tipo === "categoria" && (
+            <div className="flex flex-col gap-2">
+              {/* La casilla y su etiqueta son un solo blanco: `htmlFor` sobre
+                  el Checkbox de Radix hace que tocar el texto también marque,
+                  que en un teléfono es la diferencia entre poder y no. */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`${idBase}-destacada`}
+                  checked={destacada}
+                  onCheckedChange={(v) => setDestacada(v === true)}
+                  aria-describedby={`${idBase}-destacada-ayuda`}
+                />
+                <Label htmlFor={`${idBase}-destacada`}>
+                  {DESTACADO.etiqueta}
+                </Label>
+              </div>
+              <FieldHint id={`${idBase}-destacada-ayuda`}>
+                {DESTACADO.ayuda}
+              </FieldHint>
             </div>
           )}
 

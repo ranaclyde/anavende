@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-02.
+Última actualización: 2026-09-03.
 
 **Qué significa cada estado**
 
@@ -70,9 +70,9 @@ probó en local vive en `VERSIONS.md`.
 
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
-| F2.1 | ABM de marcas, categorías y colores | ✅ | Probado en el navegador: alta, edición, unicidad sin distinguir mayúsculas, baja, y las dos reglas de RN-11/RN-11b |
+| F2.1 | ABM de marcas, categorías y colores | ✅ | Reabierta para agregar **categoría destacada** (RF-18) y vuelta a probar en el navegador: alta destacada, la estrella en los dos sentidos, el orden con tres categorías cuyo alfabeto lo contradice, edición que quita la marca, «Inactiva + Destacada» conviviendo, y las tarjetas de móvil |
 | F2.2 | Canalización de imágenes | ⬜ | `sharp` ya está instalado (0.35.4). El logo de marca (RF-18) espera acá: no hay dónde subirlo hasta que exista |
-| F2.3 | ABM de productos | ⬜ | Tiene que verificar RN-11b al revés: no activar un producto de marca inactiva |
+| F2.3 | ABM de productos | ⬜ | Creció de M a L: suma la **descripción con formato** (RF-15, DR §6.10). Tiene que verificar RN-11b al revés: no activar un producto de marca inactiva |
 | F2.4 | Variantes de color | ⬜ | |
 | F2.5 | Listado de productos | ⬜ | |
 | F2.6 | ABM de medios de pago | ⬜ | |
@@ -97,6 +97,9 @@ Cada una se escribió primero en la especificación y después en el código
 | **RN-11b**: ningún producto activo puede tener marca, categoría o color inactivos | `FUNCTIONAL-SPEC.md` RN-11b y RF-18, `TECHNICAL-SPEC.md` §5.4 | Las especificaciones no decían qué le pasaba a los productos de una marca desactivada, y la consulta de §10.1 no miraba `b.is_active`. En vez de agregar ese filtro a cada consulta pública —una condición que el día que se olvida muestra de más—, se prohíbe desactivar algo que esté en uso por algo activo |
 | **§2.3 corregida al recibir el logo real** | `DESIGN-REFERENCE.md` §2.3 | Describía un cuadrado burdeos con letras blancas, que era el marcador de posición. El logo real es trazo burdeos sobre transparente; se agregó la versión clara obligatoria para fondo oscuro y el piso de 24px |
 | **El slug no cambia al renombrar** | `components/admin/catalogo/dialogo.tsx` | Es la dirección pública: si cambiara, todo enlace ya compartido dejaría de funcionar sin aviso |
+| **La descripción del producto lleva formato, en Markdown** | `FUNCTIONAL-SPEC.md` RF-03 y RF-15; `TECHNICAL-SPEC.md` §5.4, §10.1 y §16; `DESIGN-REFERENCE.md` §6.10 | Decisión tuya: la vendedora tiene que poder poner negrita, cursiva y listas. Se eligió **Markdown y no HTML** porque §16 ya había elegido Markdown sanitizado para las páginas legales — un formato, un sanitizador y un renderizador en todo el proyecto en vez de dos tuberías para el mismo problema. La vendedora nunca ve la sintaxis: el editor es visual. Se dejaron **afuera** imágenes, enlaces, tablas y HTML crudo, cada uno con su motivo escrito en RF-15. Efecto lateral que había que resolver: `%cable hdmi%` no encuentra `Cable **HDMI**`, así que se agrega `description_text`, columna generada como `final_price`, que es lo que busca §10.1 y no se muestra nunca |
+| **Las etiquetas (*tags*) quedan para después del MVP, quintas** | `FUNCTIONAL-SPEC.md` FA-20; `DEVELOPMENT-PLAN.md` §6 | Un producto tiene **una** categoría y `categories` no tiene jerarquía. Mientras una categoría entre en una página (24 productos), subdividirla por el nombre del producto más la búsqueda tolerante alcanza. Cuando no entre, la respuesta son etiquetas y **no** partir la categoría en hermanas: seis «Cables …» al lado de «Teclados» arruinan la fila del encabezado, que es la navegación principal. Va quinta porque es la única de esa lista cuyo momento lo fija el catálogo y no nosotros |
+| **Las categorías también se destacan** | `FUNCTIONAL-SPEC.md` RF-01, RF-02, RF-15 y RF-18; `TECHNICAL-SPEC.md` §5.4 y §10.2 | Los productos ya tenían `is_featured`; las categorías no, y sin eso el orden del menú de la tienda y de los chips de la portada era alfabético y nada más. Se agrega como **bandera, no como orden**: un `sort_order` obligaría a renumerar al insertar en el medio para un puñado de filas que desempatan solas por nombre. Destacar **no publica** —`is_active` sigue siendo la única verdad sobre la visibilidad—, y no hay tope: destacarlas todas es reversible con un clic, y un límite del servidor sería una regla que se choca sin haberla pedido |
 
 ---
 
@@ -110,6 +113,19 @@ Cada una se escribió primero en la especificación y después en el código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
 3. **F0.13 — el *Send Email Hook*.** Su respuesta define cómo se hace F1.8.
+
+---
+
+## Pendiente detectado, sin tarea propia
+
+**Los botones de ícono del panel miden 36×36 también en móvil.** `§9` de
+`DESIGN-REFERENCE.md` pide 44px de área táctil ahí, y el propio comentario de
+`components/ui/button.tsx` lo dice, pero la variante `admin:size-9` pisa el
+`size-11` en toda la escala, no solo en escritorio. Se vio midiendo las
+tarjetas de móvil de F2.1; **es anterior a «destacada»** y alcanza a los
+cuatro botones de cada fila y a todo el panel. Arreglarlo es tocar el token
+compartido, así que no entró acá: cae naturalmente en F10 (endurecimiento) o
+antes, si aparece otra tarea que toque `button.tsx`.
 
 ---
 

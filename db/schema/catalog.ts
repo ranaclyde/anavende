@@ -47,6 +47,13 @@ export const categories = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
+    /**
+     * RF-18: la categoría se muestra primero en el encabezado, en la home y
+     * en el filtro del listado. Es una BANDERA, no un orden: entre destacadas
+     * desempata el nombre (§5.4). Destacar no publica — `isActive` sigue
+     * siendo la única verdad sobre la visibilidad.
+     */
+    isFeatured: boolean("is_featured").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

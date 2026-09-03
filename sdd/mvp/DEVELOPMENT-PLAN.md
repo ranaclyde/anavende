@@ -176,7 +176,7 @@ F10 Endurecimiento y lanzamiento
 |---|---|---|---|---|
 | **F2.1** | ABM de marcas, categorías y colores | M | FS RF-18 · TS §5.4 | Alta, edición y baja. No se puede borrar un elemento en uso: se ofrece desactivarlo (RN-11) |
 | **F2.2** | **Canalización de imágenes**: subida, validación, sharp, tres tamaños, Storage | **L** | FS RF-17 · TS §9.1, §9.2, §9.4, R3 | Un JPG de 8 MB queda como tres WEBP. Un archivo de más de 10 MB o de tipo inválido se rechaza **antes** de subirse. Si falla a mitad, no quedan archivos huérfanos |
-| **F2.3** | ABM de productos con precio y descuento como **monto** | M | FS RF-15 · TS §5.4, §7.2 · RN-04b | El formulario muestra el precio final en vivo. Rechaza descuento mayor o igual al precio |
+| **F2.3** | ABM de productos con precio y descuento como **monto**, y descripción **con formato** | **L** | FS RF-15 · TS §5.4, §7.2, §10.1, §16 · DR §6.10 · RN-04b | El formulario muestra el precio final en vivo. Rechaza descuento mayor o igual al precio. La descripción se escribe en un editor visual; pegar desde Word conserva negrita, cursiva y listas y descarta el resto, y lo descartado lo descarta **el servidor**. Buscar «cable hdmi» encuentra un producto cuya descripción dice `Cable **HDMI**` |
 | **F2.4** | Variantes de color: stock e imágenes por variante | **L** | FS RF-16 · TS §5.4, §9.5 | Se agregan y quitan variantes; cada una con su stock y hasta 5 imágenes. Reutilizar las imágenes de otra variante funciona. No se puede quitar una variante con stock reservado |
 | **F2.5** | Listado de productos con búsqueda, filtros y aviso de stock bajo | M | FS RF-15, RF-20 | Se ve stock total, reservado y disponible por producto. El stock en cero se destaca |
 | **F2.6** | ABM de medios de pago | S | FS RF-19 | Alta con logo, descripción y orden |
@@ -358,12 +358,15 @@ Ordenado por relación entre valor y esfuerzo, no por entusiasmo. Nada de esto e
 | 2 | Avisos por email de cambios de estado | FA-07 |
 | 3 | Expiración automática de reservas de stock | FA-05 |
 | 4 | Caché del catálogo con `cacheComponents`, **con medición previa** | TS §12 |
-| 5 | Relacionados curados producto a producto | FA-18 |
-| 6 | Recomendados por co-compra, cuando haya volumen de órdenes | FA-17 |
-| 7 | Cupones y promociones | FA-09 |
-| 8 | Pago en línea | FA-01 |
-| 9 | Más atributos de variante además de color | FA-16 |
-| 10 | Entorno de staging | TS §18.2 |
+| 5 | **Etiquetas de producto (*tags*) y filtro por etiqueta** | FA-20 |
+| 6 | Relacionados curados producto a producto | FA-18 |
+| 7 | Recomendados por co-compra, cuando haya volumen de órdenes | FA-17 |
+| 8 | Cupones y promociones | FA-09 |
+| 9 | Pago en línea | FA-01 |
+| 10 | Más atributos de variante además de color | FA-16 |
+| 11 | Entorno de staging | TS §18.2 |
+
+> **Por qué las etiquetas están quintas y no últimas.** Son la respuesta a un problema que llega solo: una categoría que crece más que la página. Hoy «Cables» se subdivide por el nombre del producto y la búsqueda tolerante alcanza; el día que «Cables» pase los 24 productos, deja de alcanzar. Es la única de esta lista cuyo momento **lo fija el catálogo y no nosotros**, así que conviene tenerla pensada antes de necesitarla.
 
 ---
 

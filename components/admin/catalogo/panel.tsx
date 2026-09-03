@@ -1,9 +1,10 @@
 "use client";
 
-import { Eye, EyeOff, Pencil, Plus, Tags, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Star, Tags, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import {
+  DESTACADO,
   PALABRAS,
   type PalabrasDeItem,
 } from "@/components/admin/catalogo/copy";
@@ -26,7 +27,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cambiarEstado, eliminar } from "@/modules/catalog/actions";
+import {
+  cambiarDestacada,
+  cambiarEstado,
+  eliminar,
+} from "@/modules/catalog/actions";
 import type { ItemDeCatalogo } from "@/modules/catalog/queries";
 import type { TipoDeItem } from "@/modules/catalog/schemas";
 
@@ -54,6 +59,9 @@ export function PanelDeCatalogo({
   items: ItemDeCatalogo[];
 }) {
   const palabras = PALABRAS[tipo];
+  // `isFeatured` es `null` en los tipos que no se destacan (RF-18): la vista
+  // pregunta por el dato, no por el tipo.
+  const sePuedeDestacar = items.some((i) => i.isFeatured !== null);
   const [enCurso, iniciar] = useTransition();
   const [editando, setEditando] = useState<ItemDeCatalogo | null>(null);
   const [creando, setCreando] = useState(false);
@@ -80,6 +88,19 @@ export function PanelDeCatalogo({
     });
   };
 
+  // Destacar no pide confirmación: no se pierde nada y se deshace con el
+  // mismo clic. Confirmar cada acción reversible entrena a confirmar sin
+  // leer, que es justo lo que arruina la confirmación de borrar.
+  const destacar = (item: ItemDeCatalogo) => {
+    iniciar(async () => {
+      const r = await cambiarDestacada({
+        id: item.id,
+        destacada: !item.isFeatured,
+      });
+      if (!r.ok) setErrorDelServidor(r.message);
+    });
+  };
+
   const activar = (item: ItemDeCatalogo) => {
     iniciar(async () => {
       const r = await cambiarEstado({ tipo, id: item.id, activo: true });
@@ -103,6 +124,12 @@ export function PanelDeCatalogo({
         </Button>
       </div>
 
+      {errorDelServidor && !confirmacion && (
+        <p role="alert" className="text-body-sm text-danger">
+          {errorDelServidor}
+        </p>
+      )}
+
       {items.length === 0 ? (
         <Vacio tipo={tipo} alCrear={() => setCreando(true)} />
       ) : (
@@ -112,16 +139,21 @@ export function PanelDeCatalogo({
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-surface-sunken">
-                  {/* El nombre se queda con el espacio sobrante; las otras
-                      tres columnas ocupan lo que necesitan y nada más, para
-                      que el ojo no cruce media pantalla vacía entre el
-                      nombre y su conteo. */}
+                  {/* El nombre se queda con el espacio sobrante; las demás
+                      ocupan lo que necesitan y nada más, para que el ojo no
+                      cruce media pantalla vacía entre el nombre y su conteo.
+                      La de acciones se ensancha cuando aparece la estrella:
+                      cuatro botones de 36px con 4px de separación piden 156px
+                      de contenido, y `w-32` daba 104px descontando el
+                      padding —ya justo para tres—. */}
                   <TableHead>Nombre</TableHead>
                   <TableHead className="w-28">Estado</TableHead>
                   <TableHead data-align="right" className="w-32">
                     Productos
                   </TableHead>
-                  <TableHead className="w-32 text-right">
+                  <TableHead
+                    className={`text-right ${sePuedeDestacar ? "w-48" : "w-36"}`}
+                  >
                     <span className="sr-only">Acciones</span>
                   </TableHead>
                 </TableRow>
@@ -147,6 +179,7 @@ export function PanelDeCatalogo({
                         palabras={palabras}
                         ocupado={enCurso}
                         alEditar={() => setEditando(item)}
+                        alDestacar={() => destacar(item)}
                         alActivar={() => activar(item)}
                         alDesactivar={() =>
                           abrirConfirmacion({ accion: "desactivar", item })
@@ -182,6 +215,7 @@ export function PanelDeCatalogo({
                     palabras={palabras}
                     ocupado={enCurso}
                     alEditar={() => setEditando(item)}
+                    alDestacar={() => destacar(item)}
                     alActivar={() => activar(item)}
                     alDesactivar={() =>
                       abrirConfirmacion({ accion: "desactivar", item })
@@ -236,6 +270,14 @@ function Nombre({ item, tipo }: { item: ItemDeCatalogo; tipo: TipoDeItem }) {
         />
       )}
       <span className="font-medium text-ink">{item.name}</span>
+      {item.isFeatured && (
+        // Tono `brand`: §6.4 lo reserva para identidad —destacado, oferta—.
+        // Con texto y no solo con el ícono: el Badge no admite otra cosa (§9).
+        <Badge tone="brand">
+          <Star aria-hidden className="fill-current" />
+          {DESTACADO.etiqueta}
+        </Badge>
+      )}
       {tipo === "color" && item.hexCode && (
         // El código va escrito, no solo pintado: la muestra sola no sirve a
         // quien no distingue ese matiz (§9).
@@ -288,6 +330,7 @@ function Acciones({
   palabras,
   ocupado,
   alEditar,
+  alDestacar,
   alActivar,
   alDesactivar,
   alBorrar,
@@ -296,12 +339,42 @@ function Acciones({
   palabras: PalabrasDeItem;
   ocupado: boolean;
   alEditar: () => void;
+  alDestacar: () => void;
   alActivar: () => void;
   alDesactivar: () => void;
   alBorrar: () => void;
 }) {
   return (
     <div className="flex justify-end gap-1">
+      {/*
+        Un botón con `aria-pressed`, no un interruptor: la fila ya habla en
+        botones de ícono, y meter un `switch` entre ellos serían dos lenguajes
+        de control en la misma celda. `aria-pressed` dice el estado sin
+        inventar un rol —lo que el lector de pantalla anuncia coincide con lo
+        que la estrella muestra—.
+      */}
+      {item.isFeatured !== null && (
+        <Button
+          variant="tertiary"
+          size="icon"
+          onClick={alDestacar}
+          disabled={ocupado}
+          aria-pressed={item.isFeatured}
+          title={
+            item.isFeatured
+              ? `${DESTACADO.quitar}: ${item.name}`
+              : `${DESTACADO.destacar}: ${item.name}`
+          }
+          className={item.isFeatured ? "text-brand hover:text-brand" : undefined}
+        >
+          <Star aria-hidden className={item.isFeatured ? "fill-current" : ""} />
+          <span className="sr-only">
+            {item.isFeatured ? DESTACADO.quitar : DESTACADO.destacar}{" "}
+            {item.name}
+          </span>
+        </Button>
+      )}
+
       <Button
         variant="tertiary"
         size="icon"

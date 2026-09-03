@@ -66,3 +66,17 @@ export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
     pronombre: "lo",
   },
 };
+
+/**
+ * Destacar — RF-18. Sólo las categorías se destacan, así que sus palabras no
+ * entran en `PALABRAS`: un campo que es `null` para dos de los tres tipos
+ * invita a olvidarse de comprobarlo.
+ */
+export const DESTACADO = {
+  etiqueta: "Destacada",
+  /** Qué hace, dicho antes de hacerlo. */
+  ayuda:
+    "Aparece primero en el menú de la tienda, en la portada y en los filtros. Si destacás todas, ninguna se adelanta.",
+  destacar: "Destacar",
+  quitar: "Quitar de destacadas",
+} as const;

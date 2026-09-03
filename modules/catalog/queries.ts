@@ -23,6 +23,13 @@ export type ItemDeCatalogo = {
   name: string;
   slug: string;
   hexCode: string | null;
+  /**
+   * `null` = el tipo no tiene la noción. Sólo las categorías se destacan
+   * (RF-18); marcas y colores devuelven `null`, igual que `hexCode` es
+   * `null` para todo lo que no es un color. Así la vista pregunta por el
+   * dato y no por el tipo.
+   */
+  isFeatured: boolean | null;
   isActive: boolean;
   /** Productos activos que lo usan. Si es > 0, no se puede desactivar. */
   activos: number;
@@ -33,6 +40,7 @@ export type ItemDeCatalogo = {
 export async function listarMarcas(): Promise<ItemDeCatalogo[]> {
   return db.execute<ItemDeCatalogo>(sql`
     SELECT b.id, b.name, b.slug, NULL::text AS "hexCode",
+           NULL::boolean AS "isFeatured",
            b.is_active AS "isActive",
            count(p.id) FILTER (WHERE p.is_active)     ::int AS activos,
            count(p.id) FILTER (WHERE NOT p.is_active) ::int AS inactivos
@@ -43,16 +51,23 @@ export async function listarMarcas(): Promise<ItemDeCatalogo[]> {
   `);
 }
 
+/**
+ * Las categorías se listan en el MISMO orden en que las ve el comprador
+ * (§10.2): destacadas primero, después por nombre. El panel no tiene un orden
+ * propio a propósito — destacar es una decisión sobre el orden, y se juzga
+ * mal si la pantalla donde se toma la muestra de otra manera.
+ */
 export async function listarCategorias(): Promise<ItemDeCatalogo[]> {
   return db.execute<ItemDeCatalogo>(sql`
     SELECT c.id, c.name, c.slug, NULL::text AS "hexCode",
+           c.is_featured AS "isFeatured",
            c.is_active AS "isActive",
            count(p.id) FILTER (WHERE p.is_active)     ::int AS activos,
            count(p.id) FILTER (WHERE NOT p.is_active) ::int AS inactivos
       FROM ${categories} c
       LEFT JOIN products p ON p.category_id = c.id
      GROUP BY c.id
-     ORDER BY immutable_unaccent(lower(c.name))
+     ORDER BY c.is_featured DESC, immutable_unaccent(lower(c.name))
   `);
 }
 
@@ -63,6 +78,7 @@ export async function listarColores(): Promise<ItemDeCatalogo[]> {
   // correcta si esa restricción cambiara.
   return db.execute<ItemDeCatalogo>(sql`
     SELECT c.id, c.name, c.slug, c.hex_code AS "hexCode",
+           NULL::boolean AS "isFeatured",
            c.is_active AS "isActive",
            count(DISTINCT p.id) FILTER (WHERE p.is_active)     ::int AS activos,
            count(DISTINCT p.id) FILTER (WHERE NOT p.is_active) ::int AS inactivos

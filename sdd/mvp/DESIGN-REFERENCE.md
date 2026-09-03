@@ -492,6 +492,31 @@ Con oferta:      $ 24.500,00              burdeos, peso 600
 
 **En móvil las tablas se vuelven tarjetas**, no un scroll horizontal. Una tabla de siete columnas en un teléfono es inoperable.
 
+### 6.10 Editor de descripción y texto con formato
+
+Dos piezas de la misma decisión (FS RF-15): dónde se escribe la descripción y cómo se lee después.
+
+**El editor, en el panel.** Barra de herramientas fija arriba del área de escritura, con un botón por formato disponible y ninguno más: negrita, cursiva, lista con viñetas, lista numerada, subtítulo. Nada de menús desplegables de tipografía, tamaño ni color — el formato lo pone este documento, no quien escribe.
+
+| Elemento | Especificación |
+|---|---|
+| Área de escritura | Mínimo 200px de alto, crece con el contenido hasta 480px y ahí scrollea |
+| Barra | Botones de ícono de 32px, `--ink-secondary`; el formato activo en el cursor se marca con `--surface-sunken` y `aria-pressed` |
+| Borde y foco | Los mismos de §6.6: el conjunto barra + área es **un solo campo** y el anillo de foco lo rodea entero |
+| Contador | Aparece recién en los últimos 500 caracteres, en `caption`; antes es ruido |
+| Teclado | Negrita y cursiva responden a `⌘B` / `⌘I`. Toda la barra es alcanzable con `Tab` |
+
+**El texto renderizado, en la ficha.** Es el único bloque de la tienda con texto largo, y necesita medida y aire propios:
+
+| Elemento | Especificación |
+|---|---|
+| Ancho de línea | Máx. 68 caracteres. Una descripción a 1200px de ancho no se lee |
+| Cuerpo | `body` 16px, interlineado 1,6 |
+| Separación entre párrafos | 12px |
+| Subtítulo | `body` 16px peso 600, con 20px arriba y 8px abajo. **No** hereda la escala de títulos de §4: es un rótulo dentro de un texto, no una sección de la página |
+| Listas | Sangría 20px, 6px entre ítems, viñeta en `--ink-tertiary` |
+| Negrita | Peso 600, mismo color. Nunca el acento: el burdeos es de la marca y de lo accionable, no del énfasis |
+
 ---
 
 ## 7. Composición de pantallas
@@ -737,7 +762,7 @@ Se usa como base y se le mapean los tokens en lugar de reescribir componentes.
 | `Table` | Alto de fila 44px, cabecera fija |
 | `Skeleton` | Con la forma real del contenido |
 
-**Componentes propios, que no vienen de shadcn:** tarjeta de producto, precio, selector de color, galería, buscador con botón de envío, y el bloque de avisos del carrito.
+**Componentes propios, que no vienen de shadcn:** tarjeta de producto, precio, selector de color, galería, buscador con botón de envío, el bloque de avisos del carrito, y el editor de descripción con su bloque de texto renderizado (§6.10).
 
 ### 12.3 Tipografía
 
@@ -761,7 +786,7 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 **Momentos en que su uso no es opcional:**
 
 1. Primera implementación de cada pantalla de §7.
-2. Componentes propios de §12.2 (tarjeta de producto, precio, selector de color, galería, buscador, avisos del carrito).
+2. Componentes propios de §12.2 (tarjeta de producto, precio, selector de color, galería, buscador, avisos del carrito, editor de descripción).
 3. Estados vacíos, de carga y de error (§8).
 4. Cualquier ajuste que el equipo perciba como "quedó bien pero soso".
 

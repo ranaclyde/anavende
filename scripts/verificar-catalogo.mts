@@ -106,6 +106,42 @@ await sql.begin(async (tx) => {
   await rechaza(tx, "El nombre es único sin distinguir mayúsculas", (sp) =>
     sp`INSERT INTO brands (name, slug) VALUES ('PROBANDO MARCA', 'otro-slug')`);
 
+  // ── Destacadas (RF-18) ───────────────────────────────────────────────
+  const [recien] = await tx`
+    SELECT is_featured FROM categories WHERE id = ${cat.id}`;
+  ok(recien.is_featured === false, "Una categoría nueva NO nace destacada");
+
+  // Destacar no publica: se puede destacar una categoría inactiva, y sigue
+  // sin verse. `is_active` es la única verdad sobre la visibilidad.
+  await tx`
+    UPDATE categories SET is_featured = true, is_active = false
+     WHERE id = ${cat.id}`;
+  const [destacadaInactiva] = await tx`
+    SELECT is_featured, is_active FROM categories WHERE id = ${cat.id}`;
+  ok(
+    destacadaInactiva.is_featured === true &&
+      destacadaInactiva.is_active === false,
+    "Destacada e inactiva conviven: destacar no publica",
+  );
+
+  // El orden que ve el comprador (§10.2): destacadas primero, después por
+  // nombre. Se prueba con tres categorías cuyo orden alfabético contradice
+  // al de destacadas, así el resultado no puede salir bien por casualidad.
+  await tx`UPDATE categories SET is_active = true WHERE id = ${cat.id}`;
+  await tx`
+    INSERT INTO categories (name, slug, is_featured) VALUES
+      ('Zzz Ultima', 'zzz-ultima', true),
+      ('Aaa Primera', 'aaa-primera', false)`;
+  const orden = await tx`
+    SELECT name FROM categories
+     WHERE is_active AND slug IN ('probando-cat', 'zzz-ultima', 'aaa-primera')
+     ORDER BY is_featured DESC, immutable_unaccent(lower(name))`;
+  ok(
+    orden.map((f) => f.name).join(" | ") ===
+      "Probando Cat | Zzz Ultima | Aaa Primera",
+    "Orden público: destacadas primero, y entre ellas por nombre",
+  );
+
   // ── El listado: conteos en una sola consulta ─────────────────────────
   const listado = await tx`
     SELECT b.id, b.name,

@@ -9,6 +9,7 @@ import { action } from "@/lib/action";
 import { domainError } from "@/lib/errors";
 import { slugificar } from "@/lib/slug";
 import {
+  cambioDeDestacada,
   cambioDeEstado,
   crearCategoria,
   crearColor,
@@ -138,7 +139,11 @@ export const crearUnaCategoria = action
     try {
       const [fila] = await db
         .insert(categories)
-        .values({ name: input.name, slug: slugificar(input.name) })
+        .values({
+          name: input.name,
+          slug: slugificar(input.name),
+          isFeatured: input.isFeatured,
+        })
         .returning({ id: categories.id });
       refrescar();
       return { id: fila.id };
@@ -198,7 +203,11 @@ export const editarUnaCategoria = action
     try {
       const filas = await db
         .update(categories)
-        .set({ name: input.name, updatedAt: new Date() })
+        .set({
+          name: input.name,
+          isFeatured: input.isFeatured,
+          updatedAt: new Date(),
+        })
         .where(eq(categories.id, input.id))
         .returning({ id: categories.id });
       if (!filas.length) throw domainError("NOT_FOUND");
@@ -259,6 +268,36 @@ export const cambiarEstado = action
 
     refrescar();
     return { id, activo };
+  });
+
+// ── Destacar (RF-18) ────────────────────────────────────────────────────
+//
+// Destacar NO SE RECHAZA NUNCA, ni siquiera sobre una categoría inactiva:
+// no publica nada. `is_active` sigue siendo la única verdad sobre la
+// visibilidad —la misma invariante que sostiene RN-11b—, y destacar sólo
+// decide el orden entre las que ya se ven. Una categoría inactiva y
+// destacada es una preferencia guardada para cuando se reactive, no una
+// contradicción que haya que impedir.
+//
+// Tampoco hay tope de destacadas: destacarlas todas equivale a no destacar
+// ninguna, que es una consecuencia visible en el acto y reversible con un
+// clic. Un límite en el servidor sería una regla que la vendedora choca sin
+// haberla pedido.
+
+export const cambiarDestacada = action
+  .input(cambioDeDestacada)
+  .auth("admin")
+  .handler(async ({ input }) => {
+    const filas = await db
+      .update(categories)
+      .set({ isFeatured: input.destacada, updatedAt: new Date() })
+      .where(eq(categories.id, input.id))
+      .returning({ id: categories.id });
+
+    if (!filas.length) throw domainError("NOT_FOUND");
+
+    refrescar();
+    return { id: input.id, destacada: input.destacada };
   });
 
 // ── Baja (RN-11) ────────────────────────────────────────────────────────

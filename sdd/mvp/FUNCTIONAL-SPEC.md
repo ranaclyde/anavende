@@ -52,7 +52,7 @@ Ver detalle en §12 (Fuera de alcance).
 
 | Término | Definición |
 |---|---|
-| **Producto** | Artículo del catálogo. Tiene nombre, descripción, marca, categoría, precio y descuento (monto absoluto; `0` = sin oferta). |
+| **Producto** | Artículo del catálogo. Tiene nombre, descripción **con formato** (RF-15), marca, categoría, precio y descuento (monto absoluto; `0` = sin oferta). |
 | **Variante** | Combinación producto + color. Es la unidad que tiene stock e imágenes propias. Un producto tiene 1..N variantes. |
 | **Variante única** | Variante de un producto sin color relevante (ej.: pasta térmica). Se modela igual que cualquier variante, con color nulo/«Único». |
 | **Stock total** | Unidades físicas de una variante. |
@@ -94,7 +94,7 @@ Ver detalle en §12 (Fuera de alcance).
 
 **Contenido:**
 - Buscador destacado.
-- Accesos rápidos a categorías (chips/píldoras).
+- Accesos rápidos a categorías (chips/píldoras), con las **destacadas primero** (RF-18).
 - Sección de productos destacados y/o novedades.
 - Sección de productos en oferta (con descuento activo).
 - Bloque «Vistos recientemente», si el visitante tiene historial (RF-33).
@@ -105,6 +105,7 @@ Ver detalle en §12 (Fuera de alcance).
 - [ ] La home carga sin productos cargados (estado vacío controlado, sin errores).
 - [ ] Todos los bloques enlazan a listados filtrados del catálogo.
 - [ ] Sólo se muestran productos con `isActive = true`.
+- [ ] Los accesos rápidos muestran primero las categorías **destacadas** y, entre iguales, por nombre. Sólo se muestran categorías activas.
 
 ---
 
@@ -113,7 +114,7 @@ Ver detalle en §12 (Fuera de alcance).
 **Descripción:** Página `/productos` (y variantes filtradas) que lista el catálogo.
 
 **Búsqueda:**
-- Campo de texto libre que busca en nombre y descripción del producto, y en el nombre de la marca.
+- Campo de texto libre que busca en nombre y descripción del producto, y en el nombre de la marca. De la descripción se busca **el texto, no las marcas de formato**: que una palabra esté en negrita no cambia si se encuentra.
 - Insensible a mayúsculas y acentos.
 - Muestra la cantidad de resultados y el término buscado, con opción de limpiar.
 
@@ -121,7 +122,7 @@ Ver detalle en §12 (Fuera de alcance).
 
 | Filtro | Tipo | Comportamiento |
 |---|---|---|
-| Categoría | Multiselección | Muestra sólo categorías activas y con al menos un producto |
+| Categoría | Multiselección | Muestra sólo categorías activas y con al menos un producto, con las **destacadas primero** |
 | Marca | Multiselección | Ídem |
 | Color | Multiselección | Muestra el producto si **alguna** de sus variantes tiene ese color |
 | Rango de precio | Mín/Máx | Sobre el precio final (`precio − descuento`) |
@@ -156,7 +157,7 @@ Ver detalle en §12 (Fuera de alcance).
 - Selector de color (variantes). Cada opción indica si está sin stock.
 - Indicador de disponibilidad de la variante seleccionada.
 - Selector de cantidad, limitado por el stock disponible de la variante.
-- Descripción del producto.
+- Descripción del producto, **con el formato que le dio la vendedora** (RF-15).
 - Bloques de recomendados: «También te puede interesar», «Productos similares» y «Vistos recientemente» (RF-32, RF-33).
 - Medios de pago aceptados.
 - Aviso de envío por PedidosYa y enlace a Legales (garantías y devoluciones).
@@ -176,6 +177,7 @@ Ver detalle en §12 (Fuera de alcance).
 - [ ] Si la variante no tiene stock disponible, las acciones de compra quedan deshabilitadas y se ofrece «Consultar por WhatsApp».
 - [ ] Un producto con `isActive = false` devuelve 404.
 - [ ] No se puede seleccionar una cantidad mayor al stock disponible.
+- [ ] La descripción se muestra con su formato —párrafos, negrita, cursiva, listas y subtítulos— y **nada más**: lo que quedó fuera del subconjunto de RF-15 no se renderiza ni aparece como texto crudo.
 
 ---
 
@@ -411,7 +413,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 
 **Descripción:** ABM completo de productos.
 
-**Campos del producto:** nombre, slug (autogenerado y editable), descripción, marca, categoría, **precio**, **descuento** (monto absoluto en ARS; `0` = sin oferta), destacado (sí/no), activo (`isActive`).
+**Campos del producto:** nombre, slug (autogenerado y editable), descripción **con formato**, marca, categoría, **precio**, **descuento** (monto absoluto en ARS; `0` = sin oferta), destacado (sí/no), activo (`isActive`).
 
 **Criterios de aceptación:**
 - [ ] Listado con búsqueda, filtro por categoría/marca/estado, y orden por nombre, precio, stock y fecha.
@@ -422,6 +424,23 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] El precio no admite valores negativos ni cero.
 - [ ] El descuento no admite valores negativos y debe ser **menor que el precio**: no puede dejar el precio final en cero o negativo.
 - [ ] El formulario muestra en vivo el **precio final** resultante (`precio − descuento`) mientras se cargan los valores.
+- [ ] Marcar un producto como **destacado** lo adelanta en la home (RF-01) y en el orden por relevancia sin búsqueda (RF-02). Destacar no publica: un producto destacado con `isActive = false` sigue sin aparecer en ningún lado.
+
+**La descripción se escribe con formato.** La vendedora la edita en un editor visual —ve el resultado, no la sintaxis— con este subconjunto y ningún otro:
+
+| Se puede | No se puede, y por qué |
+|---|---|
+| Párrafos y saltos de línea | **Imágenes**: las fotos del producto son las de RF-16, con su canalización, sus tamaños y su orden. Una imagen suelta en la descripción se saltea todo eso |
+| **Negrita** y *cursiva* | **Enlaces**: nada dentro del MVP los necesita, y son la puerta de entrada de todo lo que hay que sanitizar. Se suman el día que haga falta, no antes |
+| Listas con viñetas y numeradas | **Tablas**: no sobreviven a un teléfono, que es donde se lee la ficha |
+| Un nivel de subtítulo | **HTML crudo**, tipografías, colores y tamaños: el formato lo pone el sistema de diseño, no quien escribe |
+
+**Criterios de aceptación de la descripción:**
+- [ ] El editor es visual: la vendedora no escribe ni ve sintaxis de formato en ningún momento.
+- [ ] Pegar texto con formato desde Word, Google Docs o una página web **conserva lo que está en la lista de arriba y descarta el resto**, en silencio y sin romper el resto del texto.
+- [ ] Lo que se descarta se descarta en el **servidor** al guardar, no solo en el editor.
+- [ ] La descripción admite hasta 5.000 caracteres de texto; el editor muestra cuántos quedan cuando se está cerca del límite.
+- [ ] Una descripción vacía es válida: no todo producto necesita una.
 
 ---
 
@@ -468,13 +487,16 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 ### RF-18 — Gestión de categorías, marcas y colores
 
 **Criterios de aceptación:**
-- [ ] ABM de **categorías** (nombre, slug, activa, **categorías relacionadas** — ver RF-31) — enlazadas a productos.
+- [ ] ABM de **categorías** (nombre, slug, activa, **destacada**, **categorías relacionadas** — ver RF-31) — enlazadas a productos.
 - [ ] ABM de **marcas** (nombre, slug, logo opcional, activa).
 - [ ] ABM de **colores** (nombre y valor hexadecimal para mostrar la muestra de color).
 - [ ] Cada listado muestra cuántos productos usan el ítem, distinguiendo los activos de los inactivos.
 - [ ] No se puede eliminar un ítem en uso: se ofrece desactivarlo (RN-11).
 - [ ] **No se puede desactivar un ítem que tenga productos activos** (RN-11b). El aviso dice cuántos son y qué hacer: desactivarlos primero.
 - [ ] Nombres únicos, sin distinción de mayúsculas.
+- [ ] Una categoría se puede marcar como **destacada**: pasa al frente en los accesos rápidos de la home (RF-01), en la fila de categorías del encabezado (`DESIGN-REFERENCE.md` §5.1) y en el filtro por categoría del listado (RF-02). Entre destacadas se ordenan por nombre.
+- [ ] **Destacar no publica.** Una categoría destacada e inactiva no aparece en ningún lado: `isActive` sigue siendo la única verdad sobre la visibilidad, y destacar sólo decide el orden entre las que ya se ven.
+- [ ] No hay tope de destacadas —es una decisión de la vendedora—, pero el diálogo dice qué hace destacar y advierte que destacarlas todas equivale a no destacar ninguna.
 - [ ] La **dirección** (el `slug`) se deriva del nombre al crear el ítem y **no cambia al renombrarlo**: es la URL pública, y cambiarla rompería en silencio todo enlace ya compartido. No es un campo del formulario —«slug» es jerga (`DESIGN-REFERENCE.md` §10)—; se muestra para leer.
 
 > **Por qué desactivar exige que no quede nada activo usándolo.** La
@@ -781,6 +803,7 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | FA-17 | Recomendaciones por co-compra / co-visitación («quienes compraron esto también compraron») | Requiere volumen de órdenes que el MVP no tiene (*cold start*). Candidato natural para la fase 2, reutilizando los bloques de RF-32 |
 | FA-18 | Relacionados curados manualmente producto a producto | Se resuelve por afinidad de categorías (RF-31). Es la capa a sumar antes que la co-compra si hace falta más precisión |
 | FA-19 | Recomendaciones personalizadas por perfil o historial de compras | Más allá de «Vistos recientemente» (RF-33) |
+| FA-20 | **Etiquetas de producto** (*tags*) y filtro por etiqueta | Un producto pertenece a **una** categoría y `categories` no tiene jerarquía, así que hoy la única forma de subdividir una categoría grande —«Cables» en HDMI, VGA, USB-C, energía— es el nombre del producto, ayudado por la búsqueda tolerante de RF-02. Alcanza mientras la categoría entre en una página (24 productos). Cuando deje de entrar, la respuesta son etiquetas —muchas por producto, transversales a la categoría— y no partir la categoría en hermanas: seis «Cables …» al mismo nivel que «Teclados» arruinan la fila de categorías del encabezado, que es la navegación principal |
 
 ---
 
