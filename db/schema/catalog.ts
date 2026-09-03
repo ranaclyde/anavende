@@ -22,7 +22,13 @@ export const brands = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
-    logoUrl: text("logo_url"),
+    /**
+     * La CLAVE del logo en Storage, no su URL (§9.4). Guardar la URL ataría
+     * la fila al servidor del día que se escribió: el logo cargado en local
+     * seguiría apuntando a `127.0.0.1` en producción. La URL se arma al
+     * mostrar, con el backend que corresponda.
+     */
+    logoKey: text("logo_key"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

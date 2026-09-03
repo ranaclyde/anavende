@@ -351,7 +351,7 @@ CREATE TABLE brands (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name        text NOT NULL,
   slug        text NOT NULL UNIQUE,
-  logo_url    text,
+  logo_key    text,                                -- CLAVE en Storage, no URL
   is_active   boolean NOT NULL DEFAULT true,
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now()
@@ -649,7 +649,7 @@ CREATE TABLE site_settings (
 CREATE TABLE payment_methods (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name        text NOT NULL,
-  logo_url    text,
+  logo_key    text,                                -- CLAVE en Storage, no URL
   description text,
   sort_order  integer NOT NULL DEFAULT 0,
   is_active   boolean NOT NULL DEFAULT true
@@ -946,6 +946,8 @@ interface ObjectStorage {
 | Entrega al navegador | **Directa** desde el subdominio público de Storage. No pasa por el servidor APP: hacerlo duplicaría el tráfico y le sumaría carga |
 | Bucket | Público en lectura; la escritura solo con clave de servicio |
 | Claves | El resto del código maneja **claves**, no URLs ni SDKs. Solo el adaptador conoce el backend |
+
+> **Las columnas se llaman `…_key`, y el nombre no es cosmética.** `brands.logo_key`, `payment_methods.logo_key` y `variant_images.storage_key` guardan la clave del archivo, nunca su URL. Guardar la URL completa ata la fila al servidor del día que se escribió: un logo cargado contra el stack local queda apuntando a `127.0.0.1` para siempre, y el día del despliegue las imágenes no se ven sin que nadie haya tocado nada. La URL se arma al mostrar, con el backend que corresponda. Las dos primeras se llamaban `logo_url` —venían de antes de esta sección— y se renombraron mientras estaban vacías, que es cuando cuesta una línea.
 
 ---
 

@@ -33,7 +33,8 @@ export const siteSettings = pgTable(
 export const paymentMethods = pgTable("payment_methods", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  logoUrl: text("logo_url"),
+  /** La CLAVE en Storage, no la URL — igual que el logo de marca (§9.4). */
+  logoKey: text("logo_key"),
   description: text("description"),
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
