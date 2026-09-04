@@ -68,10 +68,16 @@ async function contarUso(tipo: TipoDeItem, id: string) {
       ? sql`SELECT is_active FROM products WHERE brand_id = ${id}`
       : tipo === "categoria"
         ? sql`SELECT is_active FROM products WHERE category_id = ${id}`
-        : sql`SELECT DISTINCT p.id, p.is_active
+        : // Un producto por fila, y «activo» significa lo que dice RN-11b:
+          // que tenga una variante ACTIVA de este color, estando él activo.
+          // Contarlo sin mirar `v.is_active` bloquearía desactivar un color
+          // que ya nadie muestra —su variante está apagada— sin ninguna
+          // forma de saber por qué desde la pantalla.
+          sql`SELECT bool_or(v.is_active AND p.is_active) AS is_active
                 FROM product_variants v
                 JOIN products p ON p.id = v.product_id
-               WHERE v.color_id = ${id}`;
+               WHERE v.color_id = ${id}
+               GROUP BY p.id`;
 
   const [fila] = await db.execute<{ activos: number; total: number }>(sql`
     SELECT count(*) FILTER (WHERE is_active)::int AS activos,

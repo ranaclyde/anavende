@@ -184,10 +184,12 @@ export function FormularioDeProducto({
         return;
       }
 
-      // Vuelve al listado: guardar y quedarse en el formulario deja la duda
-      // de si se guardó. En F2.4, cuando el alta siga con las variantes,
-      // esto pasa a llevar al producto recién creado.
-      router.push("/admin/productos");
+      // Al EDITAR vuelve al listado: guardar y quedarse en el formulario deja
+      // la duda de si se guardó. Al CREAR sigue en la pantalla del producto
+      // recién hecho, que es donde están los colores, el stock y las fotos
+      // (F2.4): un producto sin variantes no se puede vender, así que mandar
+      // al listado sería cortar el trabajo justo antes de la mitad.
+      router.push(producto ? "/admin/productos" : `/admin/productos/${resultado.data.id}`);
       router.refresh();
     });
   }

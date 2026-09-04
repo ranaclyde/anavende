@@ -71,10 +71,10 @@ probó en local vive en `VERSIONS.md`.
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
 | F2.1 | ABM de marcas, categorías y colores, con el **logo de marca** | ✅ | Reabierta dos veces: **categoría destacada** y el **logo de marca** que RF-18 pedía y no tenía tarea. Probado en el navegador: alta con logo, el chip en el listado, reemplazar, quitar —que borra los archivos, no solo la referencia—, borrar la marca llevándose su logo, y el rechazo **antes de subir** de un `.txt` y de un archivo de 11 MB |
-| F2.2 | Canalización de imágenes | ✅ | Su «Hecho cuando» está cumplido y verificado: `db:imagenes` prueba contra Storage de verdad que un JPG de 8 MB sale como tres WEBP y que una subida cortada a mitad no deja huérfanos; el rechazo **antes de subir** se probó en el navegador con el logo de marca, que fue su primer consumidor real. De RF-17 quedan las piezas que **necesitan varias imágenes por variante** —arrastre, progreso, reordenar y elegir la principal—: caen en F2.4, que es donde tienen sentido |
+| F2.2 | Canalización de imágenes | ✅ | Su «Hecho cuando» está cumplido y verificado: `db:imagenes` prueba contra Storage de verdad que un JPG de 8 MB sale como tres WEBP y que una subida cortada a mitad no deja huérfanos; el rechazo **antes de subir** se probó en el navegador con el logo de marca, que fue su primer consumidor real. Las piezas de RF-17 que **necesitan varias imágenes por variante** —arrastre, progreso, reordenar y elegir la principal— se hicieron en F2.4, que es donde tenían dónde probarse |
 | F2.3 | ABM de productos | ✅ | Alta, edición, activar/desactivar, destacar y baja, con la **descripción con formato**. `description_text` y su índice quedaron en la migración `0006`. Verificado con tres scripts (`db:descripcion`, `db:markdown`, `db:productos`) y en el navegador: se cargó un producto real, se editó, se rechazó activarlo con la marca desactivada (RN-11b al revés) y se borró. **La búsqueda del «Hecho cuando» se probó contra el producto de verdad**: «cable hdmi» encuentra `Cable **HDMI** 2.1`. Necesitó un **listado mínimo** que el plan tenía en F2.5 |
-| F2.4 | Variantes de color | ⬜ | |
-| F2.5 | Listado de productos | ⬜ | El listado **existe** desde F2.3, con lo mínimo para llegar al formulario y volver. Falta lo que le da nombre a la tarea: búsqueda, filtros por categoría/marca/estado, orden, y stock total/reservado/disponible con el cero destacado |
+| F2.4 | Variantes de color | ✅ | Agregar, editar y sacar variantes, cada una con su stock y hasta 5 imágenes; reutilizar las de otra variante; arrastre, progreso, reordenar y elegir la principal. `db:variantes` prueba 30 reglas contra Postgres y contra Storage de verdad. Probado en el navegador de punta a punta: alta de producto que sigue en su pantalla, dos colores, tres fotos, reordenar arrastrando, «hacer principal», borrar, rechazo de un `.txt`, reutilizar las fotos de otro color, RN-11b en los dos sentidos, y borrar el producto dejando el bucket vacío. **Arrastrando aparecieron dos errores que no se veían leyendo el código** —están abajo—. Pasó por `impeccable` como pide DR §12.4, y de ahí salieron tres correcciones que sí se ven mirando: el menú de cada foto se mudó **encima de su miniatura** —debajo quedaba más cerca del número de la foto siguiente que del suyo—, la ayuda de las fotos se dice **una vez por sección** en vez de dos renglones por color, y el selector de «reutilizar las fotos de otro color» aparece **solo cuando puede hacer algo**. También se corrigió el contraste de los textos en `--ink-tertiary`, que sobre `--surface-sunken` daban 2,6:1 en claro y 3,5:1 en oscuro contra el 4,5:1 que pide §9 |
+| F2.5 | Listado de productos | ⬜ | El listado **existe** desde F2.3, con lo mínimo para llegar al formulario y volver. Falta lo que le da nombre a la tarea: búsqueda, filtros por categoría/marca/estado, orden, y stock total/reservado/disponible con el cero destacado. F2.4 le agregó lo mínimo que no podía esperar: la etiqueta **«Sin colores»**, porque desde el alta en dos pasos un producto puede quedar cargado y sin nada que vender |
 | F2.6 | ABM de medios de pago | ⬜ | |
 | F2.7 | Configuración del sitio | ⬜ | |
 | F2.8 | Cargar el catálogo real | ⬜ | |
@@ -111,6 +111,12 @@ Cada una se escribió primero en la especificación y después en el código
 | **El límite de 5.000 se mide en texto, y el servidor cuenta menos que el editor** | `modules/content/markdown.ts`, `limites.ts` | Si contara el Markdown, poner un párrafo en negrita acercaría al tope sin agregar una letra. Y el servidor **no suma los saltos entre bloques** mientras que el editor sí: la diferencia va a propósito en esa dirección, para que todo lo que el editor acepta se pueda guardar. Al revés, el contador diría que entra y el guardado lo negaría |
 | **El subtítulo tiene un solo nivel, y es `h3`** | `modules/content/markdown.ts`; DR §6.11 | RF-15 permite «un nivel de subtítulo» y no dice cuál. En la ficha el nombre del producto es el `h1` y «Descripción» el `h2` (DR §7.3), así que un subtítulo dentro de la descripción es el escalón siguiente. Todo encabezado pegado de afuera —venga como `#` o como `######`— se normaliza a ese nivel: no hay jerarquía que preservar |
 | **«Eliminar» un producto tiene dos finales, y la pantalla dice cuál pasó** | `modules/catalog/products/actions.ts` | RF-15 pide que un producto nombrado por una orden se desactive en vez de borrarse. La acción devuelve **cuál de los dos ocurrió** en vez de un «listo» genérico: decir «lo borramos» sobre algo que sigue en el listado es peor que no decir nada |
+| **La imagen principal es la que está en la posición 0** | `TECHNICAL-SPEC.md` §5.4 | RF-17 pide elegir una principal y no dice cómo. Una bandera `is_primary` da **dos fuentes para la misma pregunta** y dos estados imposibles que igual hay que programar: ninguna principal, o dos. Con el orden alcanza, y elegir la principal pasa a ser moverla al frente, que es lo que se ve. El precio es que `sort_order` tiene que quedar sin huecos ni repetidos: borrar una del medio **renumera** en la misma operación |
+| **Reutilizar imágenes tiene tres condiciones, y las tres viven en el código** | `TECHNICAL-SPEC.md` §9.5; `FUNCTIONAL-SPEC.md` RF-16 | §9.5 decía «un solo salto, sin cadenas» sin decir cómo se garantiza. La fuente tiene que ser del mismo producto, no puede estar reutilizando a su vez, y quien reutiliza no puede tener imágenes propias —quedarían ocupando lugar en Storage sin verse en ninguna pantalla, que es la peor clase de basura—. Las dos últimas no son expresables como restricción de la base, así que las tres se verifican juntas en la acción en vez de dejar media regla de cada lado |
+| **«Sacar» una variante también tiene dos finales** | `FUNCTIONAL-SPEC.md` RF-16 | RF-16 solo nombraba el freno por stock reservado. Pero una variante es lo que `order_items` referencia, así que RN-11 le cabe igual que al producto: si alguna orden la nombra se desactiva, y si no, se borra con sus imágenes. Sin esto, borrar el color negro de un producto vendido le rompía a la orden histórica el enlace al producto en silencio |
+| **El stock que se escribe a mano no puede ser negativo** | `FUNCTIONAL-SPEC.md` RF-16 | Parece contradecir a §5.4, y no: ahí el total negativo lo **produce** una venta ya ocurrida (RF-24) y es una discrepancia a corregir. Escribir «−3» en un formulario no registra ninguna discrepancia, es un error de tipeo que después hay que perseguir |
+| **El ajuste de stock del panel entra al libro mayor desde ya** | `modules/catalog/variants/actions.ts`; §8.1, §8.3 | §8.1 lista «ajuste de la vendedora» entre las operaciones de stock y §8.3 exige que cada cambio escriba su fila en `stock_movements` **en la misma transacción**. Se podría haber dejado para F4.1, que es donde vive el resto del libro; se hizo acá porque una fila de stock escrita sin asiento es justamente la que va a faltar el día que un número no cuadre, y porque retrofitearlo después es tocar código que ya anda |
+| **Un color «en uso por algo activo» se mide por la variante, no por el producto** | `modules/catalog/queries.ts`, `modules/catalog/actions.ts` | RN-11b habla de «variantes activas de un color inactivo», pero el conteo miraba solo `products.is_active`. Hasta F2.4 no había variantes y no se podía ver; con variantes es un callejón sin salida: desactivás el color en el producto, volvés a intentar desactivar el color y el aviso te pide desactivar un producto que ya no lo ofrece. Ahora bloquea lo que RN-11b dice que bloquea, ni más ni menos |
 ---
 
 ## Qué está esperando algo tuyo
@@ -145,7 +151,29 @@ entrega al navegador tiene que salir por el subdominio público (§9.4).
 Server Action devuelve la vista nueva con su respuesta; un `fetch` no. Sin
 `revalidatePath` en el servidor **y** `router.refresh()` en el cliente, el
 logo queda guardado y el listado sigue mostrando la fila sin él. Se descubrió
-en el navegador, no leyendo el código, y va a repetirse en F2.4.
+en el navegador, no leyendo el código. **Se repitió en F2.4**, tal como estaba
+anotado: la subida de imágenes de variante hace las dos cosas desde el
+principio gracias a esta nota.
+
+**~~Arrastrar una miniatura la volvía a subir.~~** Resuelto en F2.4, y no se
+veía leyendo el código. Chrome adjunta el archivo de la imagen cuando se
+arrastra un `<img>`, así que una miniatura movida para reordenar llega a la
+zona de soltar con `dataTransfer.types` conteniendo `Files`, igual que una
+foto traída del escritorio. La galería la aceptaba: soltarla creaba **una
+cuarta imagen, que era la miniatura de la primera**. Se ataca de los dos
+lados: `draggable={false}` en la imagen —para que el arrastre lo maneje su
+recuadro y no ella— y la zona de soltar ignora el evento mientras hay un
+arrastre interno en curso.
+
+**~~Reordenar arrastrando no guardaba nada.~~** Resuelto en F2.4. La galería
+quedaba reordenada en la pantalla y al recargar volvía como estaba, sin ningún
+error a la vista. El motivo: `dragover` y `drop` pueden llegar en la misma
+tanda de eventos, y React agrupa las actualizaciones de estado hasta el final,
+así que el manejador de `drop` leía el orden **anterior** al arrastre, lo
+comparaba con el del servidor, los encontraba iguales y no guardaba. Se arregló
+llevando el orden en curso también en un `ref`, que se actualiza al toque. La
+lección que vale para toda la fase: **lo que un manejador de arrastre necesita
+leer no puede vivir solo en el estado de React.**
 
 
 **~~El logo de marca de RF-18 no tiene tarea.~~** Resuelto: entró en F2.1. RF-18 pide «logo opcional» y

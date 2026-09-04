@@ -93,13 +93,27 @@ export async function listarColores(): Promise<ItemDeCatalogo[]> {
   // el producto una sola vez aunque tenga dos variantes de ese color —no
   // puede, por `variant_product_color_key`, pero el DISTINCT deja la consulta
   // correcta si esa restricción cambiara.
+  //
+  // **`activos` mira también `v.is_active`, y esa es la diferencia con marcas
+  // y categorías.** Lo que impide desactivar un color es lo que dice RN-11b:
+  // una variante ACTIVA de un producto ACTIVO. Contar el producto sin mirar
+  // la variante deja sin salida a quien desactivó el color en el producto y
+  // vuelve a intentarlo: el aviso le pide desactivar un producto que ya no
+  // ofrece ese color. Hasta F2.4 no había variantes y esto no se podía ver.
+  //
+  // El resto de los usos cae en `inactivos`, que acá significa «lo usa sin
+  // ofrecerlo»: el producto puede estar inactivo, o tener apagada justo la
+  // variante de este color. En los dos casos desactivar el color no rompe
+  // nada, que es lo que la columna tiene que responder.
   return db.execute<ItemDeCatalogo>(sql`
     SELECT c.id, c.name, c.slug, c.hex_code AS "hexCode",
            NULL::boolean AS "isFeatured",
            NULL::text AS "logoUrl",
            c.is_active AS "isActive",
-           count(DISTINCT p.id) FILTER (WHERE p.is_active)     ::int AS activos,
-           count(DISTINCT p.id) FILTER (WHERE NOT p.is_active) ::int AS inactivos
+           count(DISTINCT p.id) FILTER (WHERE p.is_active AND v.is_active)
+             ::int AS activos,
+           count(DISTINCT p.id) FILTER (WHERE NOT (p.is_active AND v.is_active))
+             ::int AS inactivos
       FROM ${colors} c
       LEFT JOIN product_variants v ON v.color_id = c.id
       LEFT JOIN products p ON p.id = v.product_id

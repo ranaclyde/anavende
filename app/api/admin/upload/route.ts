@@ -122,9 +122,10 @@ export async function POST(request: NextRequest) {
     // Invalidar acá es la mitad del trabajo: una Server Action refresca al
     // cliente con su respuesta, pero un `fetch` a un Route Handler no. La
     // otra mitad es el `router.refresh()` de quien llama.
-    if (campos.data.destino === "marca") {
-      revalidatePath("/admin/catalogo", "layout");
-    }
+    revalidatePath(
+      campos.data.destino === "marca" ? "/admin/catalogo" : "/admin/productos",
+      "layout",
+    );
 
     return NextResponse.json({ ok: true, data }, { status: 201 });
   } catch (e) {

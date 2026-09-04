@@ -31,7 +31,8 @@ import {
   editarUnColor,
 } from "@/modules/catalog/actions";
 import { quitarElLogo } from "@/modules/catalog/actions";
-import { TAMANO_MAXIMO, TIPOS_ACEPTADOS } from "@/modules/media/tamanos";
+import { motivoDeRechazo, subirImagen } from "@/modules/media/cliente";
+import { TIPOS_ACEPTADOS } from "@/modules/media/tamanos";
 import type { TipoDeItem } from "@/modules/catalog/schemas";
 
 type Campo = "name" | "hexCode";
@@ -61,34 +62,15 @@ type AccionDeLogo =
   | { tipo: "quitar" };
 
 /**
- * La misma comprobación que hace el servidor (`modules/media/validar.ts`),
- * repetida acá para responder sin esperar la subida — RF-17 pide que un
- * archivo inválido se rechace ANTES de subirse. No es una barrera: el
- * servidor vuelve a mirar, y además mira los bytes y no el tipo declarado.
+ * Sube el logo por el Route Handler (§9.1). Devuelve el motivo del fallo, o
+ * `null` si salió bien.
+ *
+ * Sin progreso: un logo pesa poco y la barra aparecería y desaparecería antes
+ * de poder leerse. El de las imágenes de producto sí lo usa (RF-17).
  */
-function motivoDeRechazo(archivo: File): string | null {
-  if (!(TIPOS_ACEPTADOS as readonly string[]).includes(archivo.type)) {
-    return "Ese archivo no es una imagen JPG, PNG ni WEBP.";
-  }
-  if (archivo.size > TAMANO_MAXIMO) {
-    const mb = (archivo.size / 1024 / 1024).toFixed(1);
-    return `La imagen pesa ${mb} MB y el máximo son 10 MB. Probá con una más chica.`;
-  }
-  return null;
-}
-
-/** Sube el logo por el Route Handler (§9.1). */
 async function subirLogo(brandId: string, archivo: File): Promise<string | null> {
-  const cuerpo = new FormData();
-  cuerpo.set("destino", "marca");
-  cuerpo.set("brandId", brandId);
-  cuerpo.set("archivo", archivo);
-
-  const r = await fetch("/api/admin/upload", { method: "POST", body: cuerpo });
-  if (r.ok) return null;
-
-  const json = await r.json().catch(() => null);
-  return json?.message ?? "No pudimos subir el logo. Probá de nuevo.";
+  const r = await subirImagen({ destino: "marca", brandId }, archivo);
+  return r.ok ? null : r.message;
 }
 
 /**

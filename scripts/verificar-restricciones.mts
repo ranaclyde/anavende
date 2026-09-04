@@ -45,24 +45,39 @@ async function acepta(tx: Tx, nombre: string, fn: (t: Tx) => Promise<unknown>) {
   }
 }
 
+/**
+ * Un sufijo distinto en cada corrida.
+ *
+ * La transacción se revierte entera, así que el andamiaje no queda escrito —
+ * pero los nombres y los slugs SÍ chocan con lo que ya haya en la base
+ * mientras la transacción vive, y ahí el script muere con un 23505 que no
+ * tiene nada que ver con lo que estaba probando. Pasó con una categoría
+ * «Teclados» cargada a mano y con una marca «Logitech» cargada al probar
+ * F2.4: el script no prueba el catálogo, así que sus datos no tienen por qué
+ * pelearse con él.
+ */
+const n = Date.now();
+
 await sql.begin(async (tx) => {
   // Andamiaje mínimo para poder insertar productos.
-  const [marca] = await tx`INSERT INTO brands (name, slug) VALUES ('Logitech','logitech') RETURNING id`;
-  const [cat] = await tx`INSERT INTO categories (name, slug) VALUES ('Teclados','teclados') RETURNING id`;
+  const [marca] = await tx`INSERT INTO brands (name, slug)
+    VALUES (${`Logitech ${n}`}, ${`logitech-${n}`}) RETURNING id`;
+  const [cat] = await tx`INSERT INTO categories (name, slug)
+    VALUES (${`Teclados ${n}`}, ${`teclados-${n}`}) RETURNING id`;
 
   console.log("── products (RN-04b, §7.2) ──");
   await rechaza(tx, "descuento igual al precio", (tx) =>
     tx`INSERT INTO products (name,slug,brand_id,category_id,price,discount)
-       VALUES ('A','a',${marca.id},${cat.id},1000.00,1000.00)`);
+       VALUES ('A',${`a-${n}`},${marca.id},${cat.id},1000.00,1000.00)`);
   await rechaza(tx, "descuento mayor al precio", (tx) =>
     tx`INSERT INTO products (name,slug,brand_id,category_id,price,discount)
-       VALUES ('B','b',${marca.id},${cat.id},1000.00,1500.00)`);
+       VALUES ('B',${`b-${n}`},${marca.id},${cat.id},1000.00,1500.00)`);
   await rechaza(tx, "precio cero", (tx) =>
     tx`INSERT INTO products (name,slug,brand_id,category_id,price)
-       VALUES ('C','c',${marca.id},${cat.id},0)`);
+       VALUES ('C',${`c-${n}`},${marca.id},${cat.id},0)`);
 
   const [prod] = await tx`INSERT INTO products (name,slug,brand_id,category_id,price,discount)
-    VALUES ('Teclado Mecánico K120','k120',${marca.id},${cat.id},27500.00,3000.00)
+    VALUES ('Teclado Mecánico K120',${`k120-${n}`},${marca.id},${cat.id},27500.00,3000.00)
     RETURNING id, price, discount, final_price`;
   ok(
     prod.final_price === "24500.00",

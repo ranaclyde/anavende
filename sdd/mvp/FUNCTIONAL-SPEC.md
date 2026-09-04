@@ -452,10 +452,13 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] Se pueden agregar, editar y quitar variantes de color; el color se elige del catálogo de colores (RF-18).
 - [ ] Cada variante tiene su propio **stock total** editable.
 - [ ] Cada variante admite **hasta 5 imágenes**, con orden definible y una marcada como principal.
-- [ ] Una variante puede configurarse para **reutilizar las imágenes de otra variante** del mismo producto, en lugar de tener las propias.
+- [ ] Una variante puede configurarse para **reutilizar las imágenes de otra variante** del mismo producto, en lugar de tener las propias. Se ofrecen las variantes que tienen imágenes de verdad —no las que a su vez están reutilizando— y hay que borrar las propias antes: si no, quedarían guardadas sin verse en ninguna parte.
 - [ ] Un producto sin color relevante se carga con una única variante («Único»), y el selector de color no se muestra en la ficha pública.
 - [ ] No se puede quitar una variante con stock reservado por órdenes activas; el sistema lo impide e indica qué órdenes la usan.
+- [ ] **Sin reservas, quitar una variante que alguna orden nombra la desactiva en vez de borrarla** (RN-11), y se informa cuál de los dos pasó. La orden histórica la sigue mostrando, así que borrarla le rompería el enlace al producto. Una variante que ninguna orden nombra se borra de verdad, con sus imágenes.
 - [ ] El panel muestra siempre stock total, reservado y disponible por variante.
+- [ ] El stock que se escribe **a mano** no admite valores negativos ni decimales. Que la columna acepte un total negativo (RF-24) no es lo mismo: ahí el negativo lo **produce** una venta ya ocurrida, y es una discrepancia a corregir. Escribir «−3» en el formulario no registra ninguna discrepancia, es un error de tipeo.
+- [ ] Cambiar el stock desde el panel es un **ajuste** y queda asentado como tal, con quién lo hizo y cuánto cambió, igual que cualquier otra operación de stock.
 
 ---
 

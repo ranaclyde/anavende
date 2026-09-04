@@ -4,10 +4,15 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
 import { FormularioDeProducto } from "@/components/admin/productos/formulario";
+import { VariantesDelProducto } from "@/components/admin/productos/variantes";
 import {
   obtenerProducto,
   opcionesDeProducto,
 } from "@/modules/catalog/products/queries";
+import {
+  opcionesDeColor,
+  variantesDelProducto,
+} from "@/modules/catalog/variants/queries";
 
 export const metadata: Metadata = { title: "Editar producto" };
 
@@ -27,11 +32,13 @@ export default async function EditarProducto({ params }: Props) {
 
   if (!ES_UUID.test(id)) notFound();
 
-  // Las dos consultas no dependen una de la otra: en serie, la página tarda
-  // la suma de las dos por nada.
-  const [producto, opciones] = await Promise.all([
+  // Las cuatro consultas no dependen unas de otras: en serie, la página
+  // tardaría la suma de las cuatro por nada.
+  const [producto, opciones, variantes, colores] = await Promise.all([
     obtenerProducto(id),
     opcionesDeProducto(),
+    variantesDelProducto(id),
+    opcionesDeColor(),
   ]);
 
   if (!producto) notFound();
@@ -50,6 +57,17 @@ export default async function EditarProducto({ params }: Props) {
         producto={producto}
         marcas={opciones.marcas}
         categorias={opciones.categorias}
+      />
+
+      {/* Fuera del formulario, y a propósito: cada variante se guarda sola,
+          en el momento. Meterlas adentro obligaría a apretar «Guardar
+          cambios» para que una foto ya subida quedara en firme, y a explicar
+          por qué una imagen que ya está en Storage todavía no cuenta. */}
+      <VariantesDelProducto
+        productId={producto.id}
+        productoActivo={producto.isActive}
+        variantes={variantes}
+        colores={colores}
       />
     </div>
   );

@@ -148,7 +148,7 @@ export function ListadoDeProductos({ items }: { items: ProductoDelListado[] }) {
                       <Precio producto={p} />
                     </TableCell>
                     <TableCell>
-                      <Estado activo={p.isActive} />
+                      <Estado producto={p} />
                     </TableCell>
                     <TableCell className="text-right">
                       <Acciones
@@ -174,7 +174,7 @@ export function ListadoDeProductos({ items }: { items: ProductoDelListado[] }) {
               >
                 <div className="flex items-start justify-between gap-3">
                   <Nombre producto={p} />
-                  <Estado activo={p.isActive} />
+                  <Estado producto={p} />
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <Precio producto={p} />
@@ -264,11 +264,20 @@ function Precio({ producto }: { producto: ProductoDelListado }) {
   );
 }
 
-function Estado({ activo }: { activo: boolean }) {
+function Estado({ producto }: { producto: ProductoDelListado }) {
   return (
-    <Badge tone={activo ? "success" : "neutral"}>
-      {activo ? "Activo" : "Inactivo"}
-    </Badge>
+    <div className="flex flex-wrap items-center gap-1">
+      <Badge tone={producto.isActive ? "success" : "neutral"}>
+        {producto.isActive ? "Activo" : "Inactivo"}
+      </Badge>
+      {/* Un producto sin colores no tiene stock ni fotos: está cargado y no se
+          puede vender. Desde F2.4 eso es un estado posible —el alta crea el
+          producto y los colores se cargan después—, así que el listado lo
+          dice en vez de dejar que se descubra en la tienda. */}
+      {producto.variantes === 0 ? (
+        <Badge tone="warning">Sin colores</Badge>
+      ) : null}
+    </div>
   );
 }
 

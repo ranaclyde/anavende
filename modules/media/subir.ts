@@ -1,9 +1,9 @@
 import "server-only";
 
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { brands, variantImages } from "@/db/schema/catalog";
+import { brands, productVariants, variantImages } from "@/db/schema/catalog";
 import { domainError } from "@/lib/errors";
 import { almacenamiento } from "@/lib/storage";
 import { procesarImagen } from "@/modules/media/procesar";
@@ -97,15 +97,44 @@ export async function publicarImagenDeVariante({
   archivo: Buffer;
   altText?: string | null;
 }): Promise<ImagenPublicada> {
-  // El tope se comprueba ANTES de convertir: procesar tres tamaños para
-  // después decir que no entraba es trabajo tirado, y en una imagen de 8 MB
-  // no es trabajo despreciable.
-  const [conteo] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(variantImages)
-    .where(eq(variantImages.variantId, variantId));
+  // Todo lo que hay que saber ANTES de convertir, en una sola consulta: a qué
+  // producto pertenece la variante, si está reutilizando las imágenes de otra
+  // y cuántas tiene. Procesar tres tamaños para después decir que no entraba
+  // es trabajo tirado, y en una imagen de 8 MB no es trabajo despreciable.
+  const [estado] = await db.execute<{
+    productId: string;
+    imagesSourceId: string | null;
+    n: number;
+  }>(sql`
+    SELECT v.product_id        AS "productId",
+           v.images_source_id  AS "imagesSourceId",
+           count(i.id)::int    AS n
+      FROM ${productVariants} v
+      LEFT JOIN ${variantImages} i ON i.variant_id = v.id
+     WHERE v.id = ${variantId}
+     GROUP BY v.id`);
 
-  if ((conteo?.n ?? 0) >= MAXIMO_POR_VARIANTE) {
+  if (!estado) throw domainError("NOT_FOUND");
+
+  // El `productId` llega del formulario y la clave de Storage se arma con él
+  // (§9.2). Sin esta comprobación, un id equivocado guardaría el archivo bajo
+  // una carpeta que no le corresponde: la fila apuntaría a un lugar donde
+  // nadie lo va a buscar el día que haya que borrarlo.
+  if (estado.productId !== productId) {
+    throw domainError("NOT_FOUND");
+  }
+
+  // Una variante que reutiliza las de otra no muestra las propias (§9.5).
+  // Aceptar la subida dejaría un archivo que ocupa lugar y no se ve en
+  // ninguna pantalla, que es la definición de basura.
+  if (estado.imagesSourceId) {
+    throw domainError("VALIDATION", {
+      message:
+        "Esa variante está reutilizando las imágenes de otra. Dejá de reutilizarlas para poder subirle las propias.",
+    });
+  }
+
+  if (estado.n >= MAXIMO_POR_VARIANTE) {
     throw domainError("VALIDATION", {
       message: `Esa variante ya tiene ${MAXIMO_POR_VARIANTE} imágenes, que son las que entran. Borrá una para subir otra.`,
     });
@@ -133,7 +162,7 @@ export async function publicarImagenDeVariante({
         bytes: procesada.bytes,
         // Se agrega al final. Reordenar es una acción aparte (RF-17), no un
         // efecto de subir.
-        sortOrder: conteo?.n ?? 0,
+        sortOrder: estado.n,
       })
       .returning();
 
@@ -152,6 +181,32 @@ export async function publicarImagenDeVariante({
 }
 
 /**
+ * Renumera las imágenes de una variante a 0, 1, 2… respetando el orden que
+ * ya tenían.
+ *
+ * NO ES COSMÉTICA. `sortOrder` cumple dos papeles a la vez: es el orden de la
+ * galería y es de dónde sale el número de la próxima imagen que se suba
+ * —`publicarImagenDeVariante` usa la CANTIDAD—. Borrar la primera de tres
+ * dejaría [1, 2] y la siguiente subida volvería a ser 2: dos imágenes con el
+ * mismo número y un orden que pasa a depender de cuál devuelva antes la base.
+ * Con la principal siendo «la que está en 0» (RF-17), eso es la portada del
+ * producto cambiando sola.
+ */
+async function renumerar(variantId: string): Promise<void> {
+  await db.execute(sql`
+    WITH ordenadas AS (
+      SELECT id,
+             row_number() OVER (ORDER BY sort_order, created_at) - 1 AS n
+        FROM ${variantImages}
+       WHERE variant_id = ${variantId}
+    )
+    UPDATE ${variantImages} i
+       SET sort_order = o.n
+      FROM ordenadas o
+     WHERE i.id = o.id AND i.sort_order <> o.n`);
+}
+
+/**
  * RF-17: eliminar una imagen la quita del almacenamiento, no solo del
  * listado. Primero se borra la fila y después los archivos: al revés, un
  * fallo entre medio dejaría una fila apuntando a archivos que ya no están
@@ -161,14 +216,107 @@ export async function borrarImagenDeVariante(imageId: string): Promise<void> {
   const [fila] = await db
     .delete(variantImages)
     .where(eq(variantImages.id, imageId))
-    .returning({ storageKey: variantImages.storageKey });
+    .returning({
+      storageKey: variantImages.storageKey,
+      variantId: variantImages.variantId,
+    });
 
   if (!fila) throw domainError("NOT_FOUND");
+
+  await renumerar(fila.variantId);
 
   // La fila ya no está, así que la vendedora ya no ve la imagen. Si algún
   // archivo sobrevive es basura, no una falla que valga cortar la operación y
   // mostrarle un error a alguien que hizo lo correcto.
   await borrarClaves(clavesDe(fila.storageKey, TAMANOS));
+}
+
+/**
+ * Reordenar y elegir la principal — RF-16, RF-17.
+ *
+ * **La principal es la que está en la posición 0, y no hay columna que lo
+ * diga.** Con una bandera `is_primary` habría dos fuentes para la misma
+ * pregunta y un estado imposible que igual hay que programar: dos principales,
+ * o ninguna. Elegir la principal es mover una imagen al frente, que es
+ * exactamente lo que se ve en la pantalla.
+ *
+ * Llega el ORDEN COMPLETO y no un «movida de aquí para allá»: si la lista que
+ * manda el navegador no es exactamente el conjunto que hay en la base, se
+ * rechaza entera. Aplicar un orden parcial sobre datos que cambiaron en otra
+ * pestaña dejaría la galería en un orden que nadie pidió.
+ */
+export async function reordenarImagenesDeVariante(
+  variantId: string,
+  ids: string[],
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const actuales = await tx
+      .select({ id: variantImages.id })
+      .from(variantImages)
+      .where(eq(variantImages.variantId, variantId));
+
+    const enLaBase = new Set(actuales.map((f) => f.id));
+    const pedidos = new Set(ids);
+
+    if (
+      enLaBase.size !== pedidos.size ||
+      ids.length !== pedidos.size ||
+      ids.some((id) => !enLaBase.has(id))
+    ) {
+      throw domainError("VALIDATION", {
+        message:
+          "Las imágenes cambiaron mientras las ordenabas. Actualizá la página y probá de nuevo.",
+      });
+    }
+
+    // Una sentencia y no una por imagen: con cinco filas la diferencia no se
+    // nota, pero una tras otra deja la galería medio ordenada si la tercera
+    // falla, y ese es el estado que después nadie entiende.
+    //
+    // Los ids van como PARÁMETROS, armando la lista con `sql.join`. Pegarlos
+    // en el texto de la consulta —aunque acaben de comprobarse contra la
+    // base— es la forma de escribir una inyección que hoy no lo es y mañana
+    // sí, el día que alguien afloje la comprobación de arriba.
+    const orden = sql.join(
+      ids.map((id, i) => sql`(${id}::uuid, ${i}::int)`),
+      sql`, `,
+    );
+
+    await tx.execute(sql`
+      UPDATE ${variantImages} i
+         SET sort_order = o.n
+        FROM (VALUES ${orden}) AS o(id, n)
+       WHERE i.id = o.id AND i.variant_id = ${variantId}`);
+  });
+}
+
+/**
+ * Las claves de Storage de todas las imágenes de una variante, para borrarlas
+ * cuando la variante se va. Se leen ANTES del DELETE: después las filas ya no
+ * están —`variant_images` cae por cascada— y las claves se fueron con ellas.
+ */
+export async function clavesDeVariante(variantId: string): Promise<string[]> {
+  const filas = await db
+    .select({ storageKey: variantImages.storageKey })
+    .from(variantImages)
+    .where(eq(variantImages.variantId, variantId));
+
+  return filas.flatMap((f) => clavesDe(f.storageKey, TAMANOS));
+}
+
+/**
+ * Lo mismo para un producto entero: todas las imágenes de todas sus
+ * variantes. Es lo que le faltaba a «borrar un producto» para no dejar en
+ * Storage archivos que ya no nombra ninguna fila (RF-15, RF-17).
+ */
+export async function clavesDeProducto(productId: string): Promise<string[]> {
+  const filas = await db.execute<{ storageKey: string }>(sql`
+    SELECT i.storage_key AS "storageKey"
+      FROM ${variantImages} i
+      JOIN ${productVariants} v ON v.id = i.variant_id
+     WHERE v.product_id = ${productId}`);
+
+  return filas.flatMap((f) => clavesDe(f.storageKey, TAMANOS));
 }
 
 /** La URL pública de un tamaño concreto (§9.3). */
@@ -277,13 +425,4 @@ export function urlDeLogo(
   sufijo: "thumb" | "card" = "thumb",
 ): string | null {
   return logoKey ? almacenamiento().publicUrl(clave(logoKey, sufijo)) : null;
-}
-
-/** Las imágenes de una variante, en su orden (§9.5 resuelve el reenvío). */
-export async function imagenesDeVariante(variantId: string) {
-  return db
-    .select()
-    .from(variantImages)
-    .where(and(eq(variantImages.variantId, variantId)))
-    .orderBy(variantImages.sortOrder);
 }

@@ -460,6 +460,11 @@ CREATE TABLE variant_images (
 CREATE INDEX variant_images_variant_idx ON variant_images (variant_id, sort_order);
 ```
 
+**La imagen principal es la de `sort_order = 0`, y no hay columna que lo diga.** RF-17 pide poder elegir una principal, y la forma obvia —una bandera `is_primary`— crea dos fuentes para la misma pregunta y dos estados imposibles que igual habría que programar: ninguna principal, o dos. Con el orden alcanza: elegir la principal es mover una imagen al frente, que además es lo que se ve en la pantalla.
+
+Lo que eso obliga a cuidar es que `sort_order` sea siempre `0, 1, 2…` **sin huecos ni repetidos** dentro de una variante, porque el mismo número decide dos cosas: el orden de la galería y en qué posición entra la próxima imagen que se suba. Borrar una del medio **renumera** las que quedan, en la misma operación.
+
+
 **Sobre `stock_total` y valores negativos.** No hay `CHECK (stock_total >= 0)`. RF-24 exige que la vendedora pueda registrar una venta ya ocurrida aunque el sistema crea que no hay stock: bloquearla obligaría a mentirle al sistema. Un `stock_total` negativo es una **señal de discrepancia** entre el sistema y la realidad, se muestra destacada en el panel y se corrige con un ajuste.
 
 > **Por qué `reserved_within_total` lleva la guarda `stock_total < 0`.** En la primera versión la restricción era `reserved_stock <= stock_total` a secas, y eso **anulaba la decisión del párrafo anterior**: junto con `reserved_stock >= 0` implica `stock_total >= 0`, es decir, imponía por la puerta de atrás justamente el `CHECK` que se había decidido no poner. Se detectó en F1.6, probando las restricciones contra Postgres antes de construir F4.
@@ -974,6 +979,16 @@ imágenes(variante) =
    si no                                 → variant_images de la variante origen
                                            (un solo salto; sin cadenas)
 ```
+
+Para que ese «un solo salto» sea cierto y la resolución quede en un `LEFT JOIN`, al elegir la fuente se verifican tres condiciones. Las tres viven **en la aplicación** y no en la base: la segunda y la tercera no son expresables como restricción declarativa, y partir la regla dejaría media garantía en cada lado.
+
+| Condición | Por qué |
+|---|---|
+| La fuente es una variante **del mismo producto** | Reutilizar las fotos de otro producto es siempre un error de carga, y la clave de Storage (§9.2) las agrupa por producto |
+| La fuente **no está reutilizando** a su vez, y nadie reutiliza las de quien va a reutilizar | Sin esto se arman cadenas, y con cadenas se arman ciclos: A→B, B→C, C→A deja la consulta que pinta la galería sin final |
+| Quien va a reutilizar **no tiene imágenes propias** | Con fuente, las propias no se muestran (el cuadro de arriba): quedarían ocupando lugar en Storage sin verse en ninguna pantalla. Se piden borradas primero, que además hace explícita la decisión |
+
+Borrar la variante fuente pone `images_source_id` en NULL en las que la reutilizaban (`ON DELETE SET NULL`), que quedan con las suyas —ninguna, si no tenían—. El panel avisa cuántas son **antes** de borrar.
 
 ---
 
