@@ -23,7 +23,8 @@
     "db:variantes": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-variantes.mts",
     "db:listado": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-listado.mts",
     "db:pagos": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-pagos.mts",
-    "db:configuracion": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-configuracion.mts"
+    "db:configuracion": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-configuracion.mts",
+    "sondear:resend": "tsx scripts/sondear-resend.mts"
   },
   "dependencies": {
     "@lexical/list": "^0.50.0",
