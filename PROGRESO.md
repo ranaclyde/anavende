@@ -157,6 +157,24 @@ Cada una se escribió primero en la especificación y después en el código
 
 ## Pendiente detectado, sin tarea propia
 
+**Los once `db:xxx` no son tests, y las especificaciones ya habían elegido
+Vitest.** `db:verificar` está en `TECHNICAL-SPEC.md` §18.3 y es legítimo; los
+otros diez —`db:catalogo`, `db:descripcion`, `db:markdown`, `db:productos`,
+`db:variantes`, `db:listado`, `db:pagos`, `db:configuracion`…— se fueron
+agregando de a uno por tarea **sin que ninguna tarea del plan los pidiera y sin
+anotarlo acá**, que es lo que la regla 1 de `DEVELOPMENT-PLAN.md` §1.2 prohíbe.
+Aciertan en lo importante —corren contra Postgres y Storage de verdad, como
+exige §17.1— y fallan en cuatro cosas: **no hay runner ni `npm test`**, así que
+hay que acordarse de correrlos a mano y un día no se corren; **§2.1 y §17.1
+eligieron Vitest** y no está instalado, de modo que hay una segunda
+infraestructura de pruebas al lado de la elegida; `tests/` sigue **vacío** desde
+F1 con F4.6 y F10.1–F10.2 esperando ahí; y la limpieza es por convención —un
+`finally` en cada uno— en vez de una transacción que se revierte, que es lo que
+sí hace `db:restricciones`. Con `db:configuracion` reventando a mitad por un
+nombre de columna equivocado la limpieza corrió, pero corrió con suerte.
+**Decisión tuya: se trata al entrar en F4**, que es cuando el plan obliga a
+tener el runner andando igual (F4.6). Hasta entonces no se agregan más.
+
 **El aviso de un campo sobrevivía a que se corrigiera el valor, y ningún
 formulario del panel valida al salir del campo.** Son la misma grieta vista
 desde dos lados, y el lado feo apareció arrastrando la pantalla de F2.7, no
