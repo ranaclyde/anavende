@@ -1031,6 +1031,20 @@ El umbral de similitud se fija con `pg_trgm.similarity_threshold` (arranca en `0
 - Las **categorías que se ofrecen** —chips del encabezado (`DESIGN-REFERENCE.md` §5.1), accesos rápidos de la home (RF-01) y filtro del listado (RF-02)— se leen con un solo orden: `WHERE is_active ORDER BY is_featured DESC, immutable_unaccent(lower(name))`. Una sola consulta compartida, para que las tres superficies no puedan discrepar sobre qué va primero.
 - Paginación por `LIMIT/OFFSET` con 24 por página. Es adecuada al volumen esperado (S-05); si el catálogo creciera, se migra a paginación por cursor.
 
+### 10.3 El listado del panel (RF-15)
+
+Comparte con §10.2 la decisión de fondo —el estado vive en la URL— y se separa de §10.1 en tres puntos, cada uno con su motivo:
+
+| Punto | Qué hace el panel | Por qué |
+|---|---|---|
+| **Búsqueda** | Solo la mitad por **subcadena** de §10.1 —nombre, marca y `description_text`, sin acentos—; **sin** la similitud por trigramas | Son dos preguntas distintas. El comprador tantea y agradece que le acerquen algo; la vendedora busca lo que sabe que existe, y un parecido traído por un umbral todavía sin calibrar (F3.3) le esconde el producto que fue a buscar. Los comodines `%` y `_` del término se **escapan**: si no, «50%» traería todo |
+| **Filtro de stock** | En `HAVING`, no en `WHERE` | Mira la **suma** de las variantes. En `WHERE` se evalúa variante por variante, y un producto con un color en cero y otro con diez aparecería como «sin stock» |
+| **Discrepancia de stock** | Se cuenta por variante (`count(*) FILTER (WHERE stock_total < 0)`), no por la suma | Un color en −3 y otro en +10 suman 7: en el total, el negativo de RF-24 desaparece |
+
+El orden siempre termina con `immutable_unaccent(lower(name)), id`: sin un criterio único, dos productos del mismo precio pueden cambiar de lugar entre dos cargas de la misma pantalla.
+
+El **umbral de stock bajo** se lee de `site_settings` (§5.9), que es una fila única. Mientras esa fila no exista —la escribe F2.7— se usa el mismo `3` que declara el `DEFAULT` de la columna. Son dos preguntas distintas con la misma respuesta: la base decide el valor de la fila nueva y el código decide qué pasa cuando no hay fila.
+
 ---
 
 ## 11. Recomendaciones (RF-31 a RF-33)

@@ -418,6 +418,9 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 **Criterios de aceptación:**
 - [ ] Listado con búsqueda, filtro por categoría/marca/estado, y orden por nombre, precio, stock y fecha.
 - [ ] El listado muestra el stock total (suma de variantes) y advierte visualmente el stock en cero.
+- [ ] El listado muestra los **tres** números de stock por producto —total, reservado y disponible—, y el que manda es el **disponible**: es el único que responde si el producto se puede vender hoy.
+- [ ] El aviso de stock es **uno solo por producto**, porque los estados son excluyentes: «Sin colores» (todavía no hay nada que vender, RF-16), «Stock negativo» (alguna variante quedó bajo cero: es una discrepancia de RF-24, no una compra pendiente), «Sin stock» (nada disponible) o «Quedan N» (por debajo del umbral de RF-20).
+- [ ] Además de categoría, marca y estado, el listado filtra **por stock**: «Sin stock» y «Para reponer» —lo que está en el umbral de RF-20 o por debajo, incluido el que ya está en cero—. Es una sola pregunta, «qué hay que comprar», y por eso es una sola opción; es también el destino del enlace «stock bajo o en cero» del dashboard (RF-14).
 - [ ] Crear y editar producto con sus variantes en una sola pantalla.
 - [ ] «Eliminar» un producto referenciado por alguna orden lo **desactiva** en lugar de borrarlo, informándolo (RN-11). Un producto sin órdenes puede eliminarse definitivamente, con confirmación explícita.
 - [ ] Un producto con `isActive = false` desaparece del sitio público de inmediato, pero sigue visible en el panel y en las órdenes históricas.

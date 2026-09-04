@@ -20,7 +20,8 @@
     "db:descripcion": "tsx scripts/verificar-descripcion.mts",
     "db:markdown": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-markdown.mts",
     "db:productos": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-productos.mts",
-    "db:variantes": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-variantes.mts"
+    "db:variantes": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-variantes.mts",
+    "db:listado": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-listado.mts"
   },
   "dependencies": {
     "@lexical/list": "^0.50.0",

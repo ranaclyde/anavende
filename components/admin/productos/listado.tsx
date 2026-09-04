@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Eye, EyeOff, Pencil, Plus, Star, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Eye,
+  EyeOff,
+  Pencil,
+  Plus,
+  Star,
+  Trash2,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +33,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatMoney } from "@/lib/money";
+import { cn } from "@/lib/utils";
+import {
+  sinFiltros,
+  urlDeFiltros,
+  urlDeOrden,
+  type FiltrosDeProductos,
+  type OrdenDeProductos,
+} from "@/modules/catalog/products/filtros";
 import {
   cambiarDestacadoDeProducto,
   cambiarEstadoDeProducto,
@@ -31,15 +49,26 @@ import {
 import type { ProductoDelListado } from "@/modules/catalog/products/queries";
 
 /**
- * Listado de productos del panel — RF-15.
+ * Listado de productos del panel — RF-15, RF-20, DESIGN-REFERENCE §6.9.
  *
- * Es el listado MÍNIMO para llegar al formulario y volver. La búsqueda, los
- * filtros, el orden y el aviso de stock bajo son F2.5: están pedidos en
- * RF-15 y no se hacen acá porque una barra de filtros a medias es peor que
- * ninguna — se usa, no encuentra, y nadie sabe si el producto no está o el
- * filtro no anda.
+ * La búsqueda, los filtros y el orden los escribe `BarraDeFiltros` en la
+ * URL; acá solo se pintan los resultados y se ofrecen las acciones de cada
+ * fila. Las cabeceras ordenan porque en escritorio es donde se mira la
+ * columna, y son ENLACES y no botones: la misma dirección que produce la
+ * barra, así que ordenar se puede compartir y volver atrás.
+ *
+ * En móvil la tabla se vuelve tarjetas, no scroll horizontal (§6.9).
  */
-export function ListadoDeProductos({ items }: { items: ProductoDelListado[] }) {
+export function ListadoDeProductos({
+  items,
+  filtros,
+  umbral,
+}: {
+  items: ProductoDelListado[];
+  filtros: FiltrosDeProductos;
+  /** Stock bajo: `disponible <= umbral` (RF-20). */
+  umbral: number;
+}) {
   const [enCurso, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -88,22 +117,6 @@ export function ListadoDeProductos({ items }: { items: ProductoDelListado[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-body-sm text-ink-secondary">
-          {items.length === 0
-            ? "Sin productos"
-            : items.length === 1
-              ? "1 producto"
-              : `${items.length} productos`}
-        </p>
-        <Button asChild variant="brand" size="sm">
-          <Link href="/admin/productos/nuevo">
-            <Plus aria-hidden />
-            Nuevo producto
-          </Link>
-        </Button>
-      </div>
-
       {error === null ? null : (
         <p role="alert" className="text-body-sm text-danger">
           {error}
@@ -116,7 +129,7 @@ export function ListadoDeProductos({ items }: { items: ProductoDelListado[] }) {
       )}
 
       {items.length === 0 ? (
-        <Vacio />
+        <SinResultados filtros={filtros} />
       ) : (
         <>
           {/* Escritorio */}
@@ -124,12 +137,29 @@ export function ListadoDeProductos({ items }: { items: ProductoDelListado[] }) {
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-surface-sunken">
-                  <TableHead>Producto</TableHead>
-                  <TableHead className="w-40">Categoría</TableHead>
-                  <TableHead data-align="right" className="w-36">
+                  <Cabecera filtros={filtros} orden="nombre">
+                    Producto
+                  </Cabecera>
+                  <Cabecera
+                    filtros={filtros}
+                    orden="precio"
+                    align="right"
+                    className="w-36"
+                  >
                     Precio
-                  </TableHead>
-                  <TableHead className="w-28">Estado</TableHead>
+                  </Cabecera>
+                  <Cabecera
+                    filtros={filtros}
+                    orden="stock"
+                    align="right"
+                    className="w-40"
+                  >
+                    Disponible
+                  </Cabecera>
+                  {/* Ancha para que «Activo» y la etiqueta de stock entren
+                      en la misma línea: apiladas, la fila crece 10px y la
+                      tabla pierde el renglón parejo de 44px (§6.9). */}
+                  <TableHead className="w-48">Estado</TableHead>
                   <TableHead className="w-40 text-right">
                     <span className="sr-only">Acciones</span>
                   </TableHead>
@@ -141,14 +171,14 @@ export function ListadoDeProductos({ items }: { items: ProductoDelListado[] }) {
                     <TableCell>
                       <Nombre producto={p} />
                     </TableCell>
-                    <TableCell className="truncate text-ink-secondary">
-                      {p.categoryName}
-                    </TableCell>
                     <TableCell data-align="right">
                       <Precio producto={p} />
                     </TableCell>
+                    <TableCell data-align="right">
+                      <Stock producto={p} umbral={umbral} />
+                    </TableCell>
                     <TableCell>
-                      <Estado producto={p} />
+                      <Estado producto={p} umbral={umbral} />
                     </TableCell>
                     <TableCell className="text-right">
                       <Acciones
@@ -174,10 +204,17 @@ export function ListadoDeProductos({ items }: { items: ProductoDelListado[] }) {
               >
                 <div className="flex items-start justify-between gap-3">
                   <Nombre producto={p} />
-                  <Estado producto={p} />
+                  <Estado producto={p} umbral={umbral} />
                 </div>
-                <div className="flex items-center justify-between gap-3">
+                {/* Arriba: el precio y el disponible arrancan en la misma
+                    línea, y cada uno explica debajo. Alineados abajo, el
+                    número grande del stock quedaba flotando sobre el
+                    precio. */}
+                <div className="flex items-start justify-between gap-3">
                   <Precio producto={p} />
+                  <Stock producto={p} umbral={umbral} />
+                </div>
+                <div className="flex justify-end">
                   <Acciones
                     producto={p}
                     ocupado={enCurso}
@@ -222,6 +259,69 @@ export function ListadoDeProductos({ items }: { items: ProductoDelListado[] }) {
   );
 }
 
+/**
+ * Cabecera que ordena. El primer clic ordena por su columna; el segundo, ya
+ * estando en ella, da vuelta la dirección — que es lo que hace cualquier
+ * tabla y lo que la flecha promete.
+ */
+function Cabecera({
+  filtros,
+  orden,
+  align,
+  className,
+  children,
+}: {
+  filtros: FiltrosDeProductos;
+  orden: OrdenDeProductos;
+  align?: "right";
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const activa = filtros.orden === orden;
+  const ascendente = filtros.dir === "asc";
+
+  return (
+    <TableHead
+      data-align={align}
+      // Lo lee el lector de pantalla: por qué columna está ordenada la tabla
+      // y hacia dónde, sin depender de ver la flecha (§9).
+      aria-sort={
+        activa ? (ascendente ? "ascending" : "descending") : "none"
+      }
+      className={cn("p-0", className)}
+    >
+      <Link
+        href={urlDeOrden(filtros, orden)}
+        className={cn(
+          "group flex h-9 w-full items-center gap-1 px-3",
+          "transition-colors duration-150 hover:text-ink",
+          // En las columnas de números la flecha va ADELANTE del título: el
+          // hueco que ocupa cuando no se ve corría el título 18px a la
+          // izquierda del borde donde terminan las cifras.
+          align === "right" ? "flex-row-reverse justify-start" : "",
+          activa ? "text-ink" : "",
+        )}
+      >
+        {children}
+        {activa ? (
+          ascendente ? (
+            <ArrowUp aria-hidden className="size-3.5" />
+          ) : (
+            <ArrowDown aria-hidden className="size-3.5" />
+          )
+        ) : (
+          // La flecha doble aparece al pasar por encima: dice que la columna
+          // ordena sin ensuciar la cabecera de flechas todo el tiempo.
+          <ChevronsUpDown
+            aria-hidden
+            className="size-3.5 opacity-0 transition-opacity duration-150 group-hover:opacity-60 group-focus-visible:opacity-60"
+          />
+        )}
+      </Link>
+    </TableHead>
+  );
+}
+
 function Nombre({ producto }: { producto: ProductoDelListado }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
@@ -240,7 +340,7 @@ function Nombre({ producto }: { producto: ProductoDelListado }) {
         </Link>
       </div>
       <span className="truncate text-caption text-ink-secondary">
-        {producto.brandName}
+        {producto.brandName} · {producto.categoryName}
       </span>
     </div>
   );
@@ -264,21 +364,104 @@ function Precio({ producto }: { producto: ProductoDelListado }) {
   );
 }
 
-function Estado({ producto }: { producto: ProductoDelListado }) {
+/**
+ * Los tres números de stock del producto (RF-15, RF-16).
+ *
+ * El grande es el DISPONIBLE, que es el único que responde «¿esto se puede
+ * vender?»; el total y el reservado van debajo porque explican de dónde sale
+ * y por qué no coincide con lo que hay en la caja.
+ *
+ * El color acompaña, no informa: lo que dice el estado es la etiqueta de al
+ * lado (§9).
+ */
+function Stock({
+  producto,
+  umbral,
+}: {
+  producto: ProductoDelListado;
+  umbral: number;
+}) {
+  // Un producto sin colores no tiene números que mostrar, y por qué lo dice
+  // la etiqueta de al lado: repetir «Sin colores» acá sería decir dos veces
+  // lo mismo en dos columnas contiguas.
+  if (producto.variantes === 0) {
+    return <span className="text-ink-tertiary">—</span>;
+  }
+
+  const tono =
+    producto.variantesEnNegativo > 0 || producto.disponible <= 0
+      ? "text-danger"
+      : producto.disponible <= umbral
+        ? "text-warning"
+        : "text-ink";
+
+  return (
+    <div className="flex flex-col items-end gap-0.5 tabular-nums">
+      <span className={cn("font-medium", tono)}>{producto.disponible}</span>
+      <span className="text-caption text-ink-tertiary">
+        de {producto.stockTotal} ·{" "}
+        {producto.reservado === 1
+          ? "1 reservada"
+          : `${producto.reservado} reservadas`}
+      </span>
+    </div>
+  );
+}
+
+function Estado({
+  producto,
+  umbral,
+}: {
+  producto: ProductoDelListado;
+  umbral: number;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-1">
       <Badge tone={producto.isActive ? "success" : "neutral"}>
         {producto.isActive ? "Activo" : "Inactivo"}
       </Badge>
-      {/* Un producto sin colores no tiene stock ni fotos: está cargado y no se
-          puede vender. Desde F2.4 eso es un estado posible —el alta crea el
-          producto y los colores se cargan después—, así que el listado lo
-          dice en vez de dejar que se descubra en la tienda. */}
-      {producto.variantes === 0 ? (
-        <Badge tone="warning">Sin colores</Badge>
-      ) : null}
+      <EtiquetaDeStock producto={producto} umbral={umbral} />
     </div>
   );
+}
+
+/**
+ * Lo que hay que saber del stock de un vistazo — DESIGN-REFERENCE §6.4.
+ *
+ * Es UNA etiqueta y no tres: son estados excluyentes, y apilarlas dejaría
+ * «Sin colores» al lado de «Sin stock» diciendo dos veces lo mismo con
+ * palabras distintas.
+ *
+ *   Sin colores      el producto está cargado y no tiene nada que vender.
+ *                    No es falta de stock: es que todavía no hay dónde
+ *                    ponerlo (F2.4 dejó el alta en dos pasos).
+ *   Stock negativo   alguna variante quedó por debajo de cero. Lo produce
+ *                    una venta registrada sobre unidades que el sistema no
+ *                    tenía (RF-24, §5.4): es una discrepancia a corregir,
+ *                    no una compra pendiente, y por eso no dice «sin stock».
+ *   Sin stock        no queda nada disponible para vender.
+ *   Quedan N         por debajo del umbral de RF-20.
+ */
+function EtiquetaDeStock({
+  producto,
+  umbral,
+}: {
+  producto: ProductoDelListado;
+  umbral: number;
+}) {
+  if (producto.variantes === 0) {
+    return <Badge tone="warning">Sin colores</Badge>;
+  }
+  if (producto.variantesEnNegativo > 0) {
+    return <Badge tone="danger">Stock negativo</Badge>;
+  }
+  if (producto.disponible <= 0) {
+    return <Badge tone="danger">Sin stock</Badge>;
+  }
+  if (producto.disponible <= umbral) {
+    return <Badge tone="warning">Quedan {producto.disponible}</Badge>;
+  }
+  return null;
 }
 
 function Acciones({
@@ -343,8 +526,32 @@ function Acciones({
   );
 }
 
+/**
+ * Sin resultados (§8), que no es lo mismo que vacío: acá hay productos y
+ * ninguno coincide. Se repite el término buscado —para ver el error de
+ * tipeo sin volver al campo—, se sugiere aflojar los filtros y se ofrece
+ * limpiarlos de una.
+ */
+function SinResultados({ filtros }: { filtros: FiltrosDeProductos }) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
+      <p className="text-body-sm text-ink">
+        {filtros.q
+          ? `No encontramos ningún producto para «${filtros.q}».`
+          : "Ningún producto coincide con los filtros."}
+      </p>
+      <p className="text-caption text-ink-secondary">
+        Probá con menos filtros, o revisá cómo quedó escrito.
+      </p>
+      <Button asChild variant="secondary" size="sm" className="mt-2">
+        <Link href={urlDeFiltros(sinFiltros(filtros))}>Limpiar todo</Link>
+      </Button>
+    </div>
+  );
+}
+
 /** Estado vacío (§8): dice qué falta y ofrece el primer paso. */
-function Vacio() {
+export function SinProductos() {
   return (
     <div className="flex flex-col items-center gap-3 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
       <p className="text-body-sm text-ink-secondary">
