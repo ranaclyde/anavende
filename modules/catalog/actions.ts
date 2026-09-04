@@ -11,7 +11,7 @@ import { slugificar } from "@/lib/slug";
 import {
   borrarArchivos,
   clavesDelLogo,
-  quitarLogoDeMarca,
+  quitarLogo,
 } from "@/modules/media/subir";
 import {
   cambioDeDestacada,
@@ -322,7 +322,7 @@ export const quitarElLogo = action
   .input(soloId)
   .auth("admin")
   .handler(async ({ input }) => {
-    await quitarLogoDeMarca(input.id);
+    await quitarLogo("marca", input.id);
     refrescar();
     return { id: input.id };
   });
@@ -353,7 +353,7 @@ export const eliminar = action
     // Las claves del logo se leen ANTES del DELETE: después la fila ya no
     // está y se perdieron con ella. Es la única forma de que borrar una marca
     // no deje sus archivos dando vueltas en Storage (RF-18).
-    const archivos = tipo === "marca" ? await clavesDelLogo(id) : [];
+    const archivos = tipo === "marca" ? await clavesDelLogo("marca", id) : [];
 
     const tabla = TABLAS[tipo];
     const filas = await db

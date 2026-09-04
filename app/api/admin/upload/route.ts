@@ -7,7 +7,7 @@ import { isDomainError } from "@/lib/errors";
 import { getSession } from "@/lib/session";
 import {
   publicarImagenDeVariante,
-  publicarLogoDeMarca,
+  publicarLogo,
 } from "@/modules/media/subir";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
 
@@ -46,6 +46,10 @@ const entrada = z.discriminatedUnion("destino", [
     destino: z.literal("marca"),
     brandId: z.uuid(),
   }),
+  z.object({
+    destino: z.literal("medio-de-pago"),
+    paymentMethodId: z.uuid(),
+  }),
 ]);
 
 export async function POST(request: NextRequest) {
@@ -72,6 +76,7 @@ export async function POST(request: NextRequest) {
     productId: form.get("productId") ?? undefined,
     variantId: form.get("variantId") ?? undefined,
     brandId: form.get("brandId") ?? undefined,
+    paymentMethodId: form.get("paymentMethodId") ?? undefined,
     altText: form.get("altText") ?? undefined,
   });
 
@@ -108,22 +113,29 @@ export async function POST(request: NextRequest) {
 
     const data =
       campos.data.destino === "marca"
-        ? await publicarLogoDeMarca({
-            brandId: campos.data.brandId,
+        ? await publicarLogo({
+            destino: "marca",
+            id: campos.data.brandId,
             archivo: bytes,
           })
-        : await publicarImagenDeVariante({
-            productId: campos.data.productId,
-            variantId: campos.data.variantId,
-            archivo: bytes,
-            altText: campos.data.altText,
-          });
+        : campos.data.destino === "medio-de-pago"
+          ? await publicarLogo({
+              destino: "medio-de-pago",
+              id: campos.data.paymentMethodId,
+              archivo: bytes,
+            })
+          : await publicarImagenDeVariante({
+              productId: campos.data.productId,
+              variantId: campos.data.variantId,
+              archivo: bytes,
+              altText: campos.data.altText,
+            });
 
     // Invalidar acá es la mitad del trabajo: una Server Action refresca al
     // cliente con su respuesta, pero un `fetch` a un Route Handler no. La
     // otra mitad es el `router.refresh()` de quien llama.
     revalidatePath(
-      campos.data.destino === "marca" ? "/admin/catalogo" : "/admin/productos",
+      campos.data.destino === "variante" ? "/admin/productos" : "/admin/catalogo",
       "layout",
     );
 

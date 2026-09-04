@@ -15,13 +15,14 @@ export type Tamano = { sufijo: string; ancho: number; calidad: number };
 export type Sufijo = (typeof TAMANOS)[number]["sufijo"];
 
 /**
- * El logo de marca (RF-18) usa la misma convención con DOS tamaños.
+ * Los logos —de marca (RF-18) y de medio de pago (RF-19)— usan la misma
+ * convención con DOS tamaños.
  *
  * `-detail` está pensado para la galería de una ficha a 1400px y un logo no
  * tiene dónde usarlo: hoy se muestra chico y solo en el listado del panel. Se
  * reutilizan los anchos de los otros dos en vez de inventar números nuevos —
  * 200px cubre el listado en cualquier densidad de pantalla, y 600px queda
- * para el día que haya una franja de marcas.
+ * para las franjas de la tienda: la de marcas y la de medios de pago (RF-01).
  */
 export const TAMANOS_LOGO = TAMANOS.filter(
   (t) => t.sufijo !== "detail",
@@ -50,9 +51,29 @@ export function claveBase(
   return `productos/${productId}/${variantId}/${imageId}`;
 }
 
-/** `marcas/{brandId}/{imageId}` — la base del logo (§9.2). */
-export function claveDeLogo(brandId: string, imageId: string): string {
-  return `marcas/${brandId}/${imageId}`;
+/**
+ * Dónde vive cada logo. `marcas/{id}/{imageId}`, `medios-de-pago/{id}/…`
+ * (§9.2).
+ *
+ * La carpeta se decide acá y no en quien sube: es lo que hay que saber para
+ * BORRAR, y el borrado ocurre lejos de la subida —al reemplazar el logo y al
+ * borrar la fila entera—. Un prefijo escrito a mano en dos lugares distintos
+ * es un archivo que un día no se encuentra.
+ */
+export const CARPETAS_DE_LOGO = {
+  marca: "marcas",
+  "medio-de-pago": "medios-de-pago",
+} as const;
+
+export type DestinoDeLogo = keyof typeof CARPETAS_DE_LOGO;
+
+/** `{carpeta}/{id}/{imageId}` — la base del logo, sin sufijo (§9.2). */
+export function claveDeLogo(
+  destino: DestinoDeLogo,
+  id: string,
+  imageId: string,
+): string {
+  return `${CARPETAS_DE_LOGO[destino]}/${id}/${imageId}`;
 }
 
 /** `…/{imageId}-card.webp` */

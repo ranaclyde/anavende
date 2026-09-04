@@ -84,10 +84,27 @@ for (const c of ["ban_has_reason", "discount_valid", "reserved_within_total", "w
   ok(checks.includes(c), `CHECK ${c}`);
 }
 
-const gen = await sql<{ table_name: string; column_name: string }[]>`
-  SELECT table_name, column_name FROM information_schema.columns
-  WHERE is_generated = 'ALWAYS' AND table_schema = 'public' ORDER BY 1`;
-ok(gen.length === 2, `Columnas generadas: ${gen.map((g) => `${g.table_name}.${g.column_name}`).join(", ")}`);
+const gen = (
+  await sql<{ table_name: string; column_name: string }[]>`
+    SELECT table_name, column_name FROM information_schema.columns
+    WHERE is_generated = 'ALWAYS' AND table_schema = 'public' ORDER BY 1, 2`
+).map((g) => `${g.table_name}.${g.column_name}`);
+
+// Se comprueban POR NOMBRE y no por cantidad. Contarlas parecía más corto y
+// se rompió sola: F2.3 agregó `products.description_text` (§5.4) y el «2» de
+// esta línea empezó a fallar sin que nada estuviera mal. El nombre además
+// dice cuál falta cuando falta una.
+for (const columna of [
+  "order_items.subtotal",
+  "products.description_text",
+  "products.final_price",
+]) {
+  ok(gen.includes(columna), `Columna generada ${columna}`);
+}
+ok(
+  gen.length === 3,
+  `No hay columnas generadas de más: ${gen.join(", ")}`,
+);
 
 const [authFk] = await sql<{ destino: string }[]>`
   SELECT confrelid::regclass::text AS destino FROM pg_constraint

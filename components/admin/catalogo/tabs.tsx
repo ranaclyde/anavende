@@ -6,15 +6,21 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 /**
- * Navegación entre marcas, categorías y colores — RF-18.
+ * Navegación entre marcas, categorías, colores y medios de pago — RF-18,
+ * RF-19.
  *
- * Son tres rutas, no tres pestañas de cliente: así cada listado tiene su
- * propia dirección, el botón atrás funciona y cada uno se puede compartir.
+ * Son rutas, no pestañas de cliente: así cada listado tiene su propia
+ * dirección, el botón atrás funciona y cada uno se puede compartir.
  */
 const SOLAPAS = [
   { href: "/admin/catalogo/marcas", etiqueta: "Marcas" },
   { href: "/admin/catalogo/categorias", etiqueta: "Categorías" },
   { href: "/admin/catalogo/colores", etiqueta: "Colores" },
+  // Los medios de pago no son catálogo de productos, pero comparten pantalla
+  // con él (§4): son las tablas que la vendedora carga una vez y toca cada
+  // tanto. Una sección propia en el menú lateral para cuatro filas sería un
+  // renglón más para leer en cada visita.
+  { href: "/admin/catalogo/medios-de-pago", etiqueta: "Medios de pago" },
 ];
 
 export function SolapasDeCatalogo() {

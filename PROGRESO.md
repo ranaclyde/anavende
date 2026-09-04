@@ -75,7 +75,7 @@ probó en local vive en `VERSIONS.md`.
 | F2.3 | ABM de productos | ✅ | Alta, edición, activar/desactivar, destacar y baja, con la **descripción con formato**. `description_text` y su índice quedaron en la migración `0006`. Verificado con tres scripts (`db:descripcion`, `db:markdown`, `db:productos`) y en el navegador: se cargó un producto real, se editó, se rechazó activarlo con la marca desactivada (RN-11b al revés) y se borró. **La búsqueda del «Hecho cuando» se probó contra el producto de verdad**: «cable hdmi» encuentra `Cable **HDMI** 2.1`. Necesitó un **listado mínimo** que el plan tenía en F2.5 |
 | F2.4 | Variantes de color | ✅ | Agregar, editar y sacar variantes, cada una con su stock y hasta 5 imágenes; reutilizar las de otra variante; arrastre, progreso, reordenar y elegir la principal. `db:variantes` prueba 30 reglas contra Postgres y contra Storage de verdad. Probado en el navegador de punta a punta: alta de producto que sigue en su pantalla, dos colores, tres fotos, reordenar arrastrando, «hacer principal», borrar, rechazo de un `.txt`, reutilizar las fotos de otro color, RN-11b en los dos sentidos, y borrar el producto dejando el bucket vacío. **Arrastrando aparecieron dos errores que no se veían leyendo el código** —están abajo—. Pasó por `impeccable` como pide DR §12.4, y de ahí salieron tres correcciones que sí se ven mirando: el menú de cada foto se mudó **encima de su miniatura** —debajo quedaba más cerca del número de la foto siguiente que del suyo—, la ayuda de las fotos se dice **una vez por sección** en vez de dos renglones por color, y el selector de «reutilizar las fotos de otro color» aparece **solo cuando puede hacer algo**. También se corrigió el contraste de los textos en `--ink-tertiary`, que sobre `--surface-sunken` daban 2,6:1 en claro y 3,5:1 en oscuro contra el 4,5:1 que pide §9 |
 | F2.5 | Listado de productos | ✅ | Búsqueda por nombre, marca y descripción; filtros por categoría, marca, estado **y stock**; orden por nombre, precio, stock disponible y fecha, en los dos sentidos y también desde las cabeceras de la tabla. Los tres números de stock por producto, con el cero, el stock bajo de RF-20 y el **negativo** de RF-24 señalizados. Todo el estado vive en la URL (§10.2). `db:listado` prueba 39 reglas contra Postgres de verdad. Verificado en el navegador con seis productos que cubren los cuatro avisos: «mecanico» encuentra «Mecánico», «8k a 60hz» encuentra por la descripción, «Para reponer» trae tres de seis, ordenar por una cabecera y volver a tocarla da vuelta la dirección, «Limpiar todo» conserva el orden, y el vacío y el sin-resultados dicen cosas distintas. Los productos de prueba se borraron: la base quedó como estaba. Pasó por `impeccable` como pide DR §12.4, y de ahí salieron cinco correcciones que sí se ven mirando: la **lupa se apoyaba sobre la primera letra** del texto de ayuda —abajo está por qué, y vale para todo el panel—; en las columnas de números la **flecha de ordenar se mudó adelante del título**, porque el lugar que ocupaba mientras no se veía corría el título 18px a la izquierda del borde donde terminan las cifras; la columna **Estado se ensanchó** para que «Activo» y el aviso de stock entren en la misma línea y la tabla conserve su renglón parejo de 44px (§6.9); en la tarjeta de móvil el **precio y el disponible arrancan en la misma línea**, que apilados dejaban el número grande flotando; y con el catálogo vacío **desaparece el botón del encabezado**, porque el estado vacío ya ofrece el mismo primer paso y dos botones de marca iguales a 100px uno del otro se leen como un error (§6.3) |
-| F2.6 | ABM de medios de pago | ⬜ | |
+| F2.6 | ABM de medios de pago | ✅ | Alta con logo, descripción y orden, edición, activar/desactivar y baja, en una solapa nueva del catálogo. El orden se cambia con flechas y se renumera solo. `db:pagos` prueba 26 reglas contra Postgres y contra Storage de verdad. Probado en el navegador: tres medios con y sin logo, reordenar, desactivar, borrar, y el estado vacío. **La canalización de logos se generalizó**: la que hizo F2.1 para las marcas ahora sirve a las dos, con una sola copia del orden de operaciones que evita archivos huérfanos —y se volvió a probar el logo de marca de punta a punta para asegurarse de que no se rompió—. Arrastrando el flujo apareció **un error que no se veía leyendo el código**: está abajo. Lo que RF-19 pide **mostrar** —la franja en la tienda, la ficha y el checkout— no es de esta tarea: cae en F3.7, F3.5 y F6.1, que son las pantallas donde va |
 | F2.7 | Configuración del sitio | ⬜ | |
 | F2.8 | Cargar el catálogo real | ⬜ | |
 
@@ -116,6 +116,9 @@ Cada una se escribió primero en la especificación y después en el código
 | **«Sacar» una variante también tiene dos finales** | `FUNCTIONAL-SPEC.md` RF-16 | RF-16 solo nombraba el freno por stock reservado. Pero una variante es lo que `order_items` referencia, así que RN-11 le cabe igual que al producto: si alguna orden la nombra se desactiva, y si no, se borra con sus imágenes. Sin esto, borrar el color negro de un producto vendido le rompía a la orden histórica el enlace al producto en silencio |
 | **El stock que se escribe a mano no puede ser negativo** | `FUNCTIONAL-SPEC.md` RF-16 | Parece contradecir a §5.4, y no: ahí el total negativo lo **produce** una venta ya ocurrida (RF-24) y es una discrepancia a corregir. Escribir «−3» en un formulario no registra ninguna discrepancia, es un error de tipeo que después hay que perseguir |
 | **El ajuste de stock del panel entra al libro mayor desde ya** | `modules/catalog/variants/actions.ts`; §8.1, §8.3 | §8.1 lista «ajuste de la vendedora» entre las operaciones de stock y §8.3 exige que cada cambio escriba su fila en `stock_movements` **en la misma transacción**. Se podría haber dejado para F4.1, que es donde vive el resto del libro; se hizo acá porque una fila de stock escrita sin asiento es justamente la que va a faltar el día que un número no cuadre, y porque retrofitearlo después es tocar código que ya anda |
+| **A los medios de pago no les cabe RN-11** | `FUNCTIONAL-SPEC.md` RF-19; `TECHNICAL-SPEC.md` §5.9 | Marcas, categorías y colores no se borran mientras algo los use porque las órdenes los nombran. A `payment_methods` no apunta **ninguna** clave foránea: son informativos (RN-01), el MVP no cobra online y la orden no guarda con qué se pagó. Así que borrar siempre se puede, y lo único que hay que acordarse de llevar son sus archivos. Queda escrito para que se vea que fue una decisión y no un olvido: el día que una orden guarde el medio de pago, esto se da vuelta |
+| **El orden se mueve de a un lugar, y se renumera solo** | `FUNCTIONAL-SPEC.md` RF-19; `TECHNICAL-SPEC.md` §5.9 | RF-19 pedía «orden de aparición» sin decir cómo. Un campo con el número de posición obliga a renumerar a mano para meter uno en el medio, que es justo el trabajo que la computadora hace bien. Con flechas, además, se decide contra la lista a la vista. `sort_order` se reescribe entero —0, 1, 2…— en cada alta, baja y movimiento: es también de dónde sale la posición del próximo (`max + 1`), y una numeración con huecos no falla el día que se hace sino el siguiente |
+| **Una sola implementación del logo para marcas y medios de pago** | `TECHNICAL-SPEC.md` §9.2; `modules/media/subir.ts` | Son idénticos en todo lo que importa: uno por fila, en una columna, reemplazarlo borra el anterior, borrar la fila se lleva los archivos. Lo delicado es el ORDEN —subir, apuntar la fila al nuevo, recién ahí borrar el viejo— y una segunda copia de esa secuencia es exactamente donde aparece el archivo huérfano. Quedó una secuencia y una tabla que dice, por destino, cómo se lee y se escribe su columna. Lo mismo del lado visual: el selector de logo salió del diálogo de marcas a `components/admin/logo/`, porque lo que se comparte no es el dibujo sino el comportamiento —que «Cancelar» cancele también el logo, que la vista previa se libere, que un archivo rechazado deje el campo limpio— |
 | **La búsqueda del panel no usa trigramas** | `TECHNICAL-SPEC.md` §10.3; `modules/catalog/products/queries.ts` | §10.1 combina subcadena y similitud, y estaba escrita para el comprador. La vendedora busca lo que **sabe** que existe: un resultado parecido, traído por un umbral que no se calibra hasta F3.3, le esconde el producto que fue a buscar entre otros que no pidió. Se queda la mitad por subcadena, que es la que resuelve los acentos, y se escapan `%` y `_` del término: sin eso, buscar «50%» traía el catálogo entero |
 | **El filtro de stock vive en `HAVING`** | `TECHNICAL-SPEC.md` §10.3 | Mira la suma de las variantes. En `WHERE` se evaluaría variante por variante y un producto con un color en cero y otro con diez aparecería como «sin stock»: el filtro diría que hay que comprar algo que está en la caja |
 | **«Stock negativo» no es «Sin stock», y se cuenta por variante** | `FUNCTIONAL-SPEC.md` RF-15; `TECHNICAL-SPEC.md` §10.3 | §5.4 pide que el panel destaque la discrepancia de RF-24, y el aviso genérico no alcanza: un negativo es una venta ya registrada sobre unidades que el sistema no tenía —se corrige con un ajuste—, y «sin stock» es una compra pendiente. Además hay que contarlo por variante: un color en −3 y otro en +10 suman 7 y en el total no se ve nada |
@@ -213,6 +216,42 @@ stack con datos restaura del backup y no lo crea. En esta máquina se creó a
 mano una vez. Vale saberlo antes de que alguien clone el repo, levante el
 stack sobre datos viejos y no entienda por qué falla la subida.
 
+
+**~~Un diálogo que se cierra dentro de una transición conserva lo que se
+escribió.~~** Resuelto en F2.6, y no se veía leyendo el código: un medio de
+pago se guardó con la **descripción del anterior**. El diálogo se limpiaba en
+un efecto al abrirse, que es el patrón de siempre, y el efecto no alcanza.
+`alCerrar()` corre dentro de la transición de la Server Action, así que entre
+que se guarda y que termina de revalidar hay un rato en que la pantalla sigue
+mostrando el diálogo con los valores viejos; si en ese rato se vuelve a abrir,
+las props no cambiaron, el efecto no se dispara y el formulario arranca con lo
+de antes. Se arregla de raíz: **el diálogo no existe mientras está cerrado**
+—el listado lo monta al abrir— y el estado sale de las props. Alcanza a los
+dos diálogos del panel, el de catálogo (F2.1) y el de medios de pago. **La
+lección vale para toda la fase: un `useEffect` que repone estado «al abrir»
+depende de ver un cambio de props que la transición se puede comer.**
+
+**~~`db:verificar` fallaba desde F2.3.~~** Corregido en F2.6. La comprobación
+de columnas generadas contaba —«tienen que ser 2»— y `description_text`, que
+F2.3 agregó con todo derecho, la rompió sin que nada estuviera mal. Se
+comprueban por nombre: además de no romperse al agregar una, el error dice
+cuál falta. **Una aserción que cuenta envejece; una que nombra, no.**
+
+**Los scripts de verificación quedan fuera del typecheck.** Renombrar las
+funciones del logo compiló sin una sola queja y rompió `db:imagenes`, que las
+llamaba con el nombre viejo. El motivo es el `await import()` con el que los
+scripts cargan los módulos `server-only`: TypeScript no sigue esa cadena, así
+que el nombre lo resuelve Node al ejecutarlo. **Al tocar una función que un
+script usa, el typecheck no alcanza: hay que correr los scripts.** Se corrió
+la suite entera después de generalizar la canalización, que es como apareció.
+
+**Después de guardar, el primer clic en otro botón se pierde.** Mientras la
+acción está revalidando, el diálogo sigue abierto —es el mismo rato de arriba—
+y ese clic lo recibe su fondo, que lo único que hace es cerrarlo. Se ve al
+guardar y querer crear otro enseguida: el segundo clic sí abre. No es grave y
+no tiene arreglo limpio sin cerrar el diálogo antes de que la acción termine
+—lo que mostraría el listado sin la fila nueva por un instante—, así que queda
+anotado y se decide con la primera pantalla que lo sufra de verdad.
 
 **Una utilidad suelta no le gana a la variante `admin:`.** El buscador del
 listado pedía `pl-9` para dejarle lugar a la lupa y la lupa igual quedaba

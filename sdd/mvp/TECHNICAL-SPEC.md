@@ -665,6 +665,13 @@ CREATE TABLE payment_methods (
   sort_order  integer NOT NULL DEFAULT 0,
   is_active   boolean NOT NULL DEFAULT true
 );
+```
+
+> **Nada apunta a `payment_methods`, y por eso RN-11 no le cabe.** Son informativos (RN-01): el MVP no cobra online y la orden no guarda con qué se pagó, así que no hay ninguna clave foránea hacia esta tabla. Borrar un medio de pago siempre se puede; lo único que hay que acordarse de llevar son sus archivos. El día que una orden guarde el medio de pago, esto se da vuelta y hay que traerle el mismo par de reglas del catálogo.
+>
+> **`sort_order` se renumera a 0, 1, 2… en cada alta, baja y movimiento.** Es a la vez el orden en que se muestran y de dónde sale la posición del próximo (`max + 1`): una numeración con huecos no falla el día que se hace, falla el siguiente. El listado, el movimiento y la renumeración ordenan los tres por `sort_order, immutable_unaccent(lower(name))` — si discreparan, la flecha movería el de al lado.
+
+```sql
 
 CREATE TABLE legal_pages (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -929,14 +936,19 @@ productos/{productId}/{variantId}/{imageId}-thumb.webp
                                   {imageId}-detail.webp
 ```
 
-**El logo de marca usa la misma convención con otra tabla de tamaños:**
+**Los logos usan la misma convención con otra tabla de tamaños:**
 
 ```
 marcas/{brandId}/{imageId}-thumb.webp
                  {imageId}-card.webp
+
+medios-de-pago/{paymentMethodId}/{imageId}-thumb.webp
+                                 {imageId}-card.webp
 ```
 
-Dos tamaños y no tres: un logo se muestra chico —hoy solo en el listado del panel (RF-18)— y `-detail`, pensado para la galería de una ficha a 1400px, no tiene dónde usarse. Se reutilizan los anchos de `-thumb` y `-card` en vez de inventar dos números nuevos: 200px cubre el listado en cualquier densidad de pantalla, y 600px queda para el día que haya una franja de marcas. `brands.logo_key` guarda la base, igual que `variant_images.storage_key`.
+Dos tamaños y no tres: un logo se muestra chico —hoy solo en el listado del panel (RF-18, RF-19)— y `-detail`, pensado para la galería de una ficha a 1400px, no tiene dónde usarse. Se reutilizan los anchos de `-thumb` y `-card` en vez de inventar dos números nuevos: 200px cubre el listado en cualquier densidad de pantalla, y 600px queda para las franjas de la tienda —la de marcas y la de medios de pago (RF-01)—. `brands.logo_key` y `payment_methods.logo_key` guardan la base, igual que `variant_images.storage_key`.
+
+**Una sola implementación para los dos.** El logo de marca (RF-18) y el de medio de pago (RF-19) no se distinguen en nada que importe: uno por fila, en una columna; reemplazarlo borra el anterior; borrar la fila se lleva los archivos. Lo delicado es el ORDEN de esas operaciones —subir, apuntar la fila al nuevo, recién ahí borrar el viejo—, y una segunda copia de esa secuencia es donde aparece el archivo huérfano. `modules/media/subir.ts` tiene la secuencia una vez y una tabla que dice, por destino, cómo se lee y cómo se escribe su columna.
 
 `variant_images.storage_key` guarda la base (`…/{imageId}`) y el sufijo se agrega al construir la URL. Se redimensiona con `fit: 'inside'` y sin ampliar (`withoutEnlargement`), preservando la relación de aspecto. Se descartan los metadatos EXIF, salvo la orientación, que se aplica antes de recortar.
 

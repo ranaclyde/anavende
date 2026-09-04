@@ -119,10 +119,16 @@ export function PanelDeCatalogo({
               ? `1 ${palabras.singular}`
               : `${items.length} ${palabras.plural}`}
         </p>
-        <Button variant="brand" size="sm" onClick={() => setCreando(true)}>
-          <Plus aria-hidden />
-          {palabras.nuevo}
-        </Button>
+        {/* Con la lista vacía este botón no está: el estado vacío ya ofrece
+            el mismo primer paso en el medio de la pantalla, y dos botones de
+            marca iguales a 100px uno del otro se leen como un error (§6.3:
+            una sola por pantalla). */}
+        {items.length === 0 ? null : (
+          <Button variant="brand" size="sm" onClick={() => setCreando(true)}>
+            <Plus aria-hidden />
+            {palabras.nuevo}
+          </Button>
+        )}
       </div>
 
       {errorDelServidor && !confirmacion && (
@@ -230,18 +236,25 @@ export function PanelDeCatalogo({
         </>
       )}
 
-      <DialogoDeItem
-        tipo={tipo}
-        item={null}
-        abierto={creando}
-        alCerrar={() => setCreando(false)}
-      />
-      <DialogoDeItem
-        tipo={tipo}
-        item={editando}
-        abierto={editando !== null}
-        alCerrar={() => setEditando(null)}
-      />
+      {/* El diálogo NO existe mientras está cerrado, y eso no es un ahorro:
+          es lo que garantiza que abra en blanco. Ver el comentario de
+          `DialogoDeItem`. */}
+      {creando ? (
+        <DialogoDeItem
+          tipo={tipo}
+          item={null}
+          abierto
+          alCerrar={() => setCreando(false)}
+        />
+      ) : null}
+      {editando ? (
+        <DialogoDeItem
+          tipo={tipo}
+          item={editando}
+          abierto
+          alCerrar={() => setEditando(null)}
+        />
+      ) : null}
 
       {confirmacion && (
         <DialogoDeConfirmacion

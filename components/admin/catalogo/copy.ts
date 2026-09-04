@@ -81,7 +81,13 @@ export const DESTACADO = {
   quitar: "Quitar de destacadas",
 } as const;
 
-/** El logo de marca — RF-18. Solo las marcas llevan, como con `DESTACADO`. */
+/**
+ * El logo — RF-18 (marca) y RF-19 (medio de pago).
+ *
+ * Las palabras son las mismas para los dos porque el trámite es el mismo:
+ * elegir un archivo, cambiarlo o sacarlo. Lo único que cambia es de qué se
+ * está hablando, y eso lo pone quien llama a `falloTrasCrear`.
+ */
 export const LOGO = {
   etiqueta: "Logo",
   opcional: "(opcional)",
@@ -91,7 +97,12 @@ export const LOGO = {
   ayuda: "JPG, PNG o WEBP, hasta 10 MB. Se guarda optimizado.",
   sinLogo: "Sin logo",
   subiendo: "Subiendo el logo",
-  /** Cuando la marca se creó pero su logo no pudo subirse. */
-  falloTrasCrear:
-    "La marca se creó, pero el logo no se pudo subir. Editala para intentar de nuevo.",
+  /**
+   * Cuando la fila se creó pero su logo no pudo subirse. El sujeto y el verbo
+   * los pone quien llama: «La marca … Editala» y «El medio de pago …
+   * Editalo» no se pueden armar con una sola plantilla sin que a una de las
+   * dos le quede mal el género.
+   */
+  falloTrasCrear: (sujeto: string, editar: string) =>
+    `${sujeto} se creó, pero el logo no se pudo subir. ${editar} para intentar de nuevo.`,
 } as const;

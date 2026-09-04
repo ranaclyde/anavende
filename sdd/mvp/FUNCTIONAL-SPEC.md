@@ -531,6 +531,10 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 **Criterios de aceptación:**
 - [ ] Se muestran en catálogo, ficha de producto y checkout, respetando el orden configurado.
 - [ ] Ningún medio de pago desencadena un cobro: son puramente informativos (RN-01).
+- [ ] El orden se cambia moviendo cada uno **un lugar arriba o abajo**, contra la lista a la vista. No se escribe un número de posición: eso obligaría a renumerar a mano para meter uno en el medio.
+- [ ] Uno nuevo se agrega **al final**. Elegir dónde va es la acción de mover, no un campo del alta.
+- [ ] Se puede **desactivar**: deja de mostrarse en la tienda y conserva su logo y su descripción. Es lo que corresponde cuando se deja de aceptar un medio por un tiempo.
+- [ ] **Borrar siempre se puede**, con confirmación, y se lleva el logo. A diferencia del catálogo (RN-11), ninguna orden nombra un medio de pago: no hay historial que se rompa. La confirmación ofrece desactivar en su lugar.
 
 ---
 

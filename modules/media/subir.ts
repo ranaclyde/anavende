@@ -4,6 +4,7 @@ import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { brands, productVariants, variantImages } from "@/db/schema/catalog";
+import { paymentMethods } from "@/db/schema/settings";
 import { domainError } from "@/lib/errors";
 import { almacenamiento } from "@/lib/storage";
 import { procesarImagen } from "@/modules/media/procesar";
@@ -14,6 +15,7 @@ import {
   MAXIMO_POR_VARIANTE,
   TAMANOS,
   TAMANOS_LOGO,
+  type DestinoDeLogo,
   type Tamano,
 } from "@/modules/media/tamanos";
 
@@ -324,94 +326,149 @@ export function urlDeImagen(storageKey: string, sufijo: string): string {
   return almacenamiento().publicUrl(clave(storageKey, sufijo));
 }
 
-// ── Logo de marca (RF-18) ───────────────────────────────────────────────
+// ── Logos: marca (RF-18) y medio de pago (RF-19) ────────────────────────
 //
-// Se parece a la imagen de variante y no es igual, por dos motivos que se
+// Se parecen a la imagen de variante y no son iguales, por dos motivos que se
 // notan en el código:
 //
-//   · Es UNO por marca, así que vive en una columna y no en una tabla. No hay
+//   · Es UNO por fila, así que vive en una columna y no en una tabla. No hay
 //     orden, no hay tope, no hay id propio que devolver.
 //   · Poner un logo nuevo REEMPLAZA al anterior, y el anterior hay que
 //     borrarlo. Es la diferencia que más fácil se olvida: sin eso, cada
 //     corrección de logo deja un juego de archivos que nadie muestra y nadie
 //     encuentra.
+//
+// Las dos entidades comparten LAS TRES OPERACIONES y, sobre todo, el ORDEN en
+// que hay que hacerlas —que es lo único delicado de todo esto—. Por eso hay
+// una sola implementación y una tabla que dice, por destino, cómo se lee y
+// cómo se escribe su columna. Copiarla para la segunda entidad habría sido
+// tener dos veces la misma secuencia y descubrir la diferencia el día que una
+// de las dos deje archivos sueltos.
 
-export async function publicarLogoDeMarca({
-  brandId,
+const LOGOS: Record<
+  DestinoDeLogo,
+  {
+    leer: (id: string) => Promise<string | null | undefined>;
+    escribir: (id: string, logoKey: string | null) => Promise<boolean>;
+  }
+> = {
+  marca: {
+    leer: async (id) =>
+      (
+        await db
+          .select({ logoKey: brands.logoKey })
+          .from(brands)
+          .where(eq(brands.id, id))
+      )[0]?.logoKey,
+    escribir: async (id, logoKey) =>
+      (
+        await db
+          .update(brands)
+          .set({ logoKey, updatedAt: new Date() })
+          .where(eq(brands.id, id))
+          .returning({ id: brands.id })
+      ).length > 0,
+  },
+  "medio-de-pago": {
+    leer: async (id) =>
+      (
+        await db
+          .select({ logoKey: paymentMethods.logoKey })
+          .from(paymentMethods)
+          .where(eq(paymentMethods.id, id))
+      )[0]?.logoKey,
+    // `payment_methods` no tiene `updated_at` (§5.9): es una tabla de
+    // configuración que se lee entera y no se sincroniza con nada.
+    escribir: async (id, logoKey) =>
+      (
+        await db
+          .update(paymentMethods)
+          .set({ logoKey })
+          .where(eq(paymentMethods.id, id))
+          .returning({ id: paymentMethods.id })
+      ).length > 0,
+  },
+};
+
+/**
+ * `undefined` = la fila no existe. `null` = existe y no tiene logo. Son dos
+ * respuestas distintas y las dos importan: la primera es un error, la segunda
+ * es lo normal en una marca recién creada.
+ */
+async function claveActual(
+  destino: DestinoDeLogo,
+  id: string,
+): Promise<string | null | undefined> {
+  return LOGOS[destino].leer(id);
+}
+
+export async function publicarLogo({
+  destino,
+  id,
   archivo,
 }: {
-  brandId: string;
+  destino: DestinoDeLogo;
+  id: string;
   archivo: Buffer;
 }): Promise<{ logoKey: string }> {
-  const [marca] = await db
-    .select({ logoKey: brands.logoKey })
-    .from(brands)
-    .where(eq(brands.id, brandId));
-
-  if (!marca) throw domainError("NOT_FOUND");
+  const anterior = await claveActual(destino, id);
+  if (anterior === undefined) throw domainError("NOT_FOUND");
 
   const procesada = await procesarImagen(archivo, TAMANOS_LOGO);
 
-  const base = claveDeLogo(brandId, crypto.randomUUID());
+  const base = claveDeLogo(destino, id, crypto.randomUUID());
   const subidas = await subirVersiones(base, procesada.versiones);
 
   try {
-    await db
-      .update(brands)
-      .set({ logoKey: base, updatedAt: new Date() })
-      .where(eq(brands.id, brandId));
+    await LOGOS[destino].escribir(id, base);
   } catch (e) {
     await borrarClaves(subidas);
     throw e;
   }
 
   // Recién ahora: el anterior se borra DESPUÉS de que la fila apunte al
-  // nuevo. Al revés, un fallo entre medio dejaría a la marca apuntando a
+  // nuevo. Al revés, un fallo entre medio dejaría la fila apuntando a
   // archivos borrados —un logo roto en el panel—, que es peor que un archivo
   // de más durante unos milisegundos.
-  if (marca.logoKey) {
-    await borrarClaves(clavesDe(marca.logoKey, TAMANOS_LOGO));
+  if (anterior) {
+    await borrarClaves(clavesDe(anterior, TAMANOS_LOGO));
   }
 
   return { logoKey: base };
 }
 
 /**
- * Quitar el logo: la marca se queda sin él y los archivos se van (RF-18).
+ * Quitar el logo: la fila se queda sin él y los archivos se van (RF-18,
+ * RF-19).
  *
  * La clave se lee ANTES del UPDATE. Pedirla con `returning` devolvería el
  * valor nuevo —`null`, que es justo el que se acaba de escribir— y los
  * archivos quedarían en Storage sin nada que los nombre.
  */
-export async function quitarLogoDeMarca(brandId: string): Promise<void> {
-  const [marca] = await db
-    .select({ logoKey: brands.logoKey })
-    .from(brands)
-    .where(eq(brands.id, brandId));
+export async function quitarLogo(
+  destino: DestinoDeLogo,
+  id: string,
+): Promise<void> {
+  const anterior = await claveActual(destino, id);
 
-  if (!marca) throw domainError("NOT_FOUND");
-  if (!marca.logoKey) return;
+  if (anterior === undefined) throw domainError("NOT_FOUND");
+  if (!anterior) return;
 
-  await db
-    .update(brands)
-    .set({ logoKey: null, updatedAt: new Date() })
-    .where(eq(brands.id, brandId));
+  await LOGOS[destino].escribir(id, null);
 
-  await borrarClaves(clavesDe(marca.logoKey, TAMANOS_LOGO));
+  await borrarClaves(clavesDe(anterior, TAMANOS_LOGO));
 }
 
 /**
- * Los archivos del logo de una marca, para borrarlos cuando se borra la marca
- * entera. Se lee ANTES del DELETE: después la fila ya no está y la clave se
- * perdió con ella.
+ * Los archivos del logo de una fila, para borrarlos cuando la fila se va. Se
+ * leen ANTES del DELETE: después ya no está y la clave se perdió con ella.
  */
-export async function clavesDelLogo(brandId: string): Promise<string[]> {
-  const [marca] = await db
-    .select({ logoKey: brands.logoKey })
-    .from(brands)
-    .where(eq(brands.id, brandId));
-
-  return marca?.logoKey ? clavesDe(marca.logoKey, TAMANOS_LOGO) : [];
+export async function clavesDelLogo(
+  destino: DestinoDeLogo,
+  id: string,
+): Promise<string[]> {
+  const actual = await claveActual(destino, id);
+  return actual ? clavesDe(actual, TAMANOS_LOGO) : [];
 }
 
 /** Borra archivos sueltos de Storage. Para los caminos de limpieza. */
@@ -419,7 +476,7 @@ export async function borrarArchivos(claves: string[]): Promise<void> {
   await borrarClaves(claves);
 }
 
-/** La URL del logo, en el tamaño pedido. `null` si la marca no tiene. */
+/** La URL del logo, en el tamaño pedido. `null` si la fila no tiene. */
 export function urlDeLogo(
   logoKey: string | null,
   sufijo: "thumb" | "card" = "thumb",
