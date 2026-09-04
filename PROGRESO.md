@@ -77,7 +77,7 @@ probó en local vive en `VERSIONS.md`.
 | F2.5 | Listado de productos | ✅ | Búsqueda por nombre, marca y descripción; filtros por categoría, marca, estado **y stock**; orden por nombre, precio, stock disponible y fecha, en los dos sentidos y también desde las cabeceras de la tabla. Los tres números de stock por producto, con el cero, el stock bajo de RF-20 y el **negativo** de RF-24 señalizados. Todo el estado vive en la URL (§10.2). `db:listado` prueba 39 reglas contra Postgres de verdad. Verificado en el navegador con seis productos que cubren los cuatro avisos: «mecanico» encuentra «Mecánico», «8k a 60hz» encuentra por la descripción, «Para reponer» trae tres de seis, ordenar por una cabecera y volver a tocarla da vuelta la dirección, «Limpiar todo» conserva el orden, y el vacío y el sin-resultados dicen cosas distintas. Los productos de prueba se borraron: la base quedó como estaba. Pasó por `impeccable` como pide DR §12.4, y de ahí salieron cinco correcciones que sí se ven mirando: la **lupa se apoyaba sobre la primera letra** del texto de ayuda —abajo está por qué, y vale para todo el panel—; en las columnas de números la **flecha de ordenar se mudó adelante del título**, porque el lugar que ocupaba mientras no se veía corría el título 18px a la izquierda del borde donde terminan las cifras; la columna **Estado se ensanchó** para que «Activo» y el aviso de stock entren en la misma línea y la tabla conserve su renglón parejo de 44px (§6.9); en la tarjeta de móvil el **precio y el disponible arrancan en la misma línea**, que apilados dejaban el número grande flotando; y con el catálogo vacío **desaparece el botón del encabezado**, porque el estado vacío ya ofrece el mismo primer paso y dos botones de marca iguales a 100px uno del otro se leen como un error (§6.3) |
 | F2.6 | ABM de medios de pago | ✅ | Alta con logo, descripción y orden, edición, activar/desactivar y baja, en una solapa nueva del catálogo. El orden se cambia con flechas y se renumera solo. `db:pagos` prueba 26 reglas contra Postgres y contra Storage de verdad. Probado en el navegador: tres medios con y sin logo, reordenar, desactivar, borrar, y el estado vacío. **La canalización de logos se generalizó**: la que hizo F2.1 para las marcas ahora sirve a las dos, con una sola copia del orden de operaciones que evita archivos huérfanos —y se volvió a probar el logo de marca de punta a punta para asegurarse de que no se rompió—. Arrastrando el flujo apareció **un error que no se veía leyendo el código**: está abajo. Lo que RF-19 pide **mostrar** —la franja en la tienda, la ficha y el checkout— no es de esta tarea: cae en F3.7, F3.5 y F6.1, que son las pantallas donde va |
 | F2.7 | Configuración del sitio | ✅ | Número de WhatsApp, email de avisos y umbral de stock bajo, editables desde `/admin/configuracion`. `db:configuracion` prueba 22 reglas contra Postgres de verdad, y las cuatro que importan no se ven leyendo el código: que **guardar la primera vez CREE la fila** —es un UPSERT, y con un UPDATE la pantalla diría «se guardó» sin haber guardado nada—, que la segunda pise a la primera sin que aparezca una segunda fila, que `updated_at` avance al pisar, y que **el umbral guardado llegue al listado**: con 5, un producto con 5 disponibles entra en «Para reponer»; con 4, sale. La normalización del teléfono se sacó a `lib/telefono.ts` y ahora es **una sola** para el comprador y para el sitio; el script prueba que las dos den lo mismo. Probado en el navegador: el estado sin configurar, un envío vacío que señala los dos campos y lleva el foco al primero, el número que vuelve normalizado a `+549…`, el email recortado y en minúsculas, el 101 rechazado por el servidor con su motivo y el campo vacío por el formulario con el mismo texto que usaría el servidor, en claro y en oscuro y a 390px. Arrastrando el flujo apareció **un callejón sin salida que no se veía leyendo el código**: está abajo. Pasó por `impeccable` y `ui-ux-pro-max` como pide DR §12.4, y de ahí salieron seis correcciones que sí se ven mirando: el campo del umbral dejó de ser `type="number"` y pasó a `inputMode="numeric"`, **por la misma razón que ya estaba escrita en el stock de una variante** —el campo numérico del navegador sube y baja con la rueda del mouse encima, y acá eso cambiaría el umbral de todo el catálogo mientras alguien baja la página—; el botón «Guardar» deshabilitado **dice por qué con palabras** («Todo guardado.») en vez de colgarlo de un `title`, que sobre un botón deshabilitado puede no llegar a aparecer nunca (§8); la unidad «unidades» entró en la descripción accesible del campo, que si no se lee «avisar stock bajo a partir de: 3» sin decir de qué; el esqueleto de carga usaba separaciones distintas de las de la pantalla de verdad y **la página saltaba 40px** al llegar los datos, así que ahora comparte las tres medidas y hasta la cantidad de renglones de cada ayuda; y dos textos se acortaron: la bajada del encabezado, que hablaba de «tocar el código» —vocabulario que la vendedora no tiene por qué tener (§10)—, y la de «Avisos», que decía en dos renglones lo que dice en uno. **La fila se borró al terminar**: el número de prueba no es el de nadie, y dejarlo puesto sería peor que dejarlo vacío |
-| F2.8 | Cargar el catálogo real | ⬜ | |
+| F2.8 | Cargar el catálogo real | ⛔ | **Espera producción.** «Cargados» quiere decir cargados donde van: el entorno de verdad es producción (§18.2), y F0.3 —Supabase en el VPS— y F0.7 —el bucket— están sin empezar. Cargar el catálogo real en el Postgres local sería trabajo de Ana que después hay que volcar y volver a subir. Lo que **sí** se puede hacer antes, y conviene, es la **Compuerta F2**: es una prueba de usabilidad del panel, y el panel es el mismo código acá que allá |
 
 ---
 
@@ -156,6 +156,29 @@ Cada una se escribió primero en la especificación y después en el código
 ---
 
 ## Pendiente detectado, sin tarea propia
+
+**~~«Elegí una marca» sin ninguna marca que elegir.~~** Resuelto preparando la
+Compuerta F2, y es el pozo más caro que tenía el panel: en una instalación
+nueva, `/admin/productos/nuevo` pintaba el formulario entero con el selector de
+marca conteniendo **una sola opción, que es el texto de «no elegiste nada»**.
+Ana escribía el nombre, el precio, la descripción y subía las fotos, y recién al
+guardar aparecía «Elegí una marca.»: una instrucción imposible de obedecer, sin
+decir dónde se crea una. Ahora la pantalla no pinta un formulario que no se
+puede completar: dice qué falta, por qué hace falta —marca y categoría arman el
+menú de la tienda y son por lo que el comprador filtra— y lleva a crearlo, y
+nombra **las dos** cuando faltan las dos, para que nadie cargue una marca,
+vuelva, y se encuentre con que ahora falta la categoría. Es de F2.3 y no de
+F2.7; se encontró recién ahora porque hasta hoy siempre hubo una marca cargada
+de alguna prueba anterior, que es exactamente lo que esconde un problema de
+primer uso.
+
+**~~La ayuda de los colores decía lo mismo con diez colores que con ninguno.~~**
+Resuelto en la misma pasada, y es más chico porque no es un callejón: con cero
+colores el selector igual ofrece «Único — no se vende por color», así que el
+producto se puede cargar (RF-16). Pero la ayuda decía «Los colores se cargan en
+Catálogo» en los dos casos, y con la lista vacía eso se lee como un paso
+obligatorio que falta cuando en realidad es opcional. Ahora dice que se puede
+seguir sin colores.
 
 **Los once `db:xxx` no son tests, y las especificaciones ya habían elegido
 Vitest.** `db:verificar` está en `TECHNICAL-SPEC.md` §18.3 y es legítimo; los

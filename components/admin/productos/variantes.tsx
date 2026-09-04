@@ -459,6 +459,12 @@ function DialogoDeVariante({
       .map((v) => v.colorId ?? UNICO),
   );
 
+  /**
+   * Los colores que se pueden elegir de verdad. Se mira lo mismo que filtra
+   * el selector: los activos, más el que esta variante ya tenga puesto.
+   */
+  const hayColores = colores.some((c) => c.isActive || c.id === variante?.colorId);
+
   const stockValido = ENTERO.test(stock.trim());
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
@@ -554,7 +560,15 @@ function DialogoDeVariante({
               </FieldError>
             ) : (
               <FieldHint id={`${idBase}-ayuda-color`}>
-                Los colores se cargan en Catálogo. Un color por producto.
+                {/* Con cero colores la ayuda tiene que decir otra cosa: que
+                    igual se puede seguir. Si no, el selector ofrece «Único» y
+                    una frase sobre dónde se cargan los colores, y parece que
+                    falta un paso obligatorio que en realidad es opcional
+                    (RF-16: una variante sin color es un producto que no se
+                    vende por color). */}
+                {hayColores
+                  ? "Los colores se cargan en Catálogo. Un color por producto."
+                  : "Todavía no cargaste ningún color. Podés vender este producto sin colores, o cargarlos en Catálogo → Colores y volver."}
               </FieldHint>
             )}
           </div>
