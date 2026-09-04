@@ -8,8 +8,10 @@ import { paymentMethods } from "@/db/schema/settings";
 import { action } from "@/lib/action";
 import { domainError } from "@/lib/errors";
 import { borrarArchivos, clavesDelLogo, quitarLogo } from "@/modules/media/subir";
+import { escribirLaConfiguracion } from "@/modules/settings/service";
 import {
   cambioDeEstadoDePago,
+  configuracionDelSitio,
   crearMedioDePago,
   editarMedioDePago,
   movimientoDePago,
@@ -215,4 +217,37 @@ export const eliminarUnMedioDePago = action
 
     refrescar();
     return { id: input.id };
+  });
+
+/* ── Configuración del sitio — RF-20, §5.9 ─────────────────────────────── */
+
+/**
+ * Guardar la configuración del sitio.
+ *
+ * La escritura vive en `service.ts` y no acá: es un UPSERT cuyo
+ * comportamiento —la primera vez crea la fila, las siguientes la pisan— es
+ * justo lo que hay que poder probar contra Postgres de verdad, y un script no
+ * puede llamar a una Server Action. Acá quedan las tres cosas que sí son de
+ * la acción: el rol, la validación y decidir qué se invalida.
+ */
+export const guardarLaConfiguracion = action
+  .input(configuracionDelSitio)
+  .auth("admin")
+  .handler(async ({ input }) => {
+    const guardada = await escribirLaConfiguracion(input);
+
+    // Todo, y a propósito. El umbral lo lee el listado de productos y lo va a
+    // leer el dashboard (RF-14); el número de WhatsApp, cada ficha y cada
+    // botón de compra de la tienda (RF-04). Son tres o cuatro pantallas hoy y
+    // más mañana, y una lista de rutas acá es una lista que el día que se
+    // agrega una pantalla nadie se acuerda de actualizar: el síntoma sería un
+    // umbral guardado que la tienda sigue ignorando, sin ningún error a la
+    // vista. Se paga con revalidar de más algo que se toca una vez por mes.
+    revalidatePath("/", "layout");
+
+    // Se devuelve lo GUARDADO y no lo enviado: el número vuelve normalizado a
+    // `+549…`, y el formulario lo muestra tal cual quedó. Escribir
+    // «11 5555 5555» y ver «+5491155555555» es la confirmación de que se
+    // entendió lo que se escribió.
+    return guardada;
   });

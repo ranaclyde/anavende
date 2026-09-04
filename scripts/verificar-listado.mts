@@ -363,7 +363,7 @@ try {
     (await umbralDeStockBajo()) === (fila?.u ?? 3),
     fila
       ? `El umbral sale de site_settings (${fila.u})`
-      : "Sin la fila de configuración —la escribe F2.7— el umbral es 3",
+      : "Sin la fila de configuración —la escribe la vendedora en F2.7— el umbral es 3",
   );
 } finally {
   if (productos.length) {

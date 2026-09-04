@@ -8,10 +8,12 @@ import { urlDeLogo } from "@/modules/media/subir";
 /**
  * Configuración del sitio — RF-20, §5.9.
  *
- * La tabla es un singleton garantizado por CHECK, pero la fila puede NO
- * existir todavía: quien la crea y la edita es F2.7. Hasta entonces el
- * listado de productos necesita el umbral igual, así que se lee con
- * respaldo en vez de fallar.
+ * La tabla es un singleton garantizado por CHECK, y la fila puede NO
+ * existir: **no la escribe ninguna migración, la escribe la vendedora** la
+ * primera vez que guarda la pantalla de configuración (F2.7). No podría ser
+ * de otra manera: sus dos columnas de texto son NOT NULL y no hay número de
+ * WhatsApp ni email que una migración pueda inventar. Así que el respaldo
+ * del umbral no era algo provisorio de F2.5: es permanente.
  */
 
 /**
@@ -19,8 +21,12 @@ import { urlDeLogo } from "@/modules/media/subir";
  *
  * Está repetido a propósito y no derivado: la base decide el valor de la
  * fila nueva, y este decide qué pasa cuando NO hay fila. Son dos preguntas
- * distintas que hoy tienen la misma respuesta; el día que F2.7 escriba la
- * fila, esta constante deja de usarse sola.
+ * distintas que hoy tienen la misma respuesta.
+ *
+ * También es lo que la pantalla de configuración muestra en el campo antes
+ * de la primera vez, y eso importa: si ofreciera otro número, guardar sin
+ * tocar nada cambiaría el comportamiento del listado sin que nadie lo
+ * hubiera pedido.
  */
 export const UMBRAL_DE_STOCK_BAJO_POR_DEFECTO = 3;
 
@@ -29,6 +35,32 @@ export async function umbralDeStockBajo(): Promise<number> {
     SELECT low_stock_threshold AS umbral FROM site_settings WHERE id = 1
   `);
   return fila?.umbral ?? UMBRAL_DE_STOCK_BAJO_POR_DEFECTO;
+}
+
+export type ConfiguracionDelSitio = {
+  /** Normalizado a `+549…` (`lib/telefono.ts`). */
+  whatsappNumber: string;
+  adminNotificationEmail: string;
+  lowStockThreshold: number;
+};
+
+/**
+ * La configuración entera, para la pantalla que la edita.
+ *
+ * Devuelve `null` —y no valores de relleno— cuando todavía no se guardó
+ * nunca. Es la diferencia entre «acá dice 3 porque lo elegiste» y «acá dice
+ * 3 porque es lo que usa el sistema mientras no elijas»: quien lo tiene que
+ * distinguir es la pantalla, y con un objeto ya rellenado no podría.
+ */
+export async function leerLaConfiguracion(): Promise<ConfiguracionDelSitio | null> {
+  const [fila] = await db.execute<ConfiguracionDelSitio>(sql`
+    SELECT whatsapp_number           AS "whatsappNumber",
+           admin_notification_email  AS "adminNotificationEmail",
+           low_stock_threshold       AS "lowStockThreshold"
+      FROM site_settings
+     WHERE id = 1
+  `);
+  return fila ?? null;
 }
 
 /**

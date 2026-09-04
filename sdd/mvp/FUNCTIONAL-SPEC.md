@@ -541,10 +541,11 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 ### RF-20 — Configuración del sitio
 
 **Criterios de aceptación:**
-- [ ] Número de WhatsApp de contacto/ventas.
-- [ ] Email de la administradora para avisos de órdenes.
-- [ ] Datos de contacto y textos legales editables (RF-29).
-- [ ] Umbral de «stock bajo» usado en el dashboard y en el listado de productos.
+- [ ] Número de WhatsApp de contacto/ventas. Se escribe **como salga** —con o sin +54, con o sin 9, con espacios o guiones— y se guarda **normalizado a `+549…`**: es la misma regla que el teléfono del comprador (RF-05) y la misma implementación, para que el enlace `wa.me` se arme concatenando y no haya que adivinar en cada pantalla qué forma tenía el que se cargó.
+- [ ] Email de la administradora para avisos de órdenes. **Puede ser distinto del email con el que entra al panel**: atarlo a la identidad la obligaría a cambiar de cuenta para cambiar de casilla.
+- [ ] Datos de contacto y textos legales editables (RF-29). **No son de esta pantalla**: viven en `legal_pages`, con su propio editor de Markdown.
+- [ ] Umbral de «stock bajo» usado en el dashboard y en el listado de productos. Es un entero **del 1 al 100**: con 0 el aviso no se encendería nunca —y «Sin stock» ya cubre ese caso, así que sería apagar una función en vez de configurarla—, y por encima de 100 marcaría casi todo el catálogo, que es dejar de señalar nada.
+- [ ] Mientras **nada esté guardado** la pantalla lo dice, y dice también con qué está funcionando el sistema mientras tanto: sin número de WhatsApp para la tienda y con el aviso de stock bajo en 3. Los campos ya muestran ese 3, porque ofrecer otro número haría que guardar sin tocar nada cambiara el listado sin que nadie lo pidiera.
 
 ---
 

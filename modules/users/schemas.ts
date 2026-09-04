@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { telefonoArgentino } from "@/lib/telefono";
+
 /**
  * Validación de identidad — se usa en el cliente y en el servidor.
  * El envoltorio de Server Actions la vuelve a correr en el servidor aunque el
@@ -9,22 +11,16 @@ import { z } from "zod";
 /**
  * Teléfono argentino, obligatorio en las tres vías de alta (RF-05, F1.9).
  * Es el canal por el que se coordina la venta: sin él la orden no sirve.
- * Se acepta con o sin +54, con o sin 9, con espacios y guiones, y se guarda
- * normalizado a solo dígitos con el prefijo internacional.
+ *
+ * La normalización vive en `lib/telefono.ts` porque el número de WhatsApp
+ * del sitio (RF-20) sigue exactamente la misma regla. Acá quedan los
+ * mensajes, que son lo único distinto: los lee quien se está registrando.
  */
-export const telefono = z
-  .string()
-  .trim()
-  .min(1, "Necesitamos tu teléfono para coordinar la entrega.")
-  .transform((v) => v.replace(/[\s()-]/g, ""))
-  .refine((v) => /^(\+?54)?9?\d{10}$/.test(v.replace(/^\+/, "+")), {
-    error:
-      "Ese teléfono no parece válido. Escribilo con característica, por ejemplo 11 5555 5555.",
-  })
-  .transform((v) => {
-    const digitos = v.replace(/\D/g, "").replace(/^54/, "").replace(/^9/, "");
-    return `+549${digitos}`;
-  });
+export const telefono = telefonoArgentino({
+  requerido: "Necesitamos tu teléfono para coordinar la entrega.",
+  invalido:
+    "Ese teléfono no parece válido. Escribilo con característica, por ejemplo 11 5555 5555.",
+});
 
 export const nombreCompleto = z
   .string()

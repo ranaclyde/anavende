@@ -667,6 +667,8 @@ CREATE TABLE payment_methods (
 );
 ```
 
+> **La fila de `site_settings` la crea la pantalla de configuración, no una migración.** Sus dos columnas de texto son `NOT NULL` y no hay número de WhatsApp ni email que una migración pueda inventar, así que la primera vez que la vendedora guarda es también la primera vez que la fila existe: se escribe con `INSERT … ON CONFLICT (id) DO UPDATE`, con el `id = 1` explícito para que el conflicto tenga contra qué chocar. Con un `UPDATE` a secas esa primera vez no afectaría ninguna fila y la pantalla diría «se guardó» sin haber guardado nada. Consecuencia para todo lo que lea esta tabla: **hay que contemplar que no haya fila** (§10.3). `updated_at` se escribe a mano al pisar, porque su `DEFAULT` solo corre al insertar.
+>
 > **Nada apunta a `payment_methods`, y por eso RN-11 no le cabe.** Son informativos (RN-01): el MVP no cobra online y la orden no guarda con qué se pagó, así que no hay ninguna clave foránea hacia esta tabla. Borrar un medio de pago siempre se puede; lo único que hay que acordarse de llevar son sus archivos. El día que una orden guarde el medio de pago, esto se da vuelta y hay que traerle el mismo par de reglas del catálogo.
 >
 > **`sort_order` se renumera a 0, 1, 2… en cada alta, baja y movimiento.** Es a la vez el orden en que se muestran y de dónde sale la posición del próximo (`max + 1`): una numeración con huecos no falla el día que se hace, falla el siguiente. El listado, el movimiento y la renumeración ordenan los tres por `sort_order, immutable_unaccent(lower(name))` — si discreparan, la flecha movería el de al lado.
@@ -1055,7 +1057,7 @@ Comparte con §10.2 la decisión de fondo —el estado vive en la URL— y se se
 
 El orden siempre termina con `immutable_unaccent(lower(name)), id`: sin un criterio único, dos productos del mismo precio pueden cambiar de lugar entre dos cargas de la misma pantalla.
 
-El **umbral de stock bajo** se lee de `site_settings` (§5.9), que es una fila única. Mientras esa fila no exista —la escribe F2.7— se usa el mismo `3` que declara el `DEFAULT` de la columna. Son dos preguntas distintas con la misma respuesta: la base decide el valor de la fila nueva y el código decide qué pasa cuando no hay fila.
+El **umbral de stock bajo** se lee de `site_settings` (§5.9), que es una fila única. Mientras esa fila no exista se usa el mismo `3` que declara el `DEFAULT` de la columna. Son dos preguntas distintas con la misma respuesta: la base decide el valor de la fila nueva y el código decide qué pasa cuando no hay fila. **El respaldo es permanente, no provisorio**: la fila no la escribe ninguna migración sino la vendedora, la primera vez que guarda la pantalla de configuración (RF-20), y hasta ese día el listado tiene que seguir funcionando.
 
 ---
 

@@ -22,7 +22,8 @@
     "db:productos": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-productos.mts",
     "db:variantes": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-variantes.mts",
     "db:listado": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-listado.mts",
-    "db:pagos": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-pagos.mts"
+    "db:pagos": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-pagos.mts",
+    "db:configuracion": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-configuracion.mts"
   },
   "dependencies": {
     "@lexical/list": "^0.50.0",
