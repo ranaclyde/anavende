@@ -180,6 +180,19 @@ Catálogo» en los dos casos, y con la lista vacía eso se lee como un paso
 obligatorio que falta cuando en realidad es opcional. Ahora dice que se puede
 seguir sin colores.
 
+**Los scripts que escriben ya no pueden correr contra producción.** Nueve de
+los once crean marcas, productos y variantes, suben archivos al bucket y
+después los borran; contra el stack local no le importa a nadie, contra la base
+de Ana son filas y archivos de mentira dentro del catálogo real —y si uno
+revienta a mitad, como ya pasó, quedan ahí—. `scripts/solo-local.mts` los frena
+salvo que la base sea exactamente la del stack local. **Los tres de solo lectura
+—`db:verificar`, `db:drizzle`, `db:markdown`— quedaron sin guarda a propósito**:
+`db:verificar` contra producción es justamente cómo se cierra F0.6, y una
+guarda que también los frenara sería algo que hay que esquivar. La guarda mira
+**host y puerto**, no solo el host, porque el acceso a producción va por túnel
+SSH y a través de un túnel producción se ve como `127.0.0.1`; de ahí la regla
+que hay que respetar del otro lado: **el túnel nunca usa el puerto 54322**.
+
 **Los once `db:xxx` no son tests, y las especificaciones ya habían elegido
 Vitest.** `db:verificar` está en `TECHNICAL-SPEC.md` §18.3 y es legítimo; los
 otros diez —`db:catalogo`, `db:descripcion`, `db:markdown`, `db:productos`,

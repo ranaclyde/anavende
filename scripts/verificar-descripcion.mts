@@ -14,6 +14,10 @@ import postgres from "postgres";
 
 try { process.loadEnvFile(".env.local"); } catch {}
 
+// Escribe en la base: no corre contra nada que no sea el stack local.
+const { soloLocal } = await import("./solo-local.mts");
+soloLocal("db:descripcion");
+
 const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
 let fallos = 0;
 
