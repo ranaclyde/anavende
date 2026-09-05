@@ -34,7 +34,7 @@ justamente por ese número).
 | F0.1 | Servidores en DonWeb unidos por LAN | 🟡 | Hay **un** VPS con el stack completo. La separación APP/DATA de §2.2 no existe todavía: el servidor APP y la LAN privada quedan para cuando se despliegue la aplicación |
 | F0.2 | Coolify + limpieza de Docker | ⬜ | Postergada por decisión tuya |
 | F0.3 | Supabase en el servidor DATA | ✅ | Docker compose oficial, doce servicios. GoTrue v2.184.0, Postgres 15.8. Studio por HTTPS en `https://vps-6346459-x.dattaweb.com` |
-| F0.4 | Cerrar Postgres al mundo | 🟡 | **Compuerta F0.** `supabase-db` no publica puerto, pero **`supabase-pooler` sí publica 5432 y 6543 en `0.0.0.0`**. Desde afuera no responde —el intento da *timeout*, no *connection refused*—, o sea que hay un firewall tapándolo. **Falta verificar cuál y que esté puesto a propósito**: hoy la base depende de una capa que nadie revisó |
+| F0.4 | Cerrar Postgres al mundo | 🟡 | **Compuerta F0.** Cerrado por dos capas independientes y verificado desde afuera. **(a)** El firewall virtual de DonWeb bloquea todo por defecto y abre solo 80, 443 y 5400 (SSH): el 5432 nunca estuvo en la lista. **(b)** `supabase-pooler` publicaba 5432 y 6543 en `0.0.0.0` —o sea que la única defensa era el perímetro de DonWeb— y ahora publica en `127.0.0.1`, por `docker-compose.override.yml` con `ports: !override`. Sin (b), borrar una regla en el panel de DonWeb dejaba la base abierta a internet. `DOCKER-USER` está vacía: no hay ni hubo firewall local. **Lo que falta es lo que no se puede hacer todavía**: «firewall local activo en **ambos** servidores» necesita que exista el segundo (F0.1). Cuando exista, son tres cosas y están acá para no redescubrirlas: publicar el pooler en la **IP privada** en vez de `127.0.0.1`, firewall local en los dos —y en el DATA tiene que ir en la cadena `DOCKER-USER`, porque **Docker se saltea `ufw`** y un `ufw` solo daría falsa tranquilidad—, y `pg_hba.conf` restringido a la IP del APP. El firewall de DonWeb **no sirve para esto**: es perimetral y no toca el tráfico de la LAN privada (§2.4) |
 | F0.5 | Restringir Studio | ⬜ | Studio queda accesible por HTTPS con usuario y contraseña del dashboard. §2.4 pide además restricción por IP |
 | F0.6 | `pg_trgm` y `unaccent` | ✅ | **Compuerta F0.** Las crea la migración `0000`. `db:verificar` contra producción: las dos extensiones, `immutable_unaccent` IMMUTABLE, y las dos pruebas que importan —«mecanico» encuentra «Mecánico» con la misma similitud que con acento, «lojitech» encuentra «Logitech» con 0,500— |
 | F0.7 | Storage: subir, leer, borrar | ✅ | Bucket `productos` creado en Studio con los tres valores de `supabase/config.toml`: público en lectura, 10 MiB, solo `image/webp`. `db:imagenes` pasó entero contra ese bucket. **R6 no se materializó**: ni una falla de firma S3, y la prueba difícil —una subida cortada en el tercer tamaño— no dejó huérfanos |
@@ -142,28 +142,22 @@ Cada una se escribió primero en la especificación y después en el código
 
 ## Qué está esperando algo tuyo
 
-1. **F0.4 — qué está tapando el puerto 5432.** Es lo más urgente de la lista.
-   `supabase-pooler` lo publica en `0.0.0.0` y desde afuera no responde, así
-   que hay un firewall haciendo el trabajo. **Nadie verificó cuál ni si está
-   puesto a propósito**: si es el firewall virtual de DonWeb, §2.4 avisa que
-   no cubre la interfaz privada. Hoy la base está cerrada por una capa que no
-   revisamos, y eso no es lo mismo que estar cerrada.
-2. **F0.9 — la versión de Postgres.** El VPS corre **15.8** y
+1. **F0.9 — la versión de Postgres.** El VPS corre **15.8** y
    `supabase/config.toml` declara `major_version = 17`. Igualarlas, o dejar
    escrito por qué no.
-3. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
+2. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
    Meta for Developers, con `/auth/v1/callback` como URI de retorno. El código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
-4. **F2.7 — el número y la casilla de verdad.** La pantalla está y anda, pero
+3. **F2.7 — el número y la casilla de verdad.** La pantalla está y anda, pero
    la fila quedó **vacía a propósito**: el número con el que se probó no es el
    de nadie, y un `wa.me` apuntando a un número inventado es peor que un botón
    que todavía no está. Hay que entrar a `/admin/configuracion` y cargar el
    número de WhatsApp real y la casilla donde querés los avisos. Hasta que eso
    pase, el aviso de stock bajo funciona con 3 unidades.
-5. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
+4. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-6. **F0.10 — el backup.** La base de producción ya tiene datos que importan
+5. **F0.10 — el backup.** La base de producción ya tiene datos que importan
    —el catálogo real entra por F2.8— y todavía no hay volcado diario ni una
    restauración de prueba. Un backup que nunca se restauró no es un backup.
 
