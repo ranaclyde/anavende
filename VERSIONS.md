@@ -23,7 +23,8 @@ desarrollo pasó a apuntar al servidor DATA.
 | sharp | 0.35.x | 0.35.4 |
 | Lexical (editor de la descripción, RF-15) | 0.50.x | 0.50.0 (`@lexical/react`, `list`, `rich-text`, `markdown`, `utils`) |
 | mdast (sanitizador del servidor, §16) | — | `from-markdown` 2.0.3, `to-markdown` 2.1.2, `gfm` 3.1.0, `micromark-extension-gfm` 3.0.0 |
-| Resend + React Email | resend 6.x | pendiente F1.8 |
+| React Email | — | **`react-email` 6.9.3**, y es el paquete entero. `@react-email/components` está **deprecado en todas sus versiones**: la 6 unificó componentes, `render` y CLI en uno solo. Se instaló el deprecado primero y se revirtió — los mantenedores son los de `resend/react-email`, así que no es un secuestro del paquete |
+| Resend (envío de E4) | resend 6.x | pendiente, cuando E4 se conecte |
 | ExcelJS | 4.x | pendiente F9.2 |
 | Sentry | @sentry/nextjs | 10.73.0 |
 | decimal.js (aritmética de montos, §7.1) | — | 10.6.0 |

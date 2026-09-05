@@ -24,7 +24,8 @@
     "db:listado": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-listado.mts",
     "db:pagos": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-pagos.mts",
     "db:configuracion": "NODE_OPTIONS=--conditions=react-server tsx scripts/verificar-configuracion.mts",
-    "sondear:resend": "tsx scripts/sondear-resend.mts"
+    "sondear:resend": "tsx scripts/sondear-resend.mts",
+    "email": "tsx lib/email/generar.mts"
   },
   "dependencies": {
     "@lexical/list": "^0.50.0",
@@ -55,6 +56,7 @@
     "postgres": "^3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-email": "6.9.3",
     "server-only": "^0.0.1",
     "sharp": "^0.35.4",
     "tailwind-merge": "^3.3.0",

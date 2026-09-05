@@ -47,3 +47,7 @@ next-env.d.ts
 # ia
 /.claude
 /.impeccable
+
+# La previsualización de los emails se regenera con `npm run email`. Lo que
+# sí se commitea es `public/emails/*.html`, que es lo que descarga GoTrue.
+public/emails/vista-previa/
