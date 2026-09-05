@@ -33,13 +33,13 @@ justamente por ese número).
 |---|---|---|---|
 | F0.1 | Servidores en DonWeb unidos por LAN | 🟡 | Hay **un** VPS con el stack completo. La separación APP/DATA de §2.2 no existe todavía: el servidor APP y la LAN privada quedan para cuando se despliegue la aplicación |
 | F0.2 | Coolify + limpieza de Docker | ⬜ | Postergada por decisión tuya |
-| F0.3 | Supabase en el servidor DATA | ✅ | Docker compose oficial, doce servicios. GoTrue v2.184.0, Postgres 15.8. Studio por HTTPS en `https://vps-6346459-x.dattaweb.com` |
+| F0.3 | Supabase en el servidor DATA | ✅ | Docker compose oficial, trece servicios (etiquetas exactas en `VERSIONS.md`). GoTrue v2.184.0, Postgres 15.8. Studio por HTTPS en `https://vps-6346459-x.dattaweb.com` |
 | F0.4 | Cerrar Postgres al mundo | 🟡 | **Compuerta F0.** Cerrado por dos capas independientes y verificado desde afuera. **(a)** El firewall virtual de DonWeb bloquea todo por defecto y abre solo 80, 443 y 5400 (SSH): el 5432 nunca estuvo en la lista. **(b)** `supabase-pooler` publicaba 5432 y 6543 en `0.0.0.0` —o sea que la única defensa era el perímetro de DonWeb— y ahora publica en `127.0.0.1`, por `docker-compose.override.yml` con `ports: !override`. Sin (b), borrar una regla en el panel de DonWeb dejaba la base abierta a internet. `DOCKER-USER` está vacía: no hay ni hubo firewall local. **Lo que falta es lo que no se puede hacer todavía**: «firewall local activo en **ambos** servidores» necesita que exista el segundo (F0.1). Cuando exista, son tres cosas y están acá para no redescubrirlas: publicar el pooler en la **IP privada** en vez de `127.0.0.1`, firewall local en los dos —y en el DATA tiene que ir en la cadena `DOCKER-USER`, porque **Docker se saltea `ufw`** y un `ufw` solo daría falsa tranquilidad—, y `pg_hba.conf` restringido a la IP del APP. El firewall de DonWeb **no sirve para esto**: es perimetral y no toca el tráfico de la LAN privada (§2.4) |
 | F0.5 | Restringir Studio | ⬜ | Studio queda accesible por HTTPS con usuario y contraseña del dashboard. §2.4 pide además restricción por IP |
 | F0.6 | `pg_trgm` y `unaccent` | ✅ | **Compuerta F0.** Las crea la migración `0000`. `db:verificar` contra producción: las dos extensiones, `immutable_unaccent` IMMUTABLE, y las dos pruebas que importan —«mecanico» encuentra «Mecánico» con la misma similitud que con acento, «lojitech» encuentra «Logitech» con 0,500— |
 | F0.7 | Storage: subir, leer, borrar | ✅ | Bucket `productos` creado en Studio con los tres valores de `supabase/config.toml`: público en lectura, 10 MiB, solo `image/webp`. `db:imagenes` pasó entero contra ese bucket. **R6 no se materializó**: ni una falla de firma S3, y la prueba difícil —una subida cortada en el tercer tamaño— no dejó huérfanos |
 | F0.8 | Latencia real de la LAN | ⬜ | Sin sentido hasta que exista el segundo servidor (F0.1) |
-| F0.9 | Fijar versiones del stack | 🟡 | Falta registrar las de infraestructura en `VERSIONS.md`. **Y hay un desfase que corregir**: `supabase/config.toml` declara `major_version = 17` y el VPS corre **Postgres 15.8**. §18.2 pide igualarlas |
+| F0.9 | Fijar versiones del stack | ✅ | Aplicación e infraestructura registradas en `VERSIONS.md`, con las **trece imágenes** del stack del VPS y su etiqueta exacta: son el parámetro de toda consulta a `context7` (§1.2 regla 6), y una actualización silenciosa de cualquiera es un cambio de producción que nadie pidió. El desfase de versión mayor quedó corregido: `supabase/config.toml` pasó de `major_version = 17` a **15**, la del servidor DATA (§18.2) |
 | F0.10 | Backup con restauración de prueba | ⬜ | |
 | F0.11 | Resend como SMTP de Supabase | ✅ | **Compuerta F0.** `SMTP_HOST=smtp.resend.com`, puerto 465, usuario `resend` y la API key como contraseña, remitente en el dominio verificado. Los emails llegan a Gmail sin ir a spam. Reemplazó al contenedor `supabase-mail`, que **ni siquiera estaba corriendo**: el registro en producción estaba roto y no se veía |
 | F0.12 | Admin API de Auth | ✅ | Usada de verdad contra producción: listar y borrar usuarios por `service_role`. El borrado se lleva el perfil solo, por el `ON DELETE CASCADE` de la migración `0002` |
@@ -142,22 +142,19 @@ Cada una se escribió primero en la especificación y después en el código
 
 ## Qué está esperando algo tuyo
 
-1. **F0.9 — la versión de Postgres.** El VPS corre **15.8** y
-   `supabase/config.toml` declara `major_version = 17`. Igualarlas, o dejar
-   escrito por qué no.
-2. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
+1. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
    Meta for Developers, con `/auth/v1/callback` como URI de retorno. El código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
-3. **F2.7 — el número y la casilla de verdad.** La pantalla está y anda, pero
+2. **F2.7 — el número y la casilla de verdad.** La pantalla está y anda, pero
    la fila quedó **vacía a propósito**: el número con el que se probó no es el
    de nadie, y un `wa.me` apuntando a un número inventado es peor que un botón
    que todavía no está. Hay que entrar a `/admin/configuracion` y cargar el
    número de WhatsApp real y la casilla donde querés los avisos. Hasta que eso
    pase, el aviso de stock bajo funciona con 3 unidades.
-4. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
+3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-5. **F0.10 — el backup.** La base de producción ya tiene datos que importan
+4. **F0.10 — el backup.** La base de producción ya tiene datos que importan
    —el catálogo real entra por F2.8— y todavía no hay volcado diario ni una
    restauración de prueba. Un backup que nunca se restauró no es un backup.
 

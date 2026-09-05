@@ -5,7 +5,8 @@
 Se consulta la documentación de *estas* versiones, no de la última publicada.
 
 Registrado el 2026-09-02 — tarea F0.9, parte de aplicación.
-Las piezas de infraestructura se completan cuando F0 esté hecha.
+Ampliado el 2026-09-05 con la infraestructura de producción, cuando el
+desarrollo pasó a apuntar al servidor DATA.
 
 | Pieza | Referencia (TS §2.1) | Instalada |
 |---|---|---|
@@ -27,9 +28,32 @@ Las piezas de infraestructura se completan cuando F0 esté hecha.
 | Sentry | @sentry/nextjs | 10.73.0 |
 | decimal.js (aritmética de montos, §7.1) | — | 10.6.0 |
 | Vitest + Playwright | — | pendiente F4.6 / F10.2 |
-| PostgreSQL | 15+ | **pendiente F0.3** — en local corre 17.6 (dev) |
-| Supabase auto-hospedado | — | **pendiente F0.3** — en local, el stack del CLI (dev) |
+| PostgreSQL (servidor DATA) | 15+ | **15.8** (`supabase/postgres:15.8.1.085`) — `supabase/config.toml` igualado a esta |
+| Supabase auto-hospedado (servidor DATA) | — | *docker compose* oficial. Las trece imágenes, abajo |
 | Coolify | — | **pendiente F0.2** |
+
+### Imágenes del stack del servidor DATA
+
+Registradas el 2026-09-05 con `docker ps --format '{{.Names}}\t{{.Image}}'`.
+Las tres primeras son las que el código toca de verdad; el resto se anota
+porque una actualización silenciosa de cualquiera de ellas es un cambio de
+producción que nadie pidió.
+
+| Servicio | Imagen |
+|---|---|
+| Postgres | `supabase/postgres:15.8.1.085` |
+| Auth (GoTrue) | `supabase/gotrue:v2.184.0` |
+| Storage | `supabase/storage-api:v1.33.0` |
+| Pooler (Supavisor) | `supabase/supavisor:2.7.4` |
+| API REST | `postgrest/postgrest:v14.1` |
+| Pasarela | `kong:2.8.1` |
+| Studio | `supabase/studio:2025.12.17-sha-43f4f7f` |
+| Metadatos | `supabase/postgres-meta:v0.95.1` |
+| Realtime | `supabase/realtime:v2.68.0` |
+| Edge Functions | `supabase/edge-runtime:v1.69.28` |
+| Analytics (Logflare) | `supabase/logflare:1.27.0` |
+| Vector | `timberio/vector:0.28.1-alpine` |
+| imgproxy | `darthsim/imgproxy:v3.8.0` |
 
 ---
 
@@ -40,12 +64,19 @@ Lo comprobado contra el stack local **no cierra una tarea de F0**
 
 | Tarea | Local | Producción |
 |---|---|---|
-| F0.6 `pg_trgm` y `unaccent` con similitud real | ✅ comprobado | ⬜ pendiente |
-| F0.7 Storage: subir, leer, borrar | ⬜ | ⬜ pendiente |
-| F0.12 Admin API de Auth | ⬜ | ⬜ pendiente |
+| F0.3 Supabase en el servidor DATA | — | ✅ |
+| F0.4 Cerrar Postgres al mundo | — | 🟡 cerrado y verificado; falta el firewall local, que necesita el segundo servidor |
+| F0.6 `pg_trgm` y `unaccent` con similitud real | ✅ comprobado | ✅ `db:verificar` contra el VPS |
+| F0.7 Storage: subir, leer, borrar | ⬜ | ✅ `db:imagenes` contra el bucket `productos` del VPS |
+| F0.11 Resend como SMTP | — sin equivalente local (Mailpit) | ✅ emails reales a una casilla de verdad |
+| F0.12 Admin API de Auth | ⬜ | ✅ listar y borrar por `service_role` |
 | F0.13 *Send Email Hook* auto-hospedado | ⬜ | ⬜ pendiente |
-| F0.1 – F0.5, F0.8, F0.10, F0.11 | — sin equivalente local | ⬜ pendiente |
+| F0.1, F0.2, F0.5, F0.8, F0.10 | — sin equivalente local | ⬜ pendiente |
 
-**F0.11 es la que muerde primero.** Sin Resend como SMTP no hay registro
-posible en producción, y no se descubre hasta que alguien intenta crearse
-una cuenta. En local no se nota: Mailpit captura todo.
+**Lo que hay que recordar de este cruce.** Los tres caminos de email —alta,
+reenvío y recuperación— **funcionaban en local y llegaron rotos a
+producción**, todos por lo mismo: el endpoint `/resend` de GoTrue descarta el
+`code_challenge` de PKCE. En local no se veía porque nunca se hizo clic en un
+enlace de Mailpit. Es el ejemplo más caro hasta ahora de por qué §18.2 dice
+que el entorno de verdad es producción. El detalle está en `PROGRESO.md`,
+en las decisiones.

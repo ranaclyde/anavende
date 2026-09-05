@@ -1,7 +1,11 @@
-# Stack de DESARROLLO LOCAL. No describe producción: el Supabase del
-# servidor DATA se aprovisiona en F0.3 y su configuración vive allá.
-# Ver TECHNICAL-SPEC §18.2. Igualar `major_version` a la de ese servidor
-# en cuanto exista.
+# Stack de DESARROLLO LOCAL, y ya no se usa: desde el 2026-09-05 el desarrollo
+# apunta al Supabase del servidor DATA (TECHNICAL-SPEC §18.2, PROGRESO F0.3).
+# Se conserva porque `[storage.buckets.productos]` es la declaración de los
+# tres valores del bucket, que es lo que se replicó en producción.
+#
+# `major_version` quedó igualado a la del servidor DATA, como pide §18.2. Si
+# algún día se vuelve a levantar el stack local, va a pedir un `supabase db
+# reset`: el volumen que hay en disco es de otra versión mayor.
 
 # For detailed configuration reference documentation, visit:
 # https://supabase.com/docs/guides/local-development/cli/config
@@ -43,7 +47,7 @@ shadow_port = 54320
 health_timeout = "2m"
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
 # server_version;` on the remote database to check.
-major_version = 17  # TS §2.1: 15+. Igualar a la del servidor DATA cuando se aprovisione (F0.3).
+major_version = 15  # La del servidor DATA: Postgres 15.8 (F0.9). TS §2.1 pide 15+.
 
 [db.pooler]
 enabled = false
