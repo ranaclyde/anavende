@@ -58,7 +58,14 @@ export const registrar = action
       email: input.email,
       password: input.password,
       options: {
-        data: { full_name: input.fullName },
+        // `first_name` se guarda además del completo porque es lo único que
+        // los emails pueden usar para saludar: GoTrue lee `user_metadata`
+        // (`{{ .Data }}`) pero no sabe partir un nombre, y «¡Hola, Matías
+        // Emanuel Sanhueza!» no suena a persona escribiendo.
+        data: {
+          full_name: input.fullName,
+          first_name: input.fullName.trim().split(/\s+/)[0],
+        },
         emailRedirectTo: urlDeConfirmacion(),
       },
     });

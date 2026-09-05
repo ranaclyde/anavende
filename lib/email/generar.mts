@@ -36,6 +36,20 @@ import { Verificacion } from "@/lib/email/plantillas/verificacion";
 const enlaceDeConfirmacion = (tipo: string) =>
   `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=${tipo}`;
 
+/**
+ * Lo que va después de «¡Hola» — o nada, si no hay nombre.
+ *
+ * `{{ .Data }}` es `auth.users.user_metadata`, donde `registrar` guarda
+ * `first_name`. Los dos `if` anidados no son adorno: en Go, pedirle un campo a
+ * un `.Data` nulo revienta la plantilla entera, y un email de verificación que
+ * no sale es una cuenta que no se puede crear. El de afuera comprueba que haya
+ * metadatos; el de adentro, que haya nombre.
+ *
+ * Los altas por invitación (E3, RF-26) todavía no cargan `first_name`: van a
+ * caer en «¡Hola!», que es exactamente para lo que está la condición.
+ */
+const SALUDO = "{{ if .Data }}{{ if .Data.first_name }}, {{ .Data.first_name }}{{ end }}{{ end }}";
+
 // `createElement` en vez de JSX porque este archivo es `.mts`, como el resto
 // de los scripts, y esa extensión no habilita JSX.
 /** Valores de mentira para la previsualización: un `token_hash` con la forma y
@@ -66,6 +80,7 @@ for (const { archivo, plantilla, tipo } of PLANTILLAS) {
     createElement(plantilla, {
       sitio: "{{ .SiteURL }}",
       enlace: enlaceDeConfirmacion(tipo),
+      saludo: SALUDO,
     }),
   );
   await writeFile(new URL(archivo, destino), html, "utf8");
@@ -76,6 +91,7 @@ for (const { archivo, plantilla, tipo } of PLANTILLAS) {
     createElement(plantilla, {
       sitio: SITIO_DE_PRUEBA,
       enlace: enlaceDePrueba(tipo),
+      saludo: ", Matías",
     }),
     { pretty: true },
   );

@@ -1,4 +1,11 @@
-import { Boton, EnlaceDeRespaldo, Marco, Parrafo } from "@/lib/email/base";
+import {
+  Boton,
+  EnlaceDeRespaldo,
+  Firma,
+  Marco,
+  Menor,
+  Parrafo,
+} from "@/lib/email/base";
 
 /**
  * E1 — Verificación de email (TECHNICAL-SPEC §14, FUNCTIONAL-SPEC RF-05).
@@ -16,9 +23,17 @@ import { Boton, EnlaceDeRespaldo, Marco, Parrafo } from "@/lib/email/base";
  * no existe es peor que no ofrecerla.
  */
 
+/** Dónde escribe alguien que se quedó trabado. Es una constante y no sale de
+ *  `site_settings`: GoTrue arma estos emails sin consultar nuestra base, así
+ *  que el día que cambie hay que cambiarlo acá y regenerar. */
+export const CASILLA_DE_AYUDA = "hola@anavende.com.ar";
+
 type Props = {
   sitio: string;
   enlace: string;
+  /** Lo que va después de «¡Hola». En la plantilla de GoTrue llega una
+   *  condición que resuelve el nombre o no pone nada: ver `generar.mts`. */
+  saludo: string;
 };
 
 /**
@@ -29,25 +44,50 @@ type Props = {
  */
 export function Verificacion({
   // Valores para la previsualización local (`npm run email`). En la plantilla
-  // de GoTrue los reemplazan sus variables: ver `generar.mts`.
+  // de GoTrue los reemplazan sus variables.
   sitio = "http://localhost:3000",
-  enlace = "http://localhost:3000/api/auth/confirmar?next=%2Fmi-cuenta&token_hash=ejemplo&type=signup",
+  enlace = "http://localhost:3000/api/auth/confirmar",
+  saludo = ", Matías",
 }: Partial<Props> = {}) {
   return (
     <Marco
       sitio={sitio}
-      adelanto="Confirmá tu email para terminar de crear tu cuenta."
+      adelanto="Te queda un paso para acceder a tu cuenta de AnaVende."
       titulo="Confirmá tu email"
-      nota="Si no fuiste vos, podés ignorar este mensaje: sin confirmar, la cuenta no se activa."
+      pie={
+        <>
+          <EnlaceDeRespaldo href={enlace} />
+          <Menor>
+            ¿Necesitás ayuda? Escribinos a{" "}
+            <a
+              href={`mailto:${CASILLA_DE_AYUDA}`}
+              style={{ color: "#832833", textDecoration: "underline" }}
+            >
+              {CASILLA_DE_AYUDA}
+            </a>
+            .
+          </Menor>
+          <Menor>
+            Si no fuiste vos, podés ignorar este mensaje: sin confirmar, la
+            cuenta no se activa.
+          </Menor>
+        </>
+      }
     >
+      <Parrafo>¡Hola{saludo}!</Parrafo>
+
       <Parrafo>
-        Ya casi. Tocá el botón para confirmar tu dirección y terminar de crear
-        tu cuenta en AnaVende.
+        Solo te queda un paso más para acceder a tu cuenta de AnaVende. Hacé
+        clic en el botón de abajo para verificar tu email.
       </Parrafo>
 
       <Boton href={enlace}>Confirmar mi email</Boton>
 
-      <EnlaceDeRespaldo href={enlace} />
+      <Firma>
+        Gracias,
+        <br />
+        el equipo de AnaVende
+      </Firma>
     </Marco>
   );
 }

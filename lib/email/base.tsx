@@ -50,14 +50,15 @@ export type MarcoProps = {
   /** Lo que se lee al lado del asunto en la bandeja, antes de abrir. */
   adelanto: string;
   titulo: string;
+  /** El cuerpo: saludo, mensaje, acción y firma. Lo que una persona escribiría. */
   children: ReactNode;
-  /** Va DEBAJO del separador, en el tono más bajo: la salida para quien no
-   *  esperaba este email. Separada del cuerpo a propósito — si compite con el
-   *  mensaje principal, los dos pierden. */
-  nota?: ReactNode;
+  /** La letra chica, debajo del separador: el enlace de respaldo, la ayuda y
+   *  la salida para quien no esperaba este email. Va aparte a propósito — si
+   *  compite con el mensaje principal, los dos pierden. */
+  pie?: ReactNode;
 };
 
-export function Marco({ sitio, adelanto, titulo, children, nota }: MarcoProps) {
+export function Marco({ sitio, adelanto, titulo, children, pie }: MarcoProps) {
   return (
     <Html lang="es">
       <Head />
@@ -127,28 +128,21 @@ export function Marco({ sitio, adelanto, titulo, children, nota }: MarcoProps) {
             }}
           />
 
-          {nota ? (
-            <Text
-              style={{
-                margin: "0 0 12px",
-                fontSize: "13px",
-                lineHeight: "1.5",
-                color: COLOR.textoSecundario,
-              }}
-            >
-              {nota}
-            </Text>
-          ) : null}
+          {pie}
 
+          {/* DESIGN-REFERENCE §2.4: en emails va la forma canónica del
+              eslogan, nunca una rotada. Se lee una sola vez y tiene que decir
+              de qué se trata; una frase que cambia sin motivo visible parece
+              un error, no un gesto. */}
           <Text
             style={{
-              margin: 0,
+              margin: "16px 0 0",
               fontSize: "13px",
               lineHeight: "1.5",
               color: COLOR.textoTerciario,
             }}
           >
-            AnaVende — Tecnología y gaming
+            Ana vende, vos elegís la tecnología.
           </Text>
         </Container>
       </Body>
@@ -211,6 +205,39 @@ export function Boton({ href, children }: { href: string; children: ReactNode })
  * copia y pega. Un email de verificación sin salida alternativa es una cuenta
  * que no se puede crear.
  */
+/** Firma del cuerpo. Cierra la carta antes de la letra chica. */
+export function Firma({ children }: { children: ReactNode }) {
+  return (
+    <Text
+      style={{
+        margin: "0",
+        fontSize: "16px",
+        lineHeight: "1.6",
+        color: COLOR.texto,
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+
+/** Texto de la letra chica: mismo tamaño y tono para todo lo que va debajo
+ *  del separador, para que ninguna línea de servicio pese más que otra. */
+export function Menor({ children }: { children: ReactNode }) {
+  return (
+    <Text
+      style={{
+        margin: "0 0 12px",
+        fontSize: "13px",
+        lineHeight: "1.5",
+        color: COLOR.textoSecundario,
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+
 export function EnlaceDeRespaldo({ href }: { href: string }) {
   return (
     <>
@@ -230,6 +257,7 @@ export function EnlaceDeRespaldo({ href }: { href: string }) {
         href={href}
         style={{
           display: "block",
+          marginBottom: "16px",
           fontSize: "13px",
           lineHeight: "1.5",
           color: COLOR.textoSecundario,

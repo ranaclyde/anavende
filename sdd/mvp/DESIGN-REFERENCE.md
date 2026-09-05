@@ -98,6 +98,18 @@ Una cuadrícula de cuatro celdas —**A**, un joystick, unos auriculares y una *
 
 **Nunca:** deformar la proporción, cambiarle el color —salvo la versión clara de esta tabla—, ponerle sombra, rotarlo, ni apoyarlo sobre una foto sin una superficie sólida debajo.
 
+### 2.4 El eslogan
+
+> **Ana vende, vos elegís la tecnología.**
+
+Es un juego con el nombre: «Ana **vende**» y del otro lado quien elige. Reparte los papeles en una sola línea —ella consigue, vos decidís— y dice para qué existe el negocio sin explicarlo.
+
+**La última palabra rota.** «la tecnología» es la forma canónica, la que se usa cuando hay una sola oportunidad de decirlo: el pie del sitio, los emails, cualquier lugar donde aparezca solo. Pero está pensada para cambiar por la categoría concreta —«vos elegís **los joysticks**», «vos elegís **los auriculares**»— y ahí es donde funciona mejor: se lee distinto cada vez y **conversa con el isotipo**, que es exactamente esa cuadrícula (§2.3: una **A**, un joystick, unos auriculares y una **V**).
+
+**Dónde rota y dónde no.** Rota donde hay contexto que la justifique: la portada de una categoría, una campaña, la cabecera de una sección del catálogo. **No** rota donde la persona lo ve una sola vez y necesita saber de qué se trata —emails, pie de página—: ahí va la forma canónica. Una frase que cambia sin motivo visible parece un error, no un gesto.
+
+**Nunca:** cambiar el orden de las dos mitades, tutearlo («tú eliges»), ni sustituir la palabra final por una marca —«vos elegís Logitech» convierte la identidad en publicidad de un tercero—.
+
 ---
 
 ## 3. Tokens
