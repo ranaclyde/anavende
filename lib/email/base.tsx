@@ -49,8 +49,10 @@ export type MarcoProps = {
   sitio: string;
   /** Lo que se lee al lado del asunto en la bandeja, antes de abrir. */
   adelanto: string;
-  titulo: string;
-  /** El cuerpo: saludo, mensaje, acción y firma. Lo que una persona escribiría. */
+  /** El cuerpo: saludo, mensaje, acción y firma. Lo que una persona escribiría.
+   *
+   *  **No hay título.** El asunto del email ya dice de qué se trata, y una
+   *  carta que encabeza y además saluda no se lee como escrita por alguien. */
   children: ReactNode;
   /** La letra chica, debajo del separador: el enlace de respaldo, la ayuda y
    *  la salida para quien no esperaba este email. Va aparte a propósito — si
@@ -58,7 +60,7 @@ export type MarcoProps = {
   pie?: ReactNode;
 };
 
-export function Marco({ sitio, adelanto, titulo, children, pie }: MarcoProps) {
+export function Marco({ sitio, adelanto, children, pie }: MarcoProps) {
   return (
     <Html lang="es">
       <Head />
@@ -105,18 +107,6 @@ export function Marco({ sitio, adelanto, titulo, children, pie }: MarcoProps) {
               AnaVende
             </span>
           </Section>
-
-          <Text
-            style={{
-              margin: "0 0 16px",
-              fontSize: "22px",
-              lineHeight: "1.3",
-              fontWeight: 600,
-              color: COLOR.texto,
-            }}
-          >
-            {titulo}
-          </Text>
 
           {children}
 
@@ -205,6 +195,16 @@ export function Boton({ href, children }: { href: string; children: ReactNode })
  * copia y pega. Un email de verificación sin salida alternativa es una cuenta
  * que no se puede crear.
  */
+/** Enlace dentro de un párrafo. Existe para que las cuatro plantillas no
+ *  repitan el estilo: en email no hay hoja de estilos donde ponerlo una vez. */
+export function Enlace({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a href={href} style={{ color: COLOR.marca, textDecoration: "underline" }}>
+      {children}
+    </a>
+  );
+}
+
 /** Firma del cuerpo. Cierra la carta antes de la letra chica. */
 export function Firma({ children }: { children: ReactNode }) {
   return (

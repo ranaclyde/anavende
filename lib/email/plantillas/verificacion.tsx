@@ -1,5 +1,6 @@
 import {
   Boton,
+  Enlace,
   EnlaceDeRespaldo,
   Firma,
   Marco,
@@ -53,20 +54,9 @@ export function Verificacion({
     <Marco
       sitio={sitio}
       adelanto="Te queda un paso para acceder a tu cuenta de AnaVende."
-      titulo="Confirmá tu email"
       pie={
         <>
           <EnlaceDeRespaldo href={enlace} />
-          <Menor>
-            ¿Necesitás ayuda? Escribinos a{" "}
-            <a
-              href={`mailto:${CASILLA_DE_AYUDA}`}
-              style={{ color: "#832833", textDecoration: "underline" }}
-            >
-              {CASILLA_DE_AYUDA}
-            </a>
-            .
-          </Menor>
           <Menor>
             Si no fuiste vos, podés ignorar este mensaje: sin confirmar, la
             cuenta no se activa.
@@ -82,6 +72,11 @@ export function Verificacion({
       </Parrafo>
 
       <Boton href={enlace}>Confirmar mi email</Boton>
+
+      <Parrafo>
+        ¿Necesitás ayuda? Escribinos a{" "}
+        <Enlace href={`mailto:${CASILLA_DE_AYUDA}`}>{CASILLA_DE_AYUDA}</Enlace>.
+      </Parrafo>
 
       <Firma>
         Gracias,
