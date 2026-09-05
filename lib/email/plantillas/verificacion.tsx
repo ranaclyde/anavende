@@ -1,12 +1,4 @@
-import {
-  Boton,
-  Enlace,
-  EnlaceDeRespaldo,
-  Firma,
-  Marco,
-  Menor,
-  Parrafo,
-} from "@/lib/email/base";
+import { Ayuda, Boton, Firma, Marco, Parrafo, PieDeEnlace } from "@/lib/email/base";
 
 /**
  * E1 — Verificación de email (TECHNICAL-SPEC §14, FUNCTIONAL-SPEC RF-05).
@@ -24,12 +16,7 @@ import {
  * no existe es peor que no ofrecerla.
  */
 
-/** Dónde escribe alguien que se quedó trabado. Es una constante y no sale de
- *  `site_settings`: GoTrue arma estos emails sin consultar nuestra base, así
- *  que el día que cambie hay que cambiarlo acá y regenerar. */
-export const CASILLA_DE_AYUDA = "hola@anavende.com.ar";
-
-type Props = {
+export type PropsDeEnlace = {
   sitio: string;
   enlace: string;
   /** Lo que va después de «¡Hola». En la plantilla de GoTrue llega una
@@ -49,19 +36,16 @@ export function Verificacion({
   sitio = "http://localhost:3000",
   enlace = "http://localhost:3000/api/auth/confirmar",
   saludo = ", Matías",
-}: Partial<Props> = {}) {
+}: Partial<PropsDeEnlace> = {}) {
   return (
     <Marco
       sitio={sitio}
       adelanto="Te queda un paso para acceder a tu cuenta de AnaVende."
       pie={
-        <>
-          <EnlaceDeRespaldo href={enlace} />
-          <Menor>
-            Si no fuiste vos, podés ignorar este mensaje: sin confirmar, la
-            cuenta no se activa.
-          </Menor>
-        </>
+        <PieDeEnlace href={enlace}>
+          Si no fuiste vos, podés ignorar este mensaje: sin confirmar, la
+          cuenta no se activa.
+        </PieDeEnlace>
       }
     >
       <Parrafo>¡Hola{saludo}!</Parrafo>
@@ -73,10 +57,7 @@ export function Verificacion({
 
       <Boton href={enlace}>Confirmar mi email</Boton>
 
-      <Parrafo>
-        ¿Necesitás ayuda? Escribinos a{" "}
-        <Enlace href={`mailto:${CASILLA_DE_AYUDA}`}>{CASILLA_DE_AYUDA}</Enlace>.
-      </Parrafo>
+      <Ayuda />
 
       <Firma>
         Gracias,

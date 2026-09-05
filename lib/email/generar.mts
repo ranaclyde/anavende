@@ -10,22 +10,22 @@
  * **El HTML generado SE COMMITEA.** No es un artefacto intermedio: es lo que
  * se despliega y lo que Supabase descarga. Se regenera con `npm run email` y
  * el diff tiene que revisarse como cualquier otro.
- *
- * Para mirar cómo quedan, abrir los archivos de `public/emails/` en el
- * navegador. Los `{{ .Algo }}` se ven literales a propósito: es exactamente lo
- * que recibe GoTrue antes de sustituir.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import { createElement } from "react";
 import { render } from "react-email";
 
+import { Invitacion } from "@/lib/email/plantillas/invitacion";
+import { Recuperacion } from "@/lib/email/plantillas/recuperacion";
 import { Verificacion } from "@/lib/email/plantillas/verificacion";
 
+const RUTA = "/api/auth/confirmar";
+
 /**
- * El enlace de E1 y E2 (TECHNICAL-SPEC §14).
+ * El enlace de E1 y E2.
  *
- * `{{ .RedirectTo }}` es el `emailRedirectTo` que manda la aplicación, o sea
- * `…/api/auth/confirmar?next=…`; ya trae `?`, por eso se sigue con `&`.
+ * `{{ .RedirectTo }}` es el `emailRedirectTo` que manda la aplicación —o sea
+ * `…/api/auth/confirmar?next=…`—; ya trae `?`, por eso se sigue con `&`.
  * `{{ .TokenHash }}` es el token que `verifyOtp` sabe canjear en el servidor.
  *
  * Es el camino que Supabase documenta para aplicaciones que renderizan en el
@@ -33,8 +33,19 @@ import { Verificacion } from "@/lib/email/plantillas/verificacion";
  * `/auth/v1/verify`— devuelve la sesión en el fragmento de la URL, que nunca
  * llega al servidor.
  */
-const enlaceDeConfirmacion = (tipo: string) =>
+const desdeElDestino = (tipo: string) =>
   `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=${tipo}`;
+
+/**
+ * El enlace de E3, armado desde `{{ .SiteURL }}` en vez del destino.
+ *
+ * Quien invita es una pantalla del panel que todavía no existe (RF-26). Si el
+ * día que se escriba nadie pasa `redirectTo`, `{{ .RedirectTo }}` sale vacío y
+ * el enlace queda roto. Armarlo acá lo hace imposible de olvidar.
+ */
+const desdeElSitio = (tipo: string, destino: string) =>
+  `{{ .SiteURL }}${RUTA}?next=${encodeURIComponent(destino)}` +
+  `&token_hash={{ .TokenHash }}&type=${tipo}`;
 
 /**
  * Lo que va después de «¡Hola» — o nada, si no hay nombre.
@@ -45,25 +56,39 @@ const enlaceDeConfirmacion = (tipo: string) =>
  * no sale es una cuenta que no se puede crear. El de afuera comprueba que haya
  * metadatos; el de adentro, que haya nombre.
  *
- * Los altas por invitación (E3, RF-26) todavía no cargan `first_name`: van a
+ * Las altas por invitación (E3, RF-26) todavía no cargan `first_name`: van a
  * caer en «¡Hola!», que es exactamente para lo que está la condición.
  */
-const SALUDO = "{{ if .Data }}{{ if .Data.first_name }}, {{ .Data.first_name }}{{ end }}{{ end }}";
+const SALUDO =
+  "{{ if .Data }}{{ if .Data.first_name }}, {{ .Data.first_name }}{{ end }}{{ end }}";
 
-// `createElement` en vez de JSX porque este archivo es `.mts`, como el resto
-// de los scripts, y esa extensión no habilita JSX.
 /** Valores de mentira para la previsualización: un `token_hash` con la forma y
  *  el largo de uno real, para que el enlace ocupe lo que va a ocupar. */
 const SITIO_DE_PRUEBA = "http://localhost:3000";
-const enlaceDePrueba = (tipo: string) =>
-  `${SITIO_DE_PRUEBA}/api/auth/confirmar?next=%2Fmi-cuenta` +
+const enlaceDePrueba = (tipo: string, destino: string) =>
+  `${SITIO_DE_PRUEBA}${RUTA}?next=${encodeURIComponent(destino)}` +
   `&token_hash=a560326d775928e2e20ef765fe112f95113dbb0522345fd203be5a04&type=${tipo}`;
+
+const NUEVA_CONTRASENA = "/recuperar/nueva-contrasena";
 
 const PLANTILLAS = [
   {
     archivo: "verificacion.html",
     plantilla: Verificacion,
-    tipo: "signup",
+    enlace: desdeElDestino("signup"),
+    enlaceDePrueba: enlaceDePrueba("signup", "/mi-cuenta"),
+  },
+  {
+    archivo: "recuperacion.html",
+    plantilla: Recuperacion,
+    enlace: desdeElDestino("recovery"),
+    enlaceDePrueba: enlaceDePrueba("recovery", NUEVA_CONTRASENA),
+  },
+  {
+    archivo: "invitacion.html",
+    plantilla: Invitacion,
+    enlace: desdeElSitio("invite", NUEVA_CONTRASENA),
+    enlaceDePrueba: enlaceDePrueba("invite", NUEVA_CONTRASENA),
   },
 ];
 
@@ -71,33 +96,33 @@ const destino = new URL("../../public/emails/", import.meta.url);
 const destinoVistaPrevia = new URL("vista-previa/", destino);
 await mkdir(destinoVistaPrevia, { recursive: true });
 
-for (const { archivo, plantilla, tipo } of PLANTILLAS) {
+for (const p of PLANTILLAS) {
   // La de verdad, con las variables de Go. `pretty` NO: el formateador parte
   // las expresiones al ajustar líneas —vimos `{{ .TokenHash` y `}}` en
-  // renglones distintos— y el enlace de confirmación es lo único que este
-  // email tiene que hacer bien. Lo que se revisa es el `.tsx`, no la salida.
+  // renglones distintos— y el enlace es lo único que estos emails tienen que
+  // hacer bien. Lo que se revisa es el `.tsx`, no la salida.
   const html = await render(
-    createElement(plantilla, {
+    createElement(p.plantilla, {
       sitio: "{{ .SiteURL }}",
-      enlace: enlaceDeConfirmacion(tipo),
+      enlace: p.enlace,
       saludo: SALUDO,
     }),
   );
-  await writeFile(new URL(archivo, destino), html, "utf8");
+  await writeFile(new URL(p.archivo, destino), html, "utf8");
 
   // La de mirar, con valores reales para que cargue el logo y el enlace se vea
   // como se va a ver. No se commitea: es andamiaje.
   const vistaPrevia = await render(
-    createElement(plantilla, {
+    createElement(p.plantilla, {
       sitio: SITIO_DE_PRUEBA,
-      enlace: enlaceDePrueba(tipo),
+      enlace: p.enlaceDePrueba,
       saludo: ", Matías",
     }),
     { pretty: true },
   );
-  await writeFile(new URL(archivo, destinoVistaPrevia), vistaPrevia, "utf8");
+  await writeFile(new URL(p.archivo, destinoVistaPrevia), vistaPrevia, "utf8");
 
-  console.log(`✅ public/emails/${archivo}`);
+  console.log(`✅ public/emails/${p.archivo}`);
 }
 
 console.log(

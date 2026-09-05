@@ -188,13 +188,6 @@ export function Boton({ href, children }: { href: string; children: ReactNode })
   );
 }
 
-/**
- * El mismo enlace, en texto.
- *
- * No es redundancia: hay clientes que no pintan el botón, y hay gente que
- * copia y pega. Un email de verificación sin salida alternativa es una cuenta
- * que no se puede crear.
- */
 /** Enlace dentro de un párrafo. Existe para que las cuatro plantillas no
  *  repitan el estilo: en email no hay hoja de estilos donde ponerlo una vez. */
 export function Enlace({ href, children }: { href: string; children: ReactNode }) {
@@ -202,6 +195,22 @@ export function Enlace({ href, children }: { href: string; children: ReactNode }
     <a href={href} style={{ color: COLOR.marca, textDecoration: "underline" }}>
       {children}
     </a>
+  );
+}
+
+/** Dónde escribe alguien que se quedó trabado. Es una constante y no sale de
+ *  `site_settings`: GoTrue arma E1, E2 y E3 sin consultar nuestra base, así
+ *  que el día que cambie hay que cambiarla acá y regenerar. */
+export const CASILLA_DE_AYUDA = "hola@anavende.com.ar";
+
+/** La salida, dentro del cuerpo y debajo del botón: si la persona se traba,
+ *  tiene que estar donde está mirando y no en la letra chica. */
+export function Ayuda() {
+  return (
+    <Parrafo>
+      ¿Necesitás ayuda? Escribinos a{" "}
+      <Enlace href={`mailto:${CASILLA_DE_AYUDA}`}>{CASILLA_DE_AYUDA}</Enlace>.
+    </Parrafo>
   );
 }
 
@@ -238,6 +247,13 @@ export function Menor({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * El mismo enlace, en texto.
+ *
+ * No es redundancia: hay clientes que no pintan el botón, y hay gente que
+ * copia y pega. Un email de verificación sin salida alternativa es una cuenta
+ * que no se puede crear.
+ */
 export function EnlaceDeRespaldo({ href }: { href: string }) {
   return (
     <>
@@ -266,6 +282,26 @@ export function EnlaceDeRespaldo({ href }: { href: string }) {
       >
         {href}
       </a>
+    </>
+  );
+}
+
+/**
+ * La letra chica de los tres emails que llevan un enlace de un solo uso
+ * (E1, E2, E3): la dirección para copiar y la salida para quien no esperaba
+ * el mensaje, que cambia según el email.
+ */
+export function PieDeEnlace({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <EnlaceDeRespaldo href={href} />
+      <Menor>{children}</Menor>
     </>
   );
 }
