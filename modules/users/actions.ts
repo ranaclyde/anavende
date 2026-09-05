@@ -38,35 +38,46 @@ export const registrar = action
   .input(registroSchema)
   .auth("public")
   .handler(async ({ input }) => {
-    const servicio = createServiceClient();
+    const supabase = await createClient();
 
-    // 1. Identidad. `email_confirm: false` la deja sin verificar: hasta que
-    //    abra el enlace no va a poder entrar (RF-05, comprobado en F1.7).
-    const { data: alta, error: errorAlta } =
-      await servicio.auth.admin.createUser({
-        email: input.email,
-        password: input.password,
-        email_confirm: false,
-        user_metadata: { full_name: input.fullName },
-      });
+    // 1. Identidad y email E1, en una sola llamada.
+    //
+    //    Va por `signUp` y no por `admin.createUser` + `resend`, que es lo que
+    //    hacía antes, por un motivo que solo se ve en producción: `/resend`
+    //    DESCARTA el `code_challenge` que le manda `@supabase/ssr`, así que no
+    //    deja fila en `auth.flow_state`. Sin esa fila GoTrue no tiene un
+    //    `code` que emitir y devuelve el enlace por el flujo implícito
+    //    (`#access_token=...`), que vive en el fragmento de la URL y por lo
+    //    tanto NUNCA llega al servidor: la confirmación moría en «enlace
+    //    inválido» con la cuenta ya verificada. Comprobado contra el servidor
+    //    DATA: `/signup` con `code_challenge` sí deja la fila, `/resend` no.
+    //
+    //    `email_confirm` deja de hacer falta: el servidor tiene
+    //    `enable_confirmations`, y hasta que abra el enlace no puede entrar.
+    const { data: alta, error: errorAlta } = await supabase.auth.signUp({
+      email: input.email,
+      password: input.password,
+      options: {
+        data: { full_name: input.fullName },
+        emailRedirectTo: urlDeConfirmacion(),
+      },
+    });
 
     if (errorAlta || !alta.user) {
-      // RF-05 pide un mensaje claro si el email ya existe. Es la única
-      // excepción a no revelar existencia de cuentas en el alta: sin ella
-      // la persona no entiende por qué no puede registrarse.
-      if (
-        errorAlta?.code === "email_exists" ||
-        errorAlta?.status === 422
-      ) {
-        throw domainError("VALIDATION", {
-          fields: {
-            properties: {
-              email: { errors: ["Ya hay una cuenta con ese email."] },
-            },
+      throw new Error(`signUp falló: ${errorAlta?.message}`);
+    }
+
+    // RF-05 pide un mensaje claro si el email ya existe. `signUp` no lo dice
+    // como error —oculta a propósito la existencia de la cuenta— sino que
+    // devuelve un usuario con `identities` vacío. Es la única señal que hay.
+    if ((alta.user.identities?.length ?? 0) === 0) {
+      throw domainError("VALIDATION", {
+        fields: {
+          properties: {
+            email: { errors: ["Ya hay una cuenta con ese email."] },
           },
-        });
-      }
-      throw new Error(`createUser falló: ${errorAlta?.message}`);
+        },
+      });
     }
 
     // 2. Perfil. 3. Si falla, se borra la identidad: o quedan los dos, o
@@ -80,28 +91,46 @@ export const registrar = action
         role: "customer",
       });
     } catch (e) {
-      await servicio.auth.admin.deleteUser(alta.user.id);
+      await createServiceClient().auth.admin.deleteUser(alta.user.id);
       throw e;
     }
 
-    // 4. Verificación (RF-05). Va DESPUÉS del perfil y su fallo no revierte
-    //    nada: la cuenta ya existe y se puede pedir el reenvío. Perder un
-    //    registro entero por un problema de correo sería peor.
-    const { error: errorEmail } = await mandarVerificacion(input.email);
-
-    return { email: input.email, emailEnviado: !errorEmail };
+    // El email ya salió en el paso 1. Cambia un matiz respecto de antes: si
+    // el correo falla, `signUp` falla entero y no queda cuenta. Antes el alta
+    // sobrevivía a un problema de correo y se resolvía con el reenvío. Se
+    // acepta el cambio porque la alternativa —el enlace roto de siempre— deja
+    // a la persona con una cuenta que no puede usar y sin nada que reintentar.
+    return { email: input.email, emailEnviado: true };
   });
 
 /**
- * Único punto de envío de la verificación, para que el alta y el reenvío no
- * puedan divergir en el destino del enlace.
+ * Reenvío del enlace de verificación.
+ *
+ * NO usa `auth.resend()`, que sería lo obvio: el endpoint `/resend` de GoTrue
+ * DESCARTA el `code_challenge` que le manda `@supabase/ssr`, no deja fila en
+ * `auth.flow_state`, y entonces el enlace vuelve por el flujo implícito
+ * (`#access_token=...`). Eso vive en el fragmento de la URL, que el navegador
+ * nunca manda al servidor, así que `/api/auth/confirmar` recibe una URL vacía
+ * y responde «enlace inválido». Comprobado contra el servidor DATA: el mismo
+ * `code_challenge` deja fila por `/signup` y no deja ninguna por `/resend`.
+ *
+ * `signInWithOtp` sí lo registra. El costo es que el email que sale es el de
+ * enlace mágico y no el de verificación: se corrige en F1.8, cuando las
+ * plantillas se sirvan desde `public/` de la app —GoTrue las busca por HTTP
+ * contra `SITE_URL`, no las lee de un archivo—.
+ *
+ * `shouldCreateUser: false` es lo que evita que esto sea un alta encubierta:
+ * si el email no tiene cuenta, no crea ninguna. El perfil sigue siendo
+ * obligatorio y solo lo crea `registrar`.
  */
 async function mandarVerificacion(email: string) {
   const supabase = await createClient();
-  return supabase.auth.resend({
-    type: "signup",
+  return supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: urlDeConfirmacion() },
+    options: {
+      emailRedirectTo: urlDeConfirmacion(),
+      shouldCreateUser: false,
+    },
   });
 }
 

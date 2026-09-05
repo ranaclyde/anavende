@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*.local
 .env
+# Los respaldos también llevan claves de verdad: el del stack local guarda la
+# API key de Resend. Sin esta línea `.env.stack-local.bak` se commitea.
+.env*.bak
 
 # vercel
 .vercel

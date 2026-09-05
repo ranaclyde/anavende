@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-04.
+Última actualización: 2026-09-05.
 
 **Qué significa cada estado**
 
@@ -18,26 +18,32 @@ plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
 ## F0 — Infraestructura
 
-**Ninguna tarea de F0 está cerrada.** Lo comprobado contra el stack local de
-desarrollo **no cierra una tarea de F0** (`TECHNICAL-SPEC.md` §18.2): el
-entorno de verdad es el Supabase auto-hospedado del VPS. El detalle de qué se
-probó en local vive en `VERSIONS.md`.
+**El 2026-09-05 el desarrollo dejó de apuntar al stack local y pasó a
+producción.** `.env.local` apunta al Supabase auto-hospedado del VPS, se
+aplicaron las siete migraciones sobre esa base, y de ahí en adelante todo lo
+que dice ✅ acá abajo está verificado **donde va** (`TECHNICAL-SPEC.md` §18.2).
+El stack local del CLI quedó guardado en `.env.stack-local.bak` y ya no se usa.
+
+**Postgres no responde desde afuera**, así que el acceso desde la máquina de
+desarrollo va por un **túnel SSH** al puerto 5433 (nunca el 54322: ver la
+guarda de `scripts/solo-local.mts`, que distingue producción del stack local
+justamente por ese número).
 
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
-| F0.1 | Servidores en DonWeb unidos por LAN | ⬜ | |
+| F0.1 | Servidores en DonWeb unidos por LAN | 🟡 | Hay **un** VPS con el stack completo. La separación APP/DATA de §2.2 no existe todavía: el servidor APP y la LAN privada quedan para cuando se despliegue la aplicación |
 | F0.2 | Coolify + limpieza de Docker | ⬜ | Postergada por decisión tuya |
-| F0.3 | Supabase en el servidor DATA | ⬜ | |
-| F0.4 | Cerrar Postgres al mundo | ⬜ | **Compuerta F0** |
-| F0.5 | Restringir Studio | ⬜ | |
-| F0.6 | `pg_trgm` y `unaccent` | 🟡 | **Compuerta F0.** Verificado en local con `scripts/verificar-esquema.mts`; falta producción |
-| F0.7 | Storage: subir, leer, borrar | ⬜ | |
-| F0.8 | Latencia real de la LAN | ⬜ | |
-| F0.9 | Fijar versiones del stack | 🟡 | Parte de aplicación registrada en `VERSIONS.md`; falta la de infraestructura |
+| F0.3 | Supabase en el servidor DATA | ✅ | Docker compose oficial, doce servicios. GoTrue v2.184.0, Postgres 15.8. Studio por HTTPS en `https://vps-6346459-x.dattaweb.com` |
+| F0.4 | Cerrar Postgres al mundo | 🟡 | **Compuerta F0.** `supabase-db` no publica puerto, pero **`supabase-pooler` sí publica 5432 y 6543 en `0.0.0.0`**. Desde afuera no responde —el intento da *timeout*, no *connection refused*—, o sea que hay un firewall tapándolo. **Falta verificar cuál y que esté puesto a propósito**: hoy la base depende de una capa que nadie revisó |
+| F0.5 | Restringir Studio | ⬜ | Studio queda accesible por HTTPS con usuario y contraseña del dashboard. §2.4 pide además restricción por IP |
+| F0.6 | `pg_trgm` y `unaccent` | ✅ | **Compuerta F0.** Las crea la migración `0000`. `db:verificar` contra producción: las dos extensiones, `immutable_unaccent` IMMUTABLE, y las dos pruebas que importan —«mecanico» encuentra «Mecánico» con la misma similitud que con acento, «lojitech» encuentra «Logitech» con 0,500— |
+| F0.7 | Storage: subir, leer, borrar | ✅ | Bucket `productos` creado en Studio con los tres valores de `supabase/config.toml`: público en lectura, 10 MiB, solo `image/webp`. `db:imagenes` pasó entero contra ese bucket. **R6 no se materializó**: ni una falla de firma S3, y la prueba difícil —una subida cortada en el tercer tamaño— no dejó huérfanos |
+| F0.8 | Latencia real de la LAN | ⬜ | Sin sentido hasta que exista el segundo servidor (F0.1) |
+| F0.9 | Fijar versiones del stack | 🟡 | Falta registrar las de infraestructura en `VERSIONS.md`. **Y hay un desfase que corregir**: `supabase/config.toml` declara `major_version = 17` y el VPS corre **Postgres 15.8**. §18.2 pide igualarlas |
 | F0.10 | Backup con restauración de prueba | ⬜ | |
-| F0.11 | Resend como SMTP de Supabase | ⬜ | **Compuerta F0. Es la que muerde primero: sin esto no hay registro en producción** |
-| F0.12 | Admin API de Auth | 🟡 | Sondeada en local (`scripts/sondear-auth.mts`); tres hallazgos abajo. Falta producción |
-| F0.13 | *Send Email Hook* auto-hospedado | ⬜ | Su respuesta define cómo se hace F1.8 |
+| F0.11 | Resend como SMTP de Supabase | ✅ | **Compuerta F0.** `SMTP_HOST=smtp.resend.com`, puerto 465, usuario `resend` y la API key como contraseña, remitente en el dominio verificado. Los emails llegan a Gmail sin ir a spam. Reemplazó al contenedor `supabase-mail`, que **ni siquiera estaba corriendo**: el registro en producción estaba roto y no se veía |
+| F0.12 | Admin API de Auth | ✅ | Usada de verdad contra producción: listar y borrar usuarios por `service_role`. El borrado se lleva el perfil solo, por el `ON DELETE CASCADE` de la migración `0002` |
+| F0.13 | *Send Email Hook* auto-hospedado | ⬜ | Sigue abierta, pero **F1.8 ya no depende de su respuesta**: la vía de las plantillas quedó decidida por lo que se descubrió acá (abajo, en las decisiones) |
 
 ---
 
@@ -48,13 +54,13 @@ probó en local vive en `VERSIONS.md`.
 | F1.1 | Proyecto Next.js 16 + estructura | ✅ | Sin `src/`, por decisión tuya. `TECHNICAL-SPEC.md` §4 actualizado |
 | F1.2 | Tailwind 4 con los tokens | ✅ | |
 | F1.3 | shadcn/ui mapeado a los tokens | ✅ | |
-| F1.4 | Drizzle y la conexión a Postgres | ✅ | Contra el stack local. En producción cambia solo `DATABASE_URL` |
+| F1.4 | Drizzle y la conexión a Postgres | ✅ | **Ahora contra producción**, por el pooler (Supavisor) y a través del túnel SSH. El usuario lleva pegado el `POOLER_TENANT_ID`: `postgres.your-tenant-id`, no `postgres` |
 | F1.5 | Esquema completo de la base | ✅ | |
-| F1.6 | Primera migración y extensiones | ✅ | Cuatro migraciones; la base se crea desde cero de una corrida |
-| F1.7 | Supabase Auth: los tres métodos | ⛔ | Email completo y probado. **Google y Facebook necesitan que crees las apps en las consolas de Google y Meta** |
+| F1.6 | Primera migración y extensiones | ✅ | Siete migraciones; la base se crea desde cero de una corrida. **Comprobado en producción**: `db:migrate` sobre el esquema vacío del VPS y `db:verificar` en verde, las 18 comprobaciones |
+| F1.7 | Supabase Auth: los tres métodos | ⛔ | **Email completo y probado en producción**, de punta a punta y en los tres caminos: alta con email de verificación que llega y lleva a `/mi-cuenta`; reenvío del enlace; y recuperación de contraseña, incluido cerrar sesión y volver a entrar con la nueva. Los tres llegaron rotos a producción por el mismo motivo —abajo, en las decisiones— y los tres se arreglaron. **Google y Facebook necesitan que crees las apps en las consolas de Google y Meta** |
 | F1.7b | `user_profiles` y alta con compensación | ✅ | La compensación se probó sola: un fallo real dejó cero identidades huérfanas |
 | F1.7c | Resolución de sesión | ✅ | |
-| F1.8 | Plantillas de email E1–E4 | ⬜ | **Depende de F0.13**: define si se unifican en React Email o se personalizan las de Supabase |
+| F1.8 | Plantillas de email E1–E4 | ⬜ | Ya no depende de F0.13: **GoTrue carga las plantillas por HTTP contra `SITE_URL`, no las lee de un archivo** (probado en el VPS, abajo). Así que van en `public/` de la aplicación, versionadas con el código, y se pueden hacer recién cuando la app esté desplegada y `SITE_URL` sea alcanzable desde el VPS. Hoy los cuatro emails salen con la plantilla por defecto de Supabase, en inglés |
 | F1.9 | Teléfono obligatorio en las tres vías | ✅ | Normaliza a `+549…`; validado en el servidor |
 | F1.10 | Envoltorio de Server Actions | ✅ | |
 | F1.11 | Módulo de dinero + regla de lint | ✅ | El lint falla ante `parseFloat` sobre un monto |
@@ -77,7 +83,7 @@ probó en local vive en `VERSIONS.md`.
 | F2.5 | Listado de productos | ✅ | Búsqueda por nombre, marca y descripción; filtros por categoría, marca, estado **y stock**; orden por nombre, precio, stock disponible y fecha, en los dos sentidos y también desde las cabeceras de la tabla. Los tres números de stock por producto, con el cero, el stock bajo de RF-20 y el **negativo** de RF-24 señalizados. Todo el estado vive en la URL (§10.2). `db:listado` prueba 39 reglas contra Postgres de verdad. Verificado en el navegador con seis productos que cubren los cuatro avisos: «mecanico» encuentra «Mecánico», «8k a 60hz» encuentra por la descripción, «Para reponer» trae tres de seis, ordenar por una cabecera y volver a tocarla da vuelta la dirección, «Limpiar todo» conserva el orden, y el vacío y el sin-resultados dicen cosas distintas. Los productos de prueba se borraron: la base quedó como estaba. Pasó por `impeccable` como pide DR §12.4, y de ahí salieron cinco correcciones que sí se ven mirando: la **lupa se apoyaba sobre la primera letra** del texto de ayuda —abajo está por qué, y vale para todo el panel—; en las columnas de números la **flecha de ordenar se mudó adelante del título**, porque el lugar que ocupaba mientras no se veía corría el título 18px a la izquierda del borde donde terminan las cifras; la columna **Estado se ensanchó** para que «Activo» y el aviso de stock entren en la misma línea y la tabla conserve su renglón parejo de 44px (§6.9); en la tarjeta de móvil el **precio y el disponible arrancan en la misma línea**, que apilados dejaban el número grande flotando; y con el catálogo vacío **desaparece el botón del encabezado**, porque el estado vacío ya ofrece el mismo primer paso y dos botones de marca iguales a 100px uno del otro se leen como un error (§6.3) |
 | F2.6 | ABM de medios de pago | ✅ | Alta con logo, descripción y orden, edición, activar/desactivar y baja, en una solapa nueva del catálogo. El orden se cambia con flechas y se renumera solo. `db:pagos` prueba 26 reglas contra Postgres y contra Storage de verdad. Probado en el navegador: tres medios con y sin logo, reordenar, desactivar, borrar, y el estado vacío. **La canalización de logos se generalizó**: la que hizo F2.1 para las marcas ahora sirve a las dos, con una sola copia del orden de operaciones que evita archivos huérfanos —y se volvió a probar el logo de marca de punta a punta para asegurarse de que no se rompió—. Arrastrando el flujo apareció **un error que no se veía leyendo el código**: está abajo. Lo que RF-19 pide **mostrar** —la franja en la tienda, la ficha y el checkout— no es de esta tarea: cae en F3.7, F3.5 y F6.1, que son las pantallas donde va |
 | F2.7 | Configuración del sitio | ✅ | Número de WhatsApp, email de avisos y umbral de stock bajo, editables desde `/admin/configuracion`. `db:configuracion` prueba 22 reglas contra Postgres de verdad, y las cuatro que importan no se ven leyendo el código: que **guardar la primera vez CREE la fila** —es un UPSERT, y con un UPDATE la pantalla diría «se guardó» sin haber guardado nada—, que la segunda pise a la primera sin que aparezca una segunda fila, que `updated_at` avance al pisar, y que **el umbral guardado llegue al listado**: con 5, un producto con 5 disponibles entra en «Para reponer»; con 4, sale. La normalización del teléfono se sacó a `lib/telefono.ts` y ahora es **una sola** para el comprador y para el sitio; el script prueba que las dos den lo mismo. Probado en el navegador: el estado sin configurar, un envío vacío que señala los dos campos y lleva el foco al primero, el número que vuelve normalizado a `+549…`, el email recortado y en minúsculas, el 101 rechazado por el servidor con su motivo y el campo vacío por el formulario con el mismo texto que usaría el servidor, en claro y en oscuro y a 390px. Arrastrando el flujo apareció **un callejón sin salida que no se veía leyendo el código**: está abajo. Pasó por `impeccable` y `ui-ux-pro-max` como pide DR §12.4, y de ahí salieron seis correcciones que sí se ven mirando: el campo del umbral dejó de ser `type="number"` y pasó a `inputMode="numeric"`, **por la misma razón que ya estaba escrita en el stock de una variante** —el campo numérico del navegador sube y baja con la rueda del mouse encima, y acá eso cambiaría el umbral de todo el catálogo mientras alguien baja la página—; el botón «Guardar» deshabilitado **dice por qué con palabras** («Todo guardado.») en vez de colgarlo de un `title`, que sobre un botón deshabilitado puede no llegar a aparecer nunca (§8); la unidad «unidades» entró en la descripción accesible del campo, que si no se lee «avisar stock bajo a partir de: 3» sin decir de qué; el esqueleto de carga usaba separaciones distintas de las de la pantalla de verdad y **la página saltaba 40px** al llegar los datos, así que ahora comparte las tres medidas y hasta la cantidad de renglones de cada ayuda; y dos textos se acortaron: la bajada del encabezado, que hablaba de «tocar el código» —vocabulario que la vendedora no tiene por qué tener (§10)—, y la de «Avisos», que decía en dos renglones lo que dice en uno. **La fila se borró al terminar**: el número de prueba no es el de nadie, y dejarlo puesto sería peor que dejarlo vacío |
-| F2.8 | Cargar el catálogo real | ⛔ | **Espera producción.** «Cargados» quiere decir cargados donde van: el entorno de verdad es producción (§18.2), y F0.3 —Supabase en el VPS— y F0.7 —el bucket— están sin empezar. Cargar el catálogo real en el Postgres local sería trabajo de Ana que después hay que volcar y volver a subir. Lo que **sí** se puede hacer antes, y conviene, es la **Compuerta F2**: es una prueba de usabilidad del panel, y el panel es el mismo código acá que allá |
+| F2.8 | Cargar el catálogo real | ⬜ | **Desbloqueada el 2026-09-05.** Lo que la trababa —F0.3 y F0.7— está hecho: la base y el bucket de producción existen y están probados, así que lo que Ana cargue queda donde va y no hay que volcarlo ni volver a subirlo. Sigue conviniendo hacer antes la **Compuerta F2**, que es la prueba de usabilidad del panel |
 
 ---
 
@@ -130,28 +136,36 @@ Cada una se escribió primero en la especificación y después en el código
 | **El umbral de stock bajo tiene topes: 1 y 100** | `FUNCTIONAL-SPEC.md` RF-20; `modules/settings/limites.ts` | RF-20 pedía «umbral» sin decir entre qué y qué. Con **0** el aviso no se enciende nunca y «Sin stock» ya cubre ese caso: sería una forma escondida de apagar una función en vez de configurarla. Por encima de **100** marca casi todo el catálogo, y un aviso que señala todo no señala nada. Los dos números y la frase que los explica viven en `limites.ts` y no en el esquema, por lo mismo que `modules/content/limites.ts`: el formulario los necesita, y traerlos desde el esquema arrastraría Zod entero al navegador por una constante de texto |
 | **Guardar invalida todo, a propósito** | `modules/settings/actions.ts` | El umbral lo lee el listado de productos y lo va a leer el dashboard (RF-14); el número de WhatsApp, cada ficha y cada botón de compra de la tienda (RF-04). Una lista de rutas en la acción es una lista que el día que se agrega una pantalla nadie se acuerda de actualizar, y el síntoma sería un umbral guardado que la tienda sigue ignorando, sin ningún error a la vista. Se paga revalidando de más algo que se toca una vez por mes |
 | **Un color «en uso por algo activo» se mide por la variante, no por el producto** | `modules/catalog/queries.ts`, `modules/catalog/actions.ts` | RN-11b habla de «variantes activas de un color inactivo», pero el conteo miraba solo `products.is_active`. Hasta F2.4 no había variantes y no se podía ver; con variantes es un callejón sin salida: desactivás el color en el producto, volvés a intentar desactivar el color y el aviso te pide desactivar un producto que ya no lo ofrece. Ahora bloquea lo que RN-11b dice que bloquea, ni más ni menos |
+| **El alta usa `signUp` y el reenvío `signInWithOtp`; `auth.resend()` no se usa en ninguna parte** | `modules/users/actions.ts`; `TECHNICAL-SPEC.md` §13.4 | El alta hacía `admin.createUser` + `auth.resend()`, y el reenvío `auth.resend()`. **El endpoint `/resend` de GoTrue descarta el `code_challenge`** que le manda `@supabase/ssr`: no deja fila en `auth.flow_state`, y sin esa fila `/auth/v1/verify` no tiene un `code` que emitir y devuelve la sesión por el flujo implícito, en el fragmento (`#access_token=…`). El fragmento **no se manda al servidor**, así que `/api/auth/confirmar` recibía una URL pelada y respondía «enlace inválido» —con la cuenta ya confirmada y la sesión perdida—. En local no se veía. Comprobado contra el servidor DATA con el mismo `code_challenge`: por `/signup` deja fila, por `/resend` no deja ninguna. `signUp` y `signInWithOtp` sí lo registran. `shouldCreateUser: false` en el reenvío es lo que impide que se vuelva un alta encubierta sin perfil |
+| **Las plantillas de email van en `public/` de la aplicación** | `PROGRESO.md` F1.8; F0.13 | GoTrue **no lee plantillas de un archivo**: toma `GOTRUE_MAILER_TEMPLATES_*` como URL y la busca por HTTP contra `SITE_URL`. Probado en el VPS montando la carpeta en el contenedor: el archivo estaba ahí y el log decía `Get "http://localhost:3000/etc/gotrue/email-templates/confirm.html": connection refused`. Servirlas hoy exigiría un contenedor más —en un stack que R5 ya marca como pesado— para tirarlo cuando la app se despliegue. Como GoTrue las resuelve contra `SITE_URL`, que **es la aplicación**, el lugar donde terminan es `public/`: versionadas con el código y sin infraestructura nueva. El intento se revirtió entero; el `docker-compose.yml` del VPS no quedó tocado |
 ---
 
 ## Qué está esperando algo tuyo
 
-1. **F0.11 — Resend como SMTP.** Sin esto no hay registro en producción, y no
-   se descubre hasta que alguien intenta crearse una cuenta. En local no se
-   nota porque Mailpit captura todo.
-2. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
+1. **F0.4 — qué está tapando el puerto 5432.** Es lo más urgente de la lista.
+   `supabase-pooler` lo publica en `0.0.0.0` y desde afuera no responde, así
+   que hay un firewall haciendo el trabajo. **Nadie verificó cuál ni si está
+   puesto a propósito**: si es el firewall virtual de DonWeb, §2.4 avisa que
+   no cubre la interfaz privada. Hoy la base está cerrada por una capa que no
+   revisamos, y eso no es lo mismo que estar cerrada.
+2. **F0.9 — la versión de Postgres.** El VPS corre **15.8** y
+   `supabase/config.toml` declara `major_version = 17`. Igualarlas, o dejar
+   escrito por qué no.
+3. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
    Meta for Developers, con `/auth/v1/callback` como URI de retorno. El código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
-3. **F0.13 — el *Send Email Hook*.** Su respuesta define cómo se hace F1.8.
 4. **F2.7 — el número y la casilla de verdad.** La pantalla está y anda, pero
    la fila quedó **vacía a propósito**: el número con el que se probó no es el
    de nadie, y un `wa.me` apuntando a un número inventado es peor que un botón
    que todavía no está. Hay que entrar a `/admin/configuracion` y cargar el
    número de WhatsApp real y la casilla donde querés los avisos. Hasta que eso
    pase, el aviso de stock bajo funciona con 3 unidades.
-5. **F0.7 — el bucket en producción.** `supabase/config.toml` declara
-   `productos` para el stack local, pero eso no lo crea en el VPS. En
-   producción lo crea F0.7, con los mismos tres valores: público en lectura,
-   10 MiB de tope y `image/webp` como único tipo permitido.
+5. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
+   contraseña; §2.4 pide además restricción por IP.
+6. **F0.10 — el backup.** La base de producción ya tiene datos que importan
+   —el catálogo real entra por F2.8— y todavía no hay volcado diario ni una
+   restauración de prueba. Un backup que nunca se restauró no es un backup.
 
 ---
 
