@@ -154,7 +154,7 @@ F10 Endurecimiento y lanzamiento
 | **F1.7** | Integrar Supabase Auth: clientes de navegador, servidor y servicio; Google y Facebook configurados en Supabase | **L** | TS §13.1, §13.2 · FS RF-05, RF-06 | Se puede registrar, entrar y salir por los tres métodos. Entrar con Google usando un email ya registrado **vincula**, no duplica |
 | **F1.7b** | Tabla `user_profiles` y alta con compensación | M | TS §5.3, §13.4 | El registro crea identidad y perfil, o **ninguno de los dos**. Tras OAuth sin perfil, se exige completarlo antes de operar |
 | **F1.7c** | Resolución de sesión: `getClaims()` local más lectura de perfil | M | TS §13.3 | Las guardias de página verifican localmente; **toda Server Action lee rol y bloqueo frescos de la base** |
-| **F1.8** | Personalizar las plantillas de Supabase (E1, E2, E3) y armar el layout de React Email para E4 | M | TS §14 · FS RF-30 | Los emails de identidad llegan con la identidad visual de AnaVende. E4 tiene su plantilla lista |
+| **F1.8** | Personalizar las plantillas de Supabase (E1, E2, E3) y armar el layout de React Email compartido | M | TS §14 · FS RF-30 | Los emails de identidad llegan con la identidad visual de AnaVende. El layout está armado y previsualizable, listo para que E4 lo use. **El contenido de E4 no es de esta tarea: es de F6.4**, porque hasta que la orden no exista no hay qué mostrarle a la administradora |
 | **F1.9** | Teléfono obligatorio en las tres vías de alta | M | FS RF-05, RF-06 · TS §5.3, §13.4 | No se puede operar sin teléfono cargado, ni por email ni por Google ni por Facebook |
 | **F1.10** | Escribir el envoltorio de Server Actions y los errores de dominio | M | TS §6.2, §6.3 | Una acción de prueba valida entrada, verifica rol, rechaza usuarios bloqueados y devuelve la forma `{ ok, ... }` |
 | **F1.11** | Escribir el módulo de dinero y activar la regla de lint que prohíbe `parseFloat` sobre montos | S | TS §7.1, R2 | Formatea `es-AR` con decimales. El lint **falla** ante un `parseFloat` sobre un monto |
@@ -250,7 +250,7 @@ F10 Endurecimiento y lanzamiento
 | **F6.1** | Checkout | **L** | FS RF-11 · DR §7 | Datos, elección de dirección, resumen y medios de pago. **Sin costo de envío** (RN-10). Email no verificado impide confirmar |
 | **F6.2** | Reconfirmación ante cambios | M | FS RF-11 · TS §8.4 paso 3 | Si el precio o el stock cambió entre ver y confirmar, **se avisa y se pide reconfirmar**; no se crea la orden en silencio |
 | **F6.3** | Confirmación: pantalla de éxito y WhatsApp | M | FS RF-12 · DR §7.5 | Número de orden, resumen y botón de WhatsApp como acción principal. Recargar no duplica |
-| **F6.4** | Email E4 a la administradora | S | FS RF-30 · TS §14 | Llega con el detalle completo y enlace al panel. **Si falla, la orden se crea igual** |
+| **F6.4** | Email E4 a la administradora, sobre el layout de F1.8 | S | FS RF-30 · TS §14 | Llega con el detalle completo y enlace al panel. **Si falla, la orden se crea igual**. Acá se escribe también su plantilla: el layout compartido ya existe desde F1.8, lo que faltaba era la orden que le da contenido |
 | **F6.5** | «Mis compras» y cancelación por el comprador | M | FS RF-07, RF-23 | Historial con precios de la orden (snapshot). Cancelar libera la reserva |
 
 > **Compuerta F6:** una compra completa de punta a punta, con el stock reservado correctamente al final.
