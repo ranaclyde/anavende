@@ -40,7 +40,7 @@ justamente por ese número).
 | F0.7 | Storage: subir, leer, borrar | ✅ | Bucket `productos` creado en Studio con los tres valores de `supabase/config.toml`: público en lectura, 10 MiB, solo `image/webp`. `db:imagenes` pasó entero contra ese bucket. **R6 no se materializó**: ni una falla de firma S3, y la prueba difícil —una subida cortada en el tercer tamaño— no dejó huérfanos |
 | F0.8 | Latencia real de la LAN | ⬜ | Sin sentido hasta que exista el segundo servidor (F0.1) |
 | F0.9 | Fijar versiones del stack | ✅ | Aplicación e infraestructura registradas en `VERSIONS.md`, con las **trece imágenes** del stack del VPS y su etiqueta exacta: son el parámetro de toda consulta a `context7` (§1.2 regla 6), y una actualización silenciosa de cualquiera es un cambio de producción que nadie pidió. El desfase de versión mayor quedó corregido: `supabase/config.toml` pasó de `major_version = 17` a **15**, la del servidor DATA (§18.2) |
-| F0.10 | Backup con restauración de prueba | ⬜ | |
+| F0.10 | Backup con restauración de prueba | ⬜ | **Hay un piso, y hay que conservarlo:** DonWeb hace un *Backup Standard* del VPS entero, **semanal, con retención de una sola copia** y restauración no inmediata, por Mesa de Ayuda. Cubre que el servidor se rompa, y nada más. Los tres huecos, en orden de gravedad: **(a)** con una única copia, un daño que no se note dentro de la semana se sobrescribe con el respaldo de los datos ya rotos —y una migración mala o un borrado por error casi nunca se notan el mismo día—; **(b)** no se puede restaurar sin ticket ni saber cuánto tarda, con el sitio caído mientras; **(c)** es la imagen del VPS entero, así que no hay forma de recuperar una tabla o un producto sin llevarse todo lo demás para atrás. Lo que falta es lo de §18.2: `pg_dump` de la base y respaldo del bucket, **fuera del VPS**, con varias copias de retención y **una restauración de prueba documentada**. La base comprimida son pocos MB: treinta copias no pesan nada y se restauran en minutos sin depender de nadie. **Sobre la frecuencia:** semanal alcanza *hoy*, con solo el catálogo —carga grande al principio y pocos artículos por mes, criterio tuyo y es correcto—. Deja de alcanzar cuando el checkout esté andando (F6): ahí adentro hay pedidos y clientes, y una semana perdida son ventas reales con gente esperando algo que ya pagó |
 | F0.11 | Resend como SMTP de Supabase | ✅ | **Compuerta F0.** `SMTP_HOST=smtp.resend.com`, puerto 465, usuario `resend` y la API key como contraseña, remitente en el dominio verificado. Los emails llegan a Gmail sin ir a spam. Reemplazó al contenedor `supabase-mail`, que **ni siquiera estaba corriendo**: el registro en producción estaba roto y no se veía |
 | F0.12 | Admin API de Auth | ✅ | Usada de verdad contra producción: listar y borrar usuarios por `service_role`. El borrado se lleva el perfil solo, por el `ON DELETE CASCADE` de la migración `0002` |
 | F0.13 | *Send Email Hook* auto-hospedado | ⬜ | Sigue abierta, pero **F1.8 ya no depende de su respuesta**: la vía de las plantillas quedó decidida por lo que se descubrió acá (abajo, en las decisiones) |
@@ -154,9 +154,11 @@ Cada una se escribió primero en la especificación y después en el código
    pase, el aviso de stock bajo funciona con 3 unidades.
 3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-4. **F0.10 — el backup.** La base de producción ya tiene datos que importan
-   —el catálogo real entra por F2.8— y todavía no hay volcado diario ni una
-   restauración de prueba. Un backup que nunca se restauró no es un backup.
+4. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
+   entero— está activo y sirve de piso, pero guarda **una sola copia** y se
+   restaura por ticket. Falta el volcado de la base y del bucket, con varias
+   copias y una restauración probada. Conviene antes de F2.8, que es cuando
+   entra el catálogo real: es trabajo de Ana lo que se estaría arriesgando.
 
 ---
 
