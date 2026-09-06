@@ -111,8 +111,31 @@ ninguno.
 | F4.2 | Máquina de estados de la orden | ✅ | `modules/orders/estados.ts`. La transición es un `UPDATE` condicional con el estado esperado en el `WHERE` y **va antes de tocar el stock**: es lo que decide quién gana. Finalizar vende y suelta la reserva; cancelar sólo suelta. Cada una escribe en el historial en la misma transacción. La tabla de RF-13 se exporta como dato (`TRANSICIONES`) para que la vista no repita la regla. **16 tests**, incluidos dos de concurrencia con solapamiento forzado |
 | F4.3 | Creación de orden con snapshot e idempotencia | 🟡 | `modules/orders/crear.ts`, el procedimiento de §8.4 completo: carrito bloqueado, revalidación contra lo que el comprador vio, snapshot de comprador, dirección e ítems, reserva en orden determinístico, total sumado en SQL, historial y carrito vaciado. **18 tests**, entre ellos dos compradores solapados sobre la última unidad. **Falta aplicar la migración `0008` en producción** |
 | F4.4 | Edición de orden activa | 🟡 | `modules/orders/editar.ts`: quitar un ítem y reducir cantidades, liberando la reserva **de inmediato** y recalculando el total en SQL. La orden se bloquea con `FOR UPDATE` antes de mirarle el estado, y eso no es de más: sin el bloqueo, entre leer «está activa» y liberar, otra transacción la finaliza. Quitar el último cancela, pero **hay que pedirlo**: si no, la función se niega y avisa que eso es lo que va a pasar. **11 tests**. **Falta la migración `0009` en producción** |
-| F4.5 | Devoluciones con y sin reposición | ⬜ | |
-| F4.6 | Tests unitarios contra Postgres real | ⬜ | Los tests no van al final: cada tarea de arriba se cierra con los suyos. Lo que queda para acá es la **Compuerta F4** —dos reservas simultáneas sobre la última unidad— y que el libro mayor cuadre con los contadores |
+| F4.5 | Devoluciones con y sin reposición | ✅ | `modules/returns/registrar.ts`. Con reposición suma al stock, sin reposición no toca nada y queda registrada igual para RF-28. El tope de RF-25 —ni más de lo vendido ni de lo ya devuelto— se calcula con la orden **bloqueada**: dos devoluciones simultáneas sobre el mismo renglón leerían la misma suma y entre las dos devolverían de más. Anular revierte lo repuesto y libera el cupo. **15 tests** |
+| F4.6 | Tests unitarios contra Postgres real | ✅ | **89 tests** en total, todos contra Postgres de verdad. Los de cada tarea viven con la tarea; acá quedan los dos que son de toda la fase: la carrera por la última unidad y el cuadre del libro |
+
+## Compuerta F4 — **pasa**
+
+> «Dos confirmaciones simultáneas sobre la última unidad producen **una orden y
+> un `INSUFFICIENT_STOCK`**, nunca dos órdenes. Sin esto verificado, no se
+> avanza.»
+
+Verificada el 2026-09-06, en los dos niveles y con el solapamiento forzado, no
+con un `Promise.all` que puede no solaparse: en `reservar()` directo
+(`tests/unit/stock/compuerta.test.ts`) y de punta a punta desde el checkout,
+con dos compradores distintos peleando la misma unidad
+(`tests/unit/orders/crear.test.ts`). Y al revés: quitándole la condición al
+`UPDATE` de la reserva se ponen en rojo **siete** tests, la compuerta entre
+ellos. Un test que no falla cuando el código está roto no prueba nada.
+
+**El libro mayor cuadra**, con dos comprobaciones que se complementan:
+`stock_total = SUM(quantity)` sobre `ajuste`, `venta` y `devolucion` —si no da,
+algún asiento tiene el signo o la cantidad mal—, y que el **último** asiento
+diga el estado actual, que es la que detecta un cambio hecho **sin** asentar.
+Esa segunda tiene su propio test que la rompe a propósito, moviéndole el
+contador por afuera del módulo.
+
+---
 
 **Un `Promise.all` no prueba una condición de carrera** (F4.2). Lanzar dos
 transacciones a la vez no garantiza que se solapen: el planificador puede
@@ -129,6 +152,13 @@ Y los tests se comprobaron al revés, que es la otra mitad: sacándole la
 condición `AND status = 'activa'` al `UPDATE` se ponen en rojo cinco, los dos
 de concurrencia entre ellos. Un test que no falla cuando el código está roto
 no está probando lo que dice.
+
+**La anulación de una devolución no estaba en §8.1** (F4.5). Esa tabla lista
+las operaciones directas, y RF-25 pide aparte que «una devolución registrada no
+se edita: se anula, revirtiendo el efecto en stock». Sin inversa esa frase no
+se puede cumplir. `revertirReposicion()` escribe el **mismo tipo** de asiento
+que la reposición con el signo dado vuelta, para que el invariante del libro
+siga cerrando: un tipo nuevo la sacaría de la suma. Agregada a §8.1.
 
 **El historial de la orden se ensanchó, y queda dicho** (F4.4). RF-22 pide que
 la edición «quede registrada en el historial de la orden» y el único historial

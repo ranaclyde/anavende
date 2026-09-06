@@ -265,6 +265,47 @@ export async function reponer(
   });
 }
 
+/**
+ * La inversa de `reponer`: `stock_total -= q`, para ANULAR una devolución
+ * (RF-25). Tarea F4.5.
+ *
+ * §8.1 no la lista, y no es un descuido de esa tabla: ahí están las cinco
+ * operaciones **directas**, y RF-25 dice aparte que «una devolución
+ * registrada no se edita: se anula, revirtiendo el efecto en stock». Sin
+ * inversa, esa frase no se puede cumplir.
+ *
+ * Escribe el MISMO tipo de asiento que la reposición, `devolucion`, con el
+ * signo dado vuelta. Así el invariante del libro sigue cerrando
+ * —`stock_total = SUM(quantity)` sobre `ajuste`, `venta` y `devolucion`— y la
+ * anulación se lee en el historial como lo que es: la devolución de la
+ * devolución. Un tipo nuevo la sacaría de esa suma y el libro dejaría de
+ * cuadrar.
+ */
+export async function revertirReposicion(
+  tx: Transaccion,
+  args: Rastro & { quantity: number },
+): Promise<Contadores> {
+  exigirCantidad(args.quantity);
+  return mover(tx, args, {
+    set: sql`stock_total = stock_total - ${args.quantity}`,
+    // La misma guarda que la venta sin reserva: el total puede irse abajo de
+    // cero —si mientras tanto se vendió lo que había vuelto—, pero no puede
+    // quedar por encima de cero y por debajo de lo ya comprometido.
+    donde: sql`stock_total - ${args.quantity} < 0
+               OR reserved_stock <= stock_total - ${args.quantity}`,
+    type: "devolucion",
+    quantity: -args.quantity,
+    siNoAplica: () => {
+      throw domainError("INSUFFICIENT_STOCK", {
+        variantId: args.variantId,
+        message:
+          "Anular esa devolución dejaría el stock por debajo de lo que ya " +
+          "está reservado en órdenes activas. Resolvé esas órdenes primero.",
+      });
+    },
+  });
+}
+
 // ── Ajustar (RF-16: la vendedora corrige el número) ─────────────────────
 
 /**

@@ -836,9 +836,12 @@ stock_disponible = stock_total − reserved_stock
 | Quitar/reducir ítem de orden activa | `reserved_stock −= q` | RF-22 |
 | Devolución con reposición | `stock_total += q` | RF-25 |
 | Devolución sin reposición | sin efecto (se registra igual) | RF-25 |
+| **Anulación de una devolución con reposición** | `stock_total −= q` | RF-25 |
 | Orden manual creada como activa | `reserved_stock += q` | RF-24 |
 | Orden manual creada como finalizada | `stock_total −= q` (puede quedar negativo) | RF-24 |
 | Ajuste de la vendedora | `stock_total = nuevo valor` | RF-16 |
+
+> **La anulación se agregó en F4.5.** Esta tabla listaba las operaciones directas y RF-25 pide aparte que «una devolución registrada no se edita: se anula, revirtiendo el efecto en stock» — sin la inversa, esa frase no se puede cumplir. Escribe el **mismo tipo de asiento** que la reposición, `devolucion`, con el signo dado vuelta: así el invariante del libro mayor sigue cerrando y la anulación se lee en el historial como lo que es. Un tipo nuevo la sacaría de la suma y el libro dejaría de cuadrar.
 
 ### 8.2 Reserva: un solo `UPDATE` condicional
 

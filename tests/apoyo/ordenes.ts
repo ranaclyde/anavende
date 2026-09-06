@@ -150,9 +150,16 @@ export async function historial(
   ];
 }
 
-/** Se llama desde el mismo `afterEach` que `limpiar()`. */
+/**
+ * Se llama desde el mismo `afterEach` que `limpiar()`.
+ *
+ * Las devoluciones se borran primero: `returns.order_id` es **RESTRICT** a
+ * propósito (§5.7) —una orden con devoluciones no se borra—, así que la
+ * cascada no las alcanza y el DELETE de la orden falla.
+ */
 export async function limpiarOrdenes(): Promise<void> {
   for (const id of creadas.splice(0)) {
+    await db.execute(sql`DELETE FROM returns WHERE order_id = ${id}`);
     await db.execute(sql`DELETE FROM orders WHERE id = ${id}`);
   }
 }
