@@ -108,11 +108,27 @@ ninguno.
 |---|---|---|---|
 | F4.0 | Vitest andando, con `npm test` | ✅ | No es una tarea del plan: es la deuda de los once `db:xxx` venciendo donde estaba anotado que vencía. Vitest 5.0.0, `tests/unit/**/*.test.ts`, un archivo por vez —comparten base, y dos a la vez se pisan los datos—. La guarda se probó de los dos lados: verde contra el stack local, y abortando con el mensaje correcto cuando la URL apunta al **5433**, que es el puerto del túnel SSH a producción |
 | F4.1 | Operaciones de stock con `UPDATE` condicional atómico | 🟡 | Reservar, liberar, vender, reponer y ajustar, en `modules/stock/operaciones.ts`, cada una con su asiento en la misma transacción. **24 tests en verde** contra Postgres de verdad. El ABM de variantes de F2.4 pasó a usar `ajustar()`: el libro mayor tiene un solo autor. **Falta aplicar la migración `0007` en producción**, abajo |
-| F4.2 | Máquina de estados de la orden | ⬜ | |
+| F4.2 | Máquina de estados de la orden | ✅ | `modules/orders/estados.ts`. La transición es un `UPDATE` condicional con el estado esperado en el `WHERE` y **va antes de tocar el stock**: es lo que decide quién gana. Finalizar vende y suelta la reserva; cancelar sólo suelta. Cada una escribe en el historial en la misma transacción. La tabla de RF-13 se exporta como dato (`TRANSICIONES`) para que la vista no repita la regla. **16 tests**, incluidos dos de concurrencia con solapamiento forzado |
 | F4.3 | Creación de orden con snapshot e idempotencia | ⬜ | |
 | F4.4 | Edición de orden activa | ⬜ | |
 | F4.5 | Devoluciones con y sin reposición | ⬜ | |
 | F4.6 | Tests unitarios contra Postgres real | ⬜ | Los tests no van al final: cada tarea de arriba se cierra con los suyos. Lo que queda para acá es la **Compuerta F4** —dos reservas simultáneas sobre la última unidad— y que el libro mayor cuadre con los contadores |
+
+**Un `Promise.all` no prueba una condición de carrera** (F4.2). Lanzar dos
+transacciones a la vez no garantiza que se solapen: el planificador puede
+correr la primera entera —COMMIT incluido— antes de que la segunda abra su
+conexión. El test da verde y no probó nada, que es la peor clase de test que
+puede haber justo acá. `tests/apoyo/concurrencia.ts` fuerza el solapamiento:
+la primera hace su trabajo y **se queda abierta**, la segunda arranca y se
+traba esperando el bloqueo de la fila, y recién ahí la primera commitea. Ese
+despertar de la segunda —cuando vuelve a evaluar su `WHERE` contra la fila ya
+cambiada— es el instante que decide si el sistema vende dos veces la última
+unidad. Es el andamiaje que va a usar la Compuerta F4.
+
+Y los tests se comprobaron al revés, que es la otra mitad: sacándole la
+condición `AND status = 'activa'` al `UPDATE` se ponen en rojo cinco, los dos
+de concurrencia entre ellos. Un test que no falla cuando el código está roto
+no está probando lo que dice.
 
 **Lo que F4.1 encontró, y no se veía leyendo el código.**
 
