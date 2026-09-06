@@ -104,6 +104,30 @@ export async function estadoDeLaOrden(orderId: string): Promise<{
   return fila;
 }
 
+/** Los renglones con su id, que es lo que la edición de RF-22 recibe. */
+export async function renglonesDeLaOrden(orderId: string): Promise<
+  { id: string; variantId: string | null; quantity: number }[]
+> {
+  return [
+    ...(await db.execute<{
+      id: string;
+      variantId: string | null;
+      quantity: number;
+    }>(sql`
+      SELECT id, variant_id AS "variantId", quantity
+        FROM order_items
+       WHERE order_id = ${orderId}
+       ORDER BY created_at, id`)),
+  ];
+}
+
+/** El total, tal como quedó guardado en la orden. */
+export async function totalDeLaOrden(orderId: string): Promise<string> {
+  const [fila] = await db.execute<{ total: string }>(sql`
+    SELECT total FROM orders WHERE id = ${orderId}`);
+  return fila.total;
+}
+
 export type EntradaDeHistorial = {
   fromStatus: string | null;
   toStatus: string;

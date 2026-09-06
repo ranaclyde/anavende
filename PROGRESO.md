@@ -110,7 +110,7 @@ ninguno.
 | F4.1 | Operaciones de stock con `UPDATE` condicional atómico | 🟡 | Reservar, liberar, vender, reponer y ajustar, en `modules/stock/operaciones.ts`, cada una con su asiento en la misma transacción. **24 tests en verde** contra Postgres de verdad. El ABM de variantes de F2.4 pasó a usar `ajustar()`: el libro mayor tiene un solo autor. **Falta aplicar la migración `0007` en producción**, abajo |
 | F4.2 | Máquina de estados de la orden | ✅ | `modules/orders/estados.ts`. La transición es un `UPDATE` condicional con el estado esperado en el `WHERE` y **va antes de tocar el stock**: es lo que decide quién gana. Finalizar vende y suelta la reserva; cancelar sólo suelta. Cada una escribe en el historial en la misma transacción. La tabla de RF-13 se exporta como dato (`TRANSICIONES`) para que la vista no repita la regla. **16 tests**, incluidos dos de concurrencia con solapamiento forzado |
 | F4.3 | Creación de orden con snapshot e idempotencia | 🟡 | `modules/orders/crear.ts`, el procedimiento de §8.4 completo: carrito bloqueado, revalidación contra lo que el comprador vio, snapshot de comprador, dirección e ítems, reserva en orden determinístico, total sumado en SQL, historial y carrito vaciado. **18 tests**, entre ellos dos compradores solapados sobre la última unidad. **Falta aplicar la migración `0008` en producción** |
-| F4.4 | Edición de orden activa | ⬜ | |
+| F4.4 | Edición de orden activa | 🟡 | `modules/orders/editar.ts`: quitar un ítem y reducir cantidades, liberando la reserva **de inmediato** y recalculando el total en SQL. La orden se bloquea con `FOR UPDATE` antes de mirarle el estado, y eso no es de más: sin el bloqueo, entre leer «está activa» y liberar, otra transacción la finaliza. Quitar el último cancela, pero **hay que pedirlo**: si no, la función se niega y avisa que eso es lo que va a pasar. **11 tests**. **Falta la migración `0009` en producción** |
 | F4.5 | Devoluciones con y sin reposición | ⬜ | |
 | F4.6 | Tests unitarios contra Postgres real | ⬜ | Los tests no van al final: cada tarea de arriba se cierra con los suyos. Lo que queda para acá es la **Compuerta F4** —dos reservas simultáneas sobre la última unidad— y que el libro mayor cuadre con los contadores |
 
@@ -129,6 +129,16 @@ Y los tests se comprobaron al revés, que es la otra mitad: sacándole la
 condición `AND status = 'activa'` al `UPDATE` se ponen en rojo cinco, los dos
 de concurrencia entre ellos. Un test que no falla cuando el código está roto
 no está probando lo que dice.
+
+**El historial de la orden se ensanchó, y queda dicho** (F4.4). RF-22 pide que
+la edición «quede registrada en el historial de la orden» y el único historial
+que existe es `order_status_history`. Una edición no es un cambio de estado,
+así que se escribe como `activa → activa` con el motivo contando qué pasó. La
+alternativa era una segunda tabla, y entonces la pantalla de la orden tendría
+que unir dos líneas de tiempo para mostrar una. De paso se le aplicó a esa
+tabla el mismo `clock_timestamp()` del libro mayor (migración `0009`): con una
+transición por transacción todavía no molestaba, pero quitar dos ítems de una
+es una sola transacción con dos filas.
 
 **La columna de la idempotencia no existía** (F4.3). §8.5 decía «la clave se
 guarda en `orders` con un índice único» y §5.6 nunca la declaró: la
@@ -275,12 +285,13 @@ Cada una se escribió primero en la especificación y después en el código
    pase, el aviso de stock bajo funciona con 3 unidades.
 3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-4. **Las migraciones `0007` y `0008` en producción.** `0007` corrige el
-   `DEFAULT` de `stock_movements.created_at` a `clock_timestamp()`; `0008`
-   agrega `orders.idempotency_key` y su índice único parcial. Las dos están
+4. **Las migraciones `0007`, `0008` y `0009` en producción.** `0007` y `0009`
+   corrigen el `DEFAULT` de `created_at` a `clock_timestamp()` en
+   `stock_movements` y en `order_status_history`; `0008` agrega
+   `orders.idempotency_key` y su índice único parcial. Las tres están
    aplicadas en el stack local y **ninguna** en el servidor DATA: aplicarlas es
    un `db:migrate` contra producción, y eso lo corrés vos cuando quieras. Las
-   dos son no destructivas y no tocan ninguna fila existente.
+   tres son no destructivas y no tocan ninguna fila existente.
 5. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
    entero— está activo y sirve de piso, pero guarda **una sola copia** y se
    restaura por ticket. Falta el volcado de la base y del bucket, con varias

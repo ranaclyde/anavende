@@ -155,9 +155,18 @@ export const orderStatusHistory = pgTable("order_status_history", {
   actorUserId: uuid("actor_user_id").references(() => userProfiles.id, {
     onDelete: "set null",
   }),
+  /**
+   * `clock_timestamp()` por el mismo motivo que `stock_movements` (F4.1): con
+   * `now()`, dos filas escritas en la misma transacción quedan con el
+   * timestamp idéntico y el historial se lee en un orden cualquiera.
+   *
+   * Acá todavía no muerde —una transición por transacción—, pero F4.4 empieza
+   * a escribir acá las ediciones de RF-22, y quitar dos ítems de una es una
+   * sola transacción con dos filas. Se corrige antes y no después.
+   */
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
-    .defaultNow(),
+    .default(sql`clock_timestamp()`),
 });
 
 export type Order = typeof orders.$inferSelect;
