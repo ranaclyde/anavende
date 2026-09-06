@@ -116,10 +116,30 @@ const gin = await sql<{ indexname: string }[]>`
   WHERE schemaname = 'public' AND indexdef LIKE '%gin%' ORDER BY 1`;
 ok(gin.length === 3, `Índices GIN de búsqueda: ${gin.length}`);
 
-const parciales = await sql<{ indexname: string }[]>`
-  SELECT indexname FROM pg_indexes
-  WHERE schemaname = 'public' AND indexdef LIKE '%WHERE%' ORDER BY 1`;
-ok(parciales.length === 5, `Índices parciales: ${parciales.map((i) => i.indexname).join(", ")}`);
+// Por nombre y no por número, por el mismo motivo que las columnas generadas
+// de arriba: el «5» que había acá se rompió solo cuando F4.3 agregó el índice
+// de la clave de idempotencia (§8.5), sin que nada estuviera mal. Una
+// aserción que cuenta envejece; una que nombra, no — y además dice cuál falta.
+const parciales = (
+  await sql<{ indexname: string }[]>`
+    SELECT indexname FROM pg_indexes
+    WHERE schemaname = 'public' AND indexdef LIKE '%WHERE%' ORDER BY 1`
+).map((i) => i.indexname);
+
+for (const indice of [
+  "one_default_address_per_user",
+  "orders_idempotency_key_idx",
+  "products_active_brand_idx",
+  "products_active_category_idx",
+  "products_created_idx",
+  "products_final_price_idx",
+]) {
+  ok(parciales.includes(indice), `Índice parcial ${indice}`);
+}
+ok(
+  parciales.length === 6,
+  `No hay índices parciales de más: ${parciales.join(", ")}`,
+);
 
 await sql.end();
 console.log(fallos ? `\n${fallos} comprobación(es) fallaron.` : "\nTodo en orden.");

@@ -109,7 +109,7 @@ ninguno.
 | F4.0 | Vitest andando, con `npm test` | ✅ | No es una tarea del plan: es la deuda de los once `db:xxx` venciendo donde estaba anotado que vencía. Vitest 5.0.0, `tests/unit/**/*.test.ts`, un archivo por vez —comparten base, y dos a la vez se pisan los datos—. La guarda se probó de los dos lados: verde contra el stack local, y abortando con el mensaje correcto cuando la URL apunta al **5433**, que es el puerto del túnel SSH a producción |
 | F4.1 | Operaciones de stock con `UPDATE` condicional atómico | 🟡 | Reservar, liberar, vender, reponer y ajustar, en `modules/stock/operaciones.ts`, cada una con su asiento en la misma transacción. **24 tests en verde** contra Postgres de verdad. El ABM de variantes de F2.4 pasó a usar `ajustar()`: el libro mayor tiene un solo autor. **Falta aplicar la migración `0007` en producción**, abajo |
 | F4.2 | Máquina de estados de la orden | ✅ | `modules/orders/estados.ts`. La transición es un `UPDATE` condicional con el estado esperado en el `WHERE` y **va antes de tocar el stock**: es lo que decide quién gana. Finalizar vende y suelta la reserva; cancelar sólo suelta. Cada una escribe en el historial en la misma transacción. La tabla de RF-13 se exporta como dato (`TRANSICIONES`) para que la vista no repita la regla. **16 tests**, incluidos dos de concurrencia con solapamiento forzado |
-| F4.3 | Creación de orden con snapshot e idempotencia | ⬜ | |
+| F4.3 | Creación de orden con snapshot e idempotencia | 🟡 | `modules/orders/crear.ts`, el procedimiento de §8.4 completo: carrito bloqueado, revalidación contra lo que el comprador vio, snapshot de comprador, dirección e ítems, reserva en orden determinístico, total sumado en SQL, historial y carrito vaciado. **18 tests**, entre ellos dos compradores solapados sobre la última unidad. **Falta aplicar la migración `0008` en producción** |
 | F4.4 | Edición de orden activa | ⬜ | |
 | F4.5 | Devoluciones con y sin reposición | ⬜ | |
 | F4.6 | Tests unitarios contra Postgres real | ⬜ | Los tests no van al final: cada tarea de arriba se cierra con los suyos. Lo que queda para acá es la **Compuerta F4** —dos reservas simultáneas sobre la última unidad— y que el libro mayor cuadre con los contadores |
@@ -129,6 +129,18 @@ Y los tests se comprobaron al revés, que es la otra mitad: sacándole la
 condición `AND status = 'activa'` al `UPDATE` se ponen en rojo cinco, los dos
 de concurrencia entre ellos. Un test que no falla cuando el código está roto
 no está probando lo que dice.
+
+**La columna de la idempotencia no existía** (F4.3). §8.5 decía «la clave se
+guarda en `orders` con un índice único» y §5.6 nunca la declaró: la
+especificación daba por existente algo que el modelo de datos no tenía.
+Migración `0008`, y escrita primero en §5.6. Vale anotar por qué el índice es
+la pieza que decide y no la consulta previa: dos peticiones con la misma clave
+que llegan a la vez consultan las dos, no encuentran nada las dos e insertan
+las dos. Es la misma carrera que el stock. Quien resuelve es el índice único, y
+la que pierde tiene que **releer** la orden ganadora **fuera** de su
+transacción, porque una transacción abortada no puede consultar — de ahí que
+`crearOrdenDesdeCarrito()` abra su propia transacción en vez de recibir una,
+al revés que todo el resto del módulo.
 
 **Lo que F4.1 encontró, y no se veía leyendo el código.**
 
@@ -263,12 +275,12 @@ Cada una se escribió primero en la especificación y después en el código
    pase, el aviso de stock bajo funciona con 3 unidades.
 3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-4. **La migración `0007` en producción.** F4.1 corrigió el `DEFAULT` de
-   `stock_movements.created_at` a `clock_timestamp()`. Está aplicada en el
-   stack local y **no** en el servidor DATA: aplicarla es un `db:migrate`
-   contra producción, y eso lo corrés vos cuando quieras. Es una sola línea,
-   no destructiva, y no toca ninguna fila existente — cambia sólo el valor por
-   omisión de las que vengan.
+4. **Las migraciones `0007` y `0008` en producción.** `0007` corrige el
+   `DEFAULT` de `stock_movements.created_at` a `clock_timestamp()`; `0008`
+   agrega `orders.idempotency_key` y su índice único parcial. Las dos están
+   aplicadas en el stack local y **ninguna** en el servidor DATA: aplicarlas es
+   un `db:migrate` contra producción, y eso lo corrés vos cuando quieras. Las
+   dos son no destructivas y no tocan ninguna fila existente.
 5. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
    entero— está activo y sirve de piso, pero guarda **una sola copia** y se
    restaura por ticket. Falta el volcado de la base y del bucket, con varias
@@ -301,6 +313,38 @@ producto se puede cargar (RF-16). Pero la ayuda decía «Los colores se cargan e
 Catálogo» en los dos casos, y con la lista vacía eso se lee como un paso
 obligatorio que falta cuando en realidad es opcional. Ahora dice que se puede
 seguir sin colores.
+
+**Un comprador con órdenes web no se puede borrar, y nadie decidió eso.**
+Apareció en F4.3, y no leyendo el código: la limpieza de un test reventó al
+borrar la identidad de prueba. `orders.user_id` es **`ON DELETE SET NULL`** —la
+intención es clara, la orden sobrevive a que se cierre la cuenta— y el CHECK
+`web_order_has_user` dice `origin <> 'web' OR user_id IS NOT NULL`, que prohíbe
+exactamente ese NULL. Las dos cosas están en §5.6, una al lado de la otra, y se
+contradicen: la cascada intenta poner NULL, el CHECK la rechaza, y el borrado
+falla entero. Un CHECK no puede distinguir «se está creando» de «se está
+borrando el dueño», así que hay que elegir:
+
+  · **Dejar el CHECK y pasar la clave foránea a `RESTRICT`.** El borrado sigue
+    sin poder hacerse, pero falla diciendo la verdad —«esta persona tiene
+    órdenes»— en vez de con una violación de CHECK. Es también lo que RN-11
+    hace con productos y marcas.
+  · **Sacar el CHECK** y sostener «una orden web tiene comprador» desde la
+    aplicación, que es más débil pero deja que la cuenta se cierre y la orden
+    quede.
+
+No entra en F4 porque nada del MVP borra cuentas: hoy sólo pasaría desde Studio
+o la Admin API. Pero es una decisión de retención de datos y conviene tomarla a
+propósito, no descubrirla el día que haya que borrar a alguien de verdad. En
+los tests se esquiva borrando las órdenes antes que la identidad.
+
+**«Los índices parciales tienen que ser 5» volvió a envejecer.** Es la misma
+lección que F2.6 escribió para las columnas generadas —«una aserción que
+cuenta envejece; una que nombra, no»— y que quedó a medias: se arregló la
+comprobación que falló ese día y no la de al lado, que contaba igual. F4.3
+agregó el índice de la clave de idempotencia y `db:verificar` se puso rojo sin
+que nada estuviera mal. Ahora se comprueban por nombre, y el error dice cuál
+falta. **Quedan dos que todavía cuentan**: los enums (`length === 4`) y los
+índices GIN (`length === 3`).
 
 **Los scripts que escriben ya no pueden correr contra producción.** Nueve de
 los once crean marcas, productos y variantes, suben archivos al bucket y

@@ -555,6 +555,10 @@ CREATE TABLE orders (
   total             numeric(12,2) NOT NULL DEFAULT 0,
   notes             text,
 
+  -- §8.5: un doble clic o un reintento del navegador no crea dos órdenes.
+  -- NULL en las manuales (RF-24), que las carga una persona de a una.
+  idempotency_key   text,
+
   created_by        uuid REFERENCES user_profiles(id) ON DELETE SET NULL,  -- admin, en órdenes manuales
   created_at        timestamptz NOT NULL DEFAULT now(),
   updated_at        timestamptz NOT NULL DEFAULT now(),
@@ -566,6 +570,12 @@ CREATE TABLE orders (
 );
 CREATE INDEX orders_status_idx  ON orders (status, created_at DESC);
 CREATE INDEX orders_user_idx    ON orders (user_id, created_at DESC);
+-- Parcial: las órdenes manuales no llevan clave, y sin el WHERE la segunda
+-- que se cargara chocaría contra la primera por tener las dos NULL... no en
+-- Postgres, donde NULL no colisiona, pero el WHERE deja escrito que ese hueco
+-- es deliberado y no un olvido.
+CREATE UNIQUE INDEX orders_idempotency_key_idx
+  ON orders (idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 CREATE TABLE order_items (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -881,6 +891,10 @@ El paso 3 implementa la **reconfirmación** de RF-11: el cliente envía un ident
 ### 8.5 Idempotencia (RF-12)
 
 Un doble clic o un reintento del navegador no puede generar dos órdenes. La acción de confirmación recibe una **clave de idempotencia** generada al abrir el checkout; si ya existe una orden con esa clave, se devuelve la existente en lugar de crear otra. La clave se guarda en `orders` con un índice único.
+
+> **La columna faltaba.** §5.6 nunca la declaró: esta sección daba por existente algo que el modelo de datos no tenía, y se descubrió al escribir F4.3. Agregada en la migración `0008` y ya escrita arriba, en §5.6.
+
+> **Mirar antes de insertar no alcanza, y por eso la clave la hace cumplir el índice.** Dos peticiones con la misma clave que llegan a la vez consultan las dos, las dos no encuentran nada y las dos insertan: es la misma carrera que el stock, con el mismo final. Quien decide es el índice único; la segunda transacción se cae con violación de unicidad y **ahí** se lee la orden que ganó y se la devuelve. Esa relectura tiene que ocurrir **fuera** de la transacción que falló, porque una transacción abortada no puede seguir consultando: de ahí que la creación de orden abra su propia transacción en vez de recibir una.
 
 ---
 

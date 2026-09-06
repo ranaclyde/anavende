@@ -63,3 +63,53 @@ export async function dosALaVez<A, B>(
     [PromiseSettledResult<A>, PromiseSettledResult<B>]
   >;
 }
+
+/**
+ * Lo mismo, para funciones que **abren su propia transacción** y por lo tanto
+ * no pueden recibir la de otro — `crearOrdenDesdeCarrito()`, por la
+ * idempotencia (§8.5).
+ *
+ * Acá el solapamiento no se fuerza reteniendo a una de las dos, sino tomando
+ * el bloqueo de la fila en disputa desde una TERCERA transacción. Las dos
+ * arrancan, hacen su trabajo previo y se quedan las dos esperando esa fila;
+ * recién entonces se suelta. Se despiertan una detrás de la otra sobre una
+ * fila que ya cambió, que es el instante que hay que poner bajo prueba.
+ *
+ * La ventaja sobre retener a la primera: ninguna de las dos sabe que está en
+ * un test, y las dos llegan al punto de conflicto por su propio camino.
+ */
+export async function dosCompitiendo<A, B>(
+  tomarElBloqueo: (tx: Transaccion) => Promise<void>,
+  a: () => Promise<A>,
+  b: () => Promise<B>,
+): Promise<[PromiseSettledResult<A>, PromiseSettledResult<B>]> {
+  let bloqueoTomado!: () => void;
+  const yaBloqueada = new Promise<void>((r) => {
+    bloqueoTomado = r;
+  });
+
+  let soltar!: () => void;
+  const puedeSoltar = new Promise<void>((r) => {
+    soltar = r;
+  });
+
+  const guardiana = db.transaction(async (tx) => {
+    await tomarElBloqueo(tx);
+    bloqueoTomado();
+    await puedeSoltar;
+  });
+
+  await Promise.race([yaBloqueada, guardiana.catch(() => undefined)]);
+
+  const trabajoA = a();
+  const trabajoB = b();
+
+  // El margen para que las dos lleguen a la fila y se queden esperándola.
+  await new Promise((r) => setTimeout(r, 200));
+  soltar();
+  await guardiana;
+
+  return Promise.allSettled([trabajoA, trabajoB]) as Promise<
+    [PromiseSettledResult<A>, PromiseSettledResult<B>]
+  >;
+}

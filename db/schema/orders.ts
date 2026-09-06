@@ -8,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -61,6 +62,20 @@ export const orders = pgTable(
       .default("0"),
     notes: text("notes"),
 
+    /**
+     * Idempotencia (§8.5): la clave que genera el checkout al abrirse. Un
+     * doble clic o un reintento del navegador llegan con la misma y devuelven
+     * LA MISMA orden en vez de crear otra.
+     *
+     * Quien lo hace cumplir es el índice único de abajo, no una consulta
+     * previa: dos peticiones simultáneas consultan las dos, no encuentran
+     * nada las dos, e insertan las dos.
+     *
+     * NULL en las órdenes manuales (RF-24), que las carga una persona de a
+     * una y no tienen de qué protegerse.
+     */
+    idempotencyKey: text("idempotency_key"),
+
     /** La administradora, en las órdenes manuales. */
     createdBy: uuid("created_by").references(() => userProfiles.id, {
       onDelete: "set null",
@@ -83,6 +98,12 @@ export const orders = pgTable(
     ),
     index("orders_status_idx").on(t.status, t.createdAt.desc()),
     index("orders_user_idx").on(t.userId, t.createdAt.desc()),
+    // Parcial. En Postgres dos NULL no colisionan, así que el WHERE no cambia
+    // el comportamiento: deja escrito que el hueco de las órdenes manuales es
+    // deliberado y no un olvido.
+    uniqueIndex("orders_idempotency_key_idx")
+      .on(t.idempotencyKey)
+      .where(sql`idempotency_key IS NOT NULL`),
   ],
 );
 
