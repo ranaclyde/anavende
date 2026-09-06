@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-05.
+Última actualización: 2026-09-06.
 
 **Qué significa cada estado**
 
@@ -87,6 +87,98 @@ justamente por ese número).
 
 ---
 
+## F4 — Núcleo de stock y órdenes
+
+**Se adelanta a F3 por decisión tuya del 2026-09-06.** El mapa de fases de
+`DEVELOPMENT-PLAN.md` §3 ya lo permitía —«F4 puede adelantarse: no depende de
+F2 ni F3»— y el motivo para usar ese permiso ahora es que F3 necesita el
+catálogo real (F2.8) y F4 no necesita nada de nadie.
+
+**Dónde corren estos tests, y por qué importa.** Contra el **stack local**
+(`npm run dev:stack`, puerto 54322), nunca contra producción: reservan, venden
+y devuelven stock, y `.env.local` apunta al servidor DATA desde el 2026-09-05.
+No queda librado a acordarse — `tests/setup/entorno.ts` lee `.env.test`
+**pisando** lo que haya en el entorno y aborta si la base no es la del stack
+local, **sin escape por variable de entorno**, que es la diferencia con
+`soloLocal()`: un script de verificación contra producción tiene un caso
+legítimo algún día, una batería que crea órdenes y las cancela no tiene
+ninguno.
+
+| ID | Tarea | Estado | Nota |
+|---|---|---|---|
+| F4.0 | Vitest andando, con `npm test` | ✅ | No es una tarea del plan: es la deuda de los once `db:xxx` venciendo donde estaba anotado que vencía. Vitest 5.0.0, `tests/unit/**/*.test.ts`, un archivo por vez —comparten base, y dos a la vez se pisan los datos—. La guarda se probó de los dos lados: verde contra el stack local, y abortando con el mensaje correcto cuando la URL apunta al **5433**, que es el puerto del túnel SSH a producción |
+| F4.1 | Operaciones de stock con `UPDATE` condicional atómico | 🟡 | Reservar, liberar, vender, reponer y ajustar, en `modules/stock/operaciones.ts`, cada una con su asiento en la misma transacción. **24 tests en verde** contra Postgres de verdad. El ABM de variantes de F2.4 pasó a usar `ajustar()`: el libro mayor tiene un solo autor. **Falta aplicar la migración `0007` en producción**, abajo |
+| F4.2 | Máquina de estados de la orden | ⬜ | |
+| F4.3 | Creación de orden con snapshot e idempotencia | ⬜ | |
+| F4.4 | Edición de orden activa | ⬜ | |
+| F4.5 | Devoluciones con y sin reposición | ⬜ | |
+| F4.6 | Tests unitarios contra Postgres real | ⬜ | Los tests no van al final: cada tarea de arriba se cierra con los suyos. Lo que queda para acá es la **Compuerta F4** —dos reservas simultáneas sobre la última unidad— y que el libro mayor cuadre con los contadores |
+
+**Lo que F4.1 encontró, y no se veía leyendo el código.**
+
+**El libro mayor no tenía orden dentro de una transacción.** `created_at` era
+`DEFAULT now()`, y `now()` devuelve el momento en que **arrancó** la
+transacción: no se mueve hasta que termina. Cuatro movimientos escritos en la
+misma transacción quedaban con el timestamp **idéntico**, y el índice
+`(variant_id, created_at DESC)` que pide §5.8 los devolvía en un orden
+cualquiera — en la tabla que existe justamente para reconstruir qué pasó y en
+qué orden. Lo encontró un test que asentaba reserva, liberación, venta y
+devolución seguidas y las leía de vuelta cambiadas de lugar. Corregido a
+`clock_timestamp()` en la migración **`0007_libro_con_orden`**, y escrito
+primero en `TECHNICAL-SPEC.md` §5.8. Hoy pasa en la práctica pocas veces —casi
+siempre hay un solo movimiento por variante por transacción— y ese «casi» es
+exactamente lo que esconde el problema hasta el día que importa.
+
+**El ABM de variantes decidía contra un número viejo.** `editarUnaVariante`
+leía el stock reservado **fuera** de la transacción y recién después
+actualizaba: entre esas dos cosas otra orden podía reservar unidades, y el
+aviso «no puede bajar de N» se decidía contra un N que ya no era. Cuando eso
+pasaba, quien rechazaba era el CHECK `reserved_within_total`, con un error de
+integridad que sale como INTERNAL y llega a Sentry como si fuera un incidente,
+en vez de la frase que explica qué pasa. Se cerró al pasar el ABM a
+`ajustar()`, que bloquea la fila.
+
+**El signo de `quantity` estaba sin decidir.** §5.8 decía «con signo, según el
+efecto» y hay **dos** contadores. Se fijó y se escribió en la especificación:
+cada movimiento firma el contador que mueve. De ahí sale el invariante que la
+Compuerta F4 va a verificar.
+
+**Lo que F4.1 NO cubre, y hay que saberlo.** Las dos Server Actions del ABM que
+ahora llaman a `ajustar()` no tienen test automático: `db:variantes` sólo
+prueba su esquema Zod, y el envoltorio de `lib/action.ts` pide sesión y
+`revalidatePath`, que fuera de una petición de Next no existen. Montar eso es
+infraestructura de pruebas para Server Actions, y cae en F7. Lo que sí se probó
+es el patrón nuevo que usan —insertar una variante y ajustarla **en la misma
+transacción**, que es donde el `SELECT … FOR UPDATE` tiene que ver una fila que
+todavía no commiteó nadie—. El resto es glue tipado; conviene una pasada por el
+navegador en la Compuerta F2.
+
+**Tres cosas que cambiaron fuera de la carpeta de tests**, y ninguna es
+gratuita, así que quedan escritas:
+
+1. **`@types/node` pasó de `^20` a `^22`.** Vitest 5 no acepta los de 20. No es
+   una concesión: `TECHNICAL-SPEC.md` §2.1 dice **Node 22 LTS** y el runtime
+   instalado es v22.22.0, así que los tipos venían describiendo un Node que no
+   era el que corre — herencia de la plantilla de Next. El typecheck pasa
+   limpio con los nuevos.
+2. **`allowImportingTsExtensions` en el tsconfig.** La regla que decide si una
+   base es el stack local ahora tiene dos consumidores —los scripts y los
+   tests— y no puede estar escrita en dos lados; el archivo que la tiene es
+   `.mts` y TypeScript exige este permiso para importarlo con la extensión a
+   la vista. Con `noEmit` no cambia nada de lo que sale.
+3. **`cerrarConexion()` en `db/index.ts`.** No había forma de cerrar el pool:
+   los scripts se lo saltean con `process.exit`, que un test no puede hacer.
+   Sin esto `vitest run` no termina y hay que matarlo a mano — la fricción
+   exacta por la que un día los tests dejan de correrse.
+
+**`.env.test` se commitea, y es la única excepción al `.gitignore`.** La clave
+del stack local viene fija en el CLI de Supabase y no es secreta. Lleva
+**una sola variable**: los tests de F4 son de dominio puro y no tocan Auth,
+Storage, Resend ni Sentry; cada variable de más sería una credencial de verdad
+esperando a que alguien la ponga.
+
+---
+
 ## Decisiones que cambiaron las especificaciones
 
 Cada una se escribió primero en la especificación y después en el código
@@ -155,7 +247,13 @@ Cada una se escribió primero en la especificación y después en el código
    pase, el aviso de stock bajo funciona con 3 unidades.
 3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-4. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
+4. **La migración `0007` en producción.** F4.1 corrigió el `DEFAULT` de
+   `stock_movements.created_at` a `clock_timestamp()`. Está aplicada en el
+   stack local y **no** en el servidor DATA: aplicarla es un `db:migrate`
+   contra producción, y eso lo corrés vos cuando quieras. Es una sola línea,
+   no destructiva, y no toca ninguna fila existente — cambia sólo el valor por
+   omisión de las que vengan.
+5. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
    entero— está activo y sirve de piso, pero guarda **una sola copia** y se
    restaura por ticket. Falta el volcado de la base y del bucket, con varias
    copias y una restauración probada. Conviene antes de F2.8, que es cuando
@@ -218,6 +316,13 @@ sí hace `db:restricciones`. Con `db:configuracion` reventando a mitad por un
 nombre de columna equivocado la limpieza corrió, pero corrió con suerte.
 **Decisión tuya: se trata al entrar en F4**, que es cuando el plan obliga a
 tener el runner andando igual (F4.6). Hasta entonces no se agregan más.
+**Vencida a medias el 2026-09-06** (F4.0): Vitest está instalado y `npm test`
+corre, así que F4 nace en el runner elegido y no suma un `db:xxx` más. Los
+once viejos **siguen como están**, por decisión tuya del mismo día: hoy
+funcionan, migrarlos son unos 250 asserts en once archivos y atrasaría F4 sin
+bajar ningún riesgo. Se migran como tarea propia **después de la Compuerta
+F4**. Hasta entonces conviven las dos formas, y eso está registrado acá para
+que sea una deuda con fecha y no un olvido.
 
 **El aviso de un campo sobrevivía a que se corrigiera el valor, y ningún
 formulario del panel valida al salir del campo.** Son la misma grieta vista

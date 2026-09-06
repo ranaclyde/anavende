@@ -50,6 +50,13 @@
       "when": 1788464139787,
       "tag": "0006_descripcion_buscable",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788722621699,
+      "tag": "0007_libro_con_orden",
+      "breakpoints": true
     }
   ]
 }

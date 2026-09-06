@@ -32,6 +32,34 @@ const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
 /** El escape para el día que haya un motivo de verdad. Se pone a mano. */
 const ESCAPE = "PERMITIR_ESCRITURA_FUERA_DE_LOCAL";
 
+/**
+ * La regla, sola y sin efectos: ¿esta URL es la del stack local?
+ *
+ * Vive separada porque tiene DOS consumidores —los scripts de verificación y
+ * la guarda de los tests de F4 (`tests/setup/entorno.ts`)— y el puerto y el
+ * loopback no pueden estar escritos en dos lados: el día que cambie uno,
+ * el otro se queda dejando pasar lo que existe para frenar.
+ */
+export function esStackLocal(crudo: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(crudo);
+  } catch {
+    return false;
+  }
+  return LOOPBACK.has(url.hostname) && url.port === PUERTO_DEL_STACK_LOCAL;
+}
+
+/** Para los mensajes de error: «127.0.0.1:5433». */
+export function dondeApunta(crudo: string): string {
+  try {
+    const url = new URL(crudo);
+    return `${url.hostname}:${url.port || "5432"}`;
+  } catch {
+    return crudo;
+  }
+}
+
 export function soloLocal(script: string): void {
   const crudo = process.env.DATABASE_URL;
 
@@ -40,12 +68,9 @@ export function soloLocal(script: string): void {
     process.exit(1);
   }
 
-  const url = new URL(crudo);
-  const donde = `${url.hostname}:${url.port || "5432"}`;
-  const esLocal =
-    LOOPBACK.has(url.hostname) && url.port === PUERTO_DEL_STACK_LOCAL;
+  const donde = dondeApunta(crudo);
 
-  if (esLocal) return;
+  if (esStackLocal(crudo)) return;
 
   if (process.env[ESCAPE] === "1") {
     console.warn(

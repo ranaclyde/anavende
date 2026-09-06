@@ -10,7 +10,7 @@ desarrollo pasó a apuntar al servidor DATA.
 
 | Pieza | Referencia (TS §2.1) | Instalada |
 |---|---|---|
-| Node.js | 22 LTS | v22.22.0 |
+| Node.js | 22 LTS | v22.22.0 (`@types/node` 22.20.1) |
 | npm | — | 10.9.4 |
 | Next.js | 16.3.x | 16.3.4 |
 | React | 19.2 | 19.2.8 |
@@ -28,7 +28,8 @@ desarrollo pasó a apuntar al servidor DATA.
 | ExcelJS | 4.x | pendiente F9.2 |
 | Sentry | @sentry/nextjs | 10.73.0 |
 | decimal.js (aritmética de montos, §7.1) | — | 10.6.0 |
-| Vitest + Playwright | — | pendiente F4.6 / F10.2 |
+| Vitest | — | **5.0.0** (F4.0, 2026-09-06). Pidió subir `@types/node` de `^20` a `^22`, que es la versión de Node que §2.1 declara y la que corre de verdad |
+| Playwright | — | pendiente F10.2 |
 | PostgreSQL (servidor DATA) | 15+ | **15.8** (`supabase/postgres:15.8.1.085`) — `supabase/config.toml` igualado a esta |
 | Supabase auto-hospedado (servidor DATA) | — | *docker compose* oficial. Las trece imágenes, abajo |
 | Coolify | — | **pendiente F0.2** |

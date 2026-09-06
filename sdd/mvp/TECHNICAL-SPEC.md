@@ -638,12 +638,16 @@ CREATE TABLE stock_movements (
   return_id     uuid REFERENCES returns(id) ON DELETE SET NULL,
   actor_user_id uuid REFERENCES user_profiles(id) ON DELETE SET NULL,
   note          text,
-  created_at    timestamptz NOT NULL DEFAULT now()
+  created_at    timestamptz NOT NULL DEFAULT clock_timestamp()
 );
 CREATE INDEX stock_movements_variant_idx ON stock_movements (variant_id, created_at DESC);
 ```
 
 Esta tabla es la que responde *«¿por qué esta variante tiene este stock?»* cuando el número no cuadre — que es la pregunta que inevitablemente aparece en producción. **Se escribe en la misma transacción que el cambio de stock, sin excepción** (P5).
+
+> **`clock_timestamp()` y no `now()`.** Corregido en F4.1 (migración `0007`), y la diferencia decide si el libro tiene orden o no lo tiene. `now()` devuelve el momento en que **arrancó la transacción** y no se mueve hasta que termina, así que varios movimientos escritos dentro de una misma transacción —reservar y vender, los dos ítems de una devolución— quedan con el timestamp **idéntico**, y el índice `(variant_id, created_at DESC)` los devuelve en un orden cualquiera. Un libro mayor sin orden no reconstruye nada. `clock_timestamp()` avanza sentencia a sentencia, y además es lo que un asiento de auditoría tiene que guardar: cuándo ocurrió el movimiento, no cuándo alguien abrió la transacción que lo contiene.
+
+> **El signo de `quantity`, fijado en F4.1.** §5.8 pedía «con signo, según el efecto» sin decir sobre cuál de los dos contadores, y hay dos. La regla es: `ajuste`, `venta` y `devolucion` firman su efecto sobre **`stock_total`**; `reserva` y `liberacion`, sobre **`reserved_stock`**. Cada movimiento firma el contador que mueve. De ahí sale el invariante que se comprueba de una consulta y que la Compuerta F4 verifica: `stock_total = SUM(quantity) WHERE type IN ('ajuste','venta','devolucion')`. Vale también para la venta que nunca estuvo reservada (RF-24, la orden manual cargada como finalizada), que es donde una regla más ingeniosa se rompía. La reserva **no** se deriva de una suma equivalente, y no es un olvido: `venta` consume la reserva sin escribir una `liberacion`, así que esa cuenta no cerraría; para ese lado el libro se cuadra contra `reserved_after` del último movimiento, que además detecta cualquier cambio hecho **sin** asentar.
 
 ### 5.9 Configuración y contenido
 

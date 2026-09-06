@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 
 import { db } from "@/db";
 import { productVariants } from "@/db/schema/catalog";
-import { stockMovements } from "@/db/schema/stock";
 import { action } from "@/lib/action";
 import { domainError } from "@/lib/errors";
 import {
@@ -14,6 +13,7 @@ import {
   clavesDeVariante,
   reordenarImagenesDeVariante,
 } from "@/modules/media/subir";
+import { ajustar } from "@/modules/stock/operaciones";
 import {
   crearVariante,
   editarVariante,
@@ -30,10 +30,11 @@ import {
  *
  *   · **Cambiar el stock escribe en el libro mayor** (§8.3, regla 3). El
  *     ajuste de la vendedora es una de las operaciones de stock de §8.1, no
- *     un campo más: se hace y se asienta en `stock_movements` DENTRO DE LA
- *     MISMA TRANSACCIÓN. Un asiento que se escribe «después» es un asiento
- *     que un día no se escribe, y ahí se pierde la única forma de auditar la
- *     discrepancia.
+ *     un campo más. **Desde F4.1 lo hace `ajustar()`**, en `modules/stock`,
+ *     igual que las otras cuatro: acá no se escribe `stock_total` ni se
+ *     inserta un movimiento a mano. Un segundo lugar que toque el contador es
+ *     un segundo lugar que puede olvidarse del asiento, y ahí se pierde la
+ *     única forma de auditar la discrepancia.
  *   · **RN-11b, la parte de los colores.** Un producto activo no puede tener
  *     variantes activas de un color inactivo.
  *   · **No se quita una variante con stock reservado** (RF-16), y el mensaje
@@ -140,7 +141,8 @@ export const agregarUnaVariante = action
           .values({
             productId: input.productId,
             colorId: input.colorId,
-            stockTotal: input.stockTotal,
+            // Nace en cero: el número que escribió la vendedora entra abajo,
+            // como movimiento.
             isActive: input.isActive,
             sortOrder: n,
           })
@@ -150,17 +152,12 @@ export const agregarUnaVariante = action
         // libro mayor en la misma transacción que lo crea. Sin esto, el día
         // que un número no cuadre, la primera carga sería justamente el
         // movimiento que no está.
-        if (input.stockTotal !== 0) {
-          await tx.insert(stockMovements).values({
-            variantId: fila.id,
-            type: "ajuste",
-            quantity: input.stockTotal,
-            stockAfter: input.stockTotal,
-            reservedAfter: 0,
-            actorUserId: ctx.session.profile.id,
-            note: "Stock inicial de la variante",
-          });
-        }
+        await ajustar(tx, {
+          variantId: fila.id,
+          nuevoTotal: input.stockTotal,
+          actorUserId: ctx.session.profile.id,
+          note: "Stock inicial de la variante",
+        });
 
         return fila.id;
       });
@@ -178,32 +175,14 @@ export const editarUnaVariante = action
   .input(editarVariante)
   .auth("admin")
   .handler(async ({ input, ctx }) => {
-    const [actual] = await db.execute<{
-      productId: string;
-      stockTotal: number;
-      reservedStock: number;
-    }>(sql`
-      SELECT product_id AS "productId",
-             stock_total AS "stockTotal",
-             reserved_stock AS "reservedStock"
+    // Sólo el producto: el stock ya no se lee acá. Ver el comentario de abajo.
+    const [actual] = await db.execute<{ productId: string }>(sql`
+      SELECT product_id AS "productId"
         FROM product_variants WHERE id = ${input.id}`);
 
     if (!actual) throw domainError("NOT_FOUND");
 
     await verificarColor(actual.productId, input.colorId, input.isActive);
-
-    /**
-     * El CHECK `reserved_within_total` rechazaría esto con un error de
-     * integridad —que sale como INTERNAL y va a Sentry como si fuera un
-     * incidente—. Es un resultado del negocio y merece la frase que explica
-     * qué pasa: hay unidades comprometidas y el total no puede quedar por
-     * debajo.
-     */
-    if (input.stockTotal < actual.reservedStock) {
-      throw domainError("INSUFFICIENT_STOCK", {
-        message: `Hay ${actual.reservedStock} ${actual.reservedStock === 1 ? "unidad reservada" : "unidades reservadas"} en órdenes activas, así que el stock no puede bajar de ${actual.reservedStock}.`,
-      });
-    }
 
     try {
       await db.transaction(async (tx) => {
@@ -211,25 +190,29 @@ export const editarUnaVariante = action
           .update(productVariants)
           .set({
             colorId: input.colorId,
-            stockTotal: input.stockTotal,
             isActive: input.isActive,
             updatedAt: new Date(),
           })
           .where(eq(productVariants.id, input.id));
 
-        if (input.stockTotal !== actual.stockTotal) {
-          await tx.insert(stockMovements).values({
-            variantId: input.id,
-            type: "ajuste",
-            // CON SIGNO, según el efecto (§5.8): así el libro se suma y tiene
-            // que dar el total, en vez de tener que interpretarse.
-            quantity: input.stockTotal - actual.stockTotal,
-            stockAfter: input.stockTotal,
-            reservedAfter: actual.reservedStock,
-            actorUserId: ctx.session.profile.id,
-            note: "Ajuste manual desde el panel",
-          });
-        }
+        /**
+         * El stock lo mueve `ajustar()` y nadie más (F4.1). Además del
+         * asiento, se lleva puesta una carrera que este código tenía: el
+         * stock reservado se leía FUERA de la transacción, así que entre esa
+         * lectura y el UPDATE otra orden podía reservar unidades y el «no
+         * puede bajar de N» se decidía contra un N viejo. Cuando eso pasaba,
+         * el que rechazaba era el CHECK `reserved_within_total` —con un error
+         * de integridad, que sale como INTERNAL y llega a Sentry como si
+         * fuera un incidente en vez de como lo que es: un resultado del
+         * negocio con una frase que lo explica—. `ajustar()` bloquea la fila
+         * y decide contra el número de verdad.
+         */
+        await ajustar(tx, {
+          variantId: input.id,
+          nuevoTotal: input.stockTotal,
+          actorUserId: ctx.session.profile.id,
+          note: "Ajuste manual desde el panel",
+        });
       });
 
       refrescar();

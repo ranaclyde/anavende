@@ -20,10 +20,16 @@ import * as schema from "./schema";
  */
 
 declare global {
-  var __anavendeDb: PostgresJsDatabase<typeof schema> | undefined;
+  var __anavendeDb: Conexion | undefined;
 }
 
-function conectar(): PostgresJsDatabase<typeof schema> {
+/** El cliente de Drizzle y el pool que hay debajo, que es lo que se cierra. */
+type Conexion = {
+  db: PostgresJsDatabase<typeof schema>;
+  sql: ReturnType<typeof postgres>;
+};
+
+function conectar(): Conexion {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
@@ -38,10 +44,10 @@ function conectar(): PostgresJsDatabase<typeof schema> {
     connect_timeout: 10,
   });
 
-  return drizzle(sql, { schema });
+  return { db: drizzle(sql, { schema }), sql };
 }
 
-function obtener(): PostgresJsDatabase<typeof schema> {
+function obtener(): Conexion {
   // En desarrollo el recargado en caliente reevalúa el módulo; sin el global
   // se abriría un pool nuevo en cada cambio hasta agotar las conexiones.
   if (process.env.NODE_ENV !== "production") {
@@ -52,7 +58,25 @@ function obtener(): PostgresJsDatabase<typeof schema> {
   return interno;
 }
 
-let interno: PostgresJsDatabase<typeof schema> | undefined;
+let interno: Conexion | undefined;
+
+/**
+ * Cierra el pool y olvida la conexión.
+ *
+ * Es para PROCESOS QUE TERMINAN: los tests (§17.1) y los scripts de
+ * verificación. El servidor de Next no la llama nunca — un pool que se cierra
+ * en medio de una petición es un error, no una limpieza.
+ *
+ * Sin esto un `vitest run` no termina: quedan hasta diez conexiones abiertas
+ * y el proceso se cuelga esperándolas, que es justo la fricción por la que un
+ * día los tests dejan de correrse.
+ */
+export async function cerrarConexion(): Promise<void> {
+  const abierta = globalThis.__anavendeDb ?? interno;
+  globalThis.__anavendeDb = undefined;
+  interno = undefined;
+  await abierta?.sql.end({ timeout: 5 });
+}
 
 /**
  * Se comporta como el cliente de Drizzle, pero no abre la conexión hasta la
@@ -60,7 +84,7 @@ let interno: PostgresJsDatabase<typeof schema> | undefined;
  */
 export const db = new Proxy({} as PostgresJsDatabase<typeof schema>, {
   get(_target, prop, receiver) {
-    return Reflect.get(obtener(), prop, receiver);
+    return Reflect.get(obtener().db, prop, receiver);
   },
 });
 

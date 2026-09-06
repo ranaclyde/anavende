@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -48,9 +49,25 @@ export const stockMovements = pgTable(
       onDelete: "set null",
     }),
     note: text("note"),
+    /**
+     * `clock_timestamp()`, NO `now()` — y es la diferencia entre tener orden
+     * y no tenerlo (F4.1, 2026-09-06).
+     *
+     * `now()` devuelve el momento en que ARRANCÓ la transacción y no se mueve
+     * hasta que termina, así que varios movimientos escritos en la misma
+     * transacción —reservar y vender, o los dos ítems de una devolución—
+     * quedan con el timestamp idéntico. Con el índice `(variant_id,
+     * created_at DESC)` de §5.8 eso significa que el libro los devuelve en un
+     * orden cualquiera, y el libro existe justamente para reconstruir qué
+     * pasó y en qué orden.
+     *
+     * `clock_timestamp()` avanza sentencia a sentencia. Además es lo que un
+     * asiento de auditoría tiene que guardar: cuándo ocurrió el movimiento,
+     * no cuándo alguien abrió la transacción que lo contiene.
+     */
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .default(sql`clock_timestamp()`),
   },
   (t) => [
     index("stock_movements_variant_idx").on(t.variantId, t.createdAt.desc()),

@@ -12,6 +12,13 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    // Para que `tests/` pueda importar `scripts/solo-local.mts` con su
+    // extensión a la vista. TypeScript solo la acepta con este permiso, y con
+    // `noEmit` no cambia nada de lo que sale: es un permiso de escritura, no
+    // de compilación. La alternativa era duplicar en los tests la regla que
+    // decide si la base es el stack local, que es la que no puede vivir en
+    // dos lugares.
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
