@@ -71,6 +71,13 @@
       "when": 1788724217930,
       "tag": "0009_historial_con_orden",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788740051881,
+      "tag": "0010_no_se_borran_usuarios",
+      "breakpoints": true
     }
   ]
 }

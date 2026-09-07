@@ -112,7 +112,8 @@ ninguno.
 | F4.3 | Creación de orden con snapshot e idempotencia | 🟡 | `modules/orders/crear.ts`, el procedimiento de §8.4 completo: carrito bloqueado, revalidación contra lo que el comprador vio, snapshot de comprador, dirección e ítems, reserva en orden determinístico, total sumado en SQL, historial y carrito vaciado. **18 tests**, entre ellos dos compradores solapados sobre la última unidad. **Falta aplicar la migración `0008` en producción** |
 | F4.4 | Edición de orden activa | 🟡 | `modules/orders/editar.ts`: quitar un ítem y reducir cantidades, liberando la reserva **de inmediato** y recalculando el total en SQL. La orden se bloquea con `FOR UPDATE` antes de mirarle el estado, y eso no es de más: sin el bloqueo, entre leer «está activa» y liberar, otra transacción la finaliza. Quitar el último cancela, pero **hay que pedirlo**: si no, la función se niega y avisa que eso es lo que va a pasar. **11 tests**. **Falta la migración `0009` en producción** |
 | F4.5 | Devoluciones con y sin reposición | ✅ | `modules/returns/registrar.ts`. Con reposición suma al stock, sin reposición no toca nada y queda registrada igual para RF-28. El tope de RF-25 —ni más de lo vendido ni de lo ya devuelto— se calcula con la orden **bloqueada**: dos devoluciones simultáneas sobre el mismo renglón leerían la misma suma y entre las dos devolverían de más. Anular revierte lo repuesto y libera el cupo. **15 tests** |
-| F4.6 | Tests unitarios contra Postgres real | ✅ | **89 tests** en total, todos contra Postgres de verdad. Los de cada tarea viven con la tarea; acá quedan los dos que son de toda la fase: la carrera por la última unidad y el cuadre del libro |
+| F4.5b | Los usuarios no se eliminan | ✅ | No es del plan: es la contradicción de §5.6 que F4.3 destapó, resuelta por decisión tuya. `orders.user_id` pasa de `SET NULL` a **`RESTRICT`** (migración `0010`), que es lo que RF-26 venía diciendo sin decirlo. Un usuario **sin** órdenes se sigue borrando, porque de eso depende la compensación de §13.4. **3 tests** |
+| F4.6 | Tests unitarios contra Postgres real | ✅ | **92 tests** en total, todos contra Postgres de verdad. Los de cada tarea viven con la tarea; acá quedan los dos que son de toda la fase: la carrera por la última unidad y el cuadre del libro |
 
 ## Compuerta F4 — **pasa**
 
@@ -301,6 +302,31 @@ Cada una se escribió primero en la especificación y después en el código
 | **Las plantillas de email van en `public/` de la aplicación** | `PROGRESO.md` F1.8; F0.13 | GoTrue **no lee plantillas de un archivo**: toma `GOTRUE_MAILER_TEMPLATES_*` como URL y la busca por HTTP contra `SITE_URL`. Probado en el VPS montando la carpeta en el contenedor: el archivo estaba ahí y el log decía `Get "http://localhost:3000/etc/gotrue/email-templates/confirm.html": connection refused`. Servirlas hoy exigiría un contenedor más —en un stack que R5 ya marca como pesado— para tirarlo cuando la app se despliegue. Como GoTrue las resuelve contra `SITE_URL`, que **es la aplicación**, el lugar donde terminan es `public/`: versionadas con el código y sin infraestructura nueva. El intento se revirtió entero; el `docker-compose.yml` del VPS no quedó tocado |
 ---
 
+## Una función candidata, sin requisito todavía
+
+**Baja lógica de usuario, «por si quieren volver».** Salió de la misma
+conversación que cerró lo de arriba, el 2026-09-06. No está en ninguna
+especificación y por eso no se escribió: **no hay pantalla que la dispare**.
+RF-07 no tiene «cerrar mi cuenta» y RF-26 no tiene «dar de baja», así que el
+mecanismo quedaría sin consumidor — y código sin consumidor es código que nadie
+prueba.
+
+Lo que conviene saber antes de decidirlo:
+
+  · **El mecanismo ya existe casi entero.** El bloqueo de RF-27 hace lo que una
+    baja necesita: no puede entrar, no se borra nada, las sesiones se matan, y
+    se revierte. Volver es desbloquear.
+  · **Lo que falta es la distinción, no la maquinaria.** Un `is_banned` reusado
+    le mostraría «Tu cuenta está bloqueada» a alguien que se fue por su cuenta,
+    que es decirle otra cosa. Serían: una marca propia en `user_profiles`, su
+    mensaje en `lib/errors.ts`, y un valor más en el filtro por estado del
+    listado de RF-26.
+  · **Dónde entra:** con la pantalla que la dispare. Si la pide la
+    administradora, en F7 junto a RF-26; si la pide el comprador desde
+    `/mi-cuenta`, es un requisito nuevo en RF-07 y hay que escribirlo primero.
+
+---
+
 ## Qué está esperando algo tuyo
 
 1. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
@@ -315,13 +341,13 @@ Cada una se escribió primero en la especificación y después en el código
    pase, el aviso de stock bajo funciona con 3 unidades.
 3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-4. **Las migraciones `0007`, `0008` y `0009` en producción.** `0007` y `0009`
-   corrigen el `DEFAULT` de `created_at` a `clock_timestamp()` en
-   `stock_movements` y en `order_status_history`; `0008` agrega
-   `orders.idempotency_key` y su índice único parcial. Las tres están
+4. **Las migraciones `0007` a `0010` en producción.** `0007` y `0009` corrigen
+   el `DEFAULT` de `created_at` a `clock_timestamp()` en `stock_movements` y en
+   `order_status_history`; `0008` agrega `orders.idempotency_key` y su índice
+   único parcial; `0010` pasa `orders.user_id` a `RESTRICT`. Las cuatro están
    aplicadas en el stack local y **ninguna** en el servidor DATA: aplicarlas es
    un `db:migrate` contra producción, y eso lo corrés vos cuando quieras. Las
-   tres son no destructivas y no tocan ninguna fila existente.
+   cuatro son no destructivas y no tocan ninguna fila existente.
 5. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
    entero— está activo y sirve de piso, pero guarda **una sola copia** y se
    restaura por ticket. Falta el volcado de la base y del bucket, con varias
@@ -355,28 +381,26 @@ Catálogo» en los dos casos, y con la lista vacía eso se lee como un paso
 obligatorio que falta cuando en realidad es opcional. Ahora dice que se puede
 seguir sin colores.
 
-**Un comprador con órdenes web no se puede borrar, y nadie decidió eso.**
-Apareció en F4.3, y no leyendo el código: la limpieza de un test reventó al
-borrar la identidad de prueba. `orders.user_id` es **`ON DELETE SET NULL`** —la
-intención es clara, la orden sobrevive a que se cierre la cuenta— y el CHECK
-`web_order_has_user` dice `origin <> 'web' OR user_id IS NOT NULL`, que prohíbe
-exactamente ese NULL. Las dos cosas están en §5.6, una al lado de la otra, y se
-contradicen: la cascada intenta poner NULL, el CHECK la rechaza, y el borrado
-falla entero. Un CHECK no puede distinguir «se está creando» de «se está
-borrando el dueño», así que hay que elegir:
+**~~Un comprador con órdenes web no se puede borrar, y nadie decidió eso.~~**
+Resuelto el 2026-09-06 (migración `0010`), y ahora sí lo decidió alguien.
+Apareció en F4.3 cuando la limpieza de un test reventó: `orders.user_id` era
+**`ON DELETE SET NULL`** —«la orden sobrevive a que se cierre la cuenta»— y el
+CHECK `web_order_has_user` prohíbe exactamente ese NULL. Las dos cosas estaban
+en §5.6, una al lado de la otra. El borrado fallaba igual, pero con una
+violación de CHECK que decía que la fila quedaba inválida en vez de decir que
+la persona tiene órdenes.
 
-  · **Dejar el CHECK y pasar la clave foránea a `RESTRICT`.** El borrado sigue
-    sin poder hacerse, pero falla diciendo la verdad —«esta persona tiene
-    órdenes»— en vez de con una violación de CHECK. Es también lo que RN-11
-    hace con productos y marcas.
-  · **Sacar el CHECK** y sostener «una orden web tiene comprador» desde la
-    aplicación, que es más débil pero deja que la cuenta se cierre y la orden
-    quede.
+**Se resolvió del lado de conservar, por decisión tuya: los usuarios no se
+eliminan.** Y no es una regla nueva — **RF-26 nunca tuvo «eliminar usuario»**
+(lista, crea, modifica, resetea contraseña y bloquea) y RF-07 no tiene «cerrar
+mi cuenta». Lo que había era un `SET NULL` escrito como si borrar fuera una
+función que existe. Con `RESTRICT` la base dice lo mismo que los requisitos, y
+el intento desde Studio o la Admin API falla **nombrando el motivo**. Es el
+patrón que el esquema ya usaba para no destruir historia (`returns.order_id`).
 
-No entra en F4 porque nada del MVP borra cuentas: hoy sólo pasaría desde Studio
-o la Admin API. Pero es una decisión de retención de datos y conviene tomarla a
-propósito, no descubrirla el día que haya que borrar a alguien de verdad. En
-los tests se esquiva borrando las órdenes antes que la identidad.
+**Un usuario sin órdenes se sigue pudiendo borrar, y tiene que ser así:** es la
+compensación de §13.4 paso 3, que borra la identidad recién creada cuando el
+alta del perfil falla. Hay un test para cada mitad.
 
 **«Los índices parciales tienen que ser 5» volvió a envejecer.** Es la misma
 lección que F2.6 escribió para las columnas generadas —«una aserción que

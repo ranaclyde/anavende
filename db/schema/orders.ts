@@ -40,9 +40,22 @@ export const orders = pgTable(
       .notNull()
       .unique()
       .generatedByDefaultAsIdentity({ startWith: 1000 }),
-    /** NULL en órdenes manuales de alguien sin cuenta (RF-24). */
+    /**
+     * NULL en órdenes manuales de alguien sin cuenta (RF-24).
+     *
+     * **RESTRICT, no SET NULL** (F4.5b). `SET NULL` decía «la orden sobrevive
+     * a que se borre la cuenta» y el CHECK `web_order_has_user` de más abajo
+     * dice «una orden web siempre tiene comprador»: las dos no pueden ser
+     * ciertas, y el borrado fallaba igual pero con una violación de CHECK que
+     * no explica nada.
+     *
+     * Se resolvió del lado de conservar: los usuarios no se eliminan. Tampoco
+     * es una regla nueva — RF-26 nunca tuvo «eliminar usuario». Ahora la base
+     * dice lo mismo que los requisitos, y el intento falla nombrando el
+     * motivo: esta persona tiene órdenes.
+     */
     userId: uuid("user_id").references(() => userProfiles.id, {
-      onDelete: "set null",
+      onDelete: "restrict",
     }),
     status: orderStatus("status").notNull().default("activa"),
     origin: orderOrigin("origin").notNull().default("web"),
