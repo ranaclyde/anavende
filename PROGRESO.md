@@ -117,6 +117,7 @@ ninguno.
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
 | F4.0 | Vitest andando, con `npm test` | ✅ | No es una tarea del plan: es la deuda de los once `db:xxx` venciendo donde estaba anotado que vencía. Vitest 5.0.0, `tests/unit/**/*.test.ts`, un archivo por vez —comparten base, y dos a la vez se pisan los datos—. La guarda se probó de los dos lados: verde contra el stack local, y abortando con el mensaje correcto cuando la URL apunta al **5433**, que es el puerto del túnel SSH a producción |
+| F4.0b | Migrar los diez `db:xxx` a Vitest | ✅ | Tampoco es del plan: es la otra mitad de la deuda de F4.0, que quedaba agendada **para después de la Compuerta F4** y venció el 2026-09-07. Los diez pasaron a `tests/unit/`, **314 tests** en total (eran 92) sin perder una sola comprobación, y los scripts se borraron: ya no conviven las dos formas. `db:verificar` se queda —§18.3, y su lugar es correr contra producción— y **`db:drizzle` también, reclasificado**: no era una batería de verificación sino una SONDA, como `sondear-auth` y `sondear-resend`. Es lo de abajo, y casi se pierde en silencio |
 | F4.1 | Operaciones de stock con `UPDATE` condicional atómico | ✅ | Reservar, liberar, vender, reponer y ajustar, en `modules/stock/operaciones.ts`, cada una con su asiento en la misma transacción. **24 tests en verde** contra Postgres de verdad. El ABM de variantes de F2.4 pasó a usar `ajustar()`: el libro mayor tiene un solo autor. La migración `0007` **quedó aplicada en producción el 2026-09-07** |
 | F4.2 | Máquina de estados de la orden | ✅ | `modules/orders/estados.ts`. La transición es un `UPDATE` condicional con el estado esperado en el `WHERE` y **va antes de tocar el stock**: es lo que decide quién gana. Finalizar vende y suelta la reserva; cancelar sólo suelta. Cada una escribe en el historial en la misma transacción. La tabla de RF-13 se exporta como dato (`TRANSICIONES`) para que la vista no repita la regla. **16 tests**, incluidos dos de concurrencia con solapamiento forzado |
 | F4.3 | Creación de orden con snapshot e idempotencia | ✅ | `modules/orders/crear.ts`, el procedimiento de §8.4 completo: carrito bloqueado, revalidación contra lo que el comprador vio, snapshot de comprador, dirección e ítems, reserva en orden determinístico, total sumado en SQL, historial y carrito vaciado. **18 tests**, entre ellos dos compradores solapados sobre la última unidad. La migración `0008` **quedó aplicada en producción el 2026-09-07** |
@@ -250,11 +251,20 @@ gratuita, así que quedan escritas:
    Sin esto `vitest run` no termina y hay que matarlo a mano — la fricción
    exacta por la que un día los tests dejan de correrse.
 
-**`.env.test` se commitea, y es la única excepción al `.gitignore`.** La clave
-del stack local viene fija en el CLI de Supabase y no es secreta. Lleva
-**una sola variable**: los tests de F4 son de dominio puro y no tocan Auth,
-Storage, Resend ni Sentry; cada variable de más sería una credencial de verdad
-esperando a que alguien la ponga.
+**~~`.env.test` se commitea, y es la única excepción al `.gitignore`.~~**
+Escrito en F4.0 con dos argumentos: que la clave del stack local viene fija en
+el CLI de Supabase y no es secreta, y que sin el archivo en el repositorio
+`npm test` depende de que cada quien lo arme a mano. **Revertido el 2026-09-07
+por decisión tuya**: no se suben claves al repositorio, sean o no secretas. Lo
+que se commitea es `.env.test.example`, con los valores vacíos, y `.env.test`
+entró al `.gitignore`.
+
+El segundo argumento seguía siendo cierto, así que se pagó y quedó anotado: en
+un clon nuevo hay **un paso manual** antes de que los tests corran. Lo que se
+hizo para que no muerda es que el error lo diga con los dos comandos exactos
+—`cp .env.test.example .env.test` y `npx supabase status`— en vez de con un
+ENOENT sobre una ruta, que es la diferencia entre un minuto y una tarde.
+Comprobado moviendo el archivo: el mensaje sale entero.
 
 ---
 
@@ -488,13 +498,72 @@ sí hace `db:restricciones`. Con `db:configuracion` reventando a mitad por un
 nombre de columna equivocado la limpieza corrió, pero corrió con suerte.
 **Decisión tuya: se trata al entrar en F4**, que es cuando el plan obliga a
 tener el runner andando igual (F4.6). Hasta entonces no se agregan más.
-**Vencida a medias el 2026-09-06** (F4.0): Vitest está instalado y `npm test`
-corre, así que F4 nace en el runner elegido y no suma un `db:xxx` más. Los
-once viejos **siguen como están**, por decisión tuya del mismo día: hoy
-funcionan, migrarlos son unos 250 asserts en once archivos y atrasaría F4 sin
-bajar ningún riesgo. Se migran como tarea propia **después de la Compuerta
-F4**. Hasta entonces conviven las dos formas, y eso está registrado acá para
-que sea una deuda con fecha y no un olvido.
+**~~Vencida el 2026-09-07~~ (F4.0 y F4.0b).** Primero a medias: Vitest
+instalado y `npm test` corriendo, así que F4 nació en el runner elegido. Y
+después entera, en cuanto pasó la Compuerta F4, que era la fecha acordada: los
+diez migrados, los scripts borrados, **314 tests**. Las cuatro fallas que la
+deuda listaba están cerradas: hay runner, es Vitest —el que §2.1 y §17.1 habían
+elegido—, `tests/` dejó de estar vacío, y la limpieza dejó de ser una
+convención.
+
+**Los dos patrones de limpieza conviven a propósito, y está escrito dónde va
+cada uno.** `enTransaccionRevertida` —una transacción que siempre se revierte—
+para lo que prueba consultas y restricciones: no hay nada que acordarse de
+borrar, y si el test explota a la mitad se revierte igual. Borrado explícito
+para lo que llama a las FUNCIONES de la aplicación, que abren su propia
+conexión por el pool y no verían nada de lo que una transacción de test
+escribió. Elegir mal el patrón no da un test frágil: da uno que falla siempre,
+o uno que pasa sin haber escrito nada.
+
+── Lo que apareció migrando, y no se veía leyendo los scripts ──
+
+**El test que protegía la guarda del stock no la probaba.** `db:restricciones`
+comprobaba «stock negativo **con reservas vivas**» —el caso que justifica la
+guarda `stock_total < 0` de §5.4— justo después de otra comprobación que ya
+había puesto `reserved_stock = 0`. Cada `acepta` liberaba su savepoint, así que
+el cero persistía y la comprobación interesante llegaba con reserva cero, donde
+`reserved <= total` se cumple sola. Migrado con la reserva viva, y comprobado al
+revés: quitándole la guarda al CHECK en el stack local, se pone rojo. Sin eso,
+el día que alguien «simplificara» esa restricción, RF-24 se rompía sin que
+ningún test se quejara.
+
+**Drizzle esconde el motivo del rechazo.** Envuelve el error del driver en un
+`DrizzleQueryError` cuyo mensaje es solo «Failed query: …»; la restricción
+violada viaja en `cause`. Un `toThrow(/constraint/)` no matchea nunca, y la
+salida cómoda ante eso es sacar el motivo y quedarse con un rechazo que se
+conforma con que ALGO falle —incluida una consulta mal escrita—. `rechaza()` y
+`rechazaLlamada()` desenvuelven la causa y **exigen nombrar la restricción**.
+
+**`db:drizzle` no era un test, y migrarlo perdía algo.** Es lo único que
+comprueba que el cliente de la APLICACIÓN —con el usuario del pooler, la
+conexión perezosa y el mapeo del esquema— llegue a producción: `db:verificar`
+usa el cliente crudo de `postgres`, no el de Drizzle. Convertido en test, solo
+habría podido correr contra el stack local, porque la guarda de
+`tests/setup/entorno.ts` no tiene escape. Se quedó como script, reclasificado
+como sonda. Estuvo migrado y borrado unos minutos.
+
+**Un array de JS no es un array de Postgres.** En una plantilla `sql` de
+Drizzle se expande como lista de parámetros —`($1, $2, …)`—, así que
+`= ANY(${ids})` falla con «requires array on right side». Lo mordió la limpieza
+de un `afterAll`: los 36 tests del archivo pasaban y **la limpieza reventaba
+después**, dejando once filas en la base con todo en verde. Se usa `inArray()`.
+
+**`soloLocal()` se fue con los scripts que protegía.** Nueve de los diez
+migrados la llamaban y no quedó ninguno: era código muerto con un comentario
+que describía un mundo que ya no existe. Queda la REGLA sola —qué cuenta como
+stack local— con un solo consumidor, `tests/setup/entorno.ts`.
+
+**`.env.test` dejó de decir «NI UNA VARIABLE MÁS», por decisión tuya del
+2026-09-07.** Los tres tests de Storage necesitan cuatro variables, y §17.1
+pide Storage de verdad y no un doble. El argumento de la regla seguía siendo
+bueno —que nadie pegue ahí una credencial de producción—, así que lo que cambió
+es quién lo sostiene: `tests/setup/entorno.ts` ahora verifica **también** que la
+API de Supabase sea loopback en el 54321 y aborta si no. Un comentario pide;
+esto impide. Comprobado apuntando el archivo a producción a propósito: no corre
+un solo test.
+
+Y el mismo día, por la misma conversación, el archivo **salió del
+repositorio**: arriba está el porqué y qué costó.
 
 **El aviso de un campo sobrevivía a que se corrigiera el valor, y ningún
 formulario del panel valida al salir del campo.** Son la misma grieta vista

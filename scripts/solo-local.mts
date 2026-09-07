@@ -1,36 +1,39 @@
 /**
- * La guarda que separa «probar» de «romperle el catálogo a Ana».
+ * Qué cuenta como «el stack local», y por qué se decide acá y en un solo lado.
  *
- * Nueve de los scripts de verificación **escriben**: crean marcas, productos
- * y variantes, suben archivos al bucket y después los borran. Contra el
- * stack local eso no le importa a nadie. Contra la base de producción son
- * filas y archivos de mentira dentro del catálogo real —y si el script
- * revienta a mitad, como ya pasó una vez, quedan ahí—.
+ * **Qué era esto hasta F4.0b.** Vivía acá `soloLocal()`, la guarda que frenaba
+ * a los nueve scripts de verificación que ESCRIBÍAN —creaban marcas, productos
+ * y variantes, subían archivos al bucket— para que no corrieran contra la base
+ * de Ana. Esos scripts se migraron a Vitest y ya no existen, así que la guarda
+ * se fue con ellos: quien la reemplaza es `tests/setup/entorno.ts`, que aplica
+ * la misma regla desde el otro lado y SIN escape, porque una batería de tests
+ * que crea órdenes y las cancela no tiene ningún caso legítimo contra
+ * producción.
  *
- * Los que solo LEEN no pasan por acá a propósito: `db:verificar` contra
- * producción es justamente cómo se cierra F0.6, y una guarda que también los
- * frenara convertiría a esta función en algo que hay que esquivar.
+ * Lo que queda es la REGLA sola, sin efectos, con un consumidor. Sigue viviendo
+ * en su propio archivo por el mismo motivo de siempre: el día que el puerto
+ * cambie, tiene que cambiar en un solo lugar.
  *
- * **Cómo decide, y por qué así.** Mira que la base sea exactamente la del
- * stack local declarado en `supabase/config.toml`: loopback y el puerto
- * 54322. No alcanza con mirar el host, y este es el motivo: el acceso a
- * producción va por un **túnel SSH** (F0.4 exige que Postgres no responda
- * desde afuera), y a través de un túnel producción se ve como `127.0.0.1`.
- * De ahí la regla que hay que respetar del otro lado:
+ * **Cómo decide, y por qué así.** Mira que la URL sea exactamente la del stack
+ * local declarado en `supabase/config.toml`: loopback y el puerto. No alcanza
+ * con mirar el host, y este es el motivo: el acceso a producción va por un
+ * **túnel SSH** (F0.4 exige que Postgres no responda desde afuera), y a través
+ * de un túnel producción se ve como `127.0.0.1`. De ahí la regla que hay que
+ * respetar del otro lado:
  *
  *     EL TÚNEL SSH NUNCA USA EL PUERTO 54322.
  *
- * Si algún día lo usara, esta guarda dejaría pasar contra producción todo lo
- * que existe para frenar.
+ * Si algún día lo usara, esto dejaría pasar contra producción todo lo que
+ * existe para frenar.
  */
 
 /** El de `supabase/config.toml`, `[db] port`. Si cambia allá, cambia acá. */
 const PUERTO_DEL_STACK_LOCAL = "54322";
 
-const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+/** El de `supabase/config.toml`, `[api] port`: Storage, Auth y el resto. */
+const PUERTO_API_DEL_STACK_LOCAL = "54321";
 
-/** El escape para el día que haya un motivo de verdad. Se pone a mano. */
-const ESCAPE = "PERMITIR_ESCRITURA_FUERA_DE_LOCAL";
+const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
 
 /**
  * La regla, sola y sin efectos: ¿esta URL es la del stack local?
@@ -41,52 +44,48 @@ const ESCAPE = "PERMITIR_ESCRITURA_FUERA_DE_LOCAL";
  * el otro se queda dejando pasar lo que existe para frenar.
  */
 export function esStackLocal(crudo: string): boolean {
+  return esLoopbackEnPuerto(crudo, PUERTO_DEL_STACK_LOCAL);
+}
+
+/**
+ * Lo mismo para la API del stack local —Storage, Auth—, que es la que usan
+ * los tests de F2.2, F2.4 y F2.6 al subir y borrar archivos de verdad.
+ *
+ * Hace falta aparte de `esStackLocal` porque son DOS puertas distintas: la
+ * base va por el 54322 y Storage por el 54321, y apuntar bien una no dice
+ * nada de la otra. Sin esta, `.env.test` podría llevar la clave `service_role`
+ * de producción al lado de una `DATABASE_URL` local y los tests subirían
+ * archivos de prueba al bucket de Ana con la guarda en verde.
+ */
+export function esApiDelStackLocal(crudo: string): boolean {
+  return esLoopbackEnPuerto(crudo, PUERTO_API_DEL_STACK_LOCAL);
+}
+
+function esLoopbackEnPuerto(crudo: string, puerto: string): boolean {
   let url: URL;
   try {
     url = new URL(crudo);
   } catch {
     return false;
   }
-  return LOOPBACK.has(url.hostname) && url.port === PUERTO_DEL_STACK_LOCAL;
+  return LOOPBACK.has(url.hostname) && url.port === puerto;
 }
 
-/** Para los mensajes de error: «127.0.0.1:5433». */
-export function dondeApunta(crudo: string): string {
+/**
+ * Para los mensajes de error: «127.0.0.1:5433».
+ *
+ * El puerto por omisión se pasa porque estas URL no son todas de Postgres: en
+ * una `https://…` sin puerto, decir «:5432» inventa un dato y manda a mirar el
+ * lugar equivocado justo cuando alguien está tratando de entender por qué su
+ * configuración no arranca.
+ */
+export function dondeApunta(crudo: string, porOmision = "5432"): string {
   try {
     const url = new URL(crudo);
-    return `${url.hostname}:${url.port || "5432"}`;
+    return url.port ? `${url.hostname}:${url.port}` : porOmision
+      ? `${url.hostname}:${porOmision}`
+      : url.hostname;
   } catch {
     return crudo;
   }
-}
-
-export function soloLocal(script: string): void {
-  const crudo = process.env.DATABASE_URL;
-
-  if (!crudo) {
-    console.error(`✋ ${script} necesita DATABASE_URL y no está definida.`);
-    process.exit(1);
-  }
-
-  const donde = dondeApunta(crudo);
-
-  if (esStackLocal(crudo)) return;
-
-  if (process.env[ESCAPE] === "1") {
-    console.warn(
-      `⚠️  ${script} va a ESCRIBIR en ${donde}, que no es el stack local.\n` +
-        `   Corre igual porque ${ESCAPE}=1. Si esto es producción, lo que\n` +
-        `   cree y borre pasa por el catálogo de verdad.\n`,
-    );
-    return;
-  }
-
-  console.error(
-    `✋ ${script} escribe en la base, y DATABASE_URL apunta a ${donde}.\n` +
-      `   El stack local es loopback en el puerto ${PUERTO_DEL_STACK_LOCAL}\n` +
-      `   (supabase/config.toml). Este script crea y borra filas de prueba:\n` +
-      `   contra producción eso entra en el catálogo real.\n\n` +
-      `   Si de verdad querés correrlo ahí: ${ESCAPE}=1 npm run <script>\n`,
-  );
-  process.exit(1);
 }

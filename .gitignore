@@ -37,6 +37,11 @@ yarn-error.log*
 # API key de Resend. Sin esta línea `.env.stack-local.bak` se commitea.
 .env*.bak
 
+# El entorno de `npm test`. Lleva claves del stack local —no son secretas, pero
+# una clave en el repositorio es una clave en el repositorio—. La plantilla que
+# SÍ se commitea es `.env.test.example`, con los valores vacíos.
+.env.test
+
 # vercel
 .vercel
 
