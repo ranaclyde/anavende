@@ -1,0 +1,184 @@
+import Image from "next/image";
+import Link from "next/link";
+import type { ReactNode } from "react";
+
+import { Precio } from "@/components/shop/precio";
+import { formatMoney, isPositive, type Money } from "@/lib/money";
+import { urlDeImagen } from "@/modules/media/subir";
+import { cn } from "@/lib/utils";
+
+/**
+ * Tarjeta de producto — F3.1, DESIGN-REFERENCE §6.1.
+ *
+ * «El componente más importante del sistema. Aparece en catálogo, home,
+ * recomendados y favoritos, y es SIEMPRE el mismo.» De ahí que reciba un
+ * objeto plano y no una fila de la base: si tomara el tipo de una consulta,
+ * cada pantalla nueva tendría que devolver exactamente esa forma o inventarse
+ * una tarjeta parecida.
+ *
+ * Es un Server Component, y eso NO es un detalle: en una grilla de 24, hacerla
+ * cliente mandaría al navegador 24 copias de este árbol más los datos para
+ * rehidratarlo, para una tarjeta que no tiene ni un evento propio. Lo único
+ * interactivo —el corazón de favoritos— entra por `accionFavorito`, que es una
+ * isla de cliente que arma quien la use.
+ */
+
+export type ProductoEnTarjeta = {
+  slug: string;
+  nombre: string;
+  /** Va en versalitas arriba del nombre (§6.1). */
+  marca: string;
+  precio: Money;
+  descuento: Money;
+  precioFinal: Money;
+  /**
+   * La CLAVE base en Storage, sin sufijo ni extensión (§9.2), o `null` si el
+   * producto todavía no tiene fotos — F2.4 hace el alta en dos pasos, así que
+   * ese estado existe de verdad y no es un caso inventado.
+   */
+  imagenKey: string | null;
+  /** Para el texto alternativo: «…, negro» (§9). */
+  color?: string | null;
+  /** `stock_total − reserved_stock` sumado sobre las variantes (§8.1). */
+  disponible: number;
+};
+
+type Props = {
+  producto: ProductoEnTarjeta;
+  /**
+   * El corazón de RF-10, que llega recién en F5.4. Se recibe como nodo y no
+   * como `onToggle` para que la tarjeta pueda seguir siendo servidor: la isla
+   * de cliente la arma quien la pasa. Sin esto, no se dibuja nada — un corazón
+   * que no hace nada es peor que ningún corazón.
+   */
+  accionFavorito?: ReactNode;
+  /**
+   * `true` en las primeras imágenes de la grilla. `next/image` difiere por
+   * omisión, y diferir la que está arriba de todo penaliza el LCP: es la que
+   * el navegador tendría que estar pidiendo primero.
+   */
+  prioridad?: boolean;
+};
+
+export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) {
+  const { slug, nombre, marca, imagenKey, color, disponible } = producto;
+  const hayOferta = isPositive(producto.descuento);
+  const sinStock = disponible <= 0;
+
+  // §9: «producto, marca y color». Sin el color, dos tarjetas de la misma
+  // ficha se anuncian idénticas.
+  const alt = [nombre, marca].join(" ") + (color ? `, ${color.toLowerCase()}` : "");
+
+  return (
+    <article
+      className={cn(
+        // `h-full`: en la grilla, las tarjetas de una fila estiran a la más alta.
+        // Sin esto, una con descuento —que lleva el renglón «Ahorrás»— queda
+        // más alta que la de al lado y los bordes de abajo bailan.
+        "group relative flex h-full flex-col rounded-card bg-surface p-3",
+        // Sombra y no borde (§11): las tarjetas se separan por elevación.
+        "shadow-md",
+        // El anillo de foco rodea la TARJETA, no el enlace de adentro, que es
+        // solo el texto del nombre y dejaría medio componente sin señalar.
+        "has-[a:focus-visible]:shadow-focus",
+        // 200ms para transformaciones (§8). `motion-safe` porque §8 pide que
+        // todo movimiento se apague bajo `prefers-reduced-motion`, y ahí la
+        // elevación sola sigue comunicando el hover.
+        "transition-shadow duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
+        "hover:shadow-lg motion-safe:hover:-translate-y-0.5",
+        "motion-safe:transition-[box-shadow,transform]",
+      )}
+    >
+      <div className="relative overflow-hidden rounded-image bg-surface-sunken">
+        {/*
+          Cuadrada siempre, aunque la foto no lo sea: el aspecto se reserva con
+          CSS y no depende de que la imagen cargue, que es lo que evita que la
+          grilla salte cuando llegan (CLS).
+        */}
+        <div className="relative aspect-square">
+          {imagenKey ? (
+            <Image
+              src={urlDeImagen(imagenKey, "card")}
+              alt={alt}
+              fill
+              // Le dice al navegador qué ancho va a ocupar ANTES de saber el
+              // layout, así elige el archivo correcto en la primera pasada.
+              // Son las tres columnas de §7.2: 2 / 3 / 4.
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+              priority={prioridad}
+              className={cn(
+                "object-cover",
+                "motion-safe:transition-transform motion-safe:duration-200",
+                "motion-safe:group-hover:scale-[1.03]",
+                // §6.1: la imagen baja a 55% cuando no hay stock. La píldora
+                // de abajo es la que lo DICE — el color no alcanza (§9).
+                sinStock ? "opacity-55" : "",
+              )}
+            />
+          ) : (
+            <div
+              className="flex h-full items-center justify-center"
+              aria-hidden="true"
+            >
+              <span className="text-caption text-ink-tertiary">Sin foto</span>
+            </div>
+          )}
+
+          {hayOferta ? (
+            // `whitespace-nowrap`: una píldora que se parte en dos renglones
+            // deja de leerse como una etiqueta y tapa media foto.
+            <p className="absolute top-2 left-2 rounded-full bg-brand px-2 py-1 text-caption font-medium whitespace-nowrap text-white tabular-nums">
+              −{formatMoney(producto.descuento)}
+            </p>
+          ) : null}
+
+          {sinStock ? (
+            <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-surface/92 px-3 py-1.5 text-caption font-medium whitespace-nowrap text-ink shadow-md">
+              Sin stock
+            </p>
+          ) : null}
+
+          {/*
+            Encima del enlace estirado, y a la vista SIEMPRE: revelarlo al pasar
+            el mouse lo dejaría inalcanzable en un teléfono, donde no hay hover.
+          */}
+          {accionFavorito ? (
+            <div className="absolute top-2 right-2 z-10">{accionFavorito}</div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-1 px-1 pt-3 pb-1">
+        <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
+          {marca}
+        </p>
+
+        <h3 className="text-body-sm font-medium text-ink">
+          {/*
+            ENLACE ESTIRADO. La tarjeta entera es clicable (§6.1) y el ancla
+            vive acá adentro: envolver todo en un `<a>` metería el botón de
+            favoritos DENTRO del enlace, que es HTML inválido y deja el corazón
+            inalcanzable con teclado. El pseudo-elemento cubre la tarjeta sin
+            anidar nada.
+
+            `line-clamp-2` con el alto reservado: sin él, un nombre de una línea
+            y otro de dos dejan los precios de la fila a distinta altura.
+          */}
+          <Link
+            href={`/productos/${slug}`}
+            className="line-clamp-2 min-h-[2.9em] after:absolute after:inset-0 after:rounded-card after:content-['']"
+          >
+            {nombre}
+          </Link>
+        </h3>
+
+        <Precio
+          precio={producto.precio}
+          descuento={producto.descuento}
+          precioFinal={producto.precioFinal}
+          className="pt-1"
+        />
+      </div>
+    </article>
+  );
+}
