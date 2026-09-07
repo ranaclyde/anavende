@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-06.
+Última actualización: 2026-09-07.
 
 **Qué significa cada estado**
 
@@ -82,12 +82,22 @@ justamente por ese número).
 | F2.4 | Variantes de color | ✅ | Agregar, editar y sacar variantes, cada una con su stock y hasta 5 imágenes; reutilizar las de otra variante; arrastre, progreso, reordenar y elegir la principal. `db:variantes` prueba 30 reglas contra Postgres y contra Storage de verdad. Probado en el navegador de punta a punta: alta de producto que sigue en su pantalla, dos colores, tres fotos, reordenar arrastrando, «hacer principal», borrar, rechazo de un `.txt`, reutilizar las fotos de otro color, RN-11b en los dos sentidos, y borrar el producto dejando el bucket vacío. **Arrastrando aparecieron dos errores que no se veían leyendo el código** —están abajo—. Pasó por `impeccable` como pide DR §12.4, y de ahí salieron tres correcciones que sí se ven mirando: el menú de cada foto se mudó **encima de su miniatura** —debajo quedaba más cerca del número de la foto siguiente que del suyo—, la ayuda de las fotos se dice **una vez por sección** en vez de dos renglones por color, y el selector de «reutilizar las fotos de otro color» aparece **solo cuando puede hacer algo**. También se corrigió el contraste de los textos en `--ink-tertiary`, que sobre `--surface-sunken` daban 2,6:1 en claro y 3,5:1 en oscuro contra el 4,5:1 que pide §9 |
 | F2.5 | Listado de productos | ✅ | Búsqueda por nombre, marca y descripción; filtros por categoría, marca, estado **y stock**; orden por nombre, precio, stock disponible y fecha, en los dos sentidos y también desde las cabeceras de la tabla. Los tres números de stock por producto, con el cero, el stock bajo de RF-20 y el **negativo** de RF-24 señalizados. Todo el estado vive en la URL (§10.2). `db:listado` prueba 39 reglas contra Postgres de verdad. Verificado en el navegador con seis productos que cubren los cuatro avisos: «mecanico» encuentra «Mecánico», «8k a 60hz» encuentra por la descripción, «Para reponer» trae tres de seis, ordenar por una cabecera y volver a tocarla da vuelta la dirección, «Limpiar todo» conserva el orden, y el vacío y el sin-resultados dicen cosas distintas. Los productos de prueba se borraron: la base quedó como estaba. Pasó por `impeccable` como pide DR §12.4, y de ahí salieron cinco correcciones que sí se ven mirando: la **lupa se apoyaba sobre la primera letra** del texto de ayuda —abajo está por qué, y vale para todo el panel—; en las columnas de números la **flecha de ordenar se mudó adelante del título**, porque el lugar que ocupaba mientras no se veía corría el título 18px a la izquierda del borde donde terminan las cifras; la columna **Estado se ensanchó** para que «Activo» y el aviso de stock entren en la misma línea y la tabla conserve su renglón parejo de 44px (§6.9); en la tarjeta de móvil el **precio y el disponible arrancan en la misma línea**, que apilados dejaban el número grande flotando; y con el catálogo vacío **desaparece el botón del encabezado**, porque el estado vacío ya ofrece el mismo primer paso y dos botones de marca iguales a 100px uno del otro se leen como un error (§6.3) |
 | F2.6 | ABM de medios de pago | ✅ | Alta con logo, descripción y orden, edición, activar/desactivar y baja, en una solapa nueva del catálogo. El orden se cambia con flechas y se renumera solo. `db:pagos` prueba 26 reglas contra Postgres y contra Storage de verdad. Probado en el navegador: tres medios con y sin logo, reordenar, desactivar, borrar, y el estado vacío. **La canalización de logos se generalizó**: la que hizo F2.1 para las marcas ahora sirve a las dos, con una sola copia del orden de operaciones que evita archivos huérfanos —y se volvió a probar el logo de marca de punta a punta para asegurarse de que no se rompió—. Arrastrando el flujo apareció **un error que no se veía leyendo el código**: está abajo. Lo que RF-19 pide **mostrar** —la franja en la tienda, la ficha y el checkout— no es de esta tarea: cae en F3.7, F3.5 y F6.1, que son las pantallas donde va |
-| F2.7 | Configuración del sitio | ✅ | Número de WhatsApp, email de avisos y umbral de stock bajo, editables desde `/admin/configuracion`. `db:configuracion` prueba 22 reglas contra Postgres de verdad, y las cuatro que importan no se ven leyendo el código: que **guardar la primera vez CREE la fila** —es un UPSERT, y con un UPDATE la pantalla diría «se guardó» sin haber guardado nada—, que la segunda pise a la primera sin que aparezca una segunda fila, que `updated_at` avance al pisar, y que **el umbral guardado llegue al listado**: con 5, un producto con 5 disponibles entra en «Para reponer»; con 4, sale. La normalización del teléfono se sacó a `lib/telefono.ts` y ahora es **una sola** para el comprador y para el sitio; el script prueba que las dos den lo mismo. Probado en el navegador: el estado sin configurar, un envío vacío que señala los dos campos y lleva el foco al primero, el número que vuelve normalizado a `+549…`, el email recortado y en minúsculas, el 101 rechazado por el servidor con su motivo y el campo vacío por el formulario con el mismo texto que usaría el servidor, en claro y en oscuro y a 390px. Arrastrando el flujo apareció **un callejón sin salida que no se veía leyendo el código**: está abajo. Pasó por `impeccable` y `ui-ux-pro-max` como pide DR §12.4, y de ahí salieron seis correcciones que sí se ven mirando: el campo del umbral dejó de ser `type="number"` y pasó a `inputMode="numeric"`, **por la misma razón que ya estaba escrita en el stock de una variante** —el campo numérico del navegador sube y baja con la rueda del mouse encima, y acá eso cambiaría el umbral de todo el catálogo mientras alguien baja la página—; el botón «Guardar» deshabilitado **dice por qué con palabras** («Todo guardado.») en vez de colgarlo de un `title`, que sobre un botón deshabilitado puede no llegar a aparecer nunca (§8); la unidad «unidades» entró en la descripción accesible del campo, que si no se lee «avisar stock bajo a partir de: 3» sin decir de qué; el esqueleto de carga usaba separaciones distintas de las de la pantalla de verdad y **la página saltaba 40px** al llegar los datos, así que ahora comparte las tres medidas y hasta la cantidad de renglones de cada ayuda; y dos textos se acortaron: la bajada del encabezado, que hablaba de «tocar el código» —vocabulario que la vendedora no tiene por qué tener (§10)—, y la de «Avisos», que decía en dos renglones lo que dice en uno. **La fila se borró al terminar**: el número de prueba no es el de nadie, y dejarlo puesto sería peor que dejarlo vacío |
+| F2.7 | Configuración del sitio | ✅ | Número de WhatsApp, email de avisos y umbral de stock bajo, editables desde `/admin/configuracion`. `db:configuracion` prueba 22 reglas contra Postgres de verdad, y las cuatro que importan no se ven leyendo el código: que **guardar la primera vez CREE la fila** —es un UPSERT, y con un UPDATE la pantalla diría «se guardó» sin haber guardado nada—, que la segunda pise a la primera sin que aparezca una segunda fila, que `updated_at` avance al pisar, y que **el umbral guardado llegue al listado**: con 5, un producto con 5 disponibles entra en «Para reponer»; con 4, sale. La normalización del teléfono se sacó a `lib/telefono.ts` y ahora es **una sola** para el comprador y para el sitio; el script prueba que las dos den lo mismo. Probado en el navegador: el estado sin configurar, un envío vacío que señala los dos campos y lleva el foco al primero, el número que vuelve normalizado a `+549…`, el email recortado y en minúsculas, el 101 rechazado por el servidor con su motivo y el campo vacío por el formulario con el mismo texto que usaría el servidor, en claro y en oscuro y a 390px. Arrastrando el flujo apareció **un callejón sin salida que no se veía leyendo el código**: está abajo. Pasó por `impeccable` y `ui-ux-pro-max` como pide DR §12.4, y de ahí salieron seis correcciones que sí se ven mirando: el campo del umbral dejó de ser `type="number"` y pasó a `inputMode="numeric"`, **por la misma razón que ya estaba escrita en el stock de una variante** —el campo numérico del navegador sube y baja con la rueda del mouse encima, y acá eso cambiaría el umbral de todo el catálogo mientras alguien baja la página—; el botón «Guardar» deshabilitado **dice por qué con palabras** («Todo guardado.») en vez de colgarlo de un `title`, que sobre un botón deshabilitado puede no llegar a aparecer nunca (§8); la unidad «unidades» entró en la descripción accesible del campo, que si no se lee «avisar stock bajo a partir de: 3» sin decir de qué; el esqueleto de carga usaba separaciones distintas de las de la pantalla de verdad y **la página saltaba 40px** al llegar los datos, así que ahora comparte las tres medidas y hasta la cantidad de renglones de cada ayuda; y dos textos se acortaron: la bajada del encabezado, que hablaba de «tocar el código» —vocabulario que la vendedora no tiene por qué tener (§10)—, y la de «Avisos», que decía en dos renglones lo que dice en uno. **La fila se borró al terminar**: el número de prueba no es el de nadie, y dejarlo puesto sería peor que dejarlo vacío. **Cargada con los datos reales el 2026-09-07**, y comprobado en la base: `id = 1`, el WhatsApp normalizado a `+549` + 10 dígitos y el email en minúsculas y recortado, o sea que la normalización del servidor corrió y no se guardó lo que se tipeó. El umbral quedó en **2**, más estricto que el 3 por defecto: es criterio tuyo y queda anotado para que no se lea como un descuido |
 | F2.8 | Cargar el catálogo real | ⬜ | **Desbloqueada el 2026-09-05.** Lo que la trababa —F0.3 y F0.7— está hecho: la base y el bucket de producción existen y están probados, así que lo que Ana cargue queda donde va y no hay que volcarlo ni volver a subirlo. Sigue conviniendo hacer antes la **Compuerta F2**, que es la prueba de usabilidad del panel |
 
 ---
 
 ## F4 — Núcleo de stock y órdenes
+
+**Producción está al día con el código desde el 2026-09-07.** Las cuatro
+migraciones que faltaban —`0007` a `0010`— se aplicaron contra el servidor DATA
+por el túnel SSH. No se borró ni se recreó nada, y no hacía falta: el
+inventario previo mostró las 21 tablas en cero salvo `user_profiles` con una
+fila, y el bucket sin archivos. Se comprobó el **efecto** de cada una, no el
+registro de Drizzle —los dos `DEFAULT` en `clock_timestamp()`, la columna
+`idempotency_key` con su índice único parcial, y `confdeltype = 'r'` en la FK
+de `orders.user_id`—, y después `db:verificar` completo: **24 comprobaciones en
+verde** contra producción.
 
 **Se adelanta a F3 por decisión tuya del 2026-09-06.** El mapa de fases de
 `DEVELOPMENT-PLAN.md` §3 ya lo permitía —«F4 puede adelantarse: no depende de
@@ -107,10 +117,10 @@ ninguno.
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
 | F4.0 | Vitest andando, con `npm test` | ✅ | No es una tarea del plan: es la deuda de los once `db:xxx` venciendo donde estaba anotado que vencía. Vitest 5.0.0, `tests/unit/**/*.test.ts`, un archivo por vez —comparten base, y dos a la vez se pisan los datos—. La guarda se probó de los dos lados: verde contra el stack local, y abortando con el mensaje correcto cuando la URL apunta al **5433**, que es el puerto del túnel SSH a producción |
-| F4.1 | Operaciones de stock con `UPDATE` condicional atómico | 🟡 | Reservar, liberar, vender, reponer y ajustar, en `modules/stock/operaciones.ts`, cada una con su asiento en la misma transacción. **24 tests en verde** contra Postgres de verdad. El ABM de variantes de F2.4 pasó a usar `ajustar()`: el libro mayor tiene un solo autor. **Falta aplicar la migración `0007` en producción**, abajo |
+| F4.1 | Operaciones de stock con `UPDATE` condicional atómico | ✅ | Reservar, liberar, vender, reponer y ajustar, en `modules/stock/operaciones.ts`, cada una con su asiento en la misma transacción. **24 tests en verde** contra Postgres de verdad. El ABM de variantes de F2.4 pasó a usar `ajustar()`: el libro mayor tiene un solo autor. La migración `0007` **quedó aplicada en producción el 2026-09-07** |
 | F4.2 | Máquina de estados de la orden | ✅ | `modules/orders/estados.ts`. La transición es un `UPDATE` condicional con el estado esperado en el `WHERE` y **va antes de tocar el stock**: es lo que decide quién gana. Finalizar vende y suelta la reserva; cancelar sólo suelta. Cada una escribe en el historial en la misma transacción. La tabla de RF-13 se exporta como dato (`TRANSICIONES`) para que la vista no repita la regla. **16 tests**, incluidos dos de concurrencia con solapamiento forzado |
-| F4.3 | Creación de orden con snapshot e idempotencia | 🟡 | `modules/orders/crear.ts`, el procedimiento de §8.4 completo: carrito bloqueado, revalidación contra lo que el comprador vio, snapshot de comprador, dirección e ítems, reserva en orden determinístico, total sumado en SQL, historial y carrito vaciado. **18 tests**, entre ellos dos compradores solapados sobre la última unidad. **Falta aplicar la migración `0008` en producción** |
-| F4.4 | Edición de orden activa | 🟡 | `modules/orders/editar.ts`: quitar un ítem y reducir cantidades, liberando la reserva **de inmediato** y recalculando el total en SQL. La orden se bloquea con `FOR UPDATE` antes de mirarle el estado, y eso no es de más: sin el bloqueo, entre leer «está activa» y liberar, otra transacción la finaliza. Quitar el último cancela, pero **hay que pedirlo**: si no, la función se niega y avisa que eso es lo que va a pasar. **11 tests**. **Falta la migración `0009` en producción** |
+| F4.3 | Creación de orden con snapshot e idempotencia | ✅ | `modules/orders/crear.ts`, el procedimiento de §8.4 completo: carrito bloqueado, revalidación contra lo que el comprador vio, snapshot de comprador, dirección e ítems, reserva en orden determinístico, total sumado en SQL, historial y carrito vaciado. **18 tests**, entre ellos dos compradores solapados sobre la última unidad. La migración `0008` **quedó aplicada en producción el 2026-09-07** |
+| F4.4 | Edición de orden activa | ✅ | `modules/orders/editar.ts`: quitar un ítem y reducir cantidades, liberando la reserva **de inmediato** y recalculando el total en SQL. La orden se bloquea con `FOR UPDATE` antes de mirarle el estado, y eso no es de más: sin el bloqueo, entre leer «está activa» y liberar, otra transacción la finaliza. Quitar el último cancela, pero **hay que pedirlo**: si no, la función se niega y avisa que eso es lo que va a pasar. **11 tests**. La migración `0009` **quedó aplicada en producción el 2026-09-07** |
 | F4.5 | Devoluciones con y sin reposición | ✅ | `modules/returns/registrar.ts`. Con reposición suma al stock, sin reposición no toca nada y queda registrada igual para RF-28. El tope de RF-25 —ni más de lo vendido ni de lo ya devuelto— se calcula con la orden **bloqueada**: dos devoluciones simultáneas sobre el mismo renglón leerían la misma suma y entre las dos devolverían de más. Anular revierte lo repuesto y libera el cupo. **15 tests** |
 | F4.5b | Los usuarios no se eliminan | ✅ | No es del plan: es la contradicción de §5.6 que F4.3 destapó, resuelta por decisión tuya. `orders.user_id` pasa de `SET NULL` a **`RESTRICT`** (migración `0010`), que es lo que RF-26 venía diciendo sin decirlo. Un usuario **sin** órdenes se sigue borrando, porque de eso depende la compensación de §13.4. **3 tests** |
 | F4.6 | Tests unitarios contra Postgres real | ✅ | **92 tests** en total, todos contra Postgres de verdad. Los de cada tarea viven con la tarea; acá quedan los dos que son de toda la fase: la carrera por la última unidad y el cuadre del libro |
@@ -351,26 +361,45 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
    Meta for Developers, con `/auth/v1/callback` como URI de retorno. El código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
-2. **F2.7 — el número y la casilla de verdad.** La pantalla está y anda, pero
-   la fila quedó **vacía a propósito**: el número con el que se probó no es el
-   de nadie, y un `wa.me` apuntando a un número inventado es peor que un botón
-   que todavía no está. Hay que entrar a `/admin/configuracion` y cargar el
-   número de WhatsApp real y la casilla donde querés los avisos. Hasta que eso
-   pase, el aviso de stock bajo funciona con 3 unidades.
-3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
+2. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-4. **Las migraciones `0007` a `0010` en producción.** `0007` y `0009` corrigen
-   el `DEFAULT` de `created_at` a `clock_timestamp()` en `stock_movements` y en
-   `order_status_history`; `0008` agrega `orders.idempotency_key` y su índice
-   único parcial; `0010` pasa `orders.user_id` a `RESTRICT`. Las cuatro están
-   aplicadas en el stack local y **ninguna** en el servidor DATA: aplicarlas es
-   un `db:migrate` contra producción, y eso lo corrés vos cuando quieras. Las
-   cuatro son no destructivas y no tocan ninguna fila existente.
-5. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
+3. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
    entero— está activo y sirve de piso, pero guarda **una sola copia** y se
    restaura por ticket. Falta el volcado de la base y del bucket, con varias
    copias y una restauración probada. Conviene antes de F2.8, que es cuando
    entra el catálogo real: es trabajo de Ana lo que se estaría arriesgando.
+
+---
+
+## Cómo se hace un administrador, hasta que exista F7.4
+
+Hecho por primera vez el **2026-09-07**: producción tiene **un** administrador,
+y es la cuenta con la que se verificó F1.7 de punta a punta.
+
+Es un `UPDATE` de una fila y no una carencia: la administración de usuarios es
+RF-26 y vive en **F7.4**. Hasta entonces, sumar un administrador es
+
+```sql
+UPDATE user_profiles SET role = 'admin', updated_at = now()
+ WHERE id = '…' RETURNING id, email, role;
+```
+
+El `RETURNING` no es adorno: sin él, un `WHERE` que no encuentra a nadie
+devuelve «Success» igual y no hay forma de distinguirlo de uno que funcionó.
+
+Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
+
+- **El rol no viaja en el JWT.** `lib/session.ts` lo lee de `user_profiles` en
+  cada resolución de sesión y `app/admin/layout.tsx` decide con eso, así que el
+  cambio surte efecto en la próxima carga de página, sin cerrar sesión. Está
+  diseñado así por RF-27, que exige que bloquear a alguien corte sus sesiones
+  activas: un rol escrito en el token queda congelado hasta que el token se
+  renueve.
+- **Un error de tipeo no entra.** El CHECK `role_valid` sólo acepta `'admin'` o
+  `'customer'`; `'Admin'` falla en el momento en vez de dejar una cuenta que no
+  entra a ningún lado y no dice por qué.
+- **Sin el rol, `/admin` devuelve 404** y no «no tenés permiso»: el panel no se
+  delata ante quien no debería saber que existe.
 
 ---
 
