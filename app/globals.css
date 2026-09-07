@@ -22,10 +22,10 @@
   --brand: #832833; /* acción principal, identidad, precio en oferta */
   --brand-hover: #9d3040; /* MÁS CLARO: el color base ya es oscuro */
   --brand-active: #6b202a;
-  --brand-tint: #fdf2f3; /* fondo de etiquetas y estados suaves */
+  --brand-tint: #f7edef; /* fondo de etiquetas y estados suaves */
   --brand-tint-border: #f2dcdf;
-  --brand-shadow: rgb(131 40 51 / 0.26);
-  --shadow-focus-raw: 0 0 0 3px #fdf2f3, 0 0 0 1px #832833;
+  --brand-shadow: rgb(131 40 51 / 0.34);
+  --shadow-focus-raw: 0 0 0 3px #f7edef, 0 0 0 1px #832833;
 
   /* Superficies */
   --canvas: #f2f4f5; /* fondo de página */
@@ -41,16 +41,16 @@
    * a tener en la tienda, que es acromática sobre `--canvas`.
    */
   --logo-chip: #f2f4f5;
-  --logo-chip-ink: #6b6f73; /* el ícono de «sin logo», sobre ese fondo */
+  --logo-chip-ink: #716e6d; /* el ícono de «sin logo», sobre ese fondo */
 
   /* Texto */
-  --ink: #16181a; /* primario — casi negro, no negro puro (§3.1) */
-  --ink-secondary: #6b6f73; /* secundario, etiquetas */
-  --ink-tertiary: #9aa0a5; /* metadatos, marcadores de posición */
+  --ink: #111010; /* primario — casi negro, no negro puro (§3.1) */
+  --ink-secondary: #716e6d; /* secundario, etiquetas */
+  --ink-tertiary: #8f8b8a; /* metadatos, marcadores de posición */
   --ink-inverse: #ffffff;
 
   /* Líneas */
-  --border: #e8eaeb; /* divisorias, contorno de campos */
+  --border: #ebebeb; /* divisorias, contorno de campos */
   --border-strong: #d3d7d9; /* campo con foco, separadores marcados */
 
   /* Semánticos */
@@ -182,8 +182,8 @@
   --spacing: 0.25rem;
 
   /* Radios (§3.5) — la tienda es generosa, el panel es denso */
-  --radius-card: 24px; /* tarjeta de producto, tienda */
-  --radius-image: 16px; /* imagen dentro de tarjeta: ~8px menos (§3.5) */
+  --radius-card: 28px; /* tarjeta de producto, tienda */
+  --radius-image: 20px; /* imagen dentro de tarjeta: ~8px menos (§3.5) */
   --radius-modal: 20px;
   --radius-panel-card: 12px; /* tarjeta del panel */
   --radius-panel-image: 8px;
@@ -191,11 +191,11 @@
   --radius-pill: 9999px; /* botón, campo y buscador de la tienda */
 
   /* Sombras (§3.6) — las tarjetas se separan por sombra, nunca por borde */
-  --shadow-sm: 0 2px 8px rgb(22 24 26 / 0.06);
-  --shadow-md: 0 4px 6px -1px rgb(22 24 26 / 0.1), 0 2px 4px -2px
-    rgb(22 24 26 / 0.1);
-  --shadow-lg: 0 4px 24px rgb(22 24 26 / 0.12);
-  --shadow-brand: 0 4px 20px var(--brand-shadow);
+  --shadow-sm: 0 2px 8px rgb(17 16 16 / 0.06);
+  --shadow-md: 0 4px 6px -1px rgb(17 16 16 / 0.1), 0 2px 4px -2px
+    rgb(17 16 16 / 0.1);
+  --shadow-lg: 0 4px 24px rgb(17 16 16 / 0.12);
+  --shadow-brand: 0 4px 24px var(--brand-shadow);
   --shadow-focus: var(--shadow-focus-raw);
 
   /* Anchos máximos (§4) */
