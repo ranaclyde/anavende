@@ -239,7 +239,11 @@ F10 Endurecimiento y lanzamiento
 | **F5.6** | Revalidación del carrito y avisos | **L** | FS RF-08 · TS §8.4 | Precio cambiado avisa y toma el vigente; stock reducido ajusta; **desactivado se elimina con aviso previo persistente** |
 | **F5.7** | «Iniciá sesión para comprar» y retomar la acción pendiente | M | FS RF-08 · DR §7.3 | El visitante que intenta agregar al carrito va al login y, al volver, **el producto queda agregado** |
 
+| **F5.8** | **Pedir la baja de la cuenta**, con el email E5 | M | FS RF-34, RF-07, RN-13 · RF-30 | El acceso está a la vista en «Mis datos». La pantalla advierte qué implica y qué se conserva, y el motivo es obligatorio. **Con órdenes activas no procede**: se dice cuántas son y qué hacer, en vez de ofrecer un botón que va a fallar. Sale el aviso a la administradora |
+
 > **Compuerta F5:** un comprador arma un carrito, cierra sesión, entra desde otro dispositivo y lo encuentra igual.
+
+> **F5.8 deja un pedido que todavía nadie puede ejecutar:** quien lo resuelve es F7.9, dos fases después. No es un descuido — el email E5 hace que la administradora se entere igual, y atenderlo a mano mientras tanto es lo mismo que hace hoy con todo lo demás. Si se prefiere que no haya ventana, F5.8 y F7.9 se hacen juntas.
 
 ---
 
@@ -269,6 +273,7 @@ F10 Endurecimiento y lanzamiento
 | **F7.6** | Gestión de usuarios | M | FS RF-26 · TS §13.2 | Crear, editar, resetear contraseña. Un admin no puede quitarse el rol ni bloquearse |
 | **F7.7** | Bloqueo con razón | M | FS RF-27 · TS §13.5 | Motivo obligatorio, garantizado por el `CHECK` de la base. Se bloquea en Supabase Auth **y** se cierran las sesiones activas. Al intentar entrar, el usuario ve el motivo registrado |
 | **F7.8** | Dashboard del panel | S | FS RF-14 | Órdenes activas, ventas del mes, stock bajo o en cero, cada uno enlazando a su listado |
+| **F7.9** | **Ejecutar y revertir bajas de cuenta** | M | FS RF-34, RF-26, RN-13 (sobre F5.8) | Las bajas pendientes se ven con su motivo. Ejecutar cierra las sesiones y deja registrado quién y cuándo; al intentar entrar, la persona ve un mensaje **distinto del bloqueo**. Revertir la devuelve con su historial, direcciones y favoritos intactos. El filtro por estado distingue los tres |
 
 > **Compuerta F7:** la vendedora opera un ciclo completo —recibir, editar, finalizar, devolver— sin tocar la base de datos.
 
@@ -311,9 +316,10 @@ F10 Endurecimiento y lanzamiento
 | **F10.7** | Repaso de textos y estados vacíos | M | DR §8, §10 | Todo error, estado vacío y mensaje revisado: voseo, sin jerga, con acción |
 | **F10.8** | Verificar backups y restauración, otra vez | S | TS §19 | Restauración de prueba con datos reales, ya cargados |
 | **F10.9** | Prueba con gente real | M | — | Dos o tres personas ajenas compran de verdad. Se corrige lo que aparezca |
-| **F10.10** | Lanzamiento | S | — | Dominio apuntando, TLS, Sentry mirando, backups corriendo |
+| **F10.10** | **Cerrar el punto abierto del arrepentimiento** | S | FS RF-34, «Punto abierto» | Definido con asesoramiento legal si el botón de arrepentimiento es un requisito **aparte** de RF-34 —revoca una compra, va en la home sin sesión, y aplica justo cuando hay una orden en curso—. Si lo es, se escribe su RF y entra antes de lanzar. Si no, queda por escrito por qué no |
+| **F10.11** | Lanzamiento | S | — | Dominio apuntando, TLS, Sentry mirando, backups corriendo |
 
-> **Compuerta F10:** **F10.1 es bloqueante.** Sin RLS (§13.4), es la única verificación de que un comprador no puede ver los datos de otro. No se lanza sin ese test pasando.
+> **Compuerta F10:** **F10.1 y F10.10 son bloqueantes.** F10.1 porque sin RLS (§13.4) es la única verificación de que un comprador no puede ver los datos de otro. F10.10 porque es un requisito legal y no se lanza una tienda sin cumplirlo — y averiguarlo el día del lanzamiento es tarde.
 
 ---
 

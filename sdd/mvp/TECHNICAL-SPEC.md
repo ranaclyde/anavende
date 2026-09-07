@@ -1231,6 +1231,25 @@ Esa pantalla ya era necesaria: ningún proveedor social entrega teléfono (RF-06
 
 **Desbloquear** revierte los tres pasos y deja registro. Todo bloqueo y desbloqueo se audita con autor y fecha.
 
+### 13.5b Baja de cuenta (RF-34, RN-13)
+
+Anotado el 2026-09-06, cuando entró RF-34. **Todavía no está construido** — el diseño fino va con F5.8 y F7.9 —, pero conviene que quede escrito acá lo que ya se sabe, porque cambia poco y se olvida fácil.
+
+**La baja usa la misma maquinaria que el bloqueo y significa otra cosa.** Los tres pasos de arriba sirven igual: marca en `user_profiles`, `ban_duration` en GoTrue para impedir el ingreso, y `signOut` global. Lo que **no** puede compartir es la marca ni el mensaje.
+
+**Y no es una cuestión de prolijidad: GoTrue no las distingue.** `ban_duration` es lo único que esa capa entiende, así que una cuenta dada de baja va a devolver `user_banned` en el intento de ingreso, **el mismo código que un bloqueo**. Quien tiene que separarlas es nuestra capa, con el patrón que §13.5 ya usa: detectado el código, se busca el perfil y se decide **qué** decir. Con un solo `is_banned` esa decisión no se puede tomar, y alguien que se fue por su cuenta leería «tu cuenta está bloqueada».
+
+Lo que implica, en concreto:
+
+| Pieza | Qué hace falta |
+|---|---|
+| `user_profiles` | Una marca propia, separada de `is_banned`, con su motivo, su fecha y quién ejecutó. Más el estado intermedio: **pedida y todavía no ejecutada**, que es lo que la administradora ve como pendiente |
+| `lib/errors.ts` | Su propio mensaje. `USER_BANNED` no sirve: dice otra cosa |
+| §13.5, ingreso | Ante `user_banned`, mirar el perfil y elegir el mensaje según el estado |
+| RF-26, listado | Tres estados en el filtro, no dos |
+
+**Nada de esto borra datos.** Los usuarios no se eliminan (§5.6): la baja es una marca, y revertirla devuelve a la persona con su historial, sus direcciones y sus favoritos intactos.
+
 ### 13.6 Costos asumidos de esta elección
 
 | Costo | Detalle | Mitigación |

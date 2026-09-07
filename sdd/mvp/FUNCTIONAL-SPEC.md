@@ -83,6 +83,7 @@ Ver detalle en §12 (Fuera de alcance).
 | **RN-11** | Nunca se elimina físicamente un producto, marca, categoría o color que esté referenciado por una orden. Se desactiva (borrado lógico). |
 | **RN-11b** | **Ningún producto activo puede pertenecer a una marca o categoría inactiva, ni tener variantes activas de un color inactivo.** No se puede desactivar una marca, categoría o color que esté en uso por algo activo: primero se desactiva lo que la usa. Tampoco se puede activar un producto cuya marca o categoría esté inactiva. |
 | **RN-12** | Las órdenes conservan una copia del nombre y precio del producto al momento de crearse (snapshot), para que cambios posteriores del catálogo no alteren el historial. |
+| **RN-13** | **Un usuario dado de baja (RF-34) no es un usuario bloqueado (RF-27).** Comparten el efecto —no puede entrar, no se borra nada, se revierte— y no comparten ni el significado ni el mensaje. Ninguno de los dos elimina datos: los usuarios no se eliminan (§5.6). |
 
 ---
 
@@ -255,7 +256,7 @@ Ver detalle en §12 (Fuera de alcance).
 
 | Sección | Contenido |
 |---|---|
-| **Mis datos** | Nombre, email, teléfono. Cambio de contraseña. |
+| **Mis datos** | Nombre, email, teléfono. Cambio de contraseña. Acceso visible para **pedir la baja de la cuenta** (RF-34). |
 | **Mis direcciones** | Libreta de direcciones (RF-09). |
 | **Mis compras** | Listado de órdenes con estado, fecha, total y detalle. |
 | **Favoritos** | Productos marcados como favoritos. |
@@ -619,6 +620,8 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] **Resetear contraseña**: dispara el email de recuperación al usuario.
 - [ ] Ver las órdenes de un usuario desde su ficha.
 - [ ] La administradora no puede quitarse a sí misma el rol admin ni bloquear su propia cuenta.
+- [ ] **Bajas de cuenta pendientes** (RF-34): se ven los pedidos con su motivo, se ejecutan y se revierten. El filtro por estado distingue activo, bloqueado y dado de baja.
+- [ ] **No hay «eliminar usuario», y es a propósito** (§5.6): un comprador con órdenes no se borra ni se puede borrar. Lo que existe es bloquear (RF-27) y dar de baja (RF-34).
 
 ---
 
@@ -668,6 +671,87 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 
 ---
 
+### RF-34 — Baja de cuenta, pedida por el comprador y ejecutada por la administradora
+
+> **El número es el siguiente libre, no la posición.** Los IDs se referencian
+> desde `TECHNICAL-SPEC.md`, `DEVELOPMENT-PLAN.md` y `PROGRESO.md`: renumerar
+> para que quedaran en orden rompería todas esas referencias. RF-34 vive acá,
+> entre los legales, porque es de donde viene.
+
+**Origen:** requisito legal, incorporado el 2026-09-06 por decisión de negocio.
+La normativa argentina de comercio electrónico exige que el consumidor tenga a
+la vista un mecanismo para desvincularse, accionable por él mismo y sin
+trámite. Reemplaza a la idea previa de una «baja lógica» genérica.
+
+**Quién hace qué, y por qué está partido en dos.** El comprador **pide** la
+baja; la administradora **la ejecuta**. El comprador no puede darse de baja
+solo. La razón es que una baja toca historial de ventas —órdenes, devoluciones,
+reportes— y hay estados en los que no puede ocurrir: quien decide si están
+dados es una persona, no un formulario.
+
+**Criterios de aceptación:**
+
+- [ ] El comprador autenticado ve un acceso **visible** para pedir la baja de
+      su cuenta, y puede accionarlo sin intermediarios ni pedirlo por otro
+      canal.
+- [ ] Antes de confirmar, la pantalla **advierte qué implica**: qué deja de
+      poder hacer, qué se conserva —sus órdenes y su historial, que no se
+      borran (§5.6)— y que volver es posible pidiéndolo.
+- [ ] El comprador **escribe el motivo**, y es obligatorio. Queda registrado
+      con fecha, igual que el motivo de bloqueo de RF-27.
+- [ ] **La baja no procede si el comprador tiene órdenes `activas`.** Se le
+      dice cuántas son, cuáles, y qué puede hacer: cancelarlas él mismo desde
+      «Mis compras» (RF-23) o esperar a que se finalicen. No se le ofrece un
+      botón que va a fallar.
+- [ ] Pedirla **dispara un aviso a la administradora** (E5, RF-30) con quién
+      la pide y el motivo.
+- [ ] La administradora ve las bajas pendientes en el panel y **las ejecuta**
+      (RF-26). Al ejecutarla queda registrado quién y cuándo.
+- [ ] **La baja es lógica: no se borra nada.** Un usuario dado de baja no puede
+      iniciar sesión y, al intentarlo, ve un mensaje **distinto del bloqueo de
+      RF-27** — se fue por su cuenta, no lo echaron. Sus sesiones activas se
+      cierran.
+- [ ] La administradora puede **revertirla**, y ahí la persona vuelve con su
+      historial, sus direcciones y sus favoritos intactos.
+- [ ] El listado de usuarios de RF-26 distingue los tres estados: activo,
+      bloqueado y dado de baja.
+
+> **RN-13.** Un usuario dado de baja no es un usuario bloqueado. Comparten el
+> efecto —no puede entrar, no se borra nada, se revierte— y no comparten el
+> significado ni el mensaje. Reusar `is_banned` para las dos cosas le diría
+> «tu cuenta está bloqueada» a alguien que se fue solo.
+
+#### Punto abierto: arrepentimiento y baja podrían ser dos requisitos, no uno
+
+Esto **no está resuelto** y hay que resolverlo con quien asesore legalmente,
+porque construir uno solo puede dejar el otro sin cumplir.
+
+| | **Botón de arrepentimiento** | **Baja de cuenta** |
+|---|---|---|
+| Qué revoca | Una **compra** (derecho de revocación, art. 34 Ley 24.240, 10 días) | El **vínculo** con el sitio |
+| Dónde | Home, **primera pantalla**, a la vista | Panel del comprador |
+| Requiere sesión | **No**: tiene que poder accionarlo cualquiera | Sí: hay que saber de quién es la cuenta |
+| Con una orden activa | Es **exactamente** el caso para el que existe | Es el caso que **la impide** |
+
+Las dos últimas filas son la señal de que no son lo mismo: lo que RF-34 rechaza
+—tener una orden en curso— es la situación que el arrepentimiento existe para
+atender.
+
+**Lo que hay que definir, en este orden:**
+
+1. Si el arrepentimiento es un requisito **aparte** de RF-34. Si lo es, va a
+   necesitar su propio RF: un formulario público, sin sesión, alcanzable desde
+   la home, y los plazos de respuesta que fije la norma.
+2. **Cómo se ejecuta acá.** AnaVende no cobra en línea: el pago se coordina por
+   WhatsApp (RN-10). Revocar una compra probablemente ya esté cubierto por
+   piezas que existen —cancelar una orden `activa` (RF-23) y devolver una
+   finalizada (RF-25)—, y lo que faltaría sería la **puerta de entrada
+   visible** y el registro del pedido, no el mecanismo.
+3. Los **plazos** de acuse y de resolución que la normativa imponga, que hoy no
+   están en ningún criterio de aceptación de este documento.
+
+---
+
 ## 10. Módulo: Emails transaccionales
 
 ### RF-30 — Emails del MVP
@@ -678,6 +762,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 | E2 | Recuperación de contraseña | Comprador o admin | Solicitud de reset, o reset disparado por la administradora (RF-26) |
 | E3 | Definición de contraseña de cuenta nueva | Usuario creado por la administradora | Alta manual de usuario (RF-26) |
 | E4 | **Nueva orden recibida** | Administradora | Confirmación de una orden en la web (RF-12) |
+| E5 | **Pedido de baja de cuenta** | Administradora | Un comprador pide la baja (RF-34) |
 
 **Criterios de aceptación:**
 - [ ] Todos los emails usan una plantilla común con la identidad visual de AnaVende.

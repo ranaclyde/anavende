@@ -302,28 +302,44 @@ Cada una se escribió primero en la especificación y después en el código
 | **Las plantillas de email van en `public/` de la aplicación** | `PROGRESO.md` F1.8; F0.13 | GoTrue **no lee plantillas de un archivo**: toma `GOTRUE_MAILER_TEMPLATES_*` como URL y la busca por HTTP contra `SITE_URL`. Probado en el VPS montando la carpeta en el contenedor: el archivo estaba ahí y el log decía `Get "http://localhost:3000/etc/gotrue/email-templates/confirm.html": connection refused`. Servirlas hoy exigiría un contenedor más —en un stack que R5 ya marca como pesado— para tirarlo cuando la app se despliegue. Como GoTrue las resuelve contra `SITE_URL`, que **es la aplicación**, el lugar donde terminan es `public/`: versionadas con el código y sin infraestructura nueva. El intento se revirtió entero; el `docker-compose.yml` del VPS no quedó tocado |
 ---
 
-## Una función candidata, sin requisito todavía
+## La baja de cuenta ya es un requisito: RF-34
 
-**Baja lógica de usuario, «por si quieren volver».** Salió de la misma
-conversación que cerró lo de arriba, el 2026-09-06. No está en ninguna
-especificación y por eso no se escribió: **no hay pantalla que la dispare**.
-RF-07 no tiene «cerrar mi cuenta» y RF-26 no tiene «dar de baja», así que el
-mecanismo quedaría sin consumidor — y código sin consumidor es código que nadie
-prueba.
+Escrita el 2026-09-06, y **por ley**, no por prolijidad: la normativa argentina
+de comercio electrónico exige que el consumidor tenga a la vista un mecanismo
+para desvincularse. Reemplaza a la «baja lógica» que el día anterior figuraba
+acá como idea suelta.
 
-Lo que conviene saber antes de decidirlo:
+Dónde quedó escrita, para no buscarla:
 
-  · **El mecanismo ya existe casi entero.** El bloqueo de RF-27 hace lo que una
-    baja necesita: no puede entrar, no se borra nada, las sesiones se matan, y
-    se revierte. Volver es desbloquear.
-  · **Lo que falta es la distinción, no la maquinaria.** Un `is_banned` reusado
-    le mostraría «Tu cuenta está bloqueada» a alguien que se fue por su cuenta,
-    que es decirle otra cosa. Serían: una marca propia en `user_profiles`, su
-    mensaje en `lib/errors.ts`, y un valor más en el filtro por estado del
-    listado de RF-26.
-  · **Dónde entra:** con la pantalla que la dispare. Si la pide la
-    administradora, en F7 junto a RF-26; si la pide el comprador desde
-    `/mi-cuenta`, es un requisito nuevo en RF-07 y hay que escribirlo primero.
+| | |
+|---|---|
+| El requisito | `FUNCTIONAL-SPEC.md` **RF-34**, en la sección de legales |
+| La regla que la separa del bloqueo | **RN-13** |
+| El aviso a la administradora | **E5**, en la tabla de RF-30 |
+| Cómo se construye sobre lo que ya hay | `TECHNICAL-SPEC.md` **§13.5b** |
+| Las tareas | **F5.8** (el comprador la pide) y **F7.9** (la administradora la ejecuta) |
+
+**Lo que decidiste, en una línea:** el comprador **pide** y la administradora
+**ejecuta**. El comprador no se da de baja solo, porque una baja toca historial
+de ventas y hay estados en los que no puede ocurrir —con **órdenes activas no
+procede**—, y eso lo decide una persona. La pantalla advierte qué implica, el
+motivo es obligatorio, y volver es posible: la baja es lógica y se revierte.
+
+**Hay un punto abierto y es el que puede costar caro.** El «botón de
+arrepentimiento» que exige la Resolución 424/2020 y la baja de cuenta parecen
+**dos requisitos distintos**: el arrepentimiento revoca **una compra** (art. 34
+de la Ley 24.240, 10 días), va en la **home, primera pantalla**, tiene que
+poder accionarse **sin sesión**, y aplica justamente cuando hay una orden en
+curso — que es el caso en el que RF-34 **no** procede. Construir uno solo puede
+dejar el otro sin cumplir. La comparación está en RF-34, bajo «Punto abierto»,
+y se resuelve en **F10.10**, que quedó **bloqueante de la Compuerta F10**:
+averiguarlo el día del lanzamiento es tarde.
+
+Vale notar que AnaVende no cobra en línea —el pago se coordina por WhatsApp
+(RN-10)—, así que revocar una compra probablemente ya esté cubierto por lo que
+existe: cancelar una orden activa (RF-23) y devolver una finalizada (RF-25). Lo
+que faltaría sería la **puerta de entrada visible** y el registro del pedido,
+no el mecanismo. Eso hay que confirmarlo, no darlo por bueno.
 
 ---
 
