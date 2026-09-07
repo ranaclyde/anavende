@@ -325,21 +325,23 @@ de ventas y hay estados en los que no puede ocurrir —con **órdenes activas no
 procede**—, y eso lo decide una persona. La pantalla advierte qué implica, el
 motivo es obligatorio, y volver es posible: la baja es lógica y se revierte.
 
-**Hay un punto abierto y es el que puede costar caro.** El «botón de
-arrepentimiento» que exige la Resolución 424/2020 y la baja de cuenta parecen
-**dos requisitos distintos**: el arrepentimiento revoca **una compra** (art. 34
-de la Ley 24.240, 10 días), va en la **home, primera pantalla**, tiene que
-poder accionarse **sin sesión**, y aplica justamente cuando hay una orden en
-curso — que es el caso en el que RF-34 **no** procede. Construir uno solo puede
-dejar el otro sin cumplir. La comparación está en RF-34, bajo «Punto abierto»,
-y se resuelve en **F10.10**, que quedó **bloqueante de la Compuerta F10**:
-averiguarlo el día del lanzamiento es tarde.
+**El arrepentimiento no era esto, y ya está cubierto.** Lo planteé como punto
+abierto —si el botón de arrepentimiento era un requisito aparte— y lo cerraste
+el mismo día con el argumento que faltaba: **RN-08** dice que el Visitante no
+genera órdenes, su compra sale sólo como mensaje de WhatsApp y se va del flujo
+del sitio. No hay compra registrada que revocar para alguien sin sesión. Y para
+quien la tiene, **cancelar su orden activa desde «Mis compras» (RF-23) es el
+arrepentimiento**: libera la reserva, no descuenta stock, y lo hace solo.
 
-Vale notar que AnaVende no cobra en línea —el pago se coordina por WhatsApp
-(RN-10)—, así que revocar una compra probablemente ya esté cubierto por lo que
-existe: cancelar una orden activa (RF-23) y devolver una finalizada (RF-25). Lo
-que faltaría sería la **puerta de entrada visible** y el registro del pedido,
-no el mecanismo. Eso hay que confirmarlo, no darlo por bueno.
+Así que no hay requisito nuevo ni tarea nueva. Lo que sí quedó escrito, para
+que dentro de un año se pueda **señalar dónde el sitio cumple**: la
+cancelación tiene que estar **a la vista** en el detalle de la orden y no
+detrás de un menú (RF-23, y en el plan F6.5), y la página «Garantías y
+devoluciones» tiene que decir con todas las letras cómo se ejerce (RF-29, y en
+el plan F9.3). El mecanismo estaba; lo que faltaba era nombrarlo.
+
+**F10.10 se fue.** La había creado bloqueante de la Compuerta F10 para cerrar
+este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
 
 ---
 

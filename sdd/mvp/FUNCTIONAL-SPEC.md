@@ -580,6 +580,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] **Finalizar** (sólo administradora): descuenta el stock real de cada ítem y libera la reserva. Pide confirmación mostrando el impacto en stock.
 - [ ] **Cancelar** (administradora **o** comprador desde su panel): libera la reserva sin descontar stock. La administradora puede registrar un motivo.
 - [ ] Ambas acciones registran autor, fecha y motivo en el historial.
+- [ ] **La cancelación por el comprador es el arrepentimiento** (RF-34, «El arrepentimiento no es esto»). Tiene que estar **a la vista** en el detalle de la orden y no detrás de un menú: es el mecanismo con el que el sitio cumple ese derecho, y su visibilidad es parte del requisito.
 - [ ] Una orden ya finalizada o cancelada no admite nuevas transiciones (RF-13).
 
 ---
@@ -666,6 +667,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 **Criterios de aceptación:**
 - [ ] Páginas accesibles desde el pie de página: **Garantías y devoluciones**, **Términos y condiciones**, **Política de privacidad**, **Cómo comprar**.
 - [ ] «Garantías y devoluciones» explica plazos, condiciones, qué cubre la garantía y el procedimiento (coordinación por WhatsApp).
+- [ ] Explica también **cómo arrepentirse de una compra**: cancelar la orden desde «Mis compras» si todavía está activa (RF-23), o pedir la devolución si ya se finalizó (RF-25). Es donde el sitio deja por escrito cómo se ejerce ese derecho.
 - [ ] El aviso de envíos por **PedidosYa** está presente en: pie de página, ficha de producto, carrito y checkout (RN-10).
 - [ ] El texto legal es editable desde el panel sin necesidad de un deploy.
 
@@ -721,34 +723,31 @@ dados es una persona, no un formulario.
 > significado ni el mensaje. Reusar `is_banned` para las dos cosas le diría
 > «tu cuenta está bloqueada» a alguien que se fue solo.
 
-#### Punto abierto: arrepentimiento y baja podrían ser dos requisitos, no uno
+#### El arrepentimiento no es esto, y ya está cubierto
 
-Esto **no está resuelto** y hay que resolverlo con quien asesore legalmente,
-porque construir uno solo puede dejar el otro sin cumplir.
+Se planteó la duda al escribir RF-34 —si el botón de arrepentimiento era un
+requisito **aparte**— y **quedó resuelta el 2026-09-06**: no lo es, porque acá
+las dos cosas no se pueden mezclar aunque en otro sitio se parezcan.
 
-| | **Botón de arrepentimiento** | **Baja de cuenta** |
-|---|---|---|
-| Qué revoca | Una **compra** (derecho de revocación, art. 34 Ley 24.240, 10 días) | El **vínculo** con el sitio |
-| Dónde | Home, **primera pantalla**, a la vista | Panel del comprador |
-| Requiere sesión | **No**: tiene que poder accionarlo cualquiera | Sí: hay que saber de quién es la cuenta |
-| Con una orden activa | Es **exactamente** el caso para el que existe | Es el caso que **la impide** |
+**Arrepentirse sólo tiene sentido con sesión, y por eso ya está hecho.**
+**RN-08** dice que el Visitante no genera órdenes ni reserva stock: su compra
+sale exclusivamente como mensaje de WhatsApp y se va del flujo del sitio. No
+hay compra registrada que revocar para alguien sin cuenta — no existe la orden.
+Para quien sí tiene sesión, **cancelar su orden `activa` desde «Mis compras»
+(RF-23, RF-07) es el arrepentimiento**: libera la reserva, no descuenta stock y
+la persona la ejecuta sola, sin pedirle permiso a nadie.
 
-Las dos últimas filas son la señal de que no son lo mismo: lo que RF-34 rechaza
-—tener una orden en curso— es la situación que el arrepentimiento existe para
-atender.
+**Lo único que hay que cuidar es que se pueda señalar.** El derecho está
+cubierto por el mecanismo, pero eso no se ve solo: la página **Garantías y
+devoluciones** (RF-29) tiene que decir con todas las letras cómo se ejerce
+—cancelar desde «Mis compras», y devolver si la orden ya se finalizó
+(RF-25)— y la acción de cancelar tiene que estar a la vista en el detalle de la
+orden, no escondida. Si no, dentro de un año nadie puede señalar dónde el sitio
+cumple.
 
-**Lo que hay que definir, en este orden:**
-
-1. Si el arrepentimiento es un requisito **aparte** de RF-34. Si lo es, va a
-   necesitar su propio RF: un formulario público, sin sesión, alcanzable desde
-   la home, y los plazos de respuesta que fije la norma.
-2. **Cómo se ejecuta acá.** AnaVende no cobra en línea: el pago se coordina por
-   WhatsApp (RN-10). Revocar una compra probablemente ya esté cubierto por
-   piezas que existen —cancelar una orden `activa` (RF-23) y devolver una
-   finalizada (RF-25)—, y lo que faltaría sería la **puerta de entrada
-   visible** y el registro del pedido, no el mecanismo.
-3. Los **plazos** de acuse y de resolución que la normativa imponga, que hoy no
-   están en ningún criterio de aceptación de este documento.
+**Y no se mezcla con RF-34.** Que la baja de cuenta no proceda con órdenes
+activas no le quita nada a esto: quien quiera revocar una compra cancela la
+orden, que es otra acción y está disponible siempre.
 
 ---
 

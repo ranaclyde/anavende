@@ -255,7 +255,7 @@ F10 Endurecimiento y lanzamiento
 | **F6.2** | Reconfirmación ante cambios | M | FS RF-11 · TS §8.4 paso 3 | Si el precio o el stock cambió entre ver y confirmar, **se avisa y se pide reconfirmar**; no se crea la orden en silencio |
 | **F6.3** | Confirmación: pantalla de éxito y WhatsApp | M | FS RF-12 · DR §7.5 | Número de orden, resumen y botón de WhatsApp como acción principal. Recargar no duplica |
 | **F6.4** | Email E4 a la administradora, sobre el layout de F1.8 | S | FS RF-30 · TS §14 | Llega con el detalle completo y enlace al panel. **Si falla, la orden se crea igual**. Acá se escribe también su plantilla: el layout compartido ya existe desde F1.8, lo que faltaba era la orden que le da contenido |
-| **F6.5** | «Mis compras» y cancelación por el comprador | M | FS RF-07, RF-23 | Historial con precios de la orden (snapshot). Cancelar libera la reserva |
+| **F6.5** | «Mis compras» y cancelación por el comprador | M | FS RF-07, RF-23, RF-34 | Historial con precios de la orden (snapshot). Cancelar libera la reserva. **Cancelar es el arrepentimiento**, así que está a la vista en el detalle de la orden y no detrás de un menú: su visibilidad es parte del requisito |
 
 > **Compuerta F6:** una compra completa de punta a punta, con el stock reservado correctamente al final.
 
@@ -296,7 +296,7 @@ F10 Endurecimiento y lanzamiento
 |---|---|---|---|---|
 | **F9.1** | Reportes de ventas | **L** | FS RF-28 · TS §15 | Totales, más vendidos, por categoría y marca, web contra manual. Las sumas se calculan **en SQL**. Activas y canceladas no cuentan; las devoluciones restan |
 | **F9.2** | Exportación a Excel | M | FS RF-28 · TS §15 | Respeta los filtros en pantalla; moneda y fechas con formato |
-| **F9.3** | Páginas legales editables | M | FS RF-29 | Garantías, términos, privacidad y cómo comprar, editables sin desplegar. Markdown sanitizado |
+| **F9.3** | Páginas legales editables | M | FS RF-29 · RF-34 | Garantías, términos, privacidad y cómo comprar, editables sin desplegar. Markdown sanitizado. **«Garantías y devoluciones» dice cómo arrepentirse**: cancelar desde «Mis compras» (RF-23) o pedir la devolución (RF-25). Es donde el sitio deja por escrito cómo se ejerce ese derecho |
 | **F9.4** | Email E3 de cuenta nueva | S | FS RF-30 | El usuario creado por la administradora recibe el enlace para definir contraseña |
 
 ---
@@ -316,10 +316,9 @@ F10 Endurecimiento y lanzamiento
 | **F10.7** | Repaso de textos y estados vacíos | M | DR §8, §10 | Todo error, estado vacío y mensaje revisado: voseo, sin jerga, con acción |
 | **F10.8** | Verificar backups y restauración, otra vez | S | TS §19 | Restauración de prueba con datos reales, ya cargados |
 | **F10.9** | Prueba con gente real | M | — | Dos o tres personas ajenas compran de verdad. Se corrige lo que aparezca |
-| **F10.10** | **Cerrar el punto abierto del arrepentimiento** | S | FS RF-34, «Punto abierto» | Definido con asesoramiento legal si el botón de arrepentimiento es un requisito **aparte** de RF-34 —revoca una compra, va en la home sin sesión, y aplica justo cuando hay una orden en curso—. Si lo es, se escribe su RF y entra antes de lanzar. Si no, queda por escrito por qué no |
-| **F10.11** | Lanzamiento | S | — | Dominio apuntando, TLS, Sentry mirando, backups corriendo |
+| **F10.10** | Lanzamiento | S | — | Dominio apuntando, TLS, Sentry mirando, backups corriendo |
 
-> **Compuerta F10:** **F10.1 y F10.10 son bloqueantes.** F10.1 porque sin RLS (§13.4) es la única verificación de que un comprador no puede ver los datos de otro. F10.10 porque es un requisito legal y no se lanza una tienda sin cumplirlo — y averiguarlo el día del lanzamiento es tarde.
+> **Compuerta F10:** **F10.1 es bloqueante.** Sin RLS (§13.4), es la única verificación de que un comprador no puede ver los datos de otro. No se lanza sin ese test pasando.
 
 ---
 
