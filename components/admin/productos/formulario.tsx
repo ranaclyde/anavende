@@ -55,7 +55,7 @@ type Campo = (typeof CAMPOS)[number];
 type Vista =
   | { estado: "incompleto" }
   | { estado: "sin-oferta"; precio: string }
-  | { estado: "oferta"; precio: string; final: string; ahorro: string }
+  | { estado: "oferta"; precio: string; final: string }
   | { estado: "descuento-invalido" };
 
 function calcularVista(precio: string, descuento: string): Vista {
@@ -71,7 +71,6 @@ function calcularVista(precio: string, descuento: string): Vista {
     estado: "oferta",
     precio: p,
     final: subtract(p, d),
-    ahorro: d,
   };
 }
 
@@ -449,9 +448,12 @@ function ResumenDePrecio({ vista }: { vista: Vista }) {
           <span className="text-body-sm tabular-nums text-ink-tertiary line-through">
             {formatMoney(vista.precio)}
           </span>
-          <span className="text-body-sm tabular-nums text-ink-secondary">
-            Ahorrás {formatMoney(vista.ahorro)}
-          </span>
+          {/*
+            NO va «Ahorrás $ X». Esta vista previa dice «Se muestra», así que
+            tiene que mostrar lo que el comprador ve y nada más — y desde
+            RN-04c la tienda muestra dos números. Además repetía el descuento
+            que Ana acaba de tipear tres campos más arriba.
+          */}
         </div>
       )}
     </div>

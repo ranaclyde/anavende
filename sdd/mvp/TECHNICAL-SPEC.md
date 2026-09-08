@@ -812,13 +812,17 @@ Cada código tiene un mensaje en español listo para mostrar. La UI decide cómo
 
 **`parseFloat` y `Number()` sobre montos están prohibidos** fuera de la capa de formateo. Es una regla de lint, no una recomendación.
 
-### 7.2 Precio final y descuento (RN-04b)
+### 7.2 Precio final y descuento (RN-04b, RN-04c)
 
 ```
 final_price = price − discount        con  0 ≤ discount < price
 discount = 0  ⇒  no hay oferta: se muestra un solo precio
-discount > 0  ⇒  se muestra final_price, con price tachado y el ahorro
+discount > 0  ⇒  se muestran DOS números: final_price y price tachado
 ```
+
+`discount` se guarda, se valida y se usa para calcular; **no se muestra**
+(RN-04c). El tachado ya dice cuánto bajó, y enunciar el monto ahorrado es un
+tercer número que repite la misma oferta.
 
 Todo filtro y todo orden por precio (RF-02) opera sobre `final_price`.
 

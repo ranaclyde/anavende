@@ -405,11 +405,13 @@ El componente más importante del sistema. Aparece en catálogo, home, recomenda
 | Foco | `--shadow-focus` sobre toda la tarjeta |
 | **Con descuento** | Precio tachado a la izquierda del final, en la misma línea. El final va en burdeos. **Sin píldora sobre la imagen** |
 | **Sin stock** | Imagen al 55% de opacidad + píldora «Sin stock» centrada sobre ella, superficie blanca al 92%. **La tarjeta sigue siendo clicable** (RN-05) |
-| Favorito | Corazón arriba a la derecha; relleno burdeos si está marcado |
+| **Favorito** | Corazón arriba a la derecha de la imagen, **siempre a la vista**. Contorno cuando no está marcado, **relleno `--brand`** cuando sí. Área táctil de 44px aunque el ícono mida 20. Fondo `--surface` al 92% detrás, porque la imagen de abajo puede ser de cualquier color |
 
 **Sobre la marca en versalitas:** separa visualmente marca de producto sin sumar un color ni un peso. Es un recurso de la referencia y funciona bien con Inter.
 
-**Sobre los dos números, y no cuatro.** La tarjeta llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el precio final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces y cuatro números para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, que es lo que ya dibujaba este esquema y lo que hace el canvas aprobado en F3.8. El «Ahorrás» sigue existiendo en la ficha (§6.7), donde hay lugar y es un argumento de venta.
+**Sobre los dos números, y no cuatro.** La tarjeta llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el precio final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces y cuatro números para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, que es lo que ya dibujaba este esquema y lo que hace el canvas aprobado en F3.8. Desde el 2026-09-08 **la ficha hace lo mismo** (§6.7, RN-04c): la regla dejó de ser de la tarjeta y pasó a ser de la tienda.
+
+**Sobre el corazón, que no espera al hover.** Revelarlo al pasar el mouse deja media tienda sin favoritos: en un teléfono no hay hover, y ahí el botón no existiría. Y va **encima** del enlace estirado —`z-10`, fuera del ancla— porque envolver la tarjeta entera en un `<a>` metería el corazón adentro del enlace: HTML inválido, e inalcanzable con teclado. El relleno no es la única señal de estado: el botón lo anuncia también para lectores de pantalla (§9), que no ven un contorno lleno.
 
 **Sobre los puntos de color.** Hasta cuatro, y «+N» si hay más; un producto con nueve colores llenaría media tarjeta de puntos y empujaría el precio. **No son seleccionables**: elegir color es de la ficha (§6.5), y hacerlos clicables metería un segundo destino dentro de una tarjeta que ya es un enlace entero. Llevan borde: un punto blanco sobre superficie blanca, sin contorno, no existe.
 
@@ -502,22 +504,23 @@ Color:  Negro
 Componente propio, porque aparece en todas partes y tiene que ser consistente.
 
 ```
-FICHA (§7.3)
-Sin oferta:      $ 27.500,00              ink, peso 600
-Con oferta:      $ 24.500,00              burdeos, peso 600
+FICHA (§7.3) — apilado
+Sin oferta:      $ 27.500,00              ink, peso 600, 24px
+Con oferta:      $ 24.500,00              burdeos, peso 600, 24px
                  $ 27.500,00              tachado, terciario, 12px
-                 Ahorrás $ 3.000,00       burdeos, caption
 
-TARJETA (§6.1) — una línea, sin «Ahorrás»
+TARJETA (§6.1) — una línea
 Sin oferta:      $ 27.500,00              ink, peso 600
 Con oferta:      $ 27.500,00 $ 24.500,00  tachado terciario 12px, después burdeos 600
 ```
 
-**Las dos variantes no son un capricho de tamaño.** En la ficha se lee un producto solo y el monto ahorrado vende; en una grilla de 24, esa misma línea multiplicada por 24 es ruido, y el tachado al lado del final ya dice que hay rebaja. El tachado va **primero** porque así se lee un cartel de oferta: «valía tanto, ahora tanto».
+**Dos números en las dos, y lo único que cambia es la disposición.** La ficha llevó «Ahorrás $ 3.000,00» hasta el 2026-09-08 y ya no: una oferta se comunica con cuánto valía y cuánto vale, y el tercer número dice la misma oferta otra vez (RN-04c). Lo que separa las dos composiciones es el lugar. En la grilla el precio comparte renglón con los puntos de color y tiene que entrar en una línea; en la ficha es lo primero que se lee después del nombre, sube a 24px y el tachado baja, donde no le compite.
+
+El tachado va **primero en la tarjeta** porque así se lee un cartel de oferta —«valía tanto, ahora tanto»— y **después en la ficha** porque ahí el final ya es lo más grande de la pantalla y no necesita que nada lo anuncie.
 
 - Formato `es-AR`: `Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' })`.
 - **Siempre con decimales** (RN-02). Nunca se aclara nada sobre IVA.
-- El descuento es un **monto**, no un porcentaje: se comunica «Ahorrás $ X» (RN-04b).
+- El descuento se guarda como **monto** y nunca como porcentaje (RN-04b), y **no se muestra**: lo comunica el tachado (RN-04c). Un «11% off» además obliga a calcular sobre un número que todavía no se leyó.
 - Variantes numéricas tabulares para que las columnas se alineen.
 
 ### 6.8 Galería de la ficha
@@ -647,11 +650,11 @@ El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del con
 
 ```
 ┌──────────────────────┬─────────────────────────────┐
-│                      │  LOGITECH                   │  caption, versalitas
+│                  ♡   │  LOGITECH                   │  caption, versalitas
 │                      │  Teclado mecánico K120      │  title 24px
 │      imagen          │                             │
 │      principal       │  $ 24.500,00                │  burdeos, 24px
-│                      │  $ 27.500,00  Ahorrás $3.000│
+│                      │  $ 27.500,00                │  tachado, terciario, 12px
 │  ┌──┐┌──┐┌──┐        │                             │
 │  └──┘└──┘└──┘        │  Color: Negro               │
 │                      │  ● ○ ○ ⊘                    │
@@ -674,6 +677,36 @@ El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del con
 ```
 
 Para el **visitante sin sesión**, el botón principal dice **«Iniciá sesión para comprar»** y el secundario «Comprar por WhatsApp» (RF-08).
+
+**El corazón va sobre la imagen, arriba a la derecha, igual que en la tarjeta** (§6.1) — mismo ícono, mismo lugar, mismos dos estados. Quien lo usó en la grilla no tiene que buscarlo de nuevo acá. Convive con la ampliación de la galería sin pelearse: la imagen es la que abre el modal y el corazón es un botón de 44px por encima, que es exactamente el arreglo que ya tiene la tarjeta con su enlace estirado.
+
+**El precio son dos números, como en la tarjeta** (§6.7, RN-04c). La ficha llevó «Ahorrás $ 3.000,00» y ya no.
+
+#### Sin stock
+
+Es un estado de la **variante elegida**, no del producto: con el negro agotado y el blanco disponible, cambiar de color sale de este estado sin recargar (RF-03).
+
+```
+│  Color: Negro               │
+│  ● ○ ○ ⊘                    │
+│                             │
+│  Cantidad  [− 1 +]          │  deshabilitado, atenuado
+│  ⊘ Sin stock en negro       │  --danger, con ícono
+│                             │
+│  [ Preguntá si va a haber ] │  PRINCIPAL, abre WhatsApp
+│                             │
+│  Te contestamos por         │  caption, --ink-secondary
+│  WhatsApp. No lo reservamos │
+│  ni te avisamos solos.      │
+```
+
+Tres cosas que este estado hace a propósito:
+
+- **Lo dice con palabras**, no con un botón apagado. Un botón gris sin explicación se lee como una falla del sitio, no como una falta de stock (§8, §9: nada se comunica sólo con color).
+- **La consulta por WhatsApp sube a principal.** Es la única acción que le queda a quien llegó hasta acá; dejarla de secundaria mientras el principal está apagado deja la pantalla sin ninguna salida a la vista.
+- **La aclaración de abajo no es letra chica, es la promesa que no hacemos.** «Preguntá si va a haber» suena a que el sitio va a avisar, y no hay ningún aviso: la respuesta la da la vendedora por WhatsApp, y decirlo acá evita que alguien se quede esperando.
+
+**El corazón sigue disponible sin stock**, y es de las pocas cosas que sí siguen andando: marcar favorito algo agotado es precisamente para qué sirven los favoritos.
 
 ### 7.4 Carrito
 
@@ -892,7 +925,9 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | RF-33 Vistos recientemente | §7.1 |
 | RN-02 Formato de moneda | §6.7 |
 | RN-04b Descuento como monto | §6.7 |
-| RN-05, RN-06 Agotados visibles | §6.1, §6.5 |
+| RN-04c Dos números, nunca tres | §6.1, §6.7, §7.3 |
+| RN-05, RN-06 Agotados visibles | §6.1, §6.5, §7.3 |
+| RF-10 Favoritos | §6.1, §7.3 |
 | RNF-01 Responsive | §5, §6.9, §7.2 |
 | RNF-02 Accesibilidad | §9 |
 | RNF-08 Errores accionables | §8, §10 |
@@ -920,3 +955,9 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | Las sombras se tiñen con `--ink` y no con negro | Al calentar los grises, una sombra azulada bajo una tarjeta cálida se nota aunque no se sepa nombrar |
 | Inter se conserva pese a que el canvas usa Archivo | Archivo llegó por herencia del sistema Modernist que el canvas importó; no fue una decisión de diseño |
 | El hover de marca sigue aclarando aunque el canvas lo oscurezca | El motivo de §2.1 no cambió, y un estado de hover en un mock estático no es una decisión tomada |
+| **La ficha también muestra dos números: se va «Ahorrás $ X»** | Pedido tuyo del 2026-09-08. Lo que era una regla de la tarjeta pasa a ser una regla de la tienda (RN-04c). El tachado sobre el final ya dice cuánto bajó; el monto ahorrado es la misma oferta enunciada de nuevo, y obliga a leer un tercer número para no enterarse de nada nuevo |
+| **La vista previa del panel también pierde el «Ahorrás»** | No es que RN-04c alcance al panel: es que esa vista previa dice literalmente «Se muestra», así que tiene que mostrar lo que el comprador ve. Y repetía el descuento que Ana acababa de tipear tres campos más arriba |
+| **El corazón de favoritos se rellena con `--brand`, y no entra un rosa nuevo** | §1.2 decidió **un solo color saturado** y el canvas de F3.8 lo confirmó. Un rosa para el corazón sería el segundo, puesto por un ícono de 20px: el burdeos ya es el color de lo accionable y de lo elegido, y relleno sobre blanco lee exactamente como se espera que lea un corazón marcado |
+| **El corazón está siempre a la vista, en la tarjeta y en la ficha** | Revelarlo al pasar el mouse lo deja inalcanzable en un teléfono, que es donde va a estar la mayoría. Y va **encima** del enlace, nunca adentro: un `<a>` que envuelva la tarjeta entera se lleva el botón adentro, que es HTML inválido y lo saca del recorrido de teclado |
+| **Sin stock, «Preguntá si va a haber» es el botón principal de la ficha** | Es la única acción que le queda a quien llegó hasta ahí. De secundaria, al lado de un principal apagado, la pantalla queda sin ninguna salida a la vista y el botón gris se lee como una falla del sitio |
+| **La ficha sin stock aclara que nadie va a avisar** | «Preguntá si va a haber» suena a que el sitio agenda un aviso, y no hay ninguno: la respuesta la da la vendedora por WhatsApp. Prometer de menos y por escrito cuesta un renglón; alguien esperando un mail que no existe cuesta la venta |

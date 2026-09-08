@@ -55,6 +55,17 @@ type Props = {
    * como `onToggle` para que la tarjeta pueda seguir siendo servidor: la isla
    * de cliente la arma quien la pasa. Sin esto, no se dibuja nada — un corazón
    * que no hace nada es peor que ningún corazón.
+   *
+   * **El contrato visual ya está decidido y es de DR §6.1**, para que F5.4 no
+   * tenga que inventarlo: arriba a la derecha de la imagen y SIEMPRE a la
+   * vista —en un teléfono no hay hover—, contorno sin marcar y relleno
+   * `--brand` marcado, área táctil de 44px, y el estado anunciado además del
+   * relleno, porque un lector de pantalla no ve un ícono lleno. El burdeos y
+   * no un rosa: §1.2 decidió un solo color saturado en todo el sistema.
+   *
+   * La tarjeta solo pone el lugar. Que esté FUERA del ancla lo resuelve acá
+   * abajo el enlace estirado, y no es negociable: un `<a>` que envolviera la
+   * tarjeta se llevaría el botón adentro.
    */
   accionFavorito?: ReactNode;
   /**
@@ -77,9 +88,10 @@ export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) 
   return (
     <article
       className={cn(
-        // `h-full`: en la grilla, las tarjetas de una fila estiran a la más alta.
-        // Sin esto, una con descuento —que lleva el renglón «Ahorrás»— queda
-        // más alta que la de al lado y los bordes de abajo bailan.
+        // `h-full`: en la grilla, las tarjetas de una fila estiran a la más
+        // alta, y sin esto la que tiene menos contenido queda corta y los
+        // bordes de abajo bailan. El nombre ya reserva sus dos líneas más
+        // abajo; esto cubre el resto.
         "group relative flex h-full flex-col rounded-card bg-surface p-3",
         // Sombra y no borde (§11): las tarjetas se separan por elevación.
         "shadow-md",
@@ -130,11 +142,12 @@ export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) 
           )}
 
           {/*
-            NO hay píldora de descuento sobre la imagen. La llevaba, y decía el
-            mismo monto que el «Ahorrás» de abajo: la tarjeta mostraba cuatro
-            números para comunicar una sola oferta. El tachado junto al precio
-            en burdeos ya dice que hay rebaja, que es como lo resuelve el canvas
-            aprobado en F3.8.
+            NO hay píldora de descuento sobre la imagen. La llevaba, y repetía
+            el monto que la tarjeta ya mostraba abajo: cuatro números para
+            comunicar una sola oferta. El tachado junto al precio en burdeos ya
+            dice que hay rebaja — es como lo resuelve el canvas aprobado en
+            F3.8, y desde el 2026-09-08 es la regla de toda la tienda y no solo
+            de la tarjeta (RN-04c).
           */}
           {sinStock ? (
             <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-surface/92 px-3 py-1.5 text-caption font-medium whitespace-nowrap text-ink shadow-md">

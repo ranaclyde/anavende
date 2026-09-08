@@ -29,6 +29,10 @@ type Props = {
   /**
    * `tarjeta` en la grilla, `ficha` en el detalle del producto (§7.3, donde el
    * precio sube a 24px y es lo primero que se lee después del nombre).
+   *
+   * Las dos muestran **los mismos dos números** —cuánto valía y cuánto vale—:
+   * lo que cambia es la disposición, no la información. El renglón «Ahorrás
+   * $ X» se fue de las dos por decisión del 2026-09-08 (DR §14).
    */
   tamano?: "tarjeta" | "ficha";
   className?: string;
@@ -45,12 +49,16 @@ export function Precio({
   const enFicha = tamano === "ficha";
 
   /*
-   * En la TARJETA el precio va en una sola línea —tachado y después final— y
-   * sin «Ahorrás». Es lo que dibuja §6.1, y el motivo es la grilla: con la
-   * píldora de descuento sobre la imagen, el final, el tachado y el ahorro, la
-   * misma cifra aparecía dos veces y la tarjeta mostraba cuatro números para
-   * decir una cosa. En la FICHA sí va completo: hay lugar, se lee un producto
-   * solo, y ahí el monto ahorrado es un argumento de venta (§6.7).
+   * DOS NÚMEROS, ACÁ Y EN LA FICHA. La tarjeta llegó a mostrar la píldora
+   * «−$ 9.900» sobre la imagen, el final, el tachado y «Ahorrás $ 9.900»: la
+   * misma cifra dos veces para comunicar una sola oferta. Quedan los dos que
+   * dicen cosas distintas —cuánto valía y cuánto vale—, y el tachado va
+   * primero, como se lee un cartel de oferta.
+   *
+   * Lo que separa las dos variantes es la DISPOSICIÓN. En la grilla el precio
+   * comparte renglón con los puntos de color y tiene que entrar en una línea;
+   * en la ficha es lo primero que se lee después del nombre, sube a 24px y el
+   * tachado pasa abajo, donde no le compite.
    */
   if (!enFicha) {
     return (
@@ -105,22 +113,17 @@ export function Precio({
         {formatMoney(precioFinal)}
       </p>
 
+      {/*
+        El descuento NO se enuncia: se muestra. El tachado arriba del final
+        dice cuánto bajó sin obligar a leer un tercer número, y jamás se
+        expresa como porcentaje (RN-04b) — «11% off» hay que calcularlo
+        mentalmente sobre un monto que todavía no se leyó.
+      */}
       {hayOferta ? (
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <s className="text-caption text-ink-tertiary tabular-nums">
-            <span className="sr-only">Antes: </span>
-            {formatMoney(precio)}
-          </s>
-
-          {/*
-            El descuento se comunica como MONTO ahorrado, nunca como porcentaje
-            (RN-04b). «Ahorrás $ 3.000» es una plata concreta; «11% off» hay que
-            calcularlo mentalmente sobre un número que todavía no se leyó.
-          */}
-          <p className="text-body-sm font-medium text-brand tabular-nums">
-            Ahorrás {formatMoney(descuento)}
-          </p>
-        </div>
+        <s className="text-caption text-ink-tertiary tabular-nums">
+          <span className="sr-only">Antes: </span>
+          {formatMoney(precio)}
+        </s>
       ) : null}
     </div>
   );

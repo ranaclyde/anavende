@@ -74,6 +74,7 @@ Ver detalle en §12 (Fuera de alcance).
 | **RN-03** | Toda la interfaz (comprador y panel) está en **español rioplatense**. |
 | **RN-04** | El precio y el descuento viven a nivel **producto**. El **stock y las imágenes** viven a nivel **variante (color)**. |
 | **RN-04b** | El **descuento es un monto absoluto en ARS**, no un porcentaje. Si el descuento es `0`, no hay oferta y se muestra sólo el precio. Si es mayor que `0`, el **precio final = precio − descuento**, y se muestra el precio original tachado junto al precio final. El descuento nunca puede ser mayor o igual al precio. |
+| **RN-04c** | Una oferta se comunica con **dos números y nunca con tres**: el precio original tachado y el precio final. **En ninguna pantalla se enuncia el monto ahorrado** («Ahorrás $ X») ni el porcentaje. El tachado ya dice cuánto bajó; el tercer número repite la misma oferta y obliga a leer de más. Vale para tarjeta, ficha, carrito y orden. |
 | **RN-05** | Un producto es visible en el sitio público únicamente si `isActive = true`. Un producto activo se muestra **siempre**, aunque no tenga stock disponible. |
 | **RN-06** | Una variante sin stock disponible se muestra, señalizada como «Sin stock» y no seleccionable para compra. |
 | **RN-07** | Una orden en estado `activa` **reserva stock**. La reserva se libera únicamente cuando la orden pasa a `finalizada` (descuenta stock real) o `cancelada` (libera sin descontar). **No existe expiración automática.** |
@@ -142,7 +143,8 @@ Ver detalle en §12 (Fuera de alcance).
 - [ ] Los productos sin stock aparecen en el listado, marcados «Sin stock».
 - [ ] Los productos con `isActive = false` **nunca** aparecen, ni por búsqueda ni por URL directa de listado.
 - [ ] Estado vacío explícito («No encontramos productos con esos filtros») con acción para limpiar filtros.
-- [ ] Cada tarjeta muestra: imagen principal, marca, nombre, precio final y —si el descuento es mayor que cero— el precio original tachado y el ahorro en pesos.
+- [ ] Cada tarjeta muestra: imagen principal, marca, nombre, precio final y —si el descuento es mayor que cero— el precio original tachado. **No muestra el ahorro en pesos**: son dos números, cuánto valía y cuánto vale (RN-04c).
+- [ ] Cada tarjeta ofrece marcar/desmarcar favorito con un corazón, **siempre a la vista** (RF-10).
 - [ ] La franja de medios de pago configurados por la administradora es visible en el listado.
 
 ---
@@ -154,7 +156,7 @@ Ver detalle en §12 (Fuera de alcance).
 **Contenido:**
 - Galería de imágenes de la variante seleccionada (hasta 5), con miniaturas y vista ampliada.
 - Nombre, marca, categoría.
-- Precio final; si el descuento es mayor que cero: precio original tachado y ahorro en pesos (ej. «Ahorrás $ 3.000,00»).
+- Precio final; si el descuento es mayor que cero: precio original tachado, y nada más (RN-04c).
 - Selector de color (variantes). Cada opción indica si está sin stock.
 - Indicador de disponibilidad de la variante seleccionada.
 - Selector de cantidad, limitado por el stock disponible de la variante.
@@ -170,12 +172,15 @@ Ver detalle en §12 (Fuera de alcance).
 | Agregar al carrito | Botón «Iniciá sesión para comprar» → login y vuelve a la acción | Sí |
 | Comprar ahora | Abre WhatsApp con el detalle del producto | Va al checkout con ese único ítem |
 | Consultar por WhatsApp | Sí | Sí |
+| **Preguntar si va a haber** (sólo sin stock) | Sí | Sí |
 | Agregar a favoritos | Invita a iniciar sesión | Sí |
 
 **Criterios de aceptación:**
 - [ ] Al cambiar de color, cambian imágenes, stock y disponibilidad sin recargar la página, y la URL refleja la variante.
 - [ ] Si una variante no tiene imágenes propias, se muestran las imágenes designadas como respaldo (ver RF-16).
-- [ ] Si la variante no tiene stock disponible, las acciones de compra quedan deshabilitadas y se ofrece «Consultar por WhatsApp».
+- [ ] Si la variante no tiene stock disponible, la ficha **lo dice con palabras** —no sólo con un color o un botón apagado—, las acciones de compra quedan deshabilitadas y el botón **principal** pasa a ser **«Preguntá si va a haber»**, que abre WhatsApp con el mensaje de consulta de disponibilidad (RF-04). Es la única acción que le queda a quien llegó hasta acá, así que no puede ser la secundaria.
+- [ ] Esa consulta **sale del sitio**: no crea orden, no reserva, no agenda ningún aviso. La ficha no promete que le vayan a avisar — la respuesta llega por WhatsApp y la da la vendedora.
+- [ ] El corazón de favoritos está en la ficha además de en la tarjeta, **siempre a la vista**, y se ve relleno cuando el producto ya está marcado (RF-10).
 - [ ] Un producto con `isActive = false` devuelve 404.
 - [ ] No se puede seleccionar una cantidad mayor al stock disponible.
 - [ ] La descripción se muestra con su formato —párrafos, negrita, cursiva, listas y subtítulos— y **nada más**: lo que quedó fuera del subconjunto de RF-15 no se renderiza ni aparece como texto crudo.
@@ -191,6 +196,15 @@ Ver detalle en §12 (Fuera de alcance).
 - El mensaje incluye: nombre del producto, color, cantidad, precio unitario y enlace a la ficha.
 - **No se crea orden. No se reserva ni descuenta stock.** (RN-08)
 - La administradora, si la venta se concreta, la registra como **orden manual** (RF-24).
+
+**Los mensajes prellenados son dos, y dicen cosas distintas:**
+
+| Mensaje | Cuándo | Qué lleva |
+|---|---|---|
+| **Compra** | La variante tiene stock | Producto, color, cantidad, precio unitario y enlace a la ficha |
+| **Consulta de disponibilidad** | La variante **no** tiene stock (RF-03) | Producto, color y enlace a la ficha. **Sin cantidad ni precio**: no se está comprando, se está preguntando si va a haber, y un precio en un mensaje sobre algo que todavía no existe es un precio que después hay que desdecir |
+
+Los dos salen de la misma función y del mismo número de configuración (RF-20): lo que cambia es el texto, no la tubería.
 
 **Criterios de aceptación:**
 - [ ] El número de WhatsApp de destino es configurable desde el panel, no está hardcodeado.
@@ -316,6 +330,9 @@ Ver detalle en §12 (Fuera de alcance).
 
 **Criterios de aceptación:**
 - [ ] Marcar/desmarcar favorito desde la tarjeta del catálogo y desde la ficha.
+- [ ] El corazón está **siempre a la vista** en las dos, y no aparece al pasar el mouse: en un teléfono no hay hover, y ahí quedaría inalcanzable.
+- [ ] **Contorno** cuando no está marcado, **relleno** cuando sí. El relleno usa el burdeos de la marca (DR §6.1); no entra un color nuevo al sistema por un solo ícono.
+- [ ] El estado no se comunica **sólo** con el relleno: el botón lo anuncia también para lectores de pantalla, y su etiqueta dice qué va a pasar al tocarlo.
 - [ ] El listado de favoritos muestra precio y disponibilidad actualizados, y permite agregar al carrito.
 - [ ] Un producto desactivado se muestra en favoritos como «No disponible».
 - [ ] Para un visitante, la acción invita a iniciar sesión sin perder la navegación.

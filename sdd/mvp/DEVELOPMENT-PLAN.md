@@ -197,12 +197,12 @@ F10 Endurecimiento y lanzamiento
 
 | ID | Tarea | Tam. | Referencias | Hecho cuando |
 |---|---|---|---|---|
-| **F3.1** | Componente de tarjeta de producto, con todos sus estados | M | DR §6.1 · FS RN-05, RN-06 | Estados de descuento, sin stock, favorito y hover. **Sin stock sigue siendo clicable** |
-| **F3.2** | Componente de precio | S | DR §6.7 · FS RN-02, RN-04b | Formato `es-AR` con decimales; con oferta muestra tachado y «Ahorrás $X»; números tabulares |
+| **F3.1** | Componente de tarjeta de producto, con todos sus estados | M | DR §6.1 · FS RN-05, RN-06, RN-04c, RF-10 | Estados de descuento, sin stock, favorito y hover. **Sin stock sigue siendo clicable**. Con oferta muestra **dos números** —tachado y final—, nunca el ahorro. El corazón está **siempre a la vista**, encima del enlace y no adentro; se rellena con `--brand` al marcar. La acción entra por F5.4: hasta entonces la tarjeta expone el hueco y no dibuja un corazón que no hace nada |
+| **F3.2** | Componente de precio | S | DR §6.7 · FS RN-02, RN-04b, RN-04c | Formato `es-AR` con decimales; con oferta muestra **tachado y final, y nada más**; números tabulares. Las dos composiciones —tarjeta en una línea, ficha apilada a 24px— llevan los mismos dos números: lo que cambia es la disposición |
 | **F3.3** | Búsqueda tolerante a acentos y errores de tipeo | **L** | FS RF-02 · TS §10.1 | «mecanico» encuentra «Mecánico»; «lojitech» encuentra «Logitech». Umbral de similitud calibrado con el catálogo real |
 | **F3.4** | Catálogo: filtros, orden, paginación, todo en la URL | **L** | FS RF-02 · TS §10.2 | Filtros combinables; el botón atrás funciona; la URL es compartible. Chips removibles y «Limpiar todo» |
-| **F3.5** | Ficha de producto con galería y selector de color | **L** | FS RF-03 · DR §6.5, §6.8, §7.3 | Cambiar de color cambia imágenes y stock sin recargar, y la URL lo refleja. Producto inactivo devuelve 404 |
-| **F3.6** | Enlaces de WhatsApp | S | FS RF-04 · TS §3 | El mensaje llega con producto, color, cantidad y precio, bien codificado. El número sale de configuración |
+| **F3.5** | Ficha de producto con galería y selector de color | **L** | FS RF-03, RF-10, RN-04c · DR §6.5, §6.8, §7.3 | Cambiar de color cambia imágenes y stock sin recargar, y la URL lo refleja. Producto inactivo devuelve 404. **La variante sin stock lo dice con palabras** y su botón principal pasa a ser «Preguntá si va a haber» (F3.6), con la aclaración de que nadie va a avisar automáticamente. El corazón va sobre la imagen, arriba a la derecha, igual que en la tarjeta |
+| **F3.6** | Enlaces de WhatsApp | S | FS RF-04, RF-03 · TS §3 | **Dos mensajes, una tubería**: el de compra llega con producto, color, cantidad y precio; el de **consulta de disponibilidad** —el de la ficha sin stock— lleva producto, color y enlace, sin cantidad ni precio. Los dos bien codificados. El número sale de configuración |
 | **F3.7** | Home | M | FS RF-01 · DR §7.1 | Buscador como protagonista, chips de categoría, destacados, ofertas, medios de pago y aviso de PedidosYa |
 | **F3.8** | Rediseño de la tienda desde el canvas aprobado | **L** | DR §1.3, §3.1, §3.5, §3.6, §6.1, §6.7, §7.2 | Tokens, catálogo, tarjeta y encabezado adoptan el canvas. **Alcanza solo a la tienda**: el panel de administración no entra, y conserva la escala densa de §4 y su modo oscuro. Lo que el canvas propone y la arquitectura no acepta —filtros sin estado en la URL— queda registrado con su motivo, no adoptado en silencio |
 | **F3.9** | SEO: URLs, metadatos por producto, datos estructurados, sitemap | M | FS RNF-04 | Una ficha compartida en WhatsApp muestra imagen, nombre y precio |
@@ -237,7 +237,7 @@ F10 Endurecimiento y lanzamiento
 | **F5.1** | Pantallas de registro, ingreso y recuperación | M | FS RF-05, RF-06 · DR §6.6 | Los tres métodos de ingreso. Un bloqueado ve **la razón** al intentar entrar |
 | **F5.2** | Panel del comprador: datos y cambio de contraseña | S | FS RF-07 | Rutas protegidas; tras entrar vuelve a donde estaba |
 | **F5.3** | Libreta de direcciones | M | FS RF-09 · TS §5.5 | Varias direcciones, una predeterminada garantizada por la base |
-| **F5.4** | Favoritos | S | FS RF-10 | Desde tarjeta y ficha. Un producto desactivado aparece como «No disponible» |
+| **F5.4** | Favoritos | S | FS RF-10 · DR §6.1, §7.3 | Desde tarjeta y ficha, con el corazón **siempre a la vista** en las dos: contorno sin marcar, relleno `--brand` marcado, y el estado anunciado además del relleno. Es la isla de cliente que llena el hueco `accionFavorito` que F3.1 dejó abierto. Un producto desactivado aparece como «No disponible» |
 | **F5.5** | Carrito: modelo y operaciones | M | FS RF-08 · TS §5.5 | Agregar, quitar, cambiar cantidad, vaciar. **No existe carrito sin sesión** |
 | **F5.6** | Revalidación del carrito y avisos | **L** | FS RF-08 · TS §8.4 | Precio cambiado avisa y toma el vigente; stock reducido ajusta; **desactivado se elimina con aviso previo persistente** |
 | **F5.7** | «Iniciá sesión para comprar» y retomar la acción pendiente | M | FS RF-08 · DR §7.3 | El visitante que intenta agregar al carrito va al login y, al volver, **el producto queda agregado** |

@@ -112,12 +112,12 @@ descuido de rotulación.
 
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
-| F3.1 | Tarjeta de producto, con todos sus estados | 🟡 | `components/shop/tarjeta-producto.tsx`, y es siempre la misma en catálogo, home, recomendados y favoritos (§6.1). Están el descuento, el **sin stock** —imagen al 55% con la píldora encima, y la tarjeta **sigue siendo clicable** (RN-05)—, el hover que eleva y escala la imagen dentro de su marco, la marca en versalitas y los puntos de color. Faltan dos, y las dos son de otra tarea: **el corazón es un hueco, no un botón** —entra por `accionFavorito` y hoy nadie se lo pasa, porque favoritos es F5.4—, así que el estado «favorito» del «Hecho cuando» no está probado; y **el enlace de la tarjeta apunta a un 404**, porque `/productos/[slug]` es la ficha y es F3.5. El enlace estirado vive dentro del `<h3>` y no envuelve la tarjeta: envolviéndola, el corazón quedaría **dentro** del ancla, que es HTML inválido y lo deja inalcanzable con teclado |
-| F3.2 | Componente de precio | 🟡 | `components/shop/precio.tsx`, con `es-AR`, decimales siempre (RN-02) y `tabular-nums` —sin eso las columnas de precios de la grilla bailan al cambiar de página—. Tiene **dos composiciones de verdad, no dos tamaños**: la de tarjeta es una línea, tachado y después final; la de ficha suma «Ahorrás $ X» (RN-04b). La de tarjeta está en pantalla; **la de ficha no tiene consumidor todavía** (F3.5), y código sin consumidor es código que nadie probó |
+| F3.1 | Tarjeta de producto, con todos sus estados | 🟡 | `components/shop/tarjeta-producto.tsx`, y es siempre la misma en catálogo, home, recomendados y favoritos (§6.1). Están el descuento —**dos números**, tachado y final (RN-04c)—, el **sin stock** —imagen al 55% con la píldora encima, y la tarjeta **sigue siendo clicable** (RN-05)—, el hover que eleva y escala la imagen dentro de su marco, la marca en versalitas y los puntos de color. **Repasada el 2026-09-08 contra el rediseño**: los tres primeros puntos quedaron confirmados como están y el cuarto se terminó de decidir; abajo está el detalle. Faltan dos, y las dos son de otra tarea: **el corazón es un hueco, no un botón** —entra por `accionFavorito` y hoy nadie se lo pasa, porque favoritos es F5.4—, así que el estado «favorito» del «Hecho cuando» no está probado; y **el enlace de la tarjeta apunta a un 404**, porque `/productos/[slug]` es la ficha y es F3.5. El enlace estirado vive dentro del `<h3>` y no envuelve la tarjeta: envolviéndola, el corazón quedaría **dentro** del ancla, que es HTML inválido y lo deja inalcanzable con teclado |
+| F3.2 | Componente de precio | 🟡 | `components/shop/precio.tsx`, con `es-AR`, decimales siempre (RN-02) y `tabular-nums` —sin eso las columnas de precios de la grilla bailan al cambiar de página—. **Las dos composiciones muestran los mismos dos números desde el 2026-09-08** (RN-04c): la de tarjeta es una línea —tachado y después final— y la de ficha va apilada, final a 24px y tachado abajo. El renglón «Ahorrás $ X» se fue de las dos. La de tarjeta está en pantalla; **la de ficha no tiene consumidor todavía** (F3.5), y código sin consumidor es código que nadie probó |
 | F3.3 | Búsqueda tolerante a acentos y errores de tipeo | ⬜ | Hay media, y es la mitad que no da nombre a la tarea: `condicionDeBusqueda()` en `modules/catalog/products/tienda.ts` resuelve **los acentos** con `immutable_unaccent` sobre nombre, marca y `description_text`, así que «mecanico» encuentra «Mecánico». Sin trigramas, «lojitech» **no** encuentra «Logitech». El umbral que falta no se calibra hasta que exista el catálogo real (F2.8), que es lo que pide el «Hecho cuando» |
 | F3.4 | Catálogo: filtros, orden, paginación, todo en la URL | 🟡 | `/productos` con filtros por categoría, marca, color y descuento, cinco órdenes y paginación, y **todo el estado en la dirección** (§10.2): el botón atrás funciona, el enlace se manda por WhatsApp tal como se está viendo, y la pantalla no necesita una línea de estado de cliente para lo que muestra. Tres pantallas vacías distintas y no una —«todavía no hay productos», «no encontramos nada para esto» y la que apareció probando, `?pagina=9` a mano, que antes ofrecía «Limpiar todo» sin ningún filtro puesto—. El conteo es `aria-live`, la paginación son enlaces y las cuatro primeras tarjetas cargan con prioridad, por el LCP. **Le falta función de RF-02**: categoría, marca y color son de **selección única** —no se pueden elegir dos marcas— y no está el rango de precio. Queda registrado en DR §7.2 como función pendiente, que es distinto de una decisión de diseño |
-| F3.5 | Ficha de producto con galería y selector de color | ⬜ | Es a donde apunta cada tarjeta del catálogo, así que es lo próximo que conviene |
-| F3.6 | Enlaces de WhatsApp | ⬜ | El número ya está cargado y normalizado en configuración (F2.7) |
+| F3.5 | Ficha de producto con galería y selector de color | ⬜ | Es a donde apunta cada tarjeta del catálogo, así que es lo próximo que conviene. **Arranca con más decidido que antes**: el precio de dos números, el corazón sobre la imagen arriba a la derecha, y el estado sin stock entero —lo dice con palabras, «Preguntá si va a haber» pasa a principal, y la pantalla aclara que nadie va a avisar solo— están escritos en DR §7.3 y en RF-03 |
+| F3.6 | Enlaces de WhatsApp | ⬜ | El número ya está cargado y normalizado en configuración (F2.7). **Son dos mensajes y no uno** desde el 2026-09-08: el de compra —producto, color, cantidad, precio y enlace— y el de **consulta de disponibilidad** de la ficha sin stock, que lleva producto, color y enlace y **no** lleva precio: no se está comprando, y un precio sobre algo que todavía no existe es un precio que después hay que desdecir |
 | F3.7 | Home | ⬜ | Hoy `/` es un **marcador de posición deliberado** —título, bajada y nada más—, y lo dice en su propio archivo: construir la home contra productos inventados es el riesgo P1 del plan. Recibió los tokens nuevos de F3.8 como todo lo demás, y ninguna otra cosa del canvas |
 | F3.8 | Rediseño de la tienda desde el canvas aprobado | 🟡 | **Tarea nueva, agregada al plan el 2026-09-08**; abajo está entera. Cuatro pasadas —tokens, estructura del catálogo, ajustes de panel y tarjeta, y encabezado— aplicadas a la capa de tokens, al catálogo y al navbar. **Falta bajarlo a la home, a la sección de categorías, al pie, al carrito y a la ficha**, y eso no se hace de una: cada pantalla lo adopta cuando se construye. **El panel de administración queda afuera**: el rediseño es de la tienda, lo que ve el comprador |
 | F3.9 | SEO: URLs, metadatos, datos estructurados, sitemap | ⬜ | Era F3.8 hasta el 2026-09-08 |
@@ -205,6 +205,74 @@ botón atrás funcione, y la tienda sí. También se revirtieron los enlaces
 «Inicio · Productos · Categorías · Destacados» del navbar: dos de esas cuatro
 secciones no existen todavía, y el pedido era acomodar el navbar, no sumar
 navegación.
+
+---
+
+### El repaso de F3.1, y las cuatro cosas que dejó decididas (2026-09-08)
+
+La pregunta era qué le había cambiado a la tarjeta el rediseño de F3.8. La
+respuesta corta: el precio, y nada más. Las otras tres cosas que se miraron
+quedaron confirmadas o terminadas de decidir, y las cuatro están ahora en las
+especificaciones — que es donde faltaban, porque **la tarjeta implementada y
+`FUNCTIONAL-SPEC.md` se estaban contradiciendo desde F3.8 y nadie lo había
+anotado**.
+
+**1. El precio: dos números, y ahora también en la ficha.** La tarjeta dejó de
+mostrar «Ahorrás $ X» en la tercera pasada de F3.8, pero RF-02 seguía pidiendo
+«el precio original tachado **y el ahorro en pesos**». Un criterio de
+aceptación que el código incumplía sin que ninguno de los dos estuviera mal a
+propósito. Se resolvió por decisión tuya y hacia el lado más simple: la regla
+sube de la tarjeta a la tienda entera y se escribe como **RN-04c** —dos
+números, nunca tres, en tarjeta, ficha, carrito y orden—. Es la única de las
+cuatro que tocó código:
+
+- `components/shop/precio.tsx` — la composición de ficha pierde el renglón
+  «Ahorrás». Las dos variantes siguen existiendo porque siguen siendo dos
+  disposiciones distintas —una línea en la grilla, apilado a 24px en la
+  ficha—, pero ya no se diferencian en **qué** dicen.
+- `components/admin/productos/formulario.tsx` — la vista previa del panel
+  también lo pierde, y **no** porque RN-04c alcance al panel: esa vista dice
+  literalmente «Se muestra», así que mostrar algo que el comprador no ve la
+  volvía mentirosa. Además repetía el descuento que Ana acaba de tipear tres
+  campos más arriba. Con eso, `Vista.ahorro` quedó sin usar y se fue.
+
+**2. Sin stock sigue siendo clicable.** Confirmado, y ya era así: es RN-05, y
+la tarjeta lo cumple desde F3.1. No hubo cambio.
+
+**3. La ficha sin stock ahora tiene estado propio, y no lo tenía.** RF-03 decía
+que las acciones de compra quedan deshabilitadas «y se ofrece Consultar por
+WhatsApp», y DR §7.3 no dibujaba el caso en ninguna parte. Ahora está entero,
+con tres decisiones que no estaban tomadas: **lo dice con palabras** y no con
+un botón apagado —un botón gris sin explicación se lee como una falla del
+sitio—; **«Preguntá si va a haber» pasa a ser el botón principal**, porque es
+la única acción que le queda a quien llegó hasta ahí; y la pantalla **aclara
+que nadie va a avisar**, porque el botón suena a que el sitio agenda un aviso y
+no hay ninguno — la respuesta la da la vendedora por WhatsApp. Eso convierte
+a F3.6 en **dos mensajes y no uno**: el de consulta no lleva cantidad ni
+precio.
+
+**4. Favoritos es F5.4, y ahora tiene el aspecto decidido de antemano.** La
+tarea existía y estaba bien ubicada —«Desde tarjeta y ficha»—, así que no se
+creó nada nuevo; lo que faltaba era el contrato visual, que hasta hoy vivía en
+una sola línea de §6.1. Quedó escrito en §6.1, §7.3, RF-10 y en el propio
+`accionFavorito` de la tarjeta: **siempre a la vista** en las dos pantallas
+—al revelarlo con el hover, en un teléfono no existe—, contorno sin marcar y
+**relleno `--brand`** marcado, 44px de área táctil, y el estado anunciado
+además del relleno.
+
+Sobre el color, que era la pregunta abierta: **el corazón se rellena con el
+burdeos de la marca y no con un rosa nuevo.** §1.2 decidió **un solo color
+saturado** en todo el sistema y el canvas de F3.8 lo confirmó; meter el segundo
+por un ícono de 20px es la clase de excepción que después justifica la
+siguiente. El burdeos ya es el color de lo accionable y de lo elegido —el
+anillo del selector de color, el precio en oferta—, y relleno sobre blanco lee
+exactamente como se espera que lea un corazón marcado. **El corazón sigue
+disponible sin stock**: marcar algo agotado es precisamente para qué sirven los
+favoritos.
+
+**Lo que esto no hace.** No dibuja el corazón: sigue siendo el hueco
+`accionFavorito`, y lo llena F5.4. Un corazón que no guarda nada es peor que
+ningún corazón.
 
 ---
 
@@ -483,7 +551,11 @@ Cada una se escribió primero en la especificación y después en el código
 | **Las plantillas de email van en `public/` de la aplicación** | `PROGRESO.md` F1.8; F0.13 | GoTrue **no lee plantillas de un archivo**: toma `GOTRUE_MAILER_TEMPLATES_*` como URL y la busca por HTTP contra `SITE_URL`. Probado en el VPS montando la carpeta en el contenedor: el archivo estaba ahí y el log decía `Get "http://localhost:3000/etc/gotrue/email-templates/confirm.html": connection refused`. Servirlas hoy exigiría un contenedor más —en un stack que R5 ya marca como pesado— para tirarlo cuando la app se despliegue. Como GoTrue las resuelve contra `SITE_URL`, que **es la aplicación**, el lugar donde terminan es `public/`: versionadas con el código y sin infraestructura nueva. El intento se revirtió entero; el `docker-compose.yml` del VPS no quedó tocado |
 | **El rediseño de la tienda es una tarea del plan, y es F3.8** | `DEVELOPMENT-PLAN.md` F3; `DESIGN-REFERENCE.md` §1.3 | El canvas se aprobó después de escrito el plan, y se implementó en cuatro commits que ya lo llaman «F3.8». El ID que F3.8 tenía —SEO— no estaba citado en ningún commit ni en ninguna otra especificación, mientras que el del rediseño ya estaba escrito en la referencia de diseño: §1.3 se llama «Lo que cambió el canvas de F3.8». Así que **SEO se renumeró a F3.9** en vez de rotular el rediseño con un número que otro documento ya usaba para otra cosa. La regla de §1.2 pide IDs estables porque los commits los citan; acá los commits citan el rediseño |
 | **§7.2 pasa de columna de filtros a barra con panel desplegable** | `DESIGN-REFERENCE.md` §7.2, reescrita entera | La columna lateral se comía 260px de los 1200 —el 22% del ancho— para algo que se toca una vez y después estorba toda la sesión. Y había un motivo más urgente para reescribirla: **§7.2 estaba contradiciendo al código**, que es la peor forma de tener una referencia, porque no se sabe cuál de los dos está mal |
-| **La tarjeta muestra dos números, no cuatro** | `DESIGN-REFERENCE.md` §6.1 y §6.7 | Llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, tachado primero, como se lee un cartel. **No es una desviación del canvas ni de la referencia**: §6.1 ya dibujaba dos números; el «Ahorrás» venía de §6.7, que es el componente genérico, y sigue vivo en la ficha, donde hay lugar y el monto ahorrado vende |
+| **La tarjeta muestra dos números, no cuatro** | `DESIGN-REFERENCE.md` §6.1 y §6.7 | Llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, tachado primero, como se lee un cartel. **No es una desviación del canvas ni de la referencia**: §6.1 ya dibujaba dos números; el «Ahorrás» venía de §6.7, que es el componente genérico. *(Ampliada el 2026-09-08: la regla dejó de ser de la tarjeta y pasó a ser de toda la tienda — RN-04c, la fila de abajo. El «Ahorrás» tampoco sigue vivo en la ficha.)* |
+| **RN-04c: una oferta son dos números, nunca tres** | `FUNCTIONAL-SPEC.md` RN-04c, RF-02, RF-03; `TECHNICAL-SPEC.md` §7.2; `DESIGN-REFERENCE.md` §6.1, §6.7, §7.3 y §14 | Decisión tuya. La tarjeta ya lo hacía desde F3.8 y **RF-02 seguía pidiendo lo contrario**: un criterio de aceptación que el código incumplía sin que ninguno de los dos estuviera mal a propósito. En vez de corregir RF-02 para que describiera la tarjeta, la regla subió a la tienda entera — el tachado sobre el final ya dice cuánto bajó, y enunciar el ahorro es la misma oferta dicha de nuevo. La ficha era la única pantalla que lo llevaba, y no llegó a tener consumidor: se fue antes de estrenarse |
+| **La vista previa del panel también pierde el «Ahorrás»** | `components/admin/productos/formulario.tsx` | RN-04c es de la tienda y el panel no entra. Pero esa vista previa dice «Se muestra», así que mostrar de más la volvía mentirosa sobre lo único que promete. Y el número que agregaba era el descuento que Ana acababa de tipear tres campos más arriba. `Vista.ahorro` quedó sin usar y se borró |
+| **La ficha sin stock tiene estado propio, con «Preguntá si va a haber» de principal** | `FUNCTIONAL-SPEC.md` RF-03 y RF-04; `DESIGN-REFERENCE.md` §7.3 y §14; `DEVELOPMENT-PLAN.md` F3.5, F3.6 | Pedido tuyo. RF-03 tenía una línea —«se ofrece Consultar por WhatsApp»— y §7.3 no dibujaba el caso. Faltaban las tres decisiones que lo hacen usable: decirlo **con palabras** y no con un botón apagado, que la consulta suba a **principal** —es la única salida que le queda a esa pantalla—, y **aclarar que nadie va a avisar**, porque el botón suena a que el sitio agenda un aviso y no hay ninguno. Efecto lateral: F3.6 pasa a tener **dos** mensajes, y el de consulta va sin cantidad ni precio |
+| **El corazón de favoritos se rellena con `--brand`** | `DESIGN-REFERENCE.md` §6.1, §7.3 y §14; `FUNCTIONAL-SPEC.md` RF-10; `DEVELOPMENT-PLAN.md` F3.1, F3.5, F5.4 | La pregunta era si entraba un rosa. No: §1.2 decidió **un solo color saturado** y el canvas de F3.8 lo confirmó, así que el segundo no entra por un ícono de 20px. El burdeos ya es el color de lo accionable y de lo elegido, y relleno sobre blanco lee como se espera que lea un corazón marcado. Con eso quedó escrito el contrato entero —siempre a la vista, contorno/relleno, 44px, estado anunciado además del color— para que **F5.4 no tenga que inventar nada**, que es lo que pasa cuando una tarea de una fase posterior hereda media especificación |
 | **La familia de grises de la tienda es cálida** | `DESIGN-REFERENCE.md` §3.1, §3.5, §3.6 y §14 | Es de donde sale el aire de la referencia: `--canvas` es un gris frío, y grises cálidos encima repiten la tensión de temperatura que §2.1 le pide al burdeos. Se cambió la familia **entera** —textos, tinte del anillo de foco, ícono de «sin logo» y las tres sombras—: mezclar las dos deja los secundarios azulados sobre tarjetas cálidas. El gris del canvas no se pudo usar tal cual: `#787574` da 4,14:1 sobre `--canvas`, por debajo del 4,5 de RNF-02, y `#716e6d` conserva la temperatura llegando a 4,58 |
 ---
 

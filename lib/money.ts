@@ -90,7 +90,7 @@ export function isPositive(monto: Money): boolean {
 }
 
 /**
- * Precio final y ahorro (RN-04b, §7.2).
+ * Precio final (RN-04b, §7.2).
  *
  * En la base esto es la columna generada `final_price` y NO se recalcula acá
  * (§7.1). Esta función existe para la previsualización en vivo del formulario
