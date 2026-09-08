@@ -145,7 +145,6 @@ Ver detalle en §12 (Fuera de alcance).
 - [ ] Estado vacío explícito («No encontramos productos con esos filtros») con acción para limpiar filtros.
 - [ ] Cada tarjeta muestra: imagen principal, marca, nombre, precio final y —si el descuento es mayor que cero— el precio original tachado. **No muestra el ahorro en pesos**: son dos números, cuánto valía y cuánto vale (RN-04c).
 - [ ] Cada tarjeta ofrece marcar/desmarcar favorito con un corazón, **siempre a la vista** (RF-10).
-- [ ] La franja de medios de pago configurados por la administradora es visible en el listado.
 
 ---
 
@@ -995,6 +994,7 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-09-08 | RN-10 pasa de nombrar a **PedidosYa** a nombrar la **zona**: Viedma, Carmen de Patagones y alrededores | La empresa de mensajería puede cambiar; lo que decide si alguien puede comprar acá es hasta dónde llegamos, no quién lleva el paquete |
 | 2026-09-08 | Se agrega el **retiro en el punto de entrega** como segunda forma de recibir | Es lo que ya se hace |
 | 2026-09-08 | El checkout (RF-11) elige entre **envío, retiro y coordinar**, y sólo el envío pide dirección | Pedido tuyo. La dirección deja de ser un paso obligatorio del checkout y pasa a ser un dato del envío: quien retira o quien prefiere hablarlo no tiene por qué cargar una calle para poder confirmar |
+| 2026-09-08 | **El catálogo no muestra medios de pago**: se saca ese criterio de RF-02 | Pedido tuyo. Una tira de logos sobre una grilla de productos no responde ninguna pregunta que alguien tenga mientras mira el catálogo, y RF-19 ya tiene dónde mostrarse |
 | 2026-09-08 | La ficha **no dibuja los logos de medios de pago**: los nombra | Una tira de logos en la pantalla de venta se lee como «pagá acá», y acá no se paga (RN-01, RN-08). Los logos siguen en el pie y en la home |
 | 2026-09-08 | La ficha declara que los productos son **nuevos y en su caja original** | No se venden reacondicionados. Es texto fijo y no un dato por producto: el día que eso cambie, cambia el modelo y no una frase |
 | 2026-09-02 | La vinculación de cuentas exige que el email original esté verificado | Protección contra apropiación previa de cuenta |

@@ -35,6 +35,22 @@ import { cn } from "@/lib/utils";
  * chip, que es lo que pasaría si React se lo reescribiera en cada render.
  */
 
+/**
+ * El área táctil de 44px de §9, sin agrandar el dibujo.
+ *
+ * Los chips del panel miden 38px de alto y los de arriba de la grilla 30: en
+ * escritorio no molesta, pero §9 pide 44 **en móvil**, que es donde va a estar
+ * la mayoría. Agrandar la píldora cambiaría la composición aprobada en F3.8;
+ * lo que está chico no es el chip, es el blanco al que hay que apuntar.
+ *
+ * El pseudo-elemento se estira sobre el elemento sin ocupar espacio ni pintar
+ * nada. Va con `relative` en quien lo use, y **hay que mirar la separación
+ * entre filas**: lo que sobresale de cada lado tiene que caber en ella o dos
+ * filas se pisan el blanco.
+ */
+const AREA_TACTIL =
+  "after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']";
+
 type Props = {
   filtros: FiltrosDeTienda;
   categorias: OpcionDeFiltro[];
@@ -162,7 +178,12 @@ export function PanelDeFiltros({
           {hayFiltrosDeTienda(filtros) ? (
             <Link
               href={urlDeTienda({ orden: filtros.orden })}
-              className="rounded-pill px-1 py-1.5 text-body-sm text-ink-secondary underline underline-offset-2 transition-colors duration-150 hover:text-brand focus-visible:shadow-focus focus-visible:outline-none"
+              className={cn(
+                "relative rounded-pill px-1 py-1.5 text-body-sm text-ink-secondary underline underline-offset-2",
+                "transition-colors duration-150 hover:text-brand",
+                "focus-visible:shadow-focus focus-visible:outline-none",
+                AREA_TACTIL,
+              )}
             >
               Limpiar filtros
             </Link>
@@ -232,9 +253,16 @@ function GrupoDeChips({
                 // lector de pantalla no ve el relleno burdeos.
                 aria-current={activo ? "true" : undefined}
                 className={cn(
-                  "flex items-center gap-2 rounded-full border py-2 pr-3 pl-3",
+                  "relative flex items-center gap-2 rounded-full border py-2 pr-3 pl-3",
                   "text-body-sm whitespace-nowrap transition-colors duration-150",
                   "focus-visible:shadow-focus focus-visible:outline-none",
+                  // §9 pide 44px de área táctil y la píldora mide 38. Se
+                  // estira el ÁREA y no el dibujo: agrandar el chip cambiaría
+                  // la composición de §7.2, y lo que está chico no es el chip
+                  // sino el blanco. Los 3px que sobresalen de cada lado caben
+                  // en el `gap-2` de la lista, así que dos filas de chips no
+                  // se pisan el blanco entre sí.
+                  AREA_TACTIL,
                   // Relleno sólido y no tinte: el tinte claro es lo que usan
                   // los chips de «filtro aplicado» de abajo, y dos estados
                   // distintos con el mismo color se confunden.
@@ -253,10 +281,16 @@ function GrupoDeChips({
                   />
                 ) : null}
                 <span className="min-w-0">{o.nombre}</span>
+                {/*
+                  `--ink-secondary` y no `--ink-tertiary`: §3.1 admite el
+                  terciario «solo texto ≥ 24px o elementos decorativos», y esto
+                  son 12px que dicen cuántos productos hay — información, y a
+                  3,37:1 sobre la superficie. Medido, no estimado.
+                */}
                 <span
                   className={cn(
                     "shrink-0 text-caption tabular-nums",
-                    activo ? "text-ink-inverse/70" : "text-ink-tertiary",
+                    activo ? "text-ink-inverse/70" : "text-ink-secondary",
                   )}
                 >
                   {o.cuantos}
@@ -295,19 +329,30 @@ function GrupoDeChips({
 function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
   return (
     <div className="flex flex-col gap-2.5">
-      <h3 className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
+      <h3
+        id="filtro-precio"
+        className="text-caption font-medium tracking-wide text-ink-secondary uppercase"
+      >
         Precio
       </h3>
 
+      {/*
+        `aria-labelledby` y no un `<fieldset>` con `<legend>`: el legend sería
+        el marcado más correcto para agrupar dos campos, pero dejaría a este
+        grupo fuera del recorrido por encabezados mientras los otros tres son
+        `h3`. Así se queda con las dos cosas — el encabezado navegable y el
+        formulario con nombre.
+      */}
       <form
         method="get"
         action="/productos"
+        aria-labelledby="filtro-precio"
         className="flex flex-wrap items-center gap-2"
       >
         <Conservados filtros={filtros} />
         <CampoDePrecio nombre="precioMin" etiqueta="Desde" valor={filtros.precioMin} />
         <CampoDePrecio nombre="precioMax" etiqueta="Hasta" valor={filtros.precioMax} />
-        <Button type="submit" variant="secondary" size="md">
+        <Button type="submit" variant="secondary" size="md" className="h-11">
           Aplicar
         </Button>
       </form>
@@ -367,7 +412,7 @@ function CampoDePrecio({
       <span className="relative">
         <span
           aria-hidden
-          className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-body-sm text-ink-tertiary"
+          className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-body-sm text-ink-secondary"
         >
           $
         </span>
@@ -379,7 +424,9 @@ function CampoDePrecio({
           inputMode="numeric"
           defaultValue={valor ?? ""}
           className={cn(
-            "h-10 w-28 rounded-pill border border-border bg-surface",
+            // 44px, que es el mínimo táctil de §9. Con los 40 que trae
+            // `h-10` los dos campos y el botón quedaban justo por debajo.
+            "h-11 w-28 rounded-pill border border-border bg-surface",
             "pr-3 pl-7 text-body-sm text-ink tabular-nums",
             "focus-visible:shadow-focus focus-visible:outline-none",
             // Las flechitas nativas de `number` no entran en el sistema y
@@ -415,9 +462,10 @@ function Casilla({
       href={href}
       aria-current={activa ? "true" : undefined}
       className={cn(
-        "flex w-fit items-center gap-2.5 rounded-pill py-1.5 pr-3 pl-1.5",
+        "relative flex w-fit items-center gap-2.5 rounded-pill py-1.5 pr-3 pl-1.5",
         "text-body-sm transition-colors duration-150",
         "focus-visible:shadow-focus focus-visible:outline-none",
+        AREA_TACTIL,
         activa
           ? "font-medium text-brand"
           : "text-ink-secondary hover:text-ink",
@@ -519,7 +567,11 @@ export function ChipsDeFiltros({
   return (
     // `flex-wrap`: con cinco filtros puestos en un teléfono, una fila sola
     // recortaría los últimos y esos valores dejarían de poder quitarse.
-    <ul className="flex flex-wrap items-center gap-2">
+    // `gap-y-4` y no `gap-2`: estos chips miden 30px de alto, así que su área
+    // táctil sobresale 7px por lado. Con 8px de separación entre filas, dos
+    // filas se pisarían el blanco y se tocaría el chip de arriba queriendo
+    // tocar el de abajo.
+    <ul className="flex flex-wrap items-center gap-x-2 gap-y-4">
       {puestos.map((p) => (
         <li key={p.clave}>
           <Link
@@ -527,7 +579,13 @@ export function ChipsDeFiltros({
             // Tinte de marca y no blanco: sobre el canvas gris, un chip
             // blanco es una superficie más entre otras y no se lee como «esto
             // está aplicado». El tinte lo dice sin sumar un color al sistema.
-            className="flex items-center gap-1.5 rounded-full border border-brand-tint-border bg-brand-tint py-1.5 pr-2 pl-3 text-caption font-medium whitespace-nowrap text-brand transition-colors duration-150 hover:border-brand hover:bg-brand hover:text-ink-inverse focus-visible:shadow-focus focus-visible:outline-none"
+            className={cn(
+              "relative flex items-center gap-1.5 rounded-full border border-brand-tint-border bg-brand-tint",
+              "py-1.5 pr-2 pl-3 text-caption font-medium whitespace-nowrap text-brand",
+              "transition-colors duration-150 hover:border-brand hover:bg-brand hover:text-ink-inverse",
+              "focus-visible:shadow-focus focus-visible:outline-none",
+              AREA_TACTIL,
+            )}
           >
             {p.etiqueta}
             <X className="size-3.5 shrink-0" aria-hidden="true" />
@@ -539,7 +597,12 @@ export function ChipsDeFiltros({
       <li>
         <Link
           href={urlDeTienda({ orden: filtros.orden })}
-          className="rounded-full px-2 py-1.5 text-caption font-medium text-ink-secondary underline underline-offset-2 transition-colors duration-150 hover:text-brand focus-visible:shadow-focus focus-visible:outline-none"
+          className={cn(
+            "relative rounded-full px-2 py-1.5 text-caption font-medium text-ink-secondary underline underline-offset-2",
+            "transition-colors duration-150 hover:text-brand",
+            "focus-visible:shadow-focus focus-visible:outline-none",
+            AREA_TACTIL,
+          )}
         >
           Limpiar todo
         </Link>

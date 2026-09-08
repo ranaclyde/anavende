@@ -128,7 +128,14 @@ export default async function Catalogo({
           className="ml-auto text-body-sm text-ink-secondary"
           // El conteo cambia al filtrar sin que se mueva el foco: sin esto,
           // quien usa lector de pantalla no se entera de que la lista cambió.
+          //
+          // `role="status"` además de `aria-live`, y `aria-atomic` para que se
+          // lea «9 productos» entero y no el número suelto: un «9» sin sustantivo
+          // no dice qué cambió, y es exactamente lo que se anuncia cuando el
+          // lector reporta solo el nodo de texto que se modificó.
+          role="status"
           aria-live="polite"
+          aria-atomic="true"
         >
           {pagina.total === 1 ? "1 producto" : `${pagina.total} productos`}
         </p>

@@ -115,7 +115,7 @@ rotulación — **la tarjeta, el catálogo y el precio siguen sin esa pasada**.
 | F3.1 | Tarjeta de producto, con todos sus estados | 🟡 | `components/shop/tarjeta-producto.tsx`, y es siempre la misma en catálogo, home, recomendados y favoritos (§6.1). Están el descuento —**dos números**, tachado y final (RN-04c)—, el **sin stock** —imagen al 55% con la píldora encima, y la tarjeta **sigue siendo clicable** (RN-05)—, el hover que eleva y escala la imagen dentro de su marco, la marca en versalitas y los puntos de color. **Repasada el 2026-09-08 contra el rediseño**: los tres primeros puntos quedaron confirmados como están y el cuarto se terminó de decidir; abajo está el detalle. Faltan dos, y las dos son de otra tarea: **el corazón es un hueco, no un botón** —entra por `accionFavorito` y hoy nadie se lo pasa, porque favoritos es F5.4—, así que el estado «favorito» del «Hecho cuando» no está probado; y **el enlace de la tarjeta apunta a un 404**, porque `/productos/[slug]` es la ficha y es F3.5. El enlace estirado vive dentro del `<h3>` y no envuelve la tarjeta: envolviéndola, el corazón quedaría **dentro** del ancla, que es HTML inválido y lo deja inalcanzable con teclado |
 | F3.2 | Componente de precio | 🟡 | `components/shop/precio.tsx`, con `es-AR`, decimales siempre (RN-02) y `tabular-nums` —sin eso las columnas de precios de la grilla bailan al cambiar de página—. **Las dos composiciones muestran los mismos dos números desde el 2026-09-08** (RN-04c): la de tarjeta es una línea —tachado y después final— y la de ficha va apilada, final a 24px y tachado abajo. El renglón «Ahorrás $ X» se fue de las dos. La de tarjeta está en pantalla; **la de ficha no tiene consumidor todavía** (F3.5), y código sin consumidor es código que nadie probó |
 | F3.3 | Búsqueda tolerante a acentos y errores de tipeo | ⬜ | Hay media, y es la mitad que no da nombre a la tarea: `condicionDeBusqueda()` en `modules/catalog/products/tienda.ts` resuelve **los acentos** con `immutable_unaccent` sobre nombre, marca y `description_text`, así que «mecanico» encuentra «Mecánico». Sin trigramas, «lojitech» **no** encuentra «Logitech». El umbral que falta no se calibra hasta que exista el catálogo real (F2.8), que es lo que pide el «Hecho cuando» |
-| F3.4 | Catálogo: filtros, orden, paginación, todo en la URL | 🟡 | `/productos` con filtros por categoría, marca, color, **rango de precio** y descuento, cinco órdenes y paginación, y **todo el estado en la dirección** (§10.2): el botón atrás funciona, el enlace se manda por WhatsApp tal como se está viendo, y la pantalla no necesita una línea de estado de cliente para lo que muestra. Tres pantallas vacías distintas y no una —«todavía no hay productos», «no encontramos nada para esto» y la que apareció probando, `?pagina=9` a mano, que antes ofrecía «Limpiar todo» sin ningún filtro puesto—. El conteo es `aria-live`, la paginación son enlaces y las cuatro primeras tarjetas cargan con prioridad, por el LCP. **Completada el 2026-09-08**: categoría, marca y color pasaron a **multiselección** y entró el **rango de precio**, que eran las dos funciones que RF-02 pedía y no estaban. Un chip por valor aplicado, contador por valor, y el precio sobre el precio **final**. **34 tests nuevos** sobre un módulo que no tenía ninguno. Le falta la pasada de `impeccable` y `ui-ux-pro-max` que §12.4 exige para cerrar una pantalla |
+| F3.4 | Catálogo: filtros, orden, paginación, todo en la URL | 🟡 | `/productos` con filtros por categoría, marca, color, **rango de precio** y descuento, cinco órdenes y paginación, y **todo el estado en la dirección** (§10.2): el botón atrás funciona, el enlace se manda por WhatsApp tal como se está viendo, y la pantalla no necesita una línea de estado de cliente para lo que muestra. Tres pantallas vacías distintas y no una —«todavía no hay productos», «no encontramos nada para esto» y la que apareció probando, `?pagina=9` a mano, que antes ofrecía «Limpiar todo» sin ningún filtro puesto—. El conteo es `aria-live`, la paginación son enlaces y las cuatro primeras tarjetas cargan con prioridad, por el LCP. **Completada el 2026-09-08**: categoría, marca y color pasaron a **multiselección** y entró el **rango de precio**, que eran las dos funciones que RF-02 pedía y no estaban. Un chip por valor aplicado, contador por valor, y el precio sobre el precio **final**. **34 tests nuevos** sobre un módulo que no tenía ninguno. **Pasó por `impeccable` (audit) y por `ui-ux-pro-max`** el mismo día: de ahí salieron nueve arreglos de accesibilidad, todos medidos y ninguno visible. Abajo están |
 | F3.5 | Ficha de producto con galería y selector de color | 🟡 | `/productos/[slug]`, y con esto **la tarjeta del catálogo dejó de apuntar a un 404**. Están la galería de §6.8, el selector de color de §6.5, la cantidad con tope en el stock, la descripción con formato pintada como React y no como HTML, y los tres estados de compra: con stock, **sin stock** y «todavía no está a la venta» —un producto activo sin ninguna variante, que RN-05 muestra igual—. Cambiar de color cambia foto, stock y mensaje **sin recargar** y escribe `?color=` con `replaceState`; un producto inactivo da 404. **17 tests** sobre la consulta y los mensajes. **Rehecha el 2026-09-08 con diecisiete pedidos tuyos**: miniaturas a la izquierda y siempre dibujadas —el salto de la foto al cambiar de color era eso—, foto al borde de la tarjeta, flechas, visor de dos niveles con recorrido a tamaño real, galería pegada con la columna derecha desplazando, descripción adentro de esa columna, recuadro «¿Cómo sigue después de comprar?», y Guardar y Compartir. Arriba está el detalle. Pasó por `impeccable` y `ui-ux-pro-max`. **Falta mirarla en un teléfono** y **falta ver moverse la galería**: el navegador de esta máquina no entrega cuadros, así que el desplazamiento suave no ocurre —la instrucción sale bien, está comprobado—. Le faltan los recomendados de RF-03, que son F8.2 y F8.4 |
 | F3.6 | Enlaces de WhatsApp | 🟡 | `lib/whatsapp.ts`, que es donde §4 lo tenía previsto, y **se hizo junto con F3.5 por decisión tuya**: la ficha no tiene ninguna otra acción, así que sin esto salía una pantalla que no se podía terminar de probar. **Son dos mensajes y no uno**: el de compra —producto, color, cantidad, precio y enlace— y el de **consulta de disponibilidad**, que lleva producto, color y enlace y **no** lleva precio ni cantidad: no se está comprando, y un precio sobre algo que todavía no existe es un precio que después hay que desdecir. El criterio de RF-04 —acentos, saltos de línea y el `$` bien codificados— está probado, y el número se limpia a dígitos venga como venga. Sin número configurado **no se dibuja ningún botón**: `wa.me/` sin destino abre WhatsApp en la nada. **Falta abrir uno en un teléfono con WhatsApp de verdad**: lo verificado es la dirección, no la entrega |
 | F3.7 | Home | ⬜ | Hoy `/` es un **marcador de posición deliberado** —título, bajada y nada más—, y lo dice en su propio archivo: construir la home contra productos inventados es el riesgo P1 del plan. Recibió los tokens nuevos de F3.8 como todo lo demás, y ninguna otra cosa del canvas |
@@ -497,6 +497,58 @@ en vez de tirado— y trece contra Postgres de verdad sobre la consulta, que es
 donde vive la diferencia entre sumar y cruzar. Cada caso compara además el
 total con la cantidad de filas: son dos consultas distintas con el mismo
 `WHERE`, y es exactamente donde se despegan.
+
+---
+
+### La auditoría del catálogo (2026-09-08)
+
+`DESIGN-REFERENCE.md` §12.4 exige `impeccable` y `ui-ux-pro-max` para cerrar
+una pantalla, y el catálogo nunca las había pasado. Salieron **nueve cosas,
+todas de accesibilidad, todas medidas en el navegador y ninguna visible**: lo
+que se arregló fue el blanco al que hay que apuntar y el contraste, no el
+dibujo.
+
+**Siete controles por debajo del mínimo táctil de §9** —44×44 en móvil—: los
+chips del panel median 38px, los campos de precio y el botón «Aplicar» 40, la
+casilla del descuento y «Limpiar filtros» 32, los chips aplicados 30 y
+«Limpiar todo» 27. Se arreglaron **estirando el área y no el dibujo**:
+agrandar la píldora habría cambiado la composición aprobada en F3.8, y lo que
+está chico no es el chip sino el blanco. Los campos sí crecieron a 44, que es
+altura de campo y no de píldora.
+
+Hay un detalle que se mide y no se ve: **lo que sobresale tiene que caber en
+la separación entre filas**. Los chips del panel sobresalen 3px por lado y su
+lista tiene 8px de separación, así que entran. Los chips aplicados sobresalen
+7 y tenían los mismos 8: dos filas se habrían pisado el blanco, y tocar el de
+abajo habría activado el de arriba. Su separación vertical pasó a 16px.
+
+**Dos textos por debajo del contraste que pide la propia §3.1.** El número de
+productos de cada chip está en `--ink-tertiary` a 12px, y §3.1 dice —textual—
+que ese token es «solo texto ≥ 24px o elementos decorativos»: 3,37:1 medido,
+contra los 4,5 que pide §9. No es decoración, es el dato que decide si vale la
+pena tocar el chip. Lo mismo el signo `$` de los campos de precio, que había
+puesto yo ese mismo día. Los dos pasaron a `--ink-secondary`: 5,06:1.
+
+**El conteo de resultados se anunciaba a medias.** Era `aria-live="polite"` sin
+`aria-atomic`, así que un lector puede leer solo el nodo que cambió —«9»— en
+vez de «9 productos». Un número suelto no dice qué cambió. Ahora es
+`role="status"` con `aria-atomic`.
+
+**El formulario del precio no tenía nombre accesible**: el «PRECIO» era un
+`h3` que vivía afuera. Se ató con `aria-labelledby` en vez de convertirlo en
+`fieldset` con `legend`, que sería el marcado más correcto para agrupar dos
+campos pero dejaría a este grupo fuera del recorrido por encabezados mientras
+los otros tres son `h3`.
+
+**Lo que la auditoría no pudo hacer.** El detector de `impeccable` sabe abrir
+una URL con el ancho que se le pida —`--viewport 390x844`— y ahí habría
+salido la revisión móvil que falta desde F3.5. Necesita `puppeteer`, que no
+está instalado. **Es la tercera vez que la misma falta frena lo mismo**, y la
+decisión de instalar un navegador propio sigue siendo tuya.
+
+**Lo que quedó afuera a propósito.** El botón del buscador mide 40px y el logo
+del encabezado 32: están en la misma pantalla y son de F1.13 y F3.8, no de
+F3.4. Se anotan y no se tocan.
 
 ---
 
@@ -893,6 +945,13 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 ---
 
 ## Pendiente detectado, sin tarea propia
+
+**Dos controles del encabezado por debajo del mínimo táctil de §9.** El botón
+de enviar del buscador mide 40×40 y el enlace del logo 32 de alto. Salieron
+midiendo el catálogo para cerrar F3.4, pero son de F1.13 y F3.8: se anotan y
+no se tocan, porque el encabezado está en todas las pantallas y cambiarlo de
+paso es cambiar algo que nadie revisó.
+
 
 **El checkout cambió en la especificación y no está construido.** RF-11 pasó de
 «elegí una dirección» a **elegir entre envío, retiro o coordinar con la
