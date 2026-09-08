@@ -144,6 +144,13 @@ export async function leerPaginaDelCatalogo(
         -- El coalesce(images_source_id, id) es §9.5: una variante puede
         -- mostrar las fotos de otra, y sin esto una que reutiliza saldría sin
         -- imagen aunque en la ficha se vea perfecta.
+        --
+        -- El ORDEN es el MISMO que el del selector de color de la ficha
+        -- (ficha.ts): sort_order de la variante y después el nombre del color.
+        -- Desempataba por v.id, que es un UUID al azar, así que la tarjeta
+        -- podía mostrar el teclado negro y la ficha abrir en el blanco. Eso no
+        -- se veía hasta que existió la ficha, y es de las cosas que nadie
+        -- reporta como error: se siente como que el sitio cambió de producto.
         LEFT JOIN LATERAL (
           SELECT i.storage_key, co.name AS color
             FROM product_variants v
@@ -151,7 +158,7 @@ export async function leerPaginaDelCatalogo(
             JOIN variant_images i
               ON i.variant_id = coalesce(v.images_source_id, v.id)
            WHERE v.product_id = p.id AND v.is_active
-           ORDER BY i.sort_order, v.id
+           ORDER BY v.sort_order, co.name NULLS LAST, i.sort_order
            LIMIT 1
         ) img ON true
 

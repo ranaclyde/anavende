@@ -106,3 +106,61 @@ export async function listarMediosDePago(): Promise<MedioDePagoDelPanel[]> {
     logoUrl: urlDeLogo(logoKey, "thumb"),
   }));
 }
+
+// ── Lo que la tienda necesita de la configuración ───────────────────────
+//
+// Consultas propias y no `leerLaConfiguracion()` recortada: esa devuelve
+// también el email de aviso a la administradora, y una pantalla pública no
+// tiene por qué traerse un dato interno a la memoria del servidor para
+// después descartarlo.
+
+/**
+ * El número al que van los `wa.me` de la tienda — RF-20, F3.6.
+ *
+ * `null` mientras la vendedora no haya guardado la configuración, y eso pasa
+ * de verdad: la fila no la escribe ninguna migración (§5.9). Quien lo use
+ * tiene que poder no mostrar el botón, no armar un enlace roto — `wa.me/`
+ * sin número abre WhatsApp en la nada y parece que el sitio falló.
+ */
+export async function numeroDeWhatsApp(): Promise<string | null> {
+  const [fila] = await db.execute<{ numero: string }>(sql`
+    SELECT whatsapp_number AS numero FROM site_settings WHERE id = 1
+  `);
+  return fila?.numero ?? null;
+}
+
+/** Un medio de pago como lo ve el comprador (RF-01, RF-02, RF-03). */
+export type MedioDePagoDeLaTienda = {
+  id: string;
+  nombre: string;
+  logoUrl: string | null;
+};
+
+/**
+ * Los medios de pago **activos**, en el orden configurado — RF-19, RN-01.
+ *
+ * `listarMediosDePago()` es la del panel y trae también los desactivados,
+ * porque ahí desactivar es un estado que se administra. Acá un desactivado
+ * no existe: son informativos y decir que se acepta algo que no se acepta es
+ * el peor de los dos errores posibles.
+ */
+export async function mediosDePagoDeLaTienda(): Promise<
+  MedioDePagoDeLaTienda[]
+> {
+  const filas = await db.execute<{
+    id: string;
+    nombre: string;
+    logoKey: string | null;
+  }>(sql`
+    SELECT id, name AS nombre, logo_key AS "logoKey"
+      FROM payment_methods
+     WHERE is_active
+     ORDER BY sort_order, immutable_unaccent(lower(name))
+  `);
+
+  return filas.map((f) => ({
+    id: f.id,
+    nombre: f.nombre,
+    logoUrl: urlDeLogo(f.logoKey, "thumb"),
+  }));
+}

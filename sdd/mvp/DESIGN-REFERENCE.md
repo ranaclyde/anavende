@@ -480,10 +480,12 @@ Color:  Negro
         └─────────── seleccionado: anillo burdeos de 2px con 2px de separación
 ```
 
-- Muestras circulares de 32px con el hexadecimal del color.
+- Muestras circulares de 32px con el hexadecimal del color, y **44px de área táctil** (§9): el relleno alrededor de la muestra es lo que concilia las dos medidas.
 - Los colores claros llevan un borde `--border` de 1px para no desaparecer sobre el blanco.
 - **El nombre del color se muestra siempre** junto al selector: no se depende del color para identificar la opción.
-- Sin stock no se puede seleccionar, pero **sigue siendo visible** (RF-03).
+- **Un color sin stock SÍ se puede elegir**, con la barra diagonal y el 40% puestos. Decía lo contrario hasta el 2026-09-08, y el cambio tiene un motivo concreto: elegir el color agotado es lo que arma el mensaje de «Preguntá si va a haber» (§7.3, RF-03). Con el color bloqueado, ese estado no se alcanzaba desde ninguna parte de la pantalla. Lo que queda deshabilitado son las acciones de **compra**, no la elección.
+- El 40% va sobre el **relleno del color**, no sobre la muestra entera: con la opacidad afuera, el anillo burdeos del color elegido se destiñe con ella y un producto agotado en su único color se ve sin marcar.
+- Son `<input type="radio">` de verdad, escondidos bajo la muestra: el recorrido con flechas, el anuncio de «2 de 4» y el agrupado los da el navegador.
 
 ### 6.6 Campos de formulario
 
@@ -960,4 +962,8 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | **El corazón de favoritos se rellena con `--brand`, y no entra un rosa nuevo** | §1.2 decidió **un solo color saturado** y el canvas de F3.8 lo confirmó. Un rosa para el corazón sería el segundo, puesto por un ícono de 20px: el burdeos ya es el color de lo accionable y de lo elegido, y relleno sobre blanco lee exactamente como se espera que lea un corazón marcado |
 | **El corazón está siempre a la vista, en la tarjeta y en la ficha** | Revelarlo al pasar el mouse lo deja inalcanzable en un teléfono, que es donde va a estar la mayoría. Y va **encima** del enlace, nunca adentro: un `<a>` que envuelva la tarjeta entera se lleva el botón adentro, que es HTML inválido y lo saca del recorrido de teclado |
 | **Sin stock, «Preguntá si va a haber» es el botón principal de la ficha** | Es la única acción que le queda a quien llegó hasta ahí. De secundaria, al lado de un principal apagado, la pantalla queda sin ninguna salida a la vista y el botón gris se lee como una falla del sitio |
+| **Un color agotado se puede elegir; §6.5 decía que no** | Sin eso, el estado sin stock de §7.3 —el que acabábamos de especificar— no se alcanzaba desde la pantalla: había que llegarle escribiendo el `?color=` a mano. Lo que se deshabilita es comprar, no elegir |
+| **El color viaja en la dirección como `?color=negro`, no como identificador** | El catálogo filtra por `?color=<uuid>` porque ahí el valor sale de una lista y no lo lee nadie. En la ficha el enlace se manda por WhatsApp (§10.2 es exactamente eso), y `?color=negro` sobrevive a que alguien lo lea en voz alta |
+| **El color cambia con `replaceState`, no con `pushState` ni con una navegación** | Con una navegación —aunque sea blanda— se vuelve al servidor a buscar lo que ya está en memoria y se pierde la transición de 150ms de §6.8. Con `pushState`, mirar tres colores deja tres entradas y el botón atrás recorre colores en vez de volver al catálogo |
+| **La galería es UNA pista con encastre, y no dos galerías** | §6.8 describe dos comportamientos —deslizar en el teléfono, miniaturas en escritorio— y la tentación es escribir dos componentes. Con dos, el índice de la foto que se está viendo vive en dos lugares, y un día dicen cosas distintas |
 | **La ficha sin stock aclara que nadie va a avisar** | «Preguntá si va a haber» suena a que el sitio agenda un aviso, y no hay ninguno: la respuesta la da la vendedora por WhatsApp. Prometer de menos y por escrito cuesta un renglón; alguien esperando un mail que no existe cuesta la venta |

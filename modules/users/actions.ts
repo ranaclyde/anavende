@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { userProfiles } from "@/db/schema";
 import { action } from "@/lib/action";
+import { urlDelSitio } from "@/lib/env";
 import { domainError } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -27,7 +28,7 @@ import {
 
 /** Destino del enlace de verificación de los emails E1 y E2. */
 function urlDeConfirmacion(volver?: string) {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const base = urlDelSitio();
   const destino = volver && volver.startsWith("/") ? volver : "/mi-cuenta";
   return `${base}/api/auth/confirmar?next=${encodeURIComponent(destino)}`;
 }

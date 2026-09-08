@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+import { urlDelSitio } from "@/lib/env";
+
+const siteUrl = urlDelSitio();
 
 // DESIGN-REFERENCE §3.3 y §12.3: una sola familia, pesos 400, 500 y 600.
 // No se carga 700 ni superior.

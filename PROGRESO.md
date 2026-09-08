@@ -103,12 +103,12 @@ pide explícitamente contra el catálogo real —el umbral de similitud de F3.3 
 la Compuerta F3— no se pueden aprobar contra 26 productos que elegimos
 nosotros. Un buscador calibrado sobre nombres propios se aprueba solo.
 
-**Ninguna tarea de F3 pasó todavía por `impeccable` ni por `ui-ux-pro-max`,**
-que es lo que `DESIGN-REFERENCE.md` §12.4 exige para cerrar cualquier pantalla
-y lo que las tareas de F2 anotan una por una. Comparar lo implementado contra
-el canvas aprobado no es lo mismo: el canvas dice cómo se ve, las skills dicen
-si se puede usar. Es el motivo por el que abajo no hay ningún ✅, y no un
-descuido de rotulación.
+**Solo F3.5 pasó por `impeccable` y por `ui-ux-pro-max`,** que es lo que
+`DESIGN-REFERENCE.md` §12.4 exige para cerrar cualquier pantalla y lo que las
+tareas de F2 anotan una por una. Comparar lo implementado contra el canvas
+aprobado no es lo mismo: el canvas dice cómo se ve, las skills dicen si se
+puede usar. Es el motivo por el que abajo no hay ningún ✅, y no un descuido de
+rotulación — **la tarjeta, el catálogo y el precio siguen sin esa pasada**.
 
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
@@ -116,8 +116,8 @@ descuido de rotulación.
 | F3.2 | Componente de precio | 🟡 | `components/shop/precio.tsx`, con `es-AR`, decimales siempre (RN-02) y `tabular-nums` —sin eso las columnas de precios de la grilla bailan al cambiar de página—. **Las dos composiciones muestran los mismos dos números desde el 2026-09-08** (RN-04c): la de tarjeta es una línea —tachado y después final— y la de ficha va apilada, final a 24px y tachado abajo. El renglón «Ahorrás $ X» se fue de las dos. La de tarjeta está en pantalla; **la de ficha no tiene consumidor todavía** (F3.5), y código sin consumidor es código que nadie probó |
 | F3.3 | Búsqueda tolerante a acentos y errores de tipeo | ⬜ | Hay media, y es la mitad que no da nombre a la tarea: `condicionDeBusqueda()` en `modules/catalog/products/tienda.ts` resuelve **los acentos** con `immutable_unaccent` sobre nombre, marca y `description_text`, así que «mecanico» encuentra «Mecánico». Sin trigramas, «lojitech» **no** encuentra «Logitech». El umbral que falta no se calibra hasta que exista el catálogo real (F2.8), que es lo que pide el «Hecho cuando» |
 | F3.4 | Catálogo: filtros, orden, paginación, todo en la URL | 🟡 | `/productos` con filtros por categoría, marca, color y descuento, cinco órdenes y paginación, y **todo el estado en la dirección** (§10.2): el botón atrás funciona, el enlace se manda por WhatsApp tal como se está viendo, y la pantalla no necesita una línea de estado de cliente para lo que muestra. Tres pantallas vacías distintas y no una —«todavía no hay productos», «no encontramos nada para esto» y la que apareció probando, `?pagina=9` a mano, que antes ofrecía «Limpiar todo» sin ningún filtro puesto—. El conteo es `aria-live`, la paginación son enlaces y las cuatro primeras tarjetas cargan con prioridad, por el LCP. **Le falta función de RF-02**: categoría, marca y color son de **selección única** —no se pueden elegir dos marcas— y no está el rango de precio. Queda registrado en DR §7.2 como función pendiente, que es distinto de una decisión de diseño |
-| F3.5 | Ficha de producto con galería y selector de color | ⬜ | Es a donde apunta cada tarjeta del catálogo, así que es lo próximo que conviene. **Arranca con más decidido que antes**: el precio de dos números, el corazón sobre la imagen arriba a la derecha, y el estado sin stock entero —lo dice con palabras, «Preguntá si va a haber» pasa a principal, y la pantalla aclara que nadie va a avisar solo— están escritos en DR §7.3 y en RF-03 |
-| F3.6 | Enlaces de WhatsApp | ⬜ | El número ya está cargado y normalizado en configuración (F2.7). **Son dos mensajes y no uno** desde el 2026-09-08: el de compra —producto, color, cantidad, precio y enlace— y el de **consulta de disponibilidad** de la ficha sin stock, que lleva producto, color y enlace y **no** lleva precio: no se está comprando, y un precio sobre algo que todavía no existe es un precio que después hay que desdecir |
+| F3.5 | Ficha de producto con galería y selector de color | 🟡 | `/productos/[slug]`, y con esto **la tarjeta del catálogo dejó de apuntar a un 404**. Están la galería de §6.8 —una sola pista con encastre: se desliza con el dedo, la mueven las miniaturas, y amplía en modal solo en escritorio—, el selector de color de §6.5, la cantidad con tope en el stock, la descripción con formato pintada como React y no como HTML, y los tres estados de compra: con stock, **sin stock** y «todavía no está a la venta» —un producto activo sin ninguna variante, que RN-05 muestra igual—. Cambiar de color cambia foto, stock y mensaje **sin recargar** y escribe `?color=` con `replaceState`; un producto inactivo da 404. **17 tests nuevos** sobre la consulta y los mensajes. Pasó por `impeccable` (polish) y `ui-ux-pro-max`: de ahí salieron seis arreglos, abajo están. **Falta mirarla en un teléfono** —el navegador de esta máquina no acepta el cambio de tamaño de ventana— y le faltan los recomendados de RF-03, que son F8.2 y F8.4 |
+| F3.6 | Enlaces de WhatsApp | 🟡 | `lib/whatsapp.ts`, que es donde §4 lo tenía previsto, y **se hizo junto con F3.5 por decisión tuya**: la ficha no tiene ninguna otra acción, así que sin esto salía una pantalla que no se podía terminar de probar. **Son dos mensajes y no uno**: el de compra —producto, color, cantidad, precio y enlace— y el de **consulta de disponibilidad**, que lleva producto, color y enlace y **no** lleva precio ni cantidad: no se está comprando, y un precio sobre algo que todavía no existe es un precio que después hay que desdecir. El criterio de RF-04 —acentos, saltos de línea y el `$` bien codificados— está probado, y el número se limpia a dígitos venga como venga. Sin número configurado **no se dibuja ningún botón**: `wa.me/` sin destino abre WhatsApp en la nada. **Falta abrir uno en un teléfono con WhatsApp de verdad**: lo verificado es la dirección, no la entrega |
 | F3.7 | Home | ⬜ | Hoy `/` es un **marcador de posición deliberado** —título, bajada y nada más—, y lo dice en su propio archivo: construir la home contra productos inventados es el riesgo P1 del plan. Recibió los tokens nuevos de F3.8 como todo lo demás, y ninguna otra cosa del canvas |
 | F3.8 | Rediseño de la tienda desde el canvas aprobado | 🟡 | **Tarea nueva, agregada al plan el 2026-09-08**; abajo está entera. Cuatro pasadas —tokens, estructura del catálogo, ajustes de panel y tarjeta, y encabezado— aplicadas a la capa de tokens, al catálogo y al navbar. **Falta bajarlo a la home, a la sección de categorías, al pie, al carrito y a la ficha**, y eso no se hace de una: cada pantalla lo adopta cuando se construye. **El panel de administración queda afuera**: el rediseño es de la tienda, lo que ve el comprador |
 | F3.9 | SEO: URLs, metadatos, datos estructurados, sitemap | ⬜ | Era F3.8 hasta el 2026-09-08 |
@@ -187,13 +187,15 @@ los mismos en los dos lados en vez de dos familias distintas.
    del encabezado desaparece cuando la página ya tiene el suyo**: dos
    buscadores uno arriba del otro hacen dudar de cuál usar.
 
-**Lo que falta, que es la mayor parte de la tienda.** El canvas cubre siete
-pantallas y el rediseño llegó a dos y media: tokens, catálogo y navbar. Quedan
-**la home, la sección de categorías, el pie, el carrito y la ficha**. No entran
-como pasadas nuevas de rediseño sino con la pantalla: F3.5 (ficha), F3.7 (home) y F5.5 (carrito)
-se construyen ya sobre el lineamiento, porque rediseñar algo que todavía no
-existe es hacer dos veces el mismo trabajo. El plan lo dice ahora en la nota de
-F3. **La sección de categorías es la excepción y no tiene tarea**: está abajo.
+**Lo que falta.** El canvas cubre siete pantallas y el rediseño llegó a tres y
+media: tokens, catálogo, navbar y —desde el 2026-09-08— **la ficha, que nació
+sobre el lineamiento en vez de ser rediseñada después**, que era exactamente el
+plan. Quedan **la home, la sección de categorías, el pie y el carrito**. No
+entran como pasadas nuevas de rediseño sino con la pantalla: F3.7 (home) y F5.5
+(carrito) se construyen ya sobre el lineamiento, porque rediseñar algo que
+todavía no existe es hacer dos veces el mismo trabajo. El plan lo dice en la
+nota de F3. **La sección de categorías es la excepción y no tiene tarea**: está
+abajo.
 
 **Dos cosas del canvas que no se adoptaron, y son de forma distinta.** Una es
 de aspecto y está en DR §1.3 con las otras cinco: tipografía, tamaños de 10px,
@@ -276,6 +278,89 @@ ningún corazón.
 
 ---
 
+### La ficha, y lo que encontró al existir (F3.5 y F3.6)
+
+**Las dos tareas se hicieron juntas, y es una decisión tuya.** F3.6 es tamaño S
+y es la única acción que la ficha puede tener hoy —el carrito es F5.5—, así que
+por separado salía una pantalla que no se podía terminar de probar: sin el
+`wa.me`, el estado sin stock que acabábamos de especificar no tiene con qué
+comprobarse.
+
+**«Agregá al carrito» se dibuja deshabilitado, y también es decisión tuya.** La
+alternativa era no dibujarlo hasta F5.5. §8 lo permite con una condición que se
+cumple: todo estado deshabilitado va **acompañado del motivo**, y el renglón de
+abajo dice qué falta y qué hacer mientras tanto. Cuando llegue el carrito, ese
+botón se enciende y WhatsApp baja a secundario, que es donde §7.3 lo pone.
+
+**Cómo se armó, en una línea cada cosa.** La consulta es **una sola** con las
+variantes y sus imágenes adentro: separadas serían tres viajes encadenados
+—hasta no tener el producto no hay variantes, hasta no tener variantes no hay
+imágenes— y la ficha no puede pintar nada sin las tres. Va envuelta en `cache()`
+de React porque la página y `generateMetadata` piden lo mismo. Lo que cambia con
+el color vive en **una** isla de cliente y lo que no —nombre, marca, precio,
+información de envío— se pinta en el servidor y le entra como nodo: es la misma
+decisión que `accionFavorito` en la tarjeta, y acá el precio la justifica solo,
+porque formatearlo en el navegador significaría mandarle `decimal.js` entero
+para poner un punto de miles.
+
+**La descripción se pinta como elementos de React, nunca como HTML.** Era la
+pantalla que habría necesitado un `dangerouslySetInnerHTML`, y no lo tiene: el
+árbol de Markdown ya filtrado se recorre y cada nodo se convierte en su
+etiqueta. Un `<script>` guardado en la base no tiene por dónde llegar a ser un
+`<script>` en la página, y no porque se lo escape bien sino porque nunca se lo
+trata como marcado. Es además la **segunda** pasada del filtro que pide §16.
+
+**Seis cosas salieron de las skills de diseño, y cuatro no se veían leyendo el
+código:**
+
+1. **El botón «Ampliar» flotaba fuera de la foto.** La columna de la derecha es
+   más alta y estiraba a la galería; el botón, que se posiciona con `inset-0`,
+   cubría el alto estirado y su ícono caía 40px por debajo de la imagen, sobre
+   el fondo. Se arregla con `self-start`.
+2. **Las miniaturas estaban del lado equivocado.** §6.8 pone la foto a la
+   izquierda; había quedado `flex-row-reverse`.
+3. **El anillo del color elegido se destiñe con el 40% de «agotado».** La
+   opacidad estaba sobre la muestra entera en vez de sobre el relleno, así que
+   un producto agotado en su único color se veía **sin marcar** — que es el caso
+   más común, no un borde.
+4. **`pt-8` en un `<fieldset>` no separa nada.** El `<legend>` se pinta sobre el
+   borde del `fieldset` e **ignora su relleno**: la separación real entre el
+   precio y el «Color:» era **cero**, y el rótulo se leía como una aclaración
+   del precio. Se midió con el inspector, no se estimó. Con margen sí funciona.
+5. **Dos áreas táctiles por debajo del mínimo de §9.** Las muestras de color
+   median 32px y las flechas de cantidad 36. Ahora las dos llegan a 44 sin
+   cambiar de tamaño a la vista: la muestra conserva sus 32px de §6.5 y el
+   relleno del `label` pone el resto.
+6. **«Sin stock» estaba reimplementado.** §6.4 ya tiene la etiqueta de estado
+   —píldora de tinte, color semántico, siempre con texto— y la ficha la estaba
+   dibujando de nuevo con un punto y un renglón. Es el `Badge` que ya existe.
+
+Dos más que no fueron de las skills sino de mirar la pantalla: el
+desplazamiento de la galería usaba `behavior: "smooth"` **por JavaScript**, y la
+regla global de `prefers-reduced-motion` apaga `scroll-behavior`, que es la
+propiedad de CSS y no ese parámetro; y las miniaturas no llevaban borde, así que
+la foto blanca de un periférico sobre superficie blanca desaparecía —el mismo
+motivo por el que las muestras de color lo llevan desde §6.5—.
+
+**Lo que la ficha destapó en el catálogo.** La tarjeta elegía su foto de portada
+con `ORDER BY i.sort_order, v.id`, y `v.id` es un UUID al azar: la tarjeta podía
+mostrar el teclado negro y la ficha abrir en el blanco. No se veía hasta que
+existió la ficha, y es de las cosas que nadie reporta como error porque se
+siente como que el sitio cambió de producto. Las dos consultas usan ahora el
+mismo orden: `sort_order` de la variante y después el nombre del color.
+
+**El seed ahora escribe también el número de WhatsApp**, sin el cual la ficha se
+dibuja sin su acción principal. **Los medios de pago se intentaron y se
+sacaron**, y el motivo queda escrito porque es la clase de cosa que se vuelve a
+intentar: el listado de RF-19 se ordena globalmente y
+`tests/unit/settings/pagos.test.ts` mueve sus tres filas contando desde el
+principio de la tabla, así que con filas sembradas encima «subir el primero no
+cambia nada» sí cambia algo y la batería se pone en rojo. La causa de fondo es
+la de siempre —el seed y los tests comparten base— y su arreglo es separarlas,
+no acomodar un test.
+
+---
+
 ### Lo que F3 encontró, y no se veía leyendo el código
 
 **Los tests le comen el stock al catálogo sembrado.** `.env.test` y `.env.local`
@@ -346,7 +431,7 @@ ninguno.
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
 | F4.0 | Vitest andando, con `npm test` | ✅ | No es una tarea del plan: es la deuda de los once `db:xxx` venciendo donde estaba anotado que vencía. Vitest 5.0.0, `tests/unit/**/*.test.ts`, un archivo por vez —comparten base, y dos a la vez se pisan los datos—. La guarda se probó de los dos lados: verde contra el stack local, y abortando con el mensaje correcto cuando la URL apunta al **5433**, que es el puerto del túnel SSH a producción |
-| F4.0b | Migrar los diez `db:xxx` a Vitest | ✅ | Tampoco es del plan: es la otra mitad de la deuda de F4.0, que quedaba agendada **para después de la Compuerta F4** y venció el 2026-09-07. Los diez pasaron a `tests/unit/`, **314 tests** en total (eran 92) sin perder una sola comprobación, y los scripts se borraron: ya no conviven las dos formas. `db:verificar` se queda —§18.3, y su lugar es correr contra producción— y **`db:drizzle` también, reclasificado**: no era una batería de verificación sino una SONDA, como `sondear-auth` y `sondear-resend`. Es lo de abajo, y casi se pierde en silencio |
+| F4.0b | Migrar los diez `db:xxx` a Vitest | ✅ | Tampoco es del plan: es la otra mitad de la deuda de F4.0, que quedaba agendada **para después de la Compuerta F4** y venció el 2026-09-07. Los diez pasaron a `tests/unit/`, **314 tests** el día que se cerró —eran 92— sin perder una sola comprobación, y los scripts se borraron: ya no conviven las dos formas. `db:verificar` se queda —§18.3, y su lugar es correr contra producción— y **`db:drizzle` también, reclasificado**: no era una batería de verificación sino una SONDA, como `sondear-auth` y `sondear-resend`. Es lo de abajo, y casi se pierde en silencio |
 | F4.1 | Operaciones de stock con `UPDATE` condicional atómico | ✅ | Reservar, liberar, vender, reponer y ajustar, en `modules/stock/operaciones.ts`, cada una con su asiento en la misma transacción. **24 tests en verde** contra Postgres de verdad. El ABM de variantes de F2.4 pasó a usar `ajustar()`: el libro mayor tiene un solo autor. La migración `0007` **quedó aplicada en producción el 2026-09-07** |
 | F4.2 | Máquina de estados de la orden | ✅ | `modules/orders/estados.ts`. La transición es un `UPDATE` condicional con el estado esperado en el `WHERE` y **va antes de tocar el stock**: es lo que decide quién gana. Finalizar vende y suelta la reserva; cancelar sólo suelta. Cada una escribe en el historial en la misma transacción. La tabla de RF-13 se exporta como dato (`TRANSICIONES`) para que la vista no repita la regla. **16 tests**, incluidos dos de concurrencia con solapamiento forzado |
 | F4.3 | Creación de orden con snapshot e idempotencia | ✅ | `modules/orders/crear.ts`, el procedimiento de §8.4 completo: carrito bloqueado, revalidación contra lo que el comprador vio, snapshot de comprador, dirección e ítems, reserva en orden determinístico, total sumado en SQL, historial y carrito vaciado. **18 tests**, entre ellos dos compradores solapados sobre la última unidad. La migración `0008` **quedó aplicada en producción el 2026-09-07** |
@@ -556,6 +641,12 @@ Cada una se escribió primero en la especificación y después en el código
 | **La vista previa del panel también pierde el «Ahorrás»** | `components/admin/productos/formulario.tsx` | RN-04c es de la tienda y el panel no entra. Pero esa vista previa dice «Se muestra», así que mostrar de más la volvía mentirosa sobre lo único que promete. Y el número que agregaba era el descuento que Ana acababa de tipear tres campos más arriba. `Vista.ahorro` quedó sin usar y se borró |
 | **La ficha sin stock tiene estado propio, con «Preguntá si va a haber» de principal** | `FUNCTIONAL-SPEC.md` RF-03 y RF-04; `DESIGN-REFERENCE.md` §7.3 y §14; `DEVELOPMENT-PLAN.md` F3.5, F3.6 | Pedido tuyo. RF-03 tenía una línea —«se ofrece Consultar por WhatsApp»— y §7.3 no dibujaba el caso. Faltaban las tres decisiones que lo hacen usable: decirlo **con palabras** y no con un botón apagado, que la consulta suba a **principal** —es la única salida que le queda a esa pantalla—, y **aclarar que nadie va a avisar**, porque el botón suena a que el sitio agenda un aviso y no hay ninguno. Efecto lateral: F3.6 pasa a tener **dos** mensajes, y el de consulta va sin cantidad ni precio |
 | **El corazón de favoritos se rellena con `--brand`** | `DESIGN-REFERENCE.md` §6.1, §7.3 y §14; `FUNCTIONAL-SPEC.md` RF-10; `DEVELOPMENT-PLAN.md` F3.1, F3.5, F5.4 | La pregunta era si entraba un rosa. No: §1.2 decidió **un solo color saturado** y el canvas de F3.8 lo confirmó, así que el segundo no entra por un ícono de 20px. El burdeos ya es el color de lo accionable y de lo elegido, y relleno sobre blanco lee como se espera que lea un corazón marcado. Con eso quedó escrito el contrato entero —siempre a la vista, contorno/relleno, 44px, estado anunciado además del color— para que **F5.4 no tenga que inventar nada**, que es lo que pasa cuando una tarea de una fase posterior hereda media especificación |
+| **F3.5 y F3.6 se hacen juntas, y «Agregá al carrito» se dibuja apagado** | `DEVELOPMENT-PLAN.md` F3.5 y F3.6; `PROGRESO.md` | Decisión tuya. F3.6 es la única acción que la ficha puede tener hasta F5.5, así que por separado salía una pantalla imposible de terminar de probar. El botón del carrito se dibuja deshabilitado **con el motivo al lado**, que es la condición que §8 le pone a todo estado deshabilitado; sin ese renglón sería el botón gris sin explicación que acabábamos de decidir evitar |
+| **Un color agotado se puede elegir: §6.5 decía lo contrario** | `DESIGN-REFERENCE.md` §6.5 y §14 | Sin eso, el estado sin stock que se especificó el mismo día **no se alcanzaba desde la pantalla**: había que escribirle el `?color=` a mano. Lo que queda deshabilitado son las acciones de compra, no la elección — y elegir el color agotado es justamente lo que arma el mensaje de «Preguntá si va a haber». RN-06 no cambia: ya decía «no seleccionable **para compra**» |
+| **El `?color=` de la ficha lleva el nombre corto, no el identificador** | `modules/catalog/products/ficha.ts`; `DESIGN-REFERENCE.md` §14 | El catálogo filtra por `?color=<uuid>` y está bien: ahí el valor sale de una lista y no lo lee nadie. En la ficha el enlace se manda por WhatsApp —que es literalmente para lo que §10.2 puso el estado en la dirección— y `?color=negro` sobrevive a que alguien lo lea en voz alta. Un color que ya no existe **no es un 404**: abre en el primero |
+| **`lib/env.ts` gana `urlDelSitio()`** | `lib/env.ts`, `app/layout.tsx`, `modules/users/actions.ts` | El mismo `?? "http://localhost:3000"` ya estaba escrito en dos lugares y el enlace de WhatsApp de la ficha pedía un tercero. Tres copias de un respaldo es cómo se termina teniendo dos respaldos distintos. Se migraron los dos que había en el mismo movimiento |
+| **La tarjeta y la ficha eligen la misma variante** | `modules/catalog/products/tienda.ts` | La portada de la tarjeta desempataba por `v.id`, que es un UUID al azar, así que podía mostrar un color y la ficha abrir en otro. Nadie lo reporta como error: se siente como que el sitio cambió de producto |
+| **El seed escribe el número de WhatsApp; los medios de pago no** | `scripts/sembrar-catalogo.mts` | Sin número la ficha no dibuja ningún botón, así que sembrarlo es lo que hace que F3.6 se pueda mirar. Los medios de pago se intentaron y **rompen** `tests/unit/settings/pagos.test.ts`, que ordena contando desde el principio de la tabla; la causa de fondo es que el seed y los tests comparten base, y eso se arregla separándolas, no acomodando un test |
 | **La familia de grises de la tienda es cálida** | `DESIGN-REFERENCE.md` §3.1, §3.5, §3.6 y §14 | Es de donde sale el aire de la referencia: `--canvas` es un gris frío, y grises cálidos encima repiten la tensión de temperatura que §2.1 le pide al burdeos. Se cambió la familia **entera** —textos, tinte del anillo de foco, ícono de «sin logo» y las tres sombras—: mezclar las dos deja los secundarios azulados sobre tarjetas cálidas. El gris del canvas no se pudo usar tal cual: `#787574` da 4,14:1 sobre `--canvas`, por debajo del 4,5 de RNF-02, y `#716e6d` conserva la temperatura llegando a 4,58 |
 ---
 
@@ -655,6 +746,28 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 ---
 
 ## Pendiente detectado, sin tarea propia
+
+**El pie y la ficha enlazan a `/legales/…`, que todavía no existe.** El pie lo
+hace desde F1.13 y la ficha lo sumó en F3.5, porque §7.3 dibuja «Garantías y
+devoluciones» ahí y sacarlo dejaría la ficha sin decir qué pasa si algo sale
+mal. Las cuatro páginas son **F9.3**, y hasta entonces los cinco enlaces caen en
+el 404. Queda anotado y no arreglado a propósito: la alternativa sería una
+página de relleno con texto legal inventado, y un texto legal inventado es peor
+que no tenerlo.
+
+**La ficha no se miró en un teléfono.** Su composición móvil es lo que decide
+§6.8 —el carrusel deslizable con puntos, sin miniaturas y sin modal— y está
+escrita, pero el navegador de esta máquina no acepta el cambio de tamaño de
+ventana, así que lo único verificado es escritorio. Es lo que impide poner ✅
+en F3.5, junto con la entrega real del mensaje de WhatsApp de F3.6.
+
+**`images.qualities` sigue sin decidirse, y ahora hay una foto grande delante.**
+`next.config.ts` dice que se decide «en F3, con el primer `next/image` real
+delante»: ese momento llegó con la galería de §6.8, que sirve el archivo
+`detail` de 1400px que sharp ya comprimió al 82%. Hoy `next/image` lo vuelve a
+comprimir con el 75 que Next 16 usa por omisión, o sea **dos pasadas con
+pérdida sobre la misma foto**. No se tocó todavía porque decidirlo pide medir
+—peso contra nitidez, sobre fotos de verdad y no sobre los rellenos del seed—.
 
 **~~«Elegí una marca» sin ninguna marca que elegir.~~** Resuelto preparando la
 Compuerta F2, y es el pozo más caro que tenía el panel: en una instalación

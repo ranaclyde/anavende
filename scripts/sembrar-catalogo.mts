@@ -1,5 +1,6 @@
 /**
- * Catálogo de demostración para construir F3 — 26 productos.
+ * Catálogo de demostración para construir F3 — 26 productos, más el número
+ * de WhatsApp sin el cual la ficha no tiene acción.
  *
  *   npm run seed            # siembra
  *   npm run seed:limpiar    # borra lo que sembró, y nada más
@@ -14,6 +15,15 @@
  * nosotros daría un número que no sirve para 200 productos de verdad. Lo mismo
  * la Compuerta F3 —«una persona ajena encuentra un producto concreto»—, que
  * contra un catálogo propio se aprueba sola. Las dos siguen esperando a Ana.
+ *
+ * **También siembra el número de WhatsApp, y esa parte es de F3.6.** Sin él
+ * la ficha se dibuja sin su acción principal, que es como no verla: la carga
+ * la vendedora (F2.7) y en una base recién levantada no existe. Se escribe
+ * SOLO si no hay fila, y `--limpiar` se la lleva SOLO si sigue siendo la del
+ * seed — en cuanto alguien la editó desde el panel es suya. Los tests de
+ * configuración BORRAN esa fila, así que después de `npm test` hay que
+ * volver a sembrar; es la misma convivencia que ya tiene el catálogo, y el
+ * arreglo de fondo es separar las dos bases.
  *
  * **Las imágenes son de verdad**, no URLs de un servicio de placeholders: pasan
  * por `publicarImagenDeVariante`, o sea por sharp, los tres tamaños y Storage.
@@ -64,6 +74,32 @@ const PREFIJO = "demo-";
 /** El residuo de los tests: `Producto <8 hex>`, `Marca …`, `Rubro …`. */
 const RESIDUO = "^(producto|marca|rubro)-[0-9a-f]{8}$";
 
+/**
+ * La configuración mínima para que la tienda se pueda MIRAR entera.
+ *
+ * Sin el número de WhatsApp no se dibuja ni un botón de F3.6 —la ficha se ve
+ * sin su acción principal, que es como no verla— y sin medios de pago falta
+ * el bloque de RF-03. Las dos cosas las carga la vendedora en F2.7 y F2.6, y
+ * en una base recién levantada no existen: `site_settings` no la escribe
+ * ninguna migración (§5.9).
+ *
+ * El número es evidentemente falso a propósito: si algún día esto corriera
+ * donde no debe, se nota en el acto en vez de mandar mensajes a alguien.
+ *
+ * **Los medios de pago NO se siembran, y se probó por qué.** El listado de
+ * RF-19 se ordena globalmente, y `tests/unit/settings/pagos.test.ts` mueve
+ * sus tres filas contando desde el principio de la tabla: con filas
+ * sembradas encima, «subir el primero no cambia nada» sí cambia algo y la
+ * batería se pone en rojo. La causa de fondo es la de siempre —el seed y los
+ * tests comparten base— y su arreglo es separarlas, no acomodar un test. Los
+ * tres medios de pago se cargan en un minuto desde el panel (F2.6), y ahí no
+ * chocan con nada.
+ */
+const CONFIGURACION = {
+  whatsapp: "+5491100000000",
+  email: "demo@anavende.invalid",
+};
+
 // ─────────────────────────────────────────────────────────────────────────
 // Limpieza
 // ─────────────────────────────────────────────────────────────────────────
@@ -85,6 +121,7 @@ async function limpiar() {
     marcas: 0,
     categorias: 0,
     colores: 0,
+    configuracion: 0,
   };
 
   if (productos.length) {
@@ -112,7 +149,33 @@ async function limpiar() {
                RETURNING c.id`
   ).length;
 
+  // La configuración de demostración se borra SOLO si sigue siendo la que
+  // escribió el seed. En cuanto alguien la editó desde el panel es suya, y
+  // llevársela sería apagarle la tienda por correr una limpieza de catálogo.
+  borrados.configuracion = (
+    await sql`DELETE FROM site_settings
+               WHERE id = 1
+                 AND whatsapp_number = ${CONFIGURACION.whatsapp}
+                 AND admin_notification_email = ${CONFIGURACION.email}
+               RETURNING id`
+  ).length;
+
   return borrados;
+}
+
+/**
+ * La configuración, solo si no hay. Nunca pisa lo que ya está: quien guardó
+ * la pantalla de configuración eligió ese número, y volver a sembrar no
+ * puede deshacerlo.
+ */
+async function sembrarConfiguracion() {
+  const [fila] = await sql<{ id: number }[]>`
+    INSERT INTO site_settings (id, whatsapp_number, admin_notification_email)
+    VALUES (1, ${CONFIGURACION.whatsapp}, ${CONFIGURACION.email})
+    ON CONFLICT (id) DO NOTHING
+    RETURNING id`;
+
+  return { configuracion: Boolean(fila) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -370,7 +433,8 @@ if (modo === "limpiar") {
   const b = await limpiar();
   console.log(
     `Borrados: ${b.productos} productos, ${b.marcas} marcas, ` +
-      `${b.categorias} categorías, ${b.colores} colores.`,
+      `${b.categorias} categorías, ${b.colores} colores` +
+      `${b.configuracion ? " y la configuración de demostración" : ""}.`,
   );
 } else {
   const previos = await limpiar();
@@ -378,6 +442,7 @@ if (modo === "limpiar") {
     console.log(`Limpieza previa: ${previos.productos} productos.`);
   }
   const cuantos = await sembrar();
+  const config = await sembrarConfiguracion();
 
   await sql`
     UPDATE categories SET is_featured = true
@@ -387,6 +452,9 @@ if (modo === "limpiar") {
     await sql<{ n: string }[]>`SELECT count(*)::text AS n FROM variant_images`;
   console.log(
     `Sembrados ${cuantos} productos con ${fotos} imágenes.\n` +
+      (config.configuracion
+        ? `Configuración de demostración escrita: WhatsApp ${CONFIGURACION.whatsapp}.\n`
+        : `Configuración: ya había una, no se tocó.\n`) +
       `Para verlos:  npm run dev  →  http://localhost:3000\n` +
       `Para borrarlos:  npm run seed:limpiar`,
   );
