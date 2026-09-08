@@ -47,7 +47,9 @@ export function SelectorDeOrden({ filtros }: { filtros: FiltrosDeTienda }) {
         }}
         // Ancho fijo: con `w-auto` el control se encoge y se estira según el
         // largo de la opción elegida, y la barra entera se mueve al ordenar.
-        className="h-10 w-[186px] text-body-sm"
+        // 48px de alto para que empate con el buscador y el botón de filtros:
+        // tres controles de distinta altura en una fila se leen como un error.
+        className="h-12 w-[186px] text-body-sm"
       >
         {ORDENES_DE_TIENDA.map((o) => (
           <option key={o.valor} value={o.valor}>

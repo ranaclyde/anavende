@@ -4,6 +4,10 @@ import { ArrowRight, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useId, useRef, useState } from "react";
 
+import {
+  leerFiltrosDeTienda,
+  urlCambiando,
+} from "@/modules/catalog/products/filtros-tienda";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,10 +22,26 @@ export function SearchBox({
   className,
   autoFocus,
   placeholder = "Buscar productos...",
+  conservarFiltros = false,
 }: {
   className?: string;
   autoFocus?: boolean;
   placeholder?: string;
+  /**
+   * Qué hacer con los filtros que ya están puestos al enviar.
+   *
+   * Por omisión se descartan, que es lo correcto en el encabezado: ahí se
+   * busca para *empezar*, y arrastrar la marca de la pantalla anterior sería
+   * un filtro invisible.
+   *
+   * En la barra del catálogo hace falta lo contrario. Buscar «teclado»
+   * teniendo puesta una marca no puede borrarla: el chip está a la vista y la
+   * persona espera que siga valiendo.
+   *
+   * Es una bandera y no un constructor de URL porque este componente es de
+   * cliente y quien lo usa es de servidor: una función no cruza ese borde.
+   */
+  conservarFiltros?: boolean;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -32,7 +52,18 @@ export function SearchBox({
   const buscar = (e: React.FormEvent) => {
     e.preventDefault();
     const q = valor.trim();
-    router.push(q ? `/productos?q=${encodeURIComponent(q)}` : "/productos");
+
+    if (!conservarFiltros) {
+      router.push(q ? `/productos?q=${encodeURIComponent(q)}` : "/productos");
+      return;
+    }
+
+    // Se relee la URL en vez de recibir los filtros por prop: son los mismos
+    // que la pantalla ya leyó, y una segunda copia viajando como prop es una
+    // copia que se puede desincronizar. `urlCambiando` vuelve a la página 1,
+    // que es justo lo que corresponde al cambiar la búsqueda.
+    const actuales = leerFiltrosDeTienda(Object.fromEntries(params.entries()));
+    router.push(urlCambiando(actuales, { q }));
   };
 
   const limpiar = () => {

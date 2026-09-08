@@ -28,6 +28,11 @@ export type FiltrosDeTienda = {
   categoria: string;
   /** UUID de la marca, o `""` = todas. */
   marca: string;
+  /**
+   * UUID del color, o `""` = todos. RF-02: el producto entra si **alguna** de
+   * sus variantes tiene ese color, no si lo tienen todas.
+   */
+  color: string;
   /** Solo lo que tiene descuento (RN-04b). */
   oferta: boolean;
   orden: OrdenDeTienda;
@@ -42,6 +47,7 @@ export const FILTROS_DE_TIENDA_VACIOS: FiltrosDeTienda = {
   q: "",
   categoria: "",
   marca: "",
+  color: "",
   oferta: false,
   orden: "relevancia",
   pagina: 1,
@@ -74,6 +80,7 @@ export function leerFiltrosDeTienda(
 ): FiltrosDeTienda {
   const categoria = texto(params.categoria);
   const marca = texto(params.marca);
+  const color = texto(params.color);
   const orden = texto(params.orden);
   const pagina = Number.parseInt(texto(params.pagina), 10);
 
@@ -83,6 +90,7 @@ export function leerFiltrosDeTienda(
     // filtraría de menos, haría fallar a Postgres.
     categoria: UUID.test(categoria) ? categoria : "",
     marca: UUID.test(marca) ? marca : "",
+    color: UUID.test(color) ? color : "",
     oferta: texto(params.oferta) === "1",
     orden: ORDENES_DE_TIENDA.some((o) => o.valor === orden)
       ? (orden as OrdenDeTienda)
@@ -109,6 +117,7 @@ export function urlDeTienda(
   if (f.q) params.set("q", f.q);
   if (f.categoria) params.set("categoria", f.categoria);
   if (f.marca) params.set("marca", f.marca);
+  if (f.color) params.set("color", f.color);
   if (f.oferta) params.set("oferta", "1");
   if (f.orden !== "relevancia") params.set("orden", f.orden);
   if (f.pagina > 1) params.set("pagina", String(f.pagina));
@@ -135,7 +144,23 @@ export function urlDePagina(
 
 /** Si hay algo que limpiar: búsqueda o filtros, no el orden ni la página. */
 export function hayFiltrosDeTienda(f: FiltrosDeTienda): boolean {
-  return f.q !== "" || f.categoria !== "" || f.marca !== "" || f.oferta;
+  return contarFiltrosDeTienda(f) > 0 || f.q !== "";
+}
+
+/**
+ * Cuántos filtros hay puestos, para el contador del botón «Filtros».
+ *
+ * **La búsqueda no cuenta.** Tiene su propio campo a la vista al lado del
+ * botón: sumarla haría que el contador diga «2» con un solo filtro elegido, y
+ * el número dejaría de corresponderse con lo que se ve al abrir el panel.
+ */
+export function contarFiltrosDeTienda(f: FiltrosDeTienda): number {
+  return (
+    (f.categoria ? 1 : 0) +
+    (f.marca ? 1 : 0) +
+    (f.color ? 1 : 0) +
+    (f.oferta ? 1 : 0)
+  );
 }
 
 /** Limpia búsqueda y filtros; conserva el orden elegido (§10.2). */

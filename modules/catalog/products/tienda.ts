@@ -50,6 +50,18 @@ function condiciones(f: FiltrosDeTienda): SQL {
   if (f.q) partes.push(condicionDeBusqueda(f.q));
   if (f.categoria) partes.push(sql`p.category_id = ${f.categoria}`);
   if (f.marca) partes.push(sql`p.brand_id = ${f.marca}`);
+
+  // RF-02: «muestra el producto si ALGUNA de sus variantes tiene ese color».
+  // Por eso es un EXISTS y no un JOIN: con el join, un producto que tiene el
+  // color en tres variantes aparecería tres veces en la grilla y contaría tres
+  // veces en el total.
+  if (f.color) {
+    partes.push(sql`EXISTS (
+      SELECT 1 FROM product_variants v
+       WHERE v.product_id = p.id AND v.is_active AND v.color_id = ${f.color}
+    )`);
+  }
+
   if (f.oferta) partes.push(sql`p.discount > 0`);
 
   return sql.join(partes, sql` AND `);
@@ -175,6 +187,9 @@ export async function leerPaginaDelCatalogo(
 
 export type OpcionDeFiltro = { id: string; nombre: string; cuantos: number };
 
+/** Un color además se dibuja, así que viaja con su hexadecimal (§6.5). */
+export type OpcionDeColor = OpcionDeFiltro & { hex: string };
+
 /**
  * Las marcas y categorías que tienen algo que mostrar, con cuántos.
  *
@@ -186,8 +201,9 @@ export type OpcionDeFiltro = { id: string; nombre: string; cuantos: number };
 export async function leerOpcionesDeFiltro(): Promise<{
   categorias: OpcionDeFiltro[];
   marcas: OpcionDeFiltro[];
+  colores: OpcionDeColor[];
 }> {
-  const [categorias, marcas] = await Promise.all([
+  const [categorias, marcas, colores] = await Promise.all([
     db.execute<OpcionDeFiltro>(sql`
       SELECT c.id, c.name AS nombre, count(p.id)::int AS cuantos
         FROM categories c
@@ -201,7 +217,24 @@ export async function leerOpcionesDeFiltro(): Promise<{
         JOIN products p ON p.brand_id = b.id AND p.is_active
        GROUP BY b.id
        ORDER BY immutable_unaccent(lower(b.name))`),
+
+    // `count(DISTINCT p.id)`, no `count(p.id)`: un producto con dos variantes
+    // negras se contaría dos veces y el número al lado del color mentiría.
+    db.execute<OpcionDeColor>(sql`
+      SELECT co.id,
+             co.name              AS nombre,
+             co.hex_code          AS hex,
+             count(DISTINCT p.id)::int AS cuantos
+        FROM colors co
+        JOIN product_variants v ON v.color_id = co.id AND v.is_active
+        JOIN products p ON p.id = v.product_id AND p.is_active
+       GROUP BY co.id
+       ORDER BY immutable_unaccent(lower(co.name))`),
   ]);
 
-  return { categorias: [...categorias], marcas: [...marcas] };
+  return {
+    categorias: [...categorias],
+    marcas: [...marcas],
+    colores: [...colores],
+  };
 }

@@ -607,11 +607,18 @@ Sin *hero* fotográfico: el hero es el buscador. Es una tienda de reventa, no un
 
 ### 7.2 Catálogo
 
-- **Escritorio:** filtros en columna izquierda de 260px, grilla de 4 columnas a la derecha.
-- **Móvil:** botón «Filtros» que abre un panel inferior deslizable; la grilla pasa a 2 columnas.
-- Los filtros aplicados aparecen como **chips removibles** arriba de la grilla, con «Limpiar todo».
-- El ordenamiento es un desplegable arriba a la derecha, junto al conteo de resultados.
+> **Reescrita en F3.8.** Antes decía «filtros en columna izquierda de 260px». El canvas aprobado propone una barra con panel desplegable, y se adoptó: la columna lateral se come 260px de los 1200 —el 22%— para algo que se toca una vez y después estorba durante toda la sesión.
+
+- **Una barra de tres controles**, del mismo alto (48px), encima de la grilla: buscador píldora que ocupa el espacio sobrante, botón «Filtros» y desplegable de orden. Tres alturas distintas en una fila se leen como un error.
+- **El botón «Filtros» lleva el número de filtros puestos** en un círculo burdeos. La búsqueda no se cuenta ahí: tiene su propio campo al lado, y sumarla haría que el número no se corresponda con lo que se ve al abrir.
+- **El panel se despliega de lado a lado por debajo de la barra**, no del ancho del botón, y se posiciona sobre la grilla en vez de empujarla. Abre con un `<details>` nativo: sin JavaScript, con teclado, y conservando su estado entre navegaciones — tocar un chip no lo cierra.
+- **Dentro del panel, todo son chips con su conteo**: categoría, marca y color, cada grupo con su encabezado. El color suma un punto relleno con su hexadecimal. El descuento es la excepción y se dibuja como casilla: no es una opción entre varias, es sí o no.
+- Los filtros aplicados aparecen además como **chips removibles** arriba de la grilla, con «Limpiar todo», porque con el panel cerrado son la única señal de por qué hay nueve resultados.
+- El conteo de resultados va a la derecha de esos chips, y es `aria-live`.
+- **El `<h1>` dice qué se está mirando**: el término buscado, el nombre de la categoría elegida, o «Todos los productos».
 - La grilla es 2 / 3 / 4 columnas según ancho, con 16px de separación.
+
+**Limitación registrada:** categoría, marca y color son de **selección única**; RF-02 los pide multiselección. Filtrar por los tres a la vez ya se puede; lo que no se puede es elegir dos marcas. Tampoco está el rango de precio de RF-02. Son funciones pendientes, no decisiones de diseño.
 
 ### 7.3 Ficha de producto
 
