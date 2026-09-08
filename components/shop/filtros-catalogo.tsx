@@ -17,7 +17,7 @@ import type {
   OpcionDeColor,
   OpcionDeFiltro,
 } from "@/modules/catalog/products/tienda";
-import { cn } from "@/lib/utils";
+import { AREA_TACTIL, cn } from "@/lib/utils";
 
 /**
  * Filtros del catálogo — F3.8, RF-02, §7.2.
@@ -35,21 +35,6 @@ import { cn } from "@/lib/utils";
  * chip, que es lo que pasaría si React se lo reescribiera en cada render.
  */
 
-/**
- * El área táctil de 44px de §9, sin agrandar el dibujo.
- *
- * Los chips del panel miden 38px de alto y los de arriba de la grilla 30: en
- * escritorio no molesta, pero §9 pide 44 **en móvil**, que es donde va a estar
- * la mayoría. Agrandar la píldora cambiaría la composición aprobada en F3.8;
- * lo que está chico no es el chip, es el blanco al que hay que apuntar.
- *
- * El pseudo-elemento se estira sobre el elemento sin ocupar espacio ni pintar
- * nada. Va con `relative` en quien lo use, y **hay que mirar la separación
- * entre filas**: lo que sobresale de cada lado tiene que caber en ella o dos
- * filas se pisan el blanco.
- */
-const AREA_TACTIL =
-  "after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']";
 
 type Props = {
   filtros: FiltrosDeTienda;

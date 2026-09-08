@@ -540,15 +540,73 @@ vez de «9 productos». Un número suelto no dice qué cambió. Ahora es
 campos pero dejaría a este grupo fuera del recorrido por encabezados mientras
 los otros tres son `h3`.
 
-**Lo que la auditoría no pudo hacer.** El detector de `impeccable` sabe abrir
-una URL con el ancho que se le pida —`--viewport 390x844`— y ahí habría
-salido la revisión móvil que falta desde F3.5. Necesita `puppeteer`, que no
-está instalado. **Es la tercera vez que la misma falta frena lo mismo**, y la
-decisión de instalar un navegador propio sigue siendo tuya.
+**Lo que la auditoría no pudo hacer** —y se destrabó horas después. El
+detector de `impeccable` sabe abrir una URL con el ancho que se le pida
+—`--viewport 390x844`— pero necesita `puppeteer`, que no estaba instalado, y
+era la tercera vez que la misma falta frenaba lo mismo. Se resolvió con
+**Playwright**, que ya estaba elegido en TS §2.1 y da las mismas medidas sin
+un segundo navegador sin cabeza. Lo que salió de ahí está más abajo.
 
 **Lo que quedó afuera a propósito.** El botón del buscador mide 40px y el logo
 del encabezado 32: están en la misma pantalla y son de F1.13 y F3.8, no de
-F3.4. Se anotan y no se tocan.
+F3.4. Se anotan y no se tocan. *(Arreglados el 2026-09-08 en la pasada de
+móvil, junto con los del pie y los de la ficha.)*
+
+---
+
+### El teléfono deja de ser una suposición (2026-09-08)
+
+Hasta hoy la tienda **nunca se había visto en un teléfono**. Ni pantalla
+completa, ni modo dispositivo, ni nada que midiera: cada decisión de móvil se
+tomó de memoria y cada auditoría terminó con la misma frase, «falta la revisión
+móvil». Se instaló **Playwright** —sólo Chromium— y se abrieron el catálogo y la
+ficha a 390×844 con `isMobile` y `hasTouch`.
+
+**Lo bueno primero, porque también es un resultado**: no hay desborde
+horizontal en ninguna de las tres pantallas, no hay errores de consola, las
+muestras de color de la ficha miden **exactamente 44×44**, y el panel de
+filtros se lee bien —los chips entran de a tres y los grupos se distinguen—.
+Nada de eso estaba comprobado antes de hoy.
+
+**Los campos ampliaban la pantalla del iPhone.** Es el hallazgo que no se ve
+mirando: iOS Safari agranda la página entera al enfocar un campo con menos de
+16px y **no la devuelve al salir**. El comprador escribe una palabra en el
+buscador y se queda con la tienda ampliada y corrida, sin entender qué hizo.
+Estaban en 14px el buscador del encabezado, los dos campos del rango de precio
+de F3.4 y el selector de «Ordenar por», que también lo dispara al abrirse.
+Pasan a 16px **sólo en teléfono**; en escritorio siguen los 14px del sistema.
+
+**Nueve controles más por debajo de los 44px de §9**, ahora medidos en el
+aparato y no estimados: el logo 32×32 y la píldora del carrito 40 de alto en el
+encabezado; los cuatro enlaces legales del pie, 17; «Guardar», «Compartir» y
+«Garantías y devoluciones» de la ficha, 40; las dos migas de pan, 17; y el
+botón de enviar del buscador de página, 40×40.
+
+Se arreglan de las tres maneras que corresponden, y la elección de cuál no es
+de estilo:
+
+- **Estirando el área y no el dibujo**, con el `::after` que ya usaba la barra
+  de filtros, donde el tamaño está fijado por otra regla: el isotipo, porque
+  §2.3 fija sus 32px, y las migas, porque son texto. El pseudo-elemento subió
+  a `lib/utils.ts` —`AREA_TACTIL` y `AREA_TACTIL_CUADRADA`— la tercera vez que
+  hizo falta.
+- **Dándole altura de verdad a la fila** en el pie. Ahí el `::after` no sirve:
+  con 8px entre filas, lo que sobresale de una se mete en la de al lado y el
+  dedo activa el enlace equivocado. El pie crece 84px en teléfono y queda igual
+  en escritorio.
+- **En la variante y no en la llamada** para el botón `md`, que son 40px y es
+  el tamaño por defecto. Arreglar las tres llamadas de la ficha dejaba el mismo
+  defecto en el carrito, el checkout y todo lo que venga.
+
+**§9 dice «44×44px en móvil», y se respeta al pie de la letra**: todo va con
+`max-md:`. En escritorio no se movió un píxel, y está comprobado midiendo
+—logo 137×32, carrito 63×40, encabezado 56, enlace del pie 20, pie 335px, los
+mismos números que antes—. Las zonas invisibles sí se verificaron a mano: el
+dedo agarra el logo 5px por fuera del dibujo en las cuatro direcciones, y las
+migas 12px arriba y abajo.
+
+**Lo que no se tocó** está en «Pendiente detectado»: el panel de filtros se
+corta en el teléfono y arreglarlo cambia §7.2, que está aprobada.
 
 ---
 
@@ -946,11 +1004,21 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 
 ## Pendiente detectado, sin tarea propia
 
-**Dos controles del encabezado por debajo del mínimo táctil de §9.** El botón
-de enviar del buscador mide 40×40 y el enlace del logo 32 de alto. Salieron
-midiendo el catálogo para cerrar F3.4, pero son de F1.13 y F3.8: se anotan y
-no se tocan, porque el encabezado está en todas las pantallas y cambiarlo de
-paso es cambiar algo que nadie revisó.
+**~~Dos controles del encabezado por debajo del mínimo táctil de §9.~~**
+Resuelto el 2026-09-08. Se anotaron acá porque el encabezado está en todas las
+pantallas y cambiarlo de paso era cambiar algo que nadie había revisado; se
+tocaron cuando la revisión existió y alcanzó también al pie y a la ficha. Ver
+«El teléfono deja de ser una suposición», más arriba.
+
+**El panel de filtros se corta en el teléfono, y no parece que se corte.** El
+contenido mide 708px y la ventana 512 (`max-h-[min(70vh,32rem)]`): `Hasta`,
+«Solo con descuento», `Aplicar` y `Limpiar` quedan detrás de un scroll interno
+sin ninguna señal —el corte cae en la mitad del campo `Desde` y el borde
+redondeado se lee como el final del panel—. Encima el gesto es ambiguo: el
+dedo sobre el panel mueve el panel y un centímetro más abajo mueve la página.
+Lo que haría es que en menos de `md` deje de ser un desplegable y pase a ser
+una hoja a pantalla completa con `Aplicar` y `Limpiar` fijos abajo, **pero eso
+cambia §7.2, que está aprobada**, así que se anota y no se toca.
 
 
 **El checkout cambió en la especificación y no está construido.** RF-11 pasó de

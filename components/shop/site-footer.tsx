@@ -66,12 +66,19 @@ export function SiteFooter({
             <h2 className="text-caption tracking-wide text-white/70 uppercase">
               Información
             </h2>
-            <ul className="flex flex-col gap-2">
+            {/*
+              44px de alto por fila en teléfono (§9). Acá no sirve
+              `AREA_TACTIL`: con 8px entre filas, lo que sobresale de una se
+              mete en la de al lado y el dedo activa el enlace equivocado. La
+              fila gana altura de verdad y el `gap` se va, que es lo mismo por
+              otro lado. En escritorio queda como estaba.
+            */}
+            <ul className="flex flex-col gap-2 max-md:gap-0">
               {LEGALES.map((l) => (
                 <li key={l.slug}>
                   <Link
                     href={`/legales/${l.slug}`}
-                    className="rounded-pill text-body-sm text-white/75 underline-offset-4 transition-colors duration-150 hover:text-ink-inverse hover:underline"
+                    className="inline-flex items-center rounded-pill text-body-sm text-white/75 underline-offset-4 transition-colors duration-150 max-md:min-h-11 hover:text-ink-inverse hover:underline"
                   >
                     {l.titulo}
                   </Link>

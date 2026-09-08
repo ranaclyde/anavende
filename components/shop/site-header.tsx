@@ -88,7 +88,7 @@ export function SiteHeader({
           */}
           <Link
             href="/carrito"
-            className="ml-1 flex h-10 items-center gap-2 rounded-pill border border-border bg-surface px-3.5 text-body-sm text-ink shadow-sm transition-shadow duration-150 hover:shadow-md"
+            className="ml-1 flex h-10 max-md:h-11 items-center gap-2 rounded-pill border border-border bg-surface px-3.5 text-body-sm text-ink shadow-sm transition-shadow duration-150 hover:shadow-md"
           >
             <ShoppingCart aria-hidden className="size-4 shrink-0" />
             <span aria-hidden className="tabular-nums">

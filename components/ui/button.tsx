@@ -38,7 +38,12 @@ const buttonVariants = cva(
       size: {
         // Tienda: píldora. Panel: 8px de radio (§3.5).
         sm: "h-8 rounded-pill px-3 text-body-sm admin:rounded-panel-control",
-        md: "h-10 rounded-pill px-4 text-body-sm admin:rounded-panel-control",
+        // `max-md:h-11`: los 40px de `h-10` quedan cuatro por debajo del
+        // mínimo táctil de §9, y este es el tamaño por defecto —lo usan
+        // Guardar, Compartir y «Garantías y devoluciones» de la ficha, y todo
+        // lo que venga—. Se arregla en la variante y no en cada llamada, o el
+        // próximo botón nace con el mismo problema.
+        md: "h-10 max-md:h-11 rounded-pill px-4 text-body-sm admin:rounded-panel-control",
         lg: "h-12 rounded-pill px-6 text-body admin:h-10 admin:rounded-panel-control admin:text-body-sm",
         // Cuadrado para acciones de solo ícono. 44px de área táctil en móvil (§9).
         icon: "size-11 rounded-pill admin:size-9 admin:rounded-panel-control",

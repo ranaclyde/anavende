@@ -9,6 +9,7 @@ import { Precio } from "@/components/shop/precio";
 import { Button } from "@/components/ui/button";
 import { urlDelSitio } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
+import { AREA_TACTIL, cn } from "@/lib/utils";
 import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
 import { leerFicha, varianteInicial } from "@/modules/catalog/products/ficha";
 import {
@@ -156,7 +157,15 @@ function Migas({
     <nav aria-label="Miga de pan" className="pb-6">
       <ol className="flex flex-wrap items-center gap-1 text-body-sm text-ink-secondary">
         <li>
-          <Link href="/productos" className="rounded-pill hover:text-ink">
+          {/*
+            El texto de la miga mide 17px de alto: se le estira la zona
+            sensible a 44 sin tocar el dibujo (§9). La fila está sola, así que
+            lo que sobresale no pisa nada.
+          */}
+          <Link
+            href="/productos"
+            className={cn("relative rounded-pill hover:text-ink", AREA_TACTIL)}
+          >
             Catálogo
           </Link>
         </li>
@@ -166,7 +175,7 @@ function Migas({
         <li>
           <Link
             href={urlDeTienda({ categoria: [categoriaId] })}
-            className="rounded-pill hover:text-ink"
+            className={cn("relative rounded-pill hover:text-ink", AREA_TACTIL)}
           >
             {categoria}
           </Link>

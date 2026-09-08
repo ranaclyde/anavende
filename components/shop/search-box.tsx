@@ -176,7 +176,8 @@ export function SearchBox({
         className={cn(
           "absolute top-1/2 right-1 grid -translate-y-1/2 place-items-center",
           "rounded-pill bg-brand text-ink-inverse shadow-brand",
-          compacto ? "size-8" : "size-10",
+          // 44px en teléfono (§9): entra en el campo de 48 sin tocarlo.
+          compacto ? "size-8" : "size-10 max-md:size-11",
           // La sombra propia pisa la del anillo: acá se vuelve a pedir.
           "focus-visible:shadow-focus",
           "transition-colors duration-150 hover:bg-brand-hover active:bg-brand-active",

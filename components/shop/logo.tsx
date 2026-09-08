@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import isotipo from "@/public/marca/logo.png";
 import isotipoClaro from "@/public/marca/logo-claro.png";
-import { cn } from "@/lib/utils";
+import { AREA_TACTIL_CUADRADA, cn } from "@/lib/utils";
 
 /**
  * Isotipo y logo — DESIGN-REFERENCE §2.3.
@@ -34,7 +34,11 @@ export function Logo({
     <Link
       href={href}
       className={cn(
-        "inline-flex shrink-0 items-center gap-2.5 rounded-pill",
+        "relative inline-flex shrink-0 items-center gap-2.5 rounded-pill",
+        // Con el wordmark oculto queda un enlace de 32×32, por debajo de los
+        // 44 de §9. La marca no se agranda —§2.3 fija ese tamaño de uso—, así
+        // que lo que crece es la zona que responde al dedo.
+        AREA_TACTIL_CUADRADA,
         className,
       )}
       aria-label="AnaVende, ir al inicio"
