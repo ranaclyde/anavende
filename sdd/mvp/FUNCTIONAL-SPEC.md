@@ -348,7 +348,7 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 
 **Contenido:**
 1. **Tus datos** — nombre, email, teléfono (editable, requerido).
-2. **Entrega** — elección entre **envío a domicilio** y **retiro en el punto de entrega** (RN-10). Con envío: dirección predeterminada preseleccionada, con opción de elegir otra o cargar una nueva; con retiro no se pide dirección. Aviso: *«Entregamos en Viedma, Carmen de Patagones y alrededores. El costo del envío se coordina y abona junto con el pago por WhatsApp.»*
+2. **Entrega** — **tres opciones**: *que me lo envíen*, *lo retiro* o *coordinar con la vendedora*. Sólo la primera pide **dirección** —la predeterminada preseleccionada, con opción de elegir otra o cargar una nueva—, y la pide **para coordinar el envío**, no para calcularlo. Aviso: *«Entregamos en Viedma, Carmen de Patagones y alrededores. El costo del envío se coordina y abona junto con el pago por WhatsApp.»*
 3. **Resumen** — ítems con color, cantidad, precio unitario y subtotal; total de productos.
 4. **Medios de pago** — informativos, según configuración del panel.
 5. **Confirmación** — botón «Confirmar pedido» + leyenda de que el pago se coordina por WhatsApp.
@@ -357,7 +357,8 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 - [ ] El total del checkout **no incluye costo de envío** (RN-10).
 - [ ] Antes de confirmar se revalida stock y precio; si algo cambió, se avisa y se pide reconfirmar en vez de crear la orden silenciosamente.
 - [ ] Un email no verificado impide confirmar, con acción para reenviar la verificación.
-- [ ] Faltando teléfono o dirección, el botón de confirmación está deshabilitado con la razón visible.
+- [ ] Faltando teléfono, el botón de confirmación está deshabilitado con la razón visible. **La dirección sólo se exige con «que me lo envíen»**: con las otras dos opciones no se pide y no bloquea.
+- [ ] La opción elegida queda guardada en la orden: es lo primero que la vendedora necesita saber al abrirla.
 
 ---
 
@@ -992,7 +993,8 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-08-30 | Dos roles: `admin` y `customer` | Un solo operador en el MVP |
 | 2026-08-30 | Reportes exportables a Excel | Pedido explícito para control offline |
 | 2026-09-08 | RN-10 pasa de nombrar a **PedidosYa** a nombrar la **zona**: Viedma, Carmen de Patagones y alrededores | La empresa de mensajería puede cambiar; lo que decide si alguien puede comprar acá es hasta dónde llegamos, no quién lleva el paquete |
-| 2026-09-08 | Se agrega el **retiro en el punto de entrega** como segunda forma de recibir | Es lo que ya se hace. Obliga a que el checkout (RF-11) elija entre envío y retiro, y no sólo entre direcciones |
+| 2026-09-08 | Se agrega el **retiro en el punto de entrega** como segunda forma de recibir | Es lo que ya se hace |
+| 2026-09-08 | El checkout (RF-11) elige entre **envío, retiro y coordinar**, y sólo el envío pide dirección | Pedido tuyo. La dirección deja de ser un paso obligatorio del checkout y pasa a ser un dato del envío: quien retira o quien prefiere hablarlo no tiene por qué cargar una calle para poder confirmar |
 | 2026-09-08 | La ficha **no dibuja los logos de medios de pago**: los nombra | Una tira de logos en la pantalla de venta se lee como «pagá acá», y acá no se paga (RN-01, RN-08). Los logos siguen en el pie y en la home |
 | 2026-09-08 | La ficha declara que los productos son **nuevos y en su caja original** | No se venden reacondicionados. Es texto fijo y no un dato por producto: el día que eso cambie, cambia el modelo y no una frase |
 | 2026-09-02 | La vinculación de cuentas exige que el email original esté verificado | Protección contra apropiación previa de cuenta |

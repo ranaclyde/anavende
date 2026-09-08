@@ -254,7 +254,7 @@ F10 Endurecimiento y lanzamiento
 
 | ID | Tarea | Tam. | Referencias | Hecho cuando |
 |---|---|---|---|---|
-| **F6.1** | Checkout | **L** | FS RF-11 · DR §7 | Datos, **elección entre envío a domicilio y retiro en el punto de entrega** (RN-10, 2026-09-08) —con retiro no se pide dirección—, resumen y medios de pago. **Sin costo de envío**. Email no verificado impide confirmar |
+| **F6.1** | Checkout | **L** | FS RF-11 · DR §7 | Datos, **elección entre envío, retiro y coordinar con la vendedora** (2026-09-08) —**sólo el envío pide dirección**, y la pide para coordinarlo, no para calcularlo—, resumen y medios de pago. La opción elegida queda en la orden. **Sin costo de envío** (RN-10). Email no verificado impide confirmar |
 | **F6.2** | Reconfirmación ante cambios | M | FS RF-11 · TS §8.4 paso 3 | Si el precio o el stock cambió entre ver y confirmar, **se avisa y se pide reconfirmar**; no se crea la orden en silencio |
 | **F6.3** | Confirmación: pantalla de éxito y WhatsApp | M | FS RF-12 · DR §7.5 | Número de orden, resumen y botón de WhatsApp como acción principal. Recargar no duplica |
 | **F6.4** | Email E4 a la administradora, sobre el layout de F1.8 | S | FS RF-30 · TS §14 | Llega con el detalle completo y enlace al panel. **Si falla, la orden se crea igual**. Acá se escribe también su plantilla: el layout compartido ya existe desde F1.8, lo que faltaba era la orden que le da contenido |

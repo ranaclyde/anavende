@@ -378,10 +378,14 @@ llegamos es lo que decide si alguien puede comprar acá— y suma el **retiro en
 punto de entrega**. Los cinco lugares del código que la nombraban ya no lo
 hacen.
 
-**Eso deja al checkout con una tarea distinta de la que tenía escrita.** RF-11
-decía «elegí una dirección»; con retiro pasa a ser «envío o retiro», y con
-retiro no se pide dirección. Está escrito en RF-11 y en F6.1, y **no
-construido**: F6 no empezó.
+**El checkout se tocó de más y se corrigió el mismo día.** Yo había dicho que
+lo dejaba anotado y no lo tocaba, y después edité RF-11 y F6.1 igual —y encima
+con dos opciones, que no era lo que querías—. Corregido con lo que dijiste:
+**tres opciones —envío, retiro o coordinar con la vendedora— y sólo el envío
+pide dirección**, que se pide para coordinar el envío y no para calcularlo. Es
+un cambio de RF-11, no de RN-10: la regla sigue describiendo dos formas de
+recibir, y «coordinar» no es una tercera forma sino no elegir todavía. **No
+está construido**: F6 no empezó.
 
 **La galería.** Las miniaturas se mudaron a la izquierda y **se dibujan siempre,
 aunque haya una sola foto**: es el arreglo del salto que reportaste. Ocupan una
@@ -725,7 +729,7 @@ Cada una se escribió primero en la especificación y después en el código
 | **La tarjeta muestra dos números, no cuatro** | `DESIGN-REFERENCE.md` §6.1 y §6.7 | Llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, tachado primero, como se lee un cartel. **No es una desviación del canvas ni de la referencia**: §6.1 ya dibujaba dos números; el «Ahorrás» venía de §6.7, que es el componente genérico. *(Ampliada el 2026-09-08: la regla dejó de ser de la tarjeta y pasó a ser de toda la tienda — RN-04c, la fila de abajo. El «Ahorrás» tampoco sigue vivo en la ficha.)* |
 | **RN-04c: una oferta son dos números, nunca tres** | `FUNCTIONAL-SPEC.md` RN-04c, RF-02, RF-03; `TECHNICAL-SPEC.md` §7.2; `DESIGN-REFERENCE.md` §6.1, §6.7, §7.3 y §14 | Decisión tuya. La tarjeta ya lo hacía desde F3.8 y **RF-02 seguía pidiendo lo contrario**: un criterio de aceptación que el código incumplía sin que ninguno de los dos estuviera mal a propósito. En vez de corregir RF-02 para que describiera la tarjeta, la regla subió a la tienda entera — el tachado sobre el final ya dice cuánto bajó, y enunciar el ahorro es la misma oferta dicha de nuevo. La ficha era la única pantalla que lo llevaba, y no llegó a tener consumidor: se fue antes de estrenarse |
 | **La vista previa del panel también pierde el «Ahorrás»** | `components/admin/productos/formulario.tsx` | RN-04c es de la tienda y el panel no entra. Pero esa vista previa dice «Se muestra», así que mostrar de más la volvía mentirosa sobre lo único que promete. Y el número que agregaba era el descuento que Ana acababa de tipear tres campos más arriba. `Vista.ahorro` quedó sin usar y se borró |
-| **RN-10 deja de nombrar a PedidosYa y pasa a nombrar la zona; aparece el retiro** | `FUNCTIONAL-SPEC.md` RN-10, RF-01, RF-03, RF-08, RF-11, RF-29, FA-02, decisiones; `TECHNICAL-SPEC.md` §3; `DESIGN-REFERENCE.md` §5.1, §7.1; `DEVELOPMENT-PLAN.md` F1.13, F3.7, F6.1 | Pedido tuyo, y era más grande que la ficha: la regla exigía el aviso en cuatro pantallas, así que cambiar sólo la ficha dejaba a la tienda contándose dos historias. El efecto lateral que hay que mirar es **el checkout**: RF-11 decía «elegí una dirección» y ahora es «envío o retiro» |
+| **RN-10 deja de nombrar a PedidosYa y pasa a nombrar la zona; aparece el retiro** | `FUNCTIONAL-SPEC.md` RN-10, RF-01, RF-03, RF-08, RF-11, RF-29, FA-02, decisiones; `TECHNICAL-SPEC.md` §3; `DESIGN-REFERENCE.md` §5.1, §7.1; `DEVELOPMENT-PLAN.md` F1.13, F3.7, F6.1 | Pedido tuyo, y era más grande que la ficha: la regla exigía el aviso en cuatro pantallas, así que cambiar sólo la ficha dejaba a la tienda contándose dos historias. El efecto lateral está en **el checkout**, y ahí me pasé: dije que lo anotaba y lo edité igual. Corregido con lo que aclaraste — RF-11 ofrece **envío, retiro o coordinar**, y sólo el envío pide dirección |
 | **Los medios de pago se nombran en la ficha en vez de dibujarse** | `FUNCTIONAL-SPEC.md` RF-03 y decisiones; `DESIGN-REFERENCE.md` §7.3, §14 | Pedido tuyo. Una tira de logos en la pantalla de venta se lee como «pagá acá», y acá no se paga. No se agregó el enlace a «qué medios aceptamos» que mencionaste: sería el sexto enlace apuntando a un `/legales/` que no existe hasta F9.3 |
 | **La ficha declara que los productos son nuevos y en su caja original** | `FUNCTIONAL-SPEC.md` RF-03 y decisiones | Preguntado y contestado: no se venden reacondicionados. Va como texto fijo y no como dato por producto, porque el día que eso cambie cambia el modelo, no una frase |
 | **La galería cambia de forma: miniaturas a la izquierda y siempre visibles, sin botón de ampliar, con visor de dos niveles** | `DESIGN-REFERENCE.md` §6.8 (reescrita) y §14; `TECHNICAL-SPEC.md` §9.3; `DEVELOPMENT-PLAN.md` F3.5 | Pedido tuyo, y el primer punto arregla un error que reportaste: la foto se corría de lugar al cambiar a un color con menos fotos. TS §9.3 tuvo que registrar **la única excepción a `next/image`** del proyecto: el zoom es «el tamaño real del archivo» y el optimizador devuelve el ancho que él elige |
@@ -840,11 +844,11 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 
 ## Pendiente detectado, sin tarea propia
 
-**El checkout ya no es el que está construido en la especificación.** Con el
-retiro en el punto de entrega (RN-10, 2026-09-08), RF-11 dejó de ser «elegí una
-dirección» y pasó a ser «envío o retiro», y con retiro no se pide dirección.
-Está escrito en RF-11 y en F6.1; no está construido porque F6 no empezó. Se
-anota acá para que no llegue como sorpresa el día que se abra la tarea.
+**El checkout cambió en la especificación y no está construido.** RF-11 pasó de
+«elegí una dirección» a **elegir entre envío, retiro o coordinar con la
+vendedora**, y sólo el envío pide dirección (2026-09-08). Está en RF-11 y en
+F6.1; no está construido porque F6 no empezó. Se anota para que no llegue como
+sorpresa el día que se abra la tarea.
 
 **El navegador de esta máquina no entrega cuadros.** `requestAnimationFrame` no
 dispara nunca, y de ahí salen tres síntomas que ya costaron tiempo: el cambio de
