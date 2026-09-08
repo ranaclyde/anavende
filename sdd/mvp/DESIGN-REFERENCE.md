@@ -342,7 +342,7 @@ El sistema tiene **una paleta y una tipografía**, pero **dos escalas de densida
 │                    máx. 1200px                           │
 │                                                          │
 ├──────────────────────────────────────────────────────────┤
-│  Envíos por PedidosYa · Medios de pago · Legales         │  pie oscuro
+│  Zona de entrega y retiro · Medios de pago · Legales      │  pie oscuro
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -527,10 +527,32 @@ El tachado va **primero en la tarjeta** porque así se lee un cartel de oferta �
 
 ### 6.8 Galería de la ficha
 
-- **Escritorio:** imagen principal grande a la izquierda, tira vertical de miniaturas de 64px. Clic amplía en modal.
-- **Móvil:** carrusel deslizable a ancho completo con puntos indicadores.
+- **Escritorio:** tira vertical de miniaturas de 64px **a la izquierda**, imagen principal grande a la derecha, y flechas ‹ › sobre los bordes de la foto. La foto entera abre el visor.
+- **Móvil:** carrusel deslizable a ancho completo con puntos indicadores. Sin miniaturas y sin flechas: el dedo ya hace las dos cosas.
 - Relación 1:1, `object-fit: contain` sobre superficie blanca — los periféricos suelen venir con fondo blanco y recortarlos los mutila.
+- **La foto llega al borde de la tarjeta y la recorta su radio.** Nada de relleno alrededor: un marco blanco adentro de una tarjeta blanca no se lee como marco, sólo como una foto más chica.
 - Al cambiar de color, la galería se reemplaza con una transición de opacidad de 150ms.
+
+**Las miniaturas se dibujan siempre, aunque haya una sola foto.** Ocupan una columna de la fila, así que esconderlas con menos de dos corre la foto principal de lugar al pasar de un color con tres fotos a uno con una. Ese salto no se lee como «este color tiene menos fotos»: se lee como que la página se movió sola. Lo mismo vale para la fila de puntos en el teléfono, que se reserva aunque quede vacía.
+
+**Las miniaturas van primero en el DOM**, que es donde se ven. Se puede dejar la foto primera y girar la fila con `flex-row-reverse`, y eso es exactamente el desacuerdo entre orden visual y orden de lectura que §9 no permite.
+
+**Las flechas se apagan en las puntas, no dan la vuelta.** Con encastre de desplazamiento, saltar de la última a la primera arrastra la pista entera de un lado al otro y se ve como un error.
+
+#### Visor ampliado
+
+No hay botón de ampliar: **lo anuncia el cursor** —lupa con más sobre la foto—. Un ícono de 36px en una esquina le pide a alguien que descubra un control para hacer lo que ya intentó, que es tocar la foto.
+
+El visor ocupa casi toda la pantalla, con las miniaturas a la izquierda, las flechas abajo a la derecha y la cruz arriba a la derecha. **Un clic en cualquier lugar que no sea un control cierra**: sin eso, la única salida sería esa cruz.
+
+Tiene **dos niveles**:
+
+1. **Encuadrada** — la foto entera, achicada para entrar en la pantalla. Cursor: lupa con más.
+2. **Tamaño real** — la foto a sus píxeles, recorrible moviendo el mouse. Cursor: lupa con menos. Es lo que hace falta para mirar de cerca la textura de una tecla o lo que dice una etiqueta, y encuadrar una foto es casi siempre achicarla.
+
+Entre los dos hay **una transición, no un salto**: la foto está siempre puesta a su tamaño natural y es `transform` quien la encoge (`scale`) o la corre (`translate`), así que el navegador interpola entre las dos formas. Se entra **centrado en el punto donde se hizo clic**: quien apuntó a la etiqueta espera ver la etiqueta, no el centro de la foto.
+
+Si la foto ya entra a 1:1 no hay segundo nivel y el cursor no lo promete — pasa con las fotos chicas, que es un caso real.
 
 ### 6.9 Tabla del panel
 
@@ -615,7 +637,7 @@ Dos piezas de la misma decisión (FS RF-15): dónde se escribe la descripción y
 │  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │
 ├──────────────────────── 80px ──────────────────────┤
 │  Medios de pago:  [logo] [logo] [logo]             │
-│  Enviamos por PedidosYa                            │
+│  Entregamos en Viedma, Patagones y alrededores      │
 └────────────────────────────────────────────────────┘
 ```
 
@@ -652,31 +674,51 @@ El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del con
 
 ```
 ┌──────────────────────┬─────────────────────────────┐
-│                  ♡   │  LOGITECH                   │  caption, versalitas
-│                      │  Teclado mecánico K120      │  title 24px
-│      imagen          │                             │
-│      principal       │  $ 24.500,00                │  burdeos, 24px
-│                      │  $ 27.500,00                │  tachado, terciario, 12px
-│  ┌──┐┌──┐┌──┐        │                             │
-│  └──┘└──┘└──┘        │  Color: Negro               │
-│                      │  ● ○ ○ ⊘                    │
-│                      │                             │
+│ ┌──┐                 │  LOGITECH                   │  caption, versalitas
+│ └──┘                 │  Teclado mecánico K120      │  title 24px
+│ ┌──┐    imagen       │                             │
+│ └──┘  principal   ›  │  $ 24.500,00                │  burdeos, 24px
+│ ┌──┐                 │  $ 27.500,00                │  tachado, terciario, 12px
+│ └──┘                 │                             │
+│                      │  Color: Negro               │
+│    ↑ pegada          │  ● ○ ○ ⊘                    │
+│      (sticky)        │                             │
 │                      │  Cantidad  [− 1 +]          │
 │                      │  ✓ 5 disponibles            │
 │                      │                             │
-│                      │  [  Agregar al carrito  ]   │  principal, ancho completo
-│                      │  [ Consultar por WhatsApp ] │  secundario
+│                      │  [  Agregá al carrito  ]    │  principal, ancho completo
+│                      │  [ Comprá ya por WhatsApp ] │  secundario, con ícono
 │                      │                             │
-│                      │  🚚 Enviamos por PedidosYa  │
-│                      │  💳 Medios de pago          │
-│                      │  ↩  Garantías y devoluciones│
+│                      │  [ ♡ Guardar ][ ⤴ Compartir]│  dos secundarios, mitad y mitad
+│                      │  ─────────────────────────  │
+│                      │  Nuevos y en su caja        │
+│                      │  Entrega en Viedma, Carmen  │
+│                      │  de Patagones y alrededores │
+│                      │  Pago al confirmar: …       │
+│                      │                             │
+│                      │  Sobre el producto          │  h2
+│                      │  (descripción enriquecida)  │
+│                      │                             │
+│                      │  ┌─────────────────────────┐│
+│                      │  │ ¿Cómo sigue después de  ││  recuadro, superficie
+│                      │  │  comprar?               ││
+│                      │  │  ① armás el pedido      ││
+│                      │  │  ② confirmamos          ││
+│                      │  │  ③ coordinamos entrega  ││
+│                      │  │  [ ↩ Garantías y dev. ] ││  el botón va ADENTRO
+│                      │  └─────────────────────────┘│
 └──────────────────────┴─────────────────────────────┘
-   Descripción
    ─────────── 64px ───────────
    También te puede interesar        → 4 tarjetas
    ─────────── 64px ───────────
    Productos similares               → 4 tarjetas
 ```
+
+**La columna derecha desplaza y la galería se queda pegada.** La descripción, los datos y el recuadro viven en esa columna, así que es mucho más alta que la foto; sin `sticky`, leer la descripción es perder de vista el producto del que habla. Los bloques de recomendados sí van a lo ancho, debajo de las dos columnas: son otra pantalla dentro de la misma página.
+
+**El corazón NO va sobre la imagen en la ficha**, y sí en la tarjeta (§6.1). Es la misma acción dibujada distinto a propósito: en una grilla el ícono solo es la única forma de que entre, y acá hay lugar para que diga «Guardar» con todas las letras al lado de «Compartir». Un ícono suelto sobre la foto es, además, la única señal que un lector de pantalla no aprovecha sin etiqueta.
+
+**«Agregá al carrito» se dibuja apagado y sin explicación a la vista.** El carrito es F5.5 y todavía no existe; el botón está para ver la composición terminada, y el renglón que explicaba la falta era, en la pantalla, más grande que la falta. El motivo queda para lectores de pantalla (`aria-describedby`) y desaparece con el botón el día que se encienda. Es una excepción anotada a §8, no un olvido.
 
 Para el **visitante sin sesión**, el botón principal dice **«Iniciá sesión para comprar»** y el secundario «Comprar por WhatsApp» (RF-08).
 
@@ -966,4 +1008,14 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | **El color viaja en la dirección como `?color=negro`, no como identificador** | El catálogo filtra por `?color=<uuid>` porque ahí el valor sale de una lista y no lo lee nadie. En la ficha el enlace se manda por WhatsApp (§10.2 es exactamente eso), y `?color=negro` sobrevive a que alguien lo lea en voz alta |
 | **El color cambia con `replaceState`, no con `pushState` ni con una navegación** | Con una navegación —aunque sea blanda— se vuelve al servidor a buscar lo que ya está en memoria y se pierde la transición de 150ms de §6.8. Con `pushState`, mirar tres colores deja tres entradas y el botón atrás recorre colores en vez de volver al catálogo |
 | **La galería es UNA pista con encastre, y no dos galerías** | §6.8 describe dos comportamientos —deslizar en el teléfono, miniaturas en escritorio— y la tentación es escribir dos componentes. Con dos, el índice de la foto que se está viendo vive en dos lugares, y un día dicen cosas distintas |
+| **La galería queda pegada y la columna derecha desplaza** | La descripción se mudó a la columna derecha, que pasó a ser mucho más alta que la foto. Leer «switches lineales» sin el teclado a la vista es leer sobre un producto abstracto |
+| **La descripción se mudó de abajo de la ficha a la columna derecha** | Estaba a lo ancho, debajo de todo, donde llega quien ya decidió. Al lado del precio y del botón llega quien está decidiendo, que es cuando importa |
+| **«Descripción» pasó a llamarse «Sobre el producto»** | El rótulo anterior nombraba el campo de la base, no lo que la persona va a leer |
+| **Se va la tira de logos de medios de pago de la ficha; quedan los nombres** | En la pantalla de venta, una tira de logos se lee como «pagá acá», y acá no se paga. Los logos siguen en el pie y en la home, donde son señal de confianza y no promesa de un botón |
+| **Aparece el recuadro «¿Cómo sigue después de comprar?»** | La tienda no cobra ni despacha sola: el pedido termina en una conversación de WhatsApp. Quien no lo sabe de antemano lee «Comprá ya» y espera un carrito con tarjeta. Decirlo ANTES del botón es la diferencia entre un proceso raro y uno que se entiende |
+| **El botón de garantías vive adentro de ese recuadro** | Es la pregunta que sigue a «coordinamos la entrega» —«¿y si no me sirve?»—. Suelto en la página era un enlace más entre otros |
+| **El corazón sale de la imagen en la ficha y se queda en la tarjeta** | Pedido tuyo del 2026-09-08. En la grilla el ícono solo es lo único que entra; en la ficha hay lugar para la palabra, y una etiqueta escrita le sirve a todo el mundo, no sólo a quien usa lector de pantalla |
+| **Compartir funciona hoy y Guardar no** | No es una inconsistencia: los favoritos necesitan cuenta (F5.4) y compartir no necesita servidor. Dibujar los dos apagados habría escondido el único que ya se puede probar |
+| **El fallo de «Compartir» se dice en pantalla** | El portapapeles necesita contexto seguro, y la tienda se abre a propósito por IP de la LAN para probarla desde el teléfono: ahí no existe. Un botón que se aprieta y no hace nada parece un sitio colgado |
+| **El visor usa `<img>` y no `next/image`, única excepción del proyecto** | El zoom es «el tamaño real del archivo», y el optimizador devuelve el ancho que él elige. Sin ese ancho conocido no hay con qué calcular la escala |
 | **La ficha sin stock aclara que nadie va a avisar** | «Preguntá si va a haber» suena a que el sitio agenda un aviso, y no hay ninguno: la respuesta la da la vendedora por WhatsApp. Prometer de menos y por escrito cuesta un renglón; alguien esperando un mail que no existe cuesta la venta |

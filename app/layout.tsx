@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s · AnaVende",
   },
   description:
-    "Teclados, mouses, auriculares, cables y memorias. Envíos por PedidosYa.",
+    "Teclados, mouses, auriculares, cables y memorias. Entrega en Viedma,\n    Carmen de Patagones y alrededores.",
 };
 
 export default function RootLayout({

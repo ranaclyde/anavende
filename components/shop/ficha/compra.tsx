@@ -1,16 +1,20 @@
 "use client";
 
-import Image from "next/image";
 import { useId, useRef, useState, type ReactNode } from "react";
-import { Ban, Check, Expand, Minus, Plus, ShoppingCart } from "lucide-react";
+import {
+  Ban,
+  Check,
+  Heart,
+  Minus,
+  Plus,
+  Share2,
+  ShoppingCart,
+} from "lucide-react";
 
+import { Galeria, comoDesplazar } from "@/components/shop/ficha/galeria";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { cn } from "@/lib/utils";
 import {
   enlaceDeWhatsApp,
@@ -29,12 +33,18 @@ import type { VarianteDeFicha } from "@/modules/catalog/products/ficha";
  * obligaría a levantar el estado a un tercer componente que igual tendría
  * que ser cliente, y serían tres archivos para una sola decisión.
  *
- * **Lo que NO entra acá entra como nodo.** El nombre, la marca, el precio y
- * el bloque de información son servidor y llegan por `encabezado` e
- * `informacion`: nada de eso depende del color, y meterlo adentro mandaría
- * al navegador el formateador de moneda —`decimal.js` entero— para pintar un
- * número que ya venía pintado. Es la misma decisión que `accionFavorito` en
- * la tarjeta.
+ * **Lo que NO entra acá entra como nodo.** El nombre, la marca, el precio, la
+ * descripción y el bloque de información son servidor y llegan por
+ * `encabezado` e `informacion`: nada de eso depende del color, y meterlo
+ * adentro mandaría al navegador el formateador de moneda —`decimal.js`
+ * entero— y el parseador de Markdown para pintar cosas que ya venían
+ * pintadas.
+ *
+ * **La galería queda pegada y la columna derecha desplaza** (§7.3, decisión
+ * del 2026-09-08). La descripción, los datos y el recuadro de «cómo sigue»
+ * pasaron a la columna derecha, así que esa columna es mucho más alta que la
+ * foto; sin `sticky`, mirar la descripción es perder de vista el producto del
+ * que habla.
  *
  * **`import type` y no `import`**: `modules/catalog/products/ficha` es
  * `server-only`. El tipo se borra al compilar, así que el módulo nunca entra
@@ -65,20 +75,6 @@ type Props = {
   informacion: ReactNode;
 };
 
-/**
- * §8 pide que TODO movimiento se apague bajo `prefers-reduced-motion`, y la
- * regla global de `globals.css` no alcanza acá: apaga `scroll-behavior`, que
- * es la propiedad de CSS, y no el `behavior: "smooth"` que se pasa por
- * JavaScript. Sin esto, mover la galería con las miniaturas seguía siendo un
- * desplazamiento animado para quien pidió que no lo fuera.
- */
-function comoDesplazar(): ScrollBehavior {
-  return typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "instant"
-    : "smooth";
-}
-
 export function Compra({
   producto,
   variantes,
@@ -90,7 +86,6 @@ export function Compra({
   const [iVariante, setVariante] = useState(inicial);
   const [iImagen, setImagen] = useState(0);
   const [cantidad, setCantidad] = useState(1);
-  const [ampliada, setAmpliada] = useState(false);
   const pista = useRef<HTMLUListElement>(null);
 
   const variante = variantes[iVariante];
@@ -150,18 +145,24 @@ export function Compra({
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
-      <Galeria
-        imagenes={imagenes}
-        indice={iImagen}
-        alt={`${producto.nombre} ${producto.marca}`}
-        color={variante?.colorNombre ?? null}
-        pista={pista}
-        onScroll={setImagen}
-        onElegir={irALaImagen}
-        onAmpliar={() => setAmpliada(true)}
-      />
+      {/*
+        `self-start` es lo que hace posible el `sticky`: en una grilla, un
+        elemento estirado ya ocupa toda la altura de la fila y no tiene contra
+        qué pegarse. El `top` son los 56px del encabezado fijo más aire.
+      */}
+      <div className="self-start lg:sticky lg:top-18">
+        <Galeria
+          imagenes={imagenes}
+          indice={iImagen}
+          alt={`${producto.nombre} ${producto.marca}`}
+          color={variante?.colorNombre ?? null}
+          pista={pista}
+          onScroll={setImagen}
+          onElegir={irALaImagen}
+        />
+      </div>
 
-      <div className="flex flex-col">
+      <div className="flex min-w-0 flex-col">
         {encabezado}
 
         {variantes.length > 0 ? (
@@ -199,217 +200,14 @@ export function Compra({
           )}
         </div>
 
+        <AccionesSecundarias
+          nombre={producto.nombre}
+          marca={producto.marca}
+          url={mensaje.url}
+        />
+
         {informacion}
       </div>
-
-      {/*
-        La ampliación es de ESCRITORIO (§6.8). En un teléfono la foto ya ocupa
-        el ancho de la pantalla y el navegador tiene su propio acercamiento con
-        los dedos: un modal ahí es una capa más para cerrar, no una ayuda.
-      */}
-      {imagenes.length > 0 ? (
-        <Dialog open={ampliada} onOpenChange={setAmpliada}>
-          <DialogContent className="max-w-4xl p-3 sm:p-4">
-            <DialogTitle className="sr-only">
-              {producto.nombre} — imagen {iImagen + 1} de {imagenes.length}
-            </DialogTitle>
-            <div className="relative aspect-square w-full overflow-hidden rounded-image bg-surface">
-              <Image
-                src={imagenes[Math.min(iImagen, imagenes.length - 1)].grande}
-                alt={
-                  imagenes[Math.min(iImagen, imagenes.length - 1)].alt ??
-                  `${producto.nombre} ${producto.marca}`
-                }
-                fill
-                sizes="(min-width: 896px) 896px, 100vw"
-                className="object-contain"
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-      ) : null}
-    </div>
-  );
-}
-
-// ── Galería (§6.8) ──────────────────────────────────────────────────────
-
-/**
- * Una sola pista horizontal con scroll de encastre, y dos formas de moverla.
- *
- * En el teléfono se desliza con el dedo y los puntos siguen a la pista; en
- * escritorio la mueven las miniaturas. Es la misma estructura para los dos
- * (§6.8 describe dos comportamientos, no dos galerías): con dos, el índice
- * de la foto que se está viendo viviría en dos lugares y un día dirían
- * cosas distintas.
- *
- * El deslizamiento lo hace CSS —`snap-x snap-mandatory`—, no JavaScript. Lo
- * único que hace el `onScroll` es enterarse de dónde quedó.
- */
-function Galeria({
-  imagenes,
-  indice,
-  alt,
-  color,
-  pista,
-  onScroll,
-  onElegir,
-  onAmpliar,
-}: {
-  imagenes: VarianteDeFicha["imagenes"];
-  indice: number;
-  alt: string;
-  color: string | null;
-  pista: React.RefObject<HTMLUListElement | null>;
-  onScroll: (i: number) => void;
-  onElegir: (i: number) => void;
-  onAmpliar: () => void;
-}) {
-  const actual = Math.min(indice, Math.max(0, imagenes.length - 1));
-
-  if (imagenes.length === 0) {
-    return (
-      <div className="flex aspect-square items-center justify-center rounded-card bg-surface shadow-md">
-        <p className="text-body-sm text-ink-tertiary">
-          Todavía no cargamos las fotos de este producto.
-        </p>
-      </div>
-    );
-  }
-
-  // §9: «producto, marca y color». Sin el color, dos galerías del mismo
-  // producto se anuncian idénticas.
-  const descripcion = color ? `${alt}, ${color.toLowerCase()}` : alt;
-
-  return (
-    // `self-start`: en la grilla de dos columnas, la de la derecha es más
-    // alta y estiraba a esta. Con la galería estirada, el botón «Ampliar»
-    // —que se posiciona con `inset-0`— quedaba flotando debajo de la foto,
-    // sobre el fondo de la página.
-    <div className="flex flex-col gap-3 self-start md:flex-row md:gap-4">
-      <div className="relative min-w-0 flex-1">
-        <ul
-          ref={pista}
-          // En el teléfono NO hay miniaturas y las que se ven son un adorno
-          // (`aria-hidden`), así que la pista es la única forma de llegar a
-          // la segunda foto. Con `tabIndex` es una región desplazable con el
-          // teclado y con nombre, en vez de depender de que el navegador
-          // decida por su cuenta hacerla enfocable.
-          tabIndex={0}
-          aria-label={`Fotos de ${descripcion}`}
-          // `overscroll-x-contain`: sin esto, llegar al final de la tira en un
-          // teléfono empieza a arrastrar la página hacia atrás.
-          className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-card bg-surface shadow-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          onScroll={(e) => {
-            const el = e.currentTarget;
-            const i = Math.round(el.scrollLeft / el.clientWidth);
-            if (i !== indice) onScroll(i);
-          }}
-        >
-          {imagenes.map((img, i) => (
-            <li key={img.grande} className="w-full shrink-0 snap-center">
-              {/*
-                `contain` y no `cover` (§6.8): los periféricos vienen
-                fotografiados sobre fondo blanco, y recortarlos los mutila.
-                El aspecto se reserva con CSS para que la página no salte
-                cuando llega la foto.
-              */}
-              <div className="relative aspect-square">
-                <Image
-                  src={img.grande}
-                  alt={img.alt ?? `${descripcion} (${i + 1} de ${imagenes.length})`}
-                  fill
-                  sizes="(min-width: 1024px) 55vw, 100vw"
-                  // La primera es el LCP de esta pantalla: es lo más grande
-                  // que hay arriba del pliegue.
-                  priority={i === 0}
-                  className="object-contain p-4"
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        {/*
-          Cubre la pista entera y existe solo en escritorio. Es un botón y no
-          un `onClick` sobre la imagen: así entra en el recorrido de teclado y
-          dice qué hace.
-        */}
-        <button
-          type="button"
-          onClick={onAmpliar}
-          className="group absolute inset-0 hidden rounded-card md:block"
-        >
-          <span className="sr-only">Ampliar la foto</span>
-          {/*
-            `group-hover` y no `hover`: el ícono ocupa una esquina y el botón
-            cubre la foto entera, así que con `hover` propio solo se encendía
-            al pasar por encima de esos 36px.
-          */}
-          <span
-            aria-hidden
-            className="absolute right-4 bottom-4 flex size-9 items-center justify-center rounded-pill bg-surface/92 text-ink-secondary shadow-md transition-colors duration-150 group-hover:text-ink"
-          >
-            <Expand className="size-4" />
-          </span>
-        </button>
-
-        {/* Los puntos son del teléfono; en escritorio mandan las miniaturas. */}
-        {imagenes.length > 1 ? (
-          <ul
-            aria-hidden
-            className="flex justify-center gap-1.5 pt-3 md:hidden"
-          >
-            {imagenes.map((img, i) => (
-              <li
-                key={img.grande}
-                className={cn(
-                  "size-1.5 rounded-full transition-colors duration-150",
-                  i === actual ? "bg-brand" : "bg-border-strong",
-                )}
-              />
-            ))}
-          </ul>
-        ) : null}
-      </div>
-
-      {/* La tira va DESPUÉS en el DOM y a la derecha en pantalla (§6.8): el
-          recorrido de teclado llega primero a la foto y después a las
-          miniaturas, que es el orden en que se mira. */}
-      {imagenes.length > 1 ? (
-        <ul className="hidden shrink-0 flex-col gap-2 md:flex">
-          {imagenes.map((img, i) => (
-            <li key={img.grande}>
-              <button
-                type="button"
-                onClick={() => onElegir(i)}
-                aria-current={i === actual ? "true" : undefined}
-                className={cn(
-                  // El borde no es decorativo: los periféricos vienen
-                  // fotografiados sobre blanco, y una miniatura blanca sobre
-                  // una superficie blanca no se ve. Es el mismo motivo por el
-                  // que las muestras de color lo llevan (§6.5).
-                  "relative block size-16 overflow-hidden rounded-panel-image",
-                  "border border-border bg-surface",
-                  "transition-shadow duration-150",
-                  i === actual
-                    ? "ring-2 ring-brand ring-offset-2 ring-offset-canvas"
-                    : "opacity-70 hover:opacity-100",
-                )}
-              >
-                <Image
-                  src={img.miniatura}
-                  alt=""
-                  fill
-                  sizes="64px"
-                  className="object-contain p-1"
-                />
-                <span className="sr-only">Ver la foto {i + 1}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
     </div>
   );
 }
@@ -534,13 +332,42 @@ function SelectorDeColor({
 // ── Las acciones ────────────────────────────────────────────────────────
 
 /**
+ * El botón de WhatsApp, que es el único que hoy hace algo de punta a punta.
+ *
+ * El ícono va adelante del texto y NO es lo único que dice de qué se trata:
+ * el rótulo lleva «por WhatsApp» con todas las letras, así que el logo es
+ * reconocimiento y no información (§9). Va en `currentColor` por §11 — ver el
+ * comentario de `IconoWhatsApp`.
+ */
+function BotonDeWhatsApp({
+  href,
+  variante,
+  children,
+}: {
+  href: string;
+  variante: "brand" | "secondary";
+  children: ReactNode;
+}) {
+  return (
+    <Button asChild size="lg" variant={variante} className="w-full">
+      <a href={href} target="_blank" rel="noopener noreferrer">
+        <IconoWhatsApp className="size-4" />
+        {children}
+      </a>
+    </Button>
+  );
+}
+
+/**
  * Con stock: cantidad, carrito y WhatsApp.
  *
- * **«Agregá al carrito» va deshabilitado y con el motivo al lado**, que es lo
- * que §8 exige de todo estado deshabilitado. El carrito es F5.5 y todavía no
- * existe; se dibuja igual, por decisión del 2026-09-08, para que la ficha
- * muestre desde ya la composición de §7.3. Cuando llegue F5.5 se enciende y
- * WhatsApp baja a secundario, que es donde §7.3 lo pone.
+ * **«Agregá al carrito» va deshabilitado y ya no lleva su explicación a la
+ * vista** (decisión del 2026-09-08). §8 pide que todo estado deshabilitado
+ * diga por qué, y acá el motivo pasó a ser solo para lectores de pantalla:
+ * el botón es andamio para ver la composición terminada de §7.3 mientras
+ * llega F5.5, y el renglón «el carrito todavía no está disponible» era, en la
+ * pantalla, más grande que la falta que explicaba. Cuando F5.5 lo encienda,
+ * la explicación desaparece con él.
  */
 function ConStock({
   disponible,
@@ -584,24 +411,20 @@ function ConStock({
           <ShoppingCart aria-hidden />
           Agregá al carrito
         </Button>
-        <p id="carrito-pendiente" className="text-caption text-ink-secondary">
-          El carrito todavía no está disponible. Mientras tanto, escribinos y
-          te lo reservamos.
+        <p id="carrito-pendiente" className="sr-only">
+          El carrito todavía no está disponible. Se puede comprar por WhatsApp.
         </p>
 
         {whatsapp ? (
-          <Button asChild size="lg" variant="secondary" className="mt-2 w-full">
-            <a
-              href={enlaceDeWhatsApp(
-                whatsapp,
-                mensajeDeCompra(mensaje, cantidad, precioUnitario),
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Comprá por WhatsApp
-            </a>
-          </Button>
+          <BotonDeWhatsApp
+            variante="secondary"
+            href={enlaceDeWhatsApp(
+              whatsapp,
+              mensajeDeCompra(mensaje, cantidad, precioUnitario),
+            )}
+          >
+            Comprá ya por WhatsApp
+          </BotonDeWhatsApp>
         ) : null}
       </div>
     </div>
@@ -630,10 +453,8 @@ function SinStock({
   return (
     <div className="flex flex-col gap-4">
       {/*
-        La etiqueta de estado de §6.4, que ya existe: píldora de tinte, color
-        semántico y SIEMPRE con texto. Estaba dibujada a mano con un punto y
-        un renglón, que es la misma cosa reimplementada — y la que el día que
-        cambie el sistema se queda vieja sola.
+        La etiqueta de estado de §6.4: píldora de tinte, color semántico y
+        SIEMPRE con texto.
       */}
       <div>
         <Badge tone="danger">
@@ -644,15 +465,12 @@ function SinStock({
 
       {whatsapp ? (
         <div className="flex flex-col gap-2">
-          <Button asChild size="lg" variant="brand" className="w-full">
-            <a
-              href={enlaceDeWhatsApp(whatsapp, mensajeDeDisponibilidad(mensaje))}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Preguntá si va a haber
-            </a>
-          </Button>
+          <BotonDeWhatsApp
+            variante="brand"
+            href={enlaceDeWhatsApp(whatsapp, mensajeDeDisponibilidad(mensaje))}
+          >
+            Preguntá si va a haber
+          </BotonDeWhatsApp>
           <p className="text-caption text-ink-secondary">
             Te contestamos por WhatsApp. No lo reservamos ni te avisamos solos.
           </p>
@@ -691,16 +509,127 @@ function TodaviaNo({
         entra.
       </p>
       {whatsapp ? (
-        <Button asChild size="lg" variant="brand" className="w-full">
-          <a
-            href={enlaceDeWhatsApp(whatsapp, mensajeDeDisponibilidad(mensaje))}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Consultá por WhatsApp
-          </a>
-        </Button>
+        <BotonDeWhatsApp
+          variante="brand"
+          href={enlaceDeWhatsApp(whatsapp, mensajeDeDisponibilidad(mensaje))}
+        >
+          Consultá por WhatsApp
+        </BotonDeWhatsApp>
       ) : null}
+    </div>
+  );
+}
+
+// ── Guardar y compartir (§7.3) ──────────────────────────────────────────
+
+/**
+ * Los dos secundarios, uno al lado del otro debajo de las acciones de compra.
+ *
+ * **El corazón se mudó acá desde arriba de la foto** (decisión del
+ * 2026-09-08). En la TARJETA sigue arriba a la derecha de la imagen, que es
+ * donde §6.1 lo puso y donde se lo busca en una grilla; en la ficha hay lugar
+ * para que diga «Guardar» con todas las letras, y un ícono solo sobre la foto
+ * es la única señal que un lector de pantalla no puede aprovechar sin
+ * etiqueta. Es un caso donde la misma acción se dibuja distinto en dos
+ * pantallas a propósito, y está anotado en §14.
+ *
+ * **Guardar está apagado y Compartir anda.** No es una inconsistencia: los
+ * favoritos son de F5.4 y necesitan cuenta, mientras que compartir no
+ * necesita servidor —es `navigator.share` o el portapapeles—. Dibujar los dos
+ * apagados habría escondido el único de los dos que ya se puede probar.
+ */
+function AccionesSecundarias({
+  nombre,
+  marca,
+  url,
+}: {
+  nombre: string;
+  marca: string;
+  url: string;
+}) {
+  const [estado, setEstado] = useState<"listo" | "copiado" | "sin-copiar">(
+    "listo",
+  );
+
+  async function compartir() {
+    const datos = { title: `${nombre} — ${marca}`, url };
+
+    // La hoja nativa del sistema si existe —es la del teléfono, y la que
+    // ofrece WhatsApp de primera—. `AbortError` es que la persona la cerró:
+    // no es un fallo y no debe caer al portapapeles, que sería copiar algo
+    // que decidió no compartir.
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share(datos);
+        return;
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setEstado("copiado");
+      window.setTimeout(() => setEstado("listo"), 2000);
+    } catch {
+      /*
+       * **El fallo se DICE, no se traga**, y esta rama pasa de verdad: el
+       * portapapeles necesita contexto seguro, y `next.config.ts` habilita a
+       * propósito abrir la tienda por IP de la LAN para probarla desde el
+       * teléfono. Ahí `navigator.clipboard` directamente no existe. Sin este
+       * aviso, el botón se aprieta y no pasa nada — que es la peor forma de
+       * fallar, porque parece que el sitio se colgó.
+       */
+      setEstado("sin-copiar");
+      window.setTimeout(() => setEstado("listo"), 4000);
+    }
+  }
+
+  const copiado = estado === "copiado";
+
+  return (
+    <div className="pt-4">
+      <div className="flex gap-2">
+        <Button
+          variant="secondary"
+          size="md"
+          disabled
+          aria-describedby="favoritos-pendiente"
+          className="flex-1"
+        >
+          <Heart aria-hidden />
+          Guardar
+        </Button>
+        <p id="favoritos-pendiente" className="sr-only">
+          Los favoritos llegan cuando estén las cuentas.
+        </p>
+
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={compartir}
+          className="flex-1"
+        >
+          {copiado ? <Check aria-hidden /> : <Share2 aria-hidden />}
+          {copiado ? "¡Copiado!" : "Compartir"}
+        </Button>
+      </div>
+
+      {estado === "sin-copiar" ? (
+        <p className="pt-2 text-caption text-ink-secondary">
+          No pudimos copiarlo. El enlace está en la barra de direcciones.
+        </p>
+      ) : null}
+
+      {/*
+        El cambio de rótulo lo anuncia una región viva y no el botón: cambiar
+        el nombre accesible de un control que acaba de recibir el foco hace
+        que el lector lo lea de nuevo y suene como si hubiera aparecido otro
+        botón.
+      */}
+      <p aria-live="polite" className="sr-only">
+        {copiado ? "Enlace copiado al portapapeles" : ""}
+      </p>
     </div>
   );
 }
@@ -729,8 +658,7 @@ function Cantidad({
 
   return (
     // `p-0.5` con botones de 44: 48px de alto, que es la altura de campo de
-    // la tienda (§6.6), y cada flecha llega al mínimo táctil de §9. Con los
-    // 36px que tenía, las dos flechas quedaban por debajo.
+    // la tienda (§6.6), y cada flecha llega al mínimo táctil de §9.
     <div className="flex items-center gap-0.5 rounded-pill border border-border bg-surface p-0.5">
       <Button
         type="button"

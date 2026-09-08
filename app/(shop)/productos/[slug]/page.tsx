@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, RotateCcw, Truck } from "lucide-react";
+import { ChevronRight, RotateCcw } from "lucide-react";
 
 import { Compra } from "@/components/shop/ficha/compra";
 import { Descripcion } from "@/components/shop/ficha/descripcion";
 import { Precio } from "@/components/shop/precio";
+import { Button } from "@/components/ui/button";
 import { urlDelSitio } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
@@ -68,7 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${ficha.nombre} — ${ficha.marca}`,
     description: resumen
       ? resumen.slice(0, 155)
-      : `${ficha.nombre} de ${ficha.marca}. Envíos por PedidosYa.`,
+      : `${ficha.nombre} de ${ficha.marca}. Entrega en Viedma, Carmen de Patagones y alrededores.`,
   };
 }
 
@@ -127,10 +127,13 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
             />
           </header>
         }
-        informacion={<Informacion mediosDePago={mediosDePago} />}
+        informacion={
+          <Informacion
+            mediosDePago={mediosDePago}
+            descripcion={ficha.descripcion}
+          />
+        }
       />
-
-      <Descripcion markdown={ficha.descripcion} />
     </div>
   );
 }
@@ -174,69 +177,120 @@ function Migas({
 }
 
 /**
- * El bloque de abajo de §7.3: envío, medios de pago y garantías.
+ * Todo lo que va debajo de las acciones — F3.5, RF-03, RF-15, RF-19, RN-10,
+ * DR §7.3 (reescrito el 2026-09-08).
  *
- * Los tres están también en el pie, y no es una repetición ociosa: acá se
- * leen en el momento de decidir la compra, que es cuando la pregunta «¿cómo
- * me llega y cómo pago?» aparece. Al pie llega quien ya bajó buscándola.
+ * Antes eran tres renglones sueltos —envío, medios de pago, garantías— y
+ * ahora son tres bloques con jerarquía: **los datos** que se leen de un
+ * vistazo, **la descripción** que escribió la vendedora, y **el recuadro**
+ * que explica qué pasa después de apretar el botón.
  *
- * Los medios de pago son los **activos** que cargó la vendedora (RF-19). Si
- * no cargó ninguno, el renglón no se dibuja: una lista vacía de «medios de
- * pago aceptados» dice algo que no queremos decir.
+ * Ese último es el que faltaba. La tienda no cobra ni despacha sola (RN-08,
+ * RN-10): el pedido termina en una conversación de WhatsApp, y quien no lo
+ * sabe de antemano lee «Comprá ya» y espera un carrito con tarjeta. Decirlo
+ * ANTES de que aprete es la diferencia entre un proceso raro y un proceso
+ * que se entiende.
+ *
+ * **Ya no dice «PedidosYa».** RN-10 pasó a hablar de entrega local y no de
+ * una empresa concreta: la mensajería puede cambiar, y el dato que le sirve a
+ * quien compra no es el nombre del cadete sino hasta dónde llegamos.
  */
 function Informacion({
   mediosDePago,
+  descripcion,
 }: {
   mediosDePago: MedioDePagoDeLaTienda[];
+  descripcion: string;
 }) {
   return (
-    <div className="mt-8 flex flex-col gap-4 border-t border-border pt-6 text-body-sm text-ink-secondary">
-      <p className="flex items-start gap-2.5">
-        <Truck aria-hidden className="mt-0.5 size-4 shrink-0" />
-        <span>
-          Enviamos por <span className="text-ink">PedidosYa</span>. El costo del
-          envío se coordina y se abona junto con el pago, por WhatsApp.
-        </span>
-      </p>
+    <div className="mt-8 border-t border-border pt-6">
+      <Datos mediosDePago={mediosDePago} />
+      <Descripcion markdown={descripcion} />
+      <ComoSigue />
+    </div>
+  );
+}
 
-      {mediosDePago.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          <p className="text-ink-secondary">Aceptamos</p>
-          <ul className="flex flex-wrap items-center gap-2">
-            {mediosDePago.map((m) => (
-              <li
-                key={m.id}
-                className="flex items-center gap-1.5 rounded-pill bg-surface px-2.5 py-1 text-caption text-ink shadow-sm"
-              >
-                {m.logoUrl ? (
-                  // Fondo claro fijo: un logo ajeno llega como trazo sobre
-                  // transparente y no se lo puede repintar (§6.10).
-                  <span className="relative block size-4 overflow-hidden rounded-[3px] bg-logo-chip">
-                    <Image
-                      src={m.logoUrl}
-                      alt=""
-                      fill
-                      sizes="16px"
-                      className="object-contain"
-                    />
-                  </span>
-                ) : null}
-                {m.nombre}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+/**
+ * Las tres cosas que alguien quiere saber antes de escribir, en tres
+ * renglones y sin adornos.
+ *
+ * **Los medios de pago se nombran, ya no se dibujan.** Estaban como una tira
+ * de logos, que en una página de venta se lee como «pagá acá» — y acá no se
+ * paga: no hay checkout con tarjeta y no va a haberlo en el MVP (FA-04,
+ * RN-08). La tira sigue en el pie y en el home, donde es una señal de
+ * confianza y no una promesa de un botón. Los nombres salen igual de lo que
+ * cargó la vendedora (RF-19), así que agregar un medio sigue siendo cargar
+ * una fila.
+ */
+function Datos({ mediosDePago }: { mediosDePago: MedioDePagoDeLaTienda[] }) {
+  const nombres = mediosDePago.map((m) => m.nombre);
+  const lista =
+    nombres.length > 1
+      ? `${nombres.slice(0, -1).join(", ")} y ${nombres.at(-1)}`
+      : nombres[0];
 
-      <p className="flex items-start gap-2.5">
-        <RotateCcw aria-hidden className="mt-0.5 size-4 shrink-0" />
-        <Link
-          href="/legales/garantias"
-          className="rounded-pill underline-offset-4 hover:text-ink hover:underline"
-        >
+  return (
+    <ul className="flex flex-col gap-1.5 text-body-sm text-ink-secondary">
+      <li>Productos nuevos y en su caja original.</li>
+      <li>Entrega en Viedma, Carmen de Patagones y alrededores.</li>
+      <li>
+        Coordinamos el pago al confirmar el pedido
+        {lista ? <>: {lista}</> : null}.
+      </li>
+    </ul>
+  );
+}
+
+/**
+ * Qué pasa después del botón (RN-08, RN-10).
+ *
+ * El botón de garantías vive ADENTRO del recuadro y no suelto abajo: es la
+ * pregunta que sigue a «coordinamos la entrega» —«¿y si no me sirve?»— y
+ * suelto en la página era un enlace más entre otros.
+ */
+const PASOS = [
+  "Armás el pedido y lo mandás como orden de compra, o nos escribís directo por WhatsApp.",
+  "Te confirmamos stock, precio final y forma de pago.",
+  "Coordinamos la entrega en Viedma, Carmen de Patagones y alrededores, o pasás a retirarlo.",
+];
+
+function ComoSigue() {
+  return (
+    <section
+      aria-labelledby="como-sigue"
+      className="mt-10 rounded-card bg-surface p-5 shadow-md"
+    >
+      <h2 id="como-sigue" className="text-body-lg font-medium text-ink">
+        ¿Cómo sigue después de comprar?
+      </h2>
+
+      <ol className="mt-4 flex flex-col gap-3 text-body-sm text-ink-secondary">
+        {PASOS.map((paso, i) => (
+          <li key={paso} className="flex items-start gap-3">
+            {/*
+              El número está DOS veces: como `<li>` de una lista ordenada, que
+              es lo que lee un lector de pantalla, y como círculo dibujado,
+              que es lo que se ve. Por eso el círculo va `aria-hidden` — si
+              no, se anunciaría «uno, uno».
+            */}
+            <span
+              aria-hidden
+              className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-tint text-caption font-medium text-brand"
+            >
+              {i + 1}
+            </span>
+            <span>{paso}</span>
+          </li>
+        ))}
+      </ol>
+
+      <Button asChild variant="secondary" size="md" className="mt-5 w-full">
+        <Link href="/legales/garantias">
+          <RotateCcw aria-hidden />
           Garantías y devoluciones
         </Link>
-      </p>
-    </div>
+      </Button>
+    </section>
   );
 }

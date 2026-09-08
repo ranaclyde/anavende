@@ -8,7 +8,8 @@ export default function Home() {
     <div className="mx-auto flex max-w-shop flex-col gap-4 px-4 py-20 sm:px-6 lg:px-8">
       <h1 className="text-display text-ink">AnaVende</h1>
       <p className="max-w-prose text-body-lg text-ink-secondary">
-        Teclados, mouses, auriculares, cables y memorias. Envíos por PedidosYa.
+        Teclados, mouses, auriculares, cables y memorias. Entrega en Viedma,
+        Carmen de Patagones y alrededores.
       </p>
     </div>
   );

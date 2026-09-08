@@ -38,15 +38,21 @@ export function Descripcion({ markdown }: { markdown: string }) {
   if (nodos.length === 0) return null;
 
   return (
-    <section aria-labelledby="descripcion" className="pt-16">
-      <h2 id="descripcion" className="text-heading text-ink">
-        Descripción
+    <section aria-labelledby="descripcion" className="pt-8">
+      {/*
+        «Sobre el producto» y no «Descripción» (2026-09-08): el rótulo
+        anterior nombraba el campo de la base, no lo que la persona va a leer.
+      */}
+      <h2 id="descripcion" className="text-body-lg font-medium text-ink">
+        Sobre el producto
       </h2>
       {/*
-        `max-w-prose`: una descripción a 1200px de ancho son renglones de 160
-        caracteres, y el ojo se pierde al volver al margen izquierdo.
+        `max-w-prose`: la ficha ya la mete en una columna angosta, pero este
+        mismo componente sirve para cualquier ancho, y una descripción a
+        1200px son renglones de 160 caracteres donde el ojo se pierde al
+        volver al margen izquierdo.
       */}
-      <div className="mt-4 flex max-w-prose flex-col gap-4 text-body text-ink-secondary">
+      <div className="mt-3 flex max-w-prose flex-col gap-4 text-body-sm text-ink-secondary">
         {nodos.map((nodo, i) => (
           <Bloque key={i} nodo={nodo} />
         ))}
@@ -75,7 +81,7 @@ function Bloque({ nodo }: { nodo: BlockContent | DefinitionContent }) {
       // la página y «Descripción» el `h2`, así que un subtítulo acá adentro
       // es el escalón siguiente. El filtro ya normalizó la profundidad.
       return (
-        <h3 className="text-body-lg font-medium text-ink">
+        <h3 className="text-body font-medium text-ink">
           <EnLinea nodos={nodo.children} />
         </h3>
       );

@@ -80,7 +80,7 @@ Ver detalle en §12 (Fuera de alcance).
 | **RN-07** | Una orden en estado `activa` **reserva stock**. La reserva se libera únicamente cuando la orden pasa a `finalizada` (descuenta stock real) o `cancelada` (libera sin descontar). **No existe expiración automática.** |
 | **RN-08** | El Visitante no genera órdenes ni reserva stock. Su compra sale exclusivamente como mensaje de WhatsApp. |
 | **RN-09** | El carrito refleja siempre el **precio vigente** del producto. Los cambios de precio, stock o disponibilidad respecto de la última vista se comunican explícitamente al comprador. |
-| **RN-10** | Los envíos se realizan por **PedidosYa**; su costo no se calcula ni se cobra en la web y se coordina por WhatsApp. |
+| **RN-10** | La tienda **entrega sólo en Viedma, Carmen de Patagones y alrededores** (los pueblos a menos de ~30 km). Hay dos formas: **envío a domicilio**, hoy con mensajería en moto, y **retiro en el punto de entrega**. El costo del envío no se calcula ni se cobra en la web: se coordina por WhatsApp. **La web no nombra a la empresa de mensajería**: puede cambiar, y lo que le sirve a quien compra es hasta dónde llegamos. |
 | **RN-11** | Nunca se elimina físicamente un producto, marca, categoría o color que esté referenciado por una orden. Se desactiva (borrado lógico). |
 | **RN-11b** | **Ningún producto activo puede pertenecer a una marca o categoría inactiva, ni tener variantes activas de un color inactivo.** No se puede desactivar una marca, categoría o color que esté en uso por algo activo: primero se desactiva lo que la usa. Tampoco se puede activar un producto cuya marca o categoría esté inactiva. |
 | **RN-12** | Las órdenes conservan una copia del nombre y precio del producto al momento de crearse (snapshot), para que cambios posteriores del catálogo no alteren el historial. |
@@ -101,7 +101,7 @@ Ver detalle en §12 (Fuera de alcance).
 - Sección de productos en oferta (con descuento activo).
 - Bloque «Vistos recientemente», si el visitante tiene historial (RF-33).
 - Franja informativa de medios de pago.
-- Aviso de envíos por PedidosYa.
+- Aviso de la zona de entrega y del retiro en el punto de entrega (RN-10).
 
 **Criterios de aceptación:**
 - [ ] La home carga sin productos cargados (estado vacío controlado, sin errores).
@@ -162,8 +162,9 @@ Ver detalle en §12 (Fuera de alcance).
 - Selector de cantidad, limitado por el stock disponible de la variante.
 - Descripción del producto, **con el formato que le dio la vendedora** (RF-15).
 - Bloques de recomendados: «También te puede interesar», «Productos similares» y «Vistos recientemente» (RF-32, RF-33).
-- Medios de pago aceptados.
-- Aviso de envío por PedidosYa y enlace a Legales (garantías y devoluciones).
+- **Tres datos**, un renglón cada uno: que los productos son nuevos y en su caja original, la zona de entrega (RN-10) y que el pago se coordina al confirmar el pedido, nombrando los medios aceptados (RF-19).
+- **Bloque «¿Cómo sigue después de comprar?»** con los tres pasos —armar el pedido o escribir por WhatsApp; confirmación de stock, precio y forma de pago; coordinación de la entrega o el retiro— y el enlace a Legales (garantías y devoluciones) adentro.
+- **Guardar** (favoritos, RF-10) y **Compartir**, juntos debajo de las acciones de compra.
 
 **Acciones:**
 
@@ -303,7 +304,7 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 
 **Criterios de aceptación:**
 - [ ] Agregar, quitar y cambiar cantidad de ítems; vaciar carrito.
-- [ ] El resumen muestra subtotal por ítem y total, más la leyenda de envío por PedidosYa (RN-10).
+- [ ] El resumen muestra subtotal por ítem y total, más la leyenda de la zona de entrega y del retiro (RN-10).
 - [ ] Debajo del resumen se muestra el bloque «Completá tu setup» con complementos de lo que hay en el carrito (RF-32).
 - [ ] Sin sesión iniciada no existe carrito: las acciones de agregar al carrito invitan a iniciar sesión y, al volver del login, se completan solas.
 - [ ] Los ítems cuyo producto o variante fue **desactivado** se eliminan del carrito, siempre precedidos por un aviso visible que nombra qué se quitó y por qué.
@@ -347,7 +348,7 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 
 **Contenido:**
 1. **Tus datos** — nombre, email, teléfono (editable, requerido).
-2. **Envío** — dirección predeterminada preseleccionada, con opción de elegir otra o cargar una nueva. Aviso: *«El envío se realiza por PedidosYa. El costo se coordina y abona junto con el pago por WhatsApp.»*
+2. **Entrega** — elección entre **envío a domicilio** y **retiro en el punto de entrega** (RN-10). Con envío: dirección predeterminada preseleccionada, con opción de elegir otra o cargar una nueva; con retiro no se pide dirección. Aviso: *«Entregamos en Viedma, Carmen de Patagones y alrededores. El costo del envío se coordina y abona junto con el pago por WhatsApp.»*
 3. **Resumen** — ítems con color, cantidad, precio unitario y subtotal; total de productos.
 4. **Medios de pago** — informativos, según configuración del panel.
 5. **Confirmación** — botón «Confirmar pedido» + leyenda de que el pago se coordina por WhatsApp.
@@ -685,7 +686,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] Páginas accesibles desde el pie de página: **Garantías y devoluciones**, **Términos y condiciones**, **Política de privacidad**, **Cómo comprar**.
 - [ ] «Garantías y devoluciones» explica plazos, condiciones, qué cubre la garantía y el procedimiento (coordinación por WhatsApp).
 - [ ] Explica también **cómo arrepentirse de una compra**: cancelar la orden desde «Mis compras» si todavía está activa (RF-23), o pedir la devolución si ya se finalizó (RF-25). Es donde el sitio deja por escrito cómo se ejerce ese derecho.
-- [ ] El aviso de envíos por **PedidosYa** está presente en: pie de página, ficha de producto, carrito y checkout (RN-10).
+- [ ] El aviso de **zona de entrega y retiro** está presente en: pie de página, ficha de producto, carrito y checkout (RN-10). Ninguno de los cuatro nombra a la empresa de mensajería.
 - [ ] El texto legal es editable desde el panel sin necesidad de un deploy.
 
 ---
@@ -901,7 +902,7 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | # | Excluido | Nota |
 |---|---|---|
 | FA-01 | Pagos online (MercadoPago, tarjetas, etc.) | Se coordina por WhatsApp (RN-01) |
-| FA-02 | Cálculo, cotización o integración con la API de PedidosYa | Sólo aviso informativo |
+| FA-02 | Cálculo, cotización o integración con la API de una empresa de mensajería | Sólo aviso informativo |
 | FA-03 | Seguimiento de envíos y estados logísticos | — |
 | FA-04 | Cuentas de invitado con orden o carrito persistido | El visitante no arma carrito; sólo usa WhatsApp (RN-08, RF-08) |
 | FA-05 | Expiración automática de reservas de stock | Liberación sólo manual (RN-07) |
@@ -949,7 +950,7 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | Carrito persistente que actualiza precios e informa cambios | RF-08 |
 | Panel del comprador (datos, compras, favoritos, carrito) | RF-07, RF-09, RF-10 |
 | Checkout con elección de dirección + pantalla final + email | RF-11, RF-12, RF-30 (email → administradora) |
-| Aviso de envíos por PedidosYa | RN-10, RF-29 |
+| Aviso de zona de entrega y retiro | RN-10, RF-29 |
 | Sección de legales (garantías y devoluciones) | RF-29 |
 | Sin pago online, se maneja por WhatsApp | RN-01 |
 | Panel protegido de gestión | RF-14 a RF-28 |
@@ -985,11 +986,15 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-08-30 | Auto-registro con verificación de email | Evitar cuentas basura sin frenar la conversión |
 | 2026-08-30 | Precio en producto, stock e imágenes en variante de color | Refleja la operación real y simplifica la carga |
 | 2026-08-30 | Las reservas de stock no expiran automáticamente | La coordinación por WhatsApp puede demorar; la vendedora decide |
-| 2026-08-30 | Sin costo de envío en la web | PedidosYa se coordina y abona aparte |
+| 2026-08-30 | Sin costo de envío en la web | La mensajería se coordina y abona aparte |
 | 2026-08-30 | Email de orden sólo a la administradora | Reduce alcance; el comprador tiene pantalla e historial |
 | 2026-08-30 | ARS con decimales, IVA incluido sin discriminar | Definición comercial |
 | 2026-08-30 | Dos roles: `admin` y `customer` | Un solo operador en el MVP |
 | 2026-08-30 | Reportes exportables a Excel | Pedido explícito para control offline |
+| 2026-09-08 | RN-10 pasa de nombrar a **PedidosYa** a nombrar la **zona**: Viedma, Carmen de Patagones y alrededores | La empresa de mensajería puede cambiar; lo que decide si alguien puede comprar acá es hasta dónde llegamos, no quién lleva el paquete |
+| 2026-09-08 | Se agrega el **retiro en el punto de entrega** como segunda forma de recibir | Es lo que ya se hace. Obliga a que el checkout (RF-11) elija entre envío y retiro, y no sólo entre direcciones |
+| 2026-09-08 | La ficha **no dibuja los logos de medios de pago**: los nombra | Una tira de logos en la pantalla de venta se lee como «pagá acá», y acá no se paga (RN-01, RN-08). Los logos siguen en el pie y en la home |
+| 2026-09-08 | La ficha declara que los productos son **nuevos y en su caja original** | No se venden reacondicionados. Es texto fijo y no un dato por producto: el día que eso cambie, cambia el modelo y no una frase |
 | 2026-09-02 | La vinculación de cuentas exige que el email original esté verificado | Protección contra apropiación previa de cuenta |
 | 2026-08-30 | El descuento es un monto absoluto en ARS, no un porcentaje | Así se piensa la oferta en el negocio |
 | 2026-08-30 | Teléfono obligatorio en el registro | Es el canal real de coordinación de la venta |

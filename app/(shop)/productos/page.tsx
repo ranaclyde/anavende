@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Catálogo",
-  description: "Teclados, mouses, auriculares y cables. Envíos por PedidosYa.",
+  description: "Teclados, mouses, auriculares y cables. Entrega en Viedma, Carmen de Patagones y alrededores.",
 };
 
 /**
@@ -79,7 +79,8 @@ export default async function Catalogo({
         </p>
         <h1 className="text-title text-ink">{titulo}</h1>
         <p className="text-body text-ink-secondary">
-          Periféricos y accesorios. Enviamos por PedidosYa.
+          Periféricos y accesorios. Entrega en Viedma, Carmen de Patagones y
+          alrededores.
         </p>
       </header>
 

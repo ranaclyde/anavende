@@ -194,7 +194,7 @@ Se adopta la **opción C** con una precisión importante: **ambos servidores est
         (emails)      (errores)         (OAuth)
 ```
 
-**Lo que sale del sistema hacia afuera:** emails vía Resend, errores vía Sentry, OAuth con Google y Facebook, y enlaces `wa.me` que abre el propio navegador del usuario. **WhatsApp no tiene integración de servidor**: son enlaces construidos en el cliente. No hay API de PedidosYa (FA-02).
+**Lo que sale del sistema hacia afuera:** emails vía Resend, errores vía Sentry, OAuth con Google y Facebook, y enlaces `wa.me` que abre el propio navegador del usuario. **WhatsApp no tiene integración de servidor**: son enlaces construidos en el cliente. No hay API de ninguna empresa de mensajería (FA-02): la entrega se coordina por WhatsApp (RN-10).
 
 ---
 
@@ -992,6 +992,8 @@ Dos tamaños y no tres: un logo se muestra chico —hoy solo en el listado del p
 Las imágenes ya están optimizadas al guardarse, así que se sirven **tal cual**, sin volver a procesarlas. Se muestran con `next/image` para aprovechar `srcset`, dimensiones y carga diferida.
 
 El subdominio de Storage se declara en `images.remotePatterns` de `next.config.ts`.
+
+**Una excepción, y es la única del proyecto: el visor ampliado de la ficha (§6.8) usa `<img>` y no `next/image`.** Su segundo nivel muestra la foto **a su tamaño real de píxeles**, y ese ancho es el dato del que depende toda la mecánica —la escala del encuadre y el recorrido salen de `naturalWidth`—. Con `next/image` el ancho lo elige el optimizador según `sizes`, así que «tamaño real» pasaría a significar «el ancho que el navegador pidió esta vez». Se sirve el archivo `-detail` directamente, que es exactamente lo que §9.2 generó para eso.
 
 **Atención a los cambios de Next 16:** el valor por omisión de `images.qualities` pasó a ser `[75]`; cualquier otra calidad debe declararse explícitamente en `next.config.ts` o se ajusta sola al valor permitido más cercano.
 

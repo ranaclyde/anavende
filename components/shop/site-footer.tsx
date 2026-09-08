@@ -5,7 +5,7 @@ import { Isotipo } from "@/components/shop/logo";
 
 /**
  * Pie de la tienda — DESIGN-REFERENCE §5.1.
- * Pie oscuro con el aviso de PedidosYa, los medios de pago y los legales.
+ * Pie oscuro con la zona de entrega, los medios de pago y los legales.
  *
  * Los medios de pago los carga la vendedora (RF-19, F2.6) y las páginas
  * legales son editables (RF-29, F9.3): los dos llegan como datos, no como
@@ -44,10 +44,20 @@ export function SiteFooter({
             </p>
             <p className="flex items-start gap-2 text-body-sm text-white/65">
               <Truck aria-hidden className="mt-0.5 size-4 shrink-0" />
+              {/*
+                Se nombra la ZONA y no la mensajería (RN-10, reescrita el
+                2026-09-08): la empresa que lleva el paquete puede cambiar, y
+                lo que decide si alguien puede comprar acá no es su nombre
+                sino hasta dónde llegamos. La tienda atiende Viedma, Carmen de
+                Patagones y los pueblos de alrededor, no la provincia entera.
+              */}
               <span>
-                Los envíos se hacen por{" "}
-                <span className="text-ink-inverse">PedidosYa</span>, y se
-                coordinan por WhatsApp cuando armamos tu pedido.
+                Entregamos a domicilio en{" "}
+                <span className="text-ink-inverse">
+                  Viedma, Carmen de Patagones y alrededores
+                </span>
+                , o lo retirás por nuestro punto de entrega. El envío se
+                coordina por WhatsApp cuando armamos tu pedido.
               </span>
             </p>
           </div>

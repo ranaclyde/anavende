@@ -116,7 +116,7 @@ rotulación — **la tarjeta, el catálogo y el precio siguen sin esa pasada**.
 | F3.2 | Componente de precio | 🟡 | `components/shop/precio.tsx`, con `es-AR`, decimales siempre (RN-02) y `tabular-nums` —sin eso las columnas de precios de la grilla bailan al cambiar de página—. **Las dos composiciones muestran los mismos dos números desde el 2026-09-08** (RN-04c): la de tarjeta es una línea —tachado y después final— y la de ficha va apilada, final a 24px y tachado abajo. El renglón «Ahorrás $ X» se fue de las dos. La de tarjeta está en pantalla; **la de ficha no tiene consumidor todavía** (F3.5), y código sin consumidor es código que nadie probó |
 | F3.3 | Búsqueda tolerante a acentos y errores de tipeo | ⬜ | Hay media, y es la mitad que no da nombre a la tarea: `condicionDeBusqueda()` en `modules/catalog/products/tienda.ts` resuelve **los acentos** con `immutable_unaccent` sobre nombre, marca y `description_text`, así que «mecanico» encuentra «Mecánico». Sin trigramas, «lojitech» **no** encuentra «Logitech». El umbral que falta no se calibra hasta que exista el catálogo real (F2.8), que es lo que pide el «Hecho cuando» |
 | F3.4 | Catálogo: filtros, orden, paginación, todo en la URL | 🟡 | `/productos` con filtros por categoría, marca, color y descuento, cinco órdenes y paginación, y **todo el estado en la dirección** (§10.2): el botón atrás funciona, el enlace se manda por WhatsApp tal como se está viendo, y la pantalla no necesita una línea de estado de cliente para lo que muestra. Tres pantallas vacías distintas y no una —«todavía no hay productos», «no encontramos nada para esto» y la que apareció probando, `?pagina=9` a mano, que antes ofrecía «Limpiar todo» sin ningún filtro puesto—. El conteo es `aria-live`, la paginación son enlaces y las cuatro primeras tarjetas cargan con prioridad, por el LCP. **Le falta función de RF-02**: categoría, marca y color son de **selección única** —no se pueden elegir dos marcas— y no está el rango de precio. Queda registrado en DR §7.2 como función pendiente, que es distinto de una decisión de diseño |
-| F3.5 | Ficha de producto con galería y selector de color | 🟡 | `/productos/[slug]`, y con esto **la tarjeta del catálogo dejó de apuntar a un 404**. Están la galería de §6.8 —una sola pista con encastre: se desliza con el dedo, la mueven las miniaturas, y amplía en modal solo en escritorio—, el selector de color de §6.5, la cantidad con tope en el stock, la descripción con formato pintada como React y no como HTML, y los tres estados de compra: con stock, **sin stock** y «todavía no está a la venta» —un producto activo sin ninguna variante, que RN-05 muestra igual—. Cambiar de color cambia foto, stock y mensaje **sin recargar** y escribe `?color=` con `replaceState`; un producto inactivo da 404. **17 tests nuevos** sobre la consulta y los mensajes. Pasó por `impeccable` (polish) y `ui-ux-pro-max`: de ahí salieron seis arreglos, abajo están. **Falta mirarla en un teléfono** —el navegador de esta máquina no acepta el cambio de tamaño de ventana— y le faltan los recomendados de RF-03, que son F8.2 y F8.4 |
+| F3.5 | Ficha de producto con galería y selector de color | 🟡 | `/productos/[slug]`, y con esto **la tarjeta del catálogo dejó de apuntar a un 404**. Están la galería de §6.8, el selector de color de §6.5, la cantidad con tope en el stock, la descripción con formato pintada como React y no como HTML, y los tres estados de compra: con stock, **sin stock** y «todavía no está a la venta» —un producto activo sin ninguna variante, que RN-05 muestra igual—. Cambiar de color cambia foto, stock y mensaje **sin recargar** y escribe `?color=` con `replaceState`; un producto inactivo da 404. **17 tests** sobre la consulta y los mensajes. **Rehecha el 2026-09-08 con diecisiete pedidos tuyos**: miniaturas a la izquierda y siempre dibujadas —el salto de la foto al cambiar de color era eso—, foto al borde de la tarjeta, flechas, visor de dos niveles con recorrido a tamaño real, galería pegada con la columna derecha desplazando, descripción adentro de esa columna, recuadro «¿Cómo sigue después de comprar?», y Guardar y Compartir. Arriba está el detalle. Pasó por `impeccable` y `ui-ux-pro-max`. **Falta mirarla en un teléfono** y **falta ver moverse la galería**: el navegador de esta máquina no entrega cuadros, así que el desplazamiento suave no ocurre —la instrucción sale bien, está comprobado—. Le faltan los recomendados de RF-03, que son F8.2 y F8.4 |
 | F3.6 | Enlaces de WhatsApp | 🟡 | `lib/whatsapp.ts`, que es donde §4 lo tenía previsto, y **se hizo junto con F3.5 por decisión tuya**: la ficha no tiene ninguna otra acción, así que sin esto salía una pantalla que no se podía terminar de probar. **Son dos mensajes y no uno**: el de compra —producto, color, cantidad, precio y enlace— y el de **consulta de disponibilidad**, que lleva producto, color y enlace y **no** lleva precio ni cantidad: no se está comprando, y un precio sobre algo que todavía no existe es un precio que después hay que desdecir. El criterio de RF-04 —acentos, saltos de línea y el `$` bien codificados— está probado, y el número se limpia a dígitos venga como venga. Sin número configurado **no se dibuja ningún botón**: `wa.me/` sin destino abre WhatsApp en la nada. **Falta abrir uno en un teléfono con WhatsApp de verdad**: lo verificado es la dirección, no la entrega |
 | F3.7 | Home | ⬜ | Hoy `/` es un **marcador de posición deliberado** —título, bajada y nada más—, y lo dice en su propio archivo: construir la home contra productos inventados es el riesgo P1 del plan. Recibió los tokens nuevos de F3.8 como todo lo demás, y ninguna otra cosa del canvas |
 | F3.8 | Rediseño de la tienda desde el canvas aprobado | 🟡 | **Tarea nueva, agregada al plan el 2026-09-08**; abajo está entera. Cuatro pasadas —tokens, estructura del catálogo, ajustes de panel y tarjeta, y encabezado— aplicadas a la capa de tokens, al catálogo y al navbar. **Falta bajarlo a la home, a la sección de categorías, al pie, al carrito y a la ficha**, y eso no se hace de una: cada pantalla lo adopta cuando se construye. **El panel de administración queda afuera**: el rediseño es de la tienda, lo que ve el comprador |
@@ -287,10 +287,12 @@ por separado salía una pantalla que no se podía terminar de probar: sin el
 comprobarse.
 
 **«Agregá al carrito» se dibuja deshabilitado, y también es decisión tuya.** La
-alternativa era no dibujarlo hasta F5.5. §8 lo permite con una condición que se
-cumple: todo estado deshabilitado va **acompañado del motivo**, y el renglón de
-abajo dice qué falta y qué hacer mientras tanto. Cuando llegue el carrito, ese
-botón se enciende y WhatsApp baja a secundario, que es donde §7.3 lo pone.
+alternativa era no dibujarlo hasta F5.5. Llevaba abajo el renglón que §8 pide
+para todo estado deshabilitado —«el carrito todavía no está disponible»—, y **el
+2026-09-08 lo sacaste**: en la pantalla ocupaba más que la falta que explicaba.
+El motivo quedó para lectores de pantalla, y es una excepción anotada a §8, no
+un olvido. Cuando llegue el carrito, ese botón se enciende y WhatsApp baja a
+secundario, que es donde §7.3 lo pone.
 
 **Cómo se armó, en una línea cada cosa.** La consulta es **una sola** con las
 variantes y sus imágenes adentro: separadas serían tres viajes encadenados
@@ -358,6 +360,90 @@ principio de la tabla, así que con filas sembradas encima «subir el primero no
 cambia nada» sí cambia algo y la batería se pone en rojo. La causa de fondo es
 la de siempre —el seed y los tests comparten base— y su arreglo es separarlas,
 no acomodar un test.
+
+---
+
+### El repaso de la ficha, y el cambio de RN-10 que arrastró (2026-09-08)
+
+Diecisiete pedidos tuyos en un solo mensaje. Salvo tres, todos entraron tal
+cual; los tres tienen nombre y motivo más abajo.
+
+**El más grande no era de la ficha: era de la regla de envíos.** RN-10 decía
+«los envíos se realizan por PedidosYa» y lo exigía en cuatro pantallas —pie,
+ficha, carrito y checkout—. Al pedir que la ficha hablara de Viedma y Carmen de
+Patagones, la tienda quedaba contándose dos historias: la ficha decía «te lo
+llevo a Viedma» y el pie seguía diciendo «enviamos por PedidosYa». Ahora **RN-10
+nombra la zona y no la empresa** —la mensajería puede cambiar; hasta dónde
+llegamos es lo que decide si alguien puede comprar acá— y suma el **retiro en el
+punto de entrega**. Los cinco lugares del código que la nombraban ya no lo
+hacen.
+
+**Eso deja al checkout con una tarea distinta de la que tenía escrita.** RF-11
+decía «elegí una dirección»; con retiro pasa a ser «envío o retiro», y con
+retiro no se pide dirección. Está escrito en RF-11 y en F6.1, y **no
+construido**: F6 no empezó.
+
+**La galería.** Las miniaturas se mudaron a la izquierda y **se dibujan siempre,
+aunque haya una sola foto**: es el arreglo del salto que reportaste. Ocupan una
+columna, así que esconderlas cuando hay una sola corría la foto principal de
+lugar al cambiar de color, y eso no se lee como «este color tiene menos fotos»,
+se lee como que la página se movió sola. La foto perdió sus 16px de relleno
+blanco y ahora la recorta el radio de la tarjeta; aparecieron las flechas, que
+se apagan en las puntas en vez de dar la vuelta —con encastre de
+desplazamiento, saltar de la última a la primera arrastra la pista entera y se
+ve como un error—.
+
+**El visor.** Se fue el botón de ampliar y quedó el cursor de lupa: un ícono de
+36px en una esquina le pide a alguien que descubra un control para hacer lo que
+ya intentó, que es tocar la foto. Adentro hay **dos niveles** —encuadrada y a
+tamaño real, recorrible con el mouse— y entre los dos hay una transición y no un
+salto: la foto está siempre puesta a su tamaño natural y es `transform` quien la
+encoge o la corre, así que el navegador interpola entre las dos formas. Cambiar
+`width` habría dado exactamente el salto que estábamos sacando, y escalar una
+imagen ya encuadrada la habría dejado borrosa justo cuando se la quiere mirar de
+cerca. Se entra **centrado en el punto donde se hizo clic**, y si la foto ya
+entra a 1:1 no hay segundo nivel y el cursor no lo promete.
+
+**Es el único `<img>` del proyecto**, y está justificado en TS §9.3: el zoom es
+«el tamaño real del archivo» y `next/image` devuelve el ancho que elige el
+optimizador. Sin ese ancho conocido no hay con qué calcular la escala.
+
+**La columna derecha.** La descripción se mudó de abajo de todo a al lado del
+precio —abajo llega quien ya decidió; al lado del botón llega quien está
+decidiendo—, se llama **«Sobre el producto»** en vez de «Descripción» —el
+rótulo viejo nombraba el campo de la base—, y **la galería quedó pegada**
+mientras esa columna desplaza: leer «switches lineales» sin el teclado a la
+vista es leer sobre un producto abstracto. La alternativa que también leía tu
+pedido —una barra de desplazamiento propia adentro de la columna— se descartó:
+rompe el desplazamiento en el teléfono y deja sin lugar a los recomendados, que
+vos mismo querés al final de la página y no al final de una cajita.
+
+**Los medios de pago dejaron de dibujarse y pasaron a nombrarse.** Era una tira
+de logos, y en la pantalla de venta una tira de logos se lee como «pagá acá» —y
+acá no se paga (RN-01, RN-08)—. Los nombres siguen saliendo de lo que carga Ana
+(RF-19), así que agregar un medio sigue siendo cargar una fila. Los logos
+quedan en el pie y en la home, donde son señal de confianza y no promesa de un
+botón. **No se puso el enlace a «qué medios aceptamos» que mencionaste**: sería
+el sexto enlace de la tienda apuntando a un `/legales/` que todavía no existe.
+
+**Guardar y Compartir.** El corazón salió de arriba de la imagen en la ficha y
+se quedó en la tarjeta, que es lo que pediste: en una grilla el ícono solo es lo
+único que entra, y en la ficha hay lugar para la palabra. **Compartir funciona
+hoy** —hoja nativa del sistema, y portapapeles si no hay— porque no necesita
+servidor; Guardar espera a F5.4. Y **el fallo de compartir se dice en
+pantalla**: el portapapeles necesita contexto seguro, y `next.config.ts` habilita
+a propósito abrir la tienda por IP de la LAN para probarla desde el teléfono —
+ahí `navigator.clipboard` no existe—. Un botón que se aprieta y no hace nada
+parece un sitio colgado.
+
+**Lo que no se pudo verificar en el navegador.** El desplazamiento de la galería
+usa `behavior: "smooth"`, y el navegador de esta máquina **no está entregando
+cuadros** —`requestAnimationFrame` no dispara nunca, que es la misma causa por
+la que falla el cambio de tamaño de ventana y por la que el portapapeles
+contesta «el documento no tiene foco»—. Lo comprobado es que la instrucción sale
+bien: al tocar la segunda miniatura se llama `scrollTo({left: 555})` sobre la
+pista correcta. Que la pista se mueva es trabajo del navegador, y hace falta uno
+que pinte para verlo.
 
 ---
 
@@ -639,6 +725,13 @@ Cada una se escribió primero en la especificación y después en el código
 | **La tarjeta muestra dos números, no cuatro** | `DESIGN-REFERENCE.md` §6.1 y §6.7 | Llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, tachado primero, como se lee un cartel. **No es una desviación del canvas ni de la referencia**: §6.1 ya dibujaba dos números; el «Ahorrás» venía de §6.7, que es el componente genérico. *(Ampliada el 2026-09-08: la regla dejó de ser de la tarjeta y pasó a ser de toda la tienda — RN-04c, la fila de abajo. El «Ahorrás» tampoco sigue vivo en la ficha.)* |
 | **RN-04c: una oferta son dos números, nunca tres** | `FUNCTIONAL-SPEC.md` RN-04c, RF-02, RF-03; `TECHNICAL-SPEC.md` §7.2; `DESIGN-REFERENCE.md` §6.1, §6.7, §7.3 y §14 | Decisión tuya. La tarjeta ya lo hacía desde F3.8 y **RF-02 seguía pidiendo lo contrario**: un criterio de aceptación que el código incumplía sin que ninguno de los dos estuviera mal a propósito. En vez de corregir RF-02 para que describiera la tarjeta, la regla subió a la tienda entera — el tachado sobre el final ya dice cuánto bajó, y enunciar el ahorro es la misma oferta dicha de nuevo. La ficha era la única pantalla que lo llevaba, y no llegó a tener consumidor: se fue antes de estrenarse |
 | **La vista previa del panel también pierde el «Ahorrás»** | `components/admin/productos/formulario.tsx` | RN-04c es de la tienda y el panel no entra. Pero esa vista previa dice «Se muestra», así que mostrar de más la volvía mentirosa sobre lo único que promete. Y el número que agregaba era el descuento que Ana acababa de tipear tres campos más arriba. `Vista.ahorro` quedó sin usar y se borró |
+| **RN-10 deja de nombrar a PedidosYa y pasa a nombrar la zona; aparece el retiro** | `FUNCTIONAL-SPEC.md` RN-10, RF-01, RF-03, RF-08, RF-11, RF-29, FA-02, decisiones; `TECHNICAL-SPEC.md` §3; `DESIGN-REFERENCE.md` §5.1, §7.1; `DEVELOPMENT-PLAN.md` F1.13, F3.7, F6.1 | Pedido tuyo, y era más grande que la ficha: la regla exigía el aviso en cuatro pantallas, así que cambiar sólo la ficha dejaba a la tienda contándose dos historias. El efecto lateral que hay que mirar es **el checkout**: RF-11 decía «elegí una dirección» y ahora es «envío o retiro» |
+| **Los medios de pago se nombran en la ficha en vez de dibujarse** | `FUNCTIONAL-SPEC.md` RF-03 y decisiones; `DESIGN-REFERENCE.md` §7.3, §14 | Pedido tuyo. Una tira de logos en la pantalla de venta se lee como «pagá acá», y acá no se paga. No se agregó el enlace a «qué medios aceptamos» que mencionaste: sería el sexto enlace apuntando a un `/legales/` que no existe hasta F9.3 |
+| **La ficha declara que los productos son nuevos y en su caja original** | `FUNCTIONAL-SPEC.md` RF-03 y decisiones | Preguntado y contestado: no se venden reacondicionados. Va como texto fijo y no como dato por producto, porque el día que eso cambie cambia el modelo, no una frase |
+| **La galería cambia de forma: miniaturas a la izquierda y siempre visibles, sin botón de ampliar, con visor de dos niveles** | `DESIGN-REFERENCE.md` §6.8 (reescrita) y §14; `TECHNICAL-SPEC.md` §9.3; `DEVELOPMENT-PLAN.md` F3.5 | Pedido tuyo, y el primer punto arregla un error que reportaste: la foto se corría de lugar al cambiar a un color con menos fotos. TS §9.3 tuvo que registrar **la única excepción a `next/image`** del proyecto: el zoom es «el tamaño real del archivo» y el optimizador devuelve el ancho que él elige |
+| **La descripción se muda a la columna derecha y la galería queda pegada** | `DESIGN-REFERENCE.md` §7.3 (canvas reescrito) y §14; `DEVELOPMENT-PLAN.md` F3.5 | Pedido tuyo. De las dos lecturas posibles se tomó la del `sticky`: una barra de desplazamiento propia adentro de la columna rompe el desplazamiento en el teléfono y deja sin lugar a los recomendados del final |
+| **El corazón sale de la imagen en la ficha; en la tarjeta se queda** | `DESIGN-REFERENCE.md` §7.3, §14; `DEVELOPMENT-PLAN.md` F3.5, F5.4 | Pedido tuyo, y contradecía lo que §7.3 había decidido tres días antes —«mismo ícono, mismo lugar en las dos»—. La misma acción dibujada distinto a propósito: en la grilla el ícono solo es lo único que entra; en la ficha hay lugar para la palabra |
+| **«Agregá al carrito» pierde su explicación a la vista** | `DESIGN-REFERENCE.md` §7.3, §14 | Pedido tuyo. §8 pide que todo deshabilitado diga por qué; queda dicho para lectores de pantalla y anotado como excepción, no como olvido. El renglón ocupaba en pantalla más que la falta que explicaba |
 | **La ficha sin stock tiene estado propio, con «Preguntá si va a haber» de principal** | `FUNCTIONAL-SPEC.md` RF-03 y RF-04; `DESIGN-REFERENCE.md` §7.3 y §14; `DEVELOPMENT-PLAN.md` F3.5, F3.6 | Pedido tuyo. RF-03 tenía una línea —«se ofrece Consultar por WhatsApp»— y §7.3 no dibujaba el caso. Faltaban las tres decisiones que lo hacen usable: decirlo **con palabras** y no con un botón apagado, que la consulta suba a **principal** —es la única salida que le queda a esa pantalla—, y **aclarar que nadie va a avisar**, porque el botón suena a que el sitio agenda un aviso y no hay ninguno. Efecto lateral: F3.6 pasa a tener **dos** mensajes, y el de consulta va sin cantidad ni precio |
 | **El corazón de favoritos se rellena con `--brand`** | `DESIGN-REFERENCE.md` §6.1, §7.3 y §14; `FUNCTIONAL-SPEC.md` RF-10; `DEVELOPMENT-PLAN.md` F3.1, F3.5, F5.4 | La pregunta era si entraba un rosa. No: §1.2 decidió **un solo color saturado** y el canvas de F3.8 lo confirmó, así que el segundo no entra por un ícono de 20px. El burdeos ya es el color de lo accionable y de lo elegido, y relleno sobre blanco lee como se espera que lea un corazón marcado. Con eso quedó escrito el contrato entero —siempre a la vista, contorno/relleno, 44px, estado anunciado además del color— para que **F5.4 no tenga que inventar nada**, que es lo que pasa cuando una tarea de una fase posterior hereda media especificación |
 | **F3.5 y F3.6 se hacen juntas, y «Agregá al carrito» se dibuja apagado** | `DEVELOPMENT-PLAN.md` F3.5 y F3.6; `PROGRESO.md` | Decisión tuya. F3.6 es la única acción que la ficha puede tener hasta F5.5, así que por separado salía una pantalla imposible de terminar de probar. El botón del carrito se dibuja deshabilitado **con el motivo al lado**, que es la condición que §8 le pone a todo estado deshabilitado; sin ese renglón sería el botón gris sin explicación que acabábamos de decidir evitar |
@@ -746,6 +839,21 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 ---
 
 ## Pendiente detectado, sin tarea propia
+
+**El checkout ya no es el que está construido en la especificación.** Con el
+retiro en el punto de entrega (RN-10, 2026-09-08), RF-11 dejó de ser «elegí una
+dirección» y pasó a ser «envío o retiro», y con retiro no se pide dirección.
+Está escrito en RF-11 y en F6.1; no está construido porque F6 no empezó. Se
+anota acá para que no llegue como sorpresa el día que se abra la tarea.
+
+**El navegador de esta máquina no entrega cuadros.** `requestAnimationFrame` no
+dispara nunca, y de ahí salen tres síntomas que ya costaron tiempo: el cambio de
+tamaño de ventana no hace nada, el portapapeles contesta «el documento no tiene
+foco», y el desplazamiento suave de la galería no ocurre. **No es un error del
+proyecto**, pero sí el motivo por el que hay cosas que sólo se pueden verificar
+leyendo el código. La salida está evaluada y es tuya: Playwright, que ya está
+elegido en TS §2.1 y §17.2 y anotado como pendiente de F10.2 en `VERSIONS.md`.
+
 
 **El pie y la ficha enlazan a `/legales/…`, que todavía no existe.** El pie lo
 hace desde F1.13 y la ficha lo sumó en F3.5, porque §7.3 dibuja «Garantías y
