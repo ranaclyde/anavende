@@ -2,8 +2,12 @@
 
 import { ArrowRight, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
+import {
+  leerFiltrosDeTienda,
+  urlCambiando,
+} from "@/modules/catalog/products/filtros-tienda";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,21 +22,86 @@ export function SearchBox({
   className,
   autoFocus,
   placeholder = "Buscar productos...",
+  conservarFiltros = false,
+  principal = false,
+  tamano = "normal",
 }: {
   className?: string;
   autoFocus?: boolean;
   placeholder?: string;
+  /**
+   * Marca a ESTE buscador como el de la página (la home y el catálogo tienen
+   * el suyo). Mientras está a la vista, el del encabezado no se dibuja: la
+   * regla vive en `globals.css` y se resuelve en CSS, sin parpadeo.
+   *
+   * Al salir de la pantalla se marca solo, y ahí el del encabezado vuelve.
+   */
+  principal?: boolean;
+  /** `compacto` es el del encabezado: 40px de alto en vez de 48 (§5.1). */
+  tamano?: "normal" | "compacto";
+  /**
+   * Qué hacer con los filtros que ya están puestos al enviar.
+   *
+   * Por omisión se descartan, que es lo correcto en el encabezado: ahí se
+   * busca para *empezar*, y arrastrar la marca de la pantalla anterior sería
+   * un filtro invisible.
+   *
+   * En la barra del catálogo hace falta lo contrario. Buscar «teclado»
+   * teniendo puesta una marca no puede borrarla: el chip está a la vista y la
+   * persona espera que siga valiendo.
+   *
+   * Es una bandera y no un constructor de URL porque este componente es de
+   * cliente y quien lo usa es de servidor: una función no cruza ese borde.
+   */
+  conservarFiltros?: boolean;
 }) {
   const router = useRouter();
   const params = useSearchParams();
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
+  const caja = useRef<HTMLFormElement>(null);
   const [valor, setValor] = useState(params.get("q") ?? "");
+  const compacto = tamano === "compacto";
+
+  /*
+   * Avisa cuándo este buscador dejó de verse, para que el del encabezado
+   * ocupe su lugar. Un IntersectionObserver y no un umbral de scroll en
+   * píxeles: el alto de la home y el del catálogo son distintos, y un número
+   * fijo se rompe el día que cambie el encabezado de cualquiera de las dos.
+   *
+   * El atributo se escribe en el DOM en vez de pasar por estado de React
+   * porque quien lo lee es una regla de CSS, no un componente. Así el scroll
+   * no dispara un solo render.
+   */
+  useEffect(() => {
+    const el = caja.current;
+    if (!principal || !el) return;
+
+    const observador = new IntersectionObserver(
+      ([entrada]) => {
+        el.toggleAttribute("data-fuera-de-vista", !entrada.isIntersecting);
+      },
+      { threshold: 0 },
+    );
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, [principal]);
 
   const buscar = (e: React.FormEvent) => {
     e.preventDefault();
     const q = valor.trim();
-    router.push(q ? `/productos?q=${encodeURIComponent(q)}` : "/productos");
+
+    if (!conservarFiltros) {
+      router.push(q ? `/productos?q=${encodeURIComponent(q)}` : "/productos");
+      return;
+    }
+
+    // Se relee la URL en vez de recibir los filtros por prop: son los mismos
+    // que la pantalla ya leyó, y una segunda copia viajando como prop es una
+    // copia que se puede desincronizar. `urlCambiando` vuelve a la página 1,
+    // que es justo lo que corresponde al cambiar la búsqueda.
+    const actuales = leerFiltrosDeTienda(Object.fromEntries(params.entries()));
+    router.push(urlCambiando(actuales, { q }));
   };
 
   const limpiar = () => {
@@ -42,8 +111,10 @@ export function SearchBox({
 
   return (
     <form
+      ref={caja}
       role="search"
       onSubmit={buscar}
+      data-buscador-principal={principal ? "" : undefined}
       className={cn("relative w-full", className)}
     >
       <label htmlFor={id} className="sr-only">
@@ -59,11 +130,20 @@ export function SearchBox({
         onChange={(e) => setValor(e.target.value)}
         placeholder={placeholder}
         className={cn(
-          "peer h-12 w-full rounded-pill border border-border bg-surface",
-          "pl-5 text-body text-ink transition-colors duration-150",
+          "peer w-full rounded-pill border border-border bg-surface",
+          "text-ink transition-colors duration-150",
           "placeholder:text-ink-tertiary focus:border-border-strong",
-          // 52px para el botón, más 36px cuando además está la «×».
-          valor ? "pr-[88px]" : "pr-13",
+          compacto
+            ? "h-10 pl-4 text-body-sm shadow-sm"
+            : "h-12 pl-5 text-body",
+          // Espacio para el botón, más el de la «×» cuando hay texto.
+          compacto
+            ? valor
+              ? "pr-[72px]"
+              : "pr-11"
+            : valor
+              ? "pr-[88px]"
+              : "pr-13",
           // El navegador dibuja su propia cruz en type=search: se retira,
           // porque acá la limpieza es un botón propio y accesible.
           "[&::-webkit-search-cancel-button]:appearance-none",
@@ -75,9 +155,10 @@ export function SearchBox({
           type="button"
           onClick={limpiar}
           className={cn(
-            "absolute top-1/2 right-[52px] grid size-8 -translate-y-1/2 place-items-center",
+            "absolute top-1/2 grid -translate-y-1/2 place-items-center",
             "rounded-pill text-ink-tertiary transition-colors duration-150",
             "hover:bg-surface-sunken hover:text-ink",
+            compacto ? "right-[42px] size-7" : "right-[52px] size-8",
           )}
         >
           <X aria-hidden className="size-4" />
@@ -88,8 +169,9 @@ export function SearchBox({
       <button
         type="submit"
         className={cn(
-          "absolute top-1/2 right-1 grid size-10 -translate-y-1/2 place-items-center",
+          "absolute top-1/2 right-1 grid -translate-y-1/2 place-items-center",
           "rounded-pill bg-brand text-ink-inverse shadow-brand",
+          compacto ? "size-8" : "size-10",
           // La sombra propia pisa la del anillo: acá se vuelve a pedir.
           "focus-visible:shadow-focus",
           "transition-colors duration-150 hover:bg-brand-hover active:bg-brand-active",

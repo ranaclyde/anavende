@@ -36,6 +36,31 @@ Toma el sistema de shop.app como referencia estructural —canvas claro, tarjeta
 | **Segunda escala, más densa, para el panel** | El lenguaje aéreo de la tienda vuelve ilegible una tabla de órdenes. Ver §4 |
 | **Modo oscuro solo en el panel** | La tienda vive del blanco; el panel es donde se pasan horas |
 
+### 1.3 Lo que cambió el canvas de F3.8
+
+En F3.8 se aprobó un canvas de Claude Design (`Rediseño UI AnaVende`, siete pantallas: home, catálogo, categorías, ficha, carrito, orden enviada, panel) construido sobre esta misma referencia — <https://claude.ai/design/p/630d6d88-0a72-4ac6-b785-b1153d5e419b?file=AnaVende.dc.html>. **Confirmó las decisiones grandes de §1.2** —acento burdeos, encabezado superior con etiquetas, un solo color saturado— y ajustó tres cosas del detalle:
+
+**El rediseño alcanza a la tienda y no al panel.** Se rehace lo que ve el comprador; el panel conserva la escala densa de §4, sus radios y su modo oscuro. La pantalla de panel que el canvas incluye está en la tabla de lo que no se toma, más abajo. Lo único compartido es la capa de tokens —una paleta, dos densidades (§4)—, así que los grises cálidos llegan al panel en modo claro por herencia, sin que ninguno de sus componentes cambie.
+
+| Ajuste | De | A |
+|---|---|---|
+| Temperatura de los grises | Fría | **Cálida** (§3.1) |
+| Radio de tarjeta / imagen | 24 / 16px | **28 / 20px** (§3.5) |
+| Tinte de marca y de sombras | `#fdf2f3` / negro frío | `#f7edef` / `--ink` cálido |
+
+**Lo que del canvas NO se tomó, y por qué:**
+
+| Del canvas | Se conserva | Motivo |
+|---|---|---|
+| Archivo como tipografía | **Inter** | Archivo entró por herencia del sistema Modernist que el canvas importó, no por decisión de diseño |
+| Textos de 10–11px | **Piso de 12px** | RNF-02. Es el mismo motivo por el que §1.2 ya había descartado los 9px de la referencia |
+| Hover de marca que oscurece (`#6d2029`) | **Hover que aclara** (`#9d3040`) | §2.1: el color base ya es oscuro, y oscurecerlo lo acerca al negro y anula la señal |
+| `#787574` como gris secundario | **`#716e6d`** | 4,14:1 sobre el canvas, por debajo del AA que pide RNF-02. Bajarle un 6% de luminosidad conserva la temperatura y llega a 4,58 |
+| Panel de órdenes con el lenguaje aéreo de la tienda | **La escala densa de §4** | El motivo original no cambió: una tabla de órdenes en lenguaje de tienda es ilegible |
+| «Admin» como enlace en la barra superior | **Nada** | En el canvas es una comodidad para saltar entre pantallas; el panel está detrás de autenticación |
+
+El canvas tampoco resuelve el catálogo tal como se implementa: propone un panel de filtros desplegable sin paginación ni estado en la URL. Se toma **su aspecto** y se conserva **la arquitectura de §7.2 y §10.2** —filtros, orden y página en la dirección—, porque es lo que hace que el enlace filtrado se pueda compartir y que el botón atrás funcione. Un prototipo no necesita ninguna de las dos cosas; la tienda sí.
+
 ---
 
 ## 2. Identidad
@@ -122,9 +147,9 @@ Es un juego con el nombre: «Ana **vende**» y del otro lado quien elige. Repart
   --brand:            #832833;   /* acción principal, identidad, precio en oferta */
   --brand-hover:      #9d3040;   /* MÁS CLARO: el color base ya es oscuro */
   --brand-active:     #6b202a;
-  --brand-tint:       #fdf2f3;   /* fondo de etiquetas y estados suaves */
+  --brand-tint:       #f7edef;   /* fondo de etiquetas y estados suaves */
   --brand-tint-border:#f2dcdf;
-  --brand-shadow:     rgba(131, 40, 51, 0.26);
+  --brand-shadow:     rgba(131, 40, 51, 0.34);
 
   /* ── Superficies ───────────────────────────────────── */
   --canvas:           #f2f4f5;   /* fondo de página */
@@ -132,13 +157,13 @@ Es un juego con el nombre: «Ana **vende**» y del otro lado quien elige. Repart
   --surface-sunken:   #fafbfb;   /* filas alternadas, bloques embebidos */
 
   /* ── Texto ─────────────────────────────────────────── */
-  --ink:              #16181a;   /* primario */
-  --ink-secondary:    #6b6f73;   /* secundario, etiquetas */
-  --ink-tertiary:     #9aa0a5;   /* metadatos, marcadores de posición */
+  --ink:              #111010;   /* primario */
+  --ink-secondary:    #716e6d;   /* secundario, etiquetas */
+  --ink-tertiary:     #8f8b8a;   /* metadatos, marcadores de posición */
   --ink-inverse:      #ffffff;
 
   /* ── Líneas ────────────────────────────────────────── */
-  --border:           #e8eaeb;   /* divisorias, contorno de campos */
+  --border:           #ebebeb;   /* divisorias, contorno de campos */
   --border-strong:    #d3d7d9;   /* campo con foco, separadores marcados */
 
   /* ── Semánticos ────────────────────────────────────── */
@@ -149,15 +174,18 @@ Es un juego con el nombre: «Ana **vende**» y del otro lado quien elige. Repart
 }
 ```
 
-> **`--ink` es `#16181a`, no negro puro.** El negro absoluto sobre blanco produce un contraste duro que cansa en textos largos. Un casi-negro conserva 15,8:1 y se lee más cómodo.
+> **`--ink` es `#111010`, no negro puro.** El negro absoluto sobre blanco produce un contraste duro que cansa en textos largos. Un casi-negro conserva 19,0:1 y se lee más cómodo.
+>
+> **La familia de grises es cálida, no fría.** Es el cambio que trajo el canvas de F3.8, y es de donde sale el aire de la referencia: `#f2f4f5` es un canvas frío, y los grises cálidos encima generan la misma tensión de temperatura que §2.1 le pide al burdeos. La familia fría anterior (`#16181a` / `#6b6f73` / `#9aa0a5`) se retiró entera — mezclar las dos deja los textos secundarios azulados sobre tarjetas cálidas.
 
 **Verificación de contraste** (todos cumplen WCAG AA para texto normal):
 
 | Combinación | Ratio | Nivel |
 |---|---|---|
-| `--ink` sobre `--surface` | 15,8:1 | AAA |
-| `--ink-secondary` sobre `--surface` | 5,3:1 | AA |
-| `--ink-tertiary` sobre `--surface` | 2,8:1 | Solo texto ≥ 24px o elementos decorativos |
+| `--ink` sobre `--surface` | 19,0:1 | AAA |
+| `--ink-secondary` sobre `--surface` | 5,06:1 | AA |
+| `--ink-secondary` sobre `--canvas` | **4,58:1** | AA — es el caso que manda (ver abajo) |
+| `--ink-tertiary` sobre `--surface` | 3,37:1 | Solo texto ≥ 24px o elementos decorativos |
 | `--brand` sobre `--surface` | **9,07:1** | AAA |
 | `--ink-inverse` sobre `--brand` | **9,07:1** | AAA |
 | `--danger` sobre `--surface` | 4,83:1 | AA |
@@ -240,25 +268,25 @@ Escala de base 4px:
 
 | Elemento | Tienda | Panel | Motivo de la diferencia |
 |---|---|---|---|
-| Tarjeta de producto | **24px** | 12px | El panel muestra muchas más filas por pantalla |
-| Imagen dentro de tarjeta | 16px | 8px | Siempre ~8px menos que su contenedor (§6.1) |
+| Tarjeta de producto | **28px** | 12px | El panel muestra muchas más filas por pantalla |
+| Imagen dentro de tarjeta | 20px | 8px | Siempre ~8px menos que su contenedor (§6.1) |
 | Botón | **9999px** | 8px | En la tienda la píldora es la firma; en el panel estorba en barras densas |
 | Campo de texto | 9999px | 8px | Ídem |
 | Buscador | 9999px | 9999px | Es el mismo componente en ambos |
 | Chip / etiqueta de estado | 9999px | 9999px | La píldora se conserva siempre |
 | Modal | 20px | 16px | |
-| Imagen suelta | 16px | 8px | |
+| Imagen suelta | 20px | 8px | |
 
 > **Regla del marco blanco:** la imagen interior siempre lleva ~8px menos de radio que su contenedor. Eso deja un borde blanco visible que separa el producto del borde de la tarjeta. Recortar la imagen exactamente a la forma de la tarjeta rompe el efecto y hace que los productos de fondo blanco se fusionen con la página.
 
 ### 3.6 Sombras
 
 ```css
---shadow-sm:    0 2px 8px rgba(22, 24, 26, 0.06);
---shadow-md:    0 4px 6px -1px rgba(22, 24, 26, 0.10),
-                0 2px 4px -2px rgba(22, 24, 26, 0.10);
---shadow-lg:    0 4px 24px rgba(22, 24, 26, 0.12);
---shadow-brand: 0 4px 20px var(--brand-shadow);
+--shadow-sm:    0 2px 8px rgba(17, 16, 16, 0.06);
+--shadow-md:    0 4px 6px -1px rgba(17, 16, 16, 0.10),
+                0 2px 4px -2px rgba(17, 16, 16, 0.10);
+--shadow-lg:    0 4px 24px rgba(17, 16, 16, 0.12);
+--shadow-brand: 0 4px 24px var(--brand-shadow);
 --shadow-focus: 0 0 0 3px var(--brand-tint), 0 0 0 1px var(--brand);
 ```
 
@@ -271,6 +299,8 @@ Escala de base 4px:
 | `focus` | Anillo de foco de teclado, en todo elemento interactivo |
 
 **Las tarjetas se separan por sombra, no por borde.** Sombra y borde juntos ensucian y aplanan la elevación.
+
+> **Las sombras se tiñen con `--ink`, no con negro.** Al pasar la familia de grises a cálida hubo que mover también el tinte de las tres sombras (`rgba(22,24,26)` → `rgba(17,16,16)`): una sombra azulada debajo de una tarjeta cálida se nota, aunque nadie sepa decir por qué.
 
 ---
 
@@ -353,19 +383,18 @@ El sistema tiene **una paleta y una tipografía**, pero **dos escalas de densida
 El componente más importante del sistema. Aparece en catálogo, home, recomendados y favoritos, y es **siempre el mismo**.
 
 ```
-┌─────────────────────────┐   radio 24px, superficie blanca
+┌─────────────────────────┐   radio 28px, superficie blanca
 │  ┌───────────────────┐  │   sombra md, sin borde
 │  │                   │  │
-│  │   imagen 1:1      │  │   radio 16px (8 menos que la tarjeta)
+│  │   imagen 1:1      │  │   radio 20px (8 menos que la tarjeta)
 │  │                   │  │
 │  └───────────────────┘  │
 │                         │
 │  LOGITECH               │   caption 12px/500, secundario, VERSALITAS
 │  Teclado mecánico K120  │   body-sm 14px/500, ink, máx. 2 líneas
 │                         │
-│  $ 24.500,00            │   body 16px/600 · burdeos si hay oferta
-│  $ 27.500,00            │   caption 12px, tachado, terciario
-│                     ♡   │
+│  $27.500,00 $24.500,00 ●●│  una línea: tachado y después final
+│                     ♡   │   puntos de color a la derecha
 └─────────────────────────┘
 ```
 
@@ -374,11 +403,15 @@ El componente más importante del sistema. Aparece en catálogo, home, recomenda
 | Reposo | `--shadow-md` |
 | Hover | Elevación a `--shadow-lg`, la tarjeta sube 2px, la imagen escala a 1.03 dentro de su marco. Transición 200ms |
 | Foco | `--shadow-focus` sobre toda la tarjeta |
-| **Con descuento** | Etiqueta «−$ 3.000» arriba a la izquierda de la imagen, píldora burdeos, texto blanco, caption |
+| **Con descuento** | Precio tachado a la izquierda del final, en la misma línea. El final va en burdeos. **Sin píldora sobre la imagen** |
 | **Sin stock** | Imagen al 55% de opacidad + píldora «Sin stock» centrada sobre ella, superficie blanca al 92%. **La tarjeta sigue siendo clicable** (RN-05) |
 | Favorito | Corazón arriba a la derecha; relleno burdeos si está marcado |
 
 **Sobre la marca en versalitas:** separa visualmente marca de producto sin sumar un color ni un peso. Es un recurso de la referencia y funciona bien con Inter.
+
+**Sobre los dos números, y no cuatro.** La tarjeta llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el precio final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces y cuatro números para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, que es lo que ya dibujaba este esquema y lo que hace el canvas aprobado en F3.8. El «Ahorrás» sigue existiendo en la ficha (§6.7), donde hay lugar y es un argumento de venta.
+
+**Sobre los puntos de color.** Hasta cuatro, y «+N» si hay más; un producto con nueve colores llenaría media tarjeta de puntos y empujaría el precio. **No son seleccionables**: elegir color es de la ficha (§6.5), y hacerlos clicables metería un segundo destino dentro de una tarjeta que ya es un enlace entero. Llevan borde: un punto blanco sobre superficie blanca, sin contorno, no existe.
 
 ### 6.2 Buscador
 
@@ -469,12 +502,18 @@ Color:  Negro
 Componente propio, porque aparece en todas partes y tiene que ser consistente.
 
 ```
+FICHA (§7.3)
 Sin oferta:      $ 27.500,00              ink, peso 600
-
 Con oferta:      $ 24.500,00              burdeos, peso 600
                  $ 27.500,00              tachado, terciario, 12px
                  Ahorrás $ 3.000,00       burdeos, caption
+
+TARJETA (§6.1) — una línea, sin «Ahorrás»
+Sin oferta:      $ 27.500,00              ink, peso 600
+Con oferta:      $ 27.500,00 $ 24.500,00  tachado terciario 12px, después burdeos 600
 ```
+
+**Las dos variantes no son un capricho de tamaño.** En la ficha se lee un producto solo y el monto ahorrado vende; en una grilla de 24, esa misma línea multiplicada por 24 es ruido, y el tachado al lado del final ya dice que hay rebaja. El tachado va **primero** porque así se lee un cartel de oferta: «valía tanto, ahora tanto».
 
 - Formato `es-AR`: `Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' })`.
 - **Siempre con decimales** (RN-02). Nunca se aclara nada sobre IVA.
@@ -579,11 +618,30 @@ Sin *hero* fotográfico: el hero es el buscador. Es una tienda de reventa, no un
 
 ### 7.2 Catálogo
 
-- **Escritorio:** filtros en columna izquierda de 260px, grilla de 4 columnas a la derecha.
-- **Móvil:** botón «Filtros» que abre un panel inferior deslizable; la grilla pasa a 2 columnas.
-- Los filtros aplicados aparecen como **chips removibles** arriba de la grilla, con «Limpiar todo».
-- El ordenamiento es un desplegable arriba a la derecha, junto al conteo de resultados.
+> **Reescrita en F3.8.** Antes decía «filtros en columna izquierda de 260px». El canvas aprobado propone una barra con panel desplegable, y se adoptó: la columna lateral se come 260px de los 1200 —el 22%— para algo que se toca una vez y después estorba durante toda la sesión.
+
+- **Una barra de tres controles**, del mismo alto (48px), encima de la grilla: buscador píldora que ocupa el espacio sobrante, botón «Filtros» y desplegable de orden. Tres alturas distintas en una fila se leen como un error.
+- **El botón «Filtros» lleva el número de filtros puestos** en un círculo burdeos. La búsqueda no se cuenta ahí: tiene su propio campo al lado, y sumarla haría que el número no se corresponda con lo que se ve al abrir.
+- **El panel se despliega de lado a lado por debajo de la barra**, no del ancho del botón, y se posiciona sobre la grilla en vez de empujarla. Abre con un `<details>` nativo: sin JavaScript, con teclado, y conservando su estado entre navegaciones — tocar un chip no lo cierra.
+- **Dentro del panel, los tres grupos van en columnas**, no apilados: apilados el panel pasaba los 500px de alto y «Color» quedaba abajo de todo, así que se elegía categoría, se elegía marca y nadie llegaba a ver que había colores. En un teléfono vuelven a una sola columna.
+- **Todo son chips con su conteo**: categoría, marca y color, cada grupo con su encabezado en versalitas. El color suma un punto relleno con su hexadecimal. El descuento es la excepción y se dibuja como casilla: no es una opción entre varias, es sí o no.
+- **El pie del panel cierra el trato**: «Limpiar filtros» a la izquierda y **«Ver N productos»** a la derecha, relleno burdeos. Sin ese botón, la única forma de cerrar es volver a subir hasta «Filtros», que es justo el gesto que nadie encuentra después de elegir tres cosas. Es la única línea de JavaScript del panel —un `<details>` no se cierra desde adentro sin script— y degrada: su `href` baja a la grilla.
+
+**Los tres estados del burdeos en esta pantalla no se pisan**, y esa es la regla que los mantiene distinguibles:
+
+| Qué | Tratamiento |
+|---|---|
+| Chip **elegido** dentro del panel | Relleno burdeos, texto blanco |
+| Chip de **filtro aplicado** sobre la grilla | Tinte `--brand-tint`, texto burdeos, borde tenue |
+| Botón **«Filtros»** con algo puesto | Tinte `--brand-tint`, texto burdeos |
+
+El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del contador: en una barra de tres controles blancos ese punto pasa desapercibido y la persona no ve que la lista que está mirando está recortada.
+- Los filtros aplicados aparecen además como **chips removibles** arriba de la grilla, con «Limpiar todo», porque con el panel cerrado son la única señal de por qué hay nueve resultados.
+- El conteo de resultados va a la derecha de esos chips, y es `aria-live`.
+- **El `<h1>` dice qué se está mirando**: el término buscado, el nombre de la categoría elegida, o «Todos los productos».
 - La grilla es 2 / 3 / 4 columnas según ancho, con 16px de separación.
+
+**Limitación registrada:** categoría, marca y color son de **selección única**; RF-02 los pide multiselección. Filtrar por los tres a la vez ya se puede; lo que no se puede es elegir dos marcas. Tampoco está el rango de precio de RF-02. Son funciones pendientes, no decisiones de diseño.
 
 ### 7.3 Ficha de producto
 
@@ -856,3 +914,9 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | Modo oscuro solo en el panel | La tienda vive del canvas blanco; el panel es donde se pasan horas |
 | Uso obligatorio de `impeccable` y `ui-ux-pro-max` al programar el frontend | Una referencia escrita fija el marco, pero no garantiza el acabado; las skills cierran esa brecha sin abrir la puerta a un segundo criterio visual |
 | Sin hero fotográfico en la home | Una foto genérica de banco de imágenes le resta credibilidad a una tienda de reventa |
+| Familia de grises cálida en vez de fría | Es lo que trajo el canvas aprobado en F3.8, y es de donde sale el aire de la referencia: grises cálidos sobre un canvas frío repiten la tensión de temperatura que §2.1 le pide al burdeos |
+| `#716e6d` en vez del `#787574` del canvas | El del canvas da 4,14:1 sobre `--canvas`, bajo el AA de RNF-02. Un 6% menos de luminosidad conserva la temperatura y llega a 4,58:1 |
+| Radios 28 / 20px en vez de 24 / 16px | Los del canvas aprobado. La diferencia de 8px que pide la regla del marco blanco (§3.5) se mantiene intacta |
+| Las sombras se tiñen con `--ink` y no con negro | Al calentar los grises, una sombra azulada bajo una tarjeta cálida se nota aunque no se sepa nombrar |
+| Inter se conserva pese a que el canvas usa Archivo | Archivo llegó por herencia del sistema Modernist que el canvas importó; no fue una decisión de diseño |
+| El hover de marca sigue aclarando aunque el canvas lo oscurezca | El motivo de §2.1 no cambió, y un estado de hover en un mock estático no es una decisión tomada |

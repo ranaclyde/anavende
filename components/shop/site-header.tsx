@@ -17,6 +17,10 @@ import { cn } from "@/lib/utils";
  * hay contenido debajo, la sombra explica que está por encima.
  *
  * En móvil el buscador colapsa a un ícono y se abre a ancho completo.
+ *
+ * **El buscador no se dibuja si la página ya tiene el suyo** (F3.8). La regla
+ * vive en `globals.css`; vuelve solo en cuanto el de la página sale de la
+ * pantalla. Ver `SearchBox`, prop `principal`.
  */
 export function SiteHeader({
   cartCount = 0,
@@ -49,14 +53,17 @@ export function SiteHeader({
       <div className="mx-auto flex h-14 max-w-shop items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Logo />
 
-        {/* Escritorio: el buscador es la pieza central del encabezado. */}
-        <div className="mx-auto hidden w-full max-w-md md:block">
-          <SearchBox />
+        <div className="flex-1" />
+
+        {/* Escritorio: 268px fijos, junto al carrito. */}
+        <div data-buscador-navbar className="hidden w-[268px] md:block">
+          <SearchBox tamano="compacto" placeholder="¿Qué estás buscando?" />
         </div>
 
-        <nav aria-label="Tu cuenta" className="ml-auto flex items-center gap-1">
+        <nav aria-label="Tu cuenta" className="flex items-center gap-1">
           <button
             type="button"
+            data-buscador-navbar
             onClick={() => setBuscadorAbierto((v) => !v)}
             aria-expanded={buscadorAbierto}
             className="grid size-11 place-items-center rounded-pill text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink md:hidden"
@@ -75,17 +82,24 @@ export function SiteHeader({
             <Heart aria-hidden className="size-5" />
           </AccionDelEncabezado>
 
-          <AccionDelEncabezado
+          {/*
+            Píldora con el número A LA VISTA, no un ícono con insignia encima:
+            la insignia de 18px sobre el ícono obliga a entrecerrar los ojos.
+          */}
+          <Link
             href="/carrito"
-            etiqueta={
-              cartCount > 0
-                ? `Carrito, ${cartCount} ${cartCount === 1 ? "producto" : "productos"}`
-                : "Carrito, vacío"
-            }
-            insignia={cartCount}
+            className="ml-1 flex h-10 items-center gap-2 rounded-pill border border-border bg-surface px-3.5 text-body-sm text-ink shadow-sm transition-shadow duration-150 hover:shadow-md"
           >
-            <ShoppingCart aria-hidden className="size-5" />
-          </AccionDelEncabezado>
+            <ShoppingCart aria-hidden className="size-4 shrink-0" />
+            <span aria-hidden className="tabular-nums">
+              {cartCount}
+            </span>
+            <span className="sr-only">
+              {cartCount > 0
+                ? `Carrito, ${cartCount} ${cartCount === 1 ? "producto" : "productos"}`
+                : "Carrito, vacío"}
+            </span>
+          </Link>
 
           <Link
             href={userName ? "/mi-cuenta" : "/ingresar"}
@@ -101,7 +115,10 @@ export function SiteHeader({
 
       {/* Móvil: el buscador se despliega a ancho completo. */}
       {buscadorAbierto && (
-        <div className="border-t border-border px-4 py-3 md:hidden">
+        <div
+          data-buscador-navbar
+          className="border-t border-border px-4 py-3 md:hidden"
+        >
           <SearchBox autoFocus />
         </div>
       )}
@@ -112,30 +129,18 @@ export function SiteHeader({
 function AccionDelEncabezado({
   href,
   etiqueta,
-  insignia,
   children,
 }: {
   href: string;
   etiqueta: string;
-  insignia?: number;
   children: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
-      className="relative grid size-11 place-items-center rounded-pill text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink"
+      className="grid size-11 place-items-center rounded-pill text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink"
     >
       {children}
-      {/* 12px es el piso absoluto del sistema (§3.3): la insignia no baja de
-          ahí aunque el espacio tiente. */}
-      {insignia !== undefined && insignia > 0 && (
-        <span
-          aria-hidden
-          className="absolute top-1 right-1 grid min-w-[18px] place-items-center rounded-pill bg-brand px-1 text-caption leading-[18px] font-medium text-ink-inverse"
-        >
-          {insignia > 9 ? "9+" : insignia}
-        </span>
-      )}
       <span className="sr-only">{etiqueta}</span>
     </Link>
   );
