@@ -29,7 +29,7 @@ desarrollo pasó a apuntar al servidor DATA.
 | Sentry | @sentry/nextjs | 10.73.0 |
 | decimal.js (aritmética de montos, §7.1) | — | 10.6.0 |
 | Vitest | — | **5.0.0** (F4.0, 2026-09-06). Pidió subir `@types/node` de `^20` a `^22`, que es la versión de Node que §2.1 declara y la que corre de verdad |
-| Playwright | — | pendiente F10.2 |
+| Playwright | — | **1.63.0** (`@playwright/test`, 2026-09-08). Instalado para poder **ver y medir el teléfono**, que hasta hoy era a ciegas; sólo se bajó Chromium (`npx playwright install chromium`). La suite de extremo a extremo sigue pendiente en F10.2 |
 | PostgreSQL (servidor DATA) | 15+ | **15.8** (`supabase/postgres:15.8.1.085`) — `supabase/config.toml` igualado a esta |
 | Supabase auto-hospedado (servidor DATA) | — | *docker compose* oficial. Las trece imágenes, abajo |
 | Coolify | — | **pendiente F0.2** |
