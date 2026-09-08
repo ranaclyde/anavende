@@ -115,6 +115,7 @@ export async function leerPaginaDelCatalogo(
       precioFinal: string;
       imagenKey: string | null;
       color: string | null;
+      colores: { nombre: string; hex: string }[] | null;
       disponible: number;
     }>(sql`
       SELECT p.slug,
@@ -125,6 +126,7 @@ export async function leerPaginaDelCatalogo(
              p.final_price     AS "precioFinal",
              img.storage_key   AS "imagenKey",
              img.color,
+             cols.lista        AS colores,
              st.disponible
         FROM products p
         JOIN brands b ON b.id = p.brand_id
@@ -153,6 +155,25 @@ export async function leerPaginaDelCatalogo(
            LIMIT 1
         ) img ON true
 
+        -- Los puntos de color de la tarjeta (§6.1). DISTINCT en el
+        -- subselect y no en el agregado: dos variantes negras del mismo
+        -- producto pintarían dos puntos negros idénticos.
+        LEFT JOIN LATERAL (
+          SELECT coalesce(
+                   json_agg(
+                     json_build_object('nombre', c.nombre, 'hex', c.hex)
+                     ORDER BY c.nombre
+                   ),
+                   '[]'::json
+                 ) AS lista
+            FROM (
+              SELECT DISTINCT co.name AS nombre, co.hex_code AS hex
+                FROM product_variants v
+                JOIN colors co ON co.id = v.color_id
+               WHERE v.product_id = p.id AND v.is_active
+            ) c
+        ) cols ON true
+
        WHERE ${donde}
        ORDER BY ${ORDEN[f.orden]}, p.id
        LIMIT ${POR_PAGINA} OFFSET ${desde}`),
@@ -178,6 +199,7 @@ export async function leerPaginaDelCatalogo(
       precioFinal: r.precioFinal,
       imagenKey: r.imagenKey,
       color: r.color,
+      colores: r.colores ?? [],
       disponible: r.disponible,
     })),
     total: conteo.n,

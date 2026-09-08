@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Precio } from "@/components/shop/precio";
-import { formatMoney, isPositive, type Money } from "@/lib/money";
+import type { Money } from "@/lib/money";
 import { urlDeImagen } from "@/modules/media/subir";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +39,11 @@ export type ProductoEnTarjeta = {
   imagenKey: string | null;
   /** Para el texto alternativo: «…, negro» (§9). */
   color?: string | null;
+  /**
+   * Todos los colores en que existe el producto, para los puntos de §6.1.
+   * Distinto de `color`, que es el de la foto que se está mostrando.
+   */
+  colores?: { nombre: string; hex: string }[];
   /** `stock_total − reserved_stock` sumado sobre las variantes (§8.1). */
   disponible: number;
 };
@@ -62,7 +67,7 @@ type Props = {
 
 export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) {
   const { slug, nombre, marca, imagenKey, color, disponible } = producto;
-  const hayOferta = isPositive(producto.descuento);
+  const colores = producto.colores ?? [];
   const sinStock = disponible <= 0;
 
   // §9: «producto, marca y color». Sin el color, dos tarjetas de la misma
@@ -124,14 +129,13 @@ export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) 
             </div>
           )}
 
-          {hayOferta ? (
-            // `whitespace-nowrap`: una píldora que se parte en dos renglones
-            // deja de leerse como una etiqueta y tapa media foto.
-            <p className="absolute top-2 left-2 rounded-full bg-brand px-2 py-1 text-caption font-medium whitespace-nowrap text-white tabular-nums">
-              −{formatMoney(producto.descuento)}
-            </p>
-          ) : null}
-
+          {/*
+            NO hay píldora de descuento sobre la imagen. La llevaba, y decía el
+            mismo monto que el «Ahorrás» de abajo: la tarjeta mostraba cuatro
+            números para comunicar una sola oferta. El tachado junto al precio
+            en burdeos ya dice que hay rebaja, que es como lo resuelve el canvas
+            aprobado en F3.8.
+          */}
           {sinStock ? (
             <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-surface/92 px-3 py-1.5 text-caption font-medium whitespace-nowrap text-ink shadow-md">
               Sin stock
@@ -172,13 +176,72 @@ export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) 
           </Link>
         </h3>
 
-        <Precio
-          precio={producto.precio}
-          descuento={producto.descuento}
-          precioFinal={producto.precioFinal}
-          className="pt-1"
-        />
+        {/*
+          Precio a la izquierda, colores a la derecha, en la misma línea (§6.1).
+          `items-end` y no `items-center`: el precio tiene dos tamaños de texto
+          y alinear por el centro deja los puntos flotando alto.
+        */}
+        <div className="flex items-end justify-between gap-2 pt-1">
+          <Precio
+            precio={producto.precio}
+            descuento={producto.descuento}
+            precioFinal={producto.precioFinal}
+          />
+          <PuntosDeColor colores={colores} />
+        </div>
       </div>
     </article>
+  );
+}
+
+/**
+ * Los colores en que viene el producto, como puntos (§6.1).
+ *
+ * **No son seleccionables acá.** Elegir color es de la ficha (§6.5): en la
+ * grilla son un dato —«esto viene en tres colores»— y hacerlos clicables
+ * metería un segundo destino dentro de una tarjeta que ya es un enlace entero.
+ *
+ * Se muestran hasta cuatro. Un producto con nueve colores llenaría media
+ * tarjeta de puntos y empujaría el precio; el resto se resume en «+N», que
+ * dice lo mismo en un tercio del espacio.
+ */
+function PuntosDeColor({ colores }: { colores: { nombre: string; hex: string }[] }) {
+  if (colores.length === 0) return null;
+
+  const MAXIMO = 4;
+  const visibles = colores.slice(0, MAXIMO);
+  const resto = colores.length - visibles.length;
+
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      {/*
+        Los puntos son decorativos y el texto oculto de abajo dice los nombres:
+        marcar cada punto por separado haría que un lector de pantalla recite
+        «negro, blanco, rojo» sin decir nunca de qué está hablando.
+      */}
+      {visibles.map((c) => (
+        <span
+          key={c.hex + c.nombre}
+          // El borde importa en los claros: un punto blanco sobre superficie
+          // blanca, sin contorno, no existe.
+          className="size-3 rounded-full border border-border"
+          style={{ backgroundColor: c.hex }}
+          aria-hidden="true"
+        />
+      ))}
+      {resto > 0 ? (
+        <span
+          className="text-caption text-ink-tertiary tabular-nums"
+          aria-hidden="true"
+        >
+          +{resto}
+        </span>
+      ) : null}
+      <span className="sr-only">
+        {colores.length === 1
+          ? `Color: ${colores[0].nombre.toLowerCase()}`
+          : `Colores: ${colores.map((c) => c.nombre.toLowerCase()).join(", ")}`}
+      </span>
+    </div>
   );
 }

@@ -44,18 +44,61 @@ export function Precio({
   const hayOferta = isPositive(descuento);
   const enFicha = tamano === "ficha";
 
+  /*
+   * En la TARJETA el precio va en una sola línea —tachado y después final— y
+   * sin «Ahorrás». Es lo que dibuja §6.1, y el motivo es la grilla: con la
+   * píldora de descuento sobre la imagen, el final, el tachado y el ahorro, la
+   * misma cifra aparecía dos veces y la tarjeta mostraba cuatro números para
+   * decir una cosa. En la FICHA sí va completo: hay lugar, se lee un producto
+   * solo, y ahí el monto ahorrado es un argumento de venta (§6.7).
+   */
+  if (!enFicha) {
+    return (
+      <div
+        className={cn(
+          "flex flex-wrap items-baseline gap-x-2 gap-y-0.5",
+          className,
+        )}
+      >
+        {/*
+          El tachado va PRIMERO, como se lee un cartel de oferta: «valía tanto,
+          ahora tanto». Con el final adelante, el tachado parece una aclaración
+          al pie y se pierde el contraste entre los dos.
+
+          `<s>` y no una clase: el tachado ES la información —«este precio ya no
+          rige»— y un lector de pantalla no ve `line-through`. El «Antes:»
+          oculto evita que se lean dos precios seguidos sin decir cuál es cuál.
+        */}
+        {hayOferta ? (
+          <s className="text-caption text-ink-tertiary tabular-nums">
+            <span className="sr-only">Antes: </span>
+            {formatMoney(precio)}
+          </s>
+        ) : null}
+
+        {/*
+          `tabular-nums`: sin esto las columnas de precios de la grilla bailan,
+          porque en Inter el «1» es más angosto que el «8».
+        */}
+        <p
+          className={cn(
+            "text-body font-semibold tabular-nums",
+            // El burdeos es de la marca y de lo accionable (§11). Acá señala
+            // una oferta vigente, la única excepción que §6.7 le concede.
+            hayOferta ? "text-brand" : "text-ink",
+          )}
+        >
+          {formatMoney(precioFinal)}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-col gap-0.5", className)}>
-      {/*
-        `tabular-nums` en todos los montos: sin esto las columnas de precios de
-        la grilla bailan, porque en Inter el «1» es más angosto que el «8».
-      */}
       <p
         className={cn(
-          "font-semibold tabular-nums",
-          enFicha ? "text-title" : "text-body",
-          // El burdeos es de la marca y de lo accionable (§11). Acá señala una
-          // oferta vigente, que es la única excepción que §6.7 le concede.
+          "text-title font-semibold tabular-nums",
           hayOferta ? "text-brand" : "text-ink",
         )}
       >
@@ -63,18 +106,7 @@ export function Precio({
       </p>
 
       {hayOferta ? (
-        <div
-          className={cn(
-            "flex flex-wrap items-baseline gap-x-2",
-            enFicha ? "gap-y-1" : "gap-y-0.5",
-          )}
-        >
-          {/*
-            `<s>` y no una clase de tachado: el tachado ES la información —«este
-            precio ya no rige»— y un lector de pantalla no ve `line-through`.
-            El «Antes:» oculto evita que se lean dos precios seguidos sin decir
-            cuál es cuál, que es como suena sin él.
-          */}
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <s className="text-caption text-ink-tertiary tabular-nums">
             <span className="sr-only">Antes: </span>
             {formatMoney(precio)}
@@ -85,12 +117,7 @@ export function Precio({
             (RN-04b). «Ahorrás $ 3.000» es una plata concreta; «11% off» hay que
             calcularlo mentalmente sobre un número que todavía no se leyó.
           */}
-          <p
-            className={cn(
-              "font-medium text-brand tabular-nums",
-              enFicha ? "text-body-sm" : "text-caption",
-            )}
-          >
+          <p className="text-body-sm font-medium text-brand tabular-nums">
             Ahorrás {formatMoney(descuento)}
           </p>
         </div>

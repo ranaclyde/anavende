@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Check, SlidersHorizontal, X } from "lucide-react";
 
+import { BotonVerResultados } from "@/components/shop/boton-ver-resultados";
+
 import {
   contarFiltrosDeTienda,
   hayFiltrosDeTienda,
@@ -42,7 +44,8 @@ export function PanelDeFiltros({
   categorias,
   marcas,
   colores,
-}: Props) {
+  total,
+}: Props & { total: number }) {
   const puestos = contarFiltrosDeTienda(filtros);
 
   return (
@@ -52,10 +55,17 @@ export function PanelDeFiltros({
           // `list-none` + el pseudo de WebKit: el triangulito nativo no entra
           // en el sistema, y la píldora ya dice que esto se abre.
           "flex h-12 cursor-pointer list-none items-center gap-2 rounded-pill",
-          "border border-border bg-surface px-5 text-body text-ink shadow-sm",
-          "transition-colors duration-150 hover:border-border-strong",
+          "border px-5 text-body shadow-sm",
+          "transition-colors duration-150",
           "focus-visible:shadow-focus focus-visible:outline-none",
           "[&::-webkit-details-marker]:hidden",
+          // Con filtros puestos el botón se tiñe. Antes solo cambiaba el
+          // circulito del contador, y en una barra de tres controles blancos
+          // ese punto pasa desapercibido: la persona no ve que la lista que
+          // está mirando está recortada.
+          puestos > 0
+            ? "border-brand-tint-border bg-brand-tint font-medium text-brand"
+            : "border-border bg-surface text-ink hover:border-border-strong",
         )}
       >
         <SlidersHorizontal className="size-4 shrink-0" aria-hidden="true" />
@@ -96,44 +106,60 @@ export function PanelDeFiltros({
           "rounded-card bg-surface p-5 shadow-lg sm:p-6",
         )}
       >
-        <GrupoDeChips
-          titulo="Categoría"
-          opciones={categorias}
-          seleccionado={filtros.categoria}
-          urlDe={(id) => urlCambiando(filtros, { categoria: id })}
-        />
-        <GrupoDeChips
-          titulo="Marca"
-          opciones={marcas}
-          seleccionado={filtros.marca}
-          urlDe={(id) => urlCambiando(filtros, { marca: id })}
-        />
-        <GrupoDeChips
-          titulo="Color"
-          opciones={colores}
-          seleccionado={filtros.color}
-          urlDe={(id) => urlCambiando(filtros, { color: id })}
-        />
-
-        <div className="flex flex-col gap-2.5">
-          <h3 className="text-body-sm font-semibold text-ink">Ofertas</h3>
-          <Casilla
-            href={urlCambiando(filtros, { oferta: !filtros.oferta })}
-            activa={filtros.oferta}
-            etiqueta="Solo con descuento"
+        {/*
+          Los tres grupos en columnas, no apilados. Apilados, el panel medía
+          más de 500px de alto y «Color» quedaba abajo de todo: se elegía
+          categoría, se elegía marca y nadie llegaba a ver que había colores.
+          En un teléfono vuelven a una sola columna, que ahí es lo correcto.
+        */}
+        <div className="grid gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+          <GrupoDeChips
+            titulo="Categoría"
+            opciones={categorias}
+            seleccionado={filtros.categoria}
+            urlDe={(id) => urlCambiando(filtros, { categoria: id })}
+          />
+          <GrupoDeChips
+            titulo="Marca"
+            opciones={marcas}
+            seleccionado={filtros.marca}
+            urlDe={(id) => urlCambiando(filtros, { marca: id })}
+          />
+          <GrupoDeChips
+            titulo="Color"
+            opciones={colores}
+            seleccionado={filtros.color}
+            urlDe={(id) => urlCambiando(filtros, { color: id })}
           />
         </div>
 
-        {hayFiltrosDeTienda(filtros) ? (
-          <div className="flex justify-end border-t border-border pt-4">
+        <Casilla
+          href={urlCambiando(filtros, { oferta: !filtros.oferta })}
+          activa={filtros.oferta}
+          etiqueta="Solo con descuento"
+        />
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+          {/*
+            «Limpiar» solo si hay algo que limpiar, pero el hueco se conserva
+            con el `justify-between`: sin esto «Ver productos» salta de la
+            derecha al centro según haya filtros o no.
+          */}
+          {hayFiltrosDeTienda(filtros) ? (
             <Link
               href={urlDeTienda({ orden: filtros.orden })}
-              className="rounded-pill px-3 py-1.5 text-body-sm font-medium text-ink-secondary underline underline-offset-2 transition-colors duration-150 hover:text-brand focus-visible:shadow-focus focus-visible:outline-none"
+              className="rounded-pill px-1 py-1.5 text-body-sm text-ink-secondary underline underline-offset-2 transition-colors duration-150 hover:text-brand focus-visible:shadow-focus focus-visible:outline-none"
             >
               Limpiar filtros
             </Link>
-          </div>
-        ) : null}
+          ) : (
+            <span />
+          )}
+
+          <BotonVerResultados
+            etiqueta={total === 1 ? "Ver 1 producto" : `Ver ${total} productos`}
+          />
+        </div>
       </div>
     </details>
   );
@@ -164,7 +190,9 @@ function GrupoDeChips({
 
   return (
     <div className="flex flex-col gap-2.5">
-      <h3 className="text-body-sm font-semibold text-ink">{titulo}</h3>
+      <h3 className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
+        {titulo}
+      </h3>
       {/*
         `flex-wrap`: los chips no se recortan ni se meten a la fuerza en una
         fila. Con quince marcas en un teléfono, una fila sola esconde las
@@ -188,8 +216,11 @@ function GrupoDeChips({
                   "flex items-center gap-2 rounded-full border py-2 pr-3 pl-3",
                   "text-body-sm whitespace-nowrap transition-colors duration-150",
                   "focus-visible:shadow-focus focus-visible:outline-none",
+                  // Relleno sólido y no tinte: el tinte claro es lo que usan
+                  // los chips de «filtro aplicado» de abajo, y dos estados
+                  // distintos con el mismo color se confunden.
                   activo
-                    ? "border-brand-tint-border bg-brand-tint font-medium text-brand"
+                    ? "border-brand bg-brand font-medium text-ink-inverse"
                     : "border-border bg-surface text-ink-secondary hover:border-border-strong hover:text-ink",
                 )}
               >
@@ -206,7 +237,7 @@ function GrupoDeChips({
                 <span
                   className={cn(
                     "shrink-0 text-caption tabular-nums",
-                    activo ? "text-brand/70" : "text-ink-tertiary",
+                    activo ? "text-ink-inverse/70" : "text-ink-tertiary",
                   )}
                 >
                   {o.cuantos}
@@ -341,7 +372,10 @@ export function ChipsDeFiltros({
         <li key={p.clave}>
           <Link
             href={p.href}
-            className="flex items-center gap-1.5 rounded-full bg-surface py-1.5 pr-2 pl-3 text-caption font-medium whitespace-nowrap text-ink shadow-sm transition-colors duration-150 hover:text-brand focus-visible:shadow-focus focus-visible:outline-none"
+            // Tinte de marca y no blanco: sobre el canvas gris, un chip
+            // blanco es una superficie más entre otras y no se lee como «esto
+            // está aplicado». El tinte lo dice sin sumar un color al sistema.
+            className="flex items-center gap-1.5 rounded-full border border-brand-tint-border bg-brand-tint py-1.5 pr-2 pl-3 text-caption font-medium whitespace-nowrap text-brand transition-colors duration-150 hover:border-brand hover:bg-brand hover:text-ink-inverse focus-visible:shadow-focus focus-visible:outline-none"
           >
             {p.etiqueta}
             <X className="size-3.5 shrink-0" aria-hidden="true" />

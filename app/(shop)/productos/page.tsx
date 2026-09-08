@@ -98,7 +98,16 @@ export default async function Catalogo({
           conservarFiltros
           placeholder="Buscá por producto, marca o categoría"
         />
-        <PanelDeFiltros filtros={filtros} {...opciones} />
+        {/*
+          `total` es para el botón «Ver N productos» del pie del panel: dice
+          cuántos quedan con los filtros que se están tocando, antes de
+          cerrarlo.
+        */}
+        <PanelDeFiltros
+          filtros={filtros}
+          {...opciones}
+          total={pagina.total}
+        />
         <SelectorDeOrden filtros={filtros} />
       </div>
 

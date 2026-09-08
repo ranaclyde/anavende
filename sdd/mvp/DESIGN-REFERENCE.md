@@ -381,19 +381,18 @@ El sistema tiene **una paleta y una tipografía**, pero **dos escalas de densida
 El componente más importante del sistema. Aparece en catálogo, home, recomendados y favoritos, y es **siempre el mismo**.
 
 ```
-┌─────────────────────────┐   radio 24px, superficie blanca
+┌─────────────────────────┐   radio 28px, superficie blanca
 │  ┌───────────────────┐  │   sombra md, sin borde
 │  │                   │  │
-│  │   imagen 1:1      │  │   radio 16px (8 menos que la tarjeta)
+│  │   imagen 1:1      │  │   radio 20px (8 menos que la tarjeta)
 │  │                   │  │
 │  └───────────────────┘  │
 │                         │
 │  LOGITECH               │   caption 12px/500, secundario, VERSALITAS
 │  Teclado mecánico K120  │   body-sm 14px/500, ink, máx. 2 líneas
 │                         │
-│  $ 24.500,00            │   body 16px/600 · burdeos si hay oferta
-│  $ 27.500,00            │   caption 12px, tachado, terciario
-│                     ♡   │
+│  $27.500,00 $24.500,00 ●●│  una línea: tachado y después final
+│                     ♡   │   puntos de color a la derecha
 └─────────────────────────┘
 ```
 
@@ -402,11 +401,15 @@ El componente más importante del sistema. Aparece en catálogo, home, recomenda
 | Reposo | `--shadow-md` |
 | Hover | Elevación a `--shadow-lg`, la tarjeta sube 2px, la imagen escala a 1.03 dentro de su marco. Transición 200ms |
 | Foco | `--shadow-focus` sobre toda la tarjeta |
-| **Con descuento** | Etiqueta «−$ 3.000» arriba a la izquierda de la imagen, píldora burdeos, texto blanco, caption |
+| **Con descuento** | Precio tachado a la izquierda del final, en la misma línea. El final va en burdeos. **Sin píldora sobre la imagen** |
 | **Sin stock** | Imagen al 55% de opacidad + píldora «Sin stock» centrada sobre ella, superficie blanca al 92%. **La tarjeta sigue siendo clicable** (RN-05) |
 | Favorito | Corazón arriba a la derecha; relleno burdeos si está marcado |
 
 **Sobre la marca en versalitas:** separa visualmente marca de producto sin sumar un color ni un peso. Es un recurso de la referencia y funciona bien con Inter.
+
+**Sobre los dos números, y no cuatro.** La tarjeta llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el precio final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces y cuatro números para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, que es lo que ya dibujaba este esquema y lo que hace el canvas aprobado en F3.8. El «Ahorrás» sigue existiendo en la ficha (§6.7), donde hay lugar y es un argumento de venta.
+
+**Sobre los puntos de color.** Hasta cuatro, y «+N» si hay más; un producto con nueve colores llenaría media tarjeta de puntos y empujaría el precio. **No son seleccionables**: elegir color es de la ficha (§6.5), y hacerlos clicables metería un segundo destino dentro de una tarjeta que ya es un enlace entero. Llevan borde: un punto blanco sobre superficie blanca, sin contorno, no existe.
 
 ### 6.2 Buscador
 
@@ -497,12 +500,18 @@ Color:  Negro
 Componente propio, porque aparece en todas partes y tiene que ser consistente.
 
 ```
+FICHA (§7.3)
 Sin oferta:      $ 27.500,00              ink, peso 600
-
 Con oferta:      $ 24.500,00              burdeos, peso 600
                  $ 27.500,00              tachado, terciario, 12px
                  Ahorrás $ 3.000,00       burdeos, caption
+
+TARJETA (§6.1) — una línea, sin «Ahorrás»
+Sin oferta:      $ 27.500,00              ink, peso 600
+Con oferta:      $ 27.500,00 $ 24.500,00  tachado terciario 12px, después burdeos 600
 ```
+
+**Las dos variantes no son un capricho de tamaño.** En la ficha se lee un producto solo y el monto ahorrado vende; en una grilla de 24, esa misma línea multiplicada por 24 es ruido, y el tachado al lado del final ya dice que hay rebaja. El tachado va **primero** porque así se lee un cartel de oferta: «valía tanto, ahora tanto».
 
 - Formato `es-AR`: `Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' })`.
 - **Siempre con decimales** (RN-02). Nunca se aclara nada sobre IVA.
@@ -612,7 +621,19 @@ Sin *hero* fotográfico: el hero es el buscador. Es una tienda de reventa, no un
 - **Una barra de tres controles**, del mismo alto (48px), encima de la grilla: buscador píldora que ocupa el espacio sobrante, botón «Filtros» y desplegable de orden. Tres alturas distintas en una fila se leen como un error.
 - **El botón «Filtros» lleva el número de filtros puestos** en un círculo burdeos. La búsqueda no se cuenta ahí: tiene su propio campo al lado, y sumarla haría que el número no se corresponda con lo que se ve al abrir.
 - **El panel se despliega de lado a lado por debajo de la barra**, no del ancho del botón, y se posiciona sobre la grilla en vez de empujarla. Abre con un `<details>` nativo: sin JavaScript, con teclado, y conservando su estado entre navegaciones — tocar un chip no lo cierra.
-- **Dentro del panel, todo son chips con su conteo**: categoría, marca y color, cada grupo con su encabezado. El color suma un punto relleno con su hexadecimal. El descuento es la excepción y se dibuja como casilla: no es una opción entre varias, es sí o no.
+- **Dentro del panel, los tres grupos van en columnas**, no apilados: apilados el panel pasaba los 500px de alto y «Color» quedaba abajo de todo, así que se elegía categoría, se elegía marca y nadie llegaba a ver que había colores. En un teléfono vuelven a una sola columna.
+- **Todo son chips con su conteo**: categoría, marca y color, cada grupo con su encabezado en versalitas. El color suma un punto relleno con su hexadecimal. El descuento es la excepción y se dibuja como casilla: no es una opción entre varias, es sí o no.
+- **El pie del panel cierra el trato**: «Limpiar filtros» a la izquierda y **«Ver N productos»** a la derecha, relleno burdeos. Sin ese botón, la única forma de cerrar es volver a subir hasta «Filtros», que es justo el gesto que nadie encuentra después de elegir tres cosas. Es la única línea de JavaScript del panel —un `<details>` no se cierra desde adentro sin script— y degrada: su `href` baja a la grilla.
+
+**Los tres estados del burdeos en esta pantalla no se pisan**, y esa es la regla que los mantiene distinguibles:
+
+| Qué | Tratamiento |
+|---|---|
+| Chip **elegido** dentro del panel | Relleno burdeos, texto blanco |
+| Chip de **filtro aplicado** sobre la grilla | Tinte `--brand-tint`, texto burdeos, borde tenue |
+| Botón **«Filtros»** con algo puesto | Tinte `--brand-tint`, texto burdeos |
+
+El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del contador: en una barra de tres controles blancos ese punto pasa desapercibido y la persona no ve que la lista que está mirando está recortada.
 - Los filtros aplicados aparecen además como **chips removibles** arriba de la grilla, con «Limpiar todo», porque con el panel cerrado son la única señal de por qué hay nueve resultados.
 - El conteo de resultados va a la derecha de esos chips, y es `aria-live`.
 - **El `<h1>` dice qué se está mirando**: el término buscado, el nombre de la categoría elegida, o «Todos los productos».
