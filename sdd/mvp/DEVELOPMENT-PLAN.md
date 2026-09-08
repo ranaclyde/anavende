@@ -193,6 +193,8 @@ F10 Endurecimiento y lanzamiento
 
 > **Toda tarea de esta fase es visual.** Ninguna se cierra sin haber pasado por `impeccable` y `ui-ux-pro-max` (`DESIGN-REFERENCE.md` §12.4). Aplica igual a F2, F5, F6, F7 y a cualquier pantalla posterior.
 
+> **El lineamiento visual de F3.8 rige de acá en adelante.** El canvas aprobado en Claude Design (`DESIGN-REFERENCE.md` §1.3) cubre siete pantallas —home, catálogo, categorías, ficha, carrito, orden enviada y panel— y F3.8 lo bajó a los tokens, al catálogo y al encabezado. **Rige sobre la tienda, no sobre el panel**: la pantalla de panel del canvas no se adopta (§1.3), y del rediseño el panel solo hereda la capa de tokens, que es compartida por decisión de §4. **Las que faltan no son tareas nuevas de rediseño:** F3.5 (ficha), F3.7 (home) y F5.5 (carrito) se construyen ya sobre el lineamiento, y el pie de página entra con la pantalla que lo obligue a cambiar. Rediseñar por separado algo que todavía no existe es hacer dos veces el mismo trabajo.
+
 | ID | Tarea | Tam. | Referencias | Hecho cuando |
 |---|---|---|---|---|
 | **F3.1** | Componente de tarjeta de producto, con todos sus estados | M | DR §6.1 · FS RN-05, RN-06 | Estados de descuento, sin stock, favorito y hover. **Sin stock sigue siendo clicable** |
@@ -202,7 +204,8 @@ F10 Endurecimiento y lanzamiento
 | **F3.5** | Ficha de producto con galería y selector de color | **L** | FS RF-03 · DR §6.5, §6.8, §7.3 | Cambiar de color cambia imágenes y stock sin recargar, y la URL lo refleja. Producto inactivo devuelve 404 |
 | **F3.6** | Enlaces de WhatsApp | S | FS RF-04 · TS §3 | El mensaje llega con producto, color, cantidad y precio, bien codificado. El número sale de configuración |
 | **F3.7** | Home | M | FS RF-01 · DR §7.1 | Buscador como protagonista, chips de categoría, destacados, ofertas, medios de pago y aviso de PedidosYa |
-| **F3.8** | SEO: URLs, metadatos por producto, datos estructurados, sitemap | M | FS RNF-04 | Una ficha compartida en WhatsApp muestra imagen, nombre y precio |
+| **F3.8** | Rediseño de la tienda desde el canvas aprobado | **L** | DR §1.3, §3.1, §3.5, §3.6, §6.1, §6.7, §7.2 | Tokens, catálogo, tarjeta y encabezado adoptan el canvas. **Alcanza solo a la tienda**: el panel de administración no entra, y conserva la escala densa de §4 y su modo oscuro. Lo que el canvas propone y la arquitectura no acepta —filtros sin estado en la URL— queda registrado con su motivo, no adoptado en silencio |
+| **F3.9** | SEO: URLs, metadatos por producto, datos estructurados, sitemap | M | FS RNF-04 | Una ficha compartida en WhatsApp muestra imagen, nombre y precio |
 
 > **Compuerta F3:** una persona ajena al proyecto encuentra un producto concreto usando solo el buscador y los filtros, sin ayuda.
 

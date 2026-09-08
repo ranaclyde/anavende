@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-07.
+Última actualización: 2026-09-08.
 
 **Qué significa cada estado**
 
@@ -84,6 +84,167 @@ justamente por ese número).
 | F2.6 | ABM de medios de pago | ✅ | Alta con logo, descripción y orden, edición, activar/desactivar y baja, en una solapa nueva del catálogo. El orden se cambia con flechas y se renumera solo. `db:pagos` prueba 26 reglas contra Postgres y contra Storage de verdad. Probado en el navegador: tres medios con y sin logo, reordenar, desactivar, borrar, y el estado vacío. **La canalización de logos se generalizó**: la que hizo F2.1 para las marcas ahora sirve a las dos, con una sola copia del orden de operaciones que evita archivos huérfanos —y se volvió a probar el logo de marca de punta a punta para asegurarse de que no se rompió—. Arrastrando el flujo apareció **un error que no se veía leyendo el código**: está abajo. Lo que RF-19 pide **mostrar** —la franja en la tienda, la ficha y el checkout— no es de esta tarea: cae en F3.7, F3.5 y F6.1, que son las pantallas donde va |
 | F2.7 | Configuración del sitio | ✅ | Número de WhatsApp, email de avisos y umbral de stock bajo, editables desde `/admin/configuracion`. `db:configuracion` prueba 22 reglas contra Postgres de verdad, y las cuatro que importan no se ven leyendo el código: que **guardar la primera vez CREE la fila** —es un UPSERT, y con un UPDATE la pantalla diría «se guardó» sin haber guardado nada—, que la segunda pise a la primera sin que aparezca una segunda fila, que `updated_at` avance al pisar, y que **el umbral guardado llegue al listado**: con 5, un producto con 5 disponibles entra en «Para reponer»; con 4, sale. La normalización del teléfono se sacó a `lib/telefono.ts` y ahora es **una sola** para el comprador y para el sitio; el script prueba que las dos den lo mismo. Probado en el navegador: el estado sin configurar, un envío vacío que señala los dos campos y lleva el foco al primero, el número que vuelve normalizado a `+549…`, el email recortado y en minúsculas, el 101 rechazado por el servidor con su motivo y el campo vacío por el formulario con el mismo texto que usaría el servidor, en claro y en oscuro y a 390px. Arrastrando el flujo apareció **un callejón sin salida que no se veía leyendo el código**: está abajo. Pasó por `impeccable` y `ui-ux-pro-max` como pide DR §12.4, y de ahí salieron seis correcciones que sí se ven mirando: el campo del umbral dejó de ser `type="number"` y pasó a `inputMode="numeric"`, **por la misma razón que ya estaba escrita en el stock de una variante** —el campo numérico del navegador sube y baja con la rueda del mouse encima, y acá eso cambiaría el umbral de todo el catálogo mientras alguien baja la página—; el botón «Guardar» deshabilitado **dice por qué con palabras** («Todo guardado.») en vez de colgarlo de un `title`, que sobre un botón deshabilitado puede no llegar a aparecer nunca (§8); la unidad «unidades» entró en la descripción accesible del campo, que si no se lee «avisar stock bajo a partir de: 3» sin decir de qué; el esqueleto de carga usaba separaciones distintas de las de la pantalla de verdad y **la página saltaba 40px** al llegar los datos, así que ahora comparte las tres medidas y hasta la cantidad de renglones de cada ayuda; y dos textos se acortaron: la bajada del encabezado, que hablaba de «tocar el código» —vocabulario que la vendedora no tiene por qué tener (§10)—, y la de «Avisos», que decía en dos renglones lo que dice en uno. **La fila se borró al terminar**: el número de prueba no es el de nadie, y dejarlo puesto sería peor que dejarlo vacío. **Cargada con los datos reales el 2026-09-07**, y comprobado en la base: `id = 1`, el WhatsApp normalizado a `+549` + 10 dígitos y el email en minúsculas y recortado, o sea que la normalización del servidor corrió y no se guardó lo que se tipeó. El umbral quedó en **2**, más estricto que el 3 por defecto: es criterio tuyo y queda anotado para que no se lea como un descuido |
 | F2.8 | Cargar el catálogo real | ⬜ | **Desbloqueada el 2026-09-05.** Lo que la trababa —F0.3 y F0.7— está hecho: la base y el bucket de producción existen y están probados, así que lo que Ana cargue queda donde va y no hay que volcarlo ni volver a subirlo. Sigue conviniendo hacer antes la **Compuerta F2**, que es la prueba de usabilidad del panel |
+
+---
+
+## F3 — Tienda: descubrimiento
+
+**El desarrollo de F3 volvió al stack local, y es a propósito.** `.env.local`
+apunta otra vez a `127.0.0.1:54322` —la copia de producción quedó guardada en
+`.env.produccion.bak`— porque F3 son pantallas, y para mirar una pantalla hace
+falta un catálogo. El real es de Ana y entra en F2.8; mientras tanto lo llena
+`npm run seed`: 26 productos con **imágenes de verdad**, que pasan por sharp,
+por los tres tamaños y por Storage, para que la grilla se vea con los pesos y
+las proporciones que va a tener. Se va entero con `npm run seed:limpiar`.
+
+Lo que eso cambia es el criterio de cierre, y conviene decirlo antes de la
+tabla: **nada de F3 está verificado donde va**, y las dos cosas que el plan
+pide explícitamente contra el catálogo real —el umbral de similitud de F3.3 y
+la Compuerta F3— no se pueden aprobar contra 26 productos que elegimos
+nosotros. Un buscador calibrado sobre nombres propios se aprueba solo.
+
+**Ninguna tarea de F3 pasó todavía por `impeccable` ni por `ui-ux-pro-max`,**
+que es lo que `DESIGN-REFERENCE.md` §12.4 exige para cerrar cualquier pantalla
+y lo que las tareas de F2 anotan una por una. Comparar lo implementado contra
+el canvas aprobado no es lo mismo: el canvas dice cómo se ve, las skills dicen
+si se puede usar. Es el motivo por el que abajo no hay ningún ✅, y no un
+descuido de rotulación.
+
+| ID | Tarea | Estado | Nota |
+|---|---|---|---|
+| F3.1 | Tarjeta de producto, con todos sus estados | 🟡 | `components/shop/tarjeta-producto.tsx`, y es siempre la misma en catálogo, home, recomendados y favoritos (§6.1). Están el descuento, el **sin stock** —imagen al 55% con la píldora encima, y la tarjeta **sigue siendo clicable** (RN-05)—, el hover que eleva y escala la imagen dentro de su marco, la marca en versalitas y los puntos de color. Faltan dos, y las dos son de otra tarea: **el corazón es un hueco, no un botón** —entra por `accionFavorito` y hoy nadie se lo pasa, porque favoritos es F5.4—, así que el estado «favorito» del «Hecho cuando» no está probado; y **el enlace de la tarjeta apunta a un 404**, porque `/productos/[slug]` es la ficha y es F3.5. El enlace estirado vive dentro del `<h3>` y no envuelve la tarjeta: envolviéndola, el corazón quedaría **dentro** del ancla, que es HTML inválido y lo deja inalcanzable con teclado |
+| F3.2 | Componente de precio | 🟡 | `components/shop/precio.tsx`, con `es-AR`, decimales siempre (RN-02) y `tabular-nums` —sin eso las columnas de precios de la grilla bailan al cambiar de página—. Tiene **dos composiciones de verdad, no dos tamaños**: la de tarjeta es una línea, tachado y después final; la de ficha suma «Ahorrás $ X» (RN-04b). La de tarjeta está en pantalla; **la de ficha no tiene consumidor todavía** (F3.5), y código sin consumidor es código que nadie probó |
+| F3.3 | Búsqueda tolerante a acentos y errores de tipeo | ⬜ | Hay media, y es la mitad que no da nombre a la tarea: `condicionDeBusqueda()` en `modules/catalog/products/tienda.ts` resuelve **los acentos** con `immutable_unaccent` sobre nombre, marca y `description_text`, así que «mecanico» encuentra «Mecánico». Sin trigramas, «lojitech» **no** encuentra «Logitech». El umbral que falta no se calibra hasta que exista el catálogo real (F2.8), que es lo que pide el «Hecho cuando» |
+| F3.4 | Catálogo: filtros, orden, paginación, todo en la URL | 🟡 | `/productos` con filtros por categoría, marca, color y descuento, cinco órdenes y paginación, y **todo el estado en la dirección** (§10.2): el botón atrás funciona, el enlace se manda por WhatsApp tal como se está viendo, y la pantalla no necesita una línea de estado de cliente para lo que muestra. Tres pantallas vacías distintas y no una —«todavía no hay productos», «no encontramos nada para esto» y la que apareció probando, `?pagina=9` a mano, que antes ofrecía «Limpiar todo» sin ningún filtro puesto—. El conteo es `aria-live`, la paginación son enlaces y las cuatro primeras tarjetas cargan con prioridad, por el LCP. **Le falta función de RF-02**: categoría, marca y color son de **selección única** —no se pueden elegir dos marcas— y no está el rango de precio. Queda registrado en DR §7.2 como función pendiente, que es distinto de una decisión de diseño |
+| F3.5 | Ficha de producto con galería y selector de color | ⬜ | Es a donde apunta cada tarjeta del catálogo, así que es lo próximo que conviene |
+| F3.6 | Enlaces de WhatsApp | ⬜ | El número ya está cargado y normalizado en configuración (F2.7) |
+| F3.7 | Home | ⬜ | Hoy `/` es un **marcador de posición deliberado** —título, bajada y nada más—, y lo dice en su propio archivo: construir la home contra productos inventados es el riesgo P1 del plan. Recibió los tokens nuevos de F3.8 como todo lo demás, y ninguna otra cosa del canvas |
+| F3.8 | Rediseño de la tienda desde el canvas aprobado | 🟡 | **Tarea nueva, agregada al plan el 2026-09-08**; abajo está entera. Cuatro pasadas —tokens, estructura del catálogo, ajustes de panel y tarjeta, y encabezado— aplicadas a la capa de tokens, al catálogo y al navbar. **Falta bajarlo a la home, a la sección de categorías, al pie, al carrito y a la ficha**, y eso no se hace de una: cada pantalla lo adopta cuando se construye. **El panel de administración queda afuera**: el rediseño es de la tienda, lo que ve el comprador |
+| F3.9 | SEO: URLs, metadatos, datos estructurados, sitemap | ⬜ | Era F3.8 hasta el 2026-09-08 |
+
+> **Compuerta F3:** «una persona ajena al proyecto encuentra un producto
+> concreto usando solo el buscador y los filtros, sin ayuda.» **No se puede
+> tomar todavía**, y no por falta de pantalla: contra un catálogo de 26
+> productos que elegimos nosotros se aprueba sola. Espera a F2.8.
+
+---
+
+### El rediseño de la tienda (F3.8)
+
+Sale de un canvas de Claude Design aprobado por vos, **`Rediseño UI AnaVende`**
+—siete pantallas: home, catálogo, categorías, ficha, carrito, orden enviada y
+panel—, construido sobre esta misma referencia:
+
+<https://claude.ai/design/p/630d6d88-0a72-4ac6-b785-b1153d5e419b?file=AnaVende.dc.html>
+
+Lo primero que hizo el canvas fue **confirmar las decisiones grandes** de DR
+§1.2 —acento burdeos, encabezado superior con etiquetas, un solo color
+saturado—, así que lo que cambia es detalle y no rumbo. Lo que cambió, lo que
+no se tomó y por qué está escrito en **DR §1.3**, que es nueva, y las seis
+decisiones entraron a §14.
+
+**El alcance es la tienda, y solo la tienda.** El rediseño no toca el panel de
+administración: lo que se rehace es lo que ve el comprador. El canvas trae una
+pantalla de panel entre las siete y **no se adopta** —está en DR §1.3, con el
+motivo: §1.2 ya había decidido dos escalas de densidad, y una tabla de órdenes
+en el lenguaje aéreo de la tienda es ilegible—. El panel conserva su escala
+densa de §4, sus radios de 12/8px y su modo oscuro, que no se tocaron.
+
+Lo único que sí lo alcanza es **la capa de tokens, porque es una sola** y así
+está decidido desde §4: una paleta, dos densidades. Los grises cálidos y el
+tinte nuevo de las sombras llegan al panel en modo claro por herencia, sin que
+se haya tocado un componente suyo — y la paleta oscura, que es donde el panel
+vive de verdad, quedó intacta. Es el efecto que se buscaba: **una tienda
+rediseñada y un panel que no se enteró**, salvo por los grises, que ahora son
+los mismos en los dos lados en vez de dos familias distintas.
+
+**Las cuatro pasadas, en orden:**
+
+1. **Solo tokens.** No se tocó un componente y el catálogo, el encabezado, el
+   pie y los formularios ya se veían distintos — que es para lo que sirve tener
+   una capa de tokens. La familia de grises pasa de fría a **cálida**, los
+   radios de tienda de 24/16 a **28/20px**, y el tinte de marca y el de las
+   tres sombras se corrigen: estaban teñidas con el `--ink` que se estaba
+   retirando, y una sombra azulada bajo una tarjeta cálida se nota aunque nadie
+   sepa decir por qué.
+2. **La estructura del catálogo.** La columna lateral de filtros se convierte
+   en una **barra de tres controles** sobre la grilla. El motivo es medible: se
+   comía 260px de 1200 —el 22% del ancho— para algo que se toca una vez y
+   después estorba el resto de la sesión. El panel abre con un `<details>`
+   nativo, sin JavaScript y con teclado, y **entra el filtro por color**, que
+   RF-02 pedía y no estaba.
+3. **Seis ajustes de comparar el canvas contra lo implementado**, pantalla al
+   lado de pantalla: los tres grupos del panel en columnas —apilados, «Color»
+   quedaba abajo de todo y nadie llegaba a verlo—, el botón «Filtros» teñido
+   cuando hay algo puesto, «Ver N productos» en el pie del panel, los tres
+   estados del burdeos separados, los puntos de color en la tarjeta, y **cuatro
+   números que pasan a dos**: la tarjeta mostraba la píldora «−$ 9.900», el
+   final, el tachado y «Ahorrás $ 9.900» — la misma cifra dos veces para
+   comunicar una sola oferta.
+4. **El encabezado.** El buscador pasa a la variante compacta y se ubica junto
+   al carrito; el carrito deja de ser un ícono con una insignia de 18px encima
+   y pasa a ser una píldora con el número en el mismo renglón. Y **el buscador
+   del encabezado desaparece cuando la página ya tiene el suyo**: dos
+   buscadores uno arriba del otro hacen dudar de cuál usar.
+
+**Lo que falta, que es la mayor parte de la tienda.** El canvas cubre siete
+pantallas y el rediseño llegó a dos y media: tokens, catálogo y navbar. Quedan
+**la home, la sección de categorías, el pie, el carrito y la ficha**. No entran
+como pasadas nuevas de rediseño sino con la pantalla: F3.5 (ficha), F3.7 (home) y F5.5 (carrito)
+se construyen ya sobre el lineamiento, porque rediseñar algo que todavía no
+existe es hacer dos veces el mismo trabajo. El plan lo dice ahora en la nota de
+F3. **La sección de categorías es la excepción y no tiene tarea**: está abajo.
+
+**Dos cosas del canvas que no se adoptaron, y son de forma distinta.** Una es
+de aspecto y está en DR §1.3 con las otras cinco: tipografía, tamaños de 10px,
+hover de marca, el gris `#787574` que no llega al AA de RNF-02. La otra es de
+arquitectura y merece decirse acá: **el canvas propone filtros desplegables sin
+paginación ni estado en la URL**. Se toma su aspecto y se conserva §10.2,
+porque un prototipo no necesita que el enlace se pueda compartir ni que el
+botón atrás funcione, y la tienda sí. También se revirtieron los enlaces
+«Inicio · Productos · Categorías · Destacados» del navbar: dos de esas cuatro
+secciones no existen todavía, y el pedido era acomodar el navbar, no sumar
+navegación.
+
+---
+
+### Lo que F3 encontró, y no se veía leyendo el código
+
+**Los tests le comen el stock al catálogo sembrado.** `.env.test` y `.env.local`
+tienen hoy el **mismo** `DATABASE_URL` —`127.0.0.1:54322`—, así que `npm test`
+reserva, vende y devuelve sobre la misma base donde está el catálogo de
+demostración: después de correrlo, la tienda entera se ve «Sin stock». Explica
+también por qué los tests de stock se ven inestables y fallan distinto en cada
+corrida. Se arregla con `npm run seed`, pero eso es un parche, y está abajo en
+lo pendiente. **La guarda de F4.0 no protege de esto**: fue escrita para que
+los tests nunca toquen producción, y lo cumple; que compartan base con el
+desarrollo local es otro problema y no lo mira.
+
+**`rounded-panel` no existía.** Los enlaces de filtro lo usaban y no está
+definido en `globals.css` —están `panel-card`, `panel-image` y `panel-control`—,
+así que Tailwind no emitía nada y salían con las esquinas rectas. Se fue con el
+archivo reescrito en la segunda pasada. Es la misma clase de error que el
+`admin:px-3` de F2.5: **una clase que no existe no falla, no se ve**.
+
+**Había dos `<main>` anidados.** El layout de la tienda abre uno y el catálogo
+abría otro adentro. Es HTML inválido, y en la práctica significa que «saltar al
+contenido principal» tiene dos destinos. Ahora es un `<section>` con nombre.
+
+**El buscador borraba los filtros.** `SearchBox` empujaba siempre a
+`/productos?q=…`, así que buscar «teclado» con una marca puesta la tiraba
+mientras el chip seguía en pantalla — diciendo que el filtro estaba aplicado
+cuando ya no lo estaba. Toma una bandera `conservarFiltros` y relee la URL.
+Bandera y no una función que arme la dirección: es un componente de cliente
+usado desde uno de servidor, y una función no cruza ese borde.
+
+**La regla que esconde el buscador del encabezado no puede ir en `@layer`.**
+Dentro de `@layer base` perdía contra el `md:block` del propio buscador, porque
+Tailwind emite las utilidades en una capa posterior y **la última capa gana sin
+importar la especificidad**. Una regla sin capa gana sobre cualquiera que esté
+en una, así que se evita el `!important`. Se resuelve además con
+`body:has(…)` y no con estado de React: con estado, el encabezado se pinta con
+su buscador y recién en el efecto se entera de que sobra, así que aparecería un
+cuadro y se iría.
 
 ---
 
@@ -320,6 +481,10 @@ Cada una se escribió primero en la especificación y después en el código
 | **El alta usa `signUp` y el reenvío `signInWithOtp`; `auth.resend()` no se usa en ninguna parte** | `modules/users/actions.ts`; `TECHNICAL-SPEC.md` §13.4 | El alta hacía `admin.createUser` + `auth.resend()`, y el reenvío `auth.resend()`. **El endpoint `/resend` de GoTrue descarta el `code_challenge`** que le manda `@supabase/ssr`: no deja fila en `auth.flow_state`, y sin esa fila `/auth/v1/verify` no tiene un `code` que emitir y devuelve la sesión por el flujo implícito, en el fragmento (`#access_token=…`). El fragmento **no se manda al servidor**, así que `/api/auth/confirmar` recibía una URL pelada y respondía «enlace inválido» —con la cuenta ya confirmada y la sesión perdida—. En local no se veía. Comprobado contra el servidor DATA con el mismo `code_challenge`: por `/signup` deja fila, por `/resend` no deja ninguna. `signUp` y `signInWithOtp` sí lo registran. `shouldCreateUser: false` en el reenvío es lo que impide que se vuelva un alta encubierta sin perfil |
 | **El contenido de E4 es de F6.4, no de F1.8** | `DEVELOPMENT-PLAN.md` F1.8 y F6.4 | Decisión tuya, y el plan ya la insinuaba: F1.8 pedía «armar el layout de React Email para E4», pero su «Hecho cuando» exigía además la plantilla terminada. Escribirla ahora sería inventar la forma de los datos de una orden que todavía no existe —número, ítems, total, enlace al panel— y volver a tocarla entera cuando F4.3 la cree de verdad. El layout compartido sí es de F1.8 y está hecho: E4 no arranca de cero, arranca de `Marco`. Se corrigieron las dos filas del plan para que ninguna de las dos tareas quede a medias sin que se note |
 | **Las plantillas de email van en `public/` de la aplicación** | `PROGRESO.md` F1.8; F0.13 | GoTrue **no lee plantillas de un archivo**: toma `GOTRUE_MAILER_TEMPLATES_*` como URL y la busca por HTTP contra `SITE_URL`. Probado en el VPS montando la carpeta en el contenedor: el archivo estaba ahí y el log decía `Get "http://localhost:3000/etc/gotrue/email-templates/confirm.html": connection refused`. Servirlas hoy exigiría un contenedor más —en un stack que R5 ya marca como pesado— para tirarlo cuando la app se despliegue. Como GoTrue las resuelve contra `SITE_URL`, que **es la aplicación**, el lugar donde terminan es `public/`: versionadas con el código y sin infraestructura nueva. El intento se revirtió entero; el `docker-compose.yml` del VPS no quedó tocado |
+| **El rediseño de la tienda es una tarea del plan, y es F3.8** | `DEVELOPMENT-PLAN.md` F3; `DESIGN-REFERENCE.md` §1.3 | El canvas se aprobó después de escrito el plan, y se implementó en cuatro commits que ya lo llaman «F3.8». El ID que F3.8 tenía —SEO— no estaba citado en ningún commit ni en ninguna otra especificación, mientras que el del rediseño ya estaba escrito en la referencia de diseño: §1.3 se llama «Lo que cambió el canvas de F3.8». Así que **SEO se renumeró a F3.9** en vez de rotular el rediseño con un número que otro documento ya usaba para otra cosa. La regla de §1.2 pide IDs estables porque los commits los citan; acá los commits citan el rediseño |
+| **§7.2 pasa de columna de filtros a barra con panel desplegable** | `DESIGN-REFERENCE.md` §7.2, reescrita entera | La columna lateral se comía 260px de los 1200 —el 22% del ancho— para algo que se toca una vez y después estorba toda la sesión. Y había un motivo más urgente para reescribirla: **§7.2 estaba contradiciendo al código**, que es la peor forma de tener una referencia, porque no se sabe cuál de los dos está mal |
+| **La tarjeta muestra dos números, no cuatro** | `DESIGN-REFERENCE.md` §6.1 y §6.7 | Llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, tachado primero, como se lee un cartel. **No es una desviación del canvas ni de la referencia**: §6.1 ya dibujaba dos números; el «Ahorrás» venía de §6.7, que es el componente genérico, y sigue vivo en la ficha, donde hay lugar y el monto ahorrado vende |
+| **La familia de grises de la tienda es cálida** | `DESIGN-REFERENCE.md` §3.1, §3.5, §3.6 y §14 | Es de donde sale el aire de la referencia: `--canvas` es un gris frío, y grises cálidos encima repiten la tensión de temperatura que §2.1 le pide al burdeos. Se cambió la familia **entera** —textos, tinte del anillo de foco, ícono de «sin logo» y las tres sombras—: mezclar las dos deja los secundarios azulados sobre tarjetas cálidas. El gris del canvas no se pudo usar tal cual: `#787574` da 4,14:1 sobre `--canvas`, por debajo del 4,5 de RNF-02, y `#716e6d` conserva la temperatura llegando a 4,58 |
 ---
 
 ## La baja de cuenta ya es un requisito: RF-34
@@ -367,13 +532,17 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
 
 ## Qué está esperando algo tuyo
 
-1. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
+1. **F2.8 — cargar el catálogo real.** Ahora traba dos cosas que antes no
+   trababa: el umbral de similitud de **F3.3** y la **Compuerta F3**, que el
+   plan pide calibrar y aprobar contra el catálogo de verdad. Los 26 productos
+   sembrados sirven para mirar pantallas, no para aprobarlas.
+2. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
    Meta for Developers, con `/auth/v1/callback` como URI de retorno. El código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
-2. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
+3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-3. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
+4. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
    entero— está activo y sirve de piso, pero guarda **una sola copia** y se
    restaura por ticket. Falta el volcado de la base y del bucket, con varias
    copias y una restauración probada. Conviene antes de F2.8, que es cuando
@@ -712,6 +881,28 @@ tarjetas de móvil de F2.1; **es anterior a «destacada»** y alcanza a los
 cuatro botones de cada fila y a todo el panel. Arreglarlo es tocar el token
 compartido, así que no entró acá: cae naturalmente en F10 (endurecimiento) o
 antes, si aparece otra tarea que toque `button.tsx`.
+
+---
+
+**La sección de categorías no tiene tarea en ninguna fase.** El canvas
+aprobado tiene su pantalla y vos la pediste; el plan no la nombra. Lo más
+cercano es RF-01, que pide **chips de categoría en la home** (F3.7), y el menú
+del encabezado — ninguno de los dos es un listado de categorías con su imagen.
+Anotado y no inventado: decidir si entra en F3.7, si es una tarea nueva de F3 o
+si va después del MVP es tuyo, y arrastra a FA-21 —la imagen chica de
+categoría, que hoy está sexta en la lista de después del MVP— porque es
+justamente la pantalla que la necesitaría.
+
+**Los tests y el desarrollo local comparten base.** `.env.test` y `.env.local`
+apuntan hoy al mismo `127.0.0.1:54322`, así que `npm test` le consume el stock
+al catálogo sembrado y deja la tienda entera en «Sin stock», además de hacer
+que los tests de stock fallen distinto en cada corrida. La guarda de F4.0 no
+mira esto: fue escrita para que los tests nunca toquen producción, y eso lo
+sigue cumpliendo. Mientras tanto se arregla con `npm run seed`, que es un
+parche; la solución es darle a los tests su propia base. **No entró todavía
+porque toca `.env.test`, `.env.local` y la guarda de `tests/setup/entorno.ts`
+a la vez**, y eso es exactamente lo que no conviene hacer en el medio de una
+tarea visual.
 
 ---
 

@@ -38,7 +38,9 @@ Toma el sistema de shop.app como referencia estructural —canvas claro, tarjeta
 
 ### 1.3 Lo que cambió el canvas de F3.8
 
-En F3.8 se aprobó un canvas de Claude Design (`Rediseño UI AnaVende`, siete pantallas: home, catálogo, categorías, ficha, carrito, orden enviada, panel) construido sobre esta misma referencia. **Confirmó las decisiones grandes de §1.2** —acento burdeos, encabezado superior con etiquetas, un solo color saturado— y ajustó tres cosas del detalle:
+En F3.8 se aprobó un canvas de Claude Design (`Rediseño UI AnaVende`, siete pantallas: home, catálogo, categorías, ficha, carrito, orden enviada, panel) construido sobre esta misma referencia — <https://claude.ai/design/p/630d6d88-0a72-4ac6-b785-b1153d5e419b?file=AnaVende.dc.html>. **Confirmó las decisiones grandes de §1.2** —acento burdeos, encabezado superior con etiquetas, un solo color saturado— y ajustó tres cosas del detalle:
+
+**El rediseño alcanza a la tienda y no al panel.** Se rehace lo que ve el comprador; el panel conserva la escala densa de §4, sus radios y su modo oscuro. La pantalla de panel que el canvas incluye está en la tabla de lo que no se toma, más abajo. Lo único compartido es la capa de tokens —una paleta, dos densidades (§4)—, así que los grises cálidos llegan al panel en modo claro por herencia, sin que ninguno de sus componentes cambie.
 
 | Ajuste | De | A |
 |---|---|---|
