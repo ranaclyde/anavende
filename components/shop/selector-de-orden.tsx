@@ -49,7 +49,9 @@ export function SelectorDeOrden({ filtros }: { filtros: FiltrosDeTienda }) {
         // largo de la opción elegida, y la barra entera se mueve al ordenar.
         // 48px de alto para que empate con el buscador y el botón de filtros:
         // tres controles de distinta altura en una fila se leen como un error.
-        className="h-12 w-[186px] text-body-sm"
+        // 16px en teléfono, como los demás campos: iOS también amplía la
+        // página al abrir un `select` chico. Ver `search-box.tsx`.
+        className="h-12 w-[186px] text-body-sm max-md:text-body"
       >
         {ORDENES_DE_TIENDA.map((o) => (
           <option key={o.valor} value={o.valor}>

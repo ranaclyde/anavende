@@ -427,7 +427,9 @@ function CampoDePrecio({
             // 44px, que es el mínimo táctil de §9. Con los 40 que trae
             // `h-10` los dos campos y el botón quedaban justo por debajo.
             "h-11 w-28 rounded-pill border border-border bg-surface",
-            "pr-3 pl-7 text-body-sm text-ink tabular-nums",
+            // 16px en teléfono: con menos, iOS Safari amplía la página al
+            // enfocar el campo y no vuelve. Ver `search-box.tsx`.
+            "pr-3 pl-7 text-body-sm max-md:text-body text-ink tabular-nums",
             "focus-visible:shadow-focus focus-visible:outline-none",
             // Las flechitas nativas de `number` no entran en el sistema y
             // encima empujan el texto contra el borde.

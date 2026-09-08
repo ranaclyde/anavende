@@ -133,8 +133,13 @@ export function SearchBox({
           "peer w-full rounded-pill border border-border bg-surface",
           "text-ink transition-colors duration-150",
           "placeholder:text-ink-tertiary focus:border-border-strong",
+          // `max-md:text-body` no es una decisión de tipografía: iOS Safari
+          // **hace zoom sobre la página** al enfocar un campo con menos de
+          // 16px, y no lo deshace al salir. El comprador queda con la tienda
+          // ampliada y desplazada después de escribir una palabra. En
+          // escritorio siguen siendo los 14px del sistema.
           compacto
-            ? "h-10 pl-4 text-body-sm shadow-sm"
+            ? "h-10 pl-4 text-body-sm max-md:text-body shadow-sm"
             : "h-12 pl-5 text-body",
           // Espacio para el botón, más el de la «×» cuando hay texto.
           compacto
