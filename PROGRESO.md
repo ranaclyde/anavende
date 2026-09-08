@@ -115,7 +115,7 @@ rotulación — **la tarjeta, el catálogo y el precio siguen sin esa pasada**.
 | F3.1 | Tarjeta de producto, con todos sus estados | 🟡 | `components/shop/tarjeta-producto.tsx`, y es siempre la misma en catálogo, home, recomendados y favoritos (§6.1). Están el descuento —**dos números**, tachado y final (RN-04c)—, el **sin stock** —imagen al 55% con la píldora encima, y la tarjeta **sigue siendo clicable** (RN-05)—, el hover que eleva y escala la imagen dentro de su marco, la marca en versalitas y los puntos de color. **Repasada el 2026-09-08 contra el rediseño**: los tres primeros puntos quedaron confirmados como están y el cuarto se terminó de decidir; abajo está el detalle. Faltan dos, y las dos son de otra tarea: **el corazón es un hueco, no un botón** —entra por `accionFavorito` y hoy nadie se lo pasa, porque favoritos es F5.4—, así que el estado «favorito» del «Hecho cuando» no está probado; y **el enlace de la tarjeta apunta a un 404**, porque `/productos/[slug]` es la ficha y es F3.5. El enlace estirado vive dentro del `<h3>` y no envuelve la tarjeta: envolviéndola, el corazón quedaría **dentro** del ancla, que es HTML inválido y lo deja inalcanzable con teclado |
 | F3.2 | Componente de precio | 🟡 | `components/shop/precio.tsx`, con `es-AR`, decimales siempre (RN-02) y `tabular-nums` —sin eso las columnas de precios de la grilla bailan al cambiar de página—. **Las dos composiciones muestran los mismos dos números desde el 2026-09-08** (RN-04c): la de tarjeta es una línea —tachado y después final— y la de ficha va apilada, final a 24px y tachado abajo. El renglón «Ahorrás $ X» se fue de las dos. La de tarjeta está en pantalla; **la de ficha no tiene consumidor todavía** (F3.5), y código sin consumidor es código que nadie probó |
 | F3.3 | Búsqueda tolerante a acentos y errores de tipeo | ⬜ | Hay media, y es la mitad que no da nombre a la tarea: `condicionDeBusqueda()` en `modules/catalog/products/tienda.ts` resuelve **los acentos** con `immutable_unaccent` sobre nombre, marca y `description_text`, así que «mecanico» encuentra «Mecánico». Sin trigramas, «lojitech» **no** encuentra «Logitech». El umbral que falta no se calibra hasta que exista el catálogo real (F2.8), que es lo que pide el «Hecho cuando» |
-| F3.4 | Catálogo: filtros, orden, paginación, todo en la URL | 🟡 | `/productos` con filtros por categoría, marca, color y descuento, cinco órdenes y paginación, y **todo el estado en la dirección** (§10.2): el botón atrás funciona, el enlace se manda por WhatsApp tal como se está viendo, y la pantalla no necesita una línea de estado de cliente para lo que muestra. Tres pantallas vacías distintas y no una —«todavía no hay productos», «no encontramos nada para esto» y la que apareció probando, `?pagina=9` a mano, que antes ofrecía «Limpiar todo» sin ningún filtro puesto—. El conteo es `aria-live`, la paginación son enlaces y las cuatro primeras tarjetas cargan con prioridad, por el LCP. **Le falta función de RF-02**: categoría, marca y color son de **selección única** —no se pueden elegir dos marcas— y no está el rango de precio. Queda registrado en DR §7.2 como función pendiente, que es distinto de una decisión de diseño |
+| F3.4 | Catálogo: filtros, orden, paginación, todo en la URL | 🟡 | `/productos` con filtros por categoría, marca, color, **rango de precio** y descuento, cinco órdenes y paginación, y **todo el estado en la dirección** (§10.2): el botón atrás funciona, el enlace se manda por WhatsApp tal como se está viendo, y la pantalla no necesita una línea de estado de cliente para lo que muestra. Tres pantallas vacías distintas y no una —«todavía no hay productos», «no encontramos nada para esto» y la que apareció probando, `?pagina=9` a mano, que antes ofrecía «Limpiar todo» sin ningún filtro puesto—. El conteo es `aria-live`, la paginación son enlaces y las cuatro primeras tarjetas cargan con prioridad, por el LCP. **Completada el 2026-09-08**: categoría, marca y color pasaron a **multiselección** y entró el **rango de precio**, que eran las dos funciones que RF-02 pedía y no estaban. Un chip por valor aplicado, contador por valor, y el precio sobre el precio **final**. **34 tests nuevos** sobre un módulo que no tenía ninguno. Le falta la pasada de `impeccable` y `ui-ux-pro-max` que §12.4 exige para cerrar una pantalla |
 | F3.5 | Ficha de producto con galería y selector de color | 🟡 | `/productos/[slug]`, y con esto **la tarjeta del catálogo dejó de apuntar a un 404**. Están la galería de §6.8, el selector de color de §6.5, la cantidad con tope en el stock, la descripción con formato pintada como React y no como HTML, y los tres estados de compra: con stock, **sin stock** y «todavía no está a la venta» —un producto activo sin ninguna variante, que RN-05 muestra igual—. Cambiar de color cambia foto, stock y mensaje **sin recargar** y escribe `?color=` con `replaceState`; un producto inactivo da 404. **17 tests** sobre la consulta y los mensajes. **Rehecha el 2026-09-08 con diecisiete pedidos tuyos**: miniaturas a la izquierda y siempre dibujadas —el salto de la foto al cambiar de color era eso—, foto al borde de la tarjeta, flechas, visor de dos niveles con recorrido a tamaño real, galería pegada con la columna derecha desplazando, descripción adentro de esa columna, recuadro «¿Cómo sigue después de comprar?», y Guardar y Compartir. Arriba está el detalle. Pasó por `impeccable` y `ui-ux-pro-max`. **Falta mirarla en un teléfono** y **falta ver moverse la galería**: el navegador de esta máquina no entrega cuadros, así que el desplazamiento suave no ocurre —la instrucción sale bien, está comprobado—. Le faltan los recomendados de RF-03, que son F8.2 y F8.4 |
 | F3.6 | Enlaces de WhatsApp | 🟡 | `lib/whatsapp.ts`, que es donde §4 lo tenía previsto, y **se hizo junto con F3.5 por decisión tuya**: la ficha no tiene ninguna otra acción, así que sin esto salía una pantalla que no se podía terminar de probar. **Son dos mensajes y no uno**: el de compra —producto, color, cantidad, precio y enlace— y el de **consulta de disponibilidad**, que lleva producto, color y enlace y **no** lleva precio ni cantidad: no se está comprando, y un precio sobre algo que todavía no existe es un precio que después hay que desdecir. El criterio de RF-04 —acentos, saltos de línea y el `$` bien codificados— está probado, y el número se limpia a dígitos venga como venga. Sin número configurado **no se dibuja ningún botón**: `wa.me/` sin destino abre WhatsApp en la nada. **Falta abrir uno en un teléfono con WhatsApp de verdad**: lo verificado es la dirección, no la entrega |
 | F3.7 | Home | ⬜ | Hoy `/` es un **marcador de posición deliberado** —título, bajada y nada más—, y lo dice en su propio archivo: construir la home contra productos inventados es el riesgo P1 del plan. Recibió los tokens nuevos de F3.8 como todo lo demás, y ninguna otra cosa del canvas |
@@ -451,6 +451,55 @@ que pinte para verlo.
 
 ---
 
+### Los filtros terminados (F3.4, 2026-09-08)
+
+RF-02 pedía tres filtros multiselección y un rango de precio desde el
+principio. Estaban los tres, de a uno, y el precio no estaba. Ahora están.
+
+**Multiselección: se suman dentro del grupo, se cruzan entre grupos.**
+«(Teclados o Mouses) y Logitech». La otra combinación —cruzar dentro del
+grupo— no es una alternativa que se descartó por gusto: da cero resultados
+siempre, porque ningún producto es de dos categorías a la vez.
+
+**Van repetidos en la dirección**, `?marca=a&marca=b`, y no separados por
+comas. Es la forma que entienden `URLSearchParams.getAll`, un formulario con
+varios campos del mismo nombre y el `searchParams` de Next, los tres sin una
+línea de código de por medio.
+
+**El rango de precio es el único control de verdad de todo el panel, y es un
+formulario `GET`.** El resto son enlaces porque el valor sale de una lista
+cerrada; acá no existe la dirección a la que ir hasta que alguien escribe el
+número. Sigue funcionando sin JavaScript, sigue dejando el atrás en su lugar y
+sigue siendo compartible, que era todo lo que los enlaces daban. Los demás
+filtros viajan como campos ocultos: sin eso, poner un precio borraría la marca
+elegida, que es la trampa clásica del formulario adentro de un panel de
+filtros. **Mira el precio final y no el de lista**: quien pone «hasta 20.000»
+dice cuánto quiere pagar, no cuánto salía antes de la oferta.
+
+Queda una fea a propósito: un campo vacío se envía igual —así funcionan los
+formularios—, así que poner sólo el mínimo deja `&precioMax=` colgando en la
+dirección. No filtra de más ni de menos, y el próximo clic en cualquier chip
+reescribe la URL limpia. Sacarlo pedía una isla de cliente y no la vale.
+
+**Dos cosas que aparecieron escribiendo los tests.** La primera: `formatMoney`
+—que pinta el chip del precio— tira una excepción con más de diez dígitos
+enteros, porque la columna es `numeric(12,2)`. Mi tope inicial dejaba pasar
+dieciséis, así que `?precioMax=99999999999` habría roto la página en vez de no
+filtrar nada; ahora el tope de la lectura es el de la columna. La segunda: hay
+**tope de veinte valores por filtro**, y no es una limitación de producto —
+nadie elige veinte marcas a mano— sino que `?marca=` repetido quinientas veces
+arma un `IN` de quinientos elementos con una sola pegada de texto.
+
+**34 tests nuevos sobre un módulo que no tenía ninguno.** Veintiuno puros
+sobre leer y escribir la dirección —ida y vuelta sin perder ni inventar nada,
+la basura descartada antes de llegar a Postgres, el rango al revés dado vuelta
+en vez de tirado— y trece contra Postgres de verdad sobre la consulta, que es
+donde vive la diferencia entre sumar y cruzar. Cada caso compara además el
+total con la cantidad de filas: son dos consultas distintas con el mismo
+`WHERE`, y es exactamente donde se despegan.
+
+---
+
 ### Lo que F3 encontró, y no se veía leyendo el código
 
 **Los tests le comen el stock al catálogo sembrado.** `.env.test` y `.env.local`
@@ -729,6 +778,7 @@ Cada una se escribió primero en la especificación y después en el código
 | **La tarjeta muestra dos números, no cuatro** | `DESIGN-REFERENCE.md` §6.1 y §6.7 | Llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, tachado primero, como se lee un cartel. **No es una desviación del canvas ni de la referencia**: §6.1 ya dibujaba dos números; el «Ahorrás» venía de §6.7, que es el componente genérico. *(Ampliada el 2026-09-08: la regla dejó de ser de la tarjeta y pasó a ser de toda la tienda — RN-04c, la fila de abajo. El «Ahorrás» tampoco sigue vivo en la ficha.)* |
 | **RN-04c: una oferta son dos números, nunca tres** | `FUNCTIONAL-SPEC.md` RN-04c, RF-02, RF-03; `TECHNICAL-SPEC.md` §7.2; `DESIGN-REFERENCE.md` §6.1, §6.7, §7.3 y §14 | Decisión tuya. La tarjeta ya lo hacía desde F3.8 y **RF-02 seguía pidiendo lo contrario**: un criterio de aceptación que el código incumplía sin que ninguno de los dos estuviera mal a propósito. En vez de corregir RF-02 para que describiera la tarjeta, la regla subió a la tienda entera — el tachado sobre el final ya dice cuánto bajó, y enunciar el ahorro es la misma oferta dicha de nuevo. La ficha era la única pantalla que lo llevaba, y no llegó a tener consumidor: se fue antes de estrenarse |
 | **La vista previa del panel también pierde el «Ahorrás»** | `components/admin/productos/formulario.tsx` | RN-04c es de la tienda y el panel no entra. Pero esa vista previa dice «Se muestra», así que mostrar de más la volvía mentirosa sobre lo único que promete. Y el número que agregaba era el descuento que Ana acababa de tipear tres campos más arriba. `Vista.ahorro` quedó sin usar y se borró |
+| **Los filtros del catálogo pasan a multiselección y aparece el rango de precio** | `DESIGN-REFERENCE.md` §7.2 y §14; `PROGRESO.md` F3.4 | No cambia ningún requisito: RF-02 los pedía así desde el principio y §7.2 tenía la ausencia registrada como «función pendiente». Lo que cambia es §7.2, que ahora describe lo que hay en vez de lo que falta |
 | **RN-10 deja de nombrar a PedidosYa y pasa a nombrar la zona; aparece el retiro** | `FUNCTIONAL-SPEC.md` RN-10, RF-01, RF-03, RF-08, RF-11, RF-29, FA-02, decisiones; `TECHNICAL-SPEC.md` §3; `DESIGN-REFERENCE.md` §5.1, §7.1; `DEVELOPMENT-PLAN.md` F1.13, F3.7, F6.1 | Pedido tuyo, y era más grande que la ficha: la regla exigía el aviso en cuatro pantallas, así que cambiar sólo la ficha dejaba a la tienda contándose dos historias. El efecto lateral está en **el checkout**, y ahí me pasé: dije que lo anotaba y lo edité igual. Corregido con lo que aclaraste — RF-11 ofrece **envío, retiro o coordinar**, y sólo el envío pide dirección |
 | **Los medios de pago se nombran en la ficha en vez de dibujarse** | `FUNCTIONAL-SPEC.md` RF-03 y decisiones; `DESIGN-REFERENCE.md` §7.3, §14 | Pedido tuyo. Una tira de logos en la pantalla de venta se lee como «pagá acá», y acá no se paga. No se agregó el enlace a «qué medios aceptamos» que mencionaste: sería el sexto enlace apuntando a un `/legales/` que no existe hasta F9.3 |
 | **La ficha declara que los productos son nuevos y en su caja original** | `FUNCTIONAL-SPEC.md` RF-03 y decisiones | Preguntado y contestado: no se venden reacondicionados. Va como texto fijo y no como dato por producto, porque el día que eso cambie cambia el modelo, no una frase |

@@ -10,6 +10,12 @@
  * Tampoco es `server-only`: el estado vive en la URL, así que lo lee la
  * consulta y lo escribe la barra de filtros. Una sola copia de los nombres de
  * los parámetros, o el día que uno cambie el otro deja de encontrar sin avisar.
+ *
+ * **Categoría, marca y color son multiselección desde el 2026-09-08**, que es
+ * lo que RF-02 pedía desde el principio. Van repetidos en la dirección
+ * —`?marca=a&marca=b`— y no separados por comas: es la forma que entienden
+ * `URLSearchParams.getAll`, un formulario con varios campos del mismo nombre y
+ * el `searchParams` de Next, los tres sin código de por medio.
  */
 
 export const ORDENES_DE_TIENDA = [
@@ -24,15 +30,18 @@ export type OrdenDeTienda = (typeof ORDENES_DE_TIENDA)[number]["valor"];
 
 export type FiltrosDeTienda = {
   q: string;
-  /** UUID de la categoría, o `""` = todas. */
-  categoria: string;
-  /** UUID de la marca, o `""` = todas. */
-  marca: string;
+  /** UUID de categorías. Vacío = todas. */
+  categoria: readonly string[];
+  /** UUID de marcas. Vacío = todas. */
+  marca: readonly string[];
   /**
-   * UUID del color, o `""` = todos. RF-02: el producto entra si **alguna** de
-   * sus variantes tiene ese color, no si lo tienen todas.
+   * UUID de colores. RF-02: el producto entra si **alguna** de sus variantes
+   * tiene **alguno** de estos colores.
    */
-  color: string;
+  color: readonly string[];
+  /** Pesos enteros sobre el precio FINAL (RN-04b). `null` = sin tope. */
+  precioMin: number | null;
+  precioMax: number | null;
   /** Solo lo que tiene descuento (RN-04b). */
   oferta: boolean;
   orden: OrdenDeTienda;
@@ -43,11 +52,26 @@ export type FiltrosDeTienda = {
 /** §10.2: «paginación por LIMIT/OFFSET con 24 por página». */
 export const POR_PAGINA = 24;
 
+/**
+ * Cuántos valores se aceptan por filtro.
+ *
+ * No es una limitación de producto —nadie elige veinte marcas a mano—: es que
+ * la dirección la escribe cualquiera, y `?marca=` repetido quinientas veces
+ * arma un `IN` de quinientos elementos con una sola pegada de texto. Veinte
+ * está por encima de cualquier uso real y por debajo de cualquier abuso.
+ */
+export const MAXIMO_POR_FILTRO = 20;
+
+/** Diez dígitos enteros: lo que entra en `numeric(12,2)`. Ver `pesos`. */
+const TOPE_DE_PRECIO = 9_999_999_999;
+
 export const FILTROS_DE_TIENDA_VACIOS: FiltrosDeTienda = {
   q: "",
-  categoria: "",
-  marca: "",
-  color: "",
+  categoria: [],
+  marca: [],
+  color: [],
+  precioMin: null,
+  precioMax: null,
   oferta: false,
   orden: "relevancia",
   pagina: 1,
@@ -67,6 +91,50 @@ function texto(valor: string | string[] | undefined): string {
 }
 
 /**
+ * Los UUID válidos de un parámetro repetido, sin repetidos y con tope.
+ *
+ * Se pasan a minúsculas porque es como los devuelve Postgres, y así
+ * `?marca=ABC…` sigue coincidiendo con la opción de la lista en vez de quedar
+ * aplicado pero sin chip que lo saque.
+ */
+function lista(valor: string | string[] | undefined): string[] {
+  const crudos =
+    valor === undefined ? [] : Array.isArray(valor) ? valor : [valor];
+  const vistos = new Set<string>();
+
+  for (const crudo of crudos) {
+    const id = crudo.trim().toLowerCase();
+    // Se validan ANTES de la consulta: sin esto `?marca=hola` no filtraría de
+    // menos, haría fallar a Postgres.
+    if (UUID.test(id)) vistos.add(id);
+    if (vistos.size >= MAXIMO_POR_FILTRO) break;
+  }
+
+  return [...vistos];
+}
+
+/**
+ * Un precio de la dirección, en pesos enteros.
+ *
+ * **Enteros y no decimales**, aunque RN-02 diga que los precios se muestran con
+ * centavos: acá el número lo escribe una persona en una caja de texto, y
+ * «desde 12.000,50» no es un filtro que alguien quiera poner. Los centavos
+ * siguen estando en el precio y en la comparación; lo que se acota es el borde.
+ */
+function pesos(valor: string | string[] | undefined): number | null {
+  const crudo = texto(valor);
+  if (crudo === "") return null;
+
+  const n = Number.parseInt(crudo, 10);
+  // El tope es el de la COLUMNA, `numeric(12,2)`: diez dígitos enteros. No es
+  // una precaución teórica —`formatMoney` tira una excepción con once, y el
+  // chip del filtro lo llama—, así que `?precioMax=99999999999` rompería la
+  // página en vez de no filtrar nada.
+  if (!Number.isSafeInteger(n) || n < 0 || n > TOPE_DE_PRECIO) return null;
+  return n;
+}
+
+/**
  * Lee la URL sin fallar nunca.
  *
  * Es la misma decisión que el panel y por el mismo motivo: la dirección es
@@ -78,19 +146,25 @@ function texto(valor: string | string[] | undefined): string {
 export function leerFiltrosDeTienda(
   params: ParametrosDeBusqueda,
 ): FiltrosDeTienda {
-  const categoria = texto(params.categoria);
-  const marca = texto(params.marca);
-  const color = texto(params.color);
   const orden = texto(params.orden);
   const pagina = Number.parseInt(texto(params.pagina), 10);
 
+  let precioMin = pesos(params.precioMin);
+  let precioMax = pesos(params.precioMax);
+  // Un rango al revés es un error de tipeo, y se da vuelta en vez de
+  // descartarse: «de 5000 a 1000» quiere decir lo mismo al derecho, y tirar el
+  // tope dejaría un «desde 5000» que nadie pidió.
+  if (precioMin !== null && precioMax !== null && precioMin > precioMax) {
+    [precioMin, precioMax] = [precioMax, precioMin];
+  }
+
   return {
     q: texto(params.q),
-    // Los UUID se validan ANTES de la consulta: sin esto `?marca=hola` no
-    // filtraría de menos, haría fallar a Postgres.
-    categoria: UUID.test(categoria) ? categoria : "",
-    marca: UUID.test(marca) ? marca : "",
-    color: UUID.test(color) ? color : "",
+    categoria: lista(params.categoria),
+    marca: lista(params.marca),
+    color: lista(params.color),
+    precioMin,
+    precioMax,
     oferta: texto(params.oferta) === "1",
     orden: ORDENES_DE_TIENDA.some((o) => o.valor === orden)
       ? (orden as OrdenDeTienda)
@@ -115,9 +189,11 @@ export function urlDeTienda(
   const params = new URLSearchParams();
 
   if (f.q) params.set("q", f.q);
-  if (f.categoria) params.set("categoria", f.categoria);
-  if (f.marca) params.set("marca", f.marca);
-  if (f.color) params.set("color", f.color);
+  for (const id of f.categoria) params.append("categoria", id);
+  for (const id of f.marca) params.append("marca", id);
+  for (const id of f.color) params.append("color", id);
+  if (f.precioMin !== null) params.set("precioMin", String(f.precioMin));
+  if (f.precioMax !== null) params.set("precioMax", String(f.precioMax));
   if (f.oferta) params.set("oferta", "1");
   if (f.orden !== "relevancia") params.set("orden", f.orden);
   if (f.pagina > 1) params.set("pagina", String(f.pagina));
@@ -142,6 +218,19 @@ export function urlDePagina(
   return urlDeTienda({ ...filtros, pagina });
 }
 
+/**
+ * Pone o saca un valor de un filtro multiselección.
+ *
+ * Es lo que hace que **volver a tocar un chip encendido lo apague**, que es el
+ * gesto que la gente prueba primero. El tope se aplica también acá: sin él, la
+ * validación de la lectura se saltea eligiendo a mano.
+ */
+export function alternar(lista: readonly string[], id: string): string[] {
+  if (lista.includes(id)) return lista.filter((x) => x !== id);
+  if (lista.length >= MAXIMO_POR_FILTRO) return [...lista];
+  return [...lista, id];
+}
+
 /** Si hay algo que limpiar: búsqueda o filtros, no el orden ni la página. */
 export function hayFiltrosDeTienda(f: FiltrosDeTienda): boolean {
   return contarFiltrosDeTienda(f) > 0 || f.q !== "";
@@ -150,16 +239,24 @@ export function hayFiltrosDeTienda(f: FiltrosDeTienda): boolean {
 /**
  * Cuántos filtros hay puestos, para el contador del botón «Filtros».
  *
+ * **Cuenta VALORES, no grupos**: con dos marcas elegidas dice 2, que es lo que
+ * se ve en el panel abierto y lo que se ve en los chips de arriba de la grilla.
+ * Contando grupos, sacar una de las dos marcas dejaría el número quieto y
+ * parecería que el clic no hizo nada.
+ *
  * **La búsqueda no cuenta.** Tiene su propio campo a la vista al lado del
- * botón: sumarla haría que el contador diga «2» con un solo filtro elegido, y
- * el número dejaría de corresponderse con lo que se ve al abrir el panel.
+ * botón: sumarla haría que el contador diga «2» con un solo filtro elegido.
+ *
+ * **El precio cuenta UNA vez** aunque tenga los dos bordes puestos: es un
+ * filtro solo, y su chip también es uno.
  */
 export function contarFiltrosDeTienda(f: FiltrosDeTienda): number {
   return (
-    (f.categoria ? 1 : 0) +
-    (f.marca ? 1 : 0) +
-    (f.color ? 1 : 0) +
-    (f.oferta ? 1 : 0)
+    f.categoria.length +
+    f.marca.length +
+    f.color.length +
+    (f.oferta ? 1 : 0) +
+    (f.precioMin !== null || f.precioMax !== null ? 1 : 0)
   );
 }
 

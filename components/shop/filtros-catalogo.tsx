@@ -2,14 +2,17 @@ import Link from "next/link";
 import { Check, SlidersHorizontal, X } from "lucide-react";
 
 import { BotonVerResultados } from "@/components/shop/boton-ver-resultados";
+import { Button } from "@/components/ui/button";
 
 import {
+  alternar,
   contarFiltrosDeTienda,
   hayFiltrosDeTienda,
   urlCambiando,
   urlDeTienda,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
+import { formatMoney } from "@/lib/money";
 import type {
   OpcionDeColor,
   OpcionDeFiltro,
@@ -116,28 +119,39 @@ export function PanelDeFiltros({
           <GrupoDeChips
             titulo="Categoría"
             opciones={categorias}
-            seleccionado={filtros.categoria}
-            urlDe={(id) => urlCambiando(filtros, { categoria: id })}
+            seleccionados={filtros.categoria}
+            urlDe={(id) =>
+              urlCambiando(filtros, {
+                categoria: alternar(filtros.categoria, id),
+              })
+            }
           />
           <GrupoDeChips
             titulo="Marca"
             opciones={marcas}
-            seleccionado={filtros.marca}
-            urlDe={(id) => urlCambiando(filtros, { marca: id })}
+            seleccionados={filtros.marca}
+            urlDe={(id) =>
+              urlCambiando(filtros, { marca: alternar(filtros.marca, id) })
+            }
           />
           <GrupoDeChips
             titulo="Color"
             opciones={colores}
-            seleccionado={filtros.color}
-            urlDe={(id) => urlCambiando(filtros, { color: id })}
+            seleccionados={filtros.color}
+            urlDe={(id) =>
+              urlCambiando(filtros, { color: alternar(filtros.color, id) })
+            }
           />
         </div>
 
-        <Casilla
-          href={urlCambiando(filtros, { oferta: !filtros.oferta })}
-          activa={filtros.oferta}
-          etiqueta="Solo con descuento"
-        />
+        <div className="flex flex-wrap items-end gap-x-8 gap-y-5">
+          <RangoDePrecio filtros={filtros} />
+          <Casilla
+            href={urlCambiando(filtros, { oferta: !filtros.oferta })}
+            activa={filtros.oferta}
+            etiqueta="Solo con descuento"
+          />
+        </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
           {/*
@@ -168,20 +182,25 @@ export function PanelDeFiltros({
 /**
  * Un grupo de chips con su conteo — categoría, marca y color usan el mismo.
  *
- * Los tres son de selección única, que es lo que la consulta sabe hacer hoy.
- * RF-02 los pide multiselección; queda anotado como pendiente y no como
- * función ausente: filtrar por los tres a la vez ya se puede, lo que no se
- * puede es elegir dos marcas.
+ * **Los tres son multiselección desde el 2026-09-08** (RF-02). Dentro del
+ * grupo las opciones se suman y entre grupos se cruzan: «(Teclados o Mouses) y
+ * Logitech». Cruzarlas dentro del grupo daría cero siempre, porque ningún
+ * producto es de dos categorías a la vez.
+ *
+ * No hay señal visual nueva para «podés elegir varios»: se descubre eligiendo
+ * el segundo, y hasta ahí el chip se comporta igual que antes. Un rótulo
+ * «elegí uno o más» arriba de cada grupo sería texto en tres lugares para algo
+ * que se aprende en un clic.
  */
 function GrupoDeChips({
   titulo,
   opciones,
-  seleccionado,
+  seleccionados,
   urlDe,
 }: {
   titulo: string;
   opciones: (OpcionDeFiltro | OpcionDeColor)[];
-  seleccionado: string;
+  seleccionados: readonly string[];
   urlDe: (id: string) => string;
 }) {
   // Sin opciones no se dibuja el título: un encabezado con nada debajo parece
@@ -200,15 +219,15 @@ function GrupoDeChips({
       */}
       <ul className="flex flex-wrap gap-2">
         {opciones.map((o) => {
-          const activo = seleccionado === o.id;
+          const activo = seleccionados.includes(o.id);
           const hex = "hex" in o ? o.hex : null;
 
           return (
             <li key={o.id}>
               <Link
-                // Volver a tocar el chip vigente lo quita: es el gesto que la
-                // gente prueba, y si no hace nada parece que se colgó.
-                href={urlDe(activo ? "" : o.id)}
+                // Volver a tocar el chip encendido lo apaga: lo resuelve
+                // `alternar`, y es el gesto que la gente prueba primero.
+                href={urlDe(o.id)}
                 // §9: el color nunca es el único portador del estado. Un
                 // lector de pantalla no ve el relleno burdeos.
                 aria-current={activo ? "true" : undefined}
@@ -251,6 +270,125 @@ function GrupoDeChips({
         })}
       </ul>
     </div>
+  );
+}
+
+/**
+ * El rango de precio (RF-02) — el único control de verdad de todo el panel.
+ *
+ * **Es un formulario GET y no un enlace**, porque el valor no sale de una lista
+ * cerrada: hasta que no se escribe no existe la dirección a la que ir. Sigue
+ * sin JavaScript, sigue dejando el atrás funcionando y sigue siendo
+ * compartible — que es todo lo que los enlaces daban.
+ *
+ * **Los demás filtros viajan como campos ocultos.** Sin eso, poner un precio
+ * borraría la marca elegida, que es la trampa clásica del formulario dentro de
+ * un panel de filtros. `pagina` es la excepción y se omite a propósito: cambiar
+ * el precio vuelve a la página 1, igual que cualquier otro filtro.
+ *
+ * **Una fea a propósito:** un campo vacío se envía igual —así funcionan los
+ * formularios—, así que poner solo el mínimo deja `&precioMax=` colgando en la
+ * dirección. No filtra de más ni de menos, y el próximo clic en cualquier chip
+ * reescribe la URL limpia. Sacarlo pedía JavaScript, y no vale una isla de
+ * cliente.
+ */
+function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
+  return (
+    <div className="flex flex-col gap-2.5">
+      <h3 className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
+        Precio
+      </h3>
+
+      <form
+        method="get"
+        action="/productos"
+        className="flex flex-wrap items-center gap-2"
+      >
+        <Conservados filtros={filtros} />
+        <CampoDePrecio nombre="precioMin" etiqueta="Desde" valor={filtros.precioMin} />
+        <CampoDePrecio nombre="precioMax" etiqueta="Hasta" valor={filtros.precioMax} />
+        <Button type="submit" variant="secondary" size="md">
+          Aplicar
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+/**
+ * Los filtros vigentes como campos ocultos, para que el formulario del precio
+ * no se los lleve puestos. Los multivalor van repetidos, que es exactamente la
+ * forma que `leerFiltrosDeTienda` sabe leer.
+ */
+function Conservados({ filtros }: { filtros: FiltrosDeTienda }) {
+  return (
+    <>
+      {filtros.q ? <input type="hidden" name="q" value={filtros.q} /> : null}
+      {filtros.categoria.map((id) => (
+        <input key={id} type="hidden" name="categoria" value={id} />
+      ))}
+      {filtros.marca.map((id) => (
+        <input key={id} type="hidden" name="marca" value={id} />
+      ))}
+      {filtros.color.map((id) => (
+        <input key={id} type="hidden" name="color" value={id} />
+      ))}
+      {filtros.oferta ? (
+        <input type="hidden" name="oferta" value="1" />
+      ) : null}
+      {filtros.orden !== "relevancia" ? (
+        <input type="hidden" name="orden" value={filtros.orden} />
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * Etiqueta VISIBLE y no un marcador de posición (§8): «Desde» y «Hasta» son la
+ * única diferencia entre los dos campos, y un marcador desaparece justo cuando
+ * se está escribiendo, que es cuando hace falta saber en cuál se está.
+ *
+ * `defaultValue` y no `value`: es un campo no controlado a propósito. Con
+ * `value` y sin `onChange` React lo deja de solo lectura, y este archivo es
+ * servidor entero.
+ */
+function CampoDePrecio({
+  nombre,
+  etiqueta,
+  valor,
+}: {
+  nombre: string;
+  etiqueta: string;
+  valor: number | null;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-body-sm text-ink-secondary">
+      {etiqueta}
+      <span className="relative">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-body-sm text-ink-tertiary"
+        >
+          $
+        </span>
+        <input
+          type="number"
+          name={nombre}
+          min={0}
+          step={1}
+          inputMode="numeric"
+          defaultValue={valor ?? ""}
+          className={cn(
+            "h-10 w-28 rounded-pill border border-border bg-surface",
+            "pr-3 pl-7 text-body-sm text-ink tabular-nums",
+            "focus-visible:shadow-focus focus-visible:outline-none",
+            // Las flechitas nativas de `number` no entran en el sistema y
+            // encima empujan el texto contra el borde.
+            "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+          )}
+        />
+      </span>
+    </label>
   );
 }
 
@@ -329,30 +467,44 @@ export function ChipsDeFiltros({
     });
   }
 
-  const categoria = categorias.find((c) => c.id === filtros.categoria);
-  if (categoria) {
-    puestos.push({
-      clave: "categoria",
-      etiqueta: categoria.nombre,
-      href: urlCambiando(filtros, { categoria: "" }),
-    });
+  /*
+   * Un chip por VALOR, no por grupo: con dos marcas puestas hay dos chips y
+   * cada uno saca la suya. Un chip «2 marcas» diría cuántas hay y obligaría a
+   * abrir el panel para saber cuáles, que es justo lo que los chips existen
+   * para evitar.
+   *
+   * Si un identificador no está en las opciones no se dibuja chip, y eso pasa
+   * de verdad: una categoría cuyo último producto se desactivó desaparece de
+   * la lista. La salida no se pierde —«Limpiar todo» está siempre al final de
+   * esta misma fila—, pero el filtro invisible es el motivo por el que ese
+   * enlace no es opcional.
+   */
+  const grupos = [
+    { clave: "categoria", ids: filtros.categoria, opciones: categorias },
+    { clave: "marca", ids: filtros.marca, opciones: marcas },
+    { clave: "color", ids: filtros.color, opciones: colores },
+  ] as const;
+
+  for (const grupo of grupos) {
+    for (const id of grupo.ids) {
+      const opcion = grupo.opciones.find((o) => o.id === id);
+      if (!opcion) continue;
+      puestos.push({
+        clave: `${grupo.clave}-${id}`,
+        etiqueta: opcion.nombre,
+        href: urlCambiando(filtros, {
+          [grupo.clave]: alternar(grupo.ids, id),
+        }),
+      });
+    }
   }
 
-  const marca = marcas.find((m) => m.id === filtros.marca);
-  if (marca) {
+  if (filtros.precioMin !== null || filtros.precioMax !== null) {
     puestos.push({
-      clave: "marca",
-      etiqueta: marca.nombre,
-      href: urlCambiando(filtros, { marca: "" }),
-    });
-  }
-
-  const color = colores.find((c) => c.id === filtros.color);
-  if (color) {
-    puestos.push({
-      clave: "color",
-      etiqueta: color.nombre,
-      href: urlCambiando(filtros, { color: "" }),
+      clave: "precio",
+      etiqueta: etiquetaDePrecio(filtros),
+      // Los dos bordes se van juntos: es UN filtro, y su chip es uno.
+      href: urlCambiando(filtros, { precioMin: null, precioMax: null }),
     });
   }
 
@@ -394,4 +546,20 @@ export function ChipsDeFiltros({
       </li>
     </ul>
   );
+}
+
+/**
+ * «$ 5.000,00 – $ 20.000,00», «Desde $ 5.000,00» o «Hasta $ 20.000,00».
+ *
+ * Con `formatMoney` y no con el número pelado: RN-02 pide que todo precio de
+ * la tienda se vea igual, y un chip que dice «5000» al lado de tarjetas que
+ * dicen «$ 5.000,00» se lee como si fuera otra cosa.
+ */
+function etiquetaDePrecio(f: FiltrosDeTienda): string {
+  const min = f.precioMin !== null ? formatMoney(String(f.precioMin)) : null;
+  const max = f.precioMax !== null ? formatMoney(String(f.precioMax)) : null;
+
+  if (min !== null && max !== null) return `${min} – ${max}`;
+  if (min !== null) return `Desde ${min}`;
+  return `Hasta ${max}`;
 }

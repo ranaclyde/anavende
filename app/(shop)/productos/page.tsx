@@ -64,12 +64,17 @@ export default async function Catalogo({
    * anuncia un lector de pantalla al llegar: que diga el término buscado es la
    * diferencia entre orientarse y tener que explorar la página.
    */
-  const categoriaElegida = opciones.categorias.find(
-    (c) => c.id === filtros.categoria,
-  );
+  // Con UNA categoría elegida el título la nombra; con dos vuelve a ser
+  // genérico. «Teclados y Mouses» arriba de una grilla que además está
+  // filtrada por marca y por precio promete un recorte que no es el que hay:
+  // para eso están los chips, que los muestran todos.
+  const unicaCategoria =
+    filtros.categoria.length === 1
+      ? opciones.categorias.find((c) => c.id === filtros.categoria[0])
+      : undefined;
   const titulo = filtros.q
     ? `Resultados para «${filtros.q}»`
-    : (categoriaElegida?.nombre ?? "Todos los productos");
+    : (unicaCategoria?.nombre ?? "Todos los productos");
 
   return (
     <div className="mx-auto w-full max-w-shop px-4 py-10 sm:px-6 lg:px-8">

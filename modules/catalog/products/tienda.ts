@@ -44,23 +44,52 @@ function condicionDeBusqueda(q: string): SQL {
   )`;
 }
 
+/**
+ * `columna IN (a, b, c)` con los valores como parámetros.
+ *
+ * Los identificadores NO se interpolan en el texto de la consulta ni siquiera
+ * después de haber pasado por la validación de UUID: la validación protege de
+ * lo que ya conocemos, y un `sql.raw` acá sería una inyección esperando a que
+ * alguien afloje esa expresión. Es la misma decisión que el reordenamiento de
+ * imágenes de `modules/media/subir.ts`.
+ */
+function enLaLista(columna: SQL, ids: readonly string[]): SQL {
+  return sql`${columna} IN (${sql.join(
+    ids.map((id) => sql`${id}::uuid`),
+    sql`, `,
+  )})`;
+}
+
 function condiciones(f: FiltrosDeTienda): SQL {
   const partes: SQL[] = [sql`p.is_active`];
 
   if (f.q) partes.push(condicionDeBusqueda(f.q));
-  if (f.categoria) partes.push(sql`p.category_id = ${f.categoria}`);
-  if (f.marca) partes.push(sql`p.brand_id = ${f.marca}`);
+
+  // Multiselección (RF-02): dentro de un grupo las opciones se suman —«Teclados
+  // O Mouses»— y entre grupos se cruzan —«(Teclados O Mouses) Y Logitech»—.
+  // Es lo que espera cualquiera que haya usado un filtro de tienda, y lo
+  // contrario —cruzar dentro del grupo— daría cero resultados siempre: ningún
+  // producto es de dos categorías a la vez.
+  if (f.categoria.length) partes.push(enLaLista(sql`p.category_id`, f.categoria));
+  if (f.marca.length) partes.push(enLaLista(sql`p.brand_id`, f.marca));
 
   // RF-02: «muestra el producto si ALGUNA de sus variantes tiene ese color».
   // Por eso es un EXISTS y no un JOIN: con el join, un producto que tiene el
   // color en tres variantes aparecería tres veces en la grilla y contaría tres
   // veces en el total.
-  if (f.color) {
+  if (f.color.length) {
     partes.push(sql`EXISTS (
       SELECT 1 FROM product_variants v
-       WHERE v.product_id = p.id AND v.is_active AND v.color_id = ${f.color}
+       WHERE v.product_id = p.id AND v.is_active
+         AND ${enLaLista(sql`v.color_id`, f.color)}
     )`);
   }
+
+  // Sobre el precio FINAL y no sobre `price` (RF-02): quien pone «hasta
+  // 20.000» está diciendo cuánto quiere pagar, no cuánto salía antes de la
+  // oferta. Los bordes son inclusivos.
+  if (f.precioMin !== null) partes.push(sql`p.final_price >= ${f.precioMin}`);
+  if (f.precioMax !== null) partes.push(sql`p.final_price <= ${f.precioMax}`);
 
   if (f.oferta) partes.push(sql`p.discount > 0`);
 

@@ -165,7 +165,7 @@ function Migas({
         </li>
         <li>
           <Link
-            href={urlDeTienda({ categoria: categoriaId })}
+            href={urlDeTienda({ categoria: [categoriaId] })}
             className="rounded-pill hover:text-ink"
           >
             {categoria}
