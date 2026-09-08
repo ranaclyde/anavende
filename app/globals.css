@@ -246,6 +246,34 @@
   [data-numeric="tabular"] {
     font-variant-numeric: tabular-nums;
   }
+
+}
+
+/*
+ * El buscador del encabezado desaparece cuando la página ya trae el suyo
+ * (§5.1). Dos buscadores a la vista, uno arriba del otro, es la clase de
+ * duplicación que hace dudar de cuál usar.
+ *
+ * **Va sin `@layer`, y no es un descuido.** Dentro de `@layer base` la regla
+ * pierde contra el `md:block` del propio buscador, porque Tailwind emite las
+ * utilidades en una capa posterior y la última capa gana sin importar la
+ * especificidad. Una regla SIN capa gana sobre cualquiera que esté en una, así
+ * que esto evita el `!important` que sería la otra salida.
+ *
+ * **Es CSS y no estado de React POR EL PARPADEO:** con estado, el encabezado
+ * se pinta con su buscador y recién en el efecto se entera de que sobra, así
+ * que en el catálogo y en la home aparecería un cuadro y se iría. Acá la regla
+ * se resuelve en el primer pintado y ese cuadro no existe.
+ *
+ * `data-fuera-de-vista` lo pone el propio buscador de la página cuando sale de
+ * la pantalla al scrollear: ahí el del encabezado ya no duplica nada, vuelve, y
+ * buscar sigue estando a un golpe de vista. Ese atributo sí lo mueve
+ * JavaScript, y si no hay, el encabezado no lo muestra en esas dos pantallas —
+ * que es la opción segura, porque el de la página está ahí arriba.
+ */
+body:has([data-buscador-principal]:not([data-fuera-de-vista]))
+  [data-buscador-navbar] {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

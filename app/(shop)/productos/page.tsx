@@ -93,9 +93,14 @@ export default async function Catalogo({
           `conservarFiltros`: buscar teniendo puesta una marca no puede
           borrarla — el chip está a la vista y se espera que siga valiendo.
         */}
+        {/*
+          `principal`: mientras este buscador se ve, el del encabezado no se
+          dibuja (§5.1). Vuelve solo al scrollear más abajo.
+        */}
         <SearchBox
           className="min-w-60 flex-1"
           conservarFiltros
+          principal
           placeholder="Buscá por producto, marca o categoría"
         />
         {/*
