@@ -31,14 +31,14 @@ justamente por ese número).
 
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
-| F0.1 | Servidores en DonWeb unidos por LAN | 🟡 | **Los dos servidores existen desde el 2026-09-09.** El APP se aprovisionó con **4 GB**, el doble del mínimo de Coolify, y con eso compilar en el servidor pasó de imposible a viable (§18.2 lo dice explícito). Nació en un **nodo distinto** del DATA, y entre nodos distintos DonWeb no da red privada: se resolvió pidiendo el traslado **del vacío**, porque mover el que tiene los datos habría arrastrado Studio, su certificado y el bucket. Ya comparten nodo. **Falta lo que cierra la tarea**: comprobar que se ven por IP privada, que es su «Hecho cuando» y que todavía nadie miró |
+| F0.1 | Servidores en DonWeb unidos por LAN | ✅ | **Cerrada el 2026-09-09.** Los dos servidores existen y **se ven por IP privada** —`192.168.200.193` el APP, `192.168.200.120` el DATA—, y el APP tiene **39 GB** de disco, por encima de los 30 que pide V8. El APP se aprovisionó con **4 GB**, el doble del mínimo de Coolify, y con eso compilar en el servidor pasó de imposible a viable (§18.2 lo dice explícito). Nació en un **nodo distinto** del DATA, y entre nodos distintos DonWeb no da red privada: se resolvió pidiendo el traslado **del vacío**, porque mover el que tiene los datos habría arrastrado Studio, su certificado y el bucket. Ya comparten nodo. **Que DonWeb asigne la placa no alcanza**: llegó sin dirección IPv4 y hubo que configurarla con netplan en los dos. Abajo está |
 | F0.2 | Coolify + limpieza de Docker | ✅ | Instalado en el servidor APP el 2026-09-09, con **las dos mitades del «Hecho cuando»**: el panel responde por HTTPS en `vps-5490980-x.dattaweb.com`, y la limpieza de Docker quedó **programada** —diaria a las 00:00, «Run on every schedule»— y no solo disponible, que es exactamente el riesgo R11. Se conservan volúmenes, redes y las **imágenes retenidas**: esas últimas son el botón de volver atrás de un despliegue, y borrarlas sería cambiar disco por la capacidad de revertir. El reloj de la instancia pasó de UTC a `America/Argentina/Buenos_Aires`; sin eso la limpieza corría a las 21 hs, en pleno uso. **Levantar Coolify no alcanzó**: abajo está el proxy que ya estaba ocupando la puerta |
-| F0.3 | Supabase en el servidor DATA | ✅ | Docker compose oficial, trece servicios (etiquetas exactas en `VERSIONS.md`). GoTrue v2.184.0, Postgres 15.8. Studio por HTTPS en `https://vps-6346459-x.dattaweb.com` |
-| F0.4 | Cerrar Postgres al mundo | 🟡 | **Compuerta F0.** Cerrado por dos capas independientes y verificado desde afuera. **(a)** El firewall virtual de DonWeb bloquea todo por defecto y abre solo 80, 443 y 5400 (SSH): el 5432 nunca estuvo en la lista. **(b)** `supabase-pooler` publicaba 5432 y 6543 en `0.0.0.0` —o sea que la única defensa era el perímetro de DonWeb— y ahora publica en `127.0.0.1`, por `docker-compose.override.yml` con `ports: !override`. Sin (b), borrar una regla en el panel de DonWeb dejaba la base abierta a internet. `DOCKER-USER` está vacía: no hay ni hubo firewall local. **Lo que falta es lo que no se puede hacer todavía**: «firewall local activo en **ambos** servidores» necesita que exista el segundo (F0.1). Cuando exista, son tres cosas y están acá para no redescubrirlas: publicar el pooler en la **IP privada** en vez de `127.0.0.1`, firewall local en los dos —y en el DATA tiene que ir en la cadena `DOCKER-USER`, porque **Docker se saltea `ufw`** y un `ufw` solo daría falsa tranquilidad—, y `pg_hba.conf` restringido a la IP del APP. El firewall de DonWeb **no sirve para esto**: es perimetral y no toca el tráfico de la LAN privada (§2.4) |
+| F0.3 | Supabase en el servidor DATA | ✅ | Docker compose oficial, trece servicios (etiquetas exactas en `VERSIONS.md`). GoTrue v2.184.0, Postgres 15.8. Studio por HTTPS en `https://vps-6346459-x.dattaweb.com`. **El 2026-09-09 sobrevivió a su primer reinicio de verdad**: los trece contenedores volvieron solos y en `healthy`, sin que nadie los empujara. Hasta ese día era una suposición |
+| F0.4 | Cerrar Postgres al mundo | ✅ | **Compuerta F0, y desde el 2026-09-09 está entera.** Lo que faltaba —«firewall local activo en **ambos** servidores»— esperaba a que existiera el segundo, y ya existe. Quedó así: **(a)** el firewall virtual de DonWeb abre solo SSH, 80 y 443, y **no toca la interfaz privada** (§2.4); **(b)** el pooler publica el 5432 en `127.0.0.1` **y** en `192.168.200.120`, y el 6543 solo en `127.0.0.1`; **(c)** en el DATA, dos reglas en la cadena `DOCKER-USER` dejan pasar al 5432 **solo desde `192.168.200.193`** y tiran todo lo demás que venga por `eth1` —`ufw` no sirve para esto: Docker se lo saltea—, guardadas con `iptables-persistent` para que sobrevivan al reinicio; **(d)** `ufw` activo en los dos servidores, con «todo lo que no esté permitido no entra». Verificado **desde afuera** después de cada cambio: 5432 y 6543 cerrados en las dos IPs públicas, Studio y el panel respondiendo. **`pg_hba.conf` no se tocó, y es una decisión**: abajo está el motivo |
 | F0.5 | Restringir Studio | ⬜ | Studio queda accesible por HTTPS con usuario y contraseña del dashboard. §2.4 pide además restricción por IP |
 | F0.6 | `pg_trgm` y `unaccent` | ✅ | **Compuerta F0.** Las crea la migración `0000`. `db:verificar` contra producción: las dos extensiones, `immutable_unaccent` IMMUTABLE, y las dos pruebas que importan —«mecanico» encuentra «Mecánico» con la misma similitud que con acento, «lojitech» encuentra «Logitech» con 0,500— |
 | F0.7 | Storage: subir, leer, borrar | ✅ | Bucket `productos` creado en Studio con los tres valores de `supabase/config.toml`: público en lectura, 10 MiB, solo `image/webp`. `db:imagenes` pasó entero contra ese bucket. **R6 no se materializó**: ni una falla de firma S3, y la prueba difícil —una subida cortada en el tercer tamaño— no dejó huérfanos |
-| F0.8 | Latencia real de la LAN | ⬜ | Sin sentido hasta que exista el segundo servidor (F0.1) |
+| F0.8 | Latencia real de la LAN | ✅ | **Medida el 2026-09-09: 0,4 ms de promedio.** §2.4 estimaba 1-2 ms y el plan pedía revisar §20 si superaba los 5. Sobre un presupuesto de 300 ms (§20), cinco consultas secuenciales cuestan 2 ms: es ruido. La objeción original a tener dos servidores queda enterrada con un número. El primer paquete de un `ping` marca ~4 ms y **no es latencia**: es el ARP, el saludo donde una máquina pregunta quién tiene esa dirección |
 | F0.9 | Fijar versiones del stack | ✅ | Aplicación e infraestructura registradas en `VERSIONS.md`, con las **trece imágenes** del stack del VPS y su etiqueta exacta: son el parámetro de toda consulta a `context7` (§1.2 regla 6), y una actualización silenciosa de cualquiera es un cambio de producción que nadie pidió. El desfase de versión mayor quedó corregido: `supabase/config.toml` pasó de `major_version = 17` a **15**, la del servidor DATA (§18.2) |
 | F0.10 | Backup con restauración de prueba | ⬜ | **Hay un piso, y hay que conservarlo:** DonWeb hace un *Backup Standard* del VPS entero, **semanal, con retención de una sola copia** y restauración no inmediata, por Mesa de Ayuda. Cubre que el servidor se rompa, y nada más. Los tres huecos, en orden de gravedad: **(a)** con una única copia, un daño que no se note dentro de la semana se sobrescribe con el respaldo de los datos ya rotos —y una migración mala o un borrado por error casi nunca se notan el mismo día—; **(b)** no se puede restaurar sin ticket ni saber cuánto tarda, con el sitio caído mientras; **(c)** es la imagen del VPS entero, así que no hay forma de recuperar una tabla o un producto sin llevarse todo lo demás para atrás. Lo que falta es lo de §18.2: `pg_dump` de la base y respaldo del bucket, **fuera del VPS**, con varias copias de retención y **una restauración de prueba documentada**. La base comprimida son pocos MB: treinta copias no pesan nada y se restauran en minutos sin depender de nadie. **Sobre la frecuencia:** semanal alcanza *hoy*, con solo el catálogo —carga grande al principio y pocos artículos por mes, criterio tuyo y es correcto—. Deja de alcanzar cuando el checkout esté andando (F6): ahí adentro hay pedidos y clientes, y una semana perdida son ventas reales con gente esperando algo que ya pagó |
 | F0.11 | Resend como SMTP de Supabase | ✅ | **Compuerta F0.** `SMTP_HOST=smtp.resend.com`, puerto 465, usuario `resend` y la API key como contraseña, remitente en el dominio verificado. Los emails llegan a Gmail sin ir a spam. Reemplazó al contenedor `supabase-mail`, que **ni siquiera estaba corriendo**: el registro en producción estaba roto y no se veía |
@@ -184,6 +184,108 @@ un comando.
 
 ---
 
+### La red privada, y las dos capas que la cierran (2026-09-09)
+
+Lo que F0.1 destrabó y F0.4 estaba esperando desde que se tomó la Compuerta F0.
+
+**La placa privada llega sin dirección.** DonWeb la asigna en el panel y en el
+sistema aparece `eth1` **en `UP` y con un `fe80::` nada más** — una dirección
+de enlace que se pone sola y no sirve para hablarse. El ping no contestaba y
+parecía un problema de la red del proveedor; era que nadie le había dicho a la
+placa qué IP tenía. Se configuró con netplan en los dos, en un archivo aparte
+(`/etc/netplan/99-privada.yaml`) para no tocar el que trae cloud-init.
+
+**Lo que no lleva ese archivo importa más que lo que lleva: no tiene puerta de
+enlace ni DNS.** La salida a internet sigue por `eth0`. Ponerle una puerta de
+enlace a la placa privada es exactamente lo que deja un servidor encendido,
+con todo corriendo, y sin camino de vuelta.
+
+**Y `netplan try` revierte solo a los 120 segundos si no confirmás.** Pasó: el
+archivo estaba perfecto, `netplan get` lo mostraba interpretado y aplicado, y
+la placa seguía sin dirección. Es una red de seguridad excelente —te devuelve
+el servidor si te equivocás— y es también una forma silenciosa de creer que
+aplicaste algo que se deshizo mientras mirabas otra cosa.
+
+**El susto del reinicio, y lo que dejó a cambio.** Activar la placa pidió
+reiniciar el DATA, y durante unos minutos no contestó ni por SSH ni por HTTPS.
+No estaba roto: **trece contenedores tardan en levantar**. Y sirvió para algo
+que nunca se había probado — que el stack vuelve solo. Volvió entero y sano.
+
+---
+
+**El pooler se publica en dos direcciones, no en una.** Lo obvio era cambiar
+`127.0.0.1` por la IP privada, y eso habría roto en silencio el túnel SSH al
+5433 con el que se corre `db:verificar` contra producción: ese túnel desemboca
+en `127.0.0.1:5432` **adentro** del servidor DATA. Quedan las dos. Y solo el
+**5432** sale a la LAN: el 6543 —modo transacción— se queda en local, porque
+rompe las sentencias preparadas que usa `postgres-js` y a esta escala no
+compra nada. Se publica lo mínimo; si algún día hace falta, se agrega a
+propósito.
+
+**El firewall del DATA va en `DOCKER-USER` y no en `ufw`**, tal como estaba
+anotado desde la Compuerta F0: Docker escribe sus propias reglas de reenvío
+por debajo y un `ufw deny` sobre un puerto publicado **no hace nada**. Son dos
+reglas y el orden es todo: primero un `RETURN` para `192.168.200.193`, después
+un `DROP` para cualquier otra cosa que entre por `eth1` al 5432. Eso es lo que
+responde a la advertencia de §2.4 — **la LAN de DonWeb no es solo tuya**.
+
+**Que la cadena esté en el camino se comprobó con los contadores.** Después de
+una conexión exitosa desde el APP, la regla del `RETURN` marcaba 4 paquetes.
+Si hubiera seguido en cero, las reglas estarían escritas y serían decorativas
+—`DOCKER-USER` no estaría en el camino— y nadie se habría enterado. **Una
+regla de firewall que nunca cuenta un paquete no está protegiendo nada.**
+
+**Y sobreviven al reinicio**, con `iptables-persistent`. Sin eso son reglas en
+memoria, y ese servidor ya se reinició una vez el mismo día.
+
+---
+
+**`pg_hba.conf` no se tocó, y no es un olvido.** §18.2 pide «`pg_hba.conf`
+restringido a la IP del APP», y eso está escrito suponiendo que la aplicación
+se conecta directo a Postgres. **No lo hace**: se conecta al pooler, y el
+pooler le habla a Postgres desde adentro de la red de Docker. Postgres **nunca
+ve la IP del servidor APP** — ve siempre la del pooler. Una regla con
+`192.168.200.193` no se aplicaría jamás y quedaría dando la sensación de que
+hay una barrera donde no hay ninguna.
+
+Se miró qué había, con `pg_hba_file_rules` —y el superusuario de la imagen de
+Supabase es `supabase_admin`, no `postgres`—: hay un `0.0.0.0/0` con
+`scram-sha-256`, o sea **con contraseña obligatoria**, no un `trust`. No es una
+puerta abierta. El `trust` que sí aparece es sobre `127.0.0.1`, que ahí adentro
+es el loopback **del contenedor**: solo alcanza a procesos que ya están dentro
+de la base, viene así en la imagen y tocarlo es pelearse con las herramientas
+de inicialización del stack.
+
+Se evaluó cambiar ese `0.0.0.0/0` por `172.18.0.0/16` y se descartó por dos
+razones. La primera es que **`hba_file` es `/etc/postgresql/pg_hba.conf`, que
+no está en ninguna carpeta montada**: vive en la capa del contenedor, así que
+un cambio ahí sobrevive a un reinicio pero **desaparece la próxima vez que el
+contenedor se recree** — y una barrera que se borra sola es peor que ninguna,
+porque queda anotada como hecha. Se podría montar desde el servidor, como el
+`override` del pooler; la segunda razón es que no vale el costo: lo que
+realmente protege hoy son otras tres cosas, y ninguna es `pg_hba`.
+
+| | |
+|---|---|
+| El contenedor de la base **no publica ningún puerto** | Lo único publicado es el pooler |
+| El pooler **solo acepta al servidor APP** | La regla de `DOCKER-USER` |
+| Hace falta **contraseña** igual | `scram-sha-256` |
+
+Queda escrito para que se lea como decisión y no como pendiente.
+
+---
+
+**El resultado, que es lo único que importa de todo esto:**
+
+| | Antes | Ahora |
+|---|---|---|
+| Desde internet | cerrado | **cerrado**, verificado en las dos IPs públicas |
+| Desde el servidor APP | no llegaba | **llega** |
+| Desde otra máquina de la LAN | llegaría | **rechazada** |
+| Sin contraseña | no | no |
+
+---
+
 ### Lo que este día encontró, y no se veía leyendo el código
 
 **Construir sin `NEXT_PUBLIC_SUPABASE_URL` deja la tienda sin una sola foto.**
@@ -223,6 +325,18 @@ decisión aparte y no un botón que se aprieta porque está iluminado.
 porque el firewall de DonWeb solo deja pasar SSH, 80 y 443, así que no es un
 agujero hoy. Queda anotado para el endurecimiento del servidor, junto con lo
 que le falta a F0.4.
+
+**El SSH de cada servidor está en un puerto distinto, y no es el que uno
+supone.** El APP escucha en **22 y 5057**; el DATA en **22 y 5400**. Antes de
+activar `ufw` en cada uno se confirmó cuál era —`echo $SSH_CONNECTION` dice el
+puerto de la sesión con la que estás conectado en ese momento, que es
+infalible—, y se abrieron los dos. Abrir el puerto equivocado y activar el
+firewall es la única maniobra del día que no se arregla sola: deja afuera del
+servidor de verdad.
+
+**En Ubuntu 24.04 el SSH lo activa systemd por socket**, así que buscar `sshd`
+en la lista de puertos que escuchan puede no devolver nada aunque el servicio
+esté perfecto: quien figura es `systemd`.
 
 ---
 
