@@ -1011,9 +1011,10 @@ tocaron cuando la revisión existió y alcanzó también al pie y a la ficha. Ve
 «El teléfono deja de ser una suposición», más arriba.
 
 **El panel de filtros se corta en el teléfono, y no parece que se corte.** El
-contenido mide 708px y la ventana 512 (`max-h-[min(70vh,32rem)]`): `Hasta`,
-«Solo con descuento», `Aplicar` y `Limpiar` quedan detrás de un scroll interno
-sin ninguna señal —el corte cae en la mitad del campo `Desde` y el borde
+contenido mide 708px y la ventana 512 (`max-h-[min(70vh,32rem)]`): el campo
+`Hasta`, su botón `Aplicar`, «Solo con descuento» y **`Ver 25 productos`, que
+es la acción principal del panel**, quedan detrás de un scroll interno sin
+ninguna señal —el corte cae en la mitad del campo `Desde` y el borde
 redondeado se lee como el final del panel—. Encima el gesto es ambiguo: el
 dedo sobre el panel mueve el panel y un centímetro más abajo mueve la página.
 Lo que haría es que en menos de `md` deje de ser un desplegable y pase a ser
