@@ -605,8 +605,69 @@ mismos números que antes—. Las zonas invisibles sí se verificaron a mano: el
 dedo agarra el logo 5px por fuera del dibujo en las cuatro direcciones, y las
 migas 12px arriba y abajo.
 
-**Lo que no se tocó** está en «Pendiente detectado»: el panel de filtros se
-corta en el teléfono y arreglarlo cambia §7.2, que está aprobada.
+**Lo que no se tocó en esa pasada** —el panel de filtros— se resolvió el mismo
+día, abajo.
+
+---
+
+### La hoja de filtros (2026-09-08)
+
+Lo que la revisión móvil dejó pendiente, y la única cosa de la pasada que
+**cambia una especificación aprobada** en vez de sólo respetarla.
+
+**El problema, medido.** El panel tiene un tope de alto con scroll propio
+—`max-h-[min(70vh,32rem)]`, o sea 512px— y adentro había 708 de contenido. Los
+196 que sobraban no desaparecían: quedaban detrás de una ranura. En escritorio
+eso casi no se nota, porque la rueda mueve lo que está bajo el puntero. En un
+teléfono se rompía por dos motivos a la vez: **el corte no tenía ninguna
+señal** —ni degradado, ni sombra, y caía justo a la mitad del campo «Desde»,
+así que el borde redondeado se leía como el final del panel—, y **el mismo
+gesto hacía dos cosas según dónde cayera el dedo**, el panel sobre el panel y
+la página dos centímetros más abajo. Lo que quedaba tapado no era menor: el
+campo «Hasta», su «Aplicar», la casilla del descuento y **«Ver N productos»,
+que es la acción principal de la pantalla**.
+
+Nadie perdía un filtro por esto —cada chip navega solo al tocarse— pero se
+salía del panel tocando afuera sin haber visto nunca cuántos productos
+quedaban.
+
+**La solución.** Debajo de `md`, el panel deja de ser un desplegable y se abre
+como **hoja a pantalla completa**: encabezado con «Filtros» y su contador,
+lista que scrollea sola y de arriba abajo, y pie fijo. Las dos salidas están
+siempre a la vista y dicen cosas distintas — la **×** de arriba es la de quien
+abrió a mirar y se arrepintió; **«Ver N productos»** abajo es la de quien
+terminó de filtrar. Ninguna descarta lo elegido.
+
+**En escritorio no cambió nada**, y está comprobado midiendo: el panel sigue
+`absolute`, con 512px de tope, radio de 28 y 1136×342 de tamaño, y el
+encabezado de la hoja ni se dibuja. §7.2 gana la forma de teléfono; no pierde
+la que tenía.
+
+**Cuatro detalles que sólo aparecen construyéndolo:**
+
+- **`h-dvh` y no `inset-0` a secas.** En Safari la barra de direcciones entra y
+  sale; con la altura del viewport fija, el pie de la hoja se va abajo del
+  borde justo cuando aparece.
+- **El área segura en el pie.** En un iPhone sin marco la franja del indicador
+  se come el botón: `env(safe-area-inset-bottom)`.
+- **El botón principal ocupa el ancho libre.** Al tamaño de su texto quedaba
+  arrinconado con media franja vacía al lado, y un botón principal que no usa
+  el espacio que tiene se lee como secundario.
+- **`overscroll-contain` en el cuerpo y no en la hoja**, que es lo único que
+  scrollea: sin eso, llegar al final de la lista sigue arrastrando la página de
+  atrás y la hoja parece que se despega.
+
+Verificado a 390×844 y a **375×667** —el iPhone SE, donde el contenido sí
+desborda—: el cuerpo scrollea 90px, el pie no se mueve un píxel, la × cierra, y
+la página no desborda a lo ancho.
+
+**Lo que NO se hizo, y es una decisión.** La hoja **no es un diálogo modal y no
+finge serlo**: sigue siendo el mismo `<details>`, así que no atrapa el foco, no
+marca inerte lo de atrás y el botón «atrás» del teléfono no la cierra —navega—.
+Convertirla en diálogo obliga a manejar foco, `Escape` e historial en cliente y
+perdería lo que hace que este panel funcione sin JavaScript, que §7.2 elogia con
+razón. Quedó escrito en §7.2 como limitación aceptada. Si alguna vez molesta de
+verdad, se revisa como decisión propia y no de paso.
 
 ---
 
@@ -1010,16 +1071,8 @@ pantallas y cambiarlo de paso era cambiar algo que nadie había revisado; se
 tocaron cuando la revisión existió y alcanzó también al pie y a la ficha. Ver
 «El teléfono deja de ser una suposición», más arriba.
 
-**El panel de filtros se corta en el teléfono, y no parece que se corte.** El
-contenido mide 708px y la ventana 512 (`max-h-[min(70vh,32rem)]`): el campo
-`Hasta`, su botón `Aplicar`, «Solo con descuento» y **`Ver 25 productos`, que
-es la acción principal del panel**, quedan detrás de un scroll interno sin
-ninguna señal —el corte cae en la mitad del campo `Desde` y el borde
-redondeado se lee como el final del panel—. Encima el gesto es ambiguo: el
-dedo sobre el panel mueve el panel y un centímetro más abajo mueve la página.
-Lo que haría es que en menos de `md` deje de ser un desplegable y pase a ser
-una hoja a pantalla completa con `Aplicar` y `Limpiar` fijos abajo, **pero eso
-cambia §7.2, que está aprobada**, así que se anota y no se toca.
+**~~El panel de filtros se corta en el teléfono.~~** Resuelto el 2026-09-08,
+con §7.2 actualizada. Ver «La hoja de filtros», más arriba.
 
 
 **El checkout cambió en la especificación y no está construido.** RF-11 pasó de

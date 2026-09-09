@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check, SlidersHorizontal, X } from "lucide-react";
 
+import { BotonCerrarFiltros } from "@/components/shop/boton-cerrar-filtros";
 import { BotonVerResultados } from "@/components/shop/boton-ver-resultados";
 import { Button } from "@/components/ui/button";
 
@@ -94,22 +95,77 @@ export function PanelDeFiltros({
       </summary>
 
       {/*
-        Se posiciona contra la BARRA, no contra el `<details>`: el ancestro
-        posicionado es la fila entera, así que `inset-x-0 top-full` lo estira
-        de lado a lado por debajo de los tres controles. Dentro del `<details>`
-        el panel saldría del ancho del botón.
+        **Dos formas para la misma pantalla, y no es capricho responsivo.**
 
-        `max-h` con scroll propio porque la lista de marcas crece con el
-        catálogo: sin tope, en un teléfono el panel tapa la pantalla entera y
-        no se llega ni a los colores ni a «Limpiar».
+        En escritorio es el desplegable de §7.2: se posiciona contra la BARRA
+        y no contra el `<details>` —el ancestro posicionado es la fila entera,
+        así que `inset-x-0 top-full` lo estira por debajo de los tres
+        controles—, se apoya sobre la grilla sin empujarla, y su `max-h` con
+        scroll propio existe porque la lista de marcas crece con el catálogo.
+
+        En teléfono ese mismo `max-h` era el problema (2026-09-08). Con 512px
+        de ventana y 708 de contenido, el campo «Hasta», su «Aplicar», la
+        casilla del descuento y **«Ver N productos» —la acción principal—**
+        quedaban detrás de un scroll interno sin ninguna señal: el corte caía
+        a la mitad de un campo y el borde redondeado se leía como el final del
+        panel. Encima el mismo gesto hacía dos cosas según dónde cayera el
+        dedo: sobre el panel movía el panel, dos centímetros más abajo movía
+        la página.
+
+        Debajo de `md` pasa a ser una **hoja a pantalla completa**: la lista
+        scrollea sola y de arriba abajo, y las dos salidas —la × y «Ver N
+        productos»— están fijas y siempre a la vista. Se van el radio, la
+        sombra y el tope de alto, que son de una tarjeta apoyada sobre algo y
+        acá no hay nada debajo.
+
+        `h-dvh` y no `inset-0` a secas: en Safari la barra de direcciones
+        entra y sale, y con la altura del viewport fija el pie de la hoja se
+        va abajo del borde justo cuando aparece. `z-50` porque tiene que tapar
+        el encabezado, que es `z-40`.
       */}
       <div
         className={cn(
           "absolute inset-x-0 top-full z-20 mt-3 flex flex-col gap-6",
           "max-h-[min(70vh,32rem)] overflow-y-auto overscroll-contain",
           "rounded-card bg-surface p-5 shadow-lg sm:p-6",
+          "max-md:fixed max-md:inset-0 max-md:z-50 max-md:mt-0 max-md:h-dvh",
+          "max-md:max-h-none max-md:gap-0 max-md:overflow-hidden",
+          "max-md:rounded-none max-md:p-0 max-md:shadow-none",
         )}
       >
+        {/*
+          Encabezado de la hoja, solo en teléfono. Repite el rótulo y el
+          contador del botón que quedó tapado: al abrirse a pantalla completa
+          se pierde el marco que decía qué es esto, y una pantalla de chips sin
+          título no dice si son filtros o categorías.
+        */}
+        <div className="hidden items-center justify-between gap-2 border-b border-border px-4 py-2 max-md:flex">
+          <h2 className="flex items-center gap-2 pl-1 text-body font-medium text-ink">
+            Filtros
+            {puestos > 0 ? (
+              <span
+                className="grid size-5 shrink-0 place-items-center rounded-full bg-brand text-caption font-medium text-ink-inverse tabular-nums"
+                aria-hidden="true"
+              >
+                {puestos}
+              </span>
+            ) : null}
+          </h2>
+          <BotonCerrarFiltros />
+        </div>
+
+        {/*
+          El cuerpo. En teléfono es lo ÚNICO que scrollea, y por eso se lleva
+          el `overscroll-contain`: sin él, llegar al final de la lista sigue
+          arrastrando la página de atrás y la hoja parece que se despega.
+        */}
+        <div
+          className={cn(
+            "flex flex-col gap-6",
+            "max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto",
+            "max-md:overscroll-contain max-md:p-5",
+          )}
+        >
         {/*
           Los tres grupos en columnas, no apilados. Apilados, el panel medía
           más de 500px de alto y «Color» quedaba abajo de todo: se elegía
@@ -154,7 +210,23 @@ export function PanelDeFiltros({
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+        </div>
+
+        {/*
+          El pie que cierra el trato (§7.2). En teléfono deja de ser el último
+          renglón de una lista larga y pasa a estar **fijo abajo**: es donde
+          está la acción principal, y su problema era justamente que había que
+          descubrir que existía. `shrink-0` para que no lo aplaste el cuerpo, y
+          el área segura porque en un iPhone sin marco la franja del indicador
+          se come el botón.
+        */}
+        <div
+          className={cn(
+            "flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5",
+            "max-md:shrink-0 max-md:flex-nowrap max-md:bg-surface max-md:px-5",
+            "max-md:pt-4 max-md:pb-[calc(1rem+env(safe-area-inset-bottom))]",
+          )}
+        >
           {/*
             «Limpiar» solo si hay algo que limpiar, pero el hueco se conserva
             con el `justify-between`: sin esto «Ver productos» salta de la

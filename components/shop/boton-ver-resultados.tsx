@@ -27,7 +27,11 @@ export function BotonVerResultados({ etiqueta }: { etiqueta: string }) {
         e.preventDefault();
         panel.removeAttribute("open");
       }}
-      className="inline-flex h-11 items-center justify-center rounded-pill bg-brand px-6 text-body-sm font-medium text-ink-inverse transition-colors duration-150 hover:bg-brand-hover active:bg-brand-active focus-visible:shadow-focus focus-visible:outline-none"
+      // `max-md:flex-1`: en la hoja de teléfono el pie es una franja sola y
+      // este es el único botón. Al tamaño de su texto queda arrinconado a la
+      // derecha con media franja vacía al lado, y un botón principal que no
+      // ocupa el ancho que tiene disponible se lee como secundario.
+      className="inline-flex h-11 items-center justify-center rounded-pill bg-brand px-6 text-body-sm font-medium text-ink-inverse transition-colors duration-150 max-md:flex-1 hover:bg-brand-hover active:bg-brand-active focus-visible:shadow-focus focus-visible:outline-none"
     >
       {etiqueta}
     </a>
