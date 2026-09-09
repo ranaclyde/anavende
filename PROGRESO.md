@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-08.
+Última actualización: 2026-09-09.
 
 **Qué significa cada estado**
 
@@ -31,8 +31,8 @@ justamente por ese número).
 
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
-| F0.1 | Servidores en DonWeb unidos por LAN | 🟡 | Hay **un** VPS con el stack completo. La separación APP/DATA de §2.2 no existe todavía: el servidor APP y la LAN privada quedan para cuando se despliegue la aplicación |
-| F0.2 | Coolify + limpieza de Docker | ⬜ | Postergada por decisión tuya |
+| F0.1 | Servidores en DonWeb unidos por LAN | 🟡 | **Los dos servidores existen desde el 2026-09-09.** El APP se aprovisionó con **4 GB**, el doble del mínimo de Coolify, y con eso compilar en el servidor pasó de imposible a viable (§18.2 lo dice explícito). Nació en un **nodo distinto** del DATA, y entre nodos distintos DonWeb no da red privada: se resolvió pidiendo el traslado **del vacío**, porque mover el que tiene los datos habría arrastrado Studio, su certificado y el bucket. Ya comparten nodo. **Falta lo que cierra la tarea**: comprobar que se ven por IP privada, que es su «Hecho cuando» y que todavía nadie miró |
+| F0.2 | Coolify + limpieza de Docker | ✅ | Instalado en el servidor APP el 2026-09-09, con **las dos mitades del «Hecho cuando»**: el panel responde por HTTPS en `vps-5490980-x.dattaweb.com`, y la limpieza de Docker quedó **programada** —diaria a las 00:00, «Run on every schedule»— y no solo disponible, que es exactamente el riesgo R11. Se conservan volúmenes, redes y las **imágenes retenidas**: esas últimas son el botón de volver atrás de un despliegue, y borrarlas sería cambiar disco por la capacidad de revertir. El reloj de la instancia pasó de UTC a `America/Argentina/Buenos_Aires`; sin eso la limpieza corría a las 21 hs, en pleno uso. **Levantar Coolify no alcanzó**: abajo está el proxy que ya estaba ocupando la puerta |
 | F0.3 | Supabase en el servidor DATA | ✅ | Docker compose oficial, trece servicios (etiquetas exactas en `VERSIONS.md`). GoTrue v2.184.0, Postgres 15.8. Studio por HTTPS en `https://vps-6346459-x.dattaweb.com` |
 | F0.4 | Cerrar Postgres al mundo | 🟡 | **Compuerta F0.** Cerrado por dos capas independientes y verificado desde afuera. **(a)** El firewall virtual de DonWeb bloquea todo por defecto y abre solo 80, 443 y 5400 (SSH): el 5432 nunca estuvo en la lista. **(b)** `supabase-pooler` publicaba 5432 y 6543 en `0.0.0.0` —o sea que la única defensa era el perímetro de DonWeb— y ahora publica en `127.0.0.1`, por `docker-compose.override.yml` con `ports: !override`. Sin (b), borrar una regla en el panel de DonWeb dejaba la base abierta a internet. `DOCKER-USER` está vacía: no hay ni hubo firewall local. **Lo que falta es lo que no se puede hacer todavía**: «firewall local activo en **ambos** servidores» necesita que exista el segundo (F0.1). Cuando exista, son tres cosas y están acá para no redescubrirlas: publicar el pooler en la **IP privada** en vez de `127.0.0.1`, firewall local en los dos —y en el DATA tiene que ir en la cadena `DOCKER-USER`, porque **Docker se saltea `ufw`** y un `ufw` solo daría falsa tranquilidad—, y `pg_hba.conf` restringido a la IP del APP. El firewall de DonWeb **no sirve para esto**: es perimetral y no toca el tráfico de la LAN privada (§2.4) |
 | F0.5 | Restringir Studio | ⬜ | Studio queda accesible por HTTPS con usuario y contraseña del dashboard. §2.4 pide además restricción por IP |
@@ -68,7 +68,161 @@ justamente por ese número).
 | F1.13 | Encabezado, pie y layout de la tienda | ✅ | |
 | F1.14 | Panel con menú lateral y modo oscuro | ✅ | 240px ↔ 64px, persistido |
 | F1.15 | Sentry con datos personales filtrados | 🟡 | Configurado y con el filtro escrito. **Sin DSN todavía**: falta ver un error de prueba llegar sin email ni teléfono |
-| F1.16 | Dockerfile y despliegue por CI | ⬜ | Postergada por decisión tuya |
+| F1.16 | Dockerfile y despliegue por CI | 🟡 | **El contenedor está escrito y probado el 2026-09-09**: `Dockerfile` de tres etapas sobre `node:22-bookworm-slim`, `output: "standalone"`, healthcheck en `/api/salud`, migraciones al arrancar y un `.dockerignore` que deja afuera **todos** los `.env`. Verificado corriendo la imagen de verdad contra el stack local: **545 MB**, migraciones que no aplican nada sobre una base al día, catálogo con sus estilos, **sharp generando un WEBP adentro del contenedor** (V7, y es la razón entera de Debian slim), healthcheck en verde y parada limpia en 0 s. **Nada de esto está verificado donde va**: es andamiaje hasta que Coolify lo construya. Y el nombre de la tarea ya no describe lo que va a pasar — **el despliegue no va por CI**, abajo el motivo |
+
+---
+
+### El servidor APP, el contenedor y el proxy que ya estaba (2026-09-09)
+
+El día que la infraestructura dejó de ser un dibujo de `TECHNICAL-SPEC.md` §2.2
+y pasó a ser dos máquinas. El motivo no es de arquitectura: es **F2.8**. Ana no
+puede cargar el catálogo real desde una notebook prestada, así que la tienda
+tiene que estar online, y eso arrastra F0.1, F0.2 y F1.16 antes que cualquier
+otra cosa.
+
+**Coolify se puso en duda y se sostuvo.** Se evaluó sacarlo del medio y
+desplegar con Docker Compose y Caddy: se ganaban 0,3-1,2 GB de RAM, varios GB
+de disco y una pieza grande menos que mantener, y la configuración pasaba a
+vivir en el repositorio en vez de en una interfaz. Se perdían el botón de
+volver atrás, la pantalla de logs y el ahorro del primer día. **Decisión tuya:
+queda Coolify.** Se anota porque la discusión ya se dio y no hace falta darla
+de nuevo — y porque el motivo de la duda, la RAM, se resolvió por otro lado
+con los 4 GB.
+
+**El servidor APP nació en el nodo equivocado.** Los dos VPS quedaron en nodos
+distintos de DonWeb, y entre nodos distintos **no hay red privada**: eso rompía
+de una vez las tres cosas que la LAN compraba —Postgres sin interfaz pública,
+1-2 ms de latencia, y el plan escrito para cerrar F0.4—. Se pidió el traslado
+por ticket y se movió **el vacío**, que es lo que hace que esto haya salido
+barato: el APP no tenía nada instalado y el DATA tiene el bucket, Studio y su
+certificado. La lección para la próxima vez que aparezca una decisión de este
+tipo: **el momento de mover un servidor es cuando la base está vacía**, y hoy
+lo estaba —21 tablas en cero salvo una fila de `user_profiles`—. Dentro de dos
+semanas, con el catálogo de Ana adentro, deja de serlo.
+
+---
+
+**El contenedor, y lo que costó que sharp funcione adentro.** F1.16 se escribió
+entera y se probó **corriendo la imagen**, no leyéndola: `docker build`,
+`docker run` contra el stack local, y después mirar. Lo que quedó comprobado y
+no supuesto: la imagen pesa 545 MB, las migraciones corrieron **sin aplicar
+nada** sobre una base ya al día, `/api/salud` devuelve 200, el catálogo sirve
+con sus estilos, sharp 0.35.4 sobre libvips 8.18.6 generó un WEBP **adentro
+del contenedor**, el healthcheck de Docker pasó a `healthy` solo y parar el
+contenedor tarda 0 segundos.
+
+Ese último número no es un adorno: si el `exec` del entrypoint estuviera mal,
+Node no sería PID 1, no recibiría el `SIGTERM` y Docker esperaría diez
+segundos antes de matarlo **con peticiones en curso**.
+
+**Tres decisiones del contenedor que no estaban escritas en ninguna parte:**
+
+- **`server.js` no copia `public` ni `.next/static`.** Lo dice la
+  documentación de Next 16 con todas las letras y es la trampa clásica del
+  `output: 'standalone'`: la aplicación levanta perfecta y se ve **sin estilos
+  y sin imágenes**, que parece un problema de CSS y es un `cp` que falta. Las
+  dos copias están en el Dockerfile y las dos se verificaron pidiendo el CSS
+  por HTTP.
+- **sharp y el migrador se copian explícitamente**, sin confiar en el trazado
+  de `@vercel/nft`. Vienen de la etapa `deps`, que usa **la misma imagen
+  base**, así que el binario es el de glibc y no el de musl. Es la clase de
+  error que §18.1 describe: no falla al construir, falla en producción la
+  primera vez que alguien sube una foto.
+- **Las migraciones al arrancar no son `drizzle-kit migrate` literal**, como
+  dice §18.2. drizzle-kit es dependencia de desarrollo y arrastra esbuild;
+  meterlo en la imagen de producción son decenas de megas de herramienta de
+  construcción del lado de adentro. Se usa el migrador de `drizzle-orm`, que
+  lee **la misma carpeta** y lleva la cuenta en **la misma tabla**
+  (`drizzle.__drizzle_migrations`). Que sea el mismo libro no se dio por
+  supuesto: corriéndolo contra la base local ya migrada, encontró el esquema y
+  la tabla existentes y **no aplicó nada**, que es la prueba.
+
+**El despliegue no va por CI, y eso cambia §18.2.** La especificación manda
+compilar fuera del servidor APP, y el motivo era doble: los 2 GB de RAM
+mínimos hacen fallar a `next build` por memoria, y la caché de build come
+disco. Con **4 GB** el primer motivo desaparece —§18.2 lo dice: *«si el
+servidor APP se aprovisiona con 4 GB o más, compilar en él pasa a ser
+viable»*— y queda el segundo, que es justo lo que la limpieza programada de
+F0.2 contiene. A cambio se gana algo concreto: **un solo lugar donde vive la
+configuración**. Compilando en CI, las cinco variables de construcción viven
+en GitHub y los cinco secretos en Coolify, y eso es una cosa más que se
+desincroniza el día que cambia un dominio. Empezar con CI es pagar
+complejidad por adelantado por un problema que todavía no existe; si algún día
+el disco molesta, mover el build a CI es agregar un workflow y el Dockerfile
+no cambia. **Falta escribirlo en `TECHNICAL-SPEC.md` §18.2**, con esta misma
+razón, antes de cerrar F1.16.
+
+---
+
+**El proxy que ya estaba ocupando la puerta.** El atajo de un clic de DonWeb
+que instala Coolify deja además un **nginx** adelante, con los puertos 80 y
+443 tomados y un certificado de Let's Encrypt para
+`vps-5490980-x.dattaweb.com`. Con eso, el proxy de Coolify —Traefik— arrancaba
+y se moría en silencio: el panel solo decía «Exited».
+
+Lo que lo convirtió en una trampa y no en un trámite: **ese mismo nginx era la
+puerta de entrada al panel de Coolify.** Su configuración efectiva
+(`nginx -T`) mostraba tres `proxy_pass` internos —el panel, el vivo de la
+interfaz y la terminal web—, así que apagarlo para liberar los puertos dejaba
+sin acceso justo a la pantalla donde está el botón de arrancar Traefik. Se
+resolvió levantando el proxy desde la consola, con el `docker compose` que el
+propio Coolify tiene en `/data/coolify/proxy/`, que es exactamente lo que
+habría hecho el botón.
+
+Quedó **un solo proxy, y es Traefik**. La alternativa —nginx adelante y
+Traefik detrás en otros puertos— eran dos capas y dos administradores de
+certificados peleando por lo mismo, y Traefik necesita el 80 libre igual,
+porque es por donde Let's Encrypt le responde el desafío. nginx quedó
+**apagado y deshabilitado**: sin el `disable`, el primer reinicio del servidor
+lo levanta primero, se queda con los puertos y la tienda se cae sin motivo
+aparente.
+
+**Lo que hay que saber si esto se rehace algún día:** la red de seguridad no
+era ningún preparativo elaborado, era `systemctl start nginx`. Apagar no es
+borrar, y mientras el servicio siga instalado se vuelve al estado anterior con
+un comando.
+
+---
+
+### Lo que este día encontró, y no se veía leyendo el código
+
+**Construir sin `NEXT_PUBLIC_SUPABASE_URL` deja la tienda sin una sola foto.**
+Las variables `NEXT_PUBLIC_*` **se incrustan en la construcción**, no se leen
+al arrancar — y `next.config.ts` deriva de esa en particular la lista de
+orígenes de imagen permitidos (§9.3). Si falta en el build, `remotePatterns`
+queda **vacío**, `next/image` rechaza todas las imágenes de producto y el
+motivo sale por la consola del servidor, no en pantalla. Por eso va como
+`--build-arg` en el Dockerfile, y en Coolify tiene que estar marcada como
+variable **de construcción** y no solo de ejecución. Es un error que se
+descubre en producción y parece un problema de imágenes.
+
+**Dos variables apuntan al mismo servidor por caminos distintos, a propósito.**
+`DATABASE_URL` va por la **IP privada** de la LAN (§18.2: *«nunca a una IP
+pública»*), y `NEXT_PUBLIC_SUPABASE_URL` va por el **subdominio público** de
+Storage. No es preferencia: ya estaba anotado desde F2.2 que `next/image` se
+niega a optimizar desde una IP privada —es su defensa contra SSRF—, así que el
+día que esa variable apunte a la LAN, la tienda se queda sin fotos en
+producción.
+
+**Los secretos no se marcan como variables de construcción.** Coolify enciende
+las dos casillas por omisión, y un `--build-arg` queda visible en el
+`docker history` de la imagen. `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y
+`RESEND_API_KEY` no se necesitan para compilar: van solo de ejecución. Al
+revés, `SENTRY_AUTH_TOKEN` es **solo de construcción** —sube los *source maps*
+al compilar y en ejecución no hace nada—.
+
+**Traefik y Coolify todavía no están en `VERSIONS.md`.** Hoy corren Traefik
+v3.6 —con un aviso de que hay v3.7— y la versión de Coolify que instaló
+DonWeb. F0.9 dice que las versiones instaladas son el parámetro de toda
+consulta posterior, así que **falta registrarlas**. Y la actualización de
+Traefik se deja pasar a propósito: acaba de estabilizarse esa pieza, el propio
+aviso pide revisar el changelog por cambios rompientes, y actualizar es una
+decisión aparte y no un botón que se aprieta porque está iluminado.
+
+**El tablero de Traefik quedó publicado en el 8080.** No se llega desde afuera
+porque el firewall de DonWeb solo deja pasar SSH, 80 y 443, así que no es un
+agujero hoy. Queda anotado para el endurecimiento del servidor, junto con lo
+que le falta a F0.4.
 
 ---
 

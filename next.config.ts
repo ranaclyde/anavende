@@ -33,6 +33,23 @@ const nextConfig: NextConfig = {
   // Sin `cacheComponents` en el MVP: TECHNICAL-SPEC §2.3 y §12.
   // Se activa después, con medición previa, no antes.
 
+  /**
+   * El contenedor de producción — TECHNICAL-SPEC §18.1.
+   *
+   * `next build` traza con `@vercel/nft` qué archivos necesita realmente cada
+   * página y escribe en `.next/standalone` un servidor mínimo con SOLO esos
+   * pedazos de `node_modules`. La imagen pasa de más de un giga a unos cientos
+   * de megas, y eso acá no es cosmético: Coolify guarda una imagen por
+   * despliegue y el disco es el recurso más escaso de los dos servidores
+   * (§2.4, riesgo R11).
+   *
+   * **`server.js` NO copia `public` ni `.next/static`**: eso lo hace el
+   * Dockerfile a mano. Sin esas dos copias la tienda levanta perfecta y se ve
+   * sin estilos ni imágenes, que parece un problema de CSS y es un `cp` que
+   * falta.
+   */
+  output: "standalone",
+
   images: {
     remotePatterns: origenesDeImagen(),
 
