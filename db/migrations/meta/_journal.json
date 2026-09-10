@@ -78,6 +78,13 @@
       "when": 1788740051881,
       "tag": "0010_no_se_borran_usuarios",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789070547278,
+      "tag": "0011_nombre_y_apellido",
+      "breakpoints": true
     }
   ]
 }

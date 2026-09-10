@@ -22,11 +22,28 @@ export const telefono = telefonoArgentino({
     "Ese teléfono no parece válido. Escribilo con característica, por ejemplo 11 5555 5555.",
 });
 
-export const nombreCompleto = z
+/**
+ * Nombre y apellido son DOS campos — decisión del 2026-09-10.
+ *
+ * Con un campo libre no hay forma de saber cuál es cuál, y hacía falta
+ * saberlo: los emails saludan por el nombre de pila. Antes se adivinaba
+ * partiendo por el primer espacio, y con «Sanhueza, Matías» el saludo salía
+ * «Hola, Sanhueza,».
+ *
+ * El apellido NO se valida como una sola palabra: dos apellidos son normales
+ * y validar de más convierte un dato correcto en un error.
+ */
+export const nombre = z
   .string()
   .trim()
-  .min(2, "Escribí tu nombre y apellido.")
-  .max(120, "Ese nombre es demasiado largo.");
+  .min(2, "Escribí tu nombre.")
+  .max(60, "Ese nombre es demasiado largo.");
+
+export const apellido = z
+  .string()
+  .trim()
+  .min(2, "Escribí tu apellido.")
+  .max(60, "Ese apellido es demasiado largo.");
 
 export const email = z
   .string()
@@ -41,7 +58,8 @@ export const contrasena = z
   .max(72, "La contraseña no puede pasar de 72 caracteres.");
 
 export const registroSchema = z.object({
-  fullName: nombreCompleto,
+  firstName: nombre,
+  lastName: apellido,
   email,
   phone: telefono,
   password: contrasena,
@@ -57,6 +75,7 @@ export const reenvioSchema = z.object({ email });
 
 /** Se completa tras el primer ingreso por Google o Facebook (RF-06). */
 export const completarPerfilSchema = z.object({
-  fullName: nombreCompleto,
+  firstName: nombre,
+  lastName: apellido,
   phone: telefono,
 });

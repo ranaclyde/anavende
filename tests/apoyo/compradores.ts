@@ -38,8 +38,8 @@ export async function unComprador(): Promise<Comprador> {
   creados.push(identidad.id);
 
   await db.execute(sql`
-    INSERT INTO user_profiles (id, full_name, email, phone)
-    VALUES (${identidad.id}, ${`Compradora ${sufijo}`},
+    INSERT INTO user_profiles (id, first_name, last_name, email, phone)
+    VALUES (${identidad.id}, 'Compradora', ${sufijo},
             ${`compra-${sufijo}@ejemplo.test`}, '+5491155550000')`);
 
   const [carrito] = await db.execute<{ id: string }>(sql`

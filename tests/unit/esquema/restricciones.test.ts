@@ -232,8 +232,8 @@ describe("user_profiles — RF-27", () => {
               'authenticated', 'authenticated', ${email})
       RETURNING id`);
     await tx.execute(sql`
-      INSERT INTO user_profiles (id, full_name, email, phone, role)
-      VALUES (${u.id}, 'Ana', ${email}, '+5491100000000', 'admin')`);
+      INSERT INTO user_profiles (id, first_name, last_name, email, phone, role)
+      VALUES (${u.id}, 'Ana', 'Vende', ${email}, '+5491100000000', 'admin')`);
     return u.id;
   }
 

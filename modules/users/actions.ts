@@ -59,13 +59,14 @@ export const registrar = action
       email: input.email,
       password: input.password,
       options: {
-        // `first_name` se guarda además del completo porque es lo único que
-        // los emails pueden usar para saludar: GoTrue lee `user_metadata`
-        // (`{{ .Data }}`) pero no sabe partir un nombre, y «¡Hola, Matías
-        // Emanuel Sanhueza!» no suena a persona escribiendo.
+        // `first_name` es lo único que los emails pueden usar para saludar:
+        // GoTrue lee `user_metadata` (`{{ .Data }}`) y «¡Hola, Matías Emanuel
+        // Sanhueza!» no suena a persona escribiendo. Desde el 2026-09-10 sale
+        // del campo de verdad y no de partir un nombre por el primer espacio,
+        // que era lo que hacía que «Sanhueza, Matías» saludara al apellido.
         data: {
-          full_name: input.fullName,
-          first_name: input.fullName.trim().split(/\s+/)[0],
+          full_name: `${input.firstName} ${input.lastName}`,
+          first_name: input.firstName,
         },
         emailRedirectTo: urlDeConfirmacion(),
       },
@@ -93,7 +94,8 @@ export const registrar = action
     try {
       await db.insert(userProfiles).values({
         id: alta.user.id,
-        fullName: input.fullName,
+        firstName: input.firstName,
+        lastName: input.lastName,
         email: input.email,
         phone: input.phone,
         role: "customer",
@@ -245,7 +247,8 @@ export const completarPerfil = action
 
     await db.insert(userProfiles).values({
       id: claims.sub,
-      fullName: input.fullName,
+      firstName: input.firstName,
+      lastName: input.lastName,
       email: String(claims.email ?? ""),
       phone: input.phone,
       role: "customer",

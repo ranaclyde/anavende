@@ -17,7 +17,24 @@ import { FieldHint, Label } from "@/components/ui/label";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { completarPerfil } from "@/modules/users/actions";
 
-type Campo = "fullName" | "phone";
+type Campo = "firstName" | "lastName" | "phone";
+
+/**
+ * Parte el nombre que entregó el proveedor social en nombre y apellido.
+ *
+ * ES UNA ADIVINANZA, y acá está bien que lo sea: Google y Facebook entregan
+ * un solo campo, y esto solo llena los valores por omisión de un formulario
+ * que la persona tiene delante y puede corregir. Es lo contrario de adivinar
+ * en el servidor, callado, al guardar — que es lo que se sacó del alta el
+ * 2026-09-10.
+ *
+ * Se declara fuera del componente para no rearmarla en cada render.
+ */
+function partirNombre(sugerido: string | null) {
+  const partes = (sugerido ?? "").trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return { nombre: "", apellido: "" };
+  return { nombre: partes[0], apellido: partes.slice(1).join(" ") };
+}
 
 /**
  * Paso que falta tras el primer ingreso por Google o Facebook (RF-06, §13.4).
@@ -34,6 +51,7 @@ export function CompletarPerfilForm({
   volver?: string;
 }) {
   const router = useRouter();
+  const sugerido = partirNombre(nombreSugerido);
   const [enviando, iniciar] = useTransition();
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
@@ -45,7 +63,8 @@ export function CompletarPerfilForm({
 
     iniciar(async () => {
       const r = await completarPerfil({
-        fullName: String(datos.get("fullName") ?? ""),
+        firstName: String(datos.get("firstName") ?? ""),
+        lastName: String(datos.get("lastName") ?? ""),
         phone: String(datos.get("phone") ?? ""),
       });
 
@@ -71,17 +90,32 @@ export function CompletarPerfilForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={enviar} className="flex flex-col gap-5" noValidate>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="fullName">Nombre y apellido</Label>
-            <Input
-              id="fullName"
-              name="fullName"
-              autoComplete="name"
-              defaultValue={nombreSugerido ?? ""}
-              required
-              aria-invalid={!!errores.campos.fullName || undefined}
-            />
-            <FieldError>{errores.campos.fullName}</FieldError>
+          <div className="flex flex-col gap-5 sm:flex-row sm:gap-4">
+            <div className="flex flex-1 flex-col gap-2">
+              <Label htmlFor="firstName">Nombre</Label>
+              <Input
+                id="firstName"
+                name="firstName"
+                autoComplete="given-name"
+                defaultValue={sugerido.nombre}
+                required
+                aria-invalid={!!errores.campos.firstName || undefined}
+              />
+              <FieldError>{errores.campos.firstName}</FieldError>
+            </div>
+
+            <div className="flex flex-1 flex-col gap-2">
+              <Label htmlFor="lastName">Apellido</Label>
+              <Input
+                id="lastName"
+                name="lastName"
+                autoComplete="family-name"
+                defaultValue={sugerido.apellido}
+                required
+                aria-invalid={!!errores.campos.lastName || undefined}
+              />
+              <FieldError>{errores.campos.lastName}</FieldError>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">

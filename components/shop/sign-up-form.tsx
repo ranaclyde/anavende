@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { ProveedoresSociales } from "@/components/shop/proveedores-sociales";
+// Google y Facebook quedan APAGADOS hasta que F1.7 tenga las apps creadas en
+// las consolas de Google y Meta (2026-09-10, pedido tuyo). El componente
+// resuelve bien el estado «no configurado» —botones deshabilitados con el
+// motivo al lado—, pero dos botones que nadie puede tocar son ruido justo en
+// la pantalla donde menos conviene dudar. Para volver: descomentar esta línea
+// y la del render, abajo. No hace falta nada más.
+// import { ProveedoresSociales } from "@/components/shop/proveedores-sociales";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,7 +25,7 @@ import { FieldHint, Label } from "@/components/ui/label";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { registrar } from "@/modules/users/actions";
 
-type Campo = "fullName" | "email" | "phone" | "password";
+type Campo = "firstName" | "lastName" | "email" | "phone" | "password";
 
 /**
  * Alta de cuenta — RF-05, TECHNICAL-SPEC §13.4.
@@ -41,7 +47,8 @@ export function SignUpForm({ volver }: { volver?: string }) {
 
     iniciar(async () => {
       const r = await registrar({
-        fullName: String(datos.get("fullName") ?? ""),
+        firstName: String(datos.get("firstName") ?? ""),
+        lastName: String(datos.get("lastName") ?? ""),
         email: String(datos.get("email") ?? ""),
         phone: String(datos.get("phone") ?? ""),
         password: String(datos.get("password") ?? ""),
@@ -67,20 +74,43 @@ export function SignUpForm({ volver }: { volver?: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
-        <ProveedoresSociales volver={volver} accion="registro" />
+        {/* <ProveedoresSociales volver={volver} accion="registro" /> */}
 
         <form onSubmit={enviar} className="flex flex-col gap-5" noValidate>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="fullName">Nombre y apellido</Label>
-            <Input
-              id="fullName"
-              name="fullName"
-              autoComplete="name"
-              required
-              aria-invalid={!!errores.campos.fullName || undefined}
-              aria-describedby={errores.campos.fullName ? "e-fullName" : undefined}
-            />
-            <FieldError id="e-fullName">{errores.campos.fullName}</FieldError>
+          {/* Dos campos y no uno: con un campo libre no hay forma de saber
+              cuál es el nombre de pila, y hace falta saberlo para saludar en
+              los emails (2026-09-10). En una fila desde `sm`, apilados en el
+              teléfono, que es donde dos campos angostos se vuelven incómodos. */}
+          <div className="flex flex-col gap-5 sm:flex-row sm:gap-4">
+            <div className="flex flex-1 flex-col gap-2">
+              <Label htmlFor="firstName">Nombre</Label>
+              <Input
+                id="firstName"
+                name="firstName"
+                autoComplete="given-name"
+                required
+                aria-invalid={!!errores.campos.firstName || undefined}
+                aria-describedby={
+                  errores.campos.firstName ? "e-firstName" : undefined
+                }
+              />
+              <FieldError id="e-firstName">{errores.campos.firstName}</FieldError>
+            </div>
+
+            <div className="flex flex-1 flex-col gap-2">
+              <Label htmlFor="lastName">Apellido</Label>
+              <Input
+                id="lastName"
+                name="lastName"
+                autoComplete="family-name"
+                required
+                aria-invalid={!!errores.campos.lastName || undefined}
+                aria-describedby={
+                  errores.campos.lastName ? "e-lastName" : undefined
+                }
+              />
+              <FieldError id="e-lastName">{errores.campos.lastName}</FieldError>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">

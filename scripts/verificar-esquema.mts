@@ -98,11 +98,14 @@ for (const columna of [
   "order_items.subtotal",
   "products.description_text",
   "products.final_price",
+  // Nombre para mostrar, derivado de first_name y last_name (migración 0011,
+  // 2026-09-10). Es generada justamente para que no pueda desincronizarse.
+  "user_profiles.full_name",
 ]) {
   ok(gen.includes(columna), `Columna generada ${columna}`);
 }
 ok(
-  gen.length === 3,
+  gen.length === 4,
   `No hay columnas generadas de más: ${gen.join(", ")}`,
 );
 

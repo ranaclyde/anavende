@@ -29,7 +29,33 @@ export const userProfiles = pgTable(
     // Sin .references(): apunta a auth.users(id), que Drizzle no administra.
     // La clave foránea se declara en la migración a mano (F1.6).
     id: uuid("id").primaryKey(),
-    fullName: text("full_name").notNull(),
+    /**
+     * Nombre y apellido POR SEPARADO, y no un campo libre — decisión del
+     * 2026-09-10.
+     *
+     * El campo único obligaba a adivinar cuál era cuál, y esa adivinanza ya
+     * estaba escrita: el alta partía el nombre por el primer espacio para
+     * saludar en los emails. Con «Sanhueza, Matías» —que es como mucha gente
+     * escribe— el email salía «Hola, Sanhueza,». Se pregunta separado porque
+     * separado es como se usa.
+     *
+     * El apellido acepta varias palabras a propósito: dos apellidos son
+     * normales y no son un error de tipeo.
+     */
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull(),
+    /**
+     * Columna GENERADA: es el nombre para mostrar, y se escribe sola.
+     *
+     * Existe para que todo lo que ya lo lee —el encabezado, el saludo de «Mi
+     * cuenta», el menú del panel— siga funcionando sin cambiar una línea, y
+     * sobre todo para que no pueda desincronizarse de las dos columnas de
+     * arriba. Un `full_name` mantenido por la aplicación es una tercera copia
+     * que algún día alguien actualiza a medias.
+     */
+    fullName: text("full_name")
+      .notNull()
+      .generatedAlwaysAs(sql`btrim(first_name || ' ' || last_name)`),
     /** Copia, para listar y buscar sin cruzar al esquema auth. */
     email: text("email").notNull(),
     /** RF-05: obligatorio, en las tres vías de alta. */

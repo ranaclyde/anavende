@@ -324,7 +324,10 @@ Todo lo que es propio de AnaVende vive en una tabla nuestra:
 ```sql
 CREATE TABLE user_profiles (
   id            uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name     text NOT NULL,
+  first_name    text NOT NULL,        -- 2026-09-10: nombre y apellido separados
+  last_name     text NOT NULL,        -- acepta varias palabras: dos apellidos
+  full_name     text NOT NULL GENERATED ALWAYS AS
+                (btrim(first_name || ' ' || last_name)) STORED,
   email         text NOT NULL,          -- copia para listar y buscar sin cruzar a auth
   phone         text NOT NULL,          -- RF-05: obligatorio
   role          text NOT NULL DEFAULT 'customer',
@@ -347,6 +350,8 @@ CREATE INDEX user_profiles_email_idx ON user_profiles (lower(email));
 > **`ban_has_reason` es la regla de negocio, en la base.** RF-27 exige motivo obligatorio; una restricción `CHECK` lo vuelve imposible de olvidar, en vez de confiar en que todo camino del código se acuerde.
 
 **El perfil lo crea nuestro código, nunca un *trigger*.** La documentación de Supabase propone poblar el perfil con un *trigger* sobre `auth.users` y advierte que, si el *trigger* falla, **bloquea los registros**. Se evita: el flujo de alta lo controla la aplicación (§13.4), donde un fallo se puede reportar y compensar.
+
+> **Nombre y apellido van separados, y `full_name` es una columna generada** (migración `0011`, 2026-09-10). El campo único obligaba a adivinar cuál era cuál, y esa adivinanza ya estaba escrita: el alta partía el nombre por el primer espacio para saludar en los emails, así que quien se registraba como «Sanhueza, Matías» recibía «Hola, Sanhueza,». Se pregunta separado porque separado es como se usa —los emails saludan por el nombre de pila, y RF-26 va a listar y ordenar por apellido—. `full_name` se conserva **generada** para que todo lo que muestra un nombre siga leyendo una sola columna y sea imposible que se desincronice; el `customer_name` de la orden (§5.6) **no** se parte: es un snapshot, una etiqueta congelada, y se compone al crear la orden.
 
 **Las tablas de dominio referencian `user_profiles(id)`**, no `auth.users`. Así el esquema de la aplicación es autocontenido y las claves foráneas no dependen de un esquema que administra otro servicio.
 

@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { ProveedoresSociales } from "@/components/shop/proveedores-sociales";
+// Google y Facebook quedan APAGADOS hasta que F1.7 tenga las apps creadas en
+// las consolas de Google y Meta (2026-09-10, pedido tuyo). El componente
+// resuelve bien el estado «no configurado» —botones deshabilitados con el
+// motivo al lado—, pero dos botones que nadie puede tocar son ruido justo en
+// la pantalla donde menos conviene dudar. Para volver: descomentar esta línea
+// y la del render, abajo. No hace falta nada más.
+// import { ProveedoresSociales } from "@/components/shop/proveedores-sociales";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -82,7 +88,7 @@ export function LoginForm({ volver }: { volver?: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
-        <ProveedoresSociales volver={volver} accion="ingreso" />
+        {/* <ProveedoresSociales volver={volver} accion="ingreso" /> */}
 
         <form onSubmit={enviar} className="flex flex-col gap-5" noValidate>
           <div className="flex flex-col gap-2">
