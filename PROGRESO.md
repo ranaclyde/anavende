@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-09.
+Última actualización: 2026-09-10.
 
 **Qué significa cada estado**
 
@@ -60,7 +60,7 @@ justamente por ese número).
 | F1.7 | Supabase Auth: los tres métodos | ⛔ | **Email completo y probado en producción**, de punta a punta y en los tres caminos: alta con email de verificación que llega y lleva a `/mi-cuenta`; reenvío del enlace; y recuperación de contraseña, incluido cerrar sesión y volver a entrar con la nueva. Los tres llegaron rotos a producción por el mismo motivo —abajo, en las decisiones— y los tres se arreglaron. **Google y Facebook necesitan que crees las apps en las consolas de Google y Meta** |
 | F1.7b | `user_profiles` y alta con compensación | ✅ | La compensación se probó sola: un fallo real dejó cero identidades huérfanas |
 | F1.7c | Resolución de sesión | ✅ | |
-| F1.8 | Plantillas E1–E3 y layout compartido | 🟡 | **E1, E2 y E3 escritas y revisadas** en `lib/email/`, en español y con la identidad de DESIGN-REFERENCE; `npm run email` las convierte en el HTML que descarga GoTrue (`public/emails/`) y deja una copia para mirar en el navegador. **E4 salió de esta tarea y volvió a F6.4**, que es donde el plan ya lo tenía: el layout que necesitaba está hecho, y hasta que la orden no exista no hay qué mostrarle a la administradora. Lo que falta acá es **conectarlas**, y no depende de nosotros: GoTrue carga las plantillas **por HTTP contra `SITE_URL`** —probado en el VPS: no lee archivos— así que recién funcionan con la aplicación desplegada. Hasta entonces los emails salen con la plantilla por defecto de Supabase, en inglés. **Los asuntos van en el mismo viaje al VPS**, no antes: cambiarlos solos daría un asunto en español sobre un cuerpo en inglés |
+| F1.8 | Plantillas E1–E3 y layout compartido | 🟡 | **E1, E2 y E3 escritas y revisadas** en `lib/email/`, en español y con la identidad de DESIGN-REFERENCE; `npm run email` las convierte en el HTML que descarga GoTrue (`public/emails/`) y deja una copia para mirar en el navegador. **E4 salió de esta tarea y volvió a F6.4**, que es donde el plan ya lo tenía: el layout que necesitaba está hecho, y hasta que la orden no exista no hay qué mostrarle a la administradora. Lo que falta acá es **conectarlas**: GoTrue carga las plantillas **por HTTP contra `SITE_URL`** —probado en el VPS: no lee archivos— así que necesitaban la aplicación desplegada. **Desde el 2026-09-10 ese bloqueo no existe**: la tienda está en línea. Lo que queda es apuntar el `SITE_URL` de GoTrue, en el `.env` de Supabase del servidor DATA, a `https://anavende.com.ar`, y es urgente por otro motivo además de este —abajo, en los pendientes—. Hasta entonces los emails salen con la plantilla por defecto de Supabase, en inglés. **Los asuntos van en el mismo viaje al VPS**, no antes: cambiarlos solos daría un asunto en español sobre un cuerpo en inglés |
 | F1.9 | Teléfono obligatorio en las tres vías | ✅ | Normaliza a `+549…`; validado en el servidor |
 | F1.10 | Envoltorio de Server Actions | ✅ | |
 | F1.11 | Módulo de dinero + regla de lint | ✅ | El lint falla ante `parseFloat` sobre un monto |
@@ -68,7 +68,7 @@ justamente por ese número).
 | F1.13 | Encabezado, pie y layout de la tienda | ✅ | |
 | F1.14 | Panel con menú lateral y modo oscuro | ✅ | 240px ↔ 64px, persistido |
 | F1.15 | Sentry con datos personales filtrados | 🟡 | Configurado y con el filtro escrito. **Sin DSN todavía**: falta ver un error de prueba llegar sin email ni teléfono |
-| F1.16 | Dockerfile y despliegue por CI | 🟡 | **El contenedor está escrito y probado el 2026-09-09**: `Dockerfile` de tres etapas sobre `node:22-bookworm-slim`, `output: "standalone"`, healthcheck en `/api/salud`, migraciones al arrancar y un `.dockerignore` que deja afuera **todos** los `.env`. Verificado corriendo la imagen de verdad contra el stack local: **545 MB**, migraciones que no aplican nada sobre una base al día, catálogo con sus estilos, **sharp generando un WEBP adentro del contenedor** (V7, y es la razón entera de Debian slim), healthcheck en verde y parada limpia en 0 s. **Nada de esto está verificado donde va**: es andamiaje hasta que Coolify lo construya. Y el nombre de la tarea ya no describe lo que va a pasar — **el despliegue no va por CI**, abajo el motivo |
+| F1.16 | Dockerfile y despliegue en Coolify | 🟡 | **La tienda está en línea desde el 2026-09-10**, en `https://anavende.com.ar` y con certificado de Let's Encrypt. Lo que el 2026-09-09 estaba «probado corriendo la imagen contra el stack local» ahora está probado **donde va**: la construcción corre en el servidor APP en **1 minuto 39** sin quedarse sin memoria —que era la mitad de la razón por la que §18.2 mandaba compilar afuera, y los 4 GB de F0.1 eran la otra—, el contenedor arranca, migra sin aplicar nada sobre una base ya en `0010`, y sirve. Abajo está lo que hizo falta y lo que encontró. **Le faltan las dos mitades del «Hecho cuando»**: que un **push a `main` despliegue solo** —este primer despliegue se disparó a mano— y que **sharp corra en producción** (V7), que no se prueba hasta que alguien suba una foto de verdad desde el panel. Y el nombre de la tarea cambió: **el despliegue no va por CI**, decidido el 2026-09-09 |
 
 ---
 
@@ -337,6 +337,121 @@ servidor de verdad.
 **En Ubuntu 24.04 el SSH lo activa systemd por socket**, así que buscar `sshd`
 en la lista de puertos que escuchan puede no devolver nada aunque el servicio
 esté perfecto: quien figura es `systemd`.
+
+---
+
+### El primer despliegue, y el dominio que ya estaba puesto (2026-09-10)
+
+El día que la tienda dejó de existir solo en esta máquina. `https://anavende.com.ar`
+responde, con certificado de Let's Encrypt para el apex y otro para `www`, y
+detrás hay un contenedor hablando con la base del otro servidor por la LAN.
+
+**Cómo se verifica esto, y por qué se anota.** No hay acceso por SSH a los
+servidores ni a los paneles desde la máquina de desarrollo, y no lo va a haber:
+lo de adentro lo ejecuta el usuario. Así que todo lo de abajo está comprobado
+**desde afuera**, con `dig` contra los nameservers autoritativos, `curl` y
+`openssl`. Es menos de lo que se ve entrando, y a cambio es exactamente lo que
+ve un comprador.
+
+| Qué | Resultado |
+|---|---|
+| Certificado del apex y de `www` | Let's Encrypt, uno por nombre, hasta el 9 de diciembre |
+| `www` → apex, y HTTP → HTTPS | 302 los dos |
+| `/api/salud` | 200, `{"estado":"ok"}` |
+| Home y `/productos` | 200, en 0,13 s y 0,19 s |
+| **La base por la LAN** | el catálogo devuelve «Todavía no hay productos» y «0 productos» — el estado vacío **real**, no una página de error: la consulta cruzó al servidor DATA y volvió con cero filas |
+| `NEXT_PUBLIC_SUPABASE_URL` incrustada | aparece en el bundle de `/ingresar` |
+| Secretos en el bundle del navegador | ninguno |
+| Rastros de `localhost` en el HTML | ninguno |
+
+**El dominio ya estaba apuntando al servidor, y se supo sin abrir el panel.**
+`anavende.com.ar` viene delegado a Cloudflare desde la época de Vercel, y con
+el proxy encendido el origen queda tapado: desde afuera solo se ve una IP de
+Cloudflare. El sitio devolvía **503** y no había forma directa de saber hacia
+dónde estaba proxeando. Se resolvió comparando dos respuestas: la que devolvía
+Cloudflare y la que devuelve el servidor APP cuando se le pega directo forzando
+el nombre real. Salieron **idénticas** —mismo estado, mismo `content-type`, el
+mismo `content-length: 20`, que son los 20 bytes de `Service Unavailable`—, y
+eso solo puede pasar si el origen es ese servidor. O sea que no faltaba ningún
+registro DNS: faltaba dar de alta el dominio en Coolify. La técnica queda
+anotada porque sirve cada vez que un proxy tapa un origen.
+
+**El certificado se pide con el proxy en gris, y no es cautela genérica.** Con
+el naranja encendido y el modo SSL en «Full», Cloudflare habla con el origen
+**siempre por HTTPS**, aunque el visitante venga por HTTP; el desafío de
+Let's Encrypt que Traefik espera llega por el puerto 80. En gris el
+certificado se emitió sin intermediarios y a la primera. El naranja vuelve
+después, y recién ahí el modo puede pasar a **Full (strict)**, que exige un
+certificado válido en el origen: antes de que exista, activarlo corta el sitio
+con un 526.
+
+**`503 no available server` no es la aplicación caída.** Es Traefik diciendo
+que el router existe y no tiene ningún servidor sano detrás. Con el 404 que da
+por el puerto 80 ante un `Host` que no conoce, son las dos firmas del proxy
+funcionando y esperando: útiles para no salir a buscar el problema donde no
+está.
+
+---
+
+### El healthcheck que Coolify pisa, y la imagen que no tiene `curl`
+
+El primer despliegue construyó bien y falló diez veces seguidas con
+`/bin/sh: 1: curl: not found` y `wget: not found`, y el contenedor nunca entró
+en rotación.
+
+El motivo estaba **escrito de antemano en el propio `Dockerfile`**: Debian slim
+no trae `curl`, agregarlo es superficie de más en un contenedor de cara a
+internet, y por eso el `HEALTHCHECK` de la imagen lo resuelve con Node y
+`fetch`. Lo que no estaba previsto es que **Coolify pisa el healthcheck de la
+imagen con uno propio**, construido sobre `curl` o `wget`. No falta configurar
+la aplicación: sobra un chequeo.
+
+**Y el comando no se puede escribir en una línea.** El chequeo de Coolify corre
+el comando **directo adentro del contenedor, sin shell**, y rechaza `;`, `|`,
+`&`, `$`, `>` y `<`. El `node -e "…"` equivalente lleva un `>` en cada `=>` de
+sus funciones flecha, y aun reescribiéndolo con `function` quedan las comillas
+de la URL, que dependen de cómo el panel parta la cadena — algo que solo se
+averigua fallando otro despliegue.
+
+Se resolvió con **`scripts/salud.mjs`**: el comando pasa a ser
+`node scripts/salud.mjs`, sin un solo carácter discutible, y el `HEALTHCHECK`
+del `Dockerfile` usa ese mismo archivo. Deja de haber dos copias del chequeo,
+una versionada y otra escrita a mano en una interfaz web, que es justo donde se
+desincronizan. Probado en sus tres caminos: sin nadie escuchando sale 1 con el
+motivo, con 200 sale 0, y con 500 sale 1 diciendo el código.
+
+**Pide a `127.0.0.1` y no a `localhost`, y no es lo mismo.** El servidor escucha
+en `0.0.0.0`, que es IPv4, y `localhost` puede resolver primero a `::1`. Cuando
+eso pasa la conexión se rechaza, el contenedor se declara enfermo estando
+perfecto, y el log muestra un «connection refused» que parece que la aplicación
+no arrancó.
+
+**El orden fue a propósito.** Para que el sitio subiera se desactivó el chequeo
+de Coolify, dejando vigente el de la imagen, y el script entró después: este
+despliegue nunca había probado la cadena completa —el build con las variables
+incrustadas, la base por la LAN, el certificado—, y agregarle un archivo nuevo
+en el mismo movimiento habría dejado dos sospechosos ante cualquier falla. Es
+el mismo criterio del proxy en gris.
+
+---
+
+### Que las fotos vayan a funcionar se puede probar sin tener una sola foto
+
+`NEXT_PUBLIC_SUPABASE_URL` se incrusta en la construcción y de ella
+`next.config.ts` deriva `remotePatterns` (§9.3). Si sale mal, la tienda levanta
+perfecta y **no muestra ninguna imagen de producto**, con el motivo saliendo por
+la consola del servidor y no en pantalla. Es el error que se descubre en
+producción y parece un problema de imágenes.
+
+Con el catálogo vacío no hay ninguna foto que mirar, así que se probó el
+optimizador directo, con dos peticiones a `/_next/image`: una a un archivo
+inventado **en el subdominio de Storage** y otra a un host cualquiera. La
+primera contestó *«"url" parameter is valid but upstream response is invalid»*
+—el host **está permitido**, falla solo porque el archivo no existe— y la
+segunda *«"url" parameter is not allowed»*. Las dos dan 400, y el código de
+estado no distingue nada: **lo que distingue es el cuerpo**. Con eso queda
+probado que la variable llegó bien al build y que la lista no quedó abierta,
+sin haber subido nada.
 
 ---
 
@@ -1281,17 +1396,30 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
 
 ## Qué está esperando algo tuyo
 
-1. **F2.8 — cargar el catálogo real.** Ahora traba dos cosas que antes no
+1. **El `SITE_URL` de GoTrue, y es lo más urgente de esta lista.** `/ingresar` y
+   `/registro` ya son públicos desde el 2026-09-10, y el `SITE_URL` del `.env`
+   de Supabase en el servidor DATA sigue apuntando a donde apuntaba antes del
+   despliegue. Quien se registre ahora recibe un email de verificación con un
+   **enlace roto**. Hay que ponerlo en `https://anavende.com.ar` y agregar las
+   URLs de retorno. Es además lo que destraba **F1.8**: es de ahí de donde
+   GoTrue baja las plantillas E1–E3 por HTTP.
+2. **Cerrar el despliegue**, tres cosas chicas: borrar el dominio `sslip.io` de
+   Coolify —ya cumplió su función de salida de emergencia y tiene «Search
+   indexing» habilitado, o sea una tercera puerta pública al mismo sitio—,
+   volver a encender el proxy naranja en Cloudflare, y **recién ahí** pasar el
+   modo SSL a **Full (strict)**, que ahora tiene un certificado válido en el
+   origen contra el cual verificar.
+3. **F2.8 — cargar el catálogo real.** Ahora traba dos cosas que antes no
    trababa: el umbral de similitud de **F3.3** y la **Compuerta F3**, que el
    plan pide calibrar y aprobar contra el catálogo de verdad. Los 26 productos
    sembrados sirven para mirar pantallas, no para aprobarlas.
-2. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
+4. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
    Meta for Developers, con `/auth/v1/callback` como URI de retorno. El código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
-3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
+5. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-4. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
+6. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
    entero— está activo y sirve de piso, pero guarda **una sola copia** y se
    restaura por ticket. Falta el volcado de la base y del bucket, con varias
    copias y una restauración probada. Conviene antes de F2.8, que es cuando
@@ -1332,6 +1460,27 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 ---
 
 ## Pendiente detectado, sin tarea propia
+
+**`/api/salud` no toca la base, y §19 pide que distinga los dos cortes.** La
+especificación quiere un healthcheck que separe «aplicación caída» de «base
+inalcanzable», porque con dos servidores saber cuál de los dos falló es la
+mitad del diagnóstico. El endpoint hace **lo contrario, a propósito y por
+escrito**: contesta 200 si el proceso de Next está vivo y nada más, porque un
+healthcheck que consulta Postgres convierte cualquier hipo de la LAN en un
+contenedor marcado enfermo, que Docker reinicia, que vuelve a fallar — el corte
+se multiplica en vez de contenerse. Las dos posiciones son razonables y no
+pueden convivir en el mismo endpoint: lo que corresponde es **un segundo
+endpoint de diagnóstico**, que mire la base y no gobierne ningún reinicio. Sin
+decidirlo, §19 y el código dicen cosas distintas.
+
+**Traefik y Coolify siguen sin estar en `VERSIONS.md`.** Detectado el
+2026-09-09 y todavía abierto. Corren Traefik v3.6 y la versión de Coolify que
+instaló DonWeb. F0.9 dice que las versiones instaladas son el parámetro de toda
+consulta posterior, así que mientras no estén anotadas hay dos piezas de
+producción sin número. La actualización de Traefik se deja pasar a propósito:
+actualizar es una decisión aparte, no un botón que se aprieta porque está
+iluminado.
+
 
 **~~Dos controles del encabezado por debajo del mínimo táctil de §9.~~**
 Resuelto el 2026-09-08. Se anotaron acá porque el encabezado está en todas las

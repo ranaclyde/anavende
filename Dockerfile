@@ -82,7 +82,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules/postgres ./node_modules/postgres
 COPY --from=builder --chown=nextjs:nodejs /app/db/migrations ./db/migrations
-COPY --chown=nextjs:nodejs scripts/migrar.mjs ./scripts/migrar.mjs
+COPY --chown=nextjs:nodejs scripts/migrar.mjs scripts/salud.mjs ./scripts/
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 
 # sharp explícito y no confiando en el trazado: es la pieza que §18.1 señala
@@ -95,8 +95,11 @@ USER nextjs
 EXPOSE 3000
 
 # Sin `curl` en la imagen —Debian slim no lo trae y agregarlo es superficie de
-# más—, así que el healthcheck lo hace el propio Node con `fetch`.
+# más—, así que el healthcheck lo hace el propio Node con `fetch`. Vive en un
+# archivo y no en esta línea porque el chequeo de Coolify corre el comando SIN
+# shell y rechaza `>` y comillas: el motivo entero está en la cabecera de
+# `scripts/salud.mjs`. Una sola copia del chequeo, y la usan los dos.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/salud').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD ["node", "scripts/salud.mjs"]
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
