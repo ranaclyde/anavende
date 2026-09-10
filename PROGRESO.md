@@ -68,7 +68,7 @@ justamente por ese número).
 | F1.13 | Encabezado, pie y layout de la tienda | ✅ | |
 | F1.14 | Panel con menú lateral y modo oscuro | ✅ | 240px ↔ 64px, persistido |
 | F1.15 | Sentry con datos personales filtrados | 🟡 | Configurado y con el filtro escrito. **Sin DSN todavía**: falta ver un error de prueba llegar sin email ni teléfono |
-| F1.16 | Dockerfile y despliegue en Coolify | 🟡 | **La tienda está en línea desde el 2026-09-10**, en `https://anavende.com.ar` y con certificado de Let's Encrypt. Lo que el 2026-09-09 estaba «probado corriendo la imagen contra el stack local» ahora está probado **donde va**: la construcción corre en el servidor APP en **1 minuto 39** sin quedarse sin memoria —que era la mitad de la razón por la que §18.2 mandaba compilar afuera, y los 4 GB de F0.1 eran la otra—, el contenedor arranca, migra sin aplicar nada sobre una base ya en `0010`, y sirve. Abajo está lo que hizo falta y lo que encontró. **Le faltan las dos mitades del «Hecho cuando»**: que un **push a `main` despliegue solo** —este primer despliegue se disparó a mano— y que **sharp corra en producción** (V7), que no se prueba hasta que alguien suba una foto de verdad desde el panel. Y el nombre de la tarea cambió: **el despliegue no va por CI**, decidido el 2026-09-09 |
+| F1.16 | Dockerfile y despliegue en Coolify | 🟡 | **La tienda está en línea desde el 2026-09-10**, en `https://anavende.com.ar` y con certificado de Let's Encrypt. Lo que el 2026-09-09 estaba «probado corriendo la imagen contra el stack local» ahora está probado **donde va**: la construcción corre en el servidor APP en **1 minuto 39** sin quedarse sin memoria —que era la mitad de la razón por la que §18.2 mandaba compilar afuera, y los 4 GB de F0.1 eran la otra—, el contenedor arranca, migra sin aplicar nada sobre una base ya en `0010`, y sirve. Abajo está lo que hizo falta y lo que encontró. **El «Hecho cuando» está por la mitad, y la mitad que falta no depende de esta tarea**: «un push a `main` despliega» quedó **verificado el mismo 2026-09-10** —el push del healthcheck disparó el despliegue por webhook, sin que nadie tocara un botón—, y falta **sharp corriendo en producción** (V7), que no se prueba leyendo nada: hace falta que alguien suba una foto de verdad desde el panel, o sea F2.8. Adentro del contenedor ya se probó contra el stack local el 2026-09-09. Y el nombre de la tarea cambió: **el despliegue no va por CI**, decidido el 2026-09-09 |
 
 ---
 
@@ -380,10 +380,22 @@ anotada porque sirve cada vez que un proxy tapa un origen.
 el naranja encendido y el modo SSL en «Full», Cloudflare habla con el origen
 **siempre por HTTPS**, aunque el visitante venga por HTTP; el desafío de
 Let's Encrypt que Traefik espera llega por el puerto 80. En gris el
-certificado se emitió sin intermediarios y a la primera. El naranja vuelve
-después, y recién ahí el modo puede pasar a **Full (strict)**, que exige un
-certificado válido en el origen: antes de que exista, activarlo corta el sitio
-con un 526.
+certificado se emitió sin intermediarios y a la primera. **El naranja volvió el
+mismo día**, junto con el modo en **Full (strict)** —que exige un certificado
+válido en el origen, así que antes de que existiera activarlo habría cortado el
+sitio con un 526— y con el `sslip.io` borrado, que era una tercera puerta
+pública al mismo sitio y encima indexable. Verificado después del cambio: las
+cuatro rutas en 200, `www` redirigiendo, y el certificado del origen intacto
+detrás del borde de Cloudflare.
+
+**Lo que Cloudflare tapa, y lo que no.** Absorbe el ruido de escáneres y
+raspadores, que es de lo que un VPS de 4 GB no se defiende solo, y cachea los
+estáticos. Lo que **no** cubre es el tráfico más pesado del sitio: las fotos de
+producto salen de `vps-6346459-x.dattaweb.com`, un nombre de DonWeb en una zona
+que no administramos, y Cloudflare sólo proxea nombres de sus propias zonas.
+Meterlas adentro sería publicar Storage como un subdominio propio, y eso toca
+`NEXT_PUBLIC_SUPABASE_URL`, el certificado y la configuración de Kong en el
+servidor DATA: es una tarea, no una casilla.
 
 **`503 no available server` no es la aplicación caída.** Es Traefik diciendo
 que el router existe y no tiene ningún servidor sano detrás. Con el 404 que da
@@ -432,6 +444,13 @@ despliegue nunca había probado la cadena completa —el build con las variables
 incrustadas, la base por la LAN, el certificado—, y agregarle un archivo nuevo
 en el mismo movimiento habría dejado dos sospechosos ante cualquier falla. Es
 el mismo criterio del proxy en gris.
+
+**Salió bien a la primera, y de yapa probó el webhook.** El push del script
+disparó el despliegue **solo**, sin que nadie tocara un botón, y con el chequeo
+de Coolify ya reactivado sobre `node /app/scripts/salud.mjs`. O sea que el
+mismo movimiento cerró las dos cosas: el healthcheck vuelve a existir del lado
+de Coolify —que es quien decide si un despliegue salió bien— y quedó
+demostrado que **un push a `main` despliega**, que es media tarea F1.16.
 
 ---
 
@@ -1403,23 +1422,17 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
    **enlace roto**. Hay que ponerlo en `https://anavende.com.ar` y agregar las
    URLs de retorno. Es además lo que destraba **F1.8**: es de ahí de donde
    GoTrue baja las plantillas E1–E3 por HTTP.
-2. **Cerrar el despliegue**, tres cosas chicas: borrar el dominio `sslip.io` de
-   Coolify —ya cumplió su función de salida de emergencia y tiene «Search
-   indexing» habilitado, o sea una tercera puerta pública al mismo sitio—,
-   volver a encender el proxy naranja en Cloudflare, y **recién ahí** pasar el
-   modo SSL a **Full (strict)**, que ahora tiene un certificado válido en el
-   origen contra el cual verificar.
-3. **F2.8 — cargar el catálogo real.** Ahora traba dos cosas que antes no
+2. **F2.8 — cargar el catálogo real.** Ahora traba dos cosas que antes no
    trababa: el umbral de similitud de **F3.3** y la **Compuerta F3**, que el
    plan pide calibrar y aprobar contra el catálogo de verdad. Los 26 productos
    sembrados sirven para mirar pantallas, no para aprobarlas.
-4. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
+3. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
    Meta for Developers, con `/auth/v1/callback` como URI de retorno. El código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
-5. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
+4. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-6. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
+5. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
    entero— está activo y sirve de piso, pero guarda **una sola copia** y se
    restaura por ticket. Falta el volcado de la base y del bucket, con varias
    copias y una restauración probada. Conviene antes de F2.8, que es cuando
@@ -1473,13 +1486,29 @@ pueden convivir en el mismo endpoint: lo que corresponde es **un segundo
 endpoint de diagnóstico**, que mire la base y no gobierne ningún reinicio. Sin
 decidirlo, §19 y el código dicen cosas distintas.
 
-**Traefik y Coolify siguen sin estar en `VERSIONS.md`.** Detectado el
-2026-09-09 y todavía abierto. Corren Traefik v3.6 y la versión de Coolify que
-instaló DonWeb. F0.9 dice que las versiones instaladas son el parámetro de toda
-consulta posterior, así que mientras no estén anotadas hay dos piezas de
-producción sin número. La actualización de Traefik se deja pasar a propósito:
-actualizar es una decisión aparte, no un botón que se aprieta porque está
-iluminado.
+**~~Traefik y Coolify no están en `VERSIONS.md`.~~** Detectado el 2026-09-09 y
+anotado el 2026-09-10: **Coolify 4.3.18** —la que instaló el atajo de DonWeb— y
+**Traefik v3.6**, el proxy que Coolify trae y el único que quedó en pie después
+de apagar el nginx del atajo. Con eso F0.9 vuelve a estar entero: las versiones
+instaladas son el parámetro de toda consulta a `context7`, y dos piezas de
+producción sin número eran dos consultas hechas contra documentación que no es
+la que corre.
+
+El parche de Traefik es **3.6.25** (*ramequin*, compilado el 2026-07-31), y
+buscarlo destapó algo que sí queda abierto: **Coolify referencia a Traefik por
+serie, no por versión.** La etiqueta de la imagen es `traefik:v3.6`, o sea un
+blanco móvil — la próxima vez que esa imagen se descargue puede traer otro
+parche con el mismo nombre, sin que nadie lo pida y sin que se note. Es el
+riesgo que `VERSIONS.md` existe para evitar, dentro de la pieza que atiende
+todo el tráfico del sitio. No se toca por ahora, porque cambiar cómo Coolify
+referencia su propio proxy es meter mano en su instalación; lo que queda
+anotado es que **el número hay que volver a mirarlo después de cada
+actualización de Coolify**, con `docker exec coolify-proxy traefik version`,
+que es lo único que dice qué binario está corriendo.
+
+La actualización a v3.7 se sigue dejando pasar a propósito: el propio aviso
+pide revisar el changelog por cambios rompientes, y actualizar es una decisión
+aparte, no un botón que se aprieta porque está iluminado.
 
 
 **~~Dos controles del encabezado por debajo del mínimo táctil de §9.~~**

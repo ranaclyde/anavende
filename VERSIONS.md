@@ -7,6 +7,8 @@ Se consulta la documentación de *estas* versiones, no de la última publicada.
 Registrado el 2026-09-02 — tarea F0.9, parte de aplicación.
 Ampliado el 2026-09-05 con la infraestructura de producción, cuando el
 desarrollo pasó a apuntar al servidor DATA.
+Ampliado el 2026-09-10 con el servidor APP —Coolify y su proxy—, cuando la
+tienda se desplegó por primera vez.
 
 | Pieza | Referencia (TS §2.1) | Instalada |
 |---|---|---|
@@ -32,7 +34,17 @@ desarrollo pasó a apuntar al servidor DATA.
 | Playwright | — | **1.63.0** (`@playwright/test`, 2026-09-08). Instalado para poder **ver y medir el teléfono**, que hasta hoy era a ciegas; sólo se bajó Chromium (`npx playwright install chromium`). La suite de extremo a extremo sigue pendiente en F10.2 |
 | PostgreSQL (servidor DATA) | 15+ | **15.8** (`supabase/postgres:15.8.1.085`) — `supabase/config.toml` igualado a esta |
 | Supabase auto-hospedado (servidor DATA) | — | *docker compose* oficial. Las trece imágenes, abajo |
-| Coolify | — | **pendiente F0.2** |
+| Coolify (servidor APP) | — | **4.3.18** — la que instaló el atajo de DonWeb. Registrada el 2026-09-10 |
+| Traefik (proxy del servidor APP) | — | **3.6.25** (*ramequin*, compilado 2026-07-31, go1.26.5). El proxy que trae Coolify, y el único que quedó en pie: el nginx del atajo de DonWeb se apagó y deshabilitó (2026-09-09). **La etiqueta de la imagen es `traefik:v3.6`, que es una serie y no una versión**: el parche sale de `docker exec coolify-proxy traefik version`, no de la etiqueta, y puede cambiar solo — ver la nota de abajo. Hay v3.7 y se deja pasar a propósito: actualizar es una decisión aparte |
+
+> **Una etiqueta de serie no fija nada.** Coolify referencia a Traefik como
+> `traefik:v3.6`, así que la próxima vez que esa imagen se descargue puede
+> traer otro parche con el mismo nombre, sin que nadie lo haya pedido y sin
+> que se note. Es exactamente el riesgo que este archivo existe para evitar.
+> No se cambió por ahora —tocar cómo Coolify referencia su propio proxy es
+> meter mano en su instalación—, pero **el número de arriba hay que volver a
+> mirarlo después de cualquier actualización de Coolify**, y no darlo por
+> válido porque está escrito.
 
 ### Imágenes del stack del servidor DATA
 
@@ -67,13 +79,16 @@ Lo comprobado contra el stack local **no cierra una tarea de F0**
 | Tarea | Local | Producción |
 |---|---|---|
 | F0.3 Supabase en el servidor DATA | — | ✅ |
-| F0.4 Cerrar Postgres al mundo | — | 🟡 cerrado y verificado; falta el firewall local, que necesita el segundo servidor |
+| F0.4 Cerrar Postgres al mundo | — | ✅ **completa desde el 2026-09-09**: el firewall local que faltaba esperaba a que existiera el servidor APP. `ufw` en los dos, más dos reglas en `DOCKER-USER` que abren el 5432 sólo desde `192.168.200.193` |
 | F0.6 `pg_trgm` y `unaccent` con similitud real | ✅ comprobado | ✅ `db:verificar` contra el VPS |
 | F0.7 Storage: subir, leer, borrar | ⬜ | ✅ `db:imagenes` contra el bucket `productos` del VPS |
 | F0.11 Resend como SMTP | — sin equivalente local (Mailpit) | ✅ emails reales a una casilla de verdad |
 | F0.12 Admin API de Auth | ⬜ | ✅ listar y borrar por `service_role` |
 | F0.13 *Send Email Hook* auto-hospedado | ⬜ | ⬜ pendiente |
-| F0.1, F0.2, F0.5, F0.8, F0.10 | — sin equivalente local | ⬜ pendiente |
+| F0.1 Servidores unidos por LAN | — sin equivalente local | ✅ 2026-09-09 |
+| F0.2 Coolify + limpieza de Docker | — sin equivalente local | ✅ 2026-09-09, con la limpieza **programada** |
+| F0.8 Latencia real de la LAN | — sin equivalente local | ✅ **0,4 ms** medidos el 2026-09-09 |
+| F0.5 Restringir Studio · F0.10 Backup | — sin equivalente local | ⬜ pendiente |
 
 **Lo que hay que recordar de este cruce.** Los tres caminos de email —alta,
 reenvío y recuperación— **funcionaban en local y llegaron rotos a
