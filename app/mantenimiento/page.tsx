@@ -33,10 +33,27 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/**
+ * Se arma en cada pedido, nunca en la construcción, igual que `/api/salud`.
+ *
+ * Sin esto `next build` la **prerrenderiza**: no usa cookies ni encabezados,
+ * así que para Next es una página estática, y la consulta a la base corre al
+ * compilar. En el servidor no hay base a esa altura —§18.2 exige que se pueda
+ * compilar sin ella—, y el despliegue del 2026-09-11 se cayó justo por eso. En
+ * `next dev` no se ve, porque ahí no se prerrenderiza nada.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function Mantenimiento() {
   const [cerrada, numero] = await Promise.all([
     estaEnMantenimiento(),
-    numeroDeWhatsApp(),
+    // Sin número, la página se muestra igual, sin el botón. Es la página que
+    // se ve cuando algo no anda: no puede ser la que se cae con un 500 porque
+    // la base tardó en contestar.
+    numeroDeWhatsApp().catch((error: unknown) => {
+      console.error("[mantenimiento] No se pudo leer el número de WhatsApp.", error);
+      return null;
+    }),
   ]);
 
   if (!cerrada) redirect("/");
