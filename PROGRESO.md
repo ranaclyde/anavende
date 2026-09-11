@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-10.
+Última actualización: 2026-09-11.
 
 **Qué significa cada estado**
 
@@ -60,7 +60,7 @@ justamente por ese número).
 | F1.7 | Supabase Auth: los tres métodos | ⛔ | **Email completo y probado en producción**, de punta a punta y en los tres caminos: alta con email de verificación que llega y lleva a `/mi-cuenta`; reenvío del enlace; y recuperación de contraseña, incluido cerrar sesión y volver a entrar con la nueva. Los tres llegaron rotos a producción por el mismo motivo —abajo, en las decisiones— y los tres se arreglaron. **Google y Facebook necesitan que crees las apps en las consolas de Google y Meta** |
 | F1.7b | `user_profiles` y alta con compensación | ✅ | La compensación se probó sola: un fallo real dejó cero identidades huérfanas |
 | F1.7c | Resolución de sesión | ✅ | |
-| F1.8 | Plantillas E1–E3 y layout compartido | 🟡 | **E1, E2 y E3 escritas y revisadas** en `lib/email/`, en español y con la identidad de DESIGN-REFERENCE; `npm run email` las convierte en el HTML que descarga GoTrue (`public/emails/`) y deja una copia para mirar en el navegador. **E4 salió de esta tarea y volvió a F6.4**, que es donde el plan ya lo tenía: el layout que necesitaba está hecho, y hasta que la orden no exista no hay qué mostrarle a la administradora. Lo que falta acá es **conectarlas**: GoTrue carga las plantillas **por HTTP contra `SITE_URL`** —probado en el VPS: no lee archivos— así que necesitaban la aplicación desplegada. **Desde el 2026-09-10 ese bloqueo no existe**: la tienda está en línea. Lo que queda es apuntar el `SITE_URL` de GoTrue, en el `.env` de Supabase del servidor DATA, a `https://anavende.com.ar`, y es urgente por otro motivo además de este —abajo, en los pendientes—. Hasta entonces los emails salen con la plantilla por defecto de Supabase, en inglés. **Los asuntos van en el mismo viaje al VPS**, no antes: cambiarlos solos daría un asunto en español sobre un cuerpo en inglés |
+| F1.8 | Plantillas E1–E3 y layout compartido | 🟡 | **E1, E2 y E3 escritas y revisadas** en `lib/email/`, en español y con la identidad de DESIGN-REFERENCE; `npm run email` las convierte en el HTML que descarga GoTrue (`public/emails/`) y deja una copia para mirar en el navegador. **E4 salió de esta tarea y volvió a F6.4**, que es donde el plan ya lo tenía: el layout que necesitaba está hecho, y hasta que la orden no exista no hay qué mostrarle a la administradora. **Conectadas en producción el 2026-09-11**, con sus asuntos, y con una cuarta plantilla que no estaba prevista: la del **reenvío**, que GoTrue manda como enlace mágico. **E2 probado de punta a punta**: llegó en español, con el nombre, el logo y la casilla de ayuda, y el enlace llevó a elegir la contraseña nueva. Lo que falta para el ✅ es **ver llegar E1 y el reenvío** con las plantillas conectadas —usan las mismas piezas que E2, pero no se vieron—, y va a pasar con el próximo registro real. E3 no se puede disparar hasta que exista la invitación del panel (RF-26, F7.4). Todo lo que hizo falta está en «Los emails salen en español», más abajo |
 | F1.9 | Teléfono obligatorio en las tres vías | ✅ | Normaliza a `+549…`; validado en el servidor |
 | F1.10 | Envoltorio de Server Actions | ✅ | |
 | F1.11 | Módulo de dinero + regla de lint | ✅ | El lint falla ante `parseFloat` sobre un monto |
@@ -474,6 +474,114 @@ sin haber subido nada.
 
 ---
 
+### Los emails salen en español, y lo que hubo que destrabar (2026-09-11)
+
+Empezó como una prueba del `SITE_URL` de GoTrue, que corregiste en el `.env`
+del servidor DATA y aplicaste con `docker compose up -d auth`. Para probarlo se
+**borró la única cuenta** —la tuya, administradora y sin órdenes— y te
+registraste de nuevo, lo que de paso arregló el reparto que había hecho la
+`0011`: «Matías Emanuel Sanhueza» había quedado como nombre «Matías» y apellido
+«Emanuel Sanhueza». El `SITE_URL` anduvo. Lo que siguió fue lo que la prueba
+destapó.
+
+**Todas las redirecciones de Auth iban a `https://0.0.0.0:3000`.** Los
+manejadores de `/api/auth/confirmar` y `/api/auth/callback` armaban el destino
+con el `origin` de `request.url`, y detrás de Traefik y Cloudflare Next lo arma
+con la dirección donde escucha adentro del contenedor —`HOSTNAME=0.0.0.0` y
+`PORT=3000`, del propio `Dockerfile`— más el `https` que le avisa el proxy. En
+local no se ve porque las dos coinciden. **Desde que la tienda salió al público
+el 2026-09-10, todo registro y toda recuperación terminaban en esa página.** Se
+arregló en `8402396` con `urlDelSitio()`, la misma función que ya arma el enlace
+del email; comprobado desde afuera con `curl` sobre las dos rutas y de punta a
+punta cambiando la contraseña. El `proxy.ts` no tenía el problema: redirige
+clonando `request.nextUrl`.
+
+**Las plantillas nunca habían estado conectadas.** El recuerdo era que faltaban
+solo los asuntos; el email que llegó era el de Supabase entero, en inglés. Ahora
+viven en **`~/app/docker-compose.override.yml` del servidor DATA**, junto al
+cambio del pooler de F0.4, y no en el `docker-compose.yml` oficial: así una
+actualización del stack que reemplace ese archivo no se las lleva. Van con la
+dirección completa y no relativa a `SITE_URL`. El archivo quedó así —la copia
+anterior es `docker-compose.override.yml.antes-de-plantillas`—:
+
+```yaml
+services:
+  supavisor:
+    ports: !override
+      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:6543:6543"
+      - "192.168.200.120:5432:5432"
+
+  auth:
+    environment:
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION: "https://anavende.com.ar/emails/verificacion.html"
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: "https://anavende.com.ar/emails/verificacion-reenvio.html"
+      GOTRUE_MAILER_TEMPLATES_RECOVERY: "https://anavende.com.ar/emails/recuperacion.html"
+      GOTRUE_MAILER_TEMPLATES_INVITE: "https://anavende.com.ar/emails/invitacion.html"
+      GOTRUE_MAILER_SUBJECTS_CONFIRMATION: "Confirmá tu email en AnaVende"
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Confirmá tu email en AnaVende"
+      GOTRUE_MAILER_SUBJECTS_RECOVERY: "Elegí una contraseña nueva para AnaVende"
+      GOTRUE_MAILER_SUBJECTS_INVITE: "Te creamos una cuenta en AnaVende"
+```
+
+Se comprobó con `docker compose config` antes de recrear `auth`, que es lo que
+dice si el archivo combinado quedó bien escrito. **GoTrue guarda cada plantilla
+diez minutos**: un cambio en `public/emails/` puede tardar eso en notarse.
+
+**El reenvío necesitaba su propia plantilla.** Sale por `signInWithOtp`, así que
+GoTrue lo manda como enlace mágico, y ése no tenía ninguna: iba a salir en
+inglés aunque las otras tres estuvieran. `verificacion-reenvio.html` es la misma
+de E1 con el enlace en `type=magiclink`; apuntar `MAGIC_LINK` a
+`verificacion.html` no servía, porque su enlace dice `signup` y el código de un
+enlace mágico no se canjea con ese tipo. Entró en `47c58e9`, junto con la
+casilla de ayuda de las cuatro plantillas, que pasó a ser
+**`ana_vende@outlook.com`**. Sigue siendo una constante en `lib/email/base.tsx`
+y no sale de `site_settings`: GoTrue arma los emails sin consultar nuestra base.
+
+**Cloudflare reescribía las plantillas.** La *Email Address Obfuscation* cambia
+cada dirección de email del HTML por `[email protected]` y un script que la
+rearma en el navegador. GoTrue las baja a través de Cloudflare, y en un email
+ese script no corre: el pie iba a decir `[email protected]` con un enlace roto.
+Se apagó para todo el dominio (en el panel nuevo está en **Security →
+Settings**, no en «Scrape Shield»). Comprobado comparando las cuatro plantillas
+publicadas con las del repo: idénticas byte a byte, y Cloudflare no las cachea.
+
+**La regla «Sólo peticiones de Argentina» dejaba los emails sin logo.** El logo
+no lo baja el navegador de quien lee: lo baja el proxy de imágenes de Gmail,
+desde Estados Unidos, y la regla le presentaba un desafío que un robot no
+resuelve. Lo mostró *Security → Events*. La regla se conserva —es tuya y tiene
+un motivo: que nadie de afuera navegue ni se registre— y ganó excepciones que no
+abren nada a una persona:
+
+```
+(ip.src.country ne "AR"
+ and not cf.client.bot
+ and not starts_with(http.request.uri.path, "/marca/")
+ and not starts_with(http.request.uri.path, "/emails/")
+ and not starts_with(http.request.uri.path, "/.well-known/acme-challenge/"))
+```
+
+Los **bots verificados** no se falsifican: Cloudflare no les cree el nombre,
+comprueba que la IP sea de Google o de Meta. Y las tres rutas son archivos
+estáticos. Con la regla anterior quedaban afuera además **Googlebot** —la tienda
+no se habría indexado, que choca de frente con F3.9— y el robot de Meta que arma
+la **vista previa** de un enlace compartido por WhatsApp (F3.6). La excepción de
+`acme-challenge` es por la renovación del certificado; ver los pendientes.
+
+**Dos push seguidos colgaron el servidor APP.** `8402396` y `47c58e9` se
+subieron con minutos de diferencia, las dos construcciones se superpusieron y
+el sitio quedó caído desde las 12:54 —Cloudflare 522, después ni eso— hasta que
+lo reiniciaste. Volvió a las 13:02 **con la imagen anterior a los dos commits**,
+y el redespliegue de `47c58e9` —que contiene a los dos— los puso en línea a las
+13:08, sin cortes. Los push los hacés vos: fue un error mío subirlos. **Queda la
+regla operativa: un despliegue a la vez**, y si un reinicio deja uno fallido,
+redesplegar el último commit alcanza.
+
+**El primer enlace no fue un error.** Venció porque se abrió pasada la hora:
+`GOTRUE_MAILER_OTP_EXP` es 3600 segundos.
+
+---
+
 ## F2 — Panel: catálogo
 
 | ID | Tarea | Estado | Nota |
@@ -485,6 +593,7 @@ sin haber subido nada.
 | F2.5 | Listado de productos | ✅ | Búsqueda por nombre, marca y descripción; filtros por categoría, marca, estado **y stock**; orden por nombre, precio, stock disponible y fecha, en los dos sentidos y también desde las cabeceras de la tabla. Los tres números de stock por producto, con el cero, el stock bajo de RF-20 y el **negativo** de RF-24 señalizados. Todo el estado vive en la URL (§10.2). `db:listado` prueba 39 reglas contra Postgres de verdad. Verificado en el navegador con seis productos que cubren los cuatro avisos: «mecanico» encuentra «Mecánico», «8k a 60hz» encuentra por la descripción, «Para reponer» trae tres de seis, ordenar por una cabecera y volver a tocarla da vuelta la dirección, «Limpiar todo» conserva el orden, y el vacío y el sin-resultados dicen cosas distintas. Los productos de prueba se borraron: la base quedó como estaba. Pasó por `impeccable` como pide DR §12.4, y de ahí salieron cinco correcciones que sí se ven mirando: la **lupa se apoyaba sobre la primera letra** del texto de ayuda —abajo está por qué, y vale para todo el panel—; en las columnas de números la **flecha de ordenar se mudó adelante del título**, porque el lugar que ocupaba mientras no se veía corría el título 18px a la izquierda del borde donde terminan las cifras; la columna **Estado se ensanchó** para que «Activo» y el aviso de stock entren en la misma línea y la tabla conserve su renglón parejo de 44px (§6.9); en la tarjeta de móvil el **precio y el disponible arrancan en la misma línea**, que apilados dejaban el número grande flotando; y con el catálogo vacío **desaparece el botón del encabezado**, porque el estado vacío ya ofrece el mismo primer paso y dos botones de marca iguales a 100px uno del otro se leen como un error (§6.3) |
 | F2.6 | ABM de medios de pago | ✅ | Alta con logo, descripción y orden, edición, activar/desactivar y baja, en una solapa nueva del catálogo. El orden se cambia con flechas y se renumera solo. `db:pagos` prueba 26 reglas contra Postgres y contra Storage de verdad. Probado en el navegador: tres medios con y sin logo, reordenar, desactivar, borrar, y el estado vacío. **La canalización de logos se generalizó**: la que hizo F2.1 para las marcas ahora sirve a las dos, con una sola copia del orden de operaciones que evita archivos huérfanos —y se volvió a probar el logo de marca de punta a punta para asegurarse de que no se rompió—. Arrastrando el flujo apareció **un error que no se veía leyendo el código**: está abajo. Lo que RF-19 pide **mostrar** —la franja en la tienda, la ficha y el checkout— no es de esta tarea: cae en F3.7, F3.5 y F6.1, que son las pantallas donde va |
 | F2.7 | Configuración del sitio | ✅ | Número de WhatsApp, email de avisos y umbral de stock bajo, editables desde `/admin/configuracion`. `db:configuracion` prueba 22 reglas contra Postgres de verdad, y las cuatro que importan no se ven leyendo el código: que **guardar la primera vez CREE la fila** —es un UPSERT, y con un UPDATE la pantalla diría «se guardó» sin haber guardado nada—, que la segunda pise a la primera sin que aparezca una segunda fila, que `updated_at` avance al pisar, y que **el umbral guardado llegue al listado**: con 5, un producto con 5 disponibles entra en «Para reponer»; con 4, sale. La normalización del teléfono se sacó a `lib/telefono.ts` y ahora es **una sola** para el comprador y para el sitio; el script prueba que las dos den lo mismo. Probado en el navegador: el estado sin configurar, un envío vacío que señala los dos campos y lleva el foco al primero, el número que vuelve normalizado a `+549…`, el email recortado y en minúsculas, el 101 rechazado por el servidor con su motivo y el campo vacío por el formulario con el mismo texto que usaría el servidor, en claro y en oscuro y a 390px. Arrastrando el flujo apareció **un callejón sin salida que no se veía leyendo el código**: está abajo. Pasó por `impeccable` y `ui-ux-pro-max` como pide DR §12.4, y de ahí salieron seis correcciones que sí se ven mirando: el campo del umbral dejó de ser `type="number"` y pasó a `inputMode="numeric"`, **por la misma razón que ya estaba escrita en el stock de una variante** —el campo numérico del navegador sube y baja con la rueda del mouse encima, y acá eso cambiaría el umbral de todo el catálogo mientras alguien baja la página—; el botón «Guardar» deshabilitado **dice por qué con palabras** («Todo guardado.») en vez de colgarlo de un `title`, que sobre un botón deshabilitado puede no llegar a aparecer nunca (§8); la unidad «unidades» entró en la descripción accesible del campo, que si no se lee «avisar stock bajo a partir de: 3» sin decir de qué; el esqueleto de carga usaba separaciones distintas de las de la pantalla de verdad y **la página saltaba 40px** al llegar los datos, así que ahora comparte las tres medidas y hasta la cantidad de renglones de cada ayuda; y dos textos se acortaron: la bajada del encabezado, que hablaba de «tocar el código» —vocabulario que la vendedora no tiene por qué tener (§10)—, y la de «Avisos», que decía en dos renglones lo que dice en uno. **La fila se borró al terminar**: el número de prueba no es el de nadie, y dejarlo puesto sería peor que dejarlo vacío. **Cargada con los datos reales el 2026-09-07**, y comprobado en la base: `id = 1`, el WhatsApp normalizado a `+549` + 10 dígitos y el email en minúsculas y recortado, o sea que la normalización del servidor corrió y no se guardó lo que se tipeó. El umbral quedó en **2**, más estricto que el 3 por defecto: es criterio tuyo y queda anotado para que no se lea como un descuido |
+| F2.7b | Modo mantenimiento | ⬜ | **Tarea nueva, agregada al plan el 2026-09-10** a pedido tuyo, y puesta **antes de F2.8** a propósito. Un interruptor en `/admin/configuracion` —donde ya vive la configuración de F2.7— que deja la tienda fuera de servicio para el público mientras Ana carga, **sin que ella deje de verla normal**: necesita mirar cada ficha como la va a ver un comprador. Tres cosas que no se pueden equivocar y están en el plan: la página devuelve **503 con `Retry-After`** y no 200 —un 200 le dice a Google que ése es el contenido de todo el sitio y lo desindexa—, **`(auth)` nunca se bloquea** —si la administradora está deslogueada y no puede entrar, la única salida es un UPDATE a mano—, y la administradora pasa por el rol, que `lib/session.ts` ya lee de la base en cada resolución. **Se evaluó no construirlo**: cargar todo desactivado da casi lo mismo, pero deja a Ana sin previsualizar —un producto inactivo devuelve 404— y con doscientos clics de activación al final, porque no hay activación masiva |
 | F2.8 | Cargar el catálogo real | ⬜ | **Desbloqueada el 2026-09-05.** Lo que la trababa —F0.3 y F0.7— está hecho: la base y el bucket de producción existen y están probados, así que lo que Ana cargue queda donde va y no hay que volcarlo ni volver a subirlo. Sigue conviniendo hacer antes la **Compuerta F2**, que es la prueba de usabilidad del panel |
 
 ---
@@ -1416,28 +1525,35 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
 
 ## Qué está esperando algo tuyo
 
-1. **El `SITE_URL` de GoTrue, y es lo más urgente de esta lista.** `/ingresar` y
-   `/registro` ya son públicos desde el 2026-09-10, y el `SITE_URL` del `.env`
-   de Supabase en el servidor DATA sigue apuntando a donde apuntaba antes del
-   despliegue. Quien se registre ahora recibe un email de verificación con un
-   **enlace roto**. Hay que ponerlo en `https://anavende.com.ar` y agregar las
-   URLs de retorno. Es además lo que destraba **F1.8**: es de ahí de donde
-   GoTrue baja las plantillas E1–E3 por HTTP.
-2. **F2.8 — cargar el catálogo real.** Ahora traba dos cosas que antes no
+1. **F2.8 — cargar el catálogo real.** Ahora traba dos cosas que antes no
    trababa: el umbral de similitud de **F3.3** y la **Compuerta F3**, que el
    plan pide calibrar y aprobar contra el catálogo de verdad. Los 26 productos
    sembrados sirven para mirar pantallas, no para aprobarlas.
-3. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
+2. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
    Meta for Developers, con `/auth/v1/callback` como URI de retorno. El código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
-4. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
+3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-5. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
+4. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
    entero— está activo y sirve de piso, pero guarda **una sola copia** y se
    restaura por ticket. Falta el volcado de la base y del bucket, con varias
    copias y una restauración probada. Conviene antes de F2.8, que es cuando
    entra el catálogo real: es trabajo de Ana lo que se estaría arriesgando.
+5. **El correo del dominio, en este orden.** Las tres son en Cloudflare o en
+   Google y ninguna toca el código:
+   - **Que `hola@anavende.com.ar` reciba.** Los emails salen de esa dirección y
+     el dominio **no tiene MX**: quien responda un email de verificación recibe
+     un rebote. Cloudflare Email Routing, gratis, lo reenvía a
+     `ana_vende@outlook.com`.
+   - **Un registro DMARC**, aunque sea `p=none`. Hoy no hay ninguno, y Gmail y
+     Yahoo lo piden cada vez más para no mandar a spam.
+   - **El logo como avatar en Gmail.** El avatar no se configura en Resend: lo
+     elige el cliente de correo. BIMI, el estándar, necesita DMARC estricto y
+     un certificado pago para que Gmail lo muestre; no vale el costo. La salida
+     gratis es una **cuenta de Google con `hola@anavende.com.ar`** y el logo de
+     foto de perfil, que Gmail muestra al lado del remitente. Para crearla,
+     Google manda un código a esa dirección: por eso va después del reenvío.
 
 ---
 
@@ -1445,6 +1561,13 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
 
 Hecho por primera vez el **2026-09-07**: producción tiene **un** administrador,
 y es la cuenta con la que se verificó F1.7 de punta a punta.
+
+**Rehecho el 2026-09-11.** Esa cuenta se borró para probar el registro de
+punta a punta (ver «Los emails salen en español», en F1), y la nueva nació como
+`customer`, que es lo que corresponde a un alta desde la tienda. El `UPDATE` de
+abajo, por email porque el `id` cambió, devolvió la fila con `role = admin` y el
+panel abrió sin cerrar sesión. **Entre el borrado y el `UPDATE` no hubo ningún
+administrador**: es la ventana a tener en cuenta si alguna vez hay que repetirlo.
 
 Es un `UPDATE` de una fila y no una carencia: la administración de usuarios es
 RF-26 y vive en **F7.4**. Hasta entonces, sumar un administrador es
@@ -1474,6 +1597,37 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 ---
 
 ## Pendiente detectado, sin tarea propia
+
+**`.env.local` apunta al stack local, y este archivo dice lo contrario.** El
+encabezado de F0 cuenta que desde el 2026-09-05 el desarrollo trabaja contra
+producción; el 2026-09-11 `.env.local` tenía `NEXT_PUBLIC_SUPABASE_URL` en
+`127.0.0.1:54321` y la base en el `54322`, que son los puertos del Supabase del
+CLI corriendo en OrbStack. No se tocó. Hay que decidir cuál de los dos vale y
+dejar escrito el que quede, porque un script que se crea contra producción y
+corre contra local —o al revés— da resultados que no sirven, sin ningún aviso.
+
+**La renovación del certificado no se comprobó.** La regla de Cloudflare ya no
+desafía `/.well-known/acme-challenge/`, que es por donde Let's Encrypt verifica
+el dominio desde servidores de afuera. Pero si esa verificación pasa o no por
+Cloudflare depende del modo SSL entre Cloudflare y el servidor APP, y eso no se
+miró. Conviene confirmarlo antes de los sesenta días de la emisión del
+2026-09-10, que es cuando Coolify intenta renovar.
+
+**Coolify construye dentro del servidor APP, y dos construcciones a la vez lo
+cuelgan.** Pasó el 2026-09-11 con dos push seguidos. Coolify tiene un límite de
+construcciones simultáneas por servidor, y conviene mirar si está en 1: sin
+eso, la regla «un despliegue a la vez» depende de acordarse.
+
+**La migración `0011` se desplegó sin backup previo, y fue una decisión, no un
+olvido.** `TECHNICAL-SPEC.md` §18.2 y el riesgo R4 piden **no desplegar una
+migración sin un backup verificado inmediatamente anterior**, y F0.10 sigue sin
+hacer. Se avanzó igual por decisión tuya del 2026-09-10, con un motivo que se
+sostiene: la migración toca `user_profiles`, que en producción tiene **una
+fila** —la cuenta de administrador— cuyo contenido es recuperable de memoria en
+treinta segundos. Queda escrito porque **la próxima vez no va a haber esa
+excusa**: en cuanto entre el catálogo de Ana (F2.8) o la primera orden, el
+alcance de cualquier migración deja de ser una fila conocida, y la regla vuelve
+a ser lo que dice §18.2.
 
 **`/api/salud` no toca la base, y §19 pide que distinga los dos cortes.** La
 especificación quiere un healthcheck que separe «aplicación caída» de «base
