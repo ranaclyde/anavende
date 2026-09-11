@@ -1,0 +1,11 @@
+-- Modo mantenimiento — F2.7b, 2026-09-11.
+--
+-- La tienda queda fuera de servicio para el público y normal para quien
+-- administra, mientras se carga el catálogo (F2.8). Es la de drizzle-kit tal
+-- cual: una columna con DEFAULT sobre una tabla de una sola fila no tiene
+-- camino que elegir. Arranca APAGADO, así que desplegarla no cambia nada de lo
+-- que se ve.
+--
+-- Se desplegó sin backup verificado previo, por decisión tuya del 2026-09-11:
+-- ver PROGRESO.md, «Pendiente detectado».
+ALTER TABLE "site_settings" ADD COLUMN "maintenance_mode" boolean DEFAULT false NOT NULL;

@@ -129,3 +129,12 @@ export const configuracionDelSitio = z.object({
 });
 
 export type EntradaDeConfiguracion = z.input<typeof configuracionDelSitio>;
+
+/* ── Modo mantenimiento — F2.7b ────────────────────────────────────────── */
+
+/**
+ * «Cerrá» o «abrí», no «cambiá»: quien toca el botón vio un estado, y si en
+ * otra pestaña ya lo cambiaron, un «cambiá» lo daría vuelta al revés de lo que
+ * quería.
+ */
+export const modoMantenimiento = z.object({ activo: z.boolean() });

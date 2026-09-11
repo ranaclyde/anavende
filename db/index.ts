@@ -47,18 +47,24 @@ function conectar(): Conexion {
   return { db: drizzle(sql, { schema }), sql };
 }
 
+/**
+ * La conexión vive en el GLOBAL del proceso, no en una variable del módulo, y
+ * por dos motivos distintos:
+ *
+ *   · En desarrollo, el recargado en caliente reevalúa el módulo; sin el global
+ *     se abriría un pool nuevo en cada cambio hasta agotar las conexiones.
+ *   · En producción, por `proxy.ts` (F2.7b). Next lo compila aparte del resto
+ *     de la aplicación, y cada compilación trae su propia copia de este
+ *     módulo: con una variable de módulo, el proxy abriría su pool de diez al
+ *     lado del de las páginas, contra el mismo pooler. El global es uno por
+ *     proceso, así que las dos copias comparten el mismo.
+ *
+ * Hasta F2.7b el global era solo de desarrollo; nada del proxy tocaba la base.
+ */
 function obtener(): Conexion {
-  // En desarrollo el recargado en caliente reevalúa el módulo; sin el global
-  // se abriría un pool nuevo en cada cambio hasta agotar las conexiones.
-  if (process.env.NODE_ENV !== "production") {
-    globalThis.__anavendeDb ??= conectar();
-    return globalThis.__anavendeDb;
-  }
-  interno ??= conectar();
-  return interno;
+  globalThis.__anavendeDb ??= conectar();
+  return globalThis.__anavendeDb;
 }
-
-let interno: Conexion | undefined;
 
 /**
  * Cierra el pool y olvida la conexión.
@@ -72,9 +78,8 @@ let interno: Conexion | undefined;
  * día los tests dejan de correrse.
  */
 export async function cerrarConexion(): Promise<void> {
-  const abierta = globalThis.__anavendeDb ?? interno;
+  const abierta = globalThis.__anavendeDb;
   globalThis.__anavendeDb = undefined;
-  interno = undefined;
   await abierta?.sql.end({ timeout: 5 });
 }
 

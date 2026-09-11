@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
 import { FormularioDeConfiguracion } from "@/components/admin/configuracion/formulario";
+import { ModoMantenimiento } from "@/components/admin/configuracion/mantenimiento";
 import {
+  elModoMantenimiento,
   leerLaConfiguracion,
   UMBRAL_DE_STOCK_BAJO_POR_DEFECTO,
 } from "@/modules/settings/queries";
@@ -18,7 +20,13 @@ export const metadata: Metadata = { title: "Configuración" };
  * código.
  */
 export default async function ConfiguracionDelSitio() {
-  const configuracion = await leerLaConfiguracion();
+  // En paralelo: son dos lecturas de la misma fila que no se esperan una a
+  // la otra. El interruptor se lee de la base y no de la memoria del proxy
+  // (`elModoMantenimiento`): recién cambiado, tiene que decir lo que quedó.
+  const [configuracion, mantenimiento] = await Promise.all([
+    leerLaConfiguracion(),
+    elModoMantenimiento(),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
@@ -34,6 +42,11 @@ export default async function ConfiguracionDelSitio() {
         configuracion={configuracion}
         umbralPorDefecto={UMBRAL_DE_STOCK_BAJO_POR_DEFECTO}
       />
+
+      {/* Fuera del formulario y con su propio botón (F2.7b): cerrar la
+          tienda no es un valor más que se guarda con «Guardar cambios», es
+          una acción que se confirma y surte efecto en el acto. */}
+      <ModoMantenimiento activo={mantenimiento} />
     </div>
   );
 }

@@ -54,3 +54,29 @@ export async function escribirLaConfiguracion(
 
   return fila;
 }
+
+/**
+ * Prender o apagar el modo mantenimiento — F2.7b.
+ *
+ * **Un UPDATE, y acá sí es lo correcto**, al revés que la configuración: la
+ * fila la crea el formulario de arriba con los dos datos que ninguna migración
+ * puede inventar, y el interruptor no los tiene. Sin fila devuelve `null`, y
+ * la acción lo traduce en «guardá primero la configuración». Crear la fila
+ * desde acá obligaría a inventar un WhatsApp y un email.
+ *
+ * El UPSERT de `escribirLaConfiguracion` no nombra esta columna, y es a
+ * propósito: guardar el número de WhatsApp no puede reabrir la tienda. Hay un
+ * test que lo cuida.
+ */
+export async function escribirElModoMantenimiento(
+  activo: boolean,
+): Promise<boolean | null> {
+  const [fila] = await db.execute<{ activo: boolean }>(sql`
+    UPDATE site_settings
+       SET maintenance_mode = ${activo},
+           updated_at       = now()
+     WHERE id = 1
+    RETURNING maintenance_mode AS activo`);
+
+  return fila?.activo ?? null;
+}

@@ -64,6 +64,21 @@ export async function leerLaConfiguracion(): Promise<ConfiguracionDelSitio | nul
 }
 
 /**
+ * El interruptor de mantenimiento como está EN LA BASE — F2.7b.
+ *
+ * Para la pantalla que lo cambia, que no puede mostrar lo que el proxy
+ * recuerda: si dijera «abierta» cinco segundos después de cerrarla, parecería
+ * que no se guardó. `null` = la configuración nunca se guardó y no hay fila
+ * donde prenderlo.
+ */
+export async function elModoMantenimiento(): Promise<boolean | null> {
+  const [fila] = await db.execute<{ activo: boolean }>(sql`
+    SELECT maintenance_mode AS activo FROM site_settings WHERE id = 1
+  `);
+  return fila?.activo ?? null;
+}
+
+/**
  * Los medios de pago del panel — RF-19.
  *
  * El orden es el que se configuró, y el nombre desempata: `sort_order` se

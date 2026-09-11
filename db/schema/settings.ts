@@ -23,6 +23,12 @@ export const siteSettings = pgTable(
     whatsappNumber: text("whatsapp_number").notNull(),
     adminNotificationEmail: text("admin_notification_email").notNull(),
     lowStockThreshold: integer("low_stock_threshold").notNull().default(3),
+    /**
+     * Tienda fuera de servicio para el público, y normal para quien
+     * administra (F2.7b). Lo lee `proxy.ts` en cada pedido que no sea de una
+     * ruta que siempre pasa; ver `modules/settings/mantenimiento.ts`.
+     */
+    maintenanceMode: boolean("maintenance_mode").notNull().default(false),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

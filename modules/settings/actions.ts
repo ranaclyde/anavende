@@ -8,12 +8,17 @@ import { paymentMethods } from "@/db/schema/settings";
 import { action } from "@/lib/action";
 import { domainError } from "@/lib/errors";
 import { borrarArchivos, clavesDelLogo, quitarLogo } from "@/modules/media/subir";
-import { escribirLaConfiguracion } from "@/modules/settings/service";
+import { olvidarElInterruptor } from "@/modules/settings/mantenimiento";
+import {
+  escribirElModoMantenimiento,
+  escribirLaConfiguracion,
+} from "@/modules/settings/service";
 import {
   cambioDeEstadoDePago,
   configuracionDelSitio,
   crearMedioDePago,
   editarMedioDePago,
+  modoMantenimiento,
   movimientoDePago,
   soloMedioDePago,
 } from "@/modules/settings/schemas";
@@ -250,4 +255,33 @@ export const guardarLaConfiguracion = action
     // «11 5555 5555» y ver «+5491155555555» es la confirmación de que se
     // entendió lo que se escribió.
     return guardada;
+  });
+
+/* ── Modo mantenimiento — F2.7b ────────────────────────────────────────── */
+
+/**
+ * Cerrar o reabrir la tienda al público.
+ *
+ * Lo que tarda en notarse: en esta instancia, nada —se olvida lo recordado—;
+ * en el proxy, hasta cinco segundos (`VIGENCIA_MS`), porque el proxy consulta
+ * su memoria antes que la base.
+ */
+export const cambiarElModoMantenimiento = action
+  .input(modoMantenimiento)
+  .auth("admin")
+  .handler(async ({ input }) => {
+    const activo = await escribirElModoMantenimiento(input.activo);
+
+    if (activo === null) {
+      throw domainError("VALIDATION", {
+        message:
+          "Guardá primero la configuración de arriba: hasta que exista, no hay dónde anotar que la tienda está cerrada.",
+      });
+    }
+
+    olvidarElInterruptor();
+    // Todo, por lo mismo que al guardar la configuración: el aviso de «solo
+    // vos la ves así» está en el layout de la tienda y en el ingreso.
+    revalidatePath("/", "layout");
+    return { activo };
   });

@@ -2,6 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { hasSupabaseEnvVars } from "@/lib/env";
+import {
+  estaEnMantenimiento,
+  pasaSiempre,
+  puedeVerLaTiendaCerrada,
+  REINTENTAR_EN_SEGUNDOS,
+} from "@/modules/settings/mantenimiento";
 
 /**
  * Redirección temprana por sesión ausente — TECHNICAL-SPEC §6.1 y §13.7.
@@ -66,7 +72,49 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Modo mantenimiento (F2.7b). El orden de las tres preguntas es el de lo
+  // que cuestan: la ruta no toca nada, el interruptor se recuerda unos
+  // segundos, y el rol solo se pregunta con la tienda cerrada y una sesión.
+  if (!pasaSiempre(pathname) && (await estaEnMantenimiento())) {
+    const userId = data?.claims?.sub;
+    const puedeVer =
+      typeof userId === "string" && (await puedeVerLaTiendaCerrada(userId));
+
+    if (!puedeVer) return tiendaCerrada(request, response);
+  }
+
   // El objeto de respuesta se devuelve tal cual: si se arma uno nuevo hay que
   // copiarle las cookies, o el navegador y el servidor quedan desincronizados.
   return response;
+}
+
+/**
+ * La página de mantenimiento con **503 y `Retry-After`**, en la MISMA
+ * dirección que se pidió.
+ *
+ * Reescritura y no redirección: con una redirección el 503 lo recibiría
+ * `/mantenimiento` y la dirección pedida devolvería un 307, que para un
+ * buscador es «esto se mudó». Y 503 y no 200: un 200 le dice a Google que ése
+ * es el contenido de todas las páginas, y desindexa el sitio.
+ *
+ * La respuesta es nueva, así que se le copian las cookies de la que armó
+ * Supabase: es la advertencia de más arriba, y acá aplica igual.
+ */
+function tiendaCerrada(request: NextRequest, sesion: NextResponse) {
+  const destino = request.nextUrl.clone();
+  destino.pathname = "/mantenimiento";
+  destino.search = "";
+
+  const cerrada = NextResponse.rewrite(destino, {
+    status: 503,
+    headers: {
+      "Retry-After": String(REINTENTAR_EN_SEGUNDOS),
+      // Que nadie en el camino —Cloudflare, el navegador— se guarde el cartel
+      // y lo siga mostrando después de reabrir.
+      "Cache-Control": "no-store",
+    },
+  });
+
+  sesion.cookies.getAll().forEach((cookie) => cerrada.cookies.set(cookie));
+  return cerrada;
 }
