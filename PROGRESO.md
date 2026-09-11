@@ -1407,7 +1407,72 @@ Comprobado moviendo el archivo: el mensaje sale entero.
 
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
-| F5.5 | Carrito: modelo y operaciones | 🟡 | **Agregar, quitar, cambiar cantidad y vaciar**, en `modules/cart/` —operaciones, consultas y acciones—, con la página `/carrito` de §7.4 y «Agregá al carrito» encendido en la ficha. Falta solo verlo en producción, que llega con el push. **Todas las operaciones reciben el `userId` de la sesión y ninguna el id del carrito**: sin RLS es la única barrera (§13.8), y hay un test que prueba que un comprador no lee ni toca el carrito de otro. Agregar y cambiar la cantidad **bloquean la fila del carrito**: leen lo que hay antes de escribir, y sin el bloqueo dos pestañas a la vez pierden una unidad. El carrito **no reserva** (RF-08), pero no deja pedir más de lo disponible y lo dice con el número: «Quedan 5 unidades y ya tenés 2 en el carrito». **Bajar la cantidad se puede siempre**, aunque el stock haya caído por debajo; subir no. Tope de **99 por renglón**, el del ejemplo de §6.2. Subtotales y total **en SQL**, de una sola consulta con función de ventana. **19 tests** contra el stack local, 412 en total. **Probado en el navegador contra el stack local**: agregar desde la ficha sube la píldora del encabezado sin recargar, pedir de más muestra el mensaje, «+» en el carrito recalcula subtotal y total, y vaciar pide confirmación y deja el estado vacío. **Cuatro decisiones mías, para revisar**: sin sesión el botón dice **«Iniciá sesión para comprar»** y vuelve a la ficha en el mismo color —que al volver quede agregado solo es F5.7—; **«Continuar con el pedido» va apagado** con el motivo solo para lectores de pantalla, el mismo criterio que tuvo «Agregá al carrito» hasta hoy, y se enciende con F6.1; el total **suma todos los renglones**, también los desactivados o sin stock, porque separarlos es F5.6; y la píldora cuenta **unidades**, no renglones. El selector de cantidad salió de la ficha a `components/shop/cantidad.tsx`, porque el carrito lo usa en cada renglón |
+| F5.5 | Carrito: modelo y operaciones | 🟡 | **Agregar, quitar, cambiar cantidad y vaciar**, en `modules/cart/` —operaciones, consultas y acciones—, con la página `/carrito` de §7.4 y «Agregá al carrito» encendido en la ficha. Falta solo verlo en producción, que llega con el push. **Todas las operaciones reciben el `userId` de la sesión y ninguna el id del carrito**: sin RLS es la única barrera (§13.8), y hay un test que prueba que un comprador no lee ni toca el carrito de otro. Agregar y cambiar la cantidad **bloquean la fila del carrito**: leen lo que hay antes de escribir, y sin el bloqueo dos pestañas a la vez pierden una unidad. El carrito **no reserva** (RF-08), pero no deja pedir más de lo disponible y lo dice con el número: «Quedan 5 unidades y ya tenés 2 en el carrito». **Bajar la cantidad se puede siempre**, aunque el stock haya caído por debajo; subir no. Tope de **99 por renglón**, el del ejemplo de §6.2. Subtotales y total **en SQL**, de una sola consulta con función de ventana. **19 tests** contra el stack local, 412 en total. **Probado en el navegador contra el stack local**: agregar desde la ficha sube la píldora del encabezado sin recargar, pedir de más muestra el mensaje, «+» en el carrito recalcula subtotal y total, y vaciar pide confirmación y deja el estado vacío. **Cuatro decisiones mías, para revisar**: sin sesión el botón dice **«Iniciá sesión para comprar»** y vuelve a la ficha en el mismo color —que al volver quede agregado solo es F5.7—; **«Continuar con el pedido» va apagado** con el motivo solo para lectores de pantalla, el mismo criterio que tuvo «Agregá al carrito» hasta hoy, y se enciende con F6.1; el total **suma todos los renglones**, también los desactivados o sin stock, porque separarlos es F5.6; y la píldora cuenta **unidades**, no renglones. El selector de cantidad salió de la ficha a `components/shop/cantidad.tsx`, porque el carrito lo usa en cada renglón. **El carrito vacío repite el estado vacío del catálogo** (pedido tuyo del 2026-09-11): encabezado con título y bajada —«No se cobra nada acá»— y el mismo recuadro, clase por clase, en vez de un mensaje suelto sobre el fondo. Está copiado y no compartido; sacarlo a un componente es el primer punto de la revisión de abajo |
+
+### Consistencia visual — para revisar (2026-09-11)
+
+Pedido tuyo: el carrito vacío no seguía la lógica del catálogo, y eso pasa en
+más lados. **Solo se cambió el carrito**; esto es la lista de lo demás, sacada
+de recorrer todas las pantallas. No hay nada decidido: cada punto dice cuál es
+el patrón que usa la mayoría y quién se aparta.
+
+**Anchos**
+- **Panel.** Casi todo ocupa el ancho entero, menos tres pantallas de
+  formulario, y con dos anchos distintos: configuración en `max-w-2xl`,
+  producto nuevo y editar producto en `max-w-3xl`.
+- **Tienda.** El contenedor de referencia es el del catálogo (`max-w-shop`,
+  `py-10`). La ficha usa `py-8 lg:py-12`; `/mi-cuenta` encierra su tarjeta en
+  `max-w-lg`; la 404 y mantenimiento pierden el relleno lateral de pantallas
+  anchas.
+
+**Encabezados**
+- **Tienda.** El del catálogo —antetítulo, título y bajada— no lo repite
+  nadie más: `/mi-cuenta` tiene solo el título. Las pantallas de ingreso no
+  tienen `h1`: el título es el de la tarjeta, en `h2`.
+- **Panel.** Título y bajada con `gap-1`; el inicio usa `gap-2`, y producto
+  nuevo y editar no tienen bajada pero sí un «← Productos» que ninguna otra
+  pantalla tiene.
+
+**Estados vacíos**
+- **Tienda.** El recuadro del catálogo es la referencia, y ahora el carrito lo
+  sigue. **Los dos son copias**: conviene sacarlo a un componente compartido.
+  La 404 y mantenimiento son mensajes sueltos sin recuadro, y el error de
+  ingreso usa la tarjeta de shadcn.
+- **Panel.** El patrón es un recuadro punteado con una línea y «Cargar el
+  primero». Se apartan: marcas, categorías y colores —único con ícono, con
+  título y explicación, y el botón dice «Nueva marca» en vez de «Cargar el
+  primero»—; productos, que no explica nada; y «Faltan cargar» de producto
+  nuevo, con un título más grande que cualquier otro. Además, marcas y medios
+  de pago dejan la barra de herramientas a la vista cuando están vacíos, y
+  productos la esconde.
+
+**Tarjetas**
+- La tarjeta de la tienda está escrita a mano en unos lugares y con el
+  componente `Card` en otros; se ven igual.
+- En el panel las secciones de formulario se separan por **sombra** y las
+  tablas por **borde**, y `card.tsx` dice que se separa «por sombra, nunca por
+  borde».
+
+**Botones y diálogos**
+- En los diálogos del panel, «Cancelar» es secundario en unos y terciario en
+  otros.
+- Borrar en el catálogo deja el diálogo abierto con el botón cargando; en
+  medios de pago y productos el diálogo se cierra enseguida.
+- «Limpiar todo» tiene tres formas: terciario chico en la barra de filtros del
+  panel, secundario chico en su estado sin resultados, y el principal grande en
+  la tienda.
+- Reenviar el email de verificación es chico en el ingreso y mediano en el
+  aviso.
+
+**Errores y cargas**
+- **No hay ningún `error.tsx`** en toda la aplicación: un fallo inesperado cae
+  en la pantalla de error genérica de Next, sin la marca ni una salida.
+- Solo cuatro rutas tienen esqueleto de carga. El catálogo no tiene. Y el de
+  la lista de productos del panel también se ve al abrir producto nuevo y
+  editar, que son formularios angostos: mientras cargan, parpadea una tabla a
+  ancho completo.
+
+---
 
 **`.env.local` hoy apunta al stack local**, a `127.0.0.1:54322`, y no a
 producción como dice el encabezado de F0 desde el 2026-09-05. Por eso el

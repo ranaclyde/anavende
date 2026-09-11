@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ShoppingCart } from "lucide-react";
 
 import {
   ControlesDelItem,
@@ -42,25 +41,39 @@ export default async function PaginaDelCarrito() {
 
   const carrito = await leerCarrito(sesion.profile.id);
 
-  if (carrito.items.length === 0) return <CarritoVacio />;
-
+  // El encabezado es el mismo con y sin productos, y es el del catálogo
+  // (título y bajada): la pantalla vacía no puede ser otra pantalla.
   return (
-    <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-      <h1 className="text-title text-ink">Tu carrito</h1>
+    <div className="mx-auto w-full max-w-shop px-4 py-10 sm:px-6 lg:px-8">
+      <header className="flex flex-col gap-2 pb-7">
+        <h1 className="text-title text-ink">Tu carrito</h1>
+        {/*
+          La bajada dice lo que el comprador no puede adivinar: que acá no se
+          paga (RN-08). Sin eso, un carrito con total se lee como el paso
+          previo a una tarjeta.
+        */}
+        <p className="text-body text-ink-secondary">
+          Armá tu pedido y lo coordinamos por WhatsApp. No se cobra nada acá.
+        </p>
+      </header>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8">
-        <ul className="flex flex-col gap-3">
-          {carrito.items.map((item) => (
-            <Renglon key={item.variantId} item={item} />
-          ))}
-        </ul>
+      {carrito.items.length === 0 ? (
+        <CarritoVacio />
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8">
+          <ul className="flex flex-col gap-3">
+            {carrito.items.map((item) => (
+              <Renglon key={item.variantId} item={item} />
+            ))}
+          </ul>
 
-        <Resumen
-          total={carrito.total}
-          unidades={carrito.unidades}
-          renglones={carrito.items.length}
-        />
-      </div>
+          <Resumen
+            total={carrito.total}
+            unidades={carrito.unidades}
+            renglones={carrito.items.length}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -213,17 +226,24 @@ function Resumen({
   );
 }
 
-/** §8: qué falta y la acción para resolverlo. Nunca un espacio en blanco. */
+/**
+ * §8: qué falta y la acción para resolverlo. Nunca un espacio en blanco.
+ *
+ * Es el MISMO recuadro que el estado vacío del catálogo (`Vacio`, en
+ * `app/(shop)/productos/page.tsx`), clase por clase: la tienda tiene una sola
+ * forma de decir «no hay nada acá». Está copiado y no compartido porque
+ * sacarlo a un componente toca el catálogo, y eso quedó para la revisión de
+ * consistencia anotada en PROGRESO.
+ */
 function CarritoVacio() {
   return (
-    <div className="mx-auto flex max-w-shop flex-col items-center gap-4 px-4 py-20 text-center">
-      <ShoppingCart aria-hidden className="size-10 text-ink-tertiary" />
-      <h1 className="text-title text-ink">Tu carrito está vacío</h1>
-      <p className="text-body text-ink-secondary">
-        Elegí algo del catálogo y va a aparecer acá.
+    <div className="flex flex-col items-center gap-3 rounded-card bg-surface px-6 py-20 text-center shadow-md">
+      <h2 className="text-heading text-ink">Todavía no agregaste nada</h2>
+      <p className="max-w-prose text-body text-ink-secondary">
+        Mirá el catálogo y sumá lo que necesites.
       </p>
-      <Button asChild variant="brand" size="lg">
-        <Link href="/productos">Explorar el catálogo</Link>
+      <Button asChild variant="brand" size="lg" className="mt-2">
+        <Link href="/productos">Ver productos</Link>
       </Button>
     </div>
   );
