@@ -1,16 +1,10 @@
 "use client";
 
-import { useId, useRef, useState, type ReactNode } from "react";
-import {
-  Ban,
-  Check,
-  Heart,
-  Minus,
-  Plus,
-  Share2,
-  ShoppingCart,
-} from "lucide-react";
+import Link from "next/link";
+import { useRef, useState, useTransition, type ReactNode } from "react";
+import { Ban, Check, Heart, Share2, ShoppingCart } from "lucide-react";
 
+import { Cantidad } from "@/components/shop/cantidad";
 import { Galeria, comoDesplazar } from "@/components/shop/ficha/galeria";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +16,8 @@ import {
   mensajeDeDisponibilidad,
   type ProductoParaMensaje,
 } from "@/lib/whatsapp";
+import { agregarAlCarrito } from "@/modules/cart/actions";
+import { TOPE_POR_ITEM } from "@/modules/cart/schemas";
 import type { VarianteDeFicha } from "@/modules/catalog/products/ficha";
 
 /**
@@ -56,6 +52,11 @@ export type ProductoEnFicha = {
   marca: string;
   /** Absoluta y sin consulta: el `?color=` lo agrega el enlace de WhatsApp. */
   url: string;
+  /**
+   * Relativa y sin consulta: a dónde volver después de ingresar (RF-08). El
+   * `?color=` lo agrega quien arma el enlace, con el color elegido.
+   */
+  ruta: string;
   /** Ya formateado por el servidor (§7.1, RN-02). */
   precioFinalFormateado: string;
 };
@@ -71,6 +72,11 @@ type Props = {
    * abre la aplicación en la nada y parece que falló el sitio.
    */
   whatsapp: string | null;
+  /**
+   * Decide qué botón de compra se dibuja: sin sesión no existe carrito
+   * (RF-08), y el botón invita a ingresar.
+   */
+  conSesion: boolean;
   encabezado: ReactNode;
   informacion: ReactNode;
 };
@@ -80,6 +86,7 @@ export function Compra({
   variantes,
   inicial,
   whatsapp,
+  conSesion,
   encabezado,
   informacion,
 }: Props) {
@@ -97,10 +104,14 @@ export function Compra({
   const disponible = Math.max(0, variante?.disponible ?? 0);
   const sinStock = disponible === 0;
 
+  // El selector no ofrece más de lo que el carrito acepta (F5.5): con 500
+  // unidades en stock, el tope sigue siendo el de un renglón.
+  const tope = Math.min(disponible, TOPE_POR_ITEM);
+
   // La cantidad se corrige AL LEERLA y no con un efecto: al pasar de un color
   // con 10 unidades a uno con 2, un efecto pintaría una vez con el 10 puesto
   // sobre un stock de 2 y lo corregiría en el siguiente cuadro.
-  const cantidadValida = Math.min(Math.max(1, cantidad), Math.max(1, disponible));
+  const cantidadValida = Math.min(Math.max(1, cantidad), Math.max(1, tope));
 
   const mensaje = {
     nombre: producto.nombre,
@@ -110,6 +121,10 @@ export function Compra({
       ? `${producto.url}?color=${variante.colorSlug}`
       : producto.url,
   };
+
+  const volver = variante?.colorSlug
+    ? `${producto.ruta}?color=${variante.colorSlug}`
+    : producto.ruta;
 
   /**
    * El color se refleja en la dirección con `history.replaceState` y no con
@@ -190,7 +205,14 @@ export function Compra({
             />
           ) : (
             <ConStock
+              // Por color: el «Listo, está en tu carrito» es del color que se
+              // agregó, y no puede quedar puesto al cambiar a otro.
+              key={variante.id}
+              variantId={variante.id}
+              conSesion={conSesion}
+              volver={volver}
               disponible={disponible}
+              tope={tope}
               cantidad={cantidadValida}
               onCantidad={setCantidad}
               whatsapp={whatsapp}
@@ -332,7 +354,9 @@ function SelectorDeColor({
 // ── Las acciones ────────────────────────────────────────────────────────
 
 /**
- * El botón de WhatsApp, que es el único que hoy hace algo de punta a punta.
+ * El botón de WhatsApp. Con el carrito encendido (F5.5) pasa a secundario en
+ * la ficha con stock, que es donde §7.3 lo pone, y sigue siendo el principal
+ * sin stock y en «todavía no está a la venta».
  *
  * El ícono va adelante del texto y NO es lo único que dice de qué se trata:
  * el rótulo lleva «por WhatsApp» con todas las letras, así que el logo es
@@ -361,23 +385,27 @@ function BotonDeWhatsApp({
 /**
  * Con stock: cantidad, carrito y WhatsApp.
  *
- * **«Agregá al carrito» va deshabilitado y ya no lleva su explicación a la
- * vista** (decisión del 2026-09-08). §8 pide que todo estado deshabilitado
- * diga por qué, y acá el motivo pasó a ser solo para lectores de pantalla:
- * el botón es andamio para ver la composición terminada de §7.3 mientras
- * llega F5.5, y el renglón «el carrito todavía no está disponible» era, en la
- * pantalla, más grande que la falta que explicaba. Cuando F5.5 lo encienda,
- * la explicación desaparece con él.
+ * **Sin sesión, el botón del carrito invita a ingresar** (RF-08): no existe
+ * carrito anónimo. Lleva de vuelta a esta misma ficha y en el mismo color;
+ * que al volver el producto quede agregado solo es F5.7.
  */
 function ConStock({
+  variantId,
+  conSesion,
+  volver,
   disponible,
+  tope,
   cantidad,
   onCantidad,
   whatsapp,
   mensaje,
   precioUnitario,
 }: {
+  variantId: string;
+  conSesion: boolean;
+  volver: string;
   disponible: number;
+  tope: number;
   cantidad: number;
   onCantidad: (n: number) => void;
   whatsapp: string | null;
@@ -387,7 +415,7 @@ function ConStock({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-4">
-        <Cantidad valor={cantidad} maximo={disponible} onCambio={onCantidad} />
+        <Cantidad valor={cantidad} maximo={tope} onCambio={onCantidad} />
         {/*
           Sin color: no es una etiqueta de estado sino un dato, y §11 pide que
           la interfaz quede acromática y que el color lo ponga la foto. El
@@ -401,19 +429,16 @@ function ConStock({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Button
-          size="lg"
-          variant="brand"
-          disabled
-          aria-describedby="carrito-pendiente"
-          className="w-full"
-        >
-          <ShoppingCart aria-hidden />
-          Agregá al carrito
-        </Button>
-        <p id="carrito-pendiente" className="sr-only">
-          El carrito todavía no está disponible. Se puede comprar por WhatsApp.
-        </p>
+        {conSesion ? (
+          <AgregarAlCarrito variantId={variantId} cantidad={cantidad} />
+        ) : (
+          <Button asChild size="lg" variant="brand" className="w-full">
+            <Link href={`/ingresar?volver=${encodeURIComponent(volver)}`}>
+              <ShoppingCart aria-hidden />
+              Iniciá sesión para comprar
+            </Link>
+          </Button>
+        )}
 
         {whatsapp ? (
           <BotonDeWhatsApp
@@ -428,6 +453,83 @@ function ConStock({
         ) : null}
       </div>
     </div>
+  );
+}
+
+/**
+ * «Agregá al carrito», encendido desde F5.5.
+ *
+ * **La confirmación se dice con palabras y se queda en la ficha.** No abre el
+ * carrito ni un panel lateral: quien agrega casi siempre sigue mirando, y
+ * sacarlo de la ficha es obligarlo a volver. El número del encabezado sube
+ * solo —la acción refresca la pantalla— y el enlace «Ver carrito» queda a
+ * mano para quien sí quiere ir.
+ *
+ * La región viva existe SIEMPRE, vacía hasta que haya algo que decir: un
+ * lector de pantalla solo anuncia los cambios de una región que ya estaba en
+ * la página, no una que aparece con el texto adentro.
+ */
+function AgregarAlCarrito({
+  variantId,
+  cantidad,
+}: {
+  variantId: string;
+  cantidad: number;
+}) {
+  const [enCurso, iniciar] = useTransition();
+  const [resultado, setResultado] = useState<
+    { ok: true; enElCarrito: number } | { ok: false; mensaje: string } | null
+  >(null);
+
+  function agregar() {
+    setResultado(null);
+    iniciar(async () => {
+      const r = await agregarAlCarrito({ variantId, cantidad });
+      setResultado(
+        r.ok
+          ? { ok: true, enElCarrito: r.data.cantidad }
+          : { ok: false, mensaje: r.message },
+      );
+    });
+  }
+
+  return (
+    <>
+      <Button
+        size="lg"
+        variant="brand"
+        className="w-full"
+        loading={enCurso}
+        loadingLabel="Agregando al carrito"
+        onClick={agregar}
+      >
+        <ShoppingCart aria-hidden />
+        Agregá al carrito
+      </Button>
+
+      <div aria-live="polite">
+        {resultado?.ok ? (
+          <p className="flex flex-wrap items-center gap-x-1.5 text-body-sm text-ink-secondary">
+            <Check aria-hidden className="size-4" />
+            {resultado.enElCarrito === 1
+              ? "Listo, está en tu carrito."
+              : `Listo, tenés ${resultado.enElCarrito} en tu carrito.`}
+            <Link
+              href="/carrito"
+              className="rounded-pill font-medium text-ink underline underline-offset-4"
+            >
+              Ver carrito
+            </Link>
+          </p>
+        ) : null}
+      </div>
+
+      {resultado && !resultado.ok ? (
+        <p role="alert" className="text-body-sm text-danger">
+          {resultado.mensaje}
+        </p>
+      ) : null}
+    </>
   );
 }
 
@@ -630,76 +732,6 @@ function AccionesSecundarias({
       <p aria-live="polite" className="sr-only">
         {copiado ? "Enlace copiado al portapapeles" : ""}
       </p>
-    </div>
-  );
-}
-
-/**
- * Cantidad, con tope en el stock de la variante (RF-03).
- *
- * El campo es `type="number"` y no dos botones sobre un número pintado:
- * llevar de 1 a 12 a fuerza de clics es once clics, y escribirlo es uno. Las
- * flechas quedan igual porque de 1 a 2 el clic es más rápido que el teclado.
- */
-function Cantidad({
-  valor,
-  maximo,
-  onCambio,
-}: {
-  valor: number;
-  maximo: number;
-  onCambio: (n: number) => void;
-}) {
-  // `useId` y no un `id` escrito: hoy hay un solo selector por pantalla, y el
-  // día que el bloque de recomendados (F8.2) traiga otro, dos campos con el
-  // mismo `id` dejan a la etiqueta apuntando al primero.
-  const id = useId();
-  const acotar = (n: number) => Math.min(Math.max(1, n), maximo);
-
-  return (
-    // `p-0.5` con botones de 44: 48px de alto, que es la altura de campo de
-    // la tienda (§6.6), y cada flecha llega al mínimo táctil de §9.
-    <div className="flex items-center gap-0.5 rounded-pill border border-border bg-surface p-0.5">
-      <Button
-        type="button"
-        size="icon"
-        variant="tertiary"
-        disabled={valor <= 1}
-        onClick={() => onCambio(acotar(valor - 1))}
-      >
-        <Minus aria-hidden />
-        <span className="sr-only">Quitar uno</span>
-      </Button>
-
-      <label className="sr-only" htmlFor={id}>
-        Cantidad
-      </label>
-      <input
-        id={id}
-        type="number"
-        inputMode="numeric"
-        min={1}
-        max={maximo}
-        value={valor}
-        onChange={(e) => {
-          const n = Number.parseInt(e.target.value, 10);
-          // Un campo vacío no vuelve a 1 de un salto mientras se escribe: se
-          // ignora, y el valor válido sigue en pantalla.
-          if (!Number.isNaN(n)) onCambio(acotar(n));
-        }}
-        className="w-10 bg-transparent text-center text-body font-medium tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-      />
-
-      <Button
-        type="button"
-        size="icon"
-        variant="tertiary"
-        disabled={valor >= maximo}
-        onClick={() => onCambio(acotar(valor + 1))}
-      >
-        <Plus aria-hidden />
-        <span className="sr-only">Agregar uno</span>
-      </Button>
     </div>
   );
 }

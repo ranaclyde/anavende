@@ -4,15 +4,16 @@ import { Suspense } from "react";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
 import { getSession } from "@/lib/session";
+import { contarUnidades } from "@/modules/cart/queries";
 import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
 
 /**
  * Layout de la tienda — DESIGN-REFERENCE §5.1.
  * Encabezado fijo, contenido sobre el canvas y pie oscuro.
  *
- * El carrito y el nombre de quien está adentro se leen en F5.5 y F1.7c: acá
- * el encabezado ya recibe los dos, para que sumarlos sea pasar datos y no
- * rehacer el layout.
+ * El encabezado recibe el nombre de quien está adentro (F1.7c) y las unidades
+ * de su carrito (F5.5). Sin sesión no hay carrito (RF-08), así que la píldora
+ * dice cero sin preguntarle nada a la base.
  */
 export default async function ShopLayout({
   children,
@@ -24,11 +25,15 @@ export default async function ShopLayout({
   // del encabezado.
   const sesion = await getSession();
 
+  // Las dos dependen de la sesión y no entre sí: en paralelo.
+  //
   // Lo barato primero: el rol ya está en la sesión, y el interruptor solo se
   // pregunta si quien mira es administradora. Es la misma memoria que usa el
   // proxy, así que el aviso y el bloqueo dicen siempre lo mismo.
-  const cerradaParaElResto =
-    sesion?.role === "admin" && (await estaEnMantenimiento());
+  const [unidadesEnElCarrito, cerradaParaElResto] = await Promise.all([
+    sesion ? contarUnidades(sesion.profile.id) : 0,
+    sesion?.role === "admin" ? estaEnMantenimiento() : false,
+  ]);
 
   return (
     <div className="flex min-h-svh flex-col bg-canvas">
@@ -37,7 +42,10 @@ export default async function ShopLayout({
       {/* El buscador lee la URL, así que el encabezado necesita el límite
           de Suspense que Next exige alrededor de useSearchParams. */}
       <Suspense fallback={<div className="h-14 bg-surface" />}>
-        <SiteHeader userName={sesion?.profile.fullName ?? null} />
+        <SiteHeader
+          userName={sesion?.profile.fullName ?? null}
+          cartCount={unidadesEnElCarrito}
+        />
       </Suspense>
 
       <main className="flex-1">{children}</main>

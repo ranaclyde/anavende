@@ -33,6 +33,8 @@ export type ImagenDeFicha = {
 };
 
 export type VarianteDeFicha = {
+  /** Lo que agrega al carrito (F5.5): el renglón del carrito es la variante. */
+  id: string;
   /** Lo que va en `?color=`. `null` si el producto no viene en colores. */
   colorSlug: string | null;
   colorNombre: string | null;
@@ -70,6 +72,7 @@ export type Ficha = {
 };
 
 type FilaDeVariante = {
+  id: string;
   colorSlug: string | null;
   colorNombre: string | null;
   colorHex: string | null;
@@ -123,6 +126,7 @@ export const leerFicha = cache(async function leerFicha(
             SELECT v.sort_order AS orden,
                    co.name      AS nombre,
                    json_build_object(
+                     'id',          v.id,
                      'colorSlug',   co.slug,
                      'colorNombre', co.name,
                      'colorHex',    co.hex_code,
@@ -158,6 +162,7 @@ export const leerFicha = cache(async function leerFicha(
   return {
     ...fila,
     variantes: (fila.variantes ?? []).map((v) => ({
+      id: v.id,
       colorSlug: v.colorSlug,
       colorNombre: v.colorNombre,
       colorHex: v.colorHex,

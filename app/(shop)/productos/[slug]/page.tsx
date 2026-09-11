@@ -9,6 +9,7 @@ import { Precio } from "@/components/shop/precio";
 import { Button } from "@/components/ui/button";
 import { urlDelSitio } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
+import { getIdentity } from "@/lib/session";
 import { AREA_TACTIL, cn } from "@/lib/utils";
 import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
 import { leerFicha, varianteInicial } from "@/modules/catalog/products/ficha";
@@ -78,12 +79,19 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
 
   // Independientes entre sí: encadenarlas sumaría dos viajes a la base para
   // datos que no dependen del producto.
-  const [ficha, whatsapp, mediosDePago, consulta] = await Promise.all([
-    leerFicha(slug),
-    numeroDeWhatsApp(),
-    mediosDePagoDeLaTienda(),
-    searchParams,
-  ]);
+  //
+  // La identidad y no la sesión entera: acá solo decide qué botón se dibuja
+  // —«Agregá al carrito» o «Iniciá sesión para comprar» (RF-08)—, y
+  // `getIdentity` verifica el token sin ir a la base. Quien decide si puede
+  // agregar es la acción, con el perfil fresco (§6.2).
+  const [ficha, whatsapp, mediosDePago, consulta, identidad] =
+    await Promise.all([
+      leerFicha(slug),
+      numeroDeWhatsApp(),
+      mediosDePagoDeLaTienda(),
+      searchParams,
+      getIdentity(),
+    ]);
 
   // RN-05: un producto inactivo no existe para el sitio público, y da el
   // mismo 404 que uno que nunca existió.
@@ -102,12 +110,14 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
           // ABSOLUTA: viaja adentro de un mensaje de WhatsApp, donde una
           // dirección relativa no lleva a ninguna parte.
           url: `${urlDelSitio()}/productos/${ficha.slug}`,
+          ruta: `/productos/${ficha.slug}`,
           // Ya formateado: ver el comentario de arriba sobre `decimal.js`.
           precioFinalFormateado: formatMoney(ficha.precioFinal),
         }}
         variantes={ficha.variantes}
         inicial={Math.max(0, inicial)}
         whatsapp={whatsapp}
+        conSesion={identidad !== null}
         encabezado={
           <header className="flex flex-col gap-2">
             <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">

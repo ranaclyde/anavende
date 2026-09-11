@@ -265,8 +265,8 @@ describe("leerFicha (RF-03)", () => {
 
 describe("varianteInicial (?color= de RF-03)", () => {
   const variantes = [
-    { colorSlug: "negro", colorNombre: "Negro", colorHex: "#000", disponible: 1, imagenes: [] },
-    { colorSlug: "blanco", colorNombre: "Blanco", colorHex: "#fff", disponible: 1, imagenes: [] },
+    { id: "v-negro", colorSlug: "negro", colorNombre: "Negro", colorHex: "#000", disponible: 1, imagenes: [] },
+    { id: "v-blanco", colorSlug: "blanco", colorNombre: "Blanco", colorHex: "#fff", disponible: 1, imagenes: [] },
   ];
 
   test("sin parámetro abre en la primera", () => {

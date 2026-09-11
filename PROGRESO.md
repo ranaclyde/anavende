@@ -40,7 +40,7 @@ justamente por ese número).
 | F0.7 | Storage: subir, leer, borrar | ✅ | Bucket `productos` creado en Studio con los tres valores de `supabase/config.toml`: público en lectura, 10 MiB, solo `image/webp`. `db:imagenes` pasó entero contra ese bucket. **R6 no se materializó**: ni una falla de firma S3, y la prueba difícil —una subida cortada en el tercer tamaño— no dejó huérfanos |
 | F0.8 | Latencia real de la LAN | ✅ | **Medida el 2026-09-09: 0,4 ms de promedio.** §2.4 estimaba 1-2 ms y el plan pedía revisar §20 si superaba los 5. Sobre un presupuesto de 300 ms (§20), cinco consultas secuenciales cuestan 2 ms: es ruido. La objeción original a tener dos servidores queda enterrada con un número. El primer paquete de un `ping` marca ~4 ms y **no es latencia**: es el ARP, el saludo donde una máquina pregunta quién tiene esa dirección |
 | F0.9 | Fijar versiones del stack | ✅ | Aplicación e infraestructura registradas en `VERSIONS.md`, con las **trece imágenes** del stack del VPS y su etiqueta exacta: son el parámetro de toda consulta a `context7` (§1.2 regla 6), y una actualización silenciosa de cualquiera es un cambio de producción que nadie pidió. El desfase de versión mayor quedó corregido: `supabase/config.toml` pasó de `major_version = 17` a **15**, la del servidor DATA (§18.2) |
-| F0.10 | Backup con restauración de prueba | ⬜ | **Hay un piso, y hay que conservarlo:** DonWeb hace un *Backup Standard* del VPS entero, **semanal, con retención de una sola copia** y restauración no inmediata, por Mesa de Ayuda. Cubre que el servidor se rompa, y nada más. Los tres huecos, en orden de gravedad: **(a)** con una única copia, un daño que no se note dentro de la semana se sobrescribe con el respaldo de los datos ya rotos —y una migración mala o un borrado por error casi nunca se notan el mismo día—; **(b)** no se puede restaurar sin ticket ni saber cuánto tarda, con el sitio caído mientras; **(c)** es la imagen del VPS entero, así que no hay forma de recuperar una tabla o un producto sin llevarse todo lo demás para atrás. Lo que falta es lo de §18.2: `pg_dump` de la base y respaldo del bucket, **fuera del VPS**, con varias copias de retención y **una restauración de prueba documentada**. La base comprimida son pocos MB: treinta copias no pesan nada y se restauran en minutos sin depender de nadie. **Sobre la frecuencia:** semanal alcanza *hoy*, con solo el catálogo —carga grande al principio y pocos artículos por mes, criterio tuyo y es correcto—. Deja de alcanzar cuando el checkout esté andando (F6): ahí adentro hay pedidos y clientes, y una semana perdida son ventas reales con gente esperando algo que ya pagó |
+| F0.10 | Backup con restauración de prueba | ⬜ | **En pausa hasta terminar todas las fases, por decisión tuya del 2026-09-11.** Mientras se desarrolla, la base es de prueba y perderla no cuesta nada; el backup se retoma al final, junto con F10.8. Se evaluaron Backblaze B2 —descartado: sin tarjeta los topes quedan en $0, 1 GB y 2.500 descargas por día, y restaurar las fotos archivo por archivo no entra en un día— y el *Backup Premium Diario* de DonWeb: diario, 30 copias, fuera del servidor, restauración con un clic y snapshot manual desde el panel para antes de una migración, pero **siempre del servidor entero**, nunca de una tabla o un archivo. No se contrató nada todavía. **Hay un piso, y hay que conservarlo:** DonWeb hace un *Backup Standard* del VPS entero, **semanal, con retención de una sola copia** y restauración no inmediata, por Mesa de Ayuda. Cubre que el servidor se rompa, y nada más. Los tres huecos, en orden de gravedad: **(a)** con una única copia, un daño que no se note dentro de la semana se sobrescribe con el respaldo de los datos ya rotos —y una migración mala o un borrado por error casi nunca se notan el mismo día—; **(b)** no se puede restaurar sin ticket ni saber cuánto tarda, con el sitio caído mientras; **(c)** es la imagen del VPS entero, así que no hay forma de recuperar una tabla o un producto sin llevarse todo lo demás para atrás. Lo que falta es lo de §18.2: `pg_dump` de la base y respaldo del bucket, **fuera del VPS**, con varias copias de retención y **una restauración de prueba documentada**. La base comprimida son pocos MB: treinta copias no pesan nada y se restauran en minutos sin depender de nadie. **Sobre la frecuencia:** semanal alcanza *hoy*, con solo el catálogo —carga grande al principio y pocos artículos por mes, criterio tuyo y es correcto—. Deja de alcanzar cuando el checkout esté andando (F6): ahí adentro hay pedidos y clientes, y una semana perdida son ventas reales con gente esperando algo que ya pagó |
 | F0.11 | Resend como SMTP de Supabase | ✅ | **Compuerta F0.** `SMTP_HOST=smtp.resend.com`, puerto 465, usuario `resend` y la API key como contraseña, remitente en el dominio verificado. Los emails llegan a Gmail sin ir a spam. Reemplazó al contenedor `supabase-mail`, que **ni siquiera estaba corriendo**: el registro en producción estaba roto y no se veía |
 | F0.12 | Admin API de Auth | ✅ | Usada de verdad contra producción: listar y borrar usuarios por `service_role`. El borrado se lleva el perfil solo, por el `ON DELETE CASCADE` de la migración `0002` |
 | F0.13 | *Send Email Hook* auto-hospedado | ⬜ | Sigue abierta, pero **F1.8 ya no depende de su respuesta**: la vía de las plantillas quedó decidida por lo que se descubrió acá (abajo, en las decisiones) |
@@ -1403,6 +1403,19 @@ Comprobado moviendo el archivo: el mensaje sale entero.
 
 ---
 
+## F5 — Cuenta del comprador
+
+| ID | Tarea | Estado | Nota |
+|---|---|---|---|
+| F5.5 | Carrito: modelo y operaciones | 🟡 | **Agregar, quitar, cambiar cantidad y vaciar**, en `modules/cart/` —operaciones, consultas y acciones—, con la página `/carrito` de §7.4 y «Agregá al carrito» encendido en la ficha. Falta solo verlo en producción, que llega con el push. **Todas las operaciones reciben el `userId` de la sesión y ninguna el id del carrito**: sin RLS es la única barrera (§13.8), y hay un test que prueba que un comprador no lee ni toca el carrito de otro. Agregar y cambiar la cantidad **bloquean la fila del carrito**: leen lo que hay antes de escribir, y sin el bloqueo dos pestañas a la vez pierden una unidad. El carrito **no reserva** (RF-08), pero no deja pedir más de lo disponible y lo dice con el número: «Quedan 5 unidades y ya tenés 2 en el carrito». **Bajar la cantidad se puede siempre**, aunque el stock haya caído por debajo; subir no. Tope de **99 por renglón**, el del ejemplo de §6.2. Subtotales y total **en SQL**, de una sola consulta con función de ventana. **19 tests** contra el stack local, 412 en total. **Probado en el navegador contra el stack local**: agregar desde la ficha sube la píldora del encabezado sin recargar, pedir de más muestra el mensaje, «+» en el carrito recalcula subtotal y total, y vaciar pide confirmación y deja el estado vacío. **Cuatro decisiones mías, para revisar**: sin sesión el botón dice **«Iniciá sesión para comprar»** y vuelve a la ficha en el mismo color —que al volver quede agregado solo es F5.7—; **«Continuar con el pedido» va apagado** con el motivo solo para lectores de pantalla, el mismo criterio que tuvo «Agregá al carrito» hasta hoy, y se enciende con F6.1; el total **suma todos los renglones**, también los desactivados o sin stock, porque separarlos es F5.6; y la píldora cuenta **unidades**, no renglones. El selector de cantidad salió de la ficha a `components/shop/cantidad.tsx`, porque el carrito lo usa en cada renglón |
+
+**`.env.local` hoy apunta al stack local**, a `127.0.0.1:54322`, y no a
+producción como dice el encabezado de F0 desde el 2026-09-05. Por eso el
+carrito se pudo probar en el navegador sin tocar la base de verdad. Queda
+anotado para que ese encabezado se corrija, o para saber qué cambió.
+
+---
+
 ## Decisiones que cambiaron las especificaciones
 
 Cada una se escribió primero en la especificación y después en el código
@@ -1529,17 +1542,18 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
    trababa: el umbral de similitud de **F3.3** y la **Compuerta F3**, que el
    plan pide calibrar y aprobar contra el catálogo de verdad. Los 26 productos
    sembrados sirven para mirar pantallas, no para aprobarlas.
-2. **F1.7 — Google y Facebook.** Hay que crear las apps en Google Cloud y en
+2. **F1.7 — Google y Facebook, para lo último** (decisión tuya del
+   2026-09-11: va después de todas las fases). Hay que crear las apps en Google Cloud y en
    Meta for Developers, con `/auth/v1/callback` como URI de retorno. El código
    ya resuelve la vinculación por email verificado; los botones se muestran
    deshabilitados con el motivo al lado.
 3. **F0.5 — restringir Studio.** Está accesible por HTTPS con usuario y
    contraseña; §2.4 pide además restricción por IP.
-4. **F0.10 — el backup.** El *Backup Standard* de DonWeb —semanal, del VPS
-   entero— está activo y sirve de piso, pero guarda **una sola copia** y se
-   restaura por ticket. Falta el volcado de la base y del bucket, con varias
-   copias y una restauración probada. Conviene antes de F2.8, que es cuando
-   entra el catálogo real: es trabajo de Ana lo que se estaría arriesgando.
+4. **F0.10 — el backup, en pausa hasta terminar todas las fases** (decisión
+   tuya del 2026-09-11: mientras se desarrolla, la base es de prueba). El
+   *Backup Standard* de DonWeb —semanal, del VPS entero, una sola copia, se
+   restaura por ticket— sigue activo y es lo único que hay. Lo evaluado está en
+   la fila de F0.10.
 5. **El correo del dominio, en este orden — baja prioridad**, decidido el
    2026-09-11: nada de esto frena la tienda. Hoy `hola@anavende.com.ar` **no es
    una casilla en ningún lado**: es el remitente con el que Resend firma, y los
@@ -1636,8 +1650,9 @@ a ser lo que dice §18.2.
 2026-09-11.** Agrega `maintenance_mode` con valor por defecto a
 `site_settings`, que tiene **una fila** de tres datos que se vuelven a tipear en
 un minuto, y si falla se deshace entera. El catálogo todavía no entró, así que
-el motivo de arriba sigue en pie. **Es la última que puede usarlo**: F0.10 va
-antes que F2.8.
+el motivo de arriba sigue en pie. **Desde el 2026-09-11 las migraciones van sin
+backup hasta terminar las fases**, por decisión tuya: mientras se desarrolla, la
+base es de prueba (ver F0.10).
 
 **`/api/salud` no toca la base, y §19 pide que distinga los dos cortes.** La
 especificación quiere un healthcheck que separe «aplicación caída» de «base
