@@ -198,10 +198,11 @@ export function Enlace({ href, children }: { href: string; children: ReactNode }
   );
 }
 
-/** Dónde escribe alguien que se quedó trabado. Es una constante y no sale de
+/** Dónde escribe alguien que se quedó trabado: la casilla de Ana, la misma que
+ *  recibe los avisos del panel (2026-09-11). Es una constante y no sale de
  *  `site_settings`: GoTrue arma E1, E2 y E3 sin consultar nuestra base, así
  *  que el día que cambie hay que cambiarla acá y regenerar. */
-export const CASILLA_DE_AYUDA = "hola@anavende.com.ar";
+export const CASILLA_DE_AYUDA = "ana_vende@outlook.com";
 
 /** La salida, dentro del cuerpo y debajo del botón: si la persona se traba,
  *  tiene que estar donde está mirando y no en la letra chica. */

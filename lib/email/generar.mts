@@ -79,6 +79,18 @@ const PLANTILLAS = [
     enlaceDePrueba: enlaceDePrueba("signup", "/mi-cuenta"),
   },
   {
+    // El reenvío de la verificación sale como ENLACE MÁGICO y no como
+    // verificación: `/resend` no registra el desafío PKCE y `signInWithOtp` sí
+    // (ver `mandarVerificacion` en `modules/users/actions.ts`). Para quien lo
+    // recibe es el mismo pedido —«confirmá tu email»—, así que es la misma
+    // plantilla; lo único que cambia es el `type` del enlace. Con `signup`, el
+    // código que GoTrue manda en este email no se canjea.
+    archivo: "verificacion-reenvio.html",
+    plantilla: Verificacion,
+    enlace: desdeElDestino("magiclink"),
+    enlaceDePrueba: enlaceDePrueba("magiclink", "/mi-cuenta"),
+  },
+  {
     archivo: "recuperacion.html",
     plantilla: Recuperacion,
     enlace: desdeElDestino("recovery"),
