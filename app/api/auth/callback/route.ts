@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { urlDelSitio } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { needsProfile } from "@/lib/session";
 
@@ -11,7 +12,11 @@ import { needsProfile } from "@/lib/session";
  * en el registro por email.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+
+  // De la configuración y no de `request.url`, por el mismo motivo que en
+  // `confirmar/route.ts`: detrás del proxy, esa dirección es `0.0.0.0:3000`.
+  const origin = urlDelSitio();
   const code = searchParams.get("code");
   const volverCrudo = searchParams.get("volver");
 

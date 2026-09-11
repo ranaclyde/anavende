@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { urlDelSitio } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -18,7 +19,13 @@ import { createClient } from "@/lib/supabase/server";
  * probando el registro de punta a punta, no leyendo el código.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+
+  // El origen sale de la configuración y NO de `request.url`: detrás de
+  // Traefik y Cloudflare, Next arma esa dirección con la que escucha adentro
+  // del contenedor, y en producción las redirecciones iban a
+  // `https://0.0.0.0:3000`. En local no se ve, porque las dos coinciden.
+  const origin = urlDelSitio();
 
   // Solo destinos internos: un `next` con host convertiría esto en un
   // redirector abierto.
