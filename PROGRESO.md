@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-11.
+Última actualización: 2026-09-12.
 
 **Qué significa cada estado**
 
@@ -2122,6 +2122,66 @@ parche; la solución es darle a los tests su propia base. **No entró todavía
 porque toca `.env.test`, `.env.local` y la guarda de `tests/setup/entorno.ts`
 a la vez**, y eso es exactamente lo que no conviene hacer en el medio de una
 tarea visual.
+
+---
+
+**GitHub quedó endurecido a mano, y esa configuración no vive en el
+repositorio (2026-09-12).** El repositorio es **público**, y eso es lo que
+habilita casi todo en el plan gratis. Quedó así: *Dependabot alerts* activas
+—vulnerabilidades y malware—, *secret scanning* con *push protection*, y un
+*ruleset* sobre la rama por omisión con **solo** *Restrict deletions* y *Block
+force pushes*, sin nadie en la lista de excepciones. El push normal a `main`
+sigue desplegando igual. La cuenta —2FA, apps autorizadas, tokens, llaves— la
+habías revisado antes.
+
+También quedaron **GitHub Actions apagado** —no hay ningún workflow, y en un
+repositorio público un PR ajeno podría traer uno—; la **wiki apagada**, porque
+en un repositorio público la edita cualquiera y la documentación del proyecto
+va a vivir en el código, como `sdd/`; y los **reportes privados de
+vulnerabilidades** activos, con un `SECURITY.md` que manda ahí y no a un issue
+público. *Automatic dependency submission* avisa que necesita Actions, y se
+ignora: es para ecosistemas donde las dependencias aparecen al compilar, y npm
+las declara en `package-lock.json`, que es de donde sale la alerta de abajo.
+Si algún día se enciende Actions para un check de build, se revisan los
+permisos del `GITHUB_TOKEN` (solo lectura) y la aprobación de PRs externos.
+
+**La primera alerta se descartó, y es una decisión.** esbuild 0.18.20, que
+llega por `drizzle-kit` 0.31.10 a través de `@esbuild-kit`. La falla es del
+servidor de desarrollo de esbuild (`serve`), que nadie levanta: drizzle-kit lo
+usa solo para leer el config y el esquema, y no entra en la imagen de
+producción, porque el migrador que corre ahí es el de `drizzle-orm` (F1.16).
+Se descartó como *«Vulnerable code is not actually used»*. Forzar la versión
+con `overrides` también se descartó: arriesga romper drizzle-kit por algo que
+no alcanza al proyecto. El día que drizzle-kit deje de traer `@esbuild-kit`,
+la alerta deja de aplicar sola.
+
+**Las *security updates* de Dependabot quedaron apagadas a propósito.** Abren
+un PR contra `main`, y hacer el merge desde la web despliega sin pasar por
+`DATABASE_URL= npx next build`. Mientras no haya un check que compile antes del
+merge, una alerta se resuelve a mano en local, como cualquier otro cambio.
+
+**Husky, para después.** Pedido tuyo: formatear el código al commitear y correr
+los tests con coverage. No necesita GitHub Actions —corre en tu máquina, antes
+de que el push salga—, y eso encaja mejor que un check en GitHub con un push
+que despliega, porque frena el problema antes de que llegue a `main`. Lo que
+hay que resolver al armarlo:
+
+- **Falta el formateador.** Hay ESLint y no hay Prettier ni Biome: hay que
+  elegir uno, y sumar `lint-staged` para que el *pre-commit* toque solo los
+  archivos que cambiaron y no el repositorio entero.
+- **El coverage pide `@vitest/coverage-v8`**, que Vitest no trae.
+- **Qué va en cada gancho.** En *pre-commit*, formato y lint de lo cambiado:
+  tiene que ser rápido o se vuelve una molestia en cada commit. En *pre-push*,
+  `typecheck`, los tests con coverage y el build sin base, que hoy se corre a
+  mano.
+- **Los tests necesitan Postgres de verdad** (`vitest.config.mts`: corren
+  contra el stack local). Un *pre-push* con `npm test` falla cada vez que
+  Supabase local no está levantado, y se cruza con el pendiente de arriba —los
+  tests y el desarrollo comparten base—. Hay que decidir si los tests entran en
+  el gancho o no.
+- **El script `prepare` de Husky corre en cada instalación**, incluida la del
+  `Dockerfile`. Ahí tiene que no hacer nada, o rompe el despliegue: mirar el
+  primer despliegue después de agregarlo.
 
 ---
 
