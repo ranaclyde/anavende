@@ -2145,6 +2145,39 @@ las declara en `package-lock.json`, que es de donde sale la alerta de abajo.
 Si algún día se enciende Actions para un check de build, se revisan los
 permisos del `GITHUB_TOKEN` (solo lectura) y la aprobación de PRs externos.
 
+**Desde el 2026-09-12 se trabaja con PRs, a prueba.** El motivo son los
+despliegues, no los commits: Coolify despliega **por push** a `main`, y cada
+cambio empujado apenas estaba listo era un despliegue, lo necesitara o no.
+Ahora el trabajo va en una rama —empujarla no despliega—, se abre un PR, y el
+merge lo hacés vos, que es el único momento en que se despliega. El merge es
+**siempre con *merge commit***: squash y rebase quedaron deshabilitados en el
+repositorio, porque los dos reescriben los hashes y este archivo los cita. Si
+el flujo no convence, se vuelve al push directo.
+
+**Y la documentación sola no despliega.** Las *Watch Paths* de Coolify
+—configuradas en el panel de la aplicación, no en el repositorio— filtran el
+despliegue por webhook. Se leen en orden, gana la última regla que coincide, y
+basta **un** archivo no excluido en el push para que despliegue:
+
+```
+**
+!*.md
+!sdd/**
+!tests/**
+!supabase/**
+!scripts/*.mts
+!.claude/**
+!.env.example
+!.env.test.example
+```
+
+Siguen la regla del `.dockerignore`: **lo que no entra en la imagen no puede
+cambiar lo que se despliega**. `scripts/` no se excluye entero porque
+`scripts/salud.mjs` es el healthcheck, y el día que haya contenido en Markdown
+dentro de `app/` o `lib/`, `!*.md` hay que revisarla. Probado el mismo día: el
+push de `78f8551`, que tocaba solo `PROGRESO.md` y `SECURITY.md`, **no disparó
+despliegue**. El botón *Deploy* manual no pasa por este filtro.
+
 **La primera alerta se descartó, y es una decisión.** esbuild 0.18.20, que
 llega por `drizzle-kit` 0.31.10 a través de `@esbuild-kit`. La falla es del
 servidor de desarrollo de esbuild (`serve`), que nadie levanta: drizzle-kit lo
