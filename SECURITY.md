@@ -1,8 +1,7 @@
 # Seguridad
 
-Si encontrás una vulnerabilidad en AnaVende, **no abras un issue público**.
+Si encontrás una vulnerabilidad en AnaVende, reportala en privado con el botón
+**Report a vulnerability** de la pestaña *Security and quality*. Solo la ve el
+mantenedor.
 
-Reportala en privado desde la pestaña **Security → Report a vulnerability**
-de este repositorio. Solo la ve el mantenedor.
-
-Incluí, si podés, qué encontraste, cómo reproducirlo y qué impacto tiene.
+Contá, si podés, qué encontraste, cómo reproducirlo y qué impacto tiene.

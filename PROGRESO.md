@@ -2138,8 +2138,8 @@ También quedaron **GitHub Actions apagado** —no hay ningún workflow, y en un
 repositorio público un PR ajeno podría traer uno—; la **wiki apagada**, porque
 en un repositorio público la edita cualquiera y la documentación del proyecto
 va a vivir en el código, como `sdd/`; y los **reportes privados de
-vulnerabilidades** activos, con un `SECURITY.md` que manda ahí y no a un issue
-público. *Automatic dependency submission* avisa que necesita Actions, y se
+vulnerabilidades** activos, con un `SECURITY.md` que lleva a ese botón. Los
+issues también quedaron apagados. *Automatic dependency submission* avisa que necesita Actions, y se
 ignora: es para ecosistemas donde las dependencias aparecen al compilar, y npm
 las declara en `package-lock.json`, que es de donde sale la alerta de abajo.
 Si algún día se enciende Actions para un check de build, se revisan los
