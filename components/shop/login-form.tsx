@@ -73,7 +73,9 @@ export function LoginForm({ volver }: { volver?: string }) {
   const reenviar = () => {
     if (!emailSinVerificar) return;
     iniciarReenvio(async () => {
-      const r = await enviarVerificacion({ email: emailSinVerificar });
+      // Con el `volver` puesto, el enlace del email devuelve a donde estaba
+      // queriendo comprar y no a «Mi cuenta» (F5.7).
+      const r = await enviarVerificacion({ email: emailSinVerificar, volver });
       if (r.ok) setReenviado(true);
       else setErrores((prev) => ({ ...prev, general: r.message }));
     });

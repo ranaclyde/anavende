@@ -52,6 +52,10 @@ export function SignUpForm({ volver }: { volver?: string }) {
         email: String(datos.get("email") ?? ""),
         phone: String(datos.get("phone") ?? ""),
         password: String(datos.get("password") ?? ""),
+        // Para que el enlace del email devuelva a la ficha y no a «Mi
+        // cuenta» (F5.7): el alta es el camino largo, y es el único que pasa
+        // por otra pestaña.
+        volver,
       });
 
       if (!r.ok) {

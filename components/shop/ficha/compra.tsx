@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, useTransition, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { Ban, Check, Heart, Share2, ShoppingCart } from "lucide-react";
 
 import { Cantidad } from "@/components/shop/cantidad";
@@ -16,7 +22,11 @@ import {
   mensajeDeDisponibilidad,
   type ProductoParaMensaje,
 } from "@/lib/whatsapp";
-import { agregarAlCarrito } from "@/modules/cart/actions";
+import {
+  agregarAlCarrito,
+  recordarCompraPendiente,
+  retomarCompraPendiente,
+} from "@/modules/cart/actions";
 import { TOPE_POR_ITEM } from "@/modules/cart/schemas";
 import type { VarianteDeFicha } from "@/modules/catalog/products/ficha";
 
@@ -77,6 +87,12 @@ type Props = {
    * (RF-08), y el botón invita a ingresar.
    */
   conSesion: boolean;
+  /**
+   * Hay una compra anotada para este producto, de antes de iniciar sesión
+   * (F5.7, RF-08). La ficha no sabe cuál —eso vive en la cookie, del lado del
+   * servidor—: solo si hay que preguntar.
+   */
+  pendiente: boolean;
   encabezado: ReactNode;
   informacion: ReactNode;
 };
@@ -87,9 +103,11 @@ export function Compra({
   inicial,
   whatsapp,
   conSesion,
+  pendiente,
   encabezado,
   informacion,
 }: Props) {
+  const retomada = useRetomarPendiente(pendiente);
   const [iVariante, setVariante] = useState(inicial);
   const [iImagen, setImagen] = useState(0);
   const [cantidad, setCantidad] = useState(1);
@@ -202,6 +220,12 @@ export function Compra({
               color={variante?.colorNombre ?? null}
               whatsapp={whatsapp}
               mensaje={mensaje}
+              /*
+                Se quedó sin stock mientras el comprador se registraba: el
+                aviso de por qué no se agregó va acá, que es donde estaría el
+                botón que lo iba a agregar.
+              */
+              aviso={<AvisoDelCarrito resultado={retomada.resultado} />}
             />
           ) : (
             <ConStock
@@ -210,6 +234,7 @@ export function Compra({
               key={variante.id}
               variantId={variante.id}
               conSesion={conSesion}
+              retomada={retomada}
               volver={volver}
               disponible={disponible}
               tope={tope}
@@ -231,6 +256,113 @@ export function Compra({
         {informacion}
       </div>
     </div>
+  );
+}
+
+// ── La compra que quedó pendiente de iniciar sesión (F5.7) ──────────────
+
+type ResultadoDelCarrito =
+  | { ok: true; enElCarrito: number }
+  | { ok: false; mensaje: string };
+
+type Retomada = {
+  enCurso: boolean;
+  resultado: ResultadoDelCarrito | null;
+  descartar: () => void;
+};
+
+/**
+ * Retoma la compra anotada antes de ingresar — F5.7 · RF-08.
+ *
+ * **La acción no recibe qué agregar.** El producto y la cantidad salen de la
+ * cookie que escribió el servidor cuando el visitante apretó «Iniciá sesión
+ * para comprar»; acá solo se decide *cuándo* preguntar. Si la entrada viniera
+ * del navegador, esto sería «agregá lo que yo te diga» con otro nombre.
+ *
+ * **Vive en `Compra` y no en el botón**, porque el botón puede no estar: si
+ * la variante se quedó sin stock mientras el comprador se registraba, la
+ * ficha dibuja «Sin stock» y el intento igual tiene que ocurrir y contarse.
+ * Callarse ahí sería dejar que se pierda una compra en silencio, que es
+ * exactamente el defecto del que nació F5.6.
+ */
+function useRetomarPendiente(pendiente: boolean): Retomada {
+  const [enCurso, iniciar] = useTransition();
+  const [resultado, setResultado] = useState<ResultadoDelCarrito | null>(null);
+  const yaSePidio = useRef(false);
+
+  useEffect(() => {
+    if (!pendiente || yaSePidio.current) return;
+
+    // Un `ref` y no una dependencia: en desarrollo React monta dos veces, y
+    // dos llamadas simultáneas alcanzan a leer la misma cookie antes de que
+    // la primera la borre — se agregaría el doble de lo pedido.
+    yaSePidio.current = true;
+
+    iniciar(async () => {
+      const r = await retomarCompraPendiente({});
+
+      if (!r.ok) {
+        // El motivo solo no alcanza: quien vuelve de ingresar no sabe que
+        // había algo esperando, y leer «Se quedó sin stock.» al lado de una
+        // etiqueta que ya dice «Sin stock» no le cuenta lo que pasó. Primero
+        // qué pasó, después por qué.
+        setResultado({
+          ok: false,
+          mensaje: `Lo que habías elegido no se pudo agregar. ${r.message}`,
+        });
+        return;
+      }
+
+      // `retomado: false` es que no había nada: entre que el servidor dibujó
+      // la ficha y llegó esta llamada, otra pestaña se lo llevó. No es una
+      // falla y no se dice nada.
+      if (r.data.retomado) {
+        setResultado({ ok: true, enElCarrito: r.data.cantidad });
+      }
+    });
+  }, [pendiente]);
+
+  return { enCurso, resultado, descartar: () => setResultado(null) };
+}
+
+/**
+ * Lo que pasó con el carrito, dicho con palabras.
+ *
+ * **La región viva existe SIEMPRE, vacía hasta que haya algo que decir**: un
+ * lector de pantalla solo anuncia los cambios de una región que ya estaba en
+ * la página, no una que aparece con el texto adentro. El error va aparte, con
+ * `role="alert"`: no es una novedad, es algo que no se pudo hacer.
+ */
+function AvisoDelCarrito({
+  resultado,
+}: {
+  resultado: ResultadoDelCarrito | null;
+}) {
+  return (
+    <>
+      <div aria-live="polite">
+        {resultado?.ok ? (
+          <p className="flex flex-wrap items-center gap-x-1.5 text-body-sm text-ink-secondary">
+            <Check aria-hidden className="size-4" />
+            {resultado.enElCarrito === 1
+              ? "Listo, está en tu carrito."
+              : `Listo, tenés ${resultado.enElCarrito} en tu carrito.`}
+            <Link
+              href="/carrito"
+              className="rounded-pill font-medium text-ink underline underline-offset-4"
+            >
+              Ver carrito
+            </Link>
+          </p>
+        ) : null}
+      </div>
+
+      {resultado && !resultado.ok ? (
+        <p role="alert" className="text-body-sm text-danger">
+          {resultado.mensaje}
+        </p>
+      ) : null}
+    </>
   );
 }
 
@@ -386,12 +518,13 @@ function BotonDeWhatsApp({
  * Con stock: cantidad, carrito y WhatsApp.
  *
  * **Sin sesión, el botón del carrito invita a ingresar** (RF-08): no existe
- * carrito anónimo. Lleva de vuelta a esta misma ficha y en el mismo color;
- * que al volver el producto quede agregado solo es F5.7.
+ * carrito anónimo. Lleva de vuelta a esta misma ficha y en el mismo color, y
+ * desde F5.7 **el producto queda agregado al volver**.
  */
 function ConStock({
   variantId,
   conSesion,
+  retomada,
   volver,
   disponible,
   tope,
@@ -403,6 +536,7 @@ function ConStock({
 }: {
   variantId: string;
   conSesion: boolean;
+  retomada: Retomada;
   volver: string;
   disponible: number;
   tope: number;
@@ -430,14 +564,17 @@ function ConStock({
 
       <div className="flex flex-col gap-2">
         {conSesion ? (
-          <AgregarAlCarrito variantId={variantId} cantidad={cantidad} />
+          <AgregarAlCarrito
+            variantId={variantId}
+            cantidad={cantidad}
+            retomada={retomada}
+          />
         ) : (
-          <Button asChild size="lg" variant="brand" className="w-full">
-            <Link href={`/ingresar?volver=${encodeURIComponent(volver)}`}>
-              <ShoppingCart aria-hidden />
-              Iniciá sesión para comprar
-            </Link>
-          </Button>
+          <IniciarSesionParaComprar
+            variantId={variantId}
+            cantidad={cantidad}
+            volver={volver}
+          />
         )}
 
         {whatsapp ? (
@@ -457,6 +594,45 @@ function ConStock({
 }
 
 /**
+ * «Iniciá sesión para comprar» — F5.7 · RF-08, DR §7.3.
+ *
+ * **Sigue siendo un enlace, y la nota se manda al pasar.** Lo que hace es
+ * llevar al ingreso: con `<button>` se perderían el destino a la vista, abrir
+ * en otra pestaña y el clic del medio, y sin JavaScript no llevaría a ningún
+ * lado. Escribir la cookie es el efecto de costado, no el propósito.
+ *
+ * **La llamada NO se espera a propósito.** La navegación es blanda —el
+ * documento no se recarga—, así que el pedido sigue viajando mientras la
+ * pantalla ya cambió, y la cookie llega mucho antes de que alguien termine de
+ * escribir su contraseña. Esperarla sería frenar la navegación por algo que
+ * nadie está mirando. Si falla, se pierde la nota y no el ingreso: quien
+ * vuelve encuentra el botón «Agregá al carrito» donde siempre estuvo.
+ */
+function IniciarSesionParaComprar({
+  variantId,
+  cantidad,
+  volver,
+}: {
+  variantId: string;
+  cantidad: number;
+  volver: string;
+}) {
+  return (
+    <Button asChild size="lg" variant="brand" className="w-full">
+      <Link
+        href={`/ingresar?volver=${encodeURIComponent(volver)}`}
+        onClick={() => {
+          void recordarCompraPendiente({ variantId, cantidad });
+        }}
+      >
+        <ShoppingCart aria-hidden />
+        Iniciá sesión para comprar
+      </Link>
+    </Button>
+  );
+}
+
+/**
  * «Agregá al carrito», encendido desde F5.5.
  *
  * **La confirmación se dice con palabras y se queda en la ficha.** No abre el
@@ -465,27 +641,30 @@ function ConStock({
  * solo —la acción refresca la pantalla— y el enlace «Ver carrito» queda a
  * mano para quien sí quiere ir.
  *
- * La región viva existe SIEMPRE, vacía hasta que haya algo que decir: un
- * lector de pantalla solo anuncia los cambios de una región que ya estaba en
- * la página, no una que aparece con el texto adentro.
+ * **Un solo aviso, venga de donde venga** (F5.7): el de lo que se retomó al
+ * volver del ingreso ocupa el mismo lugar que el de un agregado a mano, y el
+ * primer clic lo descarta. Dos «Listo» apilados, uno de hace un rato y otro
+ * recién, se leen como que se agregó dos veces.
  */
 function AgregarAlCarrito({
   variantId,
   cantidad,
+  retomada,
 }: {
   variantId: string;
   cantidad: number;
+  retomada: Retomada;
 }) {
   const [enCurso, iniciar] = useTransition();
-  const [resultado, setResultado] = useState<
-    { ok: true; enElCarrito: number } | { ok: false; mensaje: string } | null
-  >(null);
+  const [propio, setPropio] = useState<ResultadoDelCarrito | null>(null);
 
   function agregar() {
-    setResultado(null);
+    setPropio(null);
+    retomada.descartar();
+
     iniciar(async () => {
       const r = await agregarAlCarrito({ variantId, cantidad });
-      setResultado(
+      setPropio(
         r.ok
           ? { ok: true, enElCarrito: r.data.cantidad }
           : { ok: false, mensaje: r.message },
@@ -499,36 +678,17 @@ function AgregarAlCarrito({
         size="lg"
         variant="brand"
         className="w-full"
-        loading={enCurso}
-        loadingLabel="Agregando al carrito"
+        loading={enCurso || retomada.enCurso}
+        loadingLabel={
+          retomada.enCurso ? "Retomando tu compra" : "Agregando al carrito"
+        }
         onClick={agregar}
       >
         <ShoppingCart aria-hidden />
         Agregá al carrito
       </Button>
 
-      <div aria-live="polite">
-        {resultado?.ok ? (
-          <p className="flex flex-wrap items-center gap-x-1.5 text-body-sm text-ink-secondary">
-            <Check aria-hidden className="size-4" />
-            {resultado.enElCarrito === 1
-              ? "Listo, está en tu carrito."
-              : `Listo, tenés ${resultado.enElCarrito} en tu carrito.`}
-            <Link
-              href="/carrito"
-              className="rounded-pill font-medium text-ink underline underline-offset-4"
-            >
-              Ver carrito
-            </Link>
-          </p>
-        ) : null}
-      </div>
-
-      {resultado && !resultado.ok ? (
-        <p role="alert" className="text-body-sm text-danger">
-          {resultado.mensaje}
-        </p>
-      ) : null}
+      <AvisoDelCarrito resultado={propio ?? retomada.resultado} />
     </>
   );
 }
@@ -542,15 +702,22 @@ function AgregarAlCarrito({
  * acción que le queda a quien llegó hasta acá; y la aclaración de abajo es la
  * promesa que NO hacemos: «preguntá si va a haber» suena a que el sitio va a
  * avisar, y no hay ningún aviso.
+ *
+ * **El `aviso` es de F5.7**, y casi siempre está vacío: es el lugar donde se
+ * cuenta que la compra que había quedado pendiente no se pudo retomar porque
+ * justo esto se quedó sin stock. Va arriba de todo porque responde la
+ * pregunta que trae quien llega: «¿se agregó o no?».
  */
 function SinStock({
   color,
   whatsapp,
   mensaje,
+  aviso,
 }: {
   color: string | null;
   whatsapp: string | null;
   mensaje: ProductoParaMensaje;
+  aviso: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -564,6 +731,8 @@ function SinStock({
           Sin stock{color ? ` en ${color.toLowerCase()}` : ""}
         </Badge>
       </div>
+
+      {aviso}
 
       {whatsapp ? (
         <div className="flex flex-col gap-2">

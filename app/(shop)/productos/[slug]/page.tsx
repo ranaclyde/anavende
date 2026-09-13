@@ -11,6 +11,7 @@ import { urlDelSitio } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import { getIdentity } from "@/lib/session";
 import { AREA_TACTIL, cn } from "@/lib/utils";
+import { mirar } from "@/modules/cart/pendiente";
 import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
 import { leerFicha, varianteInicial } from "@/modules/catalog/products/ficha";
 import {
@@ -97,7 +98,35 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
   // mismo 404 que uno que nunca existió.
   if (!ficha) notFound();
 
-  const inicial = varianteInicial(ficha.variantes, unColor(consulta.color));
+  /*
+   * La compra que quedó pendiente de ingresar (F5.7, RF-08).
+   *
+   * Se mira DESPUÉS de la identidad y solo si hay alguien: sin sesión no hay
+   * nada que retomar, y la nota tiene que seguir esperando. Solo mirar, no
+   * tomar: un Server Component puede leer cookies pero no borrarlas, así que
+   * quien la consume es la acción.
+   *
+   * **Y solo si es de este producto.** La nota es una sola y global; si el
+   * comprador llegó a la ficha de otra cosa, acá no hay nada que hacer y la
+   * nota se queda para cuando vuelva a la que sí.
+   */
+  const pendiente = identidad ? await mirar() : null;
+  const iPendiente = pendiente
+    ? ficha.variantes.findIndex((v) => v.id === pendiente.variantId)
+    : -1;
+
+  const color = unColor(consulta.color);
+
+  /*
+   * El color de la dirección manda; la variante pendiente es el respaldo. El
+   * `volver` que se guardó lleva el `?color=`, así que los dos coinciden — el
+   * respaldo es para el camino largo, donde el enlace del email puede llegar
+   * con la consulta comida.
+   */
+  const inicial =
+    !color && iPendiente !== -1
+      ? iPendiente
+      : varianteInicial(ficha.variantes, color);
 
   return (
     <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
@@ -118,6 +147,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         inicial={Math.max(0, inicial)}
         whatsapp={whatsapp}
         conSesion={identidad !== null}
+        pendiente={iPendiente !== -1}
         encabezado={
           <header className="flex flex-col gap-2">
             <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">

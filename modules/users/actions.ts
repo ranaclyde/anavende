@@ -26,10 +26,19 @@ import {
  * servidor y compensa si falla a mitad.
  */
 
-/** Destino del enlace de verificación de los emails E1 y E2. */
+/**
+ * Destino del enlace de verificación de los emails E1 y E2.
+ *
+ * **El `volver` llega hasta acá desde F5.7** (RF-08). Hasta el 2026-09-13
+ * este parámetro existía y nadie se lo pasaba: quien se daba de alta para
+ * comprar algo abría el enlace del email y aparecía en «Mi cuenta», lejos del
+ * producto por el que se había registrado. El esquema ya descartó los
+ * destinos que no son internos; `/api/auth/confirmar` lo vuelve a mirar, que
+ * es donde de verdad se decide.
+ */
 function urlDeConfirmacion(volver?: string) {
   const base = urlDelSitio();
-  const destino = volver && volver.startsWith("/") ? volver : "/mi-cuenta";
+  const destino = volver ?? "/mi-cuenta";
   return `${base}/api/auth/confirmar?next=${encodeURIComponent(destino)}`;
 }
 
@@ -68,7 +77,7 @@ export const registrar = action
           full_name: `${input.firstName} ${input.lastName}`,
           first_name: input.firstName,
         },
-        emailRedirectTo: urlDeConfirmacion(),
+        emailRedirectTo: urlDeConfirmacion(input.volver),
       },
     });
 
@@ -133,12 +142,12 @@ export const registrar = action
  * si el email no tiene cuenta, no crea ninguna. El perfil sigue siendo
  * obligatorio y solo lo crea `registrar`.
  */
-async function mandarVerificacion(email: string) {
+async function mandarVerificacion(email: string, volver?: string) {
   const supabase = await createClient();
   return supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: urlDeConfirmacion(),
+      emailRedirectTo: urlDeConfirmacion(volver),
       shouldCreateUser: false,
     },
   });
@@ -152,7 +161,7 @@ export const enviarVerificacion = action
   .input(reenvioSchema)
   .auth("public")
   .handler(async ({ input }) => {
-    const { error } = await mandarVerificacion(input.email);
+    const { error } = await mandarVerificacion(input.email, input.volver);
 
     // El límite de frecuencia SÍ se informa: la persona necesita saber que
     // tiene que esperar, no quedarse mirando un «listo» que no pasó.

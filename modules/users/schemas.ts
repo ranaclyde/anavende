@@ -57,12 +57,29 @@ export const contrasena = z
   .min(8, "La contraseña tiene que tener al menos 8 caracteres.")
   .max(72, "La contraseña no puede pasar de 72 caracteres.");
 
+/**
+ * A dónde vuelve quien se está dando de alta, para que el enlace del email lo
+ * devuelva ahí y no a «Mi cuenta» — F5.7, RF-08.
+ *
+ * **Se limpia en vez de rechazarse.** Un destino con host convertiría el
+ * enlace de un email nuestro en un redirector abierto, y `//otro.com` es un
+ * host aunque empiece con barra. Pero fallar la validación frenaría un alta
+ * legítima por un parámetro que la persona no escribió ni ve: lo que
+ * corresponde es tirar el destino raro y seguir, que es lo que hace
+ * `/api/auth/confirmar` con lo que le llega.
+ */
+export const rutaDeRegreso = z
+  .string()
+  .transform((v) => (v.startsWith("/") && !v.startsWith("//") ? v : undefined))
+  .optional();
+
 export const registroSchema = z.object({
   firstName: nombre,
   lastName: apellido,
   email,
   phone: telefono,
   password: contrasena,
+  volver: rutaDeRegreso,
 });
 export type EntradaRegistro = z.input<typeof registroSchema>;
 
@@ -71,7 +88,7 @@ export const ingresoSchema = z.object({
   password: z.string().min(1, "Escribí tu contraseña."),
 });
 
-export const reenvioSchema = z.object({ email });
+export const reenvioSchema = z.object({ email, volver: rutaDeRegreso });
 
 /** Se completa tras el primer ingreso por Google o Facebook (RF-06). */
 export const completarPerfilSchema = z.object({

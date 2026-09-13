@@ -1408,7 +1408,8 @@ Comprobado moviendo el archivo: el mensaje sale entero.
 | ID | Tarea | Estado | Nota |
 |---|---|---|---|
 | F5.5 | Carrito: modelo y operaciones | ✅ | **Agregar, quitar, cambiar cantidad y vaciar**, en `modules/cart/` —operaciones, consultas y acciones—, con la página `/carrito` de §7.4 y «Agregá al carrito» encendido en la ficha. **Probado en producción el 2026-09-12**, con los primeros productos reales (F2.8): agregar desde la ficha sube la píldora sin recargar, «+» recalcula subtotal y total, los dos colores de un producto quedan en dos renglones, pedir de más muestra «Quedan N unidades…», un producto sin stock no se deja agregar, quitar un renglón suelto lo saca sin tocar los demás, y vaciar pide confirmación y deja el estado vacío. **Todas las operaciones reciben el `userId` de la sesión y ninguna el id del carrito**: sin RLS es la única barrera (§13.8), y hay un test que prueba que un comprador no lee ni toca el carrito de otro. Agregar y cambiar la cantidad **bloquean la fila del carrito**: leen lo que hay antes de escribir, y sin el bloqueo dos pestañas a la vez pierden una unidad. El carrito **no reserva** (RF-08), pero no deja pedir más de lo disponible y lo dice con el número: «Quedan 5 unidades y ya tenés 2 en el carrito». **Bajar la cantidad se puede siempre**, aunque el stock haya caído por debajo; subir no. Tope de **99 por renglón**, el del ejemplo de §6.2. Subtotales y total **en SQL**, de una sola consulta con función de ventana. **19 tests** contra el stack local, 412 en total. **Probado en el navegador contra el stack local**: agregar desde la ficha sube la píldora del encabezado sin recargar, pedir de más muestra el mensaje, «+» en el carrito recalcula subtotal y total, y vaciar pide confirmación y deja el estado vacío. **Cuatro decisiones mías, para revisar**: sin sesión el botón dice **«Iniciá sesión para comprar»** y vuelve a la ficha en el mismo color —que al volver quede agregado solo es F5.7—; **«Continuar con el pedido» va apagado** con el motivo solo para lectores de pantalla, el mismo criterio que tuvo «Agregá al carrito» hasta hoy, y se enciende con F6.1; el total **suma todos los renglones**, también los desactivados o sin stock, porque separarlos es F5.6; y la píldora cuenta **unidades**, no renglones. **Las cuatro se comprobaron en local el 2026-09-12**, con una compradora de prueba que entra por enlace mágico: sin sesión el botón lleva a `/ingresar?volver=…` y «Creá una» conserva el regreso; con 3 unidades de un producto y 1 de otro la píldora marca 4 y el resumen dice «Total (4 unidades)»; «Continuar con el pedido» está apagado; y un renglón cuyo stock se llevó a 0 **sigue sumando al total y no avisa nada** —solo se apaga el «+»—. Eso último es exactamente lo que resuelve F5.6, no un defecto de esta tarea, pero se ve: hasta F5.6 el comprador no tiene cómo saber que ese renglón no tiene stock. El selector de cantidad salió de la ficha a `components/shop/cantidad.tsx`, porque el carrito lo usa en cada renglón. **El carrito vacío repite el estado vacío del catálogo** (pedido tuyo del 2026-09-11): encabezado con título y bajada —«No se cobra nada acá»— y el mismo recuadro, clase por clase, en vez de un mensaje suelto sobre el fondo. Está copiado y no compartido; sacarlo a un componente es el primer punto de la revisión de abajo |
-| F5.6 | Revalidación del carrito y avisos | 🟡 | **Nació de un bug que encontraste en producción el 2026-09-12**: 2 en el carrito, 1 en stock, y ningún aviso. **Al abrir el carrito se revisa contra el catálogo** (`modules/cart/revision.ts`), en una transacción que bloquea el carrito del comprador: el precio cambiado se avisa —«pasó de $A a $B»— y queda el vigente; si queda menos stock, la cantidad baja a lo que hay y se avisa; **los dos avisos salen una vez**. Sin stock queda marcado y **no suma al total**; lo desactivado se **aparta** en «Ya no disponible» hasta que el comprador lo quita (variante B, decisión tuya). Para el precio hizo falta **`last_seen_price`**, migración `0013`, escrita a mano porque la de drizzle-kit falla sobre una tabla con filas; los renglones que ya existían arrancan con el precio vigente, así nadie ve un aviso falso. Y **el panel ya no borra lo que está en un carrito**: lo desactiva, como con las órdenes (RN-11), y lo dice —«está en 1 orden y 2 carritos»—; hasta hoy la cascada lo sacaba del carrito en silencio. La píldora cuenta `least(cantidad, disponible)`: el encabezado se arma en paralelo con la página, y así da lo mismo antes y después de la revisión. **12 tests** nuevos contra el stack local. **Probado en el navegador contra el stack local**, con los cuatro casos a la vez: los avisos salen, al recargar no vuelven, «Sin stock» y «Ya no disponible» se quedan, y «Quitar» saca lo apartado sin tocar el total. **Falta**: verlo en producción, y **probar el borrado desde el panel** con un producto que esté en un carrito, que no se probó en el navegador |
+| F5.6 | Revalidación del carrito y avisos | ✅ | **Nació de un bug que encontraste en producción el 2026-09-12**: 2 en el carrito, 1 en stock, y ningún aviso. **Al abrir el carrito se revisa contra el catálogo** (`modules/cart/revision.ts`), en una transacción que bloquea el carrito del comprador: el precio cambiado se avisa —«pasó de $A a $B»— y queda el vigente; si queda menos stock, la cantidad baja a lo que hay y se avisa; **los dos avisos salen una vez**. Sin stock queda marcado y **no suma al total**; lo desactivado se **aparta** en «Ya no disponible» hasta que el comprador lo quita (variante B, decisión tuya). Para el precio hizo falta **`last_seen_price`**, migración `0013`, escrita a mano porque la de drizzle-kit falla sobre una tabla con filas; los renglones que ya existían arrancan con el precio vigente, así nadie ve un aviso falso. Y **el panel ya no borra lo que está en un carrito**: lo desactiva, como con las órdenes (RN-11), y lo dice —«está en 1 orden y 2 carritos»—; hasta hoy la cascada lo sacaba del carrito en silencio. La píldora cuenta `least(cantidad, disponible)`: el encabezado se arma en paralelo con la página, y así da lo mismo antes y después de la revisión. **12 tests** nuevos contra el stack local. **Probado en el navegador contra el stack local**, con los cuatro casos a la vez: los avisos salen, al recargar no vuelven, «Sin stock» y «Ya no disponible» se quedan, y «Quitar» saca lo apartado sin tocar el total. **Probado en producción el 2026-09-13**, por vos: el caso del bug —3 en el carrito, 1 en stock— avisa una vez y deja 1, y eliminar desde el panel un producto que estaba en un carrito lo desactivó, lo dijo, y el carrito lo mostró en «Ya no disponible». El despliegue que lo llevó es el que colgó el servidor por falta de RAM: ver «Pendiente detectado» |
+| F5.7 | «Iniciá sesión para comprar» y retomar la acción pendiente | ✅ | **El visitante que aprieta «Iniciá sesión para comprar» vuelve y el producto ya está en el carrito**, en la cantidad que había elegido. La acción se anota en una **cookie `httpOnly`** (`modules/cart/pendiente.ts`) que dura una hora, y la retoma una acción que **no recibe qué agregar**: el producto y la cantidad los lee del servidor. Las dos decisiones tienen el mismo motivo, y están escritas en el archivo: colgar la acción de la dirección —`?agregar=…`— convertiría un enlace en una escritura, y cualquiera podría mandar uno que le meta 99 unidades en el carrito a quien lo abra con la sesión puesta; y `sessionStorage` no cruza a **otra pestaña**, que es exactamente por donde pasa el alta con verificación por email. **El botón sigue siendo un enlace** —con su destino a la vista, y abrible en otra pestaña—: la nota se manda al pasar y sin esperarla, porque la navegación es blanda y la cookie llega mucho antes de que alguien termine de escribir la contraseña. **Se retoma UNA vez**: la cookie se borra antes de intentar agregar, así que si el producto se quedó sin stock mientras tanto el intento no se repite en cada visita. **Y se cuenta lo que pasó, salga como salga**: el intento vive en `Compra` y no en el botón, porque si la variante se quedó sin stock el botón no existe —la ficha dibuja «Sin stock»— y callarse ahí sería perder una compra en silencio, que es el defecto del que nació F5.6. **Destapó que el `volver` no llegaba al email**: `urlDeConfirmacion()` tenía el parámetro desde F1.7 y nadie se lo pasaba, así que quien se daba de alta para comprar algo abría el enlace y aparecía en «Mi cuenta», lejos del producto. Ahora viaja en el alta, en los dos reenvíos y en «Ir a ingresar». **Dos mensajes reescritos**: «Este color se quedó sin stock» perdió el «este color» —hay productos que no se venden por color— y la retomada que falla dice primero qué pasó, «Lo que habías elegido no se pudo agregar», y después por qué. **7 tests** nuevos sobre lo único que esta tarea agrega y no es pantalla: que una cookie manipulada —un id que no es un uuid, una cantidad fuera de rango, algo que no es JSON— se ignore en vez de convertirse en una compra. 431 en total. **Probado en el navegador contra el stack local**, los tres caminos: con contraseña vuelve a la ficha y la píldora sube, y recargar no agrega de nuevo; con alta y verificación por email **abierto en otra pestaña** vuelve a la ficha con las 3 unidades puestas; y con el stock llevado a 0 mientras la compradora ingresaba, lo dice. **Falta**: verlo en producción |
 
 ### Consistencia visual — para revisar (2026-09-11)
 
@@ -1683,6 +1684,18 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 
 ## Pendiente detectado, sin tarea propia
 
+**La acción pendiente de F5.7 le va a hablar raro a quien entre por Google o
+Facebook.** `retomarCompraPendiente` es `customer`, y el envoltorio rechaza una
+identidad **sin perfil** con «Necesitás iniciar sesión para hacer eso» (§13.4).
+Esa combinación —identidad sí, perfil no— solo existe en el alta por
+proveedor social antes de completar el teléfono (RF-06), que hoy está apagada:
+el registro por email crea el perfil en el mismo paso. Cuando F1.7 encienda
+Google y Facebook, alguien puede llegar a la ficha en ese estado y leer que no
+inició sesión cuando el encabezado dice su nombre. La nota **no se pierde** —el
+rechazo ocurre antes de tocar la cookie, así que se retoma cuando el perfil
+exista—; lo que hay que arreglar es el mensaje. Se anota acá y no se resuelve
+hoy porque no hay forma de verlo ocurrir hasta que esas dos apps existan.
+
 **`.env.local` apunta al stack local, y este archivo dice lo contrario.** El
 encabezado de F0 cuenta que desde el 2026-09-05 el desarrollo trabaja contra
 producción; el 2026-09-11 `.env.local` tenía `NEXT_PUBLIC_SUPABASE_URL` en
@@ -1702,6 +1715,30 @@ miró. Conviene confirmarlo antes de los sesenta días de la emisión del
 cuelgan.** Pasó el 2026-09-11 con dos push seguidos. Coolify tiene un límite de
 construcciones simultáneas por servidor, y conviene mirar si está en 1: sin
 eso, la regla «un despliegue a la vez» depende de acordarse.
+
+**El 2026-09-13 alcanzó con UNA, y el servidor quedó sin swap.** El merge del
+PR #4 (00:21, hora de Argentina) disparó la construcción, y el gráfico de
+DonWeb lo muestra entero: ~1,2 GB estables —Coolify, Traefik y la tienda—, 1,5
+al arrancar, un salto a ~3,1 GB en dos minutos, y ahí la línea cae a 0, que no
+es memoria libre sino el servidor sin reportar. Después, picos a 3,1 y otra
+vez 0: un bucle del que no salió solo, y la tienda sin responder hasta el
+reinicio. **El techo real no son 4 GB**: `free -h` dice 3,8 y el gráfico se
+corta en ~3,1. Sin swap, cuando la RAM se acaba el servidor no se pone lento,
+se tranca.
+
+Se resolvió sin escalar: **4 GB de swap** en `/swapfile`, permanente en
+`/etc/fstab` (la copia anterior es `/etc/fstab.antes-del-swap`) y con
+`vm.swappiness=10` en `/etc/sysctl.d/99-swap.conf`, para que solo entre cuando
+falta RAM. Con eso el mismo despliegue terminó bien, verificado desde afuera:
+la tienda responde y los archivos que sirve cambiaron. En el gráfico, la
+construcción llevó el uso de ~0,6 GB a un pico de ~2,3 GB y volvió a bajar,
+sin cortes. **El margen es fino**: la base recién reiniciada era 0,6 GB, y
+antes de la caída era 1,2; con esa base, la misma construcción llega a ~2,9,
+pegada al techo. Hoy el swap es la red. **Construcciones simultáneas en 1**,
+confirmado en Coolify el mismo día.
+Si con swap vuelve a caerse, lo siguiente es un tope de memoria para
+`next build` en el `Dockerfile`, y después construir fuera del servidor
+(§18.2, que es lo que la especificación pedía de entrada).
 
 **La migración `0011` se desplegó sin backup previo, y fue una decisión, no un
 olvido.** `TECHNICAL-SPEC.md` §18.2 y el riesgo R4 piden **no desplegar una
@@ -2145,6 +2182,10 @@ No es el empate de `now()` dentro de una transacción —`created_at` usa
 `clock_timestamp()` desde la `0007`—, y **la causa no se encontró**. Se vio el
 2026-09-12 corriendo ese archivo solo, sin nada de F5.6 en el camino. Mientras
 tanto, un rojo en ese test no dice nada del cambio que se está probando.
+
+**Volvió a pasar el 2026-09-13, probando F5.7**, y en la corrida siguiente
+—misma batería, mismo código— pasó entero: 431 en verde. Una de cada dos sigue
+siendo la frecuencia, y la causa sigue sin encontrarse.
 
 ---
 
