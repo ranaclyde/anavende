@@ -302,7 +302,7 @@ describe("leer el carrito", () => {
         cantidad: 3,
         subtotal: "2550.00",
         disponible: 10,
-        seVende: true,
+        estado: "vigente",
         imagenKey: null,
         colorNombre: null,
       },

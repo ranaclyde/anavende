@@ -43,12 +43,18 @@ export function ControlesDelItem({
   nombre,
   cantidad,
   maximo,
+  soloQuitar = false,
 }: {
   variantId: string;
   nombre: string;
   cantidad: number;
   /** El tope del selector: lo disponible, sin bajar de lo que ya hay. */
   maximo: number;
+  /**
+   * Sin stock o ya no disponible (F5.6): no hay cantidad que elegir, y un
+   * selector ahí promete algo que no se puede pedir. Queda solo «Quitar».
+   */
+  soloQuitar?: boolean;
 }) {
   const [enCurso, iniciar] = useTransition();
   const [mostrada, setMostrada] = useOptimistic(cantidad);
@@ -74,12 +80,14 @@ export function ControlesDelItem({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-1">
-        <Cantidad
-          valor={mostrada}
-          maximo={maximo}
-          onCambio={cambiar}
-          etiqueta={`Cantidad de ${nombre}`}
-        />
+        {soloQuitar ? null : (
+          <Cantidad
+            valor={mostrada}
+            maximo={maximo}
+            onCambio={cambiar}
+            etiqueta={`Cantidad de ${nombre}`}
+          />
+        )}
         <Button variant="tertiary" size="md" disabled={enCurso} onClick={quitar}>
           <Trash2 aria-hidden />
           Quitar

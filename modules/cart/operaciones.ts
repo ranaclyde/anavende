@@ -141,10 +141,17 @@ export async function agregar(
       throw noAlcanza(disponible, enElCarrito);
     }
 
+    // Quien agrega está mirando la ficha, con el precio a la vista: ése pasa a
+    // ser el «visto» (F5.6), también cuando el renglón ya existía.
     await tx.execute(sql`
-      INSERT INTO cart_items (cart_id, variant_id, quantity)
-      VALUES (${cartId}, ${variantId}, ${nueva})
-      ON CONFLICT (cart_id, variant_id) DO UPDATE SET quantity = excluded.quantity`);
+      INSERT INTO cart_items (cart_id, variant_id, quantity, last_seen_price)
+      SELECT ${cartId}, v.id, ${nueva}, p.final_price
+        FROM product_variants v
+        JOIN products p ON p.id = v.product_id
+       WHERE v.id = ${variantId}
+      ON CONFLICT (cart_id, variant_id) DO UPDATE
+        SET quantity        = excluded.quantity,
+            last_seen_price = excluded.last_seen_price`);
 
     return { cantidad: nueva };
   });

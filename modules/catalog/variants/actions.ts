@@ -231,10 +231,13 @@ export const eliminarUnaVariante = action
     const [actual] = await db.execute<{
       reservedStock: number;
       ordenes: number;
+      carritos: number;
     }>(sql`
       SELECT v.reserved_stock AS "reservedStock",
              (SELECT count(DISTINCT oi.order_id) FROM order_items oi
-               WHERE oi.variant_id = v.id)::int AS ordenes
+               WHERE oi.variant_id = v.id)::int AS ordenes,
+             (SELECT count(*) FROM cart_items ci
+               WHERE ci.variant_id = v.id)::int AS carritos
         FROM product_variants v WHERE v.id = ${input.id}`);
 
     if (!actual) throw domainError("NOT_FOUND");
@@ -261,8 +264,10 @@ export const eliminarUnaVariante = action
     }
 
     // RN-11, el mismo final doble que «eliminar» un producto: una orden
-    // histórica que la nombra la sigue mostrando, así que se desactiva.
-    if (actual.ordenes > 0) {
+    // histórica que la nombra la sigue mostrando, así que se desactiva. Y un
+    // carrito también (F5.6): borrada, la cascada la sacaría de ahí sin
+    // aviso; desactivada, el comprador la ve apartada (RF-08).
+    if (actual.ordenes > 0 || actual.carritos > 0) {
       await db
         .update(productVariants)
         .set({ isActive: false, updatedAt: new Date() })
@@ -273,6 +278,7 @@ export const eliminarUnaVariante = action
         id: input.id,
         resultado: "desactivado" as const,
         ordenes: actual.ordenes,
+        carritos: actual.carritos,
       };
     }
 
@@ -293,7 +299,7 @@ export const eliminarUnaVariante = action
     if (archivos.length) await borrarArchivos(archivos);
 
     refrescar();
-    return { id: input.id, resultado: "borrado" as const, ordenes: 0 };
+    return { id: input.id, resultado: "borrado" as const, ordenes: 0, carritos: 0 };
   });
 
 // ── Reutilizar las imágenes de otra variante (RF-16, §9.5) ──────────────

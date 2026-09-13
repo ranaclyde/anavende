@@ -92,6 +92,13 @@
       "when": 1789150365266,
       "tag": "0012_modo_mantenimiento",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789265912508,
+      "tag": "0013_precio_visto",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
 import { Palette, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { ImagenesDeVariante } from "@/components/admin/productos/imagenes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,7 @@ export function VariantesDelProducto({
       setAviso(
         r.data.resultado === "borrado"
           ? `Sacamos «${nombreDe(v)}».`
-          : `«${nombreDe(v)}» está en ${r.data.ordenes === 1 ? "1 orden" : `${r.data.ordenes} órdenes`}, así que no se puede sacar: la desactivamos y ya no se ofrece en la tienda.`,
+          : `«${nombreDe(v)}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede sacar: la desactivamos y ya no se ofrece en la tienda.`,
       );
       router.refresh();
     });
@@ -228,7 +229,9 @@ export function VariantesDelProducto({
             <DialogDescription>
               {porBorrar?.ordenes
                 ? "Este color está en órdenes ya hechas, así que no se borra: lo desactivamos para que dejen de leerse enteras."
-                : "Se van sus fotos y su stock, y no hay vuelta atrás."}
+                : porBorrar?.carritos
+                  ? "Este color está en el carrito de alguien, así que no se borra: lo desactivamos, y quien lo tenía lo ve como «Ya no disponible»."
+                  : "Se van sus fotos y su stock, y no hay vuelta atrás."}
               {porBorrar?.prestadaA
                 ? ` Además, ${porBorrar.prestadaA === 1 ? "otro color reutiliza" : `${porBorrar.prestadaA} colores reutilizan`} sus fotos y ${porBorrar.prestadaA === 1 ? "va a quedarse" : "van a quedarse"} sin ninguna.`
                 : ""}

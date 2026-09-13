@@ -81,7 +81,7 @@ Ver detalle en §12 (Fuera de alcance).
 | **RN-08** | El Visitante no genera órdenes ni reserva stock. Su compra sale exclusivamente como mensaje de WhatsApp. |
 | **RN-09** | El carrito refleja siempre el **precio vigente** del producto. Los cambios de precio, stock o disponibilidad respecto de la última vista se comunican explícitamente al comprador. |
 | **RN-10** | La tienda **entrega sólo en Viedma, Carmen de Patagones y alrededores** (los pueblos a menos de ~30 km). Hay dos formas: **envío a domicilio**, hoy con mensajería en moto, y **retiro en el punto de entrega**. El costo del envío no se calcula ni se cobra en la web: se coordina por WhatsApp. **La web no nombra a la empresa de mensajería**: puede cambiar, y lo que le sirve a quien compra es hasta dónde llegamos. |
-| **RN-11** | Nunca se elimina físicamente un producto, marca, categoría o color que esté referenciado por una orden. Se desactiva (borrado lógico). |
+| **RN-11** | Nunca se elimina físicamente un producto, marca, categoría o color que esté referenciado por una orden. Se desactiva (borrado lógico). **Lo mismo vale para un producto o una variante que esté en algún carrito** (2026-09-12): borrarlo se lo llevaría del carrito sin aviso, y RF-08 exige que el comprador lo vea apartado. |
 | **RN-11b** | **Ningún producto activo puede pertenecer a una marca o categoría inactiva, ni tener variantes activas de un color inactivo.** No se puede desactivar una marca, categoría o color que esté en uso por algo activo: primero se desactiva lo que la usa. Tampoco se puede activar un producto cuya marca o categoría esté inactiva. |
 | **RN-12** | Las órdenes conservan una copia del nombre y precio del producto al momento de crearse (snapshot), para que cambios posteriores del catálogo no alteren el historial. |
 | **RN-13** | **Un usuario dado de baja (RF-34) no es un usuario bloqueado (RF-27).** Comparten el efecto —no puede entrar, no se borra nada, se revierte— y no comparten ni el significado ni el mensaje. Ninguno de los dos elimina datos: los usuarios no se eliminan (§5.6). |
@@ -298,16 +298,17 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 |---|---|
 | El precio cambió | «El precio de *X* pasó de $A a $B». El ítem queda al **precio vigente** (RN-09). |
 | El stock disponible es menor a la cantidad pedida | «Quedan N unidades de *X*». Se ajusta la cantidad a N con aviso. |
-| La variante quedó sin stock | El ítem se marca «Sin stock», permanece en el carrito y no se incluye al confirmar. El comprador puede quitarlo o dejarlo guardado. |
-| El producto o la variante se desactivó | El ítem se **elimina automáticamente** del carrito, informándolo antes: «Quitamos *X* de tu carrito porque ya no está disponible». |
+| La variante quedó sin stock | El ítem se marca «Sin stock», permanece en el carrito, **no suma al total** y no se incluye al confirmar. El comprador puede quitarlo o dejarlo guardado. |
+| El producto o la variante se desactivó | El ítem **se aparta** en una sección «Ya no disponible»: sigue a la vista, fuera del total y de lo que se confirma, con la acción «Quitar». **Queda ahí hasta que el comprador lo quite**, así que el aviso no se pierde aunque no lo vea en esa visita (cambio del 2026-09-12: antes se eliminaba solo, con un aviso guardado aparte). |
 
 **Criterios de aceptación:**
 - [ ] Agregar, quitar y cambiar cantidad de ítems; vaciar carrito.
 - [ ] El resumen muestra subtotal por ítem y total, más la leyenda de la zona de entrega y del retiro (RN-10).
 - [ ] Debajo del resumen se muestra el bloque «Completá tu setup» con complementos de lo que hay en el carrito (RF-32).
 - [ ] Sin sesión iniciada no existe carrito: las acciones de agregar al carrito invitan a iniciar sesión y, al volver del login, se completan solas.
-- [ ] Los ítems cuyo producto o variante fue **desactivado** se eliminan del carrito, siempre precedidos por un aviso visible que nombra qué se quitó y por qué.
-- [ ] La eliminación por desactivación nunca es silenciosa: si el comprador no llega a ver el aviso en pantalla, éste persiste hasta que lo cierre.
+- [ ] Los ítems cuyo producto o variante fue **desactivado** se apartan en «Ya no disponible», nombrando qué es y por qué, y fuera del total.
+- [ ] Un ítem apartado nunca desaparece solo: sigue en el carrito hasta que el comprador lo quite.
+- [ ] Un producto o una variante que está en algún carrito **no se borra** desde el panel: se desactiva, igual que el que ya figura en una orden (RN-11). Sin esto, el borrado se lo llevaría del carrito sin aviso.
 - [ ] Los avisos de cambio se muestran una vez y no bloquean la navegación.
 - [ ] No se puede avanzar al checkout si todos los ítems son inválidos.
 
@@ -441,7 +442,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] El aviso de stock es **uno solo por producto**, porque los estados son excluyentes: «Sin colores» (todavía no hay nada que vender, RF-16), «Stock negativo» (alguna variante quedó bajo cero: es una discrepancia de RF-24, no una compra pendiente), «Sin stock» (nada disponible) o «Quedan N» (por debajo del umbral de RF-20).
 - [ ] Además de categoría, marca y estado, el listado filtra **por stock**: «Sin stock» y «Para reponer» —lo que está en el umbral de RF-20 o por debajo, incluido el que ya está en cero—. Es una sola pregunta, «qué hay que comprar», y por eso es una sola opción; es también el destino del enlace «stock bajo o en cero» del dashboard (RF-14).
 - [ ] Crear y editar producto con sus variantes en una sola pantalla.
-- [ ] «Eliminar» un producto referenciado por alguna orden lo **desactiva** en lugar de borrarlo, informándolo (RN-11). Un producto sin órdenes puede eliminarse definitivamente, con confirmación explícita.
+- [ ] «Eliminar» un producto referenciado por alguna orden **o que está en algún carrito** lo **desactiva** en lugar de borrarlo, informándolo (RN-11). Un producto sin órdenes ni carritos puede eliminarse definitivamente, con confirmación explícita.
 - [ ] Un producto con `isActive = false` desaparece del sitio público de inmediato, pero sigue visible en el panel y en las órdenes históricas.
 - [ ] El precio no admite valores negativos ni cero.
 - [ ] El descuento no admite valores negativos y debe ser **menor que el precio**: no puede dejar el precio final en cero o negativo.
@@ -477,7 +478,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] Una variante puede configurarse para **reutilizar las imágenes de otra variante** del mismo producto, en lugar de tener las propias. Se ofrecen las variantes que tienen imágenes de verdad —no las que a su vez están reutilizando— y hay que borrar las propias antes: si no, quedarían guardadas sin verse en ninguna parte.
 - [ ] Un producto sin color relevante se carga con una única variante («Único»), y el selector de color no se muestra en la ficha pública.
 - [ ] No se puede quitar una variante con stock reservado por órdenes activas; el sistema lo impide e indica qué órdenes la usan.
-- [ ] **Sin reservas, quitar una variante que alguna orden nombra la desactiva en vez de borrarla** (RN-11), y se informa cuál de los dos pasó. La orden histórica la sigue mostrando, así que borrarla le rompería el enlace al producto. Una variante que ninguna orden nombra se borra de verdad, con sus imágenes.
+- [ ] **Sin reservas, quitar una variante que alguna orden nombra o que está en algún carrito la desactiva en vez de borrarla** (RN-11), y se informa cuál de los dos pasó. La orden histórica la sigue mostrando, así que borrarla le rompería el enlace al producto; y en un carrito tiene que quedar apartada, a la vista (RF-08). Una variante que ninguna orden ni ningún carrito nombra se borra de verdad, con sus imágenes.
 - [ ] El panel muestra siempre stock total, reservado y disponible por variante.
 - [ ] El stock que se escribe **a mano** no admite valores negativos ni decimales. Que la columna acepte un total negativo (RF-24) no es lo mismo: ahí el negativo lo **produce** una venta ya ocurrida, y es una discrepancia a corregir. Escribir «−3» en el formulario no registra ninguna discrepancia, es un error de tipeo.
 - [ ] Cambiar el stock desde el panel es un **ajuste** y queda asentado como tal, con quién lo hizo y cuánto cambió, igual que cualquier otra operación de stock.

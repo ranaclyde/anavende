@@ -8,25 +8,31 @@ import {
   VaciarCarrito,
 } from "@/components/shop/carrito/acciones";
 import { Precio } from "@/components/shop/precio";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney, type Money } from "@/lib/money";
 import { getIdentity, getSession } from "@/lib/session";
 import { leerCarrito, type ItemDelCarrito } from "@/modules/cart/queries";
+import { revisarCarrito, type Aviso } from "@/modules/cart/revision";
 import { TOPE_POR_ITEM } from "@/modules/cart/schemas";
 import { urlDeImagen } from "@/modules/media/subir";
 
 export const metadata: Metadata = { title: "Tu carrito" };
 
 /**
- * El carrito — F5.5, RF-08, DESIGN-REFERENCE §7.4.
+ * El carrito — F5.5, F5.6, RF-08, DESIGN-REFERENCE §7.4.
  *
  * Lista a la izquierda y resumen a la derecha, que baja al final en el
  * teléfono. Nace sobre el lineamiento del canvas (F3.8) en vez de ser
  * rediseñado después.
  *
- * **Lo que todavía no hace, y es de otras tareas:** los avisos de precio
- * cambiado, stock reducido y producto desactivado son F5.6; confirmar el
- * pedido es F6.1; «Completá tu setup» es RF-32, de F8.
+ * **Al abrirlo se revisa contra el catálogo** (F5.6): lo que cambió se avisa
+ * arriba, una vez; lo que no tiene stock queda marcado y fuera del total; y
+ * lo que se dejó de vender queda apartado en «Ya no disponible» hasta que el
+ * comprador lo quite.
+ *
+ * **Lo que todavía no hace, y es de otras tareas:** confirmar el pedido es
+ * F6.1; «Completá tu setup» es RF-32, de F8.
  */
 export default async function PaginaDelCarrito() {
   // El proxy ya manda a ingresar a quien no tiene cookie; esto es la
@@ -39,7 +45,16 @@ export default async function PaginaDelCarrito() {
     redirect("/ingresar?volver=/carrito");
   }
 
+  // La revisión primero y la lectura DESPUÉS, no en paralelo: lo que se
+  // muestra tiene que ser el carrito ya ajustado, no el de antes de revisar.
+  const avisos = await revisarCarrito(sesion.profile.id);
   const carrito = await leerCarrito(sesion.profile.id);
+
+  const enElPedido: ItemDelCarrito[] = [];
+  const apartados: ItemDelCarrito[] = [];
+  for (const item of carrito.items) {
+    (item.estado === "no-disponible" ? apartados : enElPedido).push(item);
+  }
 
   // El encabezado es el mismo con y sin productos, y es el del catálogo
   // (título y bajada): la pantalla vacía no puede ser otra pantalla.
@@ -61,11 +76,19 @@ export default async function PaginaDelCarrito() {
         <CarritoVacio />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8">
-          <ul className="flex flex-col gap-3">
-            {carrito.items.map((item) => (
-              <Renglon key={item.variantId} item={item} />
-            ))}
-          </ul>
+          <div className="flex flex-col gap-6">
+            {avisos.length > 0 ? <Avisos avisos={avisos} /> : null}
+
+            {enElPedido.length > 0 ? (
+              <ul className="flex flex-col gap-3">
+                {enElPedido.map((item) => (
+                  <Renglon key={item.variantId} item={item} />
+                ))}
+              </ul>
+            ) : null}
+
+            {apartados.length > 0 ? <YaNoDisponible items={apartados} /> : null}
+          </div>
 
           <Resumen
             total={carrito.total}
@@ -79,10 +102,52 @@ export default async function PaginaDelCarrito() {
 }
 
 /**
+ * Lo que cambió desde la última vez (RF-08): precio y stock. Sale una sola
+ * vez —la revisión deja el carrito al día— y no frena nada: el carrito
+ * sigue debajo, ya corregido.
+ */
+function Avisos({ avisos }: { avisos: Aviso[] }) {
+  return (
+    <section
+      role="status"
+      aria-labelledby="avisos-titulo"
+      className="flex flex-col gap-2 rounded-card bg-warning-tint p-4 sm:p-5"
+    >
+      <h2 id="avisos-titulo" className="text-body font-medium text-ink">
+        Tu carrito cambió desde la última vez
+      </h2>
+      <ul className="flex list-disc flex-col gap-1 pl-5 text-body-sm text-ink">
+        {avisos.map((aviso) => (
+          <li key={`${aviso.tipo}-${aviso.variantId}`}>{textoDe(aviso)}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function textoDe(aviso: Aviso): string {
+  if (aviso.tipo === "precio") {
+    return `El precio de ${aviso.nombre} pasó de ${formatMoney(aviso.antes)} a ${formatMoney(aviso.ahora)}.`;
+  }
+  return aviso.quedan === 1
+    ? `Queda 1 sola unidad de ${aviso.nombre}: dejamos 1 en tu carrito.`
+    : `Quedan ${aviso.quedan} unidades de ${aviso.nombre}: ajustamos la cantidad a ${aviso.quedan}.`;
+}
+
+/**
  * Un renglón: miniatura de 80px, nombre, color, precio unitario, cantidad,
  * subtotal y «Quitar» (§7.4).
+ *
+ * Los tres estados (F5.6) comparten el dibujo y cambian lo que ofrecen:
+ * vigente es el renglón completo; sin stock pierde la cantidad y el
+ * subtotal, porque no hay nada que elegir ni que sumar; y no disponible
+ * pierde además el enlace y el precio: la ficha ya no existe para el
+ * público, y un precio de algo que no se vende no informa nada.
  */
 function Renglon({ item }: { item: ItemDelCarrito }) {
+  const vigente = item.estado === "vigente";
+  const seVende = item.estado !== "no-disponible";
+
   const ruta = item.colorSlug
     ? `/productos/${item.slug}?color=${item.colorSlug}`
     : `/productos/${item.slug}`;
@@ -93,9 +158,9 @@ function Renglon({ item }: { item: ItemDelCarrito }) {
     (item.colorNombre ? `, ${item.colorNombre.toLowerCase()}` : "");
 
   // El selector no ofrece más de lo que hay, pero tampoco puede quedar por
-  // DEBAJO de lo que ya está en el carrito: con el stock caído a 1 y 4 en el
-  // carrito, un tope de 1 dibujaría un 4 imposible de mover. Bajar se puede
-  // siempre (`cambiarCantidad`); ajustar sola la cantidad es F5.6.
+  // DEBAJO de lo que ya está en el carrito. Después de la revisión no
+  // debería pasar, pero el stock puede caer entre la revisión y el clic, y
+  // un tope por debajo dibujaría un número imposible de mover.
   const maximo = Math.max(
     item.cantidad,
     Math.min(Math.max(0, item.disponible), TOPE_POR_ITEM),
@@ -110,7 +175,7 @@ function Renglon({ item }: { item: ItemDelCarrito }) {
             alt={alt}
             fill
             sizes="80px"
-            className="object-cover"
+            className={seVende ? "object-cover" : "object-cover opacity-50 grayscale"}
           />
         ) : null}
       </div>
@@ -119,28 +184,37 @@ function Renglon({ item }: { item: ItemDelCarrito }) {
         <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
           {item.marca}
         </p>
-        <h2 className="text-body-sm font-medium text-ink">
-          <Link
-            href={ruta}
-            className="rounded-pill underline-offset-4 hover:underline"
-          >
-            {item.nombre}
-          </Link>
-        </h2>
+        <h3 className="text-body-sm font-medium text-ink">
+          {seVende ? (
+            <Link
+              href={ruta}
+              className="rounded-pill underline-offset-4 hover:underline"
+            >
+              {item.nombre}
+            </Link>
+          ) : (
+            item.nombre
+          )}
+        </h3>
         {item.colorNombre ? (
           <p className="text-caption text-ink-secondary">
             Color: {item.colorNombre}
           </p>
         ) : null}
 
-        <div className="flex items-end gap-1.5">
-          <Precio
-            precio={item.precio}
-            descuento={item.descuento}
-            precioFinal={item.precioFinal}
-          />
-          <span className="text-caption text-ink-tertiary">c/u</span>
-        </div>
+        {seVende ? (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <div className="flex items-end gap-1.5">
+              <Precio
+                precio={item.precio}
+                descuento={item.descuento}
+                precioFinal={item.precioFinal}
+              />
+              <span className="text-caption text-ink-tertiary">c/u</span>
+            </div>
+            {vigente ? null : <Badge tone="danger">Sin stock</Badge>}
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <ControlesDelItem
@@ -148,14 +222,49 @@ function Renglon({ item }: { item: ItemDelCarrito }) {
             nombre={item.nombre}
             cantidad={item.cantidad}
             maximo={maximo}
+            soloQuitar={!vigente}
           />
-          <p className="text-body font-medium text-ink tabular-nums">
-            <span className="sr-only">Subtotal: </span>
-            {formatMoney(item.subtotal)}
-          </p>
+          {vigente ? (
+            <p className="text-body font-medium text-ink tabular-nums">
+              <span className="sr-only">Subtotal: </span>
+              {formatMoney(item.subtotal)}
+            </p>
+          ) : (
+            <p className="text-body-sm text-ink-secondary">
+              {seVende ? "No suma al total" : "Ya no está a la venta"}
+            </p>
+          )}
         </div>
       </div>
     </li>
+  );
+}
+
+/**
+ * Lo que se dejó de vender (RF-08, variante B del 2026-09-12). No se borra
+ * solo: queda a la vista, fuera del total, hasta que el comprador lo quite.
+ * Ese renglón ES el aviso persistente — si no lo ve hoy, lo ve la próxima
+ * vez que abra el carrito.
+ */
+function YaNoDisponible({ items }: { items: ItemDelCarrito[] }) {
+  return (
+    <section aria-labelledby="no-disponible-titulo" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <h2 id="no-disponible-titulo" className="text-body-lg font-medium text-ink">
+          Ya no disponible
+        </h2>
+        <p className="text-body-sm text-ink-secondary">
+          {items.length === 1
+            ? "Este producto se dejó de vender, así que no suma al total. Quitalo cuando quieras."
+            : "Estos productos se dejaron de vender, así que no suman al total. Quitalos cuando quieras."}
+        </p>
+      </div>
+      <ul className="flex flex-col gap-3">
+        {items.map((item) => (
+          <Renglon key={item.variantId} item={item} />
+        ))}
+      </ul>
+    </section>
   );
 }
 
