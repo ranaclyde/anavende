@@ -14,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -110,7 +111,7 @@ export function ListadoDeProductos({
       setAviso(
         r.data.resultado === "borrado"
           ? `Borramos «${p.name}».`
-          : `«${p.name}» está en ${r.data.ordenes === 1 ? "1 orden" : `${r.data.ordenes} órdenes`}, así que no se puede borrar: lo desactivamos y ya no se ve en la tienda.`,
+          : `«${p.name}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede borrar: lo desactivamos y ya no se ve en la tienda.`,
       );
     });
   };

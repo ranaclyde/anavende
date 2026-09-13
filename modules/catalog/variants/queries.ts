@@ -47,6 +47,8 @@ export type VarianteDelPanel = {
   propias: number;
   /** Órdenes que la nombran. Si hay alguna, borrar la desactiva (RN-11). */
   ordenes: number;
+  /** Carritos donde está. Si hay alguno, borrar también la desactiva (F5.6). */
+  carritos: number;
   /** Las que se muestran: las propias, o las de la fuente (§9.5). */
   imagenes: ImagenDeVariante[];
 };
@@ -84,7 +86,9 @@ export async function variantesDelProducto(
              (SELECT count(*) FROM variant_images i
                WHERE i.variant_id = v.id)::int              AS propias,
              (SELECT count(DISTINCT oi.order_id) FROM order_items oi
-               WHERE oi.variant_id = v.id)::int             AS ordenes
+               WHERE oi.variant_id = v.id)::int             AS ordenes,
+             (SELECT count(*) FROM cart_items ci
+               WHERE ci.variant_id = v.id)::int             AS carritos
         FROM product_variants v
         LEFT JOIN colors c           ON c.id = v.color_id
         LEFT JOIN product_variants f ON f.id = v.images_source_id

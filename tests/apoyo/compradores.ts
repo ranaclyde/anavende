@@ -66,9 +66,14 @@ export async function agregarAlCarrito(
   variantId: string,
   quantity: number,
 ): Promise<void> {
+  // Con el precio vigente como «visto», que es lo que haría `agregar`: un
+  // renglón armado a mano no tiene por qué arrancar con un aviso (F5.6).
   await db.execute(sql`
-    INSERT INTO cart_items (cart_id, variant_id, quantity)
-    VALUES (${cartId}, ${variantId}, ${quantity})`);
+    INSERT INTO cart_items (cart_id, variant_id, quantity, last_seen_price)
+    SELECT ${cartId}, v.id, ${quantity}, p.final_price
+      FROM product_variants v
+      JOIN products p ON p.id = v.product_id
+     WHERE v.id = ${variantId}`);
 }
 
 export async function itemsEnElCarrito(cartId: string): Promise<number> {

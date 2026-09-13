@@ -250,13 +250,21 @@ export const eliminarUnProducto = action
      * borrado. Pero una orden con la variante en NULL pierde el enlace al
      * producto para siempre, y RF-15 pide conservarlo: se desactiva.
      */
-    const [uso] = await db.execute<{ ordenes: number }>(sql`
-      SELECT count(DISTINCT oi.order_id)::int AS ordenes
-        FROM order_items oi
-        JOIN product_variants v ON v.id = oi.variant_id
-       WHERE v.product_id = ${input.id}`);
+    //
+    // ¿Y algún CARRITO? (RN-11, desde F5.6.) Borrarlo se lo llevaría de ahí
+    // por cascada, sin que el comprador se entere, y RF-08 pide que lo vea
+    // apartado en «Ya no disponible». Desactivado, el carrito lo muestra así.
+    const [uso] = await db.execute<{ ordenes: number; carritos: number }>(sql`
+      SELECT (SELECT count(DISTINCT oi.order_id)
+                FROM order_items oi
+                JOIN product_variants v ON v.id = oi.variant_id
+               WHERE v.product_id = ${input.id})::int AS ordenes,
+             (SELECT count(DISTINCT ci.cart_id)
+                FROM cart_items ci
+                JOIN product_variants v ON v.id = ci.variant_id
+               WHERE v.product_id = ${input.id})::int AS carritos`);
 
-    if ((uso?.ordenes ?? 0) > 0) {
+    if (uso.ordenes > 0 || uso.carritos > 0) {
       const filas = await db
         .update(products)
         .set({ isActive: false, updatedAt: new Date() })
@@ -268,7 +276,12 @@ export const eliminarUnProducto = action
       refrescar();
       // No es un error: es el otro final posible de «eliminar». La vista
       // cuenta qué pasó, en vez de decir «listo» sobre algo que sigue ahí.
-      return { id: input.id, resultado: "desactivado" as const, ordenes: uso.ordenes };
+      return {
+        id: input.id,
+        resultado: "desactivado" as const,
+        ordenes: uso.ordenes,
+        carritos: uso.carritos,
+      };
     }
 
     // Las claves de TODAS las imágenes de TODAS sus variantes, leídas ANTES
@@ -291,5 +304,5 @@ export const eliminarUnProducto = action
     if (archivos.length) await borrarArchivos(archivos);
 
     refrescar();
-    return { id: input.id, resultado: "borrado" as const, ordenes: 0 };
+    return { id: input.id, resultado: "borrado" as const, ordenes: 0, carritos: 0 };
   });

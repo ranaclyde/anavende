@@ -12,6 +12,8 @@ import { ZERO, type Money } from "@/lib/money";
  * motivo que las operaciones: sin RLS no hay otra barrera (§13.8).
  */
 
+export type EstadoDelItem = "vigente" | "sin-stock" | "no-disponible";
+
 export type ItemDelCarrito = {
   variantId: string;
   slug: string;
@@ -33,17 +35,29 @@ export type ItemDelCarrito = {
   subtotal: Money;
   /** `stock_total − reserved_stock`. Puede ser negativo (RF-24). */
   disponible: number;
-  /** `false` si el producto o la variante se desactivaron: es F5.6. */
-  seVende: boolean;
+  /**
+   * Qué es este renglón para el pedido (RF-08, F5.6):
+   *
+   *   · `vigente` — suma al total y se va a poder confirmar.
+   *   · `sin-stock` — queda en el carrito, marcado, y fuera del total.
+   *   · `no-disponible` — el producto o la variante se desactivaron: queda
+   *     apartado en «Ya no disponible», fuera del total, hasta que el
+   *     comprador lo quite. Ese renglón a la vista es el aviso persistente.
+   */
+  estado: EstadoDelItem;
   /** La primera foto de la variante, o de la que le presta las suyas (§9.5). */
   imagenKey: string | null;
 };
 
 export type Carrito = {
   items: ItemDelCarrito[];
-  /** Suma de los subtotales, también en la base. */
+  /**
+   * Suma de los subtotales VIGENTES, también en la base. Lo que no se puede
+   * pedir —sin stock o no disponible— no suma (RF-08): un total que incluye
+   * algo que no se va a poder confirmar es un número que no se cumple.
+   */
   total: Money;
-  /** Unidades, no renglones: dos del mismo teclado son dos. */
+  /** Unidades vigentes, no renglones: dos del mismo teclado son dos. */
   unidades: number;
 };
 
@@ -72,9 +86,18 @@ export async function leerCarrito(userId: string): Promise<Carrito> {
              p.final_price         AS "precioFinal",
              ci.quantity           AS cantidad,
              (p.final_price * ci.quantity)::numeric(12, 2) AS subtotal,
-             (sum(p.final_price * ci.quantity) OVER ())::numeric(12, 2) AS total,
+             (coalesce(
+               sum(p.final_price * ci.quantity) FILTER (
+                 WHERE v.is_active AND p.is_active
+                   AND v.stock_total - v.reserved_stock > 0
+               ) OVER (),
+               0))::numeric(12, 2) AS total,
              (v.stock_total - v.reserved_stock)::int AS disponible,
-             (v.is_active AND p.is_active) AS "seVende",
+             CASE
+               WHEN NOT (v.is_active AND p.is_active)   THEN 'no-disponible'
+               WHEN v.stock_total - v.reserved_stock <= 0 THEN 'sin-stock'
+               ELSE 'vigente'
+             END AS estado,
              img.storage_key       AS "imagenKey"
         FROM carts c
         JOIN cart_items ci      ON ci.cart_id = c.id
@@ -107,20 +130,40 @@ export async function leerCarrito(userId: string): Promise<Carrito> {
       cantidad: f.cantidad,
       subtotal: f.subtotal,
       disponible: f.disponible,
-      seVende: f.seVende,
+      estado: f.estado,
       imagenKey: f.imagenKey,
     })),
     total: filas[0]?.total ?? ZERO,
-    unidades: filas.reduce((n, f) => n + f.cantidad, 0),
+    unidades: filas.reduce(
+      (n, f) => (f.estado === "vigente" ? n + f.cantidad : n),
+      0,
+    ),
   };
 }
 
-/** Las unidades del carrito, para la píldora del encabezado (§5.1). */
+/**
+ * Las unidades del carrito, para la píldora del encabezado (§5.1). Las mismas
+ * que cuenta el resumen: lo apartado o sin stock no se va a poder pedir, y
+ * un número en el encabezado que no coincide con el del carrito se lee como
+ * un error.
+ *
+ * **El `least` no sobra.** El encabezado y la página se arman a la vez, así
+ * que esta cuenta puede correr ANTES de que `revisarCarrito` baje una
+ * cantidad al stock que queda. Contando el mínimo entre lo pedido y lo que
+ * hay, da lo mismo que va a dar después de la revisión, sin depender de
+ * quién llegó primero.
+ */
 export async function contarUnidades(userId: string): Promise<number> {
   const [fila] = await db.execute<{ n: number }>(sql`
-    SELECT coalesce(sum(ci.quantity), 0)::int AS n
+    SELECT coalesce(
+             sum(least(ci.quantity, v.stock_total - v.reserved_stock)),
+             0)::int AS n
       FROM cart_items ci
-      JOIN carts c ON c.id = ci.cart_id
-     WHERE c.user_id = ${userId}`);
+      JOIN carts c            ON c.id = ci.cart_id
+      JOIN product_variants v ON v.id = ci.variant_id
+      JOIN products p         ON p.id = v.product_id
+     WHERE c.user_id = ${userId}
+       AND v.is_active AND p.is_active
+       AND v.stock_total - v.reserved_stock > 0`);
   return fila.n;
 }

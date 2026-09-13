@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   integer,
+  numeric,
   pgTable,
   primaryKey,
   text,
@@ -38,7 +39,8 @@ export const carts = pgTable("carts", {
 /**
  * Guarda CANTIDAD, nunca precio: el precio se lee del producto en el momento
  * de mostrar (RN-09). Un precio congelado en el carrito es un precio que se
- * cobra mal.
+ * cobra mal. `last_seen_price` es la excepción, y no lo contradice: es lo que
+ * se vio, no lo que se cobra.
  */
 export const cartItems = pgTable(
   "cart_items",
@@ -51,6 +53,15 @@ export const cartItems = pgTable(
       .notNull()
       .references(() => productVariants.id, { onDelete: "cascade" }),
     quantity: integer("quantity").notNull(),
+    /**
+     * El precio final que el comprador VIO la última vez (F5.6, §5.5). Es
+     * con qué comparar para decir «pasó de $A a $B» (RN-09). NUNCA entra en
+     * un subtotal, un total ni una orden: eso sale de `products.final_price`.
+     */
+    lastSeenPrice: numeric("last_seen_price", {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
     addedAt: timestamp("added_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
