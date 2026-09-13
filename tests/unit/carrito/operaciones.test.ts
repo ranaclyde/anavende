@@ -104,7 +104,9 @@ describe("agregar", () => {
       agregar(userId, { variantId, cantidad: 1 }),
     ).rejects.toMatchObject({
       code: "INSUFFICIENT_STOCK",
-      message: "Este color se quedó sin stock.",
+      // Sin «este color»: un producto de un solo modelo no tiene color que
+      // nombrar, y el mensaje se ve de verdad desde F5.7.
+      message: "Se quedó sin stock.",
     });
     // El carrito se crea en la misma transacción que falla: se revierte con
     // ella. Todo o nada, como el resto de las operaciones de dinero y stock.

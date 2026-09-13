@@ -19,7 +19,14 @@ import { enviarVerificacion } from "@/modules/users/actions";
  * Hasta abrir el enlace no se puede entrar, así que esta pantalla tiene que
  * resolver sola el caso de que el email no llegue: el reenvío vive acá.
  */
-export function AvisoDeVerificacion({ email }: { email?: string }) {
+export function AvisoDeVerificacion({
+  email,
+  volver,
+}: {
+  email?: string;
+  /** El mismo destino que viajó en el primer email (F5.7). */
+  volver?: string;
+}) {
   const [reenviando, iniciar] = useTransition();
   const [reenviado, setReenviado] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +35,7 @@ export function AvisoDeVerificacion({ email }: { email?: string }) {
     if (!email) return;
     setError(null);
     iniciar(async () => {
-      const r = await enviarVerificacion({ email });
+      const r = await enviarVerificacion({ email, volver });
       if (r.ok) setReenviado(true);
       else setError(r.message);
     });
@@ -78,7 +85,15 @@ export function AvisoDeVerificacion({ email }: { email?: string }) {
         )}
 
         <Button asChild variant="tertiary" size="lg" className="self-start">
-          <Link href="/ingresar">Ir a ingresar</Link>
+          <Link
+            href={
+              volver
+                ? `/ingresar?volver=${encodeURIComponent(volver)}`
+                : "/ingresar"
+            }
+          >
+            Ir a ingresar
+          </Link>
         </Button>
       </CardContent>
     </Card>

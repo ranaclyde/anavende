@@ -108,7 +108,10 @@ function noAlcanza(disponible: number, enElCarrito: number) {
 
   const message =
     tope === 0
-      ? "Este color se quedó sin stock."
+      ? // Sin «este color»: hay productos que no se venden por color, y desde
+        // F5.7 este mensaje se lee seguido —quien se registra para comprar
+        // tarda minutos, y en esos minutos el stock se mueve—.
+        "Se quedó sin stock."
       : enElCarrito > 0
         ? `${cuantas} y ya tenés ${enElCarrito} en el carrito.`
         : `${cuantas}.`;
