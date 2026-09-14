@@ -522,7 +522,7 @@ CREATE TABLE addresses (
   notes          text,
   city           text NOT NULL,
   province       text NOT NULL,
-  postal_code    text NOT NULL,
+  postal_code    text,          -- se deduce de la localidad; NULL en «Otra localidad cercana» (RF-09, migración 0014)
   is_default     boolean NOT NULL DEFAULT false,
   deleted_at     timestamptz,
   created_at     timestamptz NOT NULL DEFAULT now()
@@ -539,6 +539,8 @@ CREATE TABLE favorites (
 ```
 
 > El índice parcial `one_default_address_per_user` hace que «hay una sola dirección predeterminada» sea una garantía de la base, no una convención que la aplicación deba recordar.
+
+> **Hasta 3 direcciones vivas por comprador** (RF-09, 2026-09-13). Esto no lo puede garantizar la base: un CHECK no cuenta filas. Lo hace la operación de alta: bloquea la fila del comprador en `user_profiles`, cuenta las direcciones sin `deleted_at` y rechaza la cuarta. El bloqueo evita que dos pestañas agreguen la tercera y la cuarta al mismo tiempo, igual que el del carrito. Las dadas de baja no cuentan.
 
 **El carrito no existe sin sesión** (RF-08): no hay tabla ni cookie de carrito anónimo. `cart_items` guarda cantidad, nunca precio: el precio siempre se lee del producto en el momento de mostrar (RN-09).
 

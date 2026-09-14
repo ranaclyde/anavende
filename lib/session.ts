@@ -1,6 +1,7 @@
 import "server-only";
 
 import { eq } from "drizzle-orm";
+import { cache } from "react";
 
 import { db } from "@/db";
 import { userProfiles, type Role, type UserProfile } from "@/db/schema";
@@ -21,6 +22,12 @@ import { createClient } from "@/lib/supabase/server";
  *
  * Consecuencia honesta: la verificación local ahorra la ida a la red en las
  * guardias de página, no en las mutaciones. Es el precio correcto.
+ *
+ * **Las dos van envueltas en `cache` de React** (F5.3). Desde que «Mi cuenta»
+ * tiene layout propio, el layout de la tienda, el de la cuenta y la página
+ * piden la sesión en el mismo pedido; sin `cache` eran tres lecturas del
+ * perfil. `cache` dura un pedido y nada más, así que el perfil sigue siendo
+ * fresco en cada uno, que es lo que §13.3 exige.
  */
 
 export type Identity = {
@@ -55,7 +62,7 @@ export type Session = {
  * Paso 1 solo. Para guardias de página que no necesitan el rol y para
  * lecturas de datos propios, que se filtran por este id.
  */
-export async function getIdentity(): Promise<Identity | null> {
+export const getIdentity = cache(async (): Promise<Identity | null> => {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
@@ -87,7 +94,7 @@ export async function getIdentity(): Promise<Identity | null> {
       proveedores.includes("email") ||
       app?.contrasena_definida === true,
   };
-}
+});
 
 /**
  * Pasos 1 y 2. Devuelve null si no hay identidad O si no hay perfil.
@@ -96,7 +103,7 @@ export async function getIdentity(): Promise<Identity | null> {
  * —el caso de OAuth antes de completar el teléfono— puede navegar, pero no
  * confirmar órdenes ni entrar al panel del comprador.
  */
-export async function getSession(): Promise<Session | null> {
+export const getSession = cache(async (): Promise<Session | null> => {
   const identity = await getIdentity();
   if (!identity) return null;
 
@@ -109,7 +116,7 @@ export async function getSession(): Promise<Session | null> {
   if (!profile) return null;
 
   return { identity, profile, role: profile.role as Role };
-}
+});
 
 /** ¿Hay identidad pero todavía no hay perfil? Dispara «Completá tu perfil». */
 export async function needsProfile(): Promise<boolean> {

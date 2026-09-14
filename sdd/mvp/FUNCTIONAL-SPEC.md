@@ -318,11 +318,15 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 
 **Descripción:** El comprador administra varias direcciones y marca una como predeterminada.
 
-**Campos:** alias (ej. «Casa»), nombre del receptor, teléfono, calle y número, piso/departamento, referencias, ciudad/localidad, provincia, código postal.
+**Campos:** alias (ej. «Casa»), nombre del receptor, teléfono, calle y número, piso/departamento, referencias y **localidad**.
+
+**La localidad se elige de una lista** (decisión del 2026-09-13): Viedma, Carmen de Patagones, San Javier, El Cóndor u **«Otra localidad cercana»**, porque se entrega en Viedma, Carmen de Patagones y alrededores (RN-10). **La provincia y el código postal no se preguntan: se deducen de la localidad.** «Otra localidad cercana» pide el nombre y la provincia, Río Negro o Buenos Aires, y queda sin código postal: la entrega se coordina igual por WhatsApp.
 
 **Criterios de aceptación:**
 - [ ] Crear, editar y eliminar direcciones; marcar una como predeterminada.
-- [ ] No se puede eliminar la única dirección si hay una orden `activa` que la usa (se conserva copia en la orden — RN-12).
+- [ ] **Hasta 3 direcciones por comprador**: la predeterminada y dos más, para poder elegir otra en el checkout (decisión del 2026-09-13). Con 3, «Agregar» se muestra deshabilitado y con el motivo; en el checkout, la dirección nueva se puede usar para esa orden sin guardarla.
+- [ ] Si hay direcciones, una es la predeterminada: la primera lo es sola, y al eliminar la predeterminada pasa a serlo la más antigua de las que quedan.
+- [ ] Eliminar una dirección no cambia las órdenes que la usaron: cada orden guarda su propia copia (RN-12), y la dirección se da de baja con una marca, sin borrarse. Por eso no hace falta impedir que se elimine la única dirección de una orden `activa`, que era lo que este criterio pedía antes del 2026-09-13.
 - [ ] En el checkout se puede elegir una dirección existente o cargar una nueva (con opción de guardarla).
 
 ---
