@@ -4,6 +4,10 @@ import { Heart } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 
+import {
+  propsDePausa,
+  useCuentaEnPausa,
+} from "@/components/shop/cuenta-en-pausa";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -73,7 +77,8 @@ function Corazon({ marcado, className }: { marcado: boolean; className?: string 
 const CIRCULO =
   "grid size-9 place-items-center rounded-full bg-surface/92 text-ink shadow-sm group-focus-visible/favorito:shadow-focus motion-safe:transition-transform motion-safe:group-active/favorito:scale-90";
 
-const AREA = "group/favorito grid size-11 place-items-center rounded-full outline-none";
+const AREA =
+  "group/favorito grid size-11 place-items-center rounded-full outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 function Alternar({
   productId,
@@ -82,6 +87,8 @@ function Alternar({
   forma,
 }: Omit<Props, "conSesion">) {
   const [, iniciar] = useTransition();
+  // Con la baja pedida (F5.8) se ve el estado, pero no se cambia.
+  const pausa = propsDePausa(useCuentaEnPausa());
 
   /*
    * El estado propio manda, y sigue al del servidor solo cuando ése cambia.
@@ -127,7 +134,7 @@ function Alternar({
         // y la etiqueta con el nombre del producto, para quien escucha.
         <Tooltip>
           <TooltipTrigger asChild>
-            <button type="button" onClick={alternar} className={AREA}>
+            <button type="button" onClick={alternar} className={AREA} {...pausa}>
               <span className={CIRCULO}>
                 <Corazon marcado={actual} className="size-5" />
               </span>
@@ -143,7 +150,13 @@ function Alternar({
           </TooltipContent>
         </Tooltip>
       ) : (
-        <Button variant="secondary" size="md" onClick={alternar} className="flex-1">
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={alternar}
+          className="flex-1"
+          {...pausa}
+        >
           <Corazon marcado={actual} />
           {/*
             Lo que se ve es el estado —«Guardado»— y lo que se oye además dice

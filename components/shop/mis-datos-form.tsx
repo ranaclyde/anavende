@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 
+import { useCuentaEnPausa } from "@/components/shop/cuenta-en-pausa";
+import { ID_AVISO_DE_PAUSA } from "@/components/shop/cuenta-en-pausa-id";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
@@ -32,6 +34,7 @@ export function MisDatosForm({
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
   const [guardado, setGuardado] = useState(false);
+  const enPausa = useCuentaEnPausa();
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -64,6 +67,12 @@ export function MisDatosForm({
       className="flex flex-col gap-5"
       noValidate
     >
+      {/* Con la baja pedida (F5.8) los datos se ven y no se cambian. */}
+      <fieldset
+        disabled={enPausa}
+        aria-describedby={enPausa ? ID_AVISO_DE_PAUSA : undefined}
+        className="contents"
+      >
       <div className="flex flex-col gap-5 sm:flex-row sm:gap-4">
         <div className="flex flex-1 flex-col gap-2">
           <Label htmlFor="firstName">Nombre</Label>
@@ -130,6 +139,7 @@ export function MisDatosForm({
           </p>
         )}
       </div>
+      </fieldset>
     </form>
   );
 }

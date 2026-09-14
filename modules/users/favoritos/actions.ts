@@ -40,6 +40,9 @@ export const cambiarFavorito = action
 export const elegirVistaDeFavoritos = action
   .input(eleccionDeVista)
   .auth("customer")
+  // Cómo se ve una lista no es operar la cuenta: con la baja pedida (F5.8)
+  // se sigue pudiendo mirar, y esto es mirar.
+  .aunConBajaPendiente()
   .handler(async ({ input }) => {
     await guardarVista(input.vista);
     refresh();

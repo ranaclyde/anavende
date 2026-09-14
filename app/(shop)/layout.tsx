@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { ProveedorDeCuentaEnPausa } from "@/components/shop/cuenta-en-pausa";
+import { ID_AVISO_DE_PAUSA } from "@/components/shop/cuenta-en-pausa-id";
 import { RetomarFavorito } from "@/components/shop/favorito";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
@@ -27,6 +29,10 @@ export default async function ShopLayout({
   // del encabezado.
   const sesion = await getSession();
 
+  // Pidió la baja (F5.8): la cuenta es de solo lectura hasta que la
+  // administradora la ejecute o el comprador la retire.
+  const enPausa = sesion?.profile.closureRequestedAt != null;
+
   // Las dos dependen de la sesión y no entre sí: en paralelo.
   //
   // Lo barato primero: el rol ya está en la sesión, y el interruptor solo se
@@ -40,12 +46,14 @@ export default async function ShopLayout({
     await Promise.all([
       sesion ? contarUnidades(sesion.profile.id) : 0,
       sesion?.role === "admin" ? estaEnMantenimiento() : false,
-      sesion ? hayFavoritoPendiente() : false,
+      // Con la cuenta en pausa no se retoma nada: la acción la rechazaría.
+      sesion && !enPausa ? hayFavoritoPendiente() : false,
     ]);
 
   return (
     <div className="flex min-h-svh flex-col bg-canvas">
       {cerradaParaElResto ? <AvisoDeTiendaCerrada /> : null}
+      {enPausa ? <AvisoDeBajaPedida /> : null}
       {favoritoPendiente ? <RetomarFavorito /> : null}
 
       {/* El buscador lee la URL, así que el encabezado necesita el límite
@@ -57,9 +65,41 @@ export default async function ShopLayout({
         />
       </Suspense>
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <ProveedorDeCuentaEnPausa enPausa={enPausa}>
+          {children}
+        </ProveedorDeCuentaEnPausa>
+      </main>
 
       <SiteFooter />
+    </div>
+  );
+}
+
+/**
+ * Lo que ve quien pidió la baja, en toda la tienda (F5.8, RF-34).
+ *
+ * Arriba de todo y en cada página porque la pausa afecta a cada página: sin
+ * esto, un botón apagado en la ficha no tendría a quién señalar. Dice qué
+ * pasa y ofrece la salida. En el tinte de advertencia (§6.4) y no en tinta,
+ * que es el aviso de la administradora: son dos mensajes para dos personas.
+ */
+function AvisoDeBajaPedida() {
+  return (
+    <div
+      role="status"
+      className="bg-warning-tint px-4 py-2 text-center text-body-sm text-ink"
+    >
+      <span id={ID_AVISO_DE_PAUSA}>
+        Pediste la baja de tu cuenta: podés mirar la tienda, pero no comprar ni
+        hacer cambios.
+      </span>{" "}
+      <Link
+        href="/mi-cuenta#baja"
+        className="rounded-pill font-medium underline underline-offset-4"
+      >
+        Retirar el pedido
+      </Link>
     </div>
   );
 }

@@ -245,11 +245,11 @@ F10 Endurecimiento y lanzamiento
 | **F5.6** | Revalidación del carrito y avisos | **L** | FS RF-08 · TS §8.4 | Precio cambiado avisa y toma el vigente; stock reducido ajusta; **desactivado se aparta en «Ya no disponible» hasta que el comprador lo quita**, y el panel no borra lo que está en un carrito (cambio del 2026-09-12) |
 | **F5.7** | «Iniciá sesión para comprar» y retomar la acción pendiente | M | FS RF-08 · DR §7.3 | El visitante que intenta agregar al carrito va al login y, al volver, **el producto queda agregado** |
 
-| **F5.8** | **Pedir la baja de la cuenta**, con el email E5 | M | FS RF-34, RF-07, RN-13 · RF-30 | El acceso está a la vista en «Mis datos». La pantalla advierte qué implica y qué se conserva, y el motivo es obligatorio. **Con órdenes activas no procede**: se dice cuántas son y qué hacer, en vez de ofrecer un botón que va a fallar. Sale el aviso a la administradora |
+| **F5.8** | **Pedir la baja de la cuenta** | M | FS RF-34, RF-07, RN-13, RF-14 | El acceso está a la vista en «Mis datos», y el pie enlaza ahí. La pantalla advierte qué implica y qué se conserva, y el motivo es obligatorio. **Con órdenes activas no procede**: se dice cuántas son y qué hacer, en vez de ofrecer un botón que va a fallar. **Con la baja pedida la cuenta es de solo lectura**, y el comprador puede retirarla mientras no se ejecutó. **Sin email** (2026-09-14): la baja pedida aparece como pendiente en el inicio del panel, con el enlace apagado hasta F7.9 |
 
 > **Compuerta F5:** un comprador arma un carrito, cierra sesión, entra desde otro dispositivo y lo encuentra igual.
 
-> **F5.8 deja un pedido que todavía nadie puede ejecutar:** quien lo resuelve es F7.9, dos fases después. No es un descuido — el email E5 hace que la administradora se entere igual, y atenderlo a mano mientras tanto es lo mismo que hace hoy con todo lo demás. Si se prefiere que no haya ventana, F5.8 y F7.9 se hacen juntas.
+> **F5.8 deja un pedido que todavía nadie puede ejecutar:** quien lo resuelve es F7.9, dos fases después. No es un descuido — el inicio del panel le dice a la administradora que hay una baja pedida, y atenderlo a mano mientras tanto es lo mismo que hace hoy con todo lo demás. Si se prefiere que no haya ventana, F5.8 y F7.9 se hacen juntas.
 
 ---
 
@@ -278,7 +278,7 @@ F10 Endurecimiento y lanzamiento
 | **F7.5** | Devoluciones en el panel | M | FS RF-25 (sobre F4.5) | Selección de ítems, cantidades y si repone stock, con motivo |
 | **F7.6** | Gestión de usuarios | M | FS RF-26 · TS §13.2 | Crear, editar, resetear contraseña. Un admin no puede quitarse el rol ni bloquearse |
 | **F7.7** | Bloqueo con razón | M | FS RF-27 · TS §13.5 | Motivo obligatorio, garantizado por el `CHECK` de la base. Se bloquea en Supabase Auth **y** se cierran las sesiones activas. Al intentar entrar, el usuario ve el motivo registrado |
-| **F7.8** | Dashboard del panel | S | FS RF-14 | Órdenes activas, ventas del mes, stock bajo o en cero, cada uno enlazando a su listado |
+| **F7.8** | Dashboard del panel | S | FS RF-14 | Órdenes activas, ventas del mes, stock bajo o en cero, cada uno enlazando a su listado. **Y lo que hay pendiente de hacer al entrar** (pedido del 2026-09-14): bajas de cuenta pedidas, órdenes por atender, stock bajo, sin notificaciones que se disparen. El bloque de bajas ya existe desde F5.8, con el enlace apagado |
 | **F7.9** | **Ejecutar y revertir bajas de cuenta** | M | FS RF-34, RF-26, RN-13 (sobre F5.8) | Las bajas pendientes se ven con su motivo. Ejecutar cierra las sesiones y deja registrado quién y cuándo; al intentar entrar, la persona ve un mensaje **distinto del bloqueo**. Revertir la devuelve con su historial, direcciones y favoritos intactos. El filtro por estado distingue los tres |
 
 > **Compuerta F7:** la vendedora opera un ciclo completo —recibir, editar, finalizar, devolver— sin tocar la base de datos.

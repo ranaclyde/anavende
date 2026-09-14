@@ -4,6 +4,10 @@ import { Pencil, Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
+import {
+  propsDePausa,
+  useCuentaEnPausa,
+} from "@/components/shop/cuenta-en-pausa";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -43,6 +47,9 @@ export function AccionesDeDireccion({
   const [enCurso, iniciar] = useTransition();
   const [confirmando, setConfirmando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Con la baja pedida (F5.8) la libreta se mira y no se cambia.
+  const enPausa = useCuentaEnPausa();
+  const pausa = propsDePausa(enPausa);
 
   function elegir() {
     setError(null);
@@ -65,24 +72,40 @@ export function AccionesDeDireccion({
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-1">
         {predeterminada ? null : (
-          <Button variant="tertiary" size="md" disabled={enCurso} onClick={elegir}>
+          <Button
+            variant="tertiary"
+            size="md"
+            disabled={enCurso}
+            onClick={elegir}
+            {...pausa}
+          >
             <Star aria-hidden />
             Usar como predeterminada
             <span className="sr-only"> «{etiqueta}»</span>
           </Button>
         )}
-        <Button asChild variant="tertiary" size="md">
-          <Link href={`/mi-cuenta/direcciones/${id}`}>
+        {enPausa ? (
+          // Un enlace no se apaga: se dibuja el botón, apagado y con motivo.
+          <Button variant="tertiary" size="md" {...pausa}>
             <Pencil aria-hidden />
             Editar
             <span className="sr-only"> «{etiqueta}»</span>
-          </Link>
-        </Button>
+          </Button>
+        ) : (
+          <Button asChild variant="tertiary" size="md">
+            <Link href={`/mi-cuenta/direcciones/${id}`}>
+              <Pencil aria-hidden />
+              Editar
+              <span className="sr-only"> «{etiqueta}»</span>
+            </Link>
+          </Button>
+        )}
         <Button
           variant="tertiary"
           size="md"
           disabled={enCurso}
           onClick={() => setConfirmando(true)}
+          {...pausa}
         >
           <Trash2 aria-hidden />
           Eliminar

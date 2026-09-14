@@ -32,6 +32,9 @@ export default async function EditarDireccion({
 
   if (!soloIdSchema.safeParse({ id }).success) notFound();
 
+  // Con la baja pedida (F5.8) la libreta se mira y no se cambia.
+  if (sesion.profile.closureRequestedAt) redirect("/mi-cuenta/direcciones");
+
   const d = await leerDireccion(sesion.profile.id, id);
   if (!d) notFound();
 
