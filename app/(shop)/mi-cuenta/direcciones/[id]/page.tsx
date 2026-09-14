@@ -36,7 +36,7 @@ export default async function EditarDireccion({
   if (!d) notFound();
 
   return (
-    <Card className="max-w-2xl">
+    <Card>
       <CardHeader>
         <CardTitle>Editar «{d.label}»</CardTitle>
       </CardHeader>

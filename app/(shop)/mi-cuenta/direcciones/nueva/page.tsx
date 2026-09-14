@@ -37,7 +37,7 @@ export default async function NuevaDireccion() {
   }
 
   return (
-    <Card className="max-w-2xl">
+    <Card>
       <CardHeader>
         <CardTitle>Nueva dirección</CardTitle>
         <CardDescription>
