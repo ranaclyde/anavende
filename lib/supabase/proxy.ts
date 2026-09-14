@@ -22,7 +22,13 @@ import {
  */
 
 /** Prefijos que exigen sesión. Todo lo demás de la tienda es público. */
-const RUTAS_PRIVADAS = ["/admin", "/mi-cuenta", "/carrito", "/checkout"];
+const RUTAS_PRIVADAS = [
+  "/admin",
+  "/mi-cuenta",
+  "/carrito",
+  "/checkout",
+  "/orden",
+];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

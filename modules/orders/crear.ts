@@ -46,11 +46,18 @@ export type ItemEsperado = {
   unitPrice: Money;
 };
 
+/**
+ * Cómo se entrega (RF-11, 2026-09-14): **solo el envío lleva dirección**. La
+ * orden no guarda la forma de entrega aparte: se deduce de `shipping_address`
+ * (`modules/orders/entrega.ts`), así que un retiro es una orden sin dirección.
+ */
+export type Entrega = { tipo: "envio"; addressId: string } | { tipo: "retiro" };
+
 export type DatosDeCompra = {
   userId: string;
   /** Generada al abrir el checkout, no al confirmar (§8.5). */
   idempotencyKey: string;
-  addressId: string;
+  entrega: Entrega;
   // Snapshot del comprador (RN-12): la orden se lee igual dentro de un año.
   customerName: string;
   customerEmail: string | null;
@@ -161,7 +168,13 @@ export async function crearOrdenDesdeCarrito(
       revisarQueSigaSiendoLoQueVio(datos.esperado, enElCarrito);
 
       // ── 4. La orden, con el snapshot del comprador y la dirección ──────
-      const direccion = await snapshotDeDireccion(tx, datos);
+      //
+      // Con retiro no hay dirección, y ese NULL ES el dato: la forma de
+      // entrega no tiene columna propia (2026-09-14).
+      const direccion =
+        datos.entrega.tipo === "envio"
+          ? await snapshotDeDireccion(tx, datos.userId, datos.entrega.addressId)
+          : null;
 
       const [orden] = await tx.execute<{ id: string; orderNumber: number }>(sql`
         INSERT INTO orders
@@ -170,7 +183,8 @@ export async function crearOrdenDesdeCarrito(
         VALUES
           (${datos.userId}, 'web', 'activa', ${datos.customerName},
            ${datos.customerEmail}, ${datos.customerPhone},
-           ${JSON.stringify(direccion)}::jsonb, ${datos.idempotencyKey})
+           ${direccion ? JSON.stringify(direccion) : null}::jsonb,
+           ${datos.idempotencyKey})
         RETURNING id, order_number AS "orderNumber"`);
 
       // ── 5 y 6. Los ítems y sus reservas, en el orden que ya trae ───────
@@ -319,7 +333,8 @@ function revisarQueSigaSiendoLoQueVio(
 
 async function snapshotDeDireccion(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  datos: DatosDeCompra,
+  userId: string,
+  addressId: string,
 ): Promise<ShippingAddressSnapshot> {
   // Del usuario, y no borrada. Sin el `user_id` en el WHERE, alguien podría
   // mandarse a enviar a la dirección de otro con sólo cambiar el id (§13.8:
@@ -335,8 +350,8 @@ async function snapshotDeDireccion(
            province,
            postal_code AS "postalCode"
       FROM addresses
-     WHERE id = ${datos.addressId}
-       AND user_id = ${datos.userId}
+     WHERE id = ${addressId}
+       AND user_id = ${userId}
        AND deleted_at IS NULL`);
 
   if (!d) throw domainError("NOT_FOUND");

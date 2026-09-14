@@ -352,7 +352,7 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 
 **Contenido:**
 1. **Tus datos** — nombre, email, teléfono (editable, requerido).
-2. **Entrega** — **tres opciones**: *que me lo envíen*, *lo retiro* o *coordinar con la vendedora*. Sólo la primera pide **dirección** —la predeterminada preseleccionada, con opción de elegir otra o cargar una nueva—, y la pide **para coordinar el envío**, no para calcularlo. Aviso: *«Entregamos en Viedma, Carmen de Patagones y alrededores. El costo del envío se coordina y abona junto con el pago por WhatsApp.»*
+2. **Entrega** — **dos opciones** (2026-09-14): *que me lo envíen* o *lo retiro*. El retiro no muestra dónde: la vendedora pasa el domicilio por WhatsApp al coordinar. Sólo el envío pide **dirección** —la predeterminada preseleccionada, con opción de elegir otra o cargar una nueva—, y la pide **para coordinar el envío**, no para calcularlo. Aviso: *«Entregamos en Viedma, Carmen de Patagones y alrededores. El costo del envío se coordina y abona junto con el pago por WhatsApp.»*
 3. **Resumen** — ítems con color, cantidad, precio unitario y subtotal; total de productos.
 4. **Medios de pago** — informativos, según configuración del panel.
 5. **Confirmación** — botón «Confirmar pedido» + leyenda de que el pago se coordina por WhatsApp.
@@ -361,8 +361,8 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 - [ ] El total del checkout **no incluye costo de envío** (RN-10).
 - [ ] Antes de confirmar se revalida stock y precio; si algo cambió, se avisa y se pide reconfirmar en vez de crear la orden silenciosamente.
 - [ ] Un email no verificado impide confirmar, con acción para reenviar la verificación.
-- [ ] Faltando teléfono, el botón de confirmación está deshabilitado con la razón visible. **La dirección sólo se exige con «que me lo envíen»**: con las otras dos opciones no se pide y no bloquea.
-- [ ] La opción elegida queda guardada en la orden: es lo primero que la vendedora necesita saber al abrirla.
+- [ ] Faltando teléfono, el botón de confirmación está deshabilitado con la razón visible. **La dirección sólo se exige con «que me lo envíen»**: con el retiro no se pide y no bloquea.
+- [ ] La opción elegida queda guardada en la orden: es lo primero que la vendedora necesita saber al abrirla. **Se deduce de la dirección** (2026-09-14): la orden con dirección es un envío y la orden sin dirección es un retiro.
 
 ---
 
@@ -619,6 +619,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] Se pueden agregar productos y variantes buscándolos por nombre, con cantidad y precio unitario **editable** (para contemplar precios acordados).
 - [ ] Los datos del comprador son de texto libre (nombre y teléfono/email), sin necesidad de que exista una cuenta; opcionalmente se puede asociar a un comprador registrado.
 - [ ] La orden queda marcada con origen **manual** para distinguirla en los reportes (RF-28).
+- [ ] Se anota si fue **envío o retiro**, como en el checkout (RF-11). **Con envío, la dirección es obligatoria**, y el formulario lo dice: una orden sin dirección se lee como retiro (2026-09-14).
 - [ ] Se puede crear directamente como `activa` (reserva stock) o como `finalizada` (descuenta stock de una).
 - [ ] El sistema advierte —sin bloquear— si la cantidad supera el stock disponible, para permitir registrar ventas ya ocurridas.
 
@@ -1011,6 +1012,8 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-09-08 | RN-10 pasa de nombrar a **PedidosYa** a nombrar la **zona**: Viedma, Carmen de Patagones y alrededores | La empresa de mensajería puede cambiar; lo que decide si alguien puede comprar acá es hasta dónde llegamos, no quién lleva el paquete |
 | 2026-09-08 | Se agrega el **retiro en el punto de entrega** como segunda forma de recibir | Es lo que ya se hace |
 | 2026-09-08 | El checkout (RF-11) elige entre **envío, retiro y coordinar**, y sólo el envío pide dirección | Pedido tuyo. La dirección deja de ser un paso obligatorio del checkout y pasa a ser un dato del envío: quien retira o quien prefiere hablarlo no tiene por qué cargar una calle para poder confirmar |
+| 2026-09-14 | El checkout (RF-11) queda en **envío o retiro**: «coordinar con la vendedora» se va | Pedido tuyo. Eran la misma cosa: el retiro ya se coordina con la vendedora, que pasa el domicilio por WhatsApp |
+| 2026-09-14 | La forma de entrega **se deduce de la dirección** de la orden: con dirección es envío, sin ella es retiro. Todo envío lleva dirección, también en las órdenes manuales (RF-24) | Pedido tuyo. Una columna aparte guardaría el mismo dato dos veces, y habría que cuidar que no se contradigan |
 | 2026-09-08 | **El catálogo no muestra medios de pago**: se saca ese criterio de RF-02 | Pedido tuyo. Una tira de logos sobre una grilla de productos no responde ninguna pregunta que alguien tenga mientras mira el catálogo, y RF-19 ya tiene dónde mostrarse |
 | 2026-09-08 | La ficha **no dibuja los logos de medios de pago**: los nombra | Una tira de logos en la pantalla de venta se lee como «pagá acá», y acá no se paga (RN-01, RN-08). Los logos siguen en el pie y en la home |
 | 2026-09-08 | La ficha declara que los productos son **nuevos y en su caja original** | No se venden reacondicionados. Es texto fijo y no un dato por producto: el día que eso cambie, cambia el modelo y no una frase |

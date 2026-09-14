@@ -48,7 +48,7 @@ test("un comprador con órdenes no se puede borrar, y el error dice por qué", a
   const { orderId } = await crearOrdenDesdeCarrito({
     userId: comprador.userId,
     idempotencyKey: randomUUID(),
-    addressId: comprador.addressId,
+    entrega: { tipo: "envio", addressId: comprador.addressId },
     customerName: "Compradora de prueba",
     customerEmail: "compradora@ejemplo.test",
     customerPhone: "+5491155550000",

@@ -54,10 +54,24 @@ export type ValoresDeDireccion = Record<Campo, string>;
 export function FormularioDeDireccion({
   id,
   inicial,
+  alGuardar,
+  alCancelar,
 }: {
   /** Con id, edita esa dirección; sin id, carga una nueva. */
   id?: string;
   inicial: ValoresDeDireccion;
+  /**
+   * Solo al cargar una nueva: en vez de volver a la libreta, avisa el id de
+   * la que se guardó. Es lo que usa el checkout (F6.1) para elegirla ahí
+   * mismo, sin salir de la compra.
+   */
+  alGuardar?: (id: string) => void;
+  /**
+   * Cancelar sin navegar. Si el formulario avisa al guardar y no trae esto,
+   * no hay «Cancelar»: en el checkout sin direcciones, cancelar no tiene a
+   * dónde volver.
+   */
+  alCancelar?: () => void;
 }) {
   const router = useRouter();
   const [guardando, iniciar] = useTransition();
@@ -87,13 +101,22 @@ export function FormularioDeDireccion({
     };
 
     iniciar(async () => {
-      const r = id
-        ? await guardarCambiosDeDireccion({ id, ...datos })
-        : await guardarDireccionNueva(datos);
-
-      if (!r.ok) {
-        setErrores(leerErrores<Campo>(r));
-        return;
+      if (id) {
+        const r = await guardarCambiosDeDireccion({ id, ...datos });
+        if (!r.ok) {
+          setErrores(leerErrores<Campo>(r));
+          return;
+        }
+      } else {
+        const r = await guardarDireccionNueva(datos);
+        if (!r.ok) {
+          setErrores(leerErrores<Campo>(r));
+          return;
+        }
+        if (alGuardar) {
+          alGuardar(r.data.id);
+          return;
+        }
       }
 
       router.push("/mi-cuenta/direcciones");
@@ -246,9 +269,15 @@ export function FormularioDeDireccion({
         >
           Guardar dirección
         </Button>
-        <Button asChild variant="tertiary" size="lg">
-          <Link href="/mi-cuenta/direcciones">Cancelar</Link>
-        </Button>
+        {alCancelar ? (
+          <Button type="button" variant="tertiary" size="lg" onClick={alCancelar}>
+            Cancelar
+          </Button>
+        ) : alGuardar ? null : (
+          <Button asChild variant="tertiary" size="lg">
+            <Link href="/mi-cuenta/direcciones">Cancelar</Link>
+          </Button>
+        )}
       </div>
     </form>
   );
