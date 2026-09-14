@@ -6,6 +6,7 @@ import {
   PanelDeFiltros,
 } from "@/components/shop/filtros-catalogo";
 import { BotonFavorito } from "@/components/shop/favorito";
+import { Paginacion } from "@/components/shop/paginacion";
 import { SearchBox } from "@/components/shop/search-box";
 import { SelectorDeOrden } from "@/components/shop/selector-de-orden";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
@@ -16,7 +17,6 @@ import {
   POR_PAGINA,
   urlDePagina,
   urlDeTienda,
-  type FiltrosDeTienda,
   type ParametrosDeBusqueda,
 } from "@/modules/catalog/products/filtros-tienda";
 import {
@@ -25,7 +25,6 @@ import {
 } from "@/modules/catalog/products/tienda";
 import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
 import { getIdentity } from "@/lib/session";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Catálogo",
@@ -191,9 +190,9 @@ export default async function Catalogo({
             </ul>
 
             <Paginacion
-              filtros={filtros}
               pagina={filtros.pagina}
               paginas={paginas}
+              href={(n) => urlDePagina(filtros, n)}
             />
           </>
         ) : pagina.totalSinFiltros === 0 ? (
@@ -269,56 +268,3 @@ function Vacio({
   );
 }
 
-/**
- * Paginación por enlaces — §10.2.
- *
- * Enlaces y no botones: cada página tiene su propia dirección, así que se
- * comparte, se abre en otra pestaña y el atrás vuelve a la anterior. Con
- * botones habría que reimplementar las tres cosas.
- */
-function Paginacion({
-  filtros,
-  pagina,
-  paginas,
-}: {
-  filtros: FiltrosDeTienda;
-  pagina: number;
-  paginas: number;
-}) {
-  if (paginas <= 1) return null;
-
-  const numeros = Array.from({ length: paginas }, (_, i) => i + 1);
-
-  return (
-    <nav aria-label="Paginación" className="flex justify-center pt-10">
-      <ul className="flex flex-wrap items-center gap-1.5">
-        {numeros.map((n) => (
-          <li key={n}>
-            <Button
-              asChild
-              // `size="icon"` ya son los 44px de área táctil de §9: en un
-              // teléfono, números de 28px uno al lado del otro se tocan mal y
-              // se erra de página.
-              size="icon"
-              variant={n === pagina ? "brand" : "tertiary"}
-              className={cn(
-                "tabular-nums",
-                n === pagina ? "font-medium" : "hover:bg-surface-sunken",
-              )}
-            >
-              <Link
-                href={urlDePagina(filtros, n)}
-                aria-current={n === pagina ? "page" : undefined}
-              >
-                {n}
-                <span className="sr-only">
-                  {n === pagina ? " (página actual)" : ` Ir a la página ${n}`}
-                </span>
-              </Link>
-            </Button>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}

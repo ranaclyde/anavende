@@ -7,9 +7,11 @@ import { desmarcar, marcar } from "@/modules/users/favoritos/operaciones";
 import { recordar, tomar } from "@/modules/users/favoritos/pendiente";
 import {
   cambioDeFavorito,
+  eleccionDeVista,
   sinDatos,
   soloProducto,
 } from "@/modules/users/favoritos/schemas";
+import { guardarVista } from "@/modules/users/favoritos/vista";
 
 /**
  * Las acciones de favoritos — RF-10 · TS §6.2. Tarea F5.4.
@@ -29,6 +31,19 @@ export const cambiarFavorito = action
     if (input.marcado) await marcar(userId, input.productId);
     else await desmarcar(userId, input.productId);
     return { marcado: input.marcado };
+  });
+
+/**
+ * Lista o tarjetas en «Favoritos». Refresca porque la página se dibuja en el
+ * servidor con la vista que dice la cookie.
+ */
+export const elegirVistaDeFavoritos = action
+  .input(eleccionDeVista)
+  .auth("customer")
+  .handler(async ({ input }) => {
+    await guardarVista(input.vista);
+    refresh();
+    return { vista: input.vista };
   });
 
 /**

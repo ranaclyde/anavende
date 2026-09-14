@@ -6,6 +6,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { db } from "@/db";
 import { desmarcar, marcar } from "@/modules/users/favoritos/operaciones";
 import { interpretar } from "@/modules/users/favoritos/pendiente";
+import { interpretarVista } from "@/modules/users/favoritos/vista";
 import {
   esFavorito,
   idsDeFavoritos,
@@ -86,7 +87,7 @@ describe("aislamiento (§13.8)", () => {
     expect(await desmarcar(otra.userId, productId)).toEqual({ quitado: false });
     expect(await idsDeFavoritos(otra.userId)).toEqual([]);
     expect(await esFavorito(otra.userId, productId)).toBe(false);
-    expect(await leerFavoritos(otra.userId)).toEqual([]);
+    expect(await leerFavoritos(otra.userId)).toEqual({ favoritos: [], total: 0 });
 
     expect(await esFavorito(ana.userId, productId)).toBe(true);
   });
@@ -110,8 +111,9 @@ describe("la lista", () => {
     await db.execute(sql`
       UPDATE products SET price = '2500.00' WHERE id = ${viejo.productId}`);
 
-    const lista = await leerFavoritos(userId);
+    const { favoritos: lista, total } = await leerFavoritos(userId);
 
+    expect(total).toBe(2);
     expect(lista.map((f) => f.id)).toEqual([nuevo.productId, viejo.productId]);
     expect(lista[1]).toMatchObject({ precio: "2500.00", disponible: 3, activo: true });
     expect(lista[0]).toMatchObject({ disponible: 0, activo: true });
@@ -123,9 +125,40 @@ describe("la lista", () => {
     await marcar(userId, productId);
     await desactivar(productId);
 
-    expect(await leerFavoritos(userId)).toMatchObject([
+    expect((await leerFavoritos(userId)).favoritos).toMatchObject([
       { id: productId, activo: false },
     ]);
+  });
+
+  test("se pagina: cada página trae lo suyo y el total es de todas", async () => {
+    const { userId } = await unComprador();
+    const ids = [await unProducto(), await unProducto(), await unProducto()];
+    for (const [i, id] of ids.entries()) {
+      await marcar(userId, id);
+      // El primero es el más viejo: el orden no depende de que las altas
+      // caigan en instantes distintos.
+      await db.execute(sql`
+        UPDATE favorites SET created_at = now() - make_interval(mins => ${10 - i})
+         WHERE user_id = ${userId} AND product_id = ${id}`);
+    }
+
+    const primera = await leerFavoritos(userId, { pagina: 1, porPagina: 2 });
+    const segunda = await leerFavoritos(userId, { pagina: 2, porPagina: 2 });
+    const tercera = await leerFavoritos(userId, { pagina: 3, porPagina: 2 });
+
+    expect(primera.favoritos.map((f) => f.id)).toEqual([ids[2], ids[1]]);
+    expect(segunda.favoritos.map((f) => f.id)).toEqual([ids[0]]);
+    expect(tercera).toEqual({ favoritos: [], total: 3 });
+    expect(primera.total).toBe(3);
+  });
+});
+
+describe("la vista (lista o tarjetas)", () => {
+  test("lista por omisión, y lo que no es una vista conocida también", () => {
+    expect(interpretarVista(undefined)).toBe("lista");
+    expect(interpretarVista("cualquier-cosa")).toBe("lista");
+    expect(interpretarVista("lista")).toBe("lista");
+    expect(interpretarVista("tarjetas")).toBe("tarjetas");
   });
 });
 

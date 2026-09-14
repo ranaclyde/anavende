@@ -18,3 +18,13 @@ export const cambioDeFavorito = z.object({
 export const soloProducto = z.object({ productId });
 
 export const sinDatos = z.object({});
+
+/**
+ * Cómo se ve «Favoritos»: renglones o tarjetas. **Lista por omisión**
+ * (decisión del 2026-09-14). No es `server-only` porque el botón que la
+ * cambia necesita el tipo.
+ */
+export const vistaDeFavoritos = z.enum(["lista", "tarjetas"]);
+export type VistaDeFavoritos = z.infer<typeof vistaDeFavoritos>;
+
+export const eleccionDeVista = z.object({ vista: vistaDeFavoritos });

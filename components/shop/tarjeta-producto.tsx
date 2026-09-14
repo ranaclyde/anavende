@@ -236,8 +236,11 @@ export function TarjetaProducto({
  * Se muestran hasta cuatro. Un producto con nueve colores llenaría media
  * tarjeta de puntos y empujaría el precio; el resto se resume en «+N», que
  * dice lo mismo en un tercio del espacio.
+ *
+ * Se exporta para el renglón de «Favoritos» (F5.4): la lista dice lo mismo
+ * que la tarjeta, con los mismos puntos.
  */
-function PuntosDeColor({ colores }: { colores: { nombre: string; hex: string }[] }) {
+export function PuntosDeColor({ colores }: { colores: { nombre: string; hex: string }[] }) {
   if (colores.length === 0) return null;
 
   const MAXIMO = 4;
