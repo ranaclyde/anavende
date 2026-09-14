@@ -96,3 +96,28 @@ export const completarPerfilSchema = z.object({
   lastName: apellido,
   phone: telefono,
 });
+
+/**
+ * «Mis datos» (RF-07, F5.2): los mismos tres campos, con las mismas reglas.
+ * El teléfono sigue sin poder quedar vacío (RF-05). El email no se edita —ver
+ * `modules/users/perfil.ts`—, y como el objeto descarta lo que no declara,
+ * mandarlo igual no lo cambia.
+ */
+export const misDatosSchema = completarPerfilSchema;
+
+/**
+ * Cambiar o definir la contraseña (RF-07, RF-06).
+ *
+ * La actual es opcional ACÁ porque quien entró solo por Google o Facebook no
+ * tiene una; que haga falta lo decide la acción con la sesión en la mano.
+ */
+export const cambioDeContrasenaSchema = z
+  .object({
+    actual: z.string().max(72).optional(),
+    nueva: contrasena,
+    repetida: z.string(),
+  })
+  .refine((v) => v.nueva === v.repetida, {
+    path: ["repetida"],
+    error: "Las dos contraseñas tienen que ser iguales.",
+  });

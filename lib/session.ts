@@ -32,6 +32,17 @@ export type Identity = {
    * (RF-06). No reemplaza al del perfil: es solo una sugerencia del alta.
    */
   nombreSugerido: string | null;
+  /**
+   * ¿Entra con contraseña? Decide si «Mis datos» la **cambia** —pidiendo la
+   * actual— o la **define**, que es lo que RF-06 le promete a quien se dio de
+   * alta con Google o Facebook.
+   *
+   * GoTrue anota en `app_metadata.providers` cada vía de ingreso de la cuenta,
+   * y `email` es la de contraseña. **Ante la duda, se asume que sí**: pedirle
+   * la actual a quien no tiene lo manda a «¿No la recordás?», y no pedírsela a
+   * quien sí tiene deja cambiarla a cualquiera que encuentre la sesión abierta.
+   */
+  tieneContrasena: boolean;
 };
 
 export type Session = {
@@ -54,6 +65,10 @@ export async function getIdentity(): Promise<Identity | null> {
   const metadata = claims.user_metadata as
     | { email_verified?: boolean; full_name?: string; name?: string }
     | undefined;
+  const app = claims.app_metadata as
+    | { providers?: string[]; contrasena_definida?: boolean }
+    | undefined;
+  const proveedores = app?.providers;
 
   return {
     userId: claims.sub,
@@ -63,6 +78,14 @@ export async function getIdentity(): Promise<Identity | null> {
     emailVerified:
       claims.email_verified === true || metadata?.email_verified === true,
     nombreSugerido: metadata?.full_name ?? metadata?.name ?? null,
+    // Solo es «no» cuando GoTrue dice qué vías tiene, ninguna es `email`, y
+    // nadie la definió desde «Mis datos»: GoTrue no suma `email` a
+    // `providers` cuando la define una cuenta de Google, así que eso lo anota
+    // la aplicación (`anotarContrasenaDefinida`, en `modules/users/actions`).
+    tieneContrasena:
+      !proveedores ||
+      proveedores.includes("email") ||
+      app?.contrasena_definida === true,
   };
 }
 

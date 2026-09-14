@@ -1,5 +1,6 @@
 "use client";
 
+import { LogOut } from "lucide-react";
 import { useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export function BotonSalir() {
       loadingLabel="Cerrando sesión"
       onClick={() => iniciar(() => salir())}
     >
+      <LogOut aria-hidden />
       Cerrar sesión
     </Button>
   );
