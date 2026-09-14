@@ -726,8 +726,6 @@ El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del con
 
 Para el **visitante sin sesión**, el botón principal dice **«Iniciá sesión para comprar»** y el secundario «Comprar por WhatsApp» (RF-08).
 
-**El corazón va sobre la imagen, arriba a la derecha, igual que en la tarjeta** (§6.1) — mismo ícono, mismo lugar, mismos dos estados. Quien lo usó en la grilla no tiene que buscarlo de nuevo acá. Convive con la ampliación de la galería sin pelearse: la imagen es la que abre el modal y el corazón es un botón de 44px por encima, que es exactamente el arreglo que ya tiene la tarjeta con su enlace estirado.
-
 **El precio son dos números, como en la tarjeta** (§6.7, RN-04c). La ficha llevó «Ahorrás $ 3.000,00» y ya no.
 
 #### Sin stock

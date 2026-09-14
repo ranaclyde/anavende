@@ -338,7 +338,7 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 - [ ] El corazón está **siempre a la vista** en las dos, y no aparece al pasar el mouse: en un teléfono no hay hover, y ahí quedaría inalcanzable.
 - [ ] **Contorno** cuando no está marcado, **relleno** cuando sí. El relleno usa el burdeos de la marca (DR §6.1); no entra un color nuevo al sistema por un solo ícono.
 - [ ] El estado no se comunica **sólo** con el relleno: el botón lo anuncia también para lectores de pantalla, y su etiqueta dice qué va a pasar al tocarlo.
-- [ ] El listado de favoritos muestra precio y disponibilidad actualizados, y permite agregar al carrito.
+- [ ] El listado de favoritos muestra precio y disponibilidad actualizados. **No agrega al carrito** (2026-09-14): el favorito es del producto y no del color, así que la tarjeta lleva a la ficha, donde se elige color y cantidad.
 - [ ] Un producto desactivado se muestra en favoritos como «No disponible».
 - [ ] Para un visitante, la acción invita a iniciar sesión sin perder la navegación.
 

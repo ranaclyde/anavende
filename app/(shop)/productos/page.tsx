@@ -5,6 +5,8 @@ import {
   ChipsDeFiltros,
   PanelDeFiltros,
 } from "@/components/shop/filtros-catalogo";
+import { BotonFavorito } from "@/components/shop/favorito";
+import { Paginacion } from "@/components/shop/paginacion";
 import { SearchBox } from "@/components/shop/search-box";
 import { SelectorDeOrden } from "@/components/shop/selector-de-orden";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
@@ -15,14 +17,14 @@ import {
   POR_PAGINA,
   urlDePagina,
   urlDeTienda,
-  type FiltrosDeTienda,
   type ParametrosDeBusqueda,
 } from "@/modules/catalog/products/filtros-tienda";
 import {
   leerOpcionesDeFiltro,
   leerPaginaDelCatalogo,
 } from "@/modules/catalog/products/tienda";
-import { cn } from "@/lib/utils";
+import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
+import { getIdentity } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Catálogo",
@@ -49,10 +51,20 @@ export default async function Catalogo({
   const filtros = leerFiltrosDeTienda(await searchParams);
 
   // Independientes: no tiene sentido esperar una para pedir la otra.
-  const [pagina, opciones] = await Promise.all([
+  //
+  // Los favoritos van con la identidad y no con la sesión entera (F5.4): son
+  // una lectura de datos propios, que se filtra por el id del token sin ir a
+  // buscar el perfil (§13.3). `null` es que no hay nadie adentro.
+  const [pagina, opciones, favoritos] = await Promise.all([
     leerPaginaDelCatalogo(filtros),
     leerOpcionesDeFiltro(),
+    getIdentity().then((i) => (i ? idsDeFavoritos(i.userId) : null)),
   ]);
+
+  const guardados = new Set(favoritos ?? []);
+  // El corazón de un visitante lleva a ingresar y vuelve acá, con los mismos
+  // filtros y en la misma página (RF-10: «sin perder la navegación»).
+  const volver = urlDePagina(filtros, filtros.pagina);
 
   const paginas = Math.max(1, Math.ceil(pagina.total / POR_PAGINA));
 
@@ -162,15 +174,25 @@ export default async function Catalogo({
                     // La primera fila está arriba del pliegue: diferirla
                     // penaliza el LCP. Cuatro es el ancho de la grilla.
                     prioridad={i < 4}
+                    accionFavorito={
+                      <BotonFavorito
+                        forma="corazon"
+                        productId={producto.id}
+                        nombre={producto.nombre}
+                        marcado={guardados.has(producto.id)}
+                        conSesion={favoritos !== null}
+                        volver={volver}
+                      />
+                    }
                   />
                 </li>
               ))}
             </ul>
 
             <Paginacion
-              filtros={filtros}
               pagina={filtros.pagina}
               paginas={paginas}
+              href={(n) => urlDePagina(filtros, n)}
             />
           </>
         ) : pagina.totalSinFiltros === 0 ? (
@@ -246,56 +268,3 @@ function Vacio({
   );
 }
 
-/**
- * Paginación por enlaces — §10.2.
- *
- * Enlaces y no botones: cada página tiene su propia dirección, así que se
- * comparte, se abre en otra pestaña y el atrás vuelve a la anterior. Con
- * botones habría que reimplementar las tres cosas.
- */
-function Paginacion({
-  filtros,
-  pagina,
-  paginas,
-}: {
-  filtros: FiltrosDeTienda;
-  pagina: number;
-  paginas: number;
-}) {
-  if (paginas <= 1) return null;
-
-  const numeros = Array.from({ length: paginas }, (_, i) => i + 1);
-
-  return (
-    <nav aria-label="Paginación" className="flex justify-center pt-10">
-      <ul className="flex flex-wrap items-center gap-1.5">
-        {numeros.map((n) => (
-          <li key={n}>
-            <Button
-              asChild
-              // `size="icon"` ya son los 44px de área táctil de §9: en un
-              // teléfono, números de 28px uno al lado del otro se tocan mal y
-              // se erra de página.
-              size="icon"
-              variant={n === pagina ? "brand" : "tertiary"}
-              className={cn(
-                "tabular-nums",
-                n === pagina ? "font-medium" : "hover:bg-surface-sunken",
-              )}
-            >
-              <Link
-                href={urlDePagina(filtros, n)}
-                aria-current={n === pagina ? "page" : undefined}
-              >
-                {n}
-                <span className="sr-only">
-                  {n === pagina ? " (página actual)" : ` Ir a la página ${n}`}
-                </span>
-              </Link>
-            </Button>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}

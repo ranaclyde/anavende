@@ -50,6 +50,8 @@ export type VarianteDeFicha = {
 };
 
 export type Ficha = {
+  /** Lo que guarda «Guardar» (F5.4): el favorito es del producto, no del color. */
+  id: string;
   slug: string;
   nombre: string;
   /** Markdown ya sanitizado al guardar; se vuelve a filtrar al pintar (§16). */
@@ -97,7 +99,8 @@ export const leerFicha = cache(async function leerFicha(
   const [fila] = await db.execute<
     Omit<Ficha, "variantes"> & { variantes: FilaDeVariante[] | null }
   >(sql`
-    SELECT p.slug,
+    SELECT p.id,
+           p.slug,
            p.name             AS nombre,
            p.description      AS descripcion,
            p.description_text AS "descripcionTexto",

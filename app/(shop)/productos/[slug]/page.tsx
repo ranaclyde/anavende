@@ -14,6 +14,7 @@ import { AREA_TACTIL, cn } from "@/lib/utils";
 import { mirar } from "@/modules/cart/pendiente";
 import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
 import { leerFicha, varianteInicial } from "@/modules/catalog/products/ficha";
+import { esFavorito } from "@/modules/users/favoritos/queries";
 import {
   mediosDePagoDeLaTienda,
   numeroDeWhatsApp,
@@ -109,8 +110,13 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
    * **Y solo si es de este producto.** La nota es una sola y global; si el
    * comprador llegó a la ficha de otra cosa, acá no hay nada que hacer y la
    * nota se queda para cuando vuelva a la que sí.
+   *
+   * Si «Guardar» está marcado (F5.4) también depende de la identidad y del
+   * producto, y no de la nota: va en paralelo con ella.
    */
-  const pendiente = identidad ? await mirar() : null;
+  const [pendiente, guardado] = identidad
+    ? await Promise.all([mirar(), esFavorito(identidad.userId, ficha.id)])
+    : [null, false];
   const iPendiente = pendiente
     ? ficha.variantes.findIndex((v) => v.id === pendiente.variantId)
     : -1;
@@ -148,6 +154,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         whatsapp={whatsapp}
         conSesion={identidad !== null}
         pendiente={iPendiente !== -1}
+        favorito={{ productId: ficha.id, marcado: guardado }}
         encabezado={
           <header className="flex flex-col gap-2">
             <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">

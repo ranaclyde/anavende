@@ -24,6 +24,8 @@ import { cn } from "@/lib/utils";
  */
 
 export type ProductoEnTarjeta = {
+  /** Lo que guarda el corazón (F5.4): el favorito es del producto. */
+  id: string;
   slug: string;
   nombre: string;
   /** Va en versalitas arriba del nombre (§6.1). */
@@ -51,23 +53,24 @@ export type ProductoEnTarjeta = {
 type Props = {
   producto: ProductoEnTarjeta;
   /**
-   * El corazón de RF-10, que llega recién en F5.4. Se recibe como nodo y no
-   * como `onToggle` para que la tarjeta pueda seguir siendo servidor: la isla
-   * de cliente la arma quien la pasa. Sin esto, no se dibuja nada — un corazón
-   * que no hace nada es peor que ningún corazón.
+   * El corazón de RF-10 (F5.4, `components/shop/favorito.tsx`). Se recibe
+   * como nodo y no como `onToggle` para que la tarjeta pueda seguir siendo
+   * servidor: la isla de cliente la arma quien la pasa. Sin esto, no se dibuja
+   * nada — un corazón que no hace nada es peor que ningún corazón.
    *
-   * **El contrato visual ya está decidido y es de DR §6.1**, para que F5.4 no
-   * tenga que inventarlo: arriba a la derecha de la imagen y SIEMPRE a la
-   * vista —en un teléfono no hay hover—, contorno sin marcar y relleno
-   * `--brand` marcado, área táctil de 44px, y el estado anunciado además del
-   * relleno, porque un lector de pantalla no ve un ícono lleno. El burdeos y
-   * no un rosa: §1.2 decidió un solo color saturado en todo el sistema.
-   *
-   * La tarjeta solo pone el lugar. Que esté FUERA del ancla lo resuelve acá
-   * abajo el enlace estirado, y no es negociable: un `<a>` que envolviera la
-   * tarjeta se llevaría el botón adentro.
+   * La tarjeta solo pone el lugar: arriba a la derecha de la imagen y SIEMPRE
+   * a la vista (DR §6.1). Que esté FUERA del ancla lo resuelve acá abajo el
+   * enlace estirado, y no es negociable: un `<a>` que envolviera la tarjeta se
+   * llevaría el botón adentro.
    */
   accionFavorito?: ReactNode;
+  /**
+   * Un favorito que la vendedora desactivó después (RF-10, F5.4). Se dibuja
+   * con la píldora «No disponible» y **sin enlace**: la ficha de un producto
+   * inactivo es un 404 (RN-05). El corazón sigue, porque es la forma de
+   * sacarlo de la lista.
+   */
+  noDisponible?: boolean;
   /**
    * `true` en las primeras imágenes de la grilla. `next/image` difiere por
    * omisión, y diferir la que está arriba de todo penaliza el LCP: es la que
@@ -76,10 +79,16 @@ type Props = {
   prioridad?: boolean;
 };
 
-export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) {
+export function TarjetaProducto({
+  producto,
+  accionFavorito,
+  noDisponible = false,
+  prioridad,
+}: Props) {
   const { slug, nombre, marca, imagenKey, color, disponible } = producto;
   const colores = producto.colores ?? [];
-  const sinStock = disponible <= 0;
+  const sinStock = !noDisponible && disponible <= 0;
+  const pildora = noDisponible ? "No disponible" : sinStock ? "Sin stock" : null;
 
   // §9: «producto, marca y color». Sin el color, dos tarjetas de la misma
   // ficha se anuncian idénticas.
@@ -102,7 +111,10 @@ export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) 
         // todo movimiento se apague bajo `prefers-reduced-motion`, y ahí la
         // elevación sola sigue comunicando el hover.
         "transition-shadow duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
-        "hover:shadow-lg motion-safe:hover:-translate-y-0.5",
+        // Sin enlace no hay a dónde ir, y elevarse al pasar prometería uno.
+        noDisponible
+          ? ""
+          : "hover:shadow-lg motion-safe:hover:-translate-y-0.5",
         "motion-safe:transition-[box-shadow,transform]",
       )}
     >
@@ -128,8 +140,11 @@ export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) 
                 "motion-safe:transition-transform motion-safe:duration-200",
                 "motion-safe:group-hover:scale-[1.03]",
                 // §6.1: la imagen baja a 55% cuando no hay stock. La píldora
-                // de abajo es la que lo DICE — el color no alcanza (§9).
+                // de abajo es la que lo DICE — el color no alcanza (§9). Lo
+                // que ya no se vende pierde además el color, como en el
+                // carrito (F5.6).
                 sinStock ? "opacity-55" : "",
+                noDisponible ? "opacity-55 grayscale" : "",
               )}
             />
           ) : (
@@ -149,9 +164,9 @@ export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) 
             F3.8, y desde el 2026-09-08 es la regla de toda la tienda y no solo
             de la tarjeta (RN-04c).
           */}
-          {sinStock ? (
+          {pildora ? (
             <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-surface/92 px-3 py-1.5 text-caption font-medium whitespace-nowrap text-ink shadow-md">
-              Sin stock
+              {pildora}
             </p>
           ) : null}
 
@@ -181,12 +196,16 @@ export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) 
             `line-clamp-2` con el alto reservado: sin él, un nombre de una línea
             y otro de dos dejan los precios de la fila a distinta altura.
           */}
-          <Link
-            href={`/productos/${slug}`}
-            className="line-clamp-2 min-h-[2.9em] after:absolute after:inset-0 after:rounded-card after:content-['']"
-          >
-            {nombre}
-          </Link>
+          {noDisponible ? (
+            <span className="line-clamp-2 min-h-[2.9em]">{nombre}</span>
+          ) : (
+            <Link
+              href={`/productos/${slug}`}
+              className="line-clamp-2 min-h-[2.9em] after:absolute after:inset-0 after:rounded-card after:content-['']"
+            >
+              {nombre}
+            </Link>
+          )}
         </h3>
 
         {/*
@@ -217,8 +236,11 @@ export function TarjetaProducto({ producto, accionFavorito, prioridad }: Props) 
  * Se muestran hasta cuatro. Un producto con nueve colores llenaría media
  * tarjeta de puntos y empujaría el precio; el resto se resume en «+N», que
  * dice lo mismo en un tercio del espacio.
+ *
+ * Se exporta para el renglón de «Favoritos» (F5.4): la lista dice lo mismo
+ * que la tarjeta, con los mismos puntos.
  */
-function PuntosDeColor({ colores }: { colores: { nombre: string; hex: string }[] }) {
+export function PuntosDeColor({ colores }: { colores: { nombre: string; hex: string }[] }) {
   if (colores.length === 0) return null;
 
   const MAXIMO = 4;
