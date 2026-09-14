@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   cambiarFavorito,
@@ -118,16 +123,25 @@ function Alternar({
   return (
     <div className={cn("relative", forma === "guardar" && "flex flex-1")}>
       {forma === "corazon" ? (
-        <button type="button" onClick={alternar} className={AREA}>
-          <span className={CIRCULO}>
-            <Corazon marcado={actual} className="size-5" />
-          </span>
-          <span className="sr-only">
-            {actual
-              ? `Quitar ${nombre} de favoritos`
-              : `Guardar ${nombre} en favoritos`}
-          </span>
-        </button>
+        // El ícono solo no dice qué hace: el tooltip lo dice para quien ve,
+        // y la etiqueta con el nombre del producto, para quien escucha.
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button type="button" onClick={alternar} className={AREA}>
+              <span className={CIRCULO}>
+                <Corazon marcado={actual} className="size-5" />
+              </span>
+              <span className="sr-only">
+                {actual
+                  ? `Quitar ${nombre} de favoritos`
+                  : `Guardar ${nombre} en favoritos`}
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {actual ? "Quitar de favoritos" : "Guardar en favoritos"}
+          </TooltipContent>
+        </Tooltip>
       ) : (
         <Button variant="secondary" size="md" onClick={alternar} className="flex-1">
           <Corazon marcado={actual} />
@@ -187,14 +201,19 @@ function IngresarParaGuardar({
 
   if (forma === "corazon") {
     return (
-      <Link href={href} onClick={anotar} className={AREA}>
-        <span className={CIRCULO}>
-          <Corazon marcado={false} className="size-5" />
-        </span>
-        <span className="sr-only">
-          Iniciá sesión para guardar {nombre} en favoritos
-        </span>
-      </Link>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link href={href} onClick={anotar} className={AREA}>
+            <span className={CIRCULO}>
+              <Corazon marcado={false} className="size-5" />
+            </span>
+            <span className="sr-only">
+              Iniciá sesión para guardar {nombre} en favoritos
+            </span>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent>Guardar en favoritos</TooltipContent>
+      </Tooltip>
     );
   }
 
