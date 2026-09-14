@@ -12,7 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FieldHint } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { getIdentity, getSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
@@ -62,11 +64,6 @@ export default async function MiCuenta() {
               email={profile.email}
               verificado={identity.emailVerified}
             />
-            {profile.role === "admin" && (
-              <p className="text-body-sm text-ink-secondary">
-                Tu cuenta es de administradora.
-              </p>
-            )}
             <MisDatosForm
               firstName={profile.firstName}
               lastName={profile.lastName}
@@ -98,8 +95,12 @@ export default async function MiCuenta() {
 }
 
 /**
- * El email, con su estado al lado — pedido del 2026-09-13, en lugar del
- * renglón «Email verificado: Sí».
+ * El email, en un recuadro con la forma de los campos de al lado pero sobre
+ * `--canvas`: se lee como un dato que no se edita sin tener que decirlo
+ * (pedido del 2026-09-13). Es un `input` de solo lectura y no un texto
+ * suelto, así el lector de pantalla lo anuncia como tal y se puede copiar.
+ * **El texto no se agrisa**: un email en gris claro es un email que cuesta
+ * leer, y lo que tiene que decir «no editable» es el fondo, no la letra.
  *
  * **Verificado es un tilde verde** (`--success`), no azul: el azul es el
  * tilde de las redes sociales, que certifica a una persona, no un email.
@@ -119,22 +120,38 @@ function EmailDeLaCuenta({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-body-sm font-medium text-ink">Email</p>
-      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body text-ink">
-        <span className="min-w-0 break-all">{email}</span>
+      <Label htmlFor="email">Email</Label>
+      <div className="relative">
+        <Input
+          id="email"
+          type="email"
+          value={email}
+          readOnly
+          aria-describedby="email-estado"
+          className={cn(
+            "cursor-default truncate bg-canvas",
+            verificado ? "pr-12" : "pr-36",
+          )}
+        />
         {verificado ? (
-          <span title="Email verificado" className="inline-flex text-success">
+          <span
+            id="email-estado"
+            title="Email verificado"
+            className="absolute inset-y-0 right-4 flex items-center text-success"
+          >
             <BadgeCheck aria-hidden className="size-5" />
-            <span className="sr-only">(verificado)</span>
+            <span className="sr-only">Verificado</span>
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-body-sm text-warning">
+          <span
+            id="email-estado"
+            className="absolute inset-y-0 right-4 flex items-center gap-1 text-body-sm text-warning"
+          >
             <CircleAlert aria-hidden className="size-4" />
             Sin verificar
           </span>
         )}
-      </p>
-      <FieldHint>Es con el que entrás; no se cambia desde acá.</FieldHint>
+      </div>
     </div>
   );
 }
