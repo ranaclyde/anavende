@@ -540,6 +540,8 @@ CREATE TABLE favorites (
 
 > El índice parcial `one_default_address_per_user` hace que «hay una sola dirección predeterminada» sea una garantía de la base, no una convención que la aplicación deba recordar.
 
+> **Hasta 3 direcciones vivas por comprador** (RF-09, 2026-09-13). Esto no lo puede garantizar la base: un CHECK no cuenta filas. Lo hace la operación de alta: bloquea la fila del comprador en `user_profiles`, cuenta las direcciones sin `deleted_at` y rechaza la cuarta. El bloqueo evita que dos pestañas agreguen la tercera y la cuarta al mismo tiempo, igual que el del carrito. Las dadas de baja no cuentan.
+
 **El carrito no existe sin sesión** (RF-08): no hay tabla ni cookie de carrito anónimo. `cart_items` guarda cantidad, nunca precio: el precio siempre se lee del producto en el momento de mostrar (RN-09).
 
 **`last_seen_price` es la única excepción, y no contradice la regla** (F5.6, 2026-09-12). Es el precio final que el comprador **vio** la última vez, y existe solo para poder decirle «el precio de *X* pasó de $A a $B» (RN-09, RF-08): sin recordar $A no hay forma de avisar que cambió. **Nunca entra en un subtotal, un total ni una orden** —eso sigue saliendo de `products.final_price`—, así que no hay precio congelado que se pueda cobrar mal. Se escribe cada vez que el comprador ve el precio: al agregar y al revisar el carrito. La migración `0013` carga el precio vigente en los renglones que ya existían, para que nadie vea un aviso de un cambio que no presenció.

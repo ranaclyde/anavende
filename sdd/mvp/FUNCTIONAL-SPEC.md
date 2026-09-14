@@ -322,7 +322,9 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 
 **Criterios de aceptación:**
 - [ ] Crear, editar y eliminar direcciones; marcar una como predeterminada.
-- [ ] No se puede eliminar la única dirección si hay una orden `activa` que la usa (se conserva copia en la orden — RN-12).
+- [ ] **Hasta 3 direcciones por comprador**: la predeterminada y dos más, para poder elegir otra en el checkout (decisión del 2026-09-13). Con 3, «Agregar» se muestra deshabilitado y con el motivo; en el checkout, la dirección nueva se puede usar para esa orden sin guardarla.
+- [ ] Si hay direcciones, una es la predeterminada: la primera lo es sola, y al eliminar la predeterminada pasa a serlo la más antigua de las que quedan.
+- [ ] Eliminar una dirección no cambia las órdenes que la usaron: cada orden guarda su propia copia (RN-12), y la dirección se da de baja con una marca, sin borrarse. Por eso no hace falta impedir que se elimine la única dirección de una orden `activa`, que era lo que este criterio pedía antes del 2026-09-13.
 - [ ] En el checkout se puede elegir una dirección existente o cargar una nueva (con opción de guardarla).
 
 ---
