@@ -41,7 +41,7 @@ export type Direccion = {
   notes: string | null;
   city: string;
   province: string;
-  postalCode: string;
+  postalCode: string | null;
   isDefault: boolean;
 };
 

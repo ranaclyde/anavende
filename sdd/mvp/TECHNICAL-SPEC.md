@@ -522,7 +522,7 @@ CREATE TABLE addresses (
   notes          text,
   city           text NOT NULL,
   province       text NOT NULL,
-  postal_code    text NOT NULL,
+  postal_code    text,          -- se deduce de la localidad; NULL en «Otra localidad cercana» (RF-09, migración 0014)
   is_default     boolean NOT NULL DEFAULT false,
   deleted_at     timestamptz,
   created_at     timestamptz NOT NULL DEFAULT now()

@@ -28,7 +28,8 @@ export type ShippingAddressSnapshot = {
   notes?: string | null;
   city: string;
   province: string;
-  postalCode: string;
+  /** `null` en «Otra localidad cercana» (F5.3, 2026-09-13). */
+  postalCode: string | null;
 };
 
 export const orders = pgTable(

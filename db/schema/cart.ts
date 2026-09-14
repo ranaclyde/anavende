@@ -88,7 +88,11 @@ export const addresses = pgTable(
     notes: text("notes"),
     city: text("city").notNull(),
     province: text("province").notNull(),
-    postalCode: text("postal_code").notNull(),
+    /**
+     * Opcional desde F5.3 (2026-09-13, migración `0014`): no se pregunta,
+     * se deduce de la localidad, y la de «Otra localidad cercana» no se sabe.
+     */
+    postalCode: text("postal_code"),
     isDefault: boolean("is_default").notNull().default(false),
     /** Baja lógica: una orden vieja tiene que poder seguir mostrándose. */
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

@@ -16,8 +16,9 @@ import {
   guardarDireccionNueva,
 } from "@/modules/users/direcciones/actions";
 import {
-  PROVINCIAS,
-  type Provincia,
+  LOCALIDADES,
+  OTRA_LOCALIDAD,
+  PROVINCIAS_DE_LA_ZONA,
 } from "@/modules/users/direcciones/constantes";
 
 type Campo =
@@ -27,9 +28,9 @@ type Campo =
   | "street"
   | "number"
   | "apartment"
-  | "city"
-  | "province"
-  | "postalCode"
+  | "localidad"
+  | "otraLocalidad"
+  | "provinciaDeOtra"
   | "notes";
 
 export type ValoresDeDireccion = Record<Campo, string>;
@@ -39,6 +40,11 @@ export type ValoresDeDireccion = Record<Campo, string>;
  *
  * El mismo formulario para las dos cosas, y el que va a usar el checkout
  * cuando se cargue una dirección nueva desde ahí (RF-11, F6.1).
+ *
+ * **La localidad es una lista, y no hay provincia ni código postal**
+ * (2026-09-13): se entrega en Viedma, Carmen de Patagones y alrededores
+ * (RN-10), y los dos datos se deducen de la localidad. Solo «Otra localidad
+ * cercana» pide nombre y provincia.
  *
  * Lo opcional se marca «(opcional)» y lo obligatorio no lleva nada (§6.6).
  * Cada campo lleva su `autoComplete`: el navegador ya sabe la dirección de
@@ -57,6 +63,9 @@ export function FormularioDeDireccion({
   const [guardando, iniciar] = useTransition();
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  // Controlada solo para mostrar u ocultar los campos de «Otra».
+  const [localidad, setLocalidad] = useState(inicial.localidad);
+  const esOtra = localidad === OTRA_LOCALIDAD;
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -71,11 +80,9 @@ export function FormularioDeDireccion({
       street: valor("street"),
       number: valor("number"),
       apartment: valor("apartment"),
-      city: valor("city"),
-      // El servidor la vuelve a validar contra la lista (§6.2): esto solo
-      // le dice al compilador qué forma tiene.
-      province: valor("province") as Provincia,
-      postalCode: valor("postalCode"),
+      localidad,
+      otraLocalidad: esOtra ? valor("otraLocalidad") : "",
+      provinciaDeOtra: esOtra ? valor("provinciaDeOtra") : "",
       notes: valor("notes"),
     };
 
@@ -152,45 +159,63 @@ export function FormularioDeDireccion({
         placeholder="3° B"
       />
 
-      <Fila>
-        <CampoDeTexto
-          nombre="city"
-          etiqueta="Ciudad o localidad"
-          valor={inicial.city}
-          error={e.city}
-          autoComplete="address-level2"
-        />
-        <div className="flex flex-1 flex-col gap-2">
-          <Label htmlFor="province">Provincia</Label>
-          <Select
-            id="province"
-            name="province"
-            autoComplete="address-level1"
-            defaultValue={inicial.province}
-            aria-invalid={!!e.province || undefined}
-          >
-            <option value="" disabled>
-              Elegí la provincia
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="localidad">Localidad</Label>
+        <Select
+          id="localidad"
+          name="localidad"
+          value={localidad}
+          onChange={(ev) => setLocalidad(ev.target.value)}
+          aria-invalid={!!e.localidad || undefined}
+        >
+          <option value="" disabled>
+            Elegí la localidad
+          </option>
+          {LOCALIDADES.map((l) => (
+            <option key={l.nombre} value={l.nombre}>
+              {l.nombre}
             </option>
-            {PROVINCIAS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </Select>
-          <FieldError>{e.province}</FieldError>
-        </div>
-      </Fila>
+          ))}
+          <option value={OTRA_LOCALIDAD}>Otra localidad cercana</option>
+        </Select>
+        {e.localidad ? (
+          <FieldError>{e.localidad}</FieldError>
+        ) : (
+          <FieldHint>Entregamos en Viedma, Carmen de Patagones y alrededores.</FieldHint>
+        )}
+      </div>
 
-      <CampoDeTexto
-        nombre="postalCode"
-        etiqueta="Código postal"
-        valor={inicial.postalCode}
-        error={e.postalCode}
-        autoComplete="postal-code"
-        className="sm:max-w-40"
-        placeholder="8500"
-      />
+      {esOtra ? (
+        <Fila>
+          <CampoDeTexto
+            nombre="otraLocalidad"
+            etiqueta="Nombre de la localidad"
+            valor={inicial.otraLocalidad}
+            error={e.otraLocalidad}
+            ayuda="La entrega se coordina con la vendedora por WhatsApp."
+            autoComplete="address-level2"
+          />
+          <div className="flex flex-1 flex-col gap-2">
+            <Label htmlFor="provinciaDeOtra">Provincia</Label>
+            <Select
+              id="provinciaDeOtra"
+              name="provinciaDeOtra"
+              defaultValue={inicial.provinciaDeOtra}
+              aria-invalid={!!e.provinciaDeOtra || undefined}
+            >
+              <option value="" disabled>
+                Elegí la provincia
+              </option>
+              {PROVINCIAS_DE_LA_ZONA.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </Select>
+            <FieldError>{e.provinciaDeOtra}</FieldError>
+          </div>
+        </Fila>
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="notes">Referencias (opcional)</Label>

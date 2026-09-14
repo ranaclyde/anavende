@@ -10,6 +10,7 @@ import {
   hacerPredeterminada,
 } from "@/modules/users/direcciones/operaciones";
 import {
+  aDatosDeDireccion,
   direccionSchema,
   edicionDeDireccionSchema,
   soloIdSchema,
@@ -31,15 +32,15 @@ export const guardarDireccionNueva = action
   .input(direccionSchema)
   .auth("customer")
   .handler(async ({ input, ctx }) =>
-    agregarDireccion(ctx.session.profile.id, input),
+    agregarDireccion(ctx.session.profile.id, aDatosDeDireccion(input)),
   );
 
 export const guardarCambiosDeDireccion = action
   .input(edicionDeDireccionSchema)
   .auth("customer")
   .handler(async ({ input, ctx }) => {
-    const { id, ...datos } = input;
-    await editarDireccion(ctx.session.profile.id, id, datos);
+    const { id, ...resto } = input;
+    await editarDireccion(ctx.session.profile.id, id, aDatosDeDireccion(resto));
     return { guardada: true };
   });
 

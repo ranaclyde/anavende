@@ -114,7 +114,8 @@ function TarjetaDeDireccion({
               {d.apartment ? `, ${d.apartment}` : null}
             </span>
             <span>
-              {d.city}, {d.province} ({d.postalCode})
+              {d.city}, {d.province}
+              {d.postalCode ? ` (${d.postalCode})` : null}
             </span>
           </address>
           <p className="text-body-sm text-ink-secondary">

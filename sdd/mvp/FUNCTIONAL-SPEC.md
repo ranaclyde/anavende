@@ -318,7 +318,9 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 
 **Descripción:** El comprador administra varias direcciones y marca una como predeterminada.
 
-**Campos:** alias (ej. «Casa»), nombre del receptor, teléfono, calle y número, piso/departamento, referencias, ciudad/localidad, provincia, código postal.
+**Campos:** alias (ej. «Casa»), nombre del receptor, teléfono, calle y número, piso/departamento, referencias y **localidad**.
+
+**La localidad se elige de una lista** (decisión del 2026-09-13): Viedma, Carmen de Patagones, San Javier, El Cóndor u **«Otra localidad cercana»**, porque se entrega en Viedma, Carmen de Patagones y alrededores (RN-10). **La provincia y el código postal no se preguntan: se deducen de la localidad.** «Otra localidad cercana» pide el nombre y la provincia, Río Negro o Buenos Aires, y queda sin código postal: la entrega se coordina igual por WhatsApp.
 
 **Criterios de aceptación:**
 - [ ] Crear, editar y eliminar direcciones; marcar una como predeterminada.

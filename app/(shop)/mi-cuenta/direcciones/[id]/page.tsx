@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { FormularioDeDireccion } from "@/components/shop/direcciones/formulario";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getIdentity, getSession } from "@/lib/session";
+import { valoresDeUbicacion } from "@/modules/users/direcciones/constantes";
 import { leerDireccion } from "@/modules/users/direcciones/operaciones";
 import { soloIdSchema } from "@/modules/users/direcciones/schemas";
 
@@ -49,9 +50,7 @@ export default async function EditarDireccion({
             street: d.street,
             number: d.number,
             apartment: d.apartment ?? "",
-            city: d.city,
-            province: d.province,
-            postalCode: d.postalCode,
+            ...valoresDeUbicacion(d.city, d.province),
             notes: d.notes ?? "",
           }}
         />

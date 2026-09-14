@@ -55,9 +55,9 @@ export default async function NuevaDireccion() {
             street: "",
             number: "",
             apartment: "",
-            city: "",
-            province: "",
-            postalCode: "",
+            localidad: "",
+            otraLocalidad: "",
+            provinciaDeOtra: "",
             notes: "",
           }}
         />

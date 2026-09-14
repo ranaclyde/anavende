@@ -10,7 +10,10 @@ import {
   leerDireccion,
   type DatosDeDireccion,
 } from "@/modules/users/direcciones/operaciones";
-import { direccionSchema } from "@/modules/users/direcciones/schemas";
+import {
+  aDatosDeDireccion,
+  direccionSchema,
+} from "@/modules/users/direcciones/schemas";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 import { dosCompitiendo } from "@/tests/apoyo/concurrencia";
 
@@ -142,6 +145,20 @@ describe("cuántas y cuál es la predeterminada", () => {
       SELECT deleted_at AS "deletedAt" FROM addresses WHERE id = ${addressId}`);
     expect(fila.deletedAt).not.toBeNull();
   });
+
+  test("una dirección de «Otra localidad cercana» se guarda sin código postal", async () => {
+    const { userId } = await unComprador();
+    const { id } = await agregarDireccion(userId, {
+      ...datos("Campo"),
+      city: "Guardia Mitre",
+      postalCode: null,
+    });
+
+    expect(await leerDireccion(userId, id)).toMatchObject({
+      city: "Guardia Mitre",
+      postalCode: null,
+    });
+  });
 });
 
 describe("la libreta de otro no se toca", () => {
@@ -174,30 +191,75 @@ describe("lo que llega del formulario", () => {
     street: "Belgrano",
     number: "123",
     apartment: "",
-    city: "Viedma",
-    province: "Río Negro",
-    postalCode: "8500",
+    localidad: "Viedma",
+    otraLocalidad: "",
+    provinciaDeOtra: "",
     notes: "",
   };
 
+  const guardado = (entrada: typeof valido) =>
+    aDatosDeDireccion(direccionSchema.parse(entrada));
+
   test("normaliza el teléfono y guarda lo opcional vacío como null", () => {
-    const r = direccionSchema.parse(valido);
+    const r = guardado(valido);
     expect(r.phone).toBe("+5492920555555");
     expect(r.apartment).toBeNull();
     expect(r.notes).toBeNull();
   });
 
-  test("el código postal acepta los 4 números y el completo, en mayúsculas", () => {
-    expect(direccionSchema.parse({ ...valido, postalCode: "8500" }).postalCode).toBe("8500");
+  test("la provincia y el código postal salen de la localidad", () => {
+    expect(guardado(valido)).toMatchObject({
+      city: "Viedma",
+      province: "Río Negro",
+      postalCode: "8500",
+    });
     expect(
-      direccionSchema.parse({ ...valido, postalCode: " r8500abc " }).postalCode,
-    ).toBe("R8500ABC");
-    expect(direccionSchema.safeParse({ ...valido, postalCode: "85" }).success).toBe(false);
+      guardado({ ...valido, localidad: "Carmen de Patagones" }),
+    ).toMatchObject({
+      city: "Carmen de Patagones",
+      province: "Buenos Aires",
+      postalCode: "8504",
+    });
   });
 
-  test("una provincia que no está en la lista no pasa", () => {
+  test("«Otra localidad cercana» guarda el nombre y la provincia que se eligieron, sin código postal", () => {
     expect(
-      direccionSchema.safeParse({ ...valido, province: "Rio Negro" }).success,
-    ).toBe(false);
+      guardado({
+        ...valido,
+        localidad: "otra",
+        otraLocalidad: "Guardia Mitre",
+        provinciaDeOtra: "Río Negro",
+      }),
+    ).toMatchObject({
+      city: "Guardia Mitre",
+      province: "Río Negro",
+      postalCode: null,
+    });
+  });
+
+  test("«Otra» sin nombre ni provincia no pasa, y cada error va en su campo", () => {
+    const r = direccionSchema.safeParse({ ...valido, localidad: "otra" });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues.map((i) => i.path[0]).sort()).toEqual([
+      "otraLocalidad",
+      "provinciaDeOtra",
+    ]);
+  });
+
+  test("una localidad fuera de la zona no pasa, aunque se fuerce desde afuera", () => {
+    const r = direccionSchema.safeParse({ ...valido, localidad: "Rosario" });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0].path).toEqual(["localidad"]);
+  });
+
+  test("con «Otra», una provincia que no es de la zona no pasa", () => {
+    const r = direccionSchema.safeParse({
+      ...valido,
+      localidad: "otra",
+      otraLocalidad: "Rosario",
+      provinciaDeOtra: "Santa Fe",
+    });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0].path).toEqual(["provinciaDeOtra"]);
   });
 });
