@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import {
   DomainError,
+  domainMessage,
   isDomainError,
   type DomainErrorCode,
 } from "@/lib/errors";
@@ -21,6 +22,11 @@ import { getSession, type Session } from "@/lib/session";
  * Garantiza, en este orden:
  *   1. Identidad y perfil FRESCOS de la base (§13.3). Sin perfil, se rechaza.
  *   2. Usuario bloqueado: rechazado en toda acción (RF-27).
+ *   2b. Comprador con la baja pedida: su cuenta es de solo lectura (RF-34,
+ *      decisión del 2026-09-14). Se rechaza toda acción `customer` salvo las
+ *      que se declaran con `.aunConBajaPendiente()` —retirar el pedido,
+ *      elegir cómo se ve una lista—. Va acá y no en cada acción por el mismo
+ *      motivo que todo lo demás: una acción nueva queda cubierta sola.
  *   3. Validación con Zod EN EL SERVIDOR, aunque el formulario ya haya
  *      validado en el cliente.
  *   4. Ejecución en try/catch que distingue errores de dominio de inesperados.
@@ -60,23 +66,33 @@ class ActionBuilder<TInput, L extends AuthLevel> {
   constructor(
     private readonly schema: z.ZodType<TInput> | null,
     private readonly level: L,
+    private readonly conBajaPendiente = false,
   ) {}
 
   input<T>(schema: z.ZodType<T>): ActionBuilder<T, L> {
-    return new ActionBuilder<T, L>(schema, this.level);
+    return new ActionBuilder<T, L>(schema, this.level, this.conBajaPendiente);
   }
 
   auth<N extends AuthLevel>(level: N): ActionBuilder<TInput, N> {
     return new ActionBuilder<TInput, N>(
       this.schema as z.ZodType<TInput> | null,
       level,
+      this.conBajaPendiente,
     );
+  }
+
+  /**
+   * La acción se puede usar con la baja pedida (paso 2b). Es la excepción y
+   * se declara a mano: lo que no la declara queda bloqueado.
+   */
+  aunConBajaPendiente(): ActionBuilder<TInput, L> {
+    return new ActionBuilder<TInput, L>(this.schema, this.level, true);
   }
 
   handler<TOutput>(
     fn: (args: { input: TInput; ctx: Ctx<L> }) => Promise<TOutput>,
   ): (input: TInput) => Promise<ActionResult<TOutput>> {
-    const { schema, level } = this;
+    const { schema, level, conBajaPendiente } = this;
 
     return async (raw: TInput): Promise<ActionResult<TOutput>> => {
       // ── 1 y 2. Identidad, perfil y bloqueo ───────────────────────────
@@ -102,6 +118,17 @@ class ActionBuilder<TInput, L extends AuthLevel> {
 
         if (level === "admin" && session.role !== "admin") {
           return fallo("FORBIDDEN", "No tenés permiso para hacer eso.");
+        }
+
+        if (
+          level === "customer" &&
+          session.profile.closureRequestedAt !== null &&
+          !conBajaPendiente
+        ) {
+          return fallo(
+            "ACCOUNT_CLOSURE_PENDING",
+            domainMessage("ACCOUNT_CLOSURE_PENDING"),
+          );
         }
       } else {
         // Una acción pública igual quiere saber quién es, si hay alguien.

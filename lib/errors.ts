@@ -21,6 +21,8 @@ export type DomainErrorCode =
   | "VARIANT_HAS_RESERVATIONS" // RF-16
   | "ENTITY_IN_USE" // RN-11
   | "USER_BANNED" // RF-27
+  | "ACCOUNT_CLOSURE_PENDING" // RF-34: pidió la baja, la cuenta es de solo lectura
+  | "ACCOUNT_HAS_ACTIVE_ORDERS" // RF-34: con órdenes activas la baja no procede
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "VALIDATION"
@@ -48,6 +50,10 @@ const MENSAJES: Record<DomainErrorCode, string> = {
   ENTITY_IN_USE:
     "Eso está en uso y no se puede borrar. Podés desactivarlo para que deje de aparecer.",
   USER_BANNED: "Tu cuenta está bloqueada.",
+  ACCOUNT_CLOSURE_PENDING:
+    "Pediste la baja de tu cuenta, así que por ahora solo podés mirar. Si te arrepentiste, retirá el pedido desde «Mis datos».",
+  ACCOUNT_HAS_ACTIVE_ORDERS:
+    "Tenés órdenes activas. Cancelalas o esperá a que se finalicen, y después pedí la baja.",
   FORBIDDEN: "No tenés permiso para hacer eso.",
   NOT_FOUND: "No encontramos eso que buscabas.",
   VALIDATION: "Revisá los datos: hay algo que no está bien.",

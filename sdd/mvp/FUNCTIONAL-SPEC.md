@@ -430,6 +430,9 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 **Criterios de aceptación:**
 - [ ] Muestra: órdenes activas pendientes, ventas del mes, productos con stock bajo o en cero, cantidad de productos activos.
 - [ ] Cada indicador enlaza al listado filtrado correspondiente.
+- [ ] **Dice qué hay pendiente de hacer al entrar** (2026-09-14): bajas de
+      cuenta pedidas (RF-34), órdenes por atender, productos con stock bajo.
+      No dispara notificaciones: se ve al abrir el panel.
 
 ---
 
@@ -718,7 +721,8 @@ dados es una persona, no un formulario.
 
 - [ ] El comprador autenticado ve un acceso **visible** para pedir la baja de
       su cuenta, y puede accionarlo sin intermediarios ni pedirlo por otro
-      canal.
+      canal. Está en «Mis datos», y el pie de la tienda enlaza ahí desde todas
+      las páginas (2026-09-14).
 - [ ] Antes de confirmar, la pantalla **advierte qué implica**: qué deja de
       poder hacer, qué se conserva —sus órdenes y su historial, que no se
       borran (§5.6)— y que volver es posible pidiéndolo.
@@ -728,8 +732,16 @@ dados es una persona, no un formulario.
       dice cuántas son, cuáles, y qué puede hacer: cancelarlas él mismo desde
       «Mis compras» (RF-23) o esperar a que se finalicen. No se le ofrece un
       botón que va a fallar.
-- [ ] Pedirla **dispara un aviso a la administradora** (E5, RF-30) con quién
-      la pide y el motivo.
+- [ ] Pedirla **la deja pendiente en el panel** (RF-14), con quién la pide y
+      el motivo. **Sin email** (decisión del 2026-09-14): el E5 de RF-30 se
+      descartó; la administradora se entera al entrar al panel.
+- [ ] **Mientras está pedida, la cuenta es de solo lectura** (2026-09-14): el
+      comprador puede mirar la tienda, pero no comprar, ni usar favoritos, ni
+      cambiar sus datos, su contraseña o sus direcciones. La tienda lo dice
+      arriba, en todas las páginas.
+- [ ] Mientras la administradora no la ejecutó, el comprador **puede retirar
+      el pedido** él mismo, desde «Mis datos», y la cuenta vuelve a como
+      estaba (2026-09-14).
 - [ ] La administradora ve las bajas pendientes en el panel y **las ejecuta**
       (RF-26). Al ejecutarla queda registrado quién y cuándo.
 - [ ] **La baja es lógica: no se borra nada.** Un usuario dado de baja no puede
@@ -784,7 +796,7 @@ orden, que es otra acción y está disponible siempre.
 | E2 | Recuperación de contraseña | Comprador o admin | Solicitud de reset, o reset disparado por la administradora (RF-26) |
 | E3 | Definición de contraseña de cuenta nueva | Usuario creado por la administradora | Alta manual de usuario (RF-26) |
 | E4 | **Nueva orden recibida** | Administradora | Confirmación de una orden en la web (RF-12) |
-| E5 | **Pedido de baja de cuenta** | Administradora | Un comprador pide la baja (RF-34) |
+| ~~E5~~ | ~~Pedido de baja de cuenta~~ | — | **Descartado el 2026-09-14**: la baja pedida se ve como pendiente en el panel (RF-14, RF-34), sin email |
 
 **Criterios de aceptación:**
 - [ ] Todos los emails usan una plantilla común con la identidad visual de AnaVende.

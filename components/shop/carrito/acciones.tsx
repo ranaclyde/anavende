@@ -4,6 +4,11 @@ import { Trash2 } from "lucide-react";
 import { useOptimistic, useState, useTransition } from "react";
 
 import { Cantidad } from "@/components/shop/cantidad";
+import {
+  propsDePausa,
+  useCuentaEnPausa,
+} from "@/components/shop/cuenta-en-pausa";
+import { ID_AVISO_DE_PAUSA } from "@/components/shop/cuenta-en-pausa-id";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -59,6 +64,7 @@ export function ControlesDelItem({
   const [enCurso, iniciar] = useTransition();
   const [mostrada, setMostrada] = useOptimistic(cantidad);
   const [error, setError] = useState<string | null>(null);
+  const enPausa = useCuentaEnPausa();
 
   function cambiar(n: number) {
     setError(null);
@@ -79,6 +85,16 @@ export function ControlesDelItem({
 
   return (
     <div className="flex flex-col gap-1">
+      {/*
+        Un `fieldset` apagado apaga todo lo de adentro —el selector de
+        cantidad y «Quitar»— sin que `Cantidad` tenga que saber de la pausa
+        (F5.8). `contents` para que no cambie el dibujo.
+      */}
+      <fieldset
+        disabled={enPausa}
+        aria-describedby={enPausa ? ID_AVISO_DE_PAUSA : undefined}
+        className="contents"
+      >
       <div className="flex flex-wrap items-center gap-1">
         {soloQuitar ? null : (
           <Cantidad
@@ -94,6 +110,7 @@ export function ControlesDelItem({
           <span className="sr-only"> {nombre} del carrito</span>
         </Button>
       </div>
+      </fieldset>
 
       {error === null ? null : (
         <p role="alert" className="text-caption text-danger">
@@ -116,6 +133,7 @@ export function VaciarCarrito({ renglones }: { renglones: number }) {
   const [abierto, setAbierto] = useState(false);
   const [enCurso, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const pausa = propsDePausa(useCuentaEnPausa());
 
   function vaciar() {
     setError(null);
@@ -128,7 +146,12 @@ export function VaciarCarrito({ renglones }: { renglones: number }) {
 
   return (
     <>
-      <Button variant="tertiary" size="md" onClick={() => setAbierto(true)}>
+      <Button
+        variant="tertiary"
+        size="md"
+        onClick={() => setAbierto(true)}
+        {...pausa}
+      >
         <Trash2 aria-hidden />
         Vaciar el carrito
       </Button>

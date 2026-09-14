@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 
+import { useCuentaEnPausa } from "@/components/shop/cuenta-en-pausa";
+import { ID_AVISO_DE_PAUSA } from "@/components/shop/cuenta-en-pausa-id";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
@@ -35,6 +37,7 @@ export function CambiarContrasenaForm({
   const [listo, setListo] = useState<string | null>(null);
   const [nueva, setNueva] = useState("");
   const [repetida, setRepetida] = useState("");
+  const enPausa = useCuentaEnPausa();
 
   // La confirmación es la única que se valida mientras se escribe (§6.6).
   const noCoinciden = repetida.length > 0 && nueva !== repetida;
@@ -85,6 +88,12 @@ export function CambiarContrasenaForm({
         hidden
       />
 
+      {/* Con la baja pedida (F5.8) la contraseña no se cambia. */}
+      <fieldset
+        disabled={enPausa}
+        aria-describedby={enPausa ? ID_AVISO_DE_PAUSA : undefined}
+        className="contents"
+      >
       {tieneContrasena && (
         <div className="flex flex-col gap-2">
           <Label htmlFor="actual">Contraseña actual</Label>
@@ -158,6 +167,7 @@ export function CambiarContrasenaForm({
           </p>
         )}
       </div>
+      </fieldset>
     </form>
   );
 }

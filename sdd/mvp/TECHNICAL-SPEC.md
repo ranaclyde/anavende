@@ -1264,6 +1264,8 @@ Lo que implica, en concreto:
 | §13.5, ingreso | Ante `user_banned`, mirar el perfil y elegir el mensaje según el estado |
 | RF-26, listado | Tres estados en el filtro, no dos |
 
+**Lo que construyó F5.8 (2026-09-14).** El estado intermedio es `closure_requested_at` con `closure_reason`, y el `CHECK` `closure_has_reason` exige el motivo, igual que `ban_has_reason` (migración `0015`). Quién ejecutó y cuándo llegan con F7.9. **Con la baja pedida, la cuenta es de solo lectura**: el envoltorio de §6.2 rechaza toda acción `customer` con `ACCOUNT_CLOSURE_PENDING`, salvo las que se declaran con `.aunConBajaPendiente()` —retirar el pedido y elegir cómo se ve «Favoritos»—. Va en el envoltorio y no en cada acción para que una acción nueva quede cubierta sola. **Sin email a la administradora**: la baja pedida se ve en el inicio del panel.
+
 **Nada de esto borra datos.** Los usuarios no se eliminan (§5.6): la baja es una marca, y revertirla devuelve a la persona con su historial, sus direcciones y sus favoritos intactos.
 
 ### 13.6 Costos asumidos de esta elección
@@ -1323,6 +1325,7 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 | E2 | Recuperación de contraseña | **Supabase Auth** | Plantilla de Supabase → SMTP de Resend | Solicitud, o reset desde el panel |
 | E3 | Definición de contraseña de cuenta nueva | **Supabase Auth** (`inviteUserByEmail`) | Plantilla de Supabase → SMTP de Resend | Alta manual de usuario (RF-26) |
 | E4 | Nueva orden recibida | **Nuestra aplicación** | React Email → API de Resend | Después del `COMMIT` (§8.4) |
+| ~~E5~~ | ~~Pedido de baja de cuenta~~ | — | — | **Descartado el 2026-09-14**: la baja pedida se ve en el panel (RF-14, RF-34) |
 
 > **Dos caminos hacia el mismo proveedor.** Es el costo asumido de usar Supabase Auth (§13.6): E1, E2 y E3 los emite GoTrue con sus propias plantillas; solo E4 pasa por React Email. **F0 verifica si el *Send Email Hook* funciona auto-hospedado**; si funciona, los cuatro vuelven a un único camino.
 

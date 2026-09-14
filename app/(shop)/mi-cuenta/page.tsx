@@ -1,9 +1,13 @@
-import { BadgeCheck, CircleAlert } from "lucide-react";
+import { BadgeCheck, CircleAlert, UserX } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { RetirarPedidoDeBaja } from "@/components/shop/baja/retirar";
 import { CambiarContrasenaForm } from "@/components/shop/cambiar-contrasena-form";
 import { MisDatosForm } from "@/components/shop/mis-datos-form";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -76,7 +80,82 @@ export default async function MiCuenta() {
           />
         </CardContent>
       </Card>
+
+      {/* RF-34 es de compradores: una administradora no se da de baja. */}
+      {sesion.role === "customer" ? (
+        <BajaDeLaCuenta
+          pedidaEl={profile.closureRequestedAt}
+          motivo={profile.closureReason}
+        />
+      ) : null}
     </div>
+  );
+}
+
+const FECHA = new Intl.DateTimeFormat("es-AR", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "America/Argentina/Buenos_Aires",
+});
+
+/**
+ * La baja de la cuenta — RF-34, F5.8.
+ *
+ * **A la vista y no escondida**: RF-34 es un requisito legal y pide un acceso
+ * visible. Va al final, a lo ancho, con su propio `id` porque el pie de la
+ * tienda enlaza acá (pedido del 2026-09-14). `scroll-mt` para que el
+ * encabezado fijo no la tape al llegar.
+ *
+ * Pedida, cuenta desde cuándo y con qué motivo, y ofrece retirarla: la
+ * cuenta está en pausa, y ésta es la salida que el aviso de arriba promete.
+ */
+function BajaDeLaCuenta({
+  pedidaEl,
+  motivo,
+}: {
+  pedidaEl: Date | null;
+  motivo: string | null;
+}) {
+  return (
+    <section
+      id="baja"
+      aria-label="Baja de la cuenta"
+      className="scroll-mt-24 xl:col-span-2"
+    >
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            Baja de la cuenta
+            {pedidaEl ? <Badge tone="warning">Pedida</Badge> : null}
+          </CardTitle>
+          <CardDescription>
+            {pedidaEl
+              ? `La pediste el ${FECHA.format(pedidaEl)}. Hasta que la procesemos podés mirar la tienda, pero no comprar ni hacer cambios.`
+              : "Si ya no querés usar tu cuenta, podés pedir que la demos de baja. Tus compras no se borran."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {pedidaEl ? (
+            <>
+              {motivo ? (
+                <p className="text-body-sm text-ink-secondary">
+                  Tu motivo: «{motivo}»
+                </p>
+              ) : null}
+              <RetirarPedidoDeBaja />
+            </>
+          ) : (
+            <Button asChild variant="destructive" size="md" className="self-start">
+              <Link href="/mi-cuenta/baja">
+                <UserX aria-hidden />
+                Pedir la baja de mi cuenta
+              </Link>
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 

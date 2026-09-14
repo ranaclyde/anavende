@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { ID_AVISO_DE_PAUSA } from "@/components/shop/cuenta-en-pausa-id";
 import { AccionesDeDireccion } from "@/components/shop/direcciones/acciones";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,8 @@ export default async function Direcciones() {
 
   const direcciones = await listarDirecciones(sesion.profile.id);
   const llena = direcciones.length >= MAXIMO_DE_DIRECCIONES;
+  // Con la baja pedida (F5.8) la libreta se mira y no se cambia.
+  const enPausa = sesion.profile.closureRequestedAt !== null;
 
   // La lista viene con la predeterminada primero y después por antigüedad:
   // la primera que no es predeterminada es la que tomaría su lugar.
@@ -56,7 +59,17 @@ export default async function Direcciones() {
           </p>
         </div>
 
-        {direcciones.length === 0 ? null : llena ? (
+        {direcciones.length === 0 ? null : enPausa ? (
+          <Button
+            variant="secondary"
+            size="md"
+            disabled
+            aria-describedby={ID_AVISO_DE_PAUSA}
+          >
+            <Plus aria-hidden />
+            Agregar dirección
+          </Button>
+        ) : llena ? (
           <div className="flex flex-col items-start gap-1 sm:items-end">
             <Button variant="secondary" size="md" disabled>
               <Plus aria-hidden />
@@ -77,7 +90,7 @@ export default async function Direcciones() {
       </header>
 
       {direcciones.length === 0 ? (
-        <SinDirecciones />
+        <SinDirecciones enPausa={enPausa} />
       ) : (
         <ul className="flex flex-col gap-4">
           {direcciones.map((d) => (
@@ -138,7 +151,7 @@ function TarjetaDeDireccion({
 }
 
 /** El vacío explica para qué sirve y ofrece la acción (§8). */
-function SinDirecciones() {
+function SinDirecciones({ enPausa }: { enPausa: boolean }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-card bg-surface px-6 py-16 text-center shadow-md">
       <h3 className="text-heading text-ink">
@@ -148,9 +161,21 @@ function SinDirecciones() {
         La vas a necesitar si querés que te enviemos el pedido. Si lo retirás o
         lo coordinás con la vendedora, no hace falta.
       </p>
-      <Button asChild variant="brand" size="lg" className="mt-2">
-        <Link href="/mi-cuenta/direcciones/nueva">Agregar una dirección</Link>
-      </Button>
+      {enPausa ? (
+        <Button
+          variant="brand"
+          size="lg"
+          className="mt-2"
+          disabled
+          aria-describedby={ID_AVISO_DE_PAUSA}
+        >
+          Agregar una dirección
+        </Button>
+      ) : (
+        <Button asChild variant="brand" size="lg" className="mt-2">
+          <Link href="/mi-cuenta/direcciones/nueva">Agregar una dirección</Link>
+        </Button>
+      )}
     </div>
   );
 }

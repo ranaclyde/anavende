@@ -31,6 +31,11 @@ export default async function NuevaDireccion() {
   }
 
   const { profile } = sesion;
+
+  // Con la baja pedida (F5.8) la libreta se mira y no se cambia: la lista
+  // dice por qué, y guardar lo rechazaría el envoltorio de acciones.
+  if (profile.closureRequestedAt) redirect("/mi-cuenta/direcciones");
+
   const direcciones = await listarDirecciones(profile.id);
   if (direcciones.length >= MAXIMO_DE_DIRECCIONES) {
     redirect("/mi-cuenta/direcciones");

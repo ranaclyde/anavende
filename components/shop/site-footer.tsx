@@ -15,10 +15,16 @@ import { Isotipo } from "@/components/shop/logo";
 export type MedioDePago = { id: string; name: string };
 
 const LEGALES = [
-  { slug: "como-comprar", titulo: "Cómo comprar" },
-  { slug: "garantias", titulo: "Garantías y devoluciones" },
-  { slug: "terminos", titulo: "Términos y condiciones" },
-  { slug: "privacidad", titulo: "Privacidad" },
+  { href: "/legales/como-comprar", titulo: "Cómo comprar" },
+  { href: "/legales/garantias", titulo: "Garantías y devoluciones" },
+  { href: "/legales/terminos", titulo: "Términos y condiciones" },
+  { href: "/legales/privacidad", titulo: "Privacidad" },
+  /*
+   * RF-34 pide el acceso a la baja «a la vista», y es un requisito legal: el
+   * pie está en todas las páginas. Lleva a la tarjeta de «Mis datos» donde se
+   * pide (pedido del 2026-09-14); sin sesión, el ingreso vuelve ahí.
+   */
+  { href: "/mi-cuenta#baja", titulo: "Dar de baja mi cuenta" },
 ];
 
 export function SiteFooter({
@@ -75,9 +81,9 @@ export function SiteFooter({
             */}
             <ul className="flex flex-col gap-2 max-md:gap-0">
               {LEGALES.map((l) => (
-                <li key={l.slug}>
+                <li key={l.href}>
                   <Link
-                    href={`/legales/${l.slug}`}
+                    href={l.href}
                     className="inline-flex items-center rounded-pill text-body-sm text-white/75 underline-offset-4 transition-colors duration-150 max-md:min-h-11 hover:text-ink-inverse hover:underline"
                   >
                     {l.titulo}

@@ -11,6 +11,10 @@ import {
 import { Ban, Check, Share2, ShoppingCart } from "lucide-react";
 
 import { Cantidad } from "@/components/shop/cantidad";
+import {
+  propsDePausa,
+  useCuentaEnPausa,
+} from "@/components/shop/cuenta-en-pausa";
 import { BotonFavorito } from "@/components/shop/favorito";
 import { Galeria, comoDesplazar } from "@/components/shop/ficha/galeria";
 import { Badge } from "@/components/ui/badge";
@@ -111,7 +115,10 @@ export function Compra({
   encabezado,
   informacion,
 }: Props) {
-  const retomada = useRetomarPendiente(pendiente);
+  // Con la baja pedida (F5.8) no se retoma la compra pendiente: la acción la
+  // rechazaría, y el aviso de arriba ya dice por qué.
+  const enPausa = useCuentaEnPausa();
+  const retomada = useRetomarPendiente(pendiente && !enPausa);
   const [iVariante, setVariante] = useState(inicial);
   const [iImagen, setImagen] = useState(0);
   const [cantidad, setCantidad] = useState(1);
@@ -664,6 +671,7 @@ function AgregarAlCarrito({
 }) {
   const [enCurso, iniciar] = useTransition();
   const [propio, setPropio] = useState<ResultadoDelCarrito | null>(null);
+  const pausa = propsDePausa(useCuentaEnPausa());
 
   function agregar() {
     setPropio(null);
@@ -690,6 +698,7 @@ function AgregarAlCarrito({
           retomada.enCurso ? "Retomando tu compra" : "Agregando al carrito"
         }
         onClick={agregar}
+        {...pausa}
       >
         <ShoppingCart aria-hidden />
         Agregá al carrito

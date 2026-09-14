@@ -70,6 +70,20 @@ export const userProfiles = pgTable(
       onDelete: "set null",
     }),
 
+    /**
+     * La baja PEDIDA por el comprador — RF-34, F5.8, TS §13.5b.
+     *
+     * Una marca propia y no `is_banned`: la baja y el bloqueo comparten el
+     * efecto y no el significado (RN-13), y con una sola columna no hay forma
+     * de decirle a quien se fue solo algo distinto de «tu cuenta está
+     * bloqueada». Mientras está pedida, la cuenta queda en solo lectura
+     * (decisión del 2026-09-14) y el comprador puede retirarla.
+     *
+     * Quién la ejecutó y cuándo son de F7.9, que es la tarea que la ejecuta.
+     */
+    closureRequestedAt: timestamp("closure_requested_at", { withTimezone: true }),
+    closureReason: text("closure_reason"),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -84,6 +98,12 @@ export const userProfiles = pgTable(
     check(
       "ban_has_reason",
       sql`NOT ${t.isBanned} OR ${t.banReason} IS NOT NULL`,
+    ),
+    // RF-34: el motivo es obligatorio, y lo garantiza la base, igual que el
+    // del bloqueo.
+    check(
+      "closure_has_reason",
+      sql`${t.closureRequestedAt} IS NULL OR ${t.closureReason} IS NOT NULL`,
     ),
     index("user_profiles_email_idx").on(sql`lower(${t.email})`),
   ],
