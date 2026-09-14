@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { RetomarFavorito } from "@/components/shop/favorito";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
 import { getSession } from "@/lib/session";
 import { contarUnidades } from "@/modules/cart/queries";
 import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
+import { hayFavoritoPendiente } from "@/modules/users/favoritos/pendiente";
 
 /**
  * Layout de la tienda — DESIGN-REFERENCE §5.1.
@@ -30,14 +32,21 @@ export default async function ShopLayout({
   // Lo barato primero: el rol ya está en la sesión, y el interruptor solo se
   // pregunta si quien mira es administradora. Es la misma memoria que usa el
   // proxy, así que el aviso y el bloqueo dicen siempre lo mismo.
-  const [unidadesEnElCarrito, cerradaParaElResto] = await Promise.all([
-    sesion ? contarUnidades(sesion.profile.id) : 0,
-    sesion?.role === "admin" ? estaEnMantenimiento() : false,
-  ]);
+  //
+  // El favorito pendiente (F5.4, RF-05) se mira acá y no en cada página: el
+  // corazón está en el catálogo y en la ficha, y quien ingresa vuelve a la que
+  // estaba. Sin sesión no hay nada que retomar y la nota sigue esperando.
+  const [unidadesEnElCarrito, cerradaParaElResto, favoritoPendiente] =
+    await Promise.all([
+      sesion ? contarUnidades(sesion.profile.id) : 0,
+      sesion?.role === "admin" ? estaEnMantenimiento() : false,
+      sesion ? hayFavoritoPendiente() : false,
+    ]);
 
   return (
     <div className="flex min-h-svh flex-col bg-canvas">
       {cerradaParaElResto ? <AvisoDeTiendaCerrada /> : null}
+      {favoritoPendiente ? <RetomarFavorito /> : null}
 
       {/* El buscador lee la URL, así que el encabezado necesita el límite
           de Suspense que Next exige alrededor de useSearchParams. */}

@@ -5,6 +5,7 @@ import {
   ChipsDeFiltros,
   PanelDeFiltros,
 } from "@/components/shop/filtros-catalogo";
+import { BotonFavorito } from "@/components/shop/favorito";
 import { SearchBox } from "@/components/shop/search-box";
 import { SelectorDeOrden } from "@/components/shop/selector-de-orden";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
@@ -22,6 +23,8 @@ import {
   leerOpcionesDeFiltro,
   leerPaginaDelCatalogo,
 } from "@/modules/catalog/products/tienda";
+import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
+import { getIdentity } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -49,10 +52,20 @@ export default async function Catalogo({
   const filtros = leerFiltrosDeTienda(await searchParams);
 
   // Independientes: no tiene sentido esperar una para pedir la otra.
-  const [pagina, opciones] = await Promise.all([
+  //
+  // Los favoritos van con la identidad y no con la sesión entera (F5.4): son
+  // una lectura de datos propios, que se filtra por el id del token sin ir a
+  // buscar el perfil (§13.3). `null` es que no hay nadie adentro.
+  const [pagina, opciones, favoritos] = await Promise.all([
     leerPaginaDelCatalogo(filtros),
     leerOpcionesDeFiltro(),
+    getIdentity().then((i) => (i ? idsDeFavoritos(i.userId) : null)),
   ]);
+
+  const guardados = new Set(favoritos ?? []);
+  // El corazón de un visitante lleva a ingresar y vuelve acá, con los mismos
+  // filtros y en la misma página (RF-10: «sin perder la navegación»).
+  const volver = urlDePagina(filtros, filtros.pagina);
 
   const paginas = Math.max(1, Math.ceil(pagina.total / POR_PAGINA));
 
@@ -162,6 +175,16 @@ export default async function Catalogo({
                     // La primera fila está arriba del pliegue: diferirla
                     // penaliza el LCP. Cuatro es el ancho de la grilla.
                     prioridad={i < 4}
+                    accionFavorito={
+                      <BotonFavorito
+                        forma="corazon"
+                        productId={producto.id}
+                        nombre={producto.nombre}
+                        marcado={guardados.has(producto.id)}
+                        conSesion={favoritos !== null}
+                        volver={volver}
+                      />
+                    }
                   />
                 </li>
               ))}

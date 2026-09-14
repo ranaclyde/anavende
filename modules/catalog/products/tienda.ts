@@ -107,6 +107,108 @@ const ORDEN: Record<FiltrosDeTienda["orden"], SQL> = {
   novedades: sql`p.created_at DESC`,
 };
 
+/**
+ * Lo que la tarjeta necesita de un producto (§6.1), para cualquier pantalla
+ * que la dibuje: el catálogo y, desde F5.4, «Favoritos». La tarjeta es SIEMPRE
+ * la misma, y dos copias de esta consulta terminarían mostrando dos portadas
+ * o dos stocks distintos para el mismo producto.
+ *
+ * Los dos fragmentos esperan `p` (products) y `b` (brands) en el FROM.
+ */
+export const COLUMNAS_DE_TARJETA = sql`
+  p.id,
+  p.slug,
+  p.name            AS nombre,
+  b.name            AS marca,
+  p.price           AS precio,
+  p.discount        AS descuento,
+  p.final_price     AS "precioFinal",
+  img.storage_key   AS "imagenKey",
+  img.color,
+  cols.lista        AS colores,
+  st.disponible`;
+
+export const UNIONES_DE_TARJETA = sql`
+  -- El stock que se puede vender: total menos lo comprometido por
+  -- órdenes activas (§8.1). Se suma sobre las variantes ACTIVAS, porque
+  -- una desactivada no se ofrece aunque tenga unidades.
+  LEFT JOIN LATERAL (
+    SELECT coalesce(sum(v.stock_total - v.reserved_stock), 0)::int AS disponible
+      FROM product_variants v
+     WHERE v.product_id = p.id AND v.is_active
+  ) st ON true
+
+  -- La foto de portada: la primera de la primera variante que tenga.
+  -- El coalesce(images_source_id, id) es §9.5: una variante puede
+  -- mostrar las fotos de otra, y sin esto una que reutiliza saldría sin
+  -- imagen aunque en la ficha se vea perfecta.
+  --
+  -- El ORDEN es el MISMO que el del selector de color de la ficha
+  -- (ficha.ts): sort_order de la variante y después el nombre del color.
+  -- Desempataba por v.id, que es un UUID al azar, así que la tarjeta
+  -- podía mostrar el teclado negro y la ficha abrir en el blanco. Eso no
+  -- se veía hasta que existió la ficha, y es de las cosas que nadie
+  -- reporta como error: se siente como que el sitio cambió de producto.
+  LEFT JOIN LATERAL (
+    SELECT i.storage_key, co.name AS color
+      FROM product_variants v
+      LEFT JOIN colors co ON co.id = v.color_id
+      JOIN variant_images i
+        ON i.variant_id = coalesce(v.images_source_id, v.id)
+     WHERE v.product_id = p.id AND v.is_active
+     ORDER BY v.sort_order, co.name NULLS LAST, i.sort_order
+     LIMIT 1
+  ) img ON true
+
+  -- Los puntos de color de la tarjeta (§6.1). DISTINCT en el
+  -- subselect y no en el agregado: dos variantes negras del mismo
+  -- producto pintarían dos puntos negros idénticos.
+  LEFT JOIN LATERAL (
+    SELECT coalesce(
+             json_agg(
+               json_build_object('nombre', c.nombre, 'hex', c.hex)
+               ORDER BY c.nombre
+             ),
+             '[]'::json
+           ) AS lista
+      FROM (
+        SELECT DISTINCT co.name AS nombre, co.hex_code AS hex
+          FROM product_variants v
+          JOIN colors co ON co.id = v.color_id
+         WHERE v.product_id = p.id AND v.is_active
+      ) c
+  ) cols ON true`;
+
+export type FilaDeTarjeta = {
+  id: string;
+  slug: string;
+  nombre: string;
+  marca: string;
+  precio: string;
+  descuento: string;
+  precioFinal: string;
+  imagenKey: string | null;
+  color: string | null;
+  colores: { nombre: string; hex: string }[] | null;
+  disponible: number;
+};
+
+export function aTarjeta(r: FilaDeTarjeta): ProductoEnTarjeta {
+  return {
+    id: r.id,
+    slug: r.slug,
+    nombre: r.nombre,
+    marca: r.marca,
+    precio: r.precio,
+    descuento: r.descuento,
+    precioFinal: r.precioFinal,
+    imagenKey: r.imagenKey,
+    color: r.color,
+    colores: r.colores ?? [],
+    disponible: r.disponible,
+  };
+}
+
 export type PaginaDelCatalogo = {
   productos: ProductoEnTarjeta[];
   /** Cuántos hay con ESTOS filtros. Decide la paginación y el conteo. */
@@ -135,81 +237,11 @@ export async function leerPaginaDelCatalogo(
    * y encadenarlas suma tres viajes a la base donde alcanza con uno.
    */
   const [filas, [conteo], [todos]] = await Promise.all([
-    db.execute<{
-      slug: string;
-      nombre: string;
-      marca: string;
-      precio: string;
-      descuento: string;
-      precioFinal: string;
-      imagenKey: string | null;
-      color: string | null;
-      colores: { nombre: string; hex: string }[] | null;
-      disponible: number;
-    }>(sql`
-      SELECT p.slug,
-             p.name            AS nombre,
-             b.name            AS marca,
-             p.price           AS precio,
-             p.discount        AS descuento,
-             p.final_price     AS "precioFinal",
-             img.storage_key   AS "imagenKey",
-             img.color,
-             cols.lista        AS colores,
-             st.disponible
+    db.execute<FilaDeTarjeta>(sql`
+      SELECT ${COLUMNAS_DE_TARJETA}
         FROM products p
         JOIN brands b ON b.id = p.brand_id
-
-        -- El stock que se puede vender: total menos lo comprometido por
-        -- órdenes activas (§8.1). Se suma sobre las variantes ACTIVAS, porque
-        -- una desactivada no se ofrece aunque tenga unidades.
-        LEFT JOIN LATERAL (
-          SELECT coalesce(sum(v.stock_total - v.reserved_stock), 0)::int AS disponible
-            FROM product_variants v
-           WHERE v.product_id = p.id AND v.is_active
-        ) st ON true
-
-        -- La foto de portada: la primera de la primera variante que tenga.
-        -- El coalesce(images_source_id, id) es §9.5: una variante puede
-        -- mostrar las fotos de otra, y sin esto una que reutiliza saldría sin
-        -- imagen aunque en la ficha se vea perfecta.
-        --
-        -- El ORDEN es el MISMO que el del selector de color de la ficha
-        -- (ficha.ts): sort_order de la variante y después el nombre del color.
-        -- Desempataba por v.id, que es un UUID al azar, así que la tarjeta
-        -- podía mostrar el teclado negro y la ficha abrir en el blanco. Eso no
-        -- se veía hasta que existió la ficha, y es de las cosas que nadie
-        -- reporta como error: se siente como que el sitio cambió de producto.
-        LEFT JOIN LATERAL (
-          SELECT i.storage_key, co.name AS color
-            FROM product_variants v
-            LEFT JOIN colors co ON co.id = v.color_id
-            JOIN variant_images i
-              ON i.variant_id = coalesce(v.images_source_id, v.id)
-           WHERE v.product_id = p.id AND v.is_active
-           ORDER BY v.sort_order, co.name NULLS LAST, i.sort_order
-           LIMIT 1
-        ) img ON true
-
-        -- Los puntos de color de la tarjeta (§6.1). DISTINCT en el
-        -- subselect y no en el agregado: dos variantes negras del mismo
-        -- producto pintarían dos puntos negros idénticos.
-        LEFT JOIN LATERAL (
-          SELECT coalesce(
-                   json_agg(
-                     json_build_object('nombre', c.nombre, 'hex', c.hex)
-                     ORDER BY c.nombre
-                   ),
-                   '[]'::json
-                 ) AS lista
-            FROM (
-              SELECT DISTINCT co.name AS nombre, co.hex_code AS hex
-                FROM product_variants v
-                JOIN colors co ON co.id = v.color_id
-               WHERE v.product_id = p.id AND v.is_active
-            ) c
-        ) cols ON true
-
+        ${UNIONES_DE_TARJETA}
        WHERE ${donde}
        ORDER BY ${ORDEN[f.orden]}, p.id
        LIMIT ${POR_PAGINA} OFFSET ${desde}`),
@@ -226,18 +258,7 @@ export async function leerPaginaDelCatalogo(
   ]);
 
   return {
-    productos: filas.map((r) => ({
-      slug: r.slug,
-      nombre: r.nombre,
-      marca: r.marca,
-      precio: r.precio,
-      descuento: r.descuento,
-      precioFinal: r.precioFinal,
-      imagenKey: r.imagenKey,
-      color: r.color,
-      colores: r.colores ?? [],
-      disponible: r.disponible,
-    })),
+    productos: filas.map(aTarjeta),
     total: conteo.n,
     totalSinFiltros: todos.n,
   };

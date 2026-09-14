@@ -8,9 +8,10 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { Ban, Check, Heart, Share2, ShoppingCart } from "lucide-react";
+import { Ban, Check, Share2, ShoppingCart } from "lucide-react";
 
 import { Cantidad } from "@/components/shop/cantidad";
+import { BotonFavorito } from "@/components/shop/favorito";
 import { Galeria, comoDesplazar } from "@/components/shop/ficha/galeria";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,6 +94,8 @@ type Props = {
    * servidor—: solo si hay que preguntar.
    */
   pendiente: boolean;
+  /** «Guardar» (F5.4): el favorito es del producto, no del color elegido. */
+  favorito: { productId: string; marcado: boolean };
   encabezado: ReactNode;
   informacion: ReactNode;
 };
@@ -104,6 +107,7 @@ export function Compra({
   whatsapp,
   conSesion,
   pendiente,
+  favorito,
   encabezado,
   informacion,
 }: Props) {
@@ -251,6 +255,9 @@ export function Compra({
           nombre={producto.nombre}
           marca={producto.marca}
           url={mensaje.url}
+          favorito={favorito}
+          conSesion={conSesion}
+          volver={volver}
         />
 
         {informacion}
@@ -804,19 +811,24 @@ function TodaviaNo({
  * etiqueta. Es un caso donde la misma acción se dibuja distinto en dos
  * pantallas a propósito, y está anotado en §14.
  *
- * **Guardar está apagado y Compartir anda.** No es una inconsistencia: los
- * favoritos son de F5.4 y necesitan cuenta, mientras que compartir no
- * necesita servidor —es `navigator.share` o el portapapeles—. Dibujar los dos
- * apagados habría escondido el único de los dos que ya se puede probar.
+ * **Guardar se encendió con F5.4** (`components/shop/favorito.tsx`). Sin
+ * sesión lleva a ingresar y vuelve a esta ficha, en el mismo color, con el
+ * producto ya guardado.
  */
 function AccionesSecundarias({
   nombre,
   marca,
   url,
+  favorito,
+  conSesion,
+  volver,
 }: {
   nombre: string;
   marca: string;
   url: string;
+  favorito: { productId: string; marcado: boolean };
+  conSesion: boolean;
+  volver: string;
 }) {
   const [estado, setEstado] = useState<"listo" | "copiado" | "sin-copiar">(
     "listo",
@@ -861,19 +873,14 @@ function AccionesSecundarias({
   return (
     <div className="pt-4">
       <div className="flex gap-2">
-        <Button
-          variant="secondary"
-          size="md"
-          disabled
-          aria-describedby="favoritos-pendiente"
-          className="flex-1"
-        >
-          <Heart aria-hidden />
-          Guardar
-        </Button>
-        <p id="favoritos-pendiente" className="sr-only">
-          Los favoritos llegan cuando estén las cuentas.
-        </p>
+        <BotonFavorito
+          forma="guardar"
+          productId={favorito.productId}
+          nombre={nombre}
+          marcado={favorito.marcado}
+          conSesion={conSesion}
+          volver={volver}
+        />
 
         <Button
           variant="secondary"
