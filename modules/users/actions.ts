@@ -1,6 +1,9 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
+import { createClient as crearClienteSuelto } from "@supabase/supabase-js";
 import { eq, sql } from "drizzle-orm";
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { db } from "@/db";
@@ -10,9 +13,12 @@ import { urlDelSitio } from "@/lib/env";
 import { domainError } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { actualizarDatos } from "@/modules/users/perfil";
 import {
+  cambioDeContrasenaSchema,
   completarPerfilSchema,
   ingresoSchema,
+  misDatosSchema,
   registroSchema,
   reenvioSchema,
 } from "@/modules/users/schemas";
@@ -264,4 +270,158 @@ export const completarPerfil = action
     });
 
     return { yaEstaba: false };
+  });
+
+// ── Mis datos (RF-07) — F5.2 ───────────────────────────────────────────
+
+export const guardarMisDatos = action
+  .input(misDatosSchema)
+  .auth("customer")
+  .handler(async ({ input, ctx }) => {
+    await actualizarDatos(ctx.session.profile.id, input);
+
+    // Los emails de GoTrue saludan con `first_name` de `user_metadata` —lo
+    // escribe `registrar`—, no con el perfil. Sin esto, quien corrige su
+    // nombre acá sigue recibiendo la recuperación de contraseña con el viejo.
+    //
+    // Si falla, los datos ya se guardaron, y son los que la tienda usa: no se
+    // le dice «no pudimos» a alguien cuyo cambio sí quedó. Se reporta.
+    const supabase = await createClient();
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        full_name: `${input.firstName} ${input.lastName}`,
+        first_name: input.firstName,
+      },
+    });
+    if (error) {
+      Sentry.captureException(error, {
+        tags: { capa: "server-action", paso: "user_metadata" },
+      });
+    }
+
+    // El encabezado y el saludo leen el perfil: que se vea el nombre nuevo.
+    refresh();
+    return { guardado: true };
+  });
+
+/**
+ * ¿Es esta la contraseña de la cuenta? Se le pregunta a GoTrue ingresando.
+ *
+ * **Con un cliente suelto, que no escribe cookies.** El de la sesión, si el
+ * ingreso sale bien, reemplazaría la sesión de la persona por la de la
+ * comprobación. Y la sesión que abre la comprobación **se cierra en el acto,
+ * con alcance `local`**: el `global` por omisión cerraría también la de ella.
+ *
+ * Existe la alternativa de GoTrue —`current_password` en `updateUser`—, pero
+ * solo funciona con `GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD`
+ * encendido en el servidor DATA, y esto no depende de cómo esté configurado.
+ */
+async function esLaContrasena(email: string, password: string) {
+  const cliente = crearClienteSuelto(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+
+  const { error } = await cliente.auth.signInWithPassword({ email, password });
+
+  if (!error) {
+    await cliente.auth.signOut({ scope: "local" });
+    return true;
+  }
+
+  if (error.code === "invalid_credentials") return false;
+
+  if (error.code === "over_request_rate_limit") {
+    throw domainError("VALIDATION", {
+      message: "Probaste muchas veces seguidas. Esperá un momento.",
+    });
+  }
+
+  throw new Error(`comprobar la contraseña falló: ${error.message}`);
+}
+
+/**
+ * Deja anotado que una cuenta de Google o Facebook ya tiene contraseña.
+ *
+ * GoTrue **no suma `email` a `providers`** cuando la define —comprobado en
+ * local el 2026-09-13—, así que sin esta marca la sesión seguiría creyendo
+ * que no tiene, y «Mis datos» la dejaría cambiar sin pedir la actual.
+ *
+ * Va en `app_metadata` porque solo la escribe la clave de servicio: la persona
+ * no puede ponérsela ni sacársela. Y se refresca la sesión para que el token
+ * nuevo la traiga ya, y no cuando venza el actual.
+ *
+ * Si falla, la contraseña ya quedó definida: no se le dice «no pudimos» a
+ * quien sí la tiene. Se reporta.
+ */
+async function anotarContrasenaDefinida({ userId }: { userId: string }) {
+  const { error } = await createServiceClient().auth.admin.updateUserById(
+    userId,
+    { app_metadata: { contrasena_definida: true } },
+  );
+
+  if (error) {
+    Sentry.captureException(error, {
+      tags: { capa: "server-action", paso: "app_metadata" },
+    });
+    return;
+  }
+
+  const supabase = await createClient();
+  await supabase.auth.refreshSession();
+  refresh();
+}
+
+function errorEnCampo(campo: string, mensaje: string) {
+  return domainError("VALIDATION", {
+    fields: { properties: { [campo]: { errors: [mensaje] } } },
+  });
+}
+
+export const cambiarContrasena = action
+  .input(cambioDeContrasenaSchema)
+  .auth("customer")
+  .handler(async ({ input, ctx }) => {
+    const { identity } = ctx.session;
+
+    if (identity.tieneContrasena) {
+      if (!input.actual) {
+        throw errorEnCampo("actual", "Escribí tu contraseña actual.");
+      }
+      if (!identity.email) {
+        throw new Error("sesión con contraseña y sin email");
+      }
+      if (!(await esLaContrasena(identity.email, input.actual))) {
+        throw errorEnCampo("actual", "Esa no es tu contraseña actual.");
+      }
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.auth.updateUser({ password: input.nueva });
+
+    if (!error) {
+      if (!identity.tieneContrasena) await anotarContrasenaDefinida(identity);
+      return { cambiada: true };
+    }
+
+    if (error.code === "same_password") {
+      throw errorEnCampo("nueva", "Es la misma que ya tenés. Elegí otra.");
+    }
+
+    if (error.code === "weak_password") {
+      throw errorEnCampo("nueva", "Esa contraseña es muy fácil de adivinar.");
+    }
+
+    // Con *Secure password change* encendido, GoTrue pide reingresar a quien
+    // entró hace más de 24 horas. Hoy está apagado; si alguien lo enciende,
+    // esto dice qué hacer en vez de fallar mudo.
+    if (error.code === "reauthentication_needed") {
+      throw domainError("VALIDATION", {
+        message:
+          "Por seguridad, cerrá sesión y volvé a entrar antes de cambiarla.",
+      });
+    }
+
+    throw new Error(`updateUser falló: ${error.message}`);
   });
