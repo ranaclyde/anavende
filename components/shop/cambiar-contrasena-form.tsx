@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -97,19 +96,7 @@ export function CambiarContrasenaForm({
             required
             aria-invalid={!!errores.campos.actual || undefined}
           />
-          {errores.campos.actual ? (
-            <FieldError>{errores.campos.actual}</FieldError>
-          ) : (
-            <FieldHint>
-              ¿No la recordás?{" "}
-              <Link
-                href="/recuperar"
-                className="text-ink underline underline-offset-2"
-              >
-                Te mandamos un enlace para crear otra
-              </Link>
-            </FieldHint>
-          )}
+          <FieldError>{errores.campos.actual}</FieldError>
         </div>
       )}
 
