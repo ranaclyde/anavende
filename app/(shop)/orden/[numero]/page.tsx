@@ -13,14 +13,14 @@ import {
   leerOrdenDelComprador,
   type ItemDeLaOrden,
 } from "@/modules/orders/queries";
-import { numeroDeWhatsApp } from "@/modules/settings/queries";
+import { emailDeAvisos, numeroDeWhatsApp } from "@/modules/settings/queries";
 
 export const metadata: Metadata = { title: "Pedido registrado" };
 
 type Props = { params: Promise<{ numero: string }> };
 
 /**
- * La orden recién confirmada — F6.3 · FS RF-12 · DESIGN-REFERENCE §7.5.
+ * La orden recién confirmada — F6.3 y F6.4 · FS RF-12 · DESIGN-REFERENCE §7.5.
  *
  * Solo la ve su comprador: una orden ajena es un 404, igual que una que no
  * existe (§13.8).
@@ -46,12 +46,13 @@ export default async function PaginaDeLaOrden({ params }: Props) {
   if (!/^\d{1,9}$/.test(crudo)) notFound();
   const numero = Number.parseInt(crudo, 10);
 
-  // Las dos juntas, y el número de WhatsApp aunque la orden termine en 404:
-  // no depende de ella, y encadenarlas pondría una lectura detrás de la otra
-  // en el camino que siempre se recorre para ahorrarla en el que casi nunca.
-  const [orden, whatsapp] = await Promise.all([
+  // Las tres juntas, y las de configuración aunque la orden termine en 404:
+  // no dependen de ella, y encadenarlas pondría una lectura detrás de la otra
+  // en el camino que siempre se recorre para ahorrarlas en el que casi nunca.
+  const [orden, whatsapp, casillaDeAvisos] = await Promise.all([
     leerOrdenDelComprador(sesion.profile.id, numero),
     numeroDeWhatsApp(),
+    emailDeAvisos(),
   ]);
   if (!orden) notFound();
 
@@ -69,19 +70,12 @@ export default async function PaginaDeLaOrden({ params }: Props) {
           ¡Listo, tu pedido #{orden.numero} quedó registrado!
         </h1>
         {/*
-          El aviso de que el stock queda reservado (RF-12) y, si hay número,
-          para qué sirve el botón de abajo.
-
-          **F6.4 le suma la primera mitad**: cuando el email E4 a la vendedora
-          exista, esto arranca con «Ya le avisamos a la vendedora por email y»
-          y el WhatsApp pasa a ser explícitamente el atajo para no esperarlo.
-          Hoy ese email no se manda, así que la pantalla no lo promete.
+          Quién ya se enteró, que el stock queda reservado (RF-12) y para qué
+          sirve el botón de abajo. En ese orden, porque la primera pregunta de
+          quien acaba de confirmar es «¿y ahora alguien me contesta?».
         */}
         <p className="text-body text-ink-secondary">
-          Guardamos el stock hasta coordinar el pago.
-          {whatsapp
-            ? " Escribile a la vendedora por WhatsApp para agilizarlo: le llega tu pedido con el número y lo encuentra enseguida."
-            : ""}
+          {queSigueAhora({ avisada: !!casillaDeAvisos, whatsapp: !!whatsapp })}
         </p>
       </div>
 
@@ -158,6 +152,42 @@ export default async function PaginaDeLaOrden({ params }: Props) {
       </div>
     </div>
   );
+}
+
+/**
+ * Qué pasa ahora, en una frase.
+ *
+ * Son tres piezas que se encienden solas —la vendedora avisada, el stock
+ * reservado (RF-12) y el atajo por WhatsApp—, y está acá afuera porque
+ * encadenar dos condicionales adentro del JSX partía palabras entre
+ * expresiones y no había forma de leer la frase entera de un vistazo.
+ *
+ * **Las condiciones no son prolijidad.** El email E4 sale solo si hay casilla
+ * configurada (F6.4) y el WhatsApp solo si hay número: la fila de
+ * `site_settings` puede no existir (§5.9). Prometer cualquiera de los dos sin
+ * eso sería decirle al comprador algo que no puede verificar y que no va a
+ * pasar.
+ */
+function queSigueAhora({
+  avisada,
+  whatsapp,
+}: {
+  avisada: boolean;
+  whatsapp: boolean;
+}): string {
+  const reserva = avisada
+    ? "Ya le avisamos a la vendedora por email y guardamos el stock hasta coordinar el pago."
+    : "Guardamos el stock hasta coordinar el pago.";
+
+  if (!whatsapp) return reserva;
+
+  // Con el email ya mandado el WhatsApp es opcional y se dice así; sin él, es
+  // lo único que mueve el pedido y la frase no puede sonar a sugerencia.
+  const atajo = avisada
+    ? "Si querés agilizarlo, escribile por WhatsApp: le llega tu pedido con el número y lo encuentra enseguida."
+    : "Escribile a la vendedora por WhatsApp para agilizarlo: le llega tu pedido con el número y lo encuentra enseguida.";
+
+  return `${reserva} ${atajo}`;
 }
 
 /**

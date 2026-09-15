@@ -16,6 +16,7 @@ import { createElement } from "react";
 import { render } from "react-email";
 
 import { Invitacion } from "@/lib/email/plantillas/invitacion";
+import { NuevaOrden } from "@/lib/email/plantillas/nueva-orden";
 import { Recuperacion } from "@/lib/email/plantillas/recuperacion";
 import { Verificacion } from "@/lib/email/plantillas/verificacion";
 
@@ -108,6 +109,29 @@ const destino = new URL("../../public/emails/", import.meta.url);
 const destinoVistaPrevia = new URL("vista-previa/", destino);
 await mkdir(destinoVistaPrevia, { recursive: true });
 
+/**
+ * E4 no es una plantilla de GoTrue: lo arma y lo manda la aplicación (§14).
+ *
+ * Por eso **no se escribe en `public/emails/`**, que es de donde Supabase
+ * descarga las suyas por HTTP: ahí solo va lo que GoTrue tiene que leer, y un
+ * archivo de más en esa carpeta invita a creer que este también se configura
+ * en algún lado. Sí se genera la vista previa, que es el único motivo por el
+ * que este script sabe de su existencia: sin ella, mirar E4 obliga a confirmar
+ * una compra de verdad. Sus valores de muestra viven en la plantilla, junto al
+ * diseño que tienen que llenar.
+ */
+const SOLO_VISTA_PREVIA = [
+  { archivo: "nueva-orden.html", plantilla: NuevaOrden },
+];
+
+for (const p of SOLO_VISTA_PREVIA) {
+  const vistaPrevia = await render(createElement(p.plantilla), {
+    pretty: true,
+  });
+  await writeFile(new URL(p.archivo, destinoVistaPrevia), vistaPrevia, "utf8");
+  console.log(`👁  vista previa de ${p.archivo} (E4 no se sirve por HTTP)`);
+}
+
 for (const p of PLANTILLAS) {
   // La de verdad, con las variables de Go. `pretty` NO: el formateador parte
   // las expresiones al ajustar líneas —vimos `{{ .TokenHash` y `}}` en
@@ -139,7 +163,7 @@ for (const p of PLANTILLAS) {
 
 console.log(
   `\nPara mirarlos, con \`npm run dev\` levantado:\n` +
-    PLANTILLAS.map(
-      (p) => `   ${SITIO_DE_PRUEBA}/emails/vista-previa/${p.archivo}`,
-    ).join("\n"),
+    [...PLANTILLAS, ...SOLO_VISTA_PREVIA]
+      .map((p) => `   ${SITIO_DE_PRUEBA}/emails/vista-previa/${p.archivo}`)
+      .join("\n"),
 );
