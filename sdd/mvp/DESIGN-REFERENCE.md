@@ -570,6 +570,10 @@ Si la foto ya entra a 1:1 no hay segundo nivel y el cursor no lo promete — pas
 
 **En móvil las tablas se vuelven tarjetas**, no un scroll horizontal. Una tabla de siete columnas en un teléfono es inoperable.
 
+**Paginación:** «Anterior / Página N de M / Siguiente», no un botón por página como la tienda (F7.1). Un listado del panel puede crecer sin techo —las órdenes se acumulan solas—, y una tira de cien números no sirve de nada: a una orden vieja se llega por la búsqueda o el rango de fechas, no acordándose de en qué página estaba. Los pasos que no existen —«anterior» en la primera— **no se dibujan apagados**: un enlace deshabilitado no se puede enfocar ni explica por qué no anda, y el «Página N de M» del medio ya dice dónde está el límite.
+
+**Solapas por estado:** cuando un listado tiene un estado que decide qué se está mirando —órdenes, usuarios—, va **a la vista y con el número de cada una**, no adentro de un desplegable más. Es la pregunta con la que se abre la pantalla, y el número contesta «¿tengo algo que hacer?» sin entrar. Ese número es el del total, no el del filtro puesto: si cambiara con cada búsqueda dejaría de ser un indicador para ser un resultado más.
+
 ### 6.10 Logo de marca
 
 **El recuadro del logo es siempre claro, en los dos modos.** Un logo de marca llega casi siempre como trazo sobre fondo transparente, y el trazo suele ser oscuro: sobre la superficie del panel en modo oscuro desaparece —es el mismo 1,83:1 de §2.3—. Con el logo de AnaVende eso se resuelve derivando una versión clara (`scripts/derivar-logo.mts`), pero el logo de Logitech no es nuestro y no se puede repintar.

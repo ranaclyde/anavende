@@ -46,7 +46,7 @@ export type PropsDeNuevaOrden = {
   total: string;
   /** Ya resuelta: «Envío a …» o «Retira en el punto de entrega». */
   entrega: string;
-  /** A dónde manda el botón. Hasta F7.1 es el inicio del panel. */
+  /** A dónde manda el botón: el detalle de la orden en el panel (F7.1). */
   enlace: string;
 };
 
@@ -80,7 +80,7 @@ export function NuevaOrden({
   items = ITEMS_DE_MUESTRA,
   total = "$ 191.000,00",
   entrega = "Envío a Colón 820, Viedma, Río Negro",
-  enlace = "http://localhost:3000/admin",
+  enlace = "http://localhost:3000/admin/ordenes/1043",
 }: Partial<PropsDeNuevaOrden> = {}) {
   return (
     <Marco
@@ -137,7 +137,7 @@ export function NuevaOrden({
         WhatsApp.
       </Parrafo>
 
-      <Boton href={enlace}>Abrir el panel</Boton>
+      <Boton href={enlace}>Ver la orden en el panel</Boton>
     </Marco>
   );
 }

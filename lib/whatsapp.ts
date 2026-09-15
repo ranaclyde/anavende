@@ -12,7 +12,8 @@
  */
 
 /**
- * Los dos mensajes del sistema, y por qué son dos.
+ * Los dos mensajes de la ficha de producto, y por qué son dos. (El sistema
+ * tiene cuatro: los otros dos, más abajo, son los de una orden ya creada.)
  *
  * El de COMPRA (RF-04) es un pedido: lleva cantidad y precio, que es lo que
  * la vendedora necesita para contestar con un total. El de DISPONIBILIDAD
@@ -147,5 +148,28 @@ export function mensajeDeOrden(
     `Total: ${total}`,
     "",
     "Te escribo para agilizar el pago y la entrega.",
+  ].join("\n");
+}
+
+/**
+ * El cuarto mensaje: **la vendedora escribiéndole al comprador** — RF-21,
+ * F7.1. Los otros tres van en la dirección contraria.
+ *
+ * Es deliberadamente corto y **no lleva el detalle del pedido**. Los otros
+ * mensajes los manda alguien que necesita explicar de qué habla; éste lo
+ * manda quien tiene la orden abierta en la pantalla, y lo que sigue —«te
+ * quedan dos, ¿te mando el otro color?»— lo escribe ella. Un mensaje largo
+ * prearmado se borra antes de mandarlo.
+ *
+ * **Tampoco lleva el nombre.** El proyecto ya se quemó partiendo nombres por
+ * el primer espacio (`user_profiles.first_name`), y el nombre entero —«¡Hola,
+ * María Gómez!»— suena a formulario. En un chat de a dos, del otro lado ya
+ * saben con quién están hablando.
+ */
+export function mensajeParaElComprador(numero: number): string {
+  return [
+    `¡Hola! Te escribo de AnaVende por tu pedido #${numero}.`,
+    "",
+    "¿Coordinamos el pago y la entrega?",
   ].join("\n");
 }
