@@ -43,12 +43,12 @@ const CAMBIO_EL_CARRITO = new Set([
 /**
  * Las partes vivas del checkout — F6.1, RF-11.
  *
- * **Nombre y teléfono valen para este pedido** (decisión mía, para revisar):
+ * **Nombre y teléfono valen para este pedido** (aceptado el 2026-09-14):
  * van al snapshot de la orden y no cambian la cuenta. Quien compra para otra
  * persona no tiene por qué pisar sus propios datos, y los de la cuenta se
  * cambian en «Mis datos». El email no se edita: es el de la sesión.
  *
- * **Arranca en «Que me lo envíen»** (decisión mía, para revisar), con la
+ * **Arranca en «Que me lo envíen»** (aceptado el 2026-09-14), con la
  * dirección predeterminada elegida: es el caso de casi todos, y cambiar a
  * retiro es un toque. Sin direcciones, el formulario para cargar una aparece
  * abierto ahí mismo.
@@ -77,7 +77,7 @@ export function Checkout({
   direcciones: DireccionDelCheckout[];
   maximoAlcanzado: boolean;
   nuevaDireccion: ValoresDeDireccion;
-  esperado: { variantId: string; unitPrice: string }[];
+  esperado: { variantId: string; unitPrice: string; quantity: number }[];
   mediosDePago: { id: string; nombre: string }[];
   resumen: ReactNode;
 }) {
@@ -134,7 +134,11 @@ export function Checkout({
       }
 
       setErrores(leerErrores<Campo>(r));
-      if (CAMBIO_EL_CARRITO.has(r.code)) router.refresh();
+      // NOT_FOUND es la dirección elegida, borrada desde otra pestaña: el
+      // refresco la saca de la lista y deja elegida la predeterminada.
+      if (CAMBIO_EL_CARRITO.has(r.code) || r.code === "NOT_FOUND") {
+        router.refresh();
+      }
     });
   }
 

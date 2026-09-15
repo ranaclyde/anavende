@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import type { ShippingAddressSnapshot } from "@/db/schema/orders";
-import { domainError } from "@/lib/errors";
+import { domainError, isDomainError } from "@/lib/errors";
 import { compare, type Money } from "@/lib/money";
 import { reservar } from "@/modules/stock/operaciones";
 
@@ -44,6 +44,11 @@ export type ItemEsperado = {
   variantId: string;
   /** El precio final YA con descuento, tal como se le mostró. */
   unitPrice: Money;
+  /**
+   * Cuántas vio. Sin esto, un «+» en otra pestaña crearía la orden con otra
+   * cantidad y otro total que el del resumen (F6.2).
+   */
+  quantity: number;
 };
 
 /**
@@ -207,6 +212,20 @@ export async function crearOrdenDesdeCarrito(
           orderId: orden.id,
           actorUserId: datos.userId,
           note: "Orden confirmada",
+        }).catch((e: unknown) => {
+          // El mensaje de siempre dice «ese producto» y pide ajustar la
+          // cantidad; acá se sabe cuál es, y la pantalla la ajusta sola al
+          // volver a armarse (F5.6). Sigue siendo INSUFFICIENT_STOCK (F6.2).
+          if (isDomainError(e) && e.code === "INSUFFICIENT_STOCK") {
+            const nombre = item.colorName
+              ? `${item.productName} (${item.colorName.toLowerCase()})`
+              : item.productName;
+            throw domainError("INSUFFICIENT_STOCK", {
+              variantId: item.variantId,
+              message: `Ya no queda stock suficiente de «${nombre}». Revisá el resumen y confirmá otra vez.`,
+            });
+          }
+          throw e;
         });
       }
 
@@ -262,7 +281,7 @@ function revisarQueSigaSiendoLoQueVio(
   esperado: readonly ItemEsperado[],
   enElCarrito: readonly FilaDelCarrito[],
 ): void {
-  const visto = new Map(esperado.map((i) => [i.variantId, i.unitPrice]));
+  const visto = new Map(esperado.map((i) => [i.variantId, i]));
 
   const noDisponibles: { variantId: string; productName: string }[] = [];
   const cambiosDePrecio: {
@@ -272,6 +291,11 @@ function revisarQueSigaSiendoLoQueVio(
     precioVigente: Money;
   }[] = [];
   const sinVer: string[] = [];
+  const cambiosDeCantidad: {
+    variantId: string;
+    cantidadVista: number;
+    cantidadActual: number;
+  }[] = [];
 
   for (const item of enElCarrito) {
     if (!item.productoActivo || !item.varianteActiva) {
@@ -282,9 +306,9 @@ function revisarQueSigaSiendoLoQueVio(
       continue;
     }
 
-    const precioVisto = visto.get(item.variantId);
+    const loVisto = visto.get(item.variantId);
 
-    if (precioVisto === undefined) {
+    if (loVisto === undefined) {
       // Está en el carrito y no en el resumen: se agregó desde otra pestaña
       // después de abrir el checkout. Confirmar así le cobraría algo que
       // nunca vio.
@@ -294,11 +318,21 @@ function revisarQueSigaSiendoLoQueVio(
 
     visto.delete(item.variantId);
 
-    if (compare(precioVisto, item.finalPrice) !== 0) {
+    // Un «+» o un «−» desde otra pestaña: el precio es el mismo, pero el
+    // total ya no es el del resumen.
+    if (loVisto.quantity !== item.quantity) {
+      cambiosDeCantidad.push({
+        variantId: item.variantId,
+        cantidadVista: loVisto.quantity,
+        cantidadActual: item.quantity,
+      });
+    }
+
+    if (compare(loVisto.unitPrice, item.finalPrice) !== 0) {
       cambiosDePrecio.push({
         variantId: item.variantId,
         productName: item.productName,
-        precioVisto,
+        precioVisto: loVisto.unitPrice,
         precioVigente: item.finalPrice,
       });
     }
@@ -315,12 +349,13 @@ function revisarQueSigaSiendoLoQueVio(
   }
 
   // Lo que sobró en `visto` estaba en el resumen y ya no está en el carrito;
-  // lo de `sinVer`, al revés. Las dos cosas son el mismo aviso: el carrito no
-  // es el que estás mirando.
-  if (sinVer.length > 0 || visto.size > 0) {
+  // lo de `sinVer`, al revés; y las cantidades, lo mismo a medias. Las tres
+  // cosas son el mismo aviso: el carrito no es el que estás mirando.
+  if (sinVer.length > 0 || visto.size > 0 || cambiosDeCantidad.length > 0) {
     throw domainError("PRICE_CHANGED", {
       agregados: sinVer,
       quitados: [...visto.keys()],
+      cantidades: cambiosDeCantidad,
       message:
         "Tu carrito cambió mientras comprabas. Revisá el resumen y confirmá otra vez.",
     });

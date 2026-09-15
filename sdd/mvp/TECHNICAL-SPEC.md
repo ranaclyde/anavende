@@ -916,7 +916,9 @@ COMMIT
   11. revalidateTag de los productos afectados
 ```
 
-El paso 3 implementa la **reconfirmación** de RF-11: el cliente envía un identificador del estado que vio (los precios finales de los ítems); si el servidor encuentra otra cosa, no crea la orden a espaldas del comprador.
+El paso 3 implementa la **reconfirmación** de RF-11: el cliente envía un identificador del estado que vio (los precios finales **y las cantidades** de los ítems); si el servidor encuentra otra cosa, no crea la orden a espaldas del comprador.
+
+> **La cantidad se agregó en F6.2.** Con solo los precios, un «+» desde otra pestaña pasaba la comparación —el precio seguía siendo el mismo— y la orden se creaba con otro total que el del resumen. Una cantidad distinta se trata como un producto agregado o quitado: el carrito no es el que el comprador está mirando.
 
 ### 8.5 Idempotencia (RF-12)
 
