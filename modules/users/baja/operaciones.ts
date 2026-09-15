@@ -55,8 +55,12 @@ function listar(ordenes: OrdenActiva[]): string {
 
 /**
  * «Tenés 1 orden activa (la #12)…»: cuántas y cuáles, y qué hacer (RF-34).
- * «Mis compras» llega con F6.5; hasta entonces no hay órdenes web, así que
- * este mensaje todavía no se puede ver desde la tienda.
+ *
+ * **Desde F6.5 «Mis compras» existe**, así que el camino que nombra se puede
+ * recorrer: se entra por el menú de la cuenta, se abre el pedido y se cancela
+ * desde el detalle. Va nombrada y no enlazada porque este texto es el cuerpo
+ * de un aviso y no una pantalla: meterle un enlace adentro obligaría a
+ * devolver JSX desde un módulo que hoy devuelve una frase.
  */
 export function mensajeDeOrdenesActivas(ordenes: OrdenActiva[]): string {
   const cuantas =

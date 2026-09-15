@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, MapPin, UserRound } from "lucide-react";
+import { Heart, MapPin, Package, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * Las secciones de «Mi cuenta» — RF-07. Nace con F5.3 (2026-09-13).
  *
  * Solo las que existen: una entrada que lleva a una página vacía promete
- * algo que no hay. Favoritos llegó con F5.4; Compras se suma con F6.5.
+ * algo que no hay. Favoritos llegó con F5.4 y Compras con F6.5.
  *
  * **En el teléfono es una barra de pestañas de ancho parejo** (2026-09-14):
  * ícono arriba, nombre abajo, y el ancho repartido entre las que haya. Era
@@ -31,6 +31,7 @@ const SECCIONES = [
   { href: "/mi-cuenta", etiqueta: "Mis datos", Icono: UserRound },
   { href: "/mi-cuenta/direcciones", etiqueta: "Direcciones", Icono: MapPin },
   { href: "/mi-cuenta/favoritos", etiqueta: "Favoritos", Icono: Heart },
+  { href: "/mi-cuenta/compras", etiqueta: "Compras", Icono: Package },
 ] as const;
 
 export function MenuDeLaCuenta() {

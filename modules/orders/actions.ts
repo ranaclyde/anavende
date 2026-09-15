@@ -1,9 +1,15 @@
 "use server";
 
+import { refresh } from "next/cache";
+import { z } from "zod";
+
+import { db } from "@/db";
 import { action } from "@/lib/action";
 import { domainError, isDomainError } from "@/lib/errors";
 import { avisarSinBloquear } from "@/modules/orders/avisar";
 import { crearOrdenDesdeCarrito, type Entrega } from "@/modules/orders/crear";
+import { cancelarOrden } from "@/modules/orders/estados";
+import { idDeMiOrden } from "@/modules/orders/queries";
 import {
   confirmacionSchema,
   type Confirmacion,
@@ -82,3 +88,47 @@ function entregaElegida(input: Confirmacion): Entrega {
   if (!input.addressId) throw domainError("VALIDATION");
   return { tipo: "envio", addressId: input.addressId };
 }
+
+/**
+ * Cancelar la propia orden — FS RF-23, RF-07, RF-34 · TS §8.1. Tarea F6.5.
+ *
+ * **Esto es el arrepentimiento**, y no una función más del panel: RF-34 dejó
+ * escrito que para quien tiene sesión, cancelar su orden `activa` *es* el
+ * derecho de arrepentimiento, y que su visibilidad es parte del requisito. Por
+ * eso vive a la vista en el detalle y no detrás de un menú.
+ *
+ * **Sin motivo, y es deliberado.** RF-23 se lo pide a la administradora, que
+ * cancela la orden de otro y tiene que dejar dicho por qué. A quien se
+ * arrepiente no se le pide explicación: un campo obligatorio ahí es una
+ * fricción puesta justo donde el requisito quiere que no haya ninguna.
+ *
+ * **La orden se busca por número Y por dueño** (§13.8). El número está en la
+ * URL y es adivinable —son correlativos—, así que la de otro tiene que
+ * responder exactamente lo mismo que una que no existe.
+ */
+export const cancelarMiOrden = action
+  .input(z.object({ numero: z.number().int().positive() }))
+  .auth("customer")
+  .handler(async ({ input, ctx }) => {
+    const orderId = await idDeMiOrden(ctx.session.profile.id, input.numero);
+    if (!orderId) throw domainError("NOT_FOUND");
+
+    // `cancelarOrden` libera la reserva y escribe el historial en la misma
+    // transacción que el cambio de estado (§8.1). Si ya no está activa —la
+    // finalizó la vendedora mientras esta pantalla estaba abierta— lanza
+    // INVALID_ORDER_STATE, que se lee «Esa orden ya cambió de estado».
+    await db.transaction((tx) =>
+      cancelarOrden(tx, {
+        orderId,
+        // Queda en el historial quién la canceló (RF-23). Que el autor sea el
+        // propio comprador es lo que después distingue en el panel un
+        // arrepentimiento de una cancelación de la vendedora.
+        actorUserId: ctx.session.profile.id,
+      }),
+    );
+
+    // El detalle pasa a «Cancelada» y el listado también: las dos son
+    // dinámicas y `refresh()` es lo que las vuelve a pedir.
+    refresh();
+    return { cancelada: input.numero };
+  });
