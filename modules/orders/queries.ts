@@ -3,8 +3,10 @@ import "server-only";
 import { sql } from "drizzle-orm";
 
 import { db } from "@/db";
+import { POR_PAGINA } from "@/modules/catalog/products/filtros-tienda";
 import type { ShippingAddressSnapshot } from "@/db/schema/orders";
 import type { Money } from "@/lib/money";
+import type { EstadoOrden } from "@/modules/orders/estados";
 
 /**
  * Lecturas de órdenes del lado del comprador — FS RF-12 · TS §13.8.
@@ -35,6 +37,9 @@ export type ItemDeLaOrden = {
 
 export type OrdenDelComprador = {
   numero: number;
+  estado: EstadoOrden;
+  /** ISO, como la devuelve el driver con SQL crudo: acá no se opera con ella. */
+  creadaEn: string;
   total: Money;
   unidades: number;
   /**
@@ -52,6 +57,8 @@ export async function leerOrdenDelComprador(
 ): Promise<OrdenDelComprador | null> {
   const [fila] = await db.execute<Omit<OrdenDelComprador, "unidades">>(sql`
     SELECT o.order_number     AS numero,
+           o.status           AS estado,
+           o.created_at       AS "creadaEn",
            o.total,
            o.customer_name    AS "customerName",
            o.shipping_address AS "shippingAddress",
@@ -81,4 +88,81 @@ export async function leerOrdenDelComprador(
   // el día que una cambie y la otra no.
   const unidades = fila.items.reduce((suma, item) => suma + item.cantidad, 0);
   return { ...fila, unidades };
+}
+
+// ── «Mis compras» (RF-07, F6.5) ─────────────────────────────────────────
+
+/**
+ * Un renglón del historial.
+ *
+ * **Lleva `resumen` y no los ítems enteros**: el listado tiene que dejar
+ * reconocer cuál es cuál —«Auricular Cloud II y 1 más»—, y traer todos los
+ * renglones de todas las órdenes para mostrar el primero sería leer de más en
+ * cada carga. El detalle los trae completos.
+ */
+export type CompraDelHistorial = {
+  numero: number;
+  estado: EstadoOrden;
+  creadaEn: string;
+  total: Money;
+  unidades: number;
+  /** El nombre del primer producto, con cuántos más hay. */
+  resumen: string;
+};
+
+/**
+ * El historial del comprador, de la más nueva a la más vieja — RF-07.
+ *
+ * **Paginado con el mismo tope que el catálogo y los favoritos.** No hay
+ * límite de compras y una cuenta vieja cargaría todas de una; un segundo
+ * número de página en el proyecto sería una constante más para mantener sin
+ * nada que la justifique.
+ */
+export async function leerMisCompras(
+  userId: string,
+  {
+    pagina = 1,
+    porPagina = POR_PAGINA,
+  }: { pagina?: number; porPagina?: number } = {},
+): Promise<{ compras: CompraDelHistorial[]; total: number }> {
+  const [filas, [conteo]] = await Promise.all([
+    db.execute<CompraDelHistorial>(sql`
+      SELECT o.order_number AS numero,
+             o.status       AS estado,
+             o.created_at   AS "creadaEn",
+             o.total,
+             (SELECT coalesce(sum(i.quantity), 0)::int
+                FROM order_items i WHERE i.order_id = o.id) AS unidades,
+             (SELECT CASE
+                       WHEN count(*) <= 1 THEN min(i.product_name)
+                       ELSE min(i.product_name) || ' y ' ||
+                            (count(*) - 1)::text || ' más'
+                     END
+                FROM order_items i WHERE i.order_id = o.id) AS resumen
+        FROM orders o
+       WHERE o.user_id = ${userId}
+       ORDER BY o.created_at DESC, o.order_number DESC
+       LIMIT ${porPagina} OFFSET ${(pagina - 1) * porPagina}`),
+    db.execute<{ total: number }>(sql`
+      SELECT count(*)::int AS total FROM orders WHERE user_id = ${userId}`),
+  ]);
+
+  return { compras: [...filas], total: conteo.total };
+}
+
+/**
+ * El `id` de una orden del comprador, para las acciones que la cambian.
+ *
+ * **Devuelve `null` para la orden de otro, igual que si no existiera**
+ * (§13.8): quien cancela llega con un número de la URL, y ese número es
+ * adivinable.
+ */
+export async function idDeMiOrden(
+  userId: string,
+  numero: number,
+): Promise<string | null> {
+  const [fila] = await db.execute<{ id: string }>(sql`
+    SELECT id FROM orders
+     WHERE order_number = ${numero} AND user_id = ${userId}`);
+  return fila?.id ?? null;
 }

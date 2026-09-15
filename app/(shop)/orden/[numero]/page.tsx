@@ -3,16 +3,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { RenglonDelPedido } from "@/components/shop/compras/renglon";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { formatMoney } from "@/lib/money";
 import { getIdentity, getSession } from "@/lib/session";
 import { enlaceDeWhatsApp, mensajeDeOrden } from "@/lib/whatsapp";
 import { formaDeEntrega } from "@/modules/orders/entrega";
-import {
-  leerOrdenDelComprador,
-  type ItemDeLaOrden,
-} from "@/modules/orders/queries";
+import { leerOrdenDelComprador } from "@/modules/orders/queries";
 import { emailDeAvisos, numeroDeWhatsApp } from "@/modules/settings/queries";
 
 export const metadata: Metadata = { title: "Pedido registrado" };
@@ -20,7 +18,7 @@ export const metadata: Metadata = { title: "Pedido registrado" };
 type Props = { params: Promise<{ numero: string }> };
 
 /**
- * La orden recién confirmada — F6.3 y F6.4 · FS RF-12 · DESIGN-REFERENCE §7.5.
+ * La orden recién confirmada — F6.3 a F6.5 · FS RF-12 · DR §7.5.
  *
  * Solo la ve su comprador: una orden ajena es un 404, igual que una que no
  * existe (§13.8).
@@ -82,7 +80,7 @@ export default async function PaginaDeLaOrden({ params }: Props) {
       <div className="flex w-full flex-col gap-4 rounded-card bg-surface p-5 text-left shadow-md">
         <ul className="flex flex-col gap-3">
           {orden.items.map((item) => (
-            <Renglon key={item.id} item={item} />
+            <RenglonDelPedido key={item.id} item={item} />
           ))}
         </ul>
 
@@ -116,7 +114,7 @@ export default async function PaginaDeLaOrden({ params }: Props) {
           Sin número configurado no se dibuja, en vez de dibujarse roto: la
           fila de `site_settings` puede no existir (§5.9), y `wa.me/` sin
           número abre WhatsApp en la nada y parece que falló el sitio. En ese
-          caso «Seguir mirando» queda como única acción, que es la verdad de
+          caso «Ver mis compras» queda como única acción, que es la verdad de
           lo que se puede hacer desde acá.
         */}
         {whatsapp ? (
@@ -141,13 +139,14 @@ export default async function PaginaDeLaOrden({ params }: Props) {
         ) : null}
 
         {/*
-          F6.5 lo reemplaza por «Ver mis compras», que es lo que pide §7.5.
-          Todavía no existe `/mis-compras`, y un botón que lleva a un 404 es
-          peor que uno que lleva a otro lado. Los legales, el otro enlace que
-          pide RF-12, ya están en el pie de todas las pantallas.
+          «Ver mis compras», que es lo que pide §7.5 y F6.5 hizo posible: hasta
+          que existió el historial esto decía «Seguir mirando», porque un botón
+          que lleva a un 404 es peor que uno que lleva a otro lado. Los legales,
+          el otro enlace que pide RF-12, ya están en el pie de todas las
+          pantallas.
         */}
         <Button asChild variant="secondary" size="lg" className="w-full">
-          <Link href="/productos">Seguir mirando</Link>
+          <Link href="/mi-cuenta/compras">Ver mis compras</Link>
         </Button>
       </div>
     </div>
@@ -188,31 +187,4 @@ function queSigueAhora({
     : "Escribile a la vendedora por WhatsApp para agilizarlo: le llega tu pedido con el número y lo encuentra enseguida.";
 
   return `${reserva} ${atajo}`;
-}
-
-/**
- * Un renglón del pedido, con la misma forma que el resumen del checkout
- * (F6.1) — quien acaba de confirmar está comparando una pantalla con la
- * anterior, y que se lean igual es parte de que se entienda que es lo mismo.
- *
- * **Sin foto, y ahí termina el parecido.** Estos datos salen del snapshot
- * (RN-12), que no guarda imágenes; el del checkout sale del carrito, que las
- * tiene. Traerlas del producto de hoy mostraría la foto actual al lado del
- * precio de ayer.
- */
-function Renglon({ item }: { item: ItemDeLaOrden }) {
-  return (
-    <li className="flex gap-3">
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <p className="text-body-sm font-medium text-ink">{item.nombre}</p>
-        <p className="text-caption text-ink-secondary tabular-nums">
-          {item.color ? `${item.color} · ` : ""}
-          {item.cantidad} × {formatMoney(item.precioUnitario)}
-        </p>
-      </div>
-      <p className="text-body-sm font-medium text-ink tabular-nums">
-        {formatMoney(item.subtotal)}
-      </p>
-    </li>
-  );
 }

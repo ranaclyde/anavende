@@ -281,6 +281,10 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 - [ ] El detalle de una orden muestra los ítems con el precio al que se generó la orden (snapshot, RN-12), el estado y los datos de envío.
 - [ ] Desde una orden `activa`, el comprador puede **cancelarla** (RF-23) y **retomar la conversación por WhatsApp**.
 
+> **El historial y el detalle son dos pantallas, y el detalle no es la confirmación** (F6.5, 2026-09-15). `/mi-cuenta/compras` lista, `/mi-cuenta/compras/[numero]` muestra una. La confirmación de RF-12 (`/orden/[numero]`) se queda donde está y con su tono: es el momento de haber comprado, se lee una vez y felicita. Al detalle se vuelve semanas después para otra cosa —ver en qué anda, releer qué se pidió, arrepentirse—, y las dos acciones que ofrece (WhatsApp y cancelar) sólo aparecen mientras la orden está `activa`.
+>
+> **Los estados se nombran para quien compró**: `activa` se lee **«En preparación»**, `finalizada` **«Entregada»**. Finalizar es lo que hace la vendedora en el panel; recibirla es lo que le pasa a él. El panel de F7.1 sí los nombra como la máquina de estados.
+
 ---
 
 ### RF-08 — Carrito persistente
@@ -617,6 +621,8 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] **Cancelar** (administradora **o** comprador desde su panel): libera la reserva sin descontar stock. La administradora puede registrar un motivo.
 - [ ] Ambas acciones registran autor, fecha y motivo en el historial.
 - [ ] **La cancelación por el comprador es el arrepentimiento** (RF-34, «El arrepentimiento no es esto»). Tiene que estar **a la vista** en el detalle de la orden y no detrás de un menú: es el mecanismo con el que el sitio cumple ese derecho, y su visibilidad es parte del requisito.
+
+> **A la vista quiere decir en el detalle, no en cada renglón del listado** (F6.5). Un botón destructivo al lado de cada compra de una lista es el que se toca sin querer; en el detalle está solo y con el pedido enfrente. **Y sin campo de motivo**: el motivo se lo pide RF-23 a la administradora, que cancela la orden de otro. A quien se arrepiente no se le pide explicación — un campo obligatorio ahí es fricción puesta justo donde el requisito quiere que no haya ninguna. Igual queda registrado **quién** canceló, que es lo que en el panel distingue un arrepentimiento de una cancelación de la vendedora.
 - [ ] Una orden ya finalizada o cancelada no admite nuevas transiciones (RF-13).
 
 ---
