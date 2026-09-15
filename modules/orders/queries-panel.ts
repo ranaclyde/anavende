@@ -192,6 +192,19 @@ export type EntradaDelHistorial = {
   cuando: string;
 };
 
+/**
+ * Un renglón de la orden, con **lo que hay disponible de esa variante hoy**.
+ *
+ * El renglón es el snapshot de RN-12 y no cambia; `disponible` es del catálogo
+ * vivo y sí. Van juntos porque la edición de RF-22 los necesita juntos: quitar
+ * dos unidades libera dos unidades, y el número que le importa a quien lo hace
+ * es en cuánto queda el disponible después. `null` cuando la variante ya no
+ * existe (§5.6): ahí no hay contador que mover.
+ */
+export type ItemDeLaOrdenDelPanel = ItemDeLaOrden & {
+  disponible: number | null;
+};
+
 export type OrdenDelPanel = {
   numero: number;
   estado: EstadoOrden;
@@ -206,7 +219,7 @@ export type OrdenDelPanel = {
   notas: string | null;
   total: Money;
   unidades: number;
-  items: ItemDeLaOrden[];
+  items: ItemDeLaOrdenDelPanel[];
   /**
    * La cuenta del comprador, cuando la orden salió de la web. `null` en las
    * manuales de alguien sin cuenta (RF-24). **No es lo mismo que el snapshot
@@ -254,12 +267,17 @@ export async function leerOrdenDelPanel(
                          'color',          i.color_name,
                          'cantidad',       i.quantity,
                          'precioUnitario', i.unit_price::text,
-                         'subtotal',       i.subtotal::text
+                         'subtotal',       i.subtotal::text,
+                         'disponible',     CASE WHEN v.id IS NULL THEN NULL
+                                                ELSE v.stock_total
+                                                     - v.reserved_stock END
                        )
                        ORDER BY i.product_name, i.color_name
                      ),
                      '[]'::json)
-              FROM order_items i WHERE i.order_id = o.id) AS items,
+              FROM order_items i
+              LEFT JOIN product_variants v ON v.id = i.variant_id
+             WHERE i.order_id = o.id) AS items,
            (SELECT coalesce(
                      json_agg(
                        json_build_object(
@@ -287,4 +305,18 @@ export async function leerOrdenDelPanel(
   // sobre la misma tabla puede discrepar el día que una cambie y la otra no.
   const unidades = fila.items.reduce((suma, item) => suma + item.cantidad, 0);
   return { ...fila, unidades };
+}
+
+/**
+ * El `id` de una orden a partir de su número, que es lo que viaja en la URL.
+ *
+ * **Sin filtrar por nadie**, al revés de `idDeMiOrden` (§13.8): el panel ve
+ * todas las órdenes, y quién puede llamarlo lo decide el `.auth("admin")` del
+ * envoltorio de acciones. Son dos funciones parecidas con garantías
+ * distintas, y por eso viven en archivos distintos.
+ */
+export async function idDeLaOrden(numero: number): Promise<string | null> {
+  const [fila] = await db.execute<{ id: string }>(sql`
+    SELECT id FROM orders WHERE order_number = ${numero}`);
+  return fila?.id ?? null;
 }

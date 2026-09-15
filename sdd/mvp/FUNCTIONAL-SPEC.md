@@ -619,6 +619,11 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] El total se recalcula automáticamente y el cambio queda registrado en el historial de la orden.
 - [ ] Quitar el último ítem de una orden equivale a cancelarla (se pide confirmación explícita).
 - [ ] Sólo se pueden editar órdenes `activas`.
+- [ ] Antes de confirmar, la pantalla dice **qué pasa con el stock**: cuántas unidades se liberan y en cuánto queda el disponible de esa variante. Es el número con el que se decide si conviene.
+- [ ] **Quitar y bajar la cantidad son dos acciones separadas**, cada una con su confirmación. Bajar deja el producto en la orden; quitar lo saca, y si era el único, además cancela. Un solo control que llegue hasta cero mezcla las dos y convierte un cero distraído en una cancelación.
+- [ ] **Ninguna se puede deshacer, y las dos lo avisan.** Volver a agregar no está en este requisito —habría que reservar de nuevo y puede no haber stock— y de `cancelada` no se sale (RF-13).
+
+> **La edición se registra en el historial de estados, como `activa → activa`** (F4.4). Es el único historial que tiene la orden, y ensanchar su uso es preferible a partir la línea de tiempo en dos tablas que la pantalla después tiene que volver a unir. **Pero no se muestra así**: el panel lee esas filas y dice lo que pasó —«Se quitó "Auricular Cloud II (Rojo)"»—, porque «Activa → Activa» es la implementación asomándose (F7.2).
 
 ---
 

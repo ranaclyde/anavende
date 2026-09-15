@@ -7,6 +7,7 @@ import {
   EstadoDeLaOrden,
   OrigenDeLaOrden,
 } from "@/components/admin/ordenes/estado";
+import { EditarElRenglon } from "@/components/admin/ordenes/editar-item";
 import { HistorialDeLaOrden } from "@/components/admin/ordenes/historial";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
@@ -110,9 +111,9 @@ export default async function DetalleDeLaOrden({ params }: Props) {
 
       {orden.estado === "activa" ? (
         <p className="rounded-panel-card border border-dashed border-border bg-surface px-4 py-3 text-body-sm text-ink-secondary">
-          Editarla, finalizarla o cancelarla desde acá llega con las próximas
-          tareas del panel. Mientras tanto, se coordina por WhatsApp como hasta
-          ahora.
+          Podés quitar productos o bajar cantidades desde la tabla, y lo que
+          saques vuelve al stock enseguida. Finalizarla o cancelarla desde acá
+          llega con la próxima tarea del panel.
         </p>
       ) : null}
 
@@ -198,6 +199,29 @@ export default async function DetalleDeLaOrden({ params }: Props) {
  * tampoco hay enlace a la ficha del producto.
  */
 function Renglones({ orden }: { orden: OrdenDelPanel }) {
+  // RF-22: sólo las activas se editan. La regla la hace cumplir el dominio
+  // con un `FOR UPDATE` (`editar.ts`); acá se decide qué se dibuja, que no es
+  // lo mismo — un botón escondido no es una guardia.
+  const editable = orden.estado === "activa";
+  const esElUnico = orden.items.length === 1;
+
+  /**
+   * Una orden puede quedarse sin renglones, y sólo de una manera: se le quitó
+   * el último (RF-22), lo que la cancela. Una tabla con la cabecera puesta y
+   * nada debajo no explica eso (§8), y el historial de al lado sí — pero está
+   * más abajo. Se dice acá.
+   */
+  if (orden.items.length === 0) {
+    return (
+      <section className="rounded-panel-card border border-border bg-surface px-4 py-6 text-center">
+        <p className="text-body-sm text-ink-secondary">
+          No quedó ningún producto: se quitaron todos y por eso la orden está
+          cancelada. El detalle de qué se sacó está en el historial.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section
       aria-labelledby="items"
@@ -222,6 +246,11 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
             <TableHead data-align="right" className="w-36">
               Subtotal
             </TableHead>
+            {editable ? (
+              <TableHead className="w-24 text-right">
+                <span className="sr-only">Acciones</span>
+              </TableHead>
+            ) : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -241,6 +270,15 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
               <TableCell data-align="right" className="font-medium">
                 {formatMoney(item.subtotal)}
               </TableCell>
+              {editable ? (
+                <TableCell className="text-right">
+                  <EditarElRenglon
+                    numero={orden.numero}
+                    item={item}
+                    esElUnico={esElUnico}
+                  />
+                </TableCell>
+              ) : null}
             </TableRow>
           ))}
         </TableBody>
@@ -268,6 +306,13 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
                 {formatMoney(item.subtotal)}
               </span>
             </div>
+            {editable ? (
+              <EditarElRenglon
+                numero={orden.numero}
+                item={item}
+                esElUnico={esElUnico}
+              />
+            ) : null}
           </li>
         ))}
       </ul>

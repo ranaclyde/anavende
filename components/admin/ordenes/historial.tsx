@@ -46,7 +46,11 @@ export function HistorialDeLaOrden({
               {e.autor ? ` · ${e.autor}` : ""}
               {e.esElComprador ? " (el comprador)" : ""}
             </p>
-            {e.motivo ? (
+            {/* En una edición el motivo YA ES el titular de arriba: repetirlo
+                acá bajo «Motivo:» sería decir dos veces lo mismo, y además
+                «motivo» es la palabra de RF-23 —por qué se canceló—, no la de
+                un renglón que se sacó. */}
+            {e.motivo && !esUnaEdicion(e) ? (
               <p className="text-caption text-ink-secondary">
                 Motivo: {e.motivo}
               </p>
@@ -59,13 +63,29 @@ export function HistorialDeLaOrden({
 }
 
 /**
+ * Una edición de RF-22 —quitar un renglón, bajar una cantidad—, que
+ * `editar.ts` escribe como `activa → activa`.
+ *
+ * La tabla del historial es la de ESTADOS y una edición no cambia el estado,
+ * pero es el único historial que tiene la orden: F4.4 decidió ensanchar su
+ * uso antes que partir la línea de tiempo en dos tablas que la pantalla
+ * después tendría que volver a unir.
+ */
+function esUnaEdicion(e: EntradaDelHistorial): boolean {
+  return e.desde !== null && e.desde === e.hacia;
+}
+
+/**
  * La transición en palabras.
  *
  * La primera fila de toda orden es `null → activa`, que no es un cambio sino
  * el nacimiento: decir «de nada a activa» sería repetir la implementación en
- * la pantalla.
+ * la pantalla. Y una edición **no se anuncia como «Activa → Activa»**, que es
+ * la cañería asomándose: el propio motivo —«Se quitó "Auricular Cloud II"»—
+ * ya dice qué pasó, y mejor que cualquier resumen.
  */
 function quePaso(e: EntradaDelHistorial): string {
   if (e.desde === null) return "Se creó la orden";
+  if (esUnaEdicion(e)) return e.motivo ?? "Se editó la orden";
   return `${nombreDelEstado(e.desde)} → ${nombreDelEstado(e.hacia)}`;
 }
