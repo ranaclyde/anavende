@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
+import { useDataScale } from "@/components/ui/escala";
 import { cn } from "@/lib/utils";
 
 /**
@@ -52,6 +53,10 @@ function TooltipContent({
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
+        // Los globos de ayuda viven hoy en la tienda, así que esto no cambia
+        // nada todavía. Va igual porque el que falta es el que se olvida: si
+        // mañana aparece uno en el panel, tiene que nacer bien (`escala.tsx`).
+        data-scale={useDataScale()}
         sideOffset={sideOffset}
         className={cn(
           "z-50 w-fit rounded-[6px] bg-ink px-2.5 py-1.5 text-caption text-balance text-ink-inverse shadow-md",

@@ -4,6 +4,7 @@ import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
 
+import { useDataScale } from "@/components/ui/escala";
 import { cn } from "@/lib/utils";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
@@ -63,6 +64,10 @@ const DropdownMenuContent = React.forwardRef<
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
       ref={ref}
+      // Igual que el diálogo: el portal lo saca de `[data-scale]` y se lo
+      // lleva puesto (ver `escala.tsx`). El menú de imágenes del panel es el
+      // que lo usa hoy.
+      data-scale={useDataScale()}
       sideOffset={sideOffset}
       className={cn(
         "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-panel-control border border-border bg-surface p-1 text-ink shadow-md",
