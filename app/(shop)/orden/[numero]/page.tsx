@@ -4,25 +4,35 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { formatMoney } from "@/lib/money";
 import { getIdentity, getSession } from "@/lib/session";
+import { enlaceDeWhatsApp, mensajeDeOrden } from "@/lib/whatsapp";
 import { formaDeEntrega } from "@/modules/orders/entrega";
-import { leerOrdenDelComprador } from "@/modules/orders/queries";
+import {
+  leerOrdenDelComprador,
+  type ItemDeLaOrden,
+} from "@/modules/orders/queries";
+import { numeroDeWhatsApp } from "@/modules/settings/queries";
 
 export const metadata: Metadata = { title: "Pedido registrado" };
 
 type Props = { params: Promise<{ numero: string }> };
 
 /**
- * La orden recién confirmada — FS RF-12 · DESIGN-REFERENCE §7.5.
- *
- * **Es la mitad de F6.3, a propósito.** F6.1 necesita un lugar a donde llegar
- * después de confirmar, y ese lugar es este. Acá están el número, el total y
- * cómo se entrega; F6.3 suma el botón de WhatsApp como acción principal, el
- * detalle de los ítems y «Ver mis compras».
+ * La orden recién confirmada — F6.3 · FS RF-12 · DESIGN-REFERENCE §7.5.
  *
  * Solo la ve su comprador: una orden ajena es un 404, igual que una que no
  * existe (§13.8).
+ *
+ * **Recargar no duplica nada** (criterio de RF-12) y no hizo falta hacer nada
+ * para lograrlo: esta pantalla sólo lee. La orden se creó en la acción del
+ * checkout, con su clave de idempotencia (§8.5), y acá ya existía.
+ *
+ * **Todo se dibuja en el servidor y no viaja un byte de JavaScript.** El
+ * enlace de WhatsApp es un `<a>` con el `href` ya armado: a diferencia de la
+ * ficha (F3.6), donde el mensaje cambia con el color y la cantidad que se
+ * están mirando, acá el pedido ya está congelado y el mensaje es uno solo.
  */
 export default async function PaginaDeLaOrden({ params }: Props) {
   const [{ numero: crudo }, sesion] = await Promise.all([params, getSession()]);
@@ -36,10 +46,17 @@ export default async function PaginaDeLaOrden({ params }: Props) {
   if (!/^\d{1,9}$/.test(crudo)) notFound();
   const numero = Number.parseInt(crudo, 10);
 
-  const orden = await leerOrdenDelComprador(sesion.profile.id, numero);
+  // Las dos juntas, y el número de WhatsApp aunque la orden termine en 404:
+  // no depende de ella, y encadenarlas pondría una lectura detrás de la otra
+  // en el camino que siempre se recorre para ahorrarla en el que casi nunca.
+  const [orden, whatsapp] = await Promise.all([
+    leerOrdenDelComprador(sesion.profile.id, numero),
+    numeroDeWhatsApp(),
+  ]);
   if (!orden) notFound();
 
   const direccion = orden.shippingAddress;
+  const total = formatMoney(orden.total);
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-6 px-4 py-16 text-center">
@@ -51,36 +68,121 @@ export default async function PaginaDeLaOrden({ params }: Props) {
         <h1 className="text-title text-ink">
           ¡Listo, tu pedido #{orden.numero} quedó registrado!
         </h1>
+        {/*
+          El aviso de que el stock queda reservado (RF-12) y, si hay número,
+          para qué sirve el botón de abajo.
+
+          **F6.4 le suma la primera mitad**: cuando el email E4 a la vendedora
+          exista, esto arranca con «Ya le avisamos a la vendedora por email y»
+          y el WhatsApp pasa a ser explícitamente el atajo para no esperarlo.
+          Hoy ese email no se manda, así que la pantalla no lo promete.
+        */}
         <p className="text-body text-ink-secondary">
-          Guardamos el stock hasta que coordinemos el pago.
+          Guardamos el stock hasta coordinar el pago.
+          {whatsapp
+            ? " Escribile a la vendedora por WhatsApp para agilizarlo: le llega tu pedido con el número y lo encuentra enseguida."
+            : ""}
         </p>
       </div>
 
-      <dl className="flex w-full flex-col gap-3 rounded-card bg-surface p-5 text-left shadow-md">
-        <div className="flex items-baseline justify-between gap-4">
-          <dt className="text-body text-ink">
+      <div className="flex w-full flex-col gap-4 rounded-card bg-surface p-5 text-left shadow-md">
+        <ul className="flex flex-col gap-3">
+          {orden.items.map((item) => (
+            <Renglon key={item.id} item={item} />
+          ))}
+        </ul>
+
+        <div className="flex items-baseline justify-between gap-4 border-t border-border pt-4">
+          <p className="text-body text-ink">
             Total{" "}
             <span className="text-body-sm text-ink-secondary">
               ({orden.unidades} {orden.unidades === 1 ? "unidad" : "unidades"})
             </span>
-          </dt>
-          <dd className="text-heading font-medium text-ink tabular-nums">
-            {formatMoney(orden.total)}
-          </dd>
+          </p>
+          <p className="text-heading font-medium text-ink tabular-nums">
+            {total}
+          </p>
         </div>
-        <div className="flex flex-col gap-0.5 border-t border-border pt-3">
-          <dt className="text-body-sm text-ink-secondary">Entrega</dt>
-          <dd className="text-body-sm text-ink">
+
+        <div className="flex flex-col gap-0.5 border-t border-border pt-4">
+          <p className="text-body-sm text-ink-secondary">Entrega</p>
+          <p className="text-body-sm text-ink">
             {formaDeEntrega(orden) === "envio" && direccion
               ? `Te lo enviamos a ${direccion.street} ${direccion.number}${direccion.apartment ? `, ${direccion.apartment}` : ""}, ${direccion.city}.`
               : "Lo retirás: te pasamos por WhatsApp dónde y cuándo."}
-          </dd>
+          </p>
         </div>
-      </dl>
+      </div>
 
-      <Button asChild variant="secondary" size="lg">
-        <Link href="/productos">Seguir mirando</Link>
-      </Button>
+      <div className="flex w-full flex-col gap-3">
+        {/*
+          **La acción principal** (§7.5): es lo que efectivamente cierra la
+          venta, porque el MVP no cobra online (FA-01).
+
+          Sin número configurado no se dibuja, en vez de dibujarse roto: la
+          fila de `site_settings` puede no existir (§5.9), y `wa.me/` sin
+          número abre WhatsApp en la nada y parece que falló el sitio. En ese
+          caso «Seguir mirando» queda como única acción, que es la verdad de
+          lo que se puede hacer desde acá.
+        */}
+        {whatsapp ? (
+          <Button asChild size="lg" className="w-full">
+            <a
+              href={enlaceDeWhatsApp(
+                whatsapp,
+                mensajeDeOrden(
+                  orden.numero,
+                  orden.customerName,
+                  orden.items,
+                  total,
+                ),
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <IconoWhatsApp className="size-4" />
+              Coordinar pago por WhatsApp
+            </a>
+          </Button>
+        ) : null}
+
+        {/*
+          F6.5 lo reemplaza por «Ver mis compras», que es lo que pide §7.5.
+          Todavía no existe `/mis-compras`, y un botón que lleva a un 404 es
+          peor que uno que lleva a otro lado. Los legales, el otro enlace que
+          pide RF-12, ya están en el pie de todas las pantallas.
+        */}
+        <Button asChild variant="secondary" size="lg" className="w-full">
+          <Link href="/productos">Seguir mirando</Link>
+        </Button>
+      </div>
     </div>
+  );
+}
+
+/**
+ * Un renglón del pedido, con la misma forma que el resumen del checkout
+ * (F6.1) — quien acaba de confirmar está comparando una pantalla con la
+ * anterior, y que se lean igual es parte de que se entienda que es lo mismo.
+ *
+ * **Sin foto, y ahí termina el parecido.** Estos datos salen del snapshot
+ * (RN-12), que no guarda imágenes; el del checkout sale del carrito, que las
+ * tiene. Traerlas del producto de hoy mostraría la foto actual al lado del
+ * precio de ayer.
+ */
+function Renglon({ item }: { item: ItemDeLaOrden }) {
+  return (
+    <li className="flex gap-3">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <p className="text-body-sm font-medium text-ink">{item.nombre}</p>
+        <p className="text-caption text-ink-secondary tabular-nums">
+          {item.color ? `${item.color} · ` : ""}
+          {item.cantidad} × {formatMoney(item.precioUnitario)}
+        </p>
+      </div>
+      <p className="text-body-sm font-medium text-ink tabular-nums">
+        {formatMoney(item.subtotal)}
+      </p>
+    </li>
   );
 }

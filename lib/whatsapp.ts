@@ -87,3 +87,65 @@ export function enlaceDeWhatsApp(numero: string, mensaje: string): string {
   const soloDigitos = numero.replace(/\D/g, "");
   return `https://wa.me/${soloDigitos}?text=${encodeURIComponent(mensaje)}`;
 }
+
+/**
+ * Un renglón del pedido, como quedó en el snapshot (RN-12).
+ *
+ * No trae `url`: los nombres son los que la orden congeló al crearse, y el
+ * producto pudo cambiar de nombre, de precio o dejar de venderse desde
+ * entonces. Un enlace a la ficha llevaría a algo que ya no es esto.
+ */
+export type ItemDeOrdenParaMensaje = {
+  nombre: string;
+  marca: string;
+  /** El del snapshot. `null` si el producto no viene en colores. */
+  color: string | null;
+  cantidad: number;
+};
+
+/**
+ * RF-12, el pedido recién confirmado.
+ *
+ * **No es el mensaje de compra con más renglones**, y la diferencia no es de
+ * formato. Los otros dos son de alguien que quiere comprar y todavía no hay
+ * nada en la base: por eso llevan el enlace a la ficha, que es lo único que
+ * identifica de qué están hablando. Este es de alguien que **ya compró**, y
+ * del otro lado hay una orden con número.
+ *
+ * **Por eso lleva el número y no el detalle completo** (el `total` sí, que es
+ * lo que hay que cobrar). La vendedora tiene los precios por unidad, la
+ * dirección y el medio de pago en el panel, y lo único que le falta para
+ * llegar hasta ahí es por dónde buscar. Repetirle acá lo que ya puede leer
+ * allá le daría dos fuentes para lo mismo, y el día que una cambie —un precio
+ * corregido, un ítem devuelto— van a discrepar sin que nadie se entere.
+ *
+ * **El nombre es el del pedido, no el de la cuenta.** F6.1 decidió que el
+ * nombre y el teléfono del checkout valen sólo para esa orden, así que quien
+ * compra para otro manda el de esa persona, que es con quien hay que
+ * coordinar.
+ *
+ * **Y no es el canal de la venta**: el aviso formal es el email E4 a la
+ * vendedora (RF-30, F6.4). Esto es el atajo para no esperar a que lo lea, y
+ * la pantalla que lo ofrece lo dice con esas palabras.
+ */
+export function mensajeDeOrden(
+  numero: number,
+  nombre: string,
+  items: ItemDeOrdenParaMensaje[],
+  total: string,
+): string {
+  return [
+    "¡Hola! Acabo de hacer un pedido en la web.",
+    "",
+    `Pedido #${numero}, a nombre de ${nombre}`,
+    "",
+    ...items.map(
+      (i) =>
+        `${i.cantidad} × ${i.nombre} (${i.marca})` +
+        (i.color ? `, ${i.color.toLowerCase()}` : ""),
+    ),
+    `Total: ${total}`,
+    "",
+    "Te escribo para agilizar el pago y la entrega.",
+  ].join("\n");
+}

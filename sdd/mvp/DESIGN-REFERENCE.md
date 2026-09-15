@@ -781,8 +781,10 @@ Pantalla de éxito, centrada, sin distracciones:
       ¡Listo, tu pedido #1043         title 24px
          quedó registrado!
 
-   Guardamos el stock hasta que        body, secundario
-   coordinemos el pago.
+   Ya le avisamos a la vendedora       body, secundario
+   por email y guardamos el stock
+   hasta coordinar el pago. Si querés
+   agilizarlo, escribile por WhatsApp.
 
    ┌──────────────────────────────┐
    │  resumen de la orden          │  tarjeta, radio 24px
@@ -792,7 +794,7 @@ Pantalla de éxito, centrada, sin distracciones:
    [  Ver mis compras  ]               secundario
 ```
 
-El botón de WhatsApp es la **acción principal**: es lo que efectivamente cierra la venta (RF-12).
+El botón de WhatsApp es la **acción principal**: es lo que efectivamente cierra la venta (RF-12). **Pero el texto de arriba lo presenta como opcional**, y las dos cosas no se contradicen: la venta ya está registrada y la vendedora ya fue avisada, así que apurarla es una elección de quien compra. Destacado porque es lo que más le conviene, no porque sin él no pase nada.
 
 ---
 
