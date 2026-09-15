@@ -4,6 +4,7 @@ import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
+import { useDataScale } from "@/components/ui/escala";
 import { cn } from "@/lib/utils";
 
 /**
@@ -43,11 +44,17 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   closeLabel?: string;
 }) {
+  // El portal lo saca de `[data-scale]`, así que se lo lleva puesto: sin
+  // esto, un diálogo del panel se pinta con la escala de la tienda y sus
+  // propias clases `admin:` de más abajo no valen nada (ver `escala.tsx`).
+  const escala = useDataScale();
+
   return (
     <DialogPrimitive.Portal>
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        data-scale={escala}
         className={cn(
           "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2",
           "flex-col gap-4 rounded-modal bg-surface p-6 text-ink shadow-lg",

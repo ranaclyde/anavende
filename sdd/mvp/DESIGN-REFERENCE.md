@@ -324,6 +324,8 @@ El sistema tiene **una paleta y una tipografía**, pero **dos escalas de densida
 
 **Qué se comparte, y no es negociable:** la paleta, Inter, el rol del color de marca, el estilo del foco, la voz de los mensajes y todos los componentes de formulario.
 
+**Lo que se pinta en un portal se lleva la escala puesta.** Diálogos, menús y globos de ayuda salen a `document.body` para que ningún `overflow` los recorte, y ahí arriba ya no hay `data-scale`: un diálogo abierto desde el panel se pintaba con la escala de la tienda —16px y campos con forma de píldora— aunque sus clases `admin:` estuvieran escritas. Se resuelve en `components/ui/escala.tsx`, que marca el atributo y además lo pasa por contexto, para que el contenido portaleado lo repita sobre sí mismo. El modo oscuro no tiene el problema: `data-theme` vive en `<html>`, y `body` está adentro.
+
 ---
 
 ## 5. Estructura de página

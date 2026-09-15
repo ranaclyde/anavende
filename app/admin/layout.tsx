@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { scriptDeTema } from "@/components/admin/theme";
+import { MarcoDeEscala } from "@/components/ui/escala";
 import { getSession } from "@/lib/session";
 
 /**
@@ -39,8 +40,10 @@ export default async function AdminLayout({
           oscuro en el primer render. */}
       <script dangerouslySetInnerHTML={{ __html: scriptDeTema }} />
 
-      {/* data-scale activa la densidad del panel: 14px de base, radios de
-          8-12px y filas de 44px, sin duplicar ningún componente (§4).
+      {/* `MarcoDeEscala` activa la densidad del panel: 14px de base, radios
+          de 8-12px y filas de 44px, sin duplicar ningún componente (§4).
+          Pone el `data-scale` para el CSS y además lo deja disponible para
+          los diálogos y menús, que se pintan fuera de este árbol.
 
           **En columna hasta `lg`, y ahí sí en fila.** `AdminSidebar` empieza
           con la barra del teléfono, que es una franja de 14 de alto pensada
@@ -51,13 +54,13 @@ export default async function AdminLayout({
           que se mira en serio desde un teléfono (§6.9). El menú de
           escritorio es `fixed`, así que no participa de esto ni en un caso
           ni en el otro. */}
-      <div
-        data-scale="admin"
+      <MarcoDeEscala
+        escala="admin"
         className="flex min-h-svh flex-col bg-canvas text-ink lg:flex-row"
       >
         <AdminSidebar nombre={session.profile.fullName} />
         <main className="min-w-0 flex-1 p-4 lg:p-6">{children}</main>
-      </div>
+      </MarcoDeEscala>
     </>
   );
 }

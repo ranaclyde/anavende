@@ -1125,6 +1125,8 @@ Hereda §10.2 —el estado en la URL— y §10.3 —búsqueda por subcadena sin 
 
 **Las lecturas del panel viven en otro archivo que las del comprador**, y no es organización: las del comprador filtran siempre por `user_id`, que sin RLS es la única barrera (§13.8), y las del panel no filtran por nadie porque la guardia es el layout de `/admin`. Un archivo con las dos mitades invita a llamar a la que no corresponde.
 
+**El detalle trae, por renglón, el snapshot Y el disponible de hoy.** Son dos cosas distintas y se necesitan juntas para RF-22: el renglón dice lo que se vendió (RN-12, congelado) y el disponible dice en cuánto queda el contador si se suelta esa reserva. Sale de un `LEFT JOIN` a `product_variants` dentro de la misma subconsulta, y llega en `null` cuando la variante ya no existe (§5.6) — que no es lo mismo que cero, y la pantalla lo dice con otras palabras.
+
 **`loading.tsx` envuelve su segmento Y a sus hijos.** Un esqueleto puesto en `app/admin/ordenes/` cubría también a `app/admin/ordenes/[numero]/`: la cáscara salía a la calle antes de que la consulta del detalle terminara, y un `notFound()` posterior llegaba con la respuesta ya empezada — **200 con la pantalla vacía** en lugar de 404. Se resuelve poniendo el listado en un grupo de rutas (`(listado)/`), que no cambia ninguna dirección y deja el esqueleto sobre la tabla y sólo sobre la tabla. Vale para cualquier par listado/detalle del panel.
 
 ---
