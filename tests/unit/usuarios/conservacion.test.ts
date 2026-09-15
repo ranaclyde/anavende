@@ -52,7 +52,7 @@ test("un comprador con órdenes no se puede borrar, y el error dice por qué", a
     customerName: "Compradora de prueba",
     customerEmail: "compradora@ejemplo.test",
     customerPhone: "+5491155550000",
-    esperado: [{ variantId, unitPrice: "1000.00" }],
+    esperado: [{ variantId, unitPrice: "1000.00", quantity: 2 }],
   });
 
   const fallo = await borrarIdentidad(comprador.userId);

@@ -33,13 +33,15 @@ export const confirmacionSchema = z
     addressId: z.uuid().optional(),
     /**
      * Lo que el comprador vio en el resumen (§8.4 paso 3). Si no coincide con
-     * lo vigente, la orden no se crea y se le pide que reconfirme.
+     * lo vigente, la orden no se crea y se le pide que reconfirme. La cantidad
+     * va porque también cambia el total (F6.2).
      */
     esperado: z
       .array(
         z.object({
           variantId: z.uuid(),
           unitPrice: z.string().refine(isMoney),
+          quantity: z.number().int().positive(),
         }),
       )
       .min(1)

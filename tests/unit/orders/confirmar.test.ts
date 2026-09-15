@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
+import { domainError } from "@/lib/errors";
 import { leerErrores } from "@/lib/form";
 
 /**
@@ -53,7 +54,7 @@ function pedido(cambios: Record<string, unknown> = {}) {
     telefono: "2920 55 5555",
     entrega: "envio",
     addressId: DIRECCION,
-    esperado: [{ variantId: VARIANTE, unitPrice: "1000.00" }],
+    esperado: [{ variantId: VARIANTE, unitPrice: "1000.00", quantity: 1 }],
     ...cambios,
   } as Parameters<typeof confirmarPedido>[0];
 }
@@ -124,6 +125,31 @@ describe("lo que no deja confirmar", () => {
     expect(leerErrores(r).campos).toMatchObject({
       telefono: "Necesitamos tu teléfono para coordinar la entrega.",
     });
+  });
+
+  test("la dirección borrada en otra pestaña se avisa en su campo (F6.2)", async () => {
+    crear.fn.mockRejectedValue(domainError("NOT_FOUND"));
+
+    const r = await confirmarPedido(pedido());
+
+    expect(r).toMatchObject({ ok: false, code: "NOT_FOUND" });
+    if (r.ok) return;
+    expect(leerErrores(r)).toMatchObject({
+      general: null,
+      campos: {
+        addressId:
+          "Esa dirección ya no está en tu libreta. Elegí otra o cargá una nueva.",
+      },
+    });
+  });
+
+  test("la cantidad es parte de lo que vio: sin ella no se compara", async () => {
+    const r = await confirmarPedido(
+      pedido({ esperado: [{ variantId: VARIANTE, unitPrice: "1000.00" }] }),
+    );
+
+    expect(r).toMatchObject({ ok: false, code: "VALIDATION" });
+    expect(crear.fn).not.toHaveBeenCalled();
   });
 
   test("un precio mal formado no llega a compararse", async () => {

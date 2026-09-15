@@ -112,6 +112,7 @@ export default async function PaginaDelCheckout() {
         esperado={carrito.items.map((i) => ({
           variantId: i.variantId,
           unitPrice: i.precioFinal,
+          quantity: i.cantidad,
         }))}
         mediosDePago={mediosDePago.map((m) => ({ id: m.id, nombre: m.nombre }))}
         resumen={

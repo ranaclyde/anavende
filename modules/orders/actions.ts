@@ -1,7 +1,7 @@
 "use server";
 
 import { action } from "@/lib/action";
-import { domainError } from "@/lib/errors";
+import { domainError, isDomainError } from "@/lib/errors";
 import { crearOrdenDesdeCarrito, type Entrega } from "@/modules/orders/crear";
 import { confirmacionSchema, type Confirmacion } from "@/modules/orders/schemas";
 
@@ -40,10 +40,26 @@ export const confirmarPedido = action
       customerEmail: identity.email ?? profile.email,
       customerPhone: input.telefono,
       esperado: input.esperado,
+    }).catch((e: unknown) => {
+      // La creación solo busca una cosa que puede no estar: la dirección. Si
+      // se borró desde otra pestaña, el aviso va en su campo y no como el
+      // genérico «No encontramos eso que buscabas» (F6.2).
+      if (isDomainError(e) && e.code === "NOT_FOUND") {
+        throw domainError("NOT_FOUND", {
+          message: DIRECCION_QUE_YA_NO_ESTA,
+          fields: {
+            properties: { addressId: { errors: [DIRECCION_QUE_YA_NO_ESTA] } },
+          },
+        });
+      }
+      throw e;
     });
 
     return { numero: orden.orderNumber };
   });
+
+const DIRECCION_QUE_YA_NO_ESTA =
+  "Esa dirección ya no está en tu libreta. Elegí otra o cargá una nueva.";
 
 function entregaElegida(input: Confirmacion): Entrega {
   if (input.entrega === "retiro") return { tipo: "retiro" };
