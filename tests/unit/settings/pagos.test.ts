@@ -104,8 +104,8 @@ describe("contra la base y contra Storage", () => {
   }
 
   async function posiciones() {
-    return db.execute<{ name: string; sortOrder: number }>(sql`
-      SELECT name, sort_order AS "sortOrder" FROM payment_methods
+    return db.execute<{ id: string; name: string; sortOrder: number }>(sql`
+      SELECT id, name, sort_order AS "sortOrder" FROM payment_methods
        ORDER BY sort_order, immutable_unaccent(lower(name))`);
   }
 
@@ -182,8 +182,16 @@ describe("contra la base y contra Storage", () => {
     });
 
     test("subir el primero no falla y no cambia nada: el borde no es un error", async () => {
+      // **El primero DE LA TABLA, no el primero de los tres que creó el
+      // test.** La base local puede tener medios de pago cargados de antes
+      // —los tres que se ven en la tienda—, y ahí arriba de `c` sí hay
+      // alguien: con `c.id` esto no probaba ningún borde, probaba un
+      // movimiento común, fallaba, y de paso le corría el orden al de al
+      // lado. Es el mismo motivo por el que las comprobaciones de acá usan
+      // `endsWith` y no igualdad.
+      const [primero] = await posiciones();
       const antes = await nombres();
-      await mover(c.id, "arriba");
+      await mover(primero.id, "arriba");
       expect(await nombres()).toBe(antes);
     });
 
