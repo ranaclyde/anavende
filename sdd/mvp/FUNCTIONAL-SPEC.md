@@ -380,9 +380,19 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 **Pantalla de confirmación:**
 - Número de orden.
 - Detalle de ítems y total.
-- Botón destacado **«Coordinar pago por WhatsApp»**, que abre `wa.me` con el número de orden y el detalle.
+- Botón destacado **«Coordinar pago por WhatsApp»**, que abre `wa.me` con el número de orden, el nombre del pedido, qué se compró y el total.
 - Aviso de que el stock queda reservado hasta finalizar o cancelar la orden.
 - Enlaces a «Mis compras» y a Legales.
+
+> **El WhatsApp es un atajo, no el canal** (decisión del 2026-09-15). El aviso
+> formal a la vendedora es el email E4 (RF-30): la pantalla **le dice al
+> comprador que ya la avisamos**, y ofrece el WhatsApp para **agilizar el
+> trámite** sin esperar a que lo lea. De ahí sale qué lleva el mensaje: **quién
+> compró, qué compró y el número de orden**, que es la llave con la que la
+> vendedora encuentra el pedido en el panel. **No lleva los precios por
+> unidad** —el panel los tiene, y dos fuentes para lo mismo terminan
+> discrepando— ni enlaces a las fichas, porque los nombres son los del
+> snapshot y el producto pudo cambiar desde entonces.
 
 **Criterios de aceptación:**
 - [ ] La operación es atómica: si falla la reserva de stock, no se crea la orden y se informa el motivo.
