@@ -560,7 +560,12 @@ CREATE TABLE orders (
   customer_name     text NOT NULL,
   customer_email    text,
   customer_phone    text NOT NULL,
-  shipping_address  jsonb,          -- snapshot; NULL si es manual sin envío
+  -- Snapshot, y además dice la forma de entrega (2026-09-14): con dirección
+  -- es envío, NULL es retiro. No hay columna aparte porque sería el mismo
+  -- dato dos veces; lo deduce una sola función, formaDeEntrega(), en
+  -- modules/orders/. Vale porque todo envío lleva dirección, también en las
+  -- manuales (RF-11, RF-24).
+  shipping_address  jsonb,
 
   total             numeric(12,2) NOT NULL DEFAULT 0,
   notes             text,

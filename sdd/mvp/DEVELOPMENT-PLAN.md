@@ -257,7 +257,7 @@ F10 Endurecimiento y lanzamiento
 
 | ID | Tarea | Tam. | Referencias | Hecho cuando |
 |---|---|---|---|---|
-| **F6.1** | Checkout | **L** | FS RF-11 · DR §7 | Datos, **elección entre envío, retiro y coordinar con la vendedora** (2026-09-08) —**sólo el envío pide dirección**, y la pide para coordinarlo, no para calcularlo—, resumen y medios de pago. La opción elegida queda en la orden. **Sin costo de envío** (RN-10). Email no verificado impide confirmar |
+| **F6.1** | Checkout | **L** | FS RF-11 · DR §7 | Datos, **elección entre envío y retiro** (2026-09-14; «coordinar con la vendedora» era lo mismo que el retiro) —**sólo el envío pide dirección**, y la pide para coordinarlo, no para calcularlo—, resumen y medios de pago. La opción elegida queda en la orden. **Sin costo de envío** (RN-10). Email no verificado impide confirmar |
 | **F6.2** | Reconfirmación ante cambios | M | FS RF-11 · TS §8.4 paso 3 | Si el precio o el stock cambió entre ver y confirmar, **se avisa y se pide reconfirmar**; no se crea la orden en silencio |
 | **F6.3** | Confirmación: pantalla de éxito y WhatsApp | M | FS RF-12 · DR §7.5 | Número de orden, resumen y botón de WhatsApp como acción principal. Recargar no duplica |
 | **F6.4** | Email E4 a la administradora, sobre el layout de F1.8 | S | FS RF-30 · TS §14 | Llega con el detalle completo y enlace al panel. **Si falla, la orden se crea igual**. Acá se escribe también su plantilla: el layout compartido ya existe desde F1.8, lo que faltaba era la orden que le da contenido |
@@ -274,7 +274,7 @@ F10 Endurecimiento y lanzamiento
 | **F7.1** | Listado y detalle de órdenes | M | FS RF-21 · DR §6.9 | Solapas por estado, filtros, búsqueda. En móvil las tablas son tarjetas |
 | **F7.2** | Editar orden activa | M | FS RF-22 (sobre F4.4) | Quitar ítems y reducir cantidades desde la interfaz, con el impacto en stock visible |
 | **F7.3** | Finalizar y cancelar | S | FS RF-23 (sobre F4.2) | Finalizar pide confirmación **mostrando el impacto en stock** |
-| **F7.4** | Órdenes manuales | **L** | FS RF-24 | Productos con precio editable, comprador de texto libre. Se puede crear ya finalizada. Advierte sin bloquear si supera el stock |
+| **F7.4** | Órdenes manuales | **L** | FS RF-24 | Productos con precio editable, comprador de texto libre. Envío o retiro, y **con envío la dirección es obligatoria** y el formulario lo aclara (2026-09-14). Se puede crear ya finalizada. Advierte sin bloquear si supera el stock |
 | **F7.5** | Devoluciones en el panel | M | FS RF-25 (sobre F4.5) | Selección de ítems, cantidades y si repone stock, con motivo |
 | **F7.6** | Gestión de usuarios | M | FS RF-26 · TS §13.2 | Crear, editar, resetear contraseña. Un admin no puede quitarse el rol ni bloquearse |
 | **F7.7** | Bloqueo con razón | M | FS RF-27 · TS §13.5 | Motivo obligatorio, garantizado por el `CHECK` de la base. Se bloquea en Supabase Auth **y** se cierran las sesiones activas. Al intentar entrar, el usuario ve el motivo registrado |

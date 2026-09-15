@@ -7,13 +7,15 @@ import {
   ControlesDelItem,
   VaciarCarrito,
 } from "@/components/shop/carrito/acciones";
+import { Avisos } from "@/components/shop/carrito/avisos";
+import { ID_AVISO_DE_PAUSA } from "@/components/shop/cuenta-en-pausa-id";
 import { Precio } from "@/components/shop/precio";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney, type Money } from "@/lib/money";
 import { getIdentity, getSession } from "@/lib/session";
 import { leerCarrito, type ItemDelCarrito } from "@/modules/cart/queries";
-import { revisarCarrito, type Aviso } from "@/modules/cart/revision";
+import { revisarCarrito } from "@/modules/cart/revision";
 import { TOPE_POR_ITEM } from "@/modules/cart/schemas";
 import { urlDeImagen } from "@/modules/media/subir";
 
@@ -31,8 +33,8 @@ export const metadata: Metadata = { title: "Tu carrito" };
  * lo que se dejó de vender queda apartado en «Ya no disponible» hasta que el
  * comprador lo quite.
  *
- * **Lo que todavía no hace, y es de otras tareas:** confirmar el pedido es
- * F6.1; «Completá tu setup» es RF-32, de F8.
+ * «Continuar con el pedido» lleva al checkout (F6.1). **Lo que todavía no
+ * hace, y es de otra tarea:** «Completá tu setup» es RF-32, de F8.
  */
 export default async function PaginaDelCarrito() {
   // El proxy ya manda a ingresar a quien no tiene cookie; esto es la
@@ -55,6 +57,17 @@ export default async function PaginaDelCarrito() {
   for (const item of carrito.items) {
     (item.estado === "no-disponible" ? apartados : enElPedido).push(item);
   }
+
+  // Se sigue al checkout con todo en regla. Lo que no tiene stock o no se
+  // vende no se puede reservar, y la orden es todo o nada (§8.3 regla 1):
+  // confirmar con eso adentro fallaría siempre.
+  const continuar: Continuar =
+    sesion.profile.closureRequestedAt != null
+      ? "pausa"
+      : carrito.items.length > 0 &&
+          carrito.items.every((i) => i.estado === "vigente")
+        ? "si"
+        : "quitar";
 
   // El encabezado es el mismo con y sin productos, y es el del catálogo
   // (título y bajada): la pantalla vacía no puede ser otra pantalla.
@@ -94,44 +107,12 @@ export default async function PaginaDelCarrito() {
             total={carrito.total}
             unidades={carrito.unidades}
             renglones={carrito.items.length}
+            continuar={continuar}
           />
         </div>
       )}
     </div>
   );
-}
-
-/**
- * Lo que cambió desde la última vez (RF-08): precio y stock. Sale una sola
- * vez —la revisión deja el carrito al día— y no frena nada: el carrito
- * sigue debajo, ya corregido.
- */
-function Avisos({ avisos }: { avisos: Aviso[] }) {
-  return (
-    <section
-      role="status"
-      aria-labelledby="avisos-titulo"
-      className="flex flex-col gap-2 rounded-card bg-warning-tint p-4 sm:p-5"
-    >
-      <h2 id="avisos-titulo" className="text-body font-medium text-ink">
-        Tu carrito cambió desde la última vez
-      </h2>
-      <ul className="flex list-disc flex-col gap-1 pl-5 text-body-sm text-ink">
-        {avisos.map((aviso) => (
-          <li key={`${aviso.tipo}-${aviso.variantId}`}>{textoDe(aviso)}</li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function textoDe(aviso: Aviso): string {
-  if (aviso.tipo === "precio") {
-    return `El precio de ${aviso.nombre} pasó de ${formatMoney(aviso.antes)} a ${formatMoney(aviso.ahora)}.`;
-  }
-  return aviso.quedan === 1
-    ? `Queda 1 sola unidad de ${aviso.nombre}: dejamos 1 en tu carrito.`
-    : `Quedan ${aviso.quedan} unidades de ${aviso.nombre}: ajustamos la cantidad a ${aviso.quedan}.`;
 }
 
 /**
@@ -268,13 +249,16 @@ function YaNoDisponible({ items }: { items: ItemDelCarrito[] }) {
   );
 }
 
+/** Si se puede seguir al checkout, y si no, por qué. */
+type Continuar = "si" | "pausa" | "quitar";
+
 /**
  * El resumen, fijo al costado en pantallas anchas.
  *
- * **«Continuar con el pedido» va apagado**, con el motivo solo para lectores
- * de pantalla: es el mismo criterio que tuvo «Agregá al carrito» en la ficha
- * mientras no existía el carrito (decisión del 2026-09-08). Se enciende con
- * F6.1.
+ * **«Continuar con el pedido» lleva al checkout** (F6.1). Apagado dice por
+ * qué, como todo control apagado (§8): con la baja pedida apunta al aviso de
+ * arriba de la tienda; con algo sin stock o que ya no se vende, lo dice abajo
+ * del botón.
  *
  * La leyenda de entrega es RN-10 y la pide RF-08: el envío no se cobra en la
  * web, y quien llega al total tiene que saber que ese número no va a crecer
@@ -284,10 +268,12 @@ function Resumen({
   total,
   unidades,
   renglones,
+  continuar,
 }: {
   total: Money;
   unidades: number;
   renglones: number;
+  continuar: Continuar;
 }) {
   return (
     <section
@@ -316,18 +302,31 @@ function Resumen({
       </p>
 
       <div className="flex flex-col gap-2">
-        <Button
-          size="lg"
-          variant="brand"
-          disabled
-          aria-describedby="pedido-pendiente"
-          className="w-full"
-        >
-          Continuar con el pedido
-        </Button>
-        <p id="pedido-pendiente" className="sr-only">
-          Confirmar el pedido todavía no está disponible.
-        </p>
+        {continuar === "si" ? (
+          <Button asChild size="lg" variant="brand" className="w-full">
+            <Link href="/checkout">Continuar con el pedido</Link>
+          </Button>
+        ) : (
+          <>
+            <Button
+              size="lg"
+              variant="brand"
+              disabled
+              aria-describedby={
+                continuar === "pausa" ? ID_AVISO_DE_PAUSA : "continuar-motivo"
+              }
+              className="w-full"
+            >
+              Continuar con el pedido
+            </Button>
+            {continuar === "quitar" ? (
+              <p id="continuar-motivo" className="text-body-sm text-ink-secondary">
+                Para continuar, quitá lo que no tiene stock o ya no está a la
+                venta.
+              </p>
+            ) : null}
+          </>
+        )}
 
         <VaciarCarrito renglones={renglones} />
       </div>

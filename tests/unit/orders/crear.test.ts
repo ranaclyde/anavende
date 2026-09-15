@@ -9,6 +9,7 @@ import {
   crearOrdenDesdeCarrito,
   type DatosDeCompra,
 } from "@/modules/orders/crear";
+import { formaDeEntrega } from "@/modules/orders/entrega";
 import {
   contadores,
   limpiar,
@@ -48,7 +49,7 @@ function compra(
   return {
     userId: comprador.userId,
     idempotencyKey: clave,
-    addressId: comprador.addressId,
+    entrega: { tipo: "envio", addressId: comprador.addressId },
     customerName: "Compradora de prueba",
     customerEmail: "compradora@ejemplo.test",
     customerPhone: "+5491155550000",
@@ -166,6 +167,42 @@ describe("el camino que tiene que funcionar", () => {
 
     // 3030.30 + 140.35
     expect((await laOrden(orderId)).total).toBe("3170.65");
+  });
+});
+
+describe("envío o retiro (RF-11, 2026-09-14)", () => {
+  test("el retiro no guarda dirección, y se lee como retiro", async () => {
+    const comprador = await unComprador();
+    const { variantId } = await unaVariante({ total: 5 });
+    await agregarAlCarrito(comprador.cartId, variantId, 1);
+
+    const { orderId } = await crearOrdenDesdeCarrito({
+      ...compra(comprador, [{ variantId, unitPrice: "1000.00" }]),
+      entrega: { tipo: "retiro" },
+    });
+
+    const orden = await laOrden(orderId);
+    expect(orden.shippingAddress).toBeNull();
+    expect(formaDeEntrega(orden)).toBe("retiro");
+
+    // Lo demás no cambia: la reserva no depende de cómo se entrega.
+    expect(await contadores(variantId)).toEqual({
+      stockTotal: 5,
+      reservedStock: 1,
+    });
+    expect(await itemsEnElCarrito(comprador.cartId)).toBe(0);
+  });
+
+  test("el envío guarda la dirección, y se lee como envío", async () => {
+    const comprador = await unComprador();
+    const { variantId } = await unaVariante({ total: 5 });
+    await agregarAlCarrito(comprador.cartId, variantId, 1);
+
+    const { orderId } = await crearOrdenDesdeCarrito(
+      compra(comprador, [{ variantId, unitPrice: "1000.00" }]),
+    );
+
+    expect(formaDeEntrega(await laOrden(orderId))).toBe("envio");
   });
 });
 
@@ -412,7 +449,7 @@ describe("lo que impide crear la orden", () => {
     await expect(
       crearOrdenDesdeCarrito({
         ...compra(comprador, [{ variantId, unitPrice: "1000.00" }]),
-        addressId: ajeno.addressId,
+        entrega: { tipo: "envio", addressId: ajeno.addressId },
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
