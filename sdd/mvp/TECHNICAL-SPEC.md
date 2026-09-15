@@ -1338,7 +1338,9 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 
 - **SMTP propio es obligatorio.** El emisor por omisión de Supabase envía 2 mensajes por hora y solo a direcciones autorizadas: no sirve para producción. Resend se configura como proveedor SMTP en Supabase, algo que su documentación contempla de forma explícita.
 - Las plantillas de Supabase se personalizan para replicar la identidad visual; **E4 usa React Email** con layout propio y previsualización local.
-- El envío ocurre **siempre después del commit** y **nunca bloquea** la operación de negocio: un fallo de Resend se registra en Sentry y la orden queda creada igual (RF-12).
+- El envío ocurre **siempre después del commit** y **nunca bloquea** la operación de negocio: un fallo de Resend se registra en Sentry y la orden queda creada igual (RF-12). **E4 sale con `after()`**, o sea después de la respuesta y no solo fuera de la transacción (F6.4): renderizar el HTML y hablar con Resend son un par de segundos que no tienen por qué pasar con el comprador esperando. **Agendarlo tampoco puede fallar:** `after()` lanza si lo llaman fuera de una petición, y sin atajarlo esa excepción viajaría por el envoltorio de acciones y el comprador vería un error con la orden ya creada.
+- **E4 no se manda dos veces por la misma orden.** Un reintento con la misma clave de idempotencia devuelve la orden que ya existía (§8.5) y no dispara un segundo aviso.
+- **E4 no sale si no hay casilla configurada**, y en ese caso la pantalla de confirmación tampoco le dice al comprador que se avisó a la vendedora. La fila de `site_settings` puede no existir (§5.9) y no hay dirección de respaldo razonable.
 - Dominio propio verificado en Resend para producción.
 
 ---

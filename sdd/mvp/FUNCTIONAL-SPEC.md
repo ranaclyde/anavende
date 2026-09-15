@@ -812,6 +812,8 @@ orden, que es otra acción y está disponible siempre.
 **Criterios de aceptación:**
 - [ ] Todos los emails usan una plantilla común con la identidad visual de AnaVende.
 - [ ] E4 incluye número de orden, comprador, teléfono, ítems con color y cantidad, total y enlace directo al detalle en el panel.
+
+> **El enlace al detalle espera a F7.1** (decisión del 2026-09-15). Ese detalle es F7.1 y todavía no existe, así que hasta entonces el botón lleva al **inicio del panel**: una dirección inventada por adelantado daría 404 en todos los avisos de esta ventana. **El email no depende de ese enlace para servir**: lleva el pedido entero —quién, qué, cuánto y cómo se entrega— justamente para que se pueda decidir si hay que hacer algo sin abrir nada. El enlace es para lo que el email no puede hacer, que es cambiar el estado del pedido.
 - [ ] Los enlaces con token (E1, E2, E3) son de un solo uso y expiran.
 - [ ] Un fallo de envío nunca revierte la operación de negocio asociada; queda registrado para diagnóstico.
 - [ ] **No** se envía email de confirmación de orden al comprador (decisión de alcance del MVP).

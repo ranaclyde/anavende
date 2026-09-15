@@ -179,3 +179,21 @@ export async function mediosDePagoDeLaTienda(): Promise<
     logoUrl: urlDeLogo(f.logoKey, "thumb"),
   }));
 }
+
+/**
+ * La casilla que recibe el aviso de nueva orden — RF-20, RF-30 (E4), F6.4.
+ *
+ * Consulta propia y no `leerLaConfiguracion()` recortada, por el mismo motivo
+ * que `numeroDeWhatsApp()`: cada lectura trae lo suyo y nada más.
+ *
+ * `null` mientras la vendedora no haya guardado la configuración. Quien la use
+ * tiene que poder **no mandar el email**, que es lo que corresponde: no hay
+ * dirección de respaldo razonable, y mandárselo a cualquier otra sería peor
+ * que no mandarlo.
+ */
+export async function emailDeAvisos(): Promise<string | null> {
+  const [fila] = await db.execute<{ email: string }>(sql`
+    SELECT admin_notification_email AS email FROM site_settings WHERE id = 1
+  `);
+  return fila?.email ?? null;
+}

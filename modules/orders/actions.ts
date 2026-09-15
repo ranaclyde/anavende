@@ -2,8 +2,12 @@
 
 import { action } from "@/lib/action";
 import { domainError, isDomainError } from "@/lib/errors";
+import { avisarSinBloquear } from "@/modules/orders/avisar";
 import { crearOrdenDesdeCarrito, type Entrega } from "@/modules/orders/crear";
-import { confirmacionSchema, type Confirmacion } from "@/modules/orders/schemas";
+import {
+  confirmacionSchema,
+  type Confirmacion,
+} from "@/modules/orders/schemas";
 
 /**
  * Confirmar el pedido — FS RF-11, RF-12 · TS §8.4, §8.5. Tarea F6.1.
@@ -12,10 +16,15 @@ import { confirmacionSchema, type Confirmacion } from "@/modules/orders/schemas"
  * quien está bloqueado y a quien pidió la baja (paso 2b). El `userId` sale de
  * la sesión y nunca de la entrada (§13.8).
  *
- * **Lo que NO hace, y es de otras tareas:** el email E4 a la administradora es
- * F6.4 y va acá, después de crear la orden y fuera de su transacción (§8.4
- * paso 10). El `revalidateTag` del paso 11 no hace falta todavía: la tienda no
- * cachea nada por etiqueta (§12).
+ * **El email E4 sale después de la respuesta** (F6.4, §8.4 paso 10), no solo
+ * fuera de la transacción: armar el HTML y hablar con Resend son un par de
+ * segundos que no tienen por qué pasar con el comprador mirando un botón
+ * girando, cuando la orden ya está hecha y nada de lo que pase ahí cambia lo
+ * que él ve. Quién lo agenda y por qué no puede fallar está en
+ * `avisarSinBloquear`.
+ *
+ * **Lo que NO hace:** el `revalidateTag` del paso 11 no hace falta todavía, la
+ * tienda no cachea nada por etiqueta (§12).
  *
  * **Tampoco llama a `refresh()`.** Refrescaría el checkout, que con el carrito
  * ya vacío manda al carrito: la respuesta traería una redirección que compite
@@ -54,6 +63,12 @@ export const confirmarPedido = action
       }
       throw e;
     });
+
+    // Solo cuando la orden nació acá. Un reintento con la misma clave devuelve
+    // la que ya existía (§8.5), y avisarla otra vez le mandaría a Ana un
+    // segundo email por un pedido que no es nuevo — que es exactamente lo que
+    // la idempotencia existe para evitar.
+    if (!orden.yaExistia) avisarSinBloquear(orden.orderId);
 
     return { numero: orden.orderNumber };
   });
