@@ -131,10 +131,14 @@ export async function datosDelAviso(
       items: orden.items.map(comoItemDelAviso),
       total: formatMoney(orden.total),
       entrega: comoEntrega(orden.shippingAddress),
-      // Hasta F7.1 no hay detalle de orden en el panel, así que el botón lleva
-      // al inicio y no a una dirección que daría 404. Cuando exista, acá va
-      // `/admin/ordenes/${orderId}` y el email cumple RF-30 al pie de la letra.
-      enlace: `${SITIO}/admin`,
+      // El enlace directo al detalle que pide RF-30. Hasta F7.1 llevaba al
+      // inicio del panel, porque la pantalla no existía y todos los avisos de
+      // esa ventana habrían dado 404.
+      //
+      // Va por NÚMERO y no por `id`: es la dirección que tiene el panel
+      // (`/admin/ordenes/[numero]`), la misma que se lee en el asunto del
+      // email, y la única que alguien puede tipear si el botón falla.
+      enlace: `${SITIO}/admin/ordenes/${orden.numero}`,
     },
   };
 }

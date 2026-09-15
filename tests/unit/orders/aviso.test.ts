@@ -137,8 +137,9 @@ describe("lo que dice el aviso", () => {
     });
     // Los montos llegan formateados: la plantilla no hace aritmética (§7.1).
     expect(props.total).toMatch(/^\$/);
-    // El enlace al panel, que hasta F7.1 es el inicio y no el detalle.
-    expect(props.enlace).toMatch(/\/admin$/);
+    // El enlace directo al detalle que pide RF-30, ya con F7.1 existiendo.
+    // Por número, que es la dirección del panel y la que dice el asunto.
+    expect(props.enlace.endsWith(`/admin/ordenes/${props.numero}`)).toBe(true);
   });
 
   test("con envío dice la dirección entera; con retiro no dice dónde", async () => {

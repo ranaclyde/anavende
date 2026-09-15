@@ -593,11 +593,19 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 ### RF-21 — Listado y detalle de órdenes
 
 **Criterios de aceptación:**
-- [ ] Solapas/filtros por estado: **activas**, **finalizadas**, **canceladas** (y «todas»).
+- [ ] Solapas/filtros por estado: **activas**, **finalizadas**, **canceladas** (y «todas»). La solapa por omisión es **activas**: el listado se abre en lo que hay que preparar, no en el archivo histórico.
 - [ ] Filtros por rango de fechas, comprador y origen (web / manual).
-- [ ] Búsqueda por número de orden, nombre o email del comprador.
-- [ ] El listado muestra: número, fecha, comprador, cantidad de ítems, total, estado y origen.
+
+> **El «filtro por comprador» es la búsqueda, y no un desplegable** (F7.1). Una lista con todos los compradores registrados crece sin techo, deja afuera las órdenes manuales —que no tienen cuenta (RF-24)— y obliga a saber el nombre exacto antes de empezar. El mismo campo que busca por número busca por nombre y por email, que es lo que se tiene a mano cuando alguien escribe preguntando por su pedido. Cuando exista la ficha del usuario (RF-26), «ver sus órdenes» va a enlazar a este listado con su nombre puesto.
+
+> **El rango de fechas se lee en la zona horaria del negocio**, no en la del servidor. Una orden de las 22:00 de un lunes en Argentina es de la 01:00 del martes en UTC: sin zona explícita, la fecha de la columna y el corte del filtro dicen días distintos.
+
+- [ ] Búsqueda por número de orden, nombre o email del comprador. **El número se compara exacto** —«104» no trae la #1043—: quien escribe un número está yendo a una orden, no explorando. Los textos van por subcadena y sin tildes.
+- [ ] El listado muestra: número, fecha, comprador, cantidad de ítems, total, estado y origen. **«Cantidad de ítems» son unidades**, no renglones: es lo que contesta la pregunta que se hace mirando el listado —cuántas cosas van en la caja—, y el desglose por renglón está en el detalle.
+- [ ] El listado **se pagina**. No estaba pedido y hace falta igual: a diferencia de los productos, las órdenes se acumulan solas y sin techo.
 - [ ] El detalle muestra ítems (producto, color, cantidad, precio unitario y subtotal), datos del comprador, dirección de envío, total, historial de cambios de estado y acceso directo al WhatsApp del comprador.
+- [ ] El historial **distingue quién hizo cada transición**, y en particular si canceló el comprador (RF-23) o la administradora. Se resuelve comparando el autor con el dueño de la orden y **no con su rol de hoy**: una compradora que después sea administradora no puede volver retroactivamente «de la vendedora» algo que hizo ella.
+- [ ] Los datos del comprador muestran **el snapshot del pedido y la cuenta por separado** cuando las dos existen. No son lo mismo (RN-12, RF-11): quien compró para un tercero puso los datos del tercero, y verlas juntas es lo que evita escribirle a la persona equivocada.
 
 ---
 
@@ -819,7 +827,7 @@ orden, que es otra acción y está disponible siempre.
 - [ ] Todos los emails usan una plantilla común con la identidad visual de AnaVende.
 - [ ] E4 incluye número de orden, comprador, teléfono, ítems con color y cantidad, total y enlace directo al detalle en el panel.
 
-> **El enlace al detalle espera a F7.1** (decisión del 2026-09-15). Ese detalle es F7.1 y todavía no existe, así que hasta entonces el botón lleva al **inicio del panel**: una dirección inventada por adelantado daría 404 en todos los avisos de esta ventana. **El email no depende de ese enlace para servir**: lleva el pedido entero —quién, qué, cuánto y cómo se entrega— justamente para que se pueda decidir si hay que hacer algo sin abrir nada. El enlace es para lo que el email no puede hacer, que es cambiar el estado del pedido.
+> **El enlace al detalle esperó a F7.1**, y llegó el mismo 2026-09-15. Mientras ese detalle no existía el botón llevaba al **inicio del panel**: una dirección inventada por adelantado habría dado 404 en todos los avisos de esa ventana. Hoy lleva a `/admin/ordenes/<numero>` —por número, que es la dirección del panel y la misma que dice el asunto—. **El email no depende de ese enlace para servir**: lleva el pedido entero —quién, qué, cuánto y cómo se entrega— justamente para que se pueda decidir si hay que hacer algo sin abrir nada. El enlace es para lo que el email no puede hacer, que es cambiar el estado del pedido.
 - [ ] Los enlaces con token (E1, E2, E3) son de un solo uso y expiran.
 - [ ] Un fallo de envío nunca revierte la operación de negocio asociada; queda registrado para diagnóstico.
 - [ ] **No** se envía email de confirmación de orden al comprador (decisión de alcance del MVP).

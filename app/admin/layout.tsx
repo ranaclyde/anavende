@@ -40,10 +40,20 @@ export default async function AdminLayout({
       <script dangerouslySetInnerHTML={{ __html: scriptDeTema }} />
 
       {/* data-scale activa la densidad del panel: 14px de base, radios de
-          8-12px y filas de 44px, sin duplicar ningún componente (§4). */}
+          8-12px y filas de 44px, sin duplicar ningún componente (§4).
+
+          **En columna hasta `lg`, y ahí sí en fila.** `AdminSidebar` empieza
+          con la barra del teléfono, que es una franja de 14 de alto pensada
+          para ir ARRIBA del contenido; con `flex` a secas se acomodaba como
+          primera columna y se comía 125 de los 390 píxeles de la pantalla,
+          dejando el contenido en un canuto. Estaba así desde F1.12 y lo
+          encontró el repaso de F7.1, que es la primera pantalla del panel
+          que se mira en serio desde un teléfono (§6.9). El menú de
+          escritorio es `fixed`, así que no participa de esto ni en un caso
+          ni en el otro. */}
       <div
         data-scale="admin"
-        className="flex min-h-svh bg-canvas text-ink"
+        className="flex min-h-svh flex-col bg-canvas text-ink lg:flex-row"
       >
         <AdminSidebar nombre={session.profile.fullName} />
         <main className="min-w-0 flex-1 p-4 lg:p-6">{children}</main>

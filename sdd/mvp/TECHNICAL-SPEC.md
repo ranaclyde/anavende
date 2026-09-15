@@ -1113,6 +1113,23 @@ El **umbral de stock bajo** se lee de `site_settings` (§5.9), que es una fila �
 
 ---
 
+### 10.4 El listado de órdenes del panel (RF-21)
+
+Hereda §10.2 —el estado en la URL— y §10.3 —búsqueda por subcadena sin acentos, con los comodines escapados— y agrega tres cosas propias:
+
+| Punto | Qué hace | Por qué |
+|---|---|---|
+| **Número vs. texto** | El número de orden se compara **exacto**; el nombre y el email, por subcadena | El número es un identificador: quien lo escribe está yendo a una orden, no explorando. Con `ILIKE`, «104» traería la #1043, la #1104 y la #2104 |
+| **Rango de fechas** | Los dos cortes van `AT TIME ZONE` a la zona del negocio, y `hasta` se compara contra **el día siguiente** | `created_at` es un instante y el filtro habla de días. El servidor corre en UTC: sin zona, una orden de las 22:00 de un lunes en Argentina se muestra como del lunes y se cuenta en el martes. Y con `<= hasta::date` se perdería todo lo del último día pasadas las 00:00 |
+| **Paginación** | `LIMIT/OFFSET`, 40 por página, con el conteo total en la misma ida a la base | A diferencia de los productos —que carga la vendedora y tienen techo—, las órdenes se acumulan solas. Cuarenta y no veinticuatro porque acá el renglón es una fila de 44px y no una tarjeta con foto |
+
+**Las lecturas del panel viven en otro archivo que las del comprador**, y no es organización: las del comprador filtran siempre por `user_id`, que sin RLS es la única barrera (§13.8), y las del panel no filtran por nadie porque la guardia es el layout de `/admin`. Un archivo con las dos mitades invita a llamar a la que no corresponde.
+
+**`loading.tsx` envuelve su segmento Y a sus hijos.** Un esqueleto puesto en `app/admin/ordenes/` cubría también a `app/admin/ordenes/[numero]/`: la cáscara salía a la calle antes de que la consulta del detalle terminara, y un `notFound()` posterior llegaba con la respuesta ya empezada — **200 con la pantalla vacía** en lugar de 404. Se resuelve poniendo el listado en un grupo de rutas (`(listado)/`), que no cambia ninguna dirección y deja el esqueleto sobre la tabla y sólo sobre la tabla. Vale para cualquier par listado/detalle del panel.
+
+---
+
+
 ## 11. Recomendaciones (RF-31 a RF-33)
 
 ### 11.1 Categorías relacionadas: reciprocidad
