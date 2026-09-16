@@ -221,8 +221,10 @@ export async function reducirCantidad(
   const item = await elItem(tx, args);
 
   if (args.nuevaCantidad > item.quantity) {
-    // RF-22 habla de reducir. Agregar unidades es otra cosa —hay que reservar,
-    // y puede no haber stock—, y no está en el MVP.
+    // Esta función reduce, y sólo reduce. Sumar es otra cosa —hay que
+    // reservar, y el stock puede no estar—, así que es su propia operación:
+    // **F7.2a** (RF-22, «Criterios — sumar»). Hasta que exista, acá se
+    // rechaza en vez de dejar pasar un número más grande sin reservar nada.
     throw domainError("VALIDATION", {
       message: `No se puede agregar unidades desde acá: la orden tiene ${item.quantity} y sólo se puede bajar.`,
     });
