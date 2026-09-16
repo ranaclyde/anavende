@@ -35,6 +35,25 @@ export type ItemDeLaOrden = {
   subtotal: Money;
 };
 
+/**
+ * Quién canceló el pedido, y por qué si lo dijo — RF-23. Tarea F7.3.
+ *
+ * **Hasta F7.3 esto no hacía falta**, porque el único que podía cancelar era
+ * el propio comprador: la pantalla decía «Cancelaste este pedido» y siempre
+ * era verdad. Desde que la vendedora también puede (RF-23), decirlo así sería
+ * contarle a alguien que él canceló lo que le cancelaron.
+ *
+ * **`porLaTienda` sale de comparar el autor con el dueño de la orden**, no
+ * del rol de quien la movió, por lo mismo que en el panel: el rol es el de
+ * hoy y el dueño de la orden no cambia (F7.1). Un autor en blanco cuenta
+ * como la tienda — el comprador siempre queda registrado al cancelar.
+ */
+export type CancelacionDeLaOrden = {
+  porLaTienda: boolean;
+  /** Sólo el que escribe la vendedora: al arrepentimiento no se le pide (RF-23). */
+  motivo: string | null;
+};
+
 export type OrdenDelComprador = {
   numero: number;
   estado: EstadoOrden;
@@ -49,6 +68,8 @@ export type OrdenDelComprador = {
   customerName: string;
   items: ItemDeLaOrden[];
   shippingAddress: ShippingAddressSnapshot | null;
+  /** `null` mientras no esté cancelada, que es el caso de siempre. */
+  cancelacion: CancelacionDeLaOrden | null;
 };
 
 export async function leerOrdenDelComprador(
@@ -76,7 +97,21 @@ export async function leerOrdenDelComprador(
                        ORDER BY i.product_name, i.color_name
                      ),
                      '[]'::json)
-              FROM order_items i WHERE i.order_id = o.id) AS items
+              FROM order_items i WHERE i.order_id = o.id) AS items,
+           -- La última cancelación de esta orden, que es también la única:
+           -- de cancelada no se sale (RF-13). El orden está igual, porque una
+           -- consulta que depende de que haya una sola fila se rompe sola el
+           -- día que eso deje de ser cierto.
+           CASE WHEN o.status = 'cancelada' THEN (
+             SELECT json_build_object(
+                      'porLaTienda', h.actor_user_id IS DISTINCT FROM o.user_id,
+                      'motivo',      h.reason)
+               FROM order_status_history h
+              WHERE h.order_id = o.id
+                AND h.to_status = 'cancelada'
+              ORDER BY h.created_at DESC, h.id DESC
+              LIMIT 1
+           ) END AS cancelacion
       FROM orders o
      WHERE o.order_number = ${numero}
        AND o.user_id = ${userId}`);

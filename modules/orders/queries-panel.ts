@@ -193,16 +193,26 @@ export type EntradaDelHistorial = {
 };
 
 /**
- * Un renglón de la orden, con **lo que hay disponible de esa variante hoy**.
+ * Un renglón de la orden, con **los dos contadores de esa variante hoy**.
  *
- * El renglón es el snapshot de RN-12 y no cambia; `disponible` es del catálogo
- * vivo y sí. Van juntos porque la edición de RF-22 los necesita juntos: quitar
- * dos unidades libera dos unidades, y el número que le importa a quien lo hace
- * es en cuánto queda el disponible después. `null` cuando la variante ya no
- * existe (§5.6): ahí no hay contador que mover.
+ * El renglón es el snapshot de RN-12 y no cambia; estos dos son del catálogo
+ * vivo y sí. Van juntos porque las acciones del panel los necesitan juntos, y
+ * **cada una mira uno distinto**:
+ *
+ * - `disponible` (total − reservado) es el de RF-22 y el de cancelar: soltar
+ *   una reserva no toca el stock real, sólo vuelve a dejar libre lo que
+ *   estaba apartado.
+ * - `stock` es el total real, y es el que mira **finalizar** (RF-23): la venta
+ *   baja el total y la reserva a la vez, así que el disponible queda igual y
+ *   lo que cambia es este otro. Decir «el disponible pasa de 9 a 7» al
+ *   finalizar sería mentir.
+ *
+ * Los dos en `null` cuando la variante ya no existe (§5.6): ahí no hay
+ * contador que mover.
  */
 export type ItemDeLaOrdenDelPanel = ItemDeLaOrden & {
   disponible: number | null;
+  stock: number | null;
 };
 
 export type OrdenDelPanel = {
@@ -270,7 +280,8 @@ export async function leerOrdenDelPanel(
                          'subtotal',       i.subtotal::text,
                          'disponible',     CASE WHEN v.id IS NULL THEN NULL
                                                 ELSE v.stock_total
-                                                     - v.reserved_stock END
+                                                     - v.reserved_stock END,
+                         'stock',          v.stock_total
                        )
                        ORDER BY i.product_name, i.color_name
                      ),

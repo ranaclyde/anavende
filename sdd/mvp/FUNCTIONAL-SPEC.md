@@ -657,7 +657,17 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] **La cancelación por el comprador es el arrepentimiento** (RF-34, «El arrepentimiento no es esto»). Tiene que estar **a la vista** en el detalle de la orden y no detrás de un menú: es el mecanismo con el que el sitio cumple ese derecho, y su visibilidad es parte del requisito.
 
 > **A la vista quiere decir en el detalle, no en cada renglón del listado** (F6.5). Un botón destructivo al lado de cada compra de una lista es el que se toca sin querer; en el detalle está solo y con el pedido enfrente. **Y sin campo de motivo**: el motivo se lo pide RF-23 a la administradora, que cancela la orden de otro. A quien se arrepiente no se le pide explicación — un campo obligatorio ahí es fricción puesta justo donde el requisito quiere que no haya ninguna. Igual queda registrado **quién** canceló, que es lo que en el panel distingue un arrepentimiento de una cancelación de la vendedora.
+- [ ] **El comprador ve quién canceló su pedido, y el motivo si la administradora lo escribió.** Su detalle de compra dice «Cancelamos este pedido» cuando la canceló la tienda y «Cancelaste este pedido» cuando se arrepintió él, y en el primer caso muestra el motivo debajo.
 - [ ] Una orden ya finalizada o cancelada no admite nuevas transiciones (RF-13).
+
+> **Lo del comprador se agregó el 2026-09-16, al implementar F7.3.** Hasta
+> entonces el único que podía cancelar era él, así que la pantalla podía decir
+> «Cancelaste este pedido» sin equivocarse nunca; con la vendedora cancelando,
+> ese mismo texto le avisaría a alguien que canceló él lo que le cancelaron.
+> **El motivo se le muestra** porque a quien le cancelan un pedido «por qué» es
+> la única pregunta que le queda, y tenerla contestada le ahorra escribir. Eso
+> convierte el campo del panel en algo que se publica, y el diálogo lo dice:
+> un campo que se cree interno y no lo sea es peor que no tenerlo.
 
 ---
 

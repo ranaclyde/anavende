@@ -9,6 +9,7 @@ import {
 } from "@/components/admin/ordenes/estado";
 import { EditarElRenglon } from "@/components/admin/ordenes/editar-item";
 import { HistorialDeLaOrden } from "@/components/admin/ordenes/historial";
+import { ResolverLaOrden } from "@/components/admin/ordenes/resolver";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import {
@@ -46,10 +47,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * Aquél cuenta en qué anda su pedido; éste es la hoja de trabajo: lleva el
  * teléfono, el email, la dirección entera y quién movió qué cosa cuándo.
  *
- * **Todavía no tiene botones de acción.** Editar es F7.2 y finalizar o
- * cancelar es F7.3; hasta entonces la pantalla lo dice, en vez de mostrar
- * controles apagados sin explicación. Es el mismo criterio con el que F5.8
- * dejó el bloque de bajas enlazando a una sección que no existía.
+ * **Las acciones viven acá y sólo mientras la orden está activa**: editar
+ * renglón por renglón en la tabla (F7.2), y finalizar o cancelar en la
+ * cabecera (F7.3). Sobre una finalizada o una cancelada no hay nada que
+ * hacer (RF-13), así que no hay controles apagados: simplemente no están.
  */
 export default async function DetalleDeLaOrden({ params }: Props) {
   const { numero: crudo } = await params;
@@ -83,21 +84,46 @@ export default async function DetalleDeLaOrden({ params }: Props) {
           <OrigenDeLaOrden origen={orden.origen} />
         </div>
 
-        {/* El atajo de RF-21. El teléfono del pedido es obligatorio en las
-            tres vías de alta (RF-05), así que el botón siempre puede estar. */}
-        <Button asChild variant="brand" size="sm">
-          <a
-            href={enlaceDeWhatsApp(
-              orden.customerPhone,
-              mensajeParaElComprador(orden.numero),
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <IconoWhatsApp className="size-4" />
-            Escribirle por WhatsApp
-          </a>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* El atajo de RF-21. El teléfono del pedido es obligatorio en las
+              tres vías de alta (RF-05), así que el botón siempre puede estar.
+              **Dejó de ser el de marca** cuando llegó «Finalizar» (F7.3): de
+              esta pantalla se sale finalizando o cancelando, escribirle es el
+              paso previo, y §6.3 admite un solo botón de marca por pantalla. */}
+          <Button asChild variant="secondary" size="sm">
+            <a
+              href={enlaceDeWhatsApp(
+                orden.customerPhone,
+                mensajeParaElComprador(orden.numero),
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <IconoWhatsApp className="size-4" />
+              Escribirle por WhatsApp
+            </a>
+          </Button>
+
+          {/* RF-23. Sólo desde `activa`: es lo que dice `TRANSICIONES`, y de
+              las otras dos no sale ninguna flecha. */}
+          {orden.estado === "activa" ? (
+            <ResolverLaOrden
+              numero={orden.numero}
+              // Sólo lo que los diálogos usan (§ rendimiento: lo que viaja al
+              // cliente se serializa entero). Los precios están en la tabla y
+              // no cambian con esto.
+              items={orden.items.map((item) => ({
+                id: item.id,
+                nombre: item.nombre,
+                color: item.color,
+                cantidad: item.cantidad,
+                disponible: item.disponible,
+                stock: item.stock,
+              }))}
+              loLeeElComprador={orden.cuenta !== null}
+            />
+          ) : null}
+        </div>
       </div>
 
       <p className="text-body-sm text-ink-secondary">
@@ -112,8 +138,9 @@ export default async function DetalleDeLaOrden({ params }: Props) {
       {orden.estado === "activa" ? (
         <p className="rounded-panel-card border border-dashed border-border bg-surface px-4 py-3 text-body-sm text-ink-secondary">
           Podés quitar productos o bajar cantidades desde la tabla, y lo que
-          saques vuelve al stock enseguida. Finalizarla o cancelarla desde acá
-          llega con la próxima tarea del panel.
+          saques vuelve al stock enseguida. Cuando la entregues, finalizala: ahí
+          se descuenta el stock de verdad. Ni finalizarla ni cancelarla tienen
+          vuelta atrás.
         </p>
       ) : null}
 
