@@ -85,13 +85,31 @@ export default async function DetalleDeLaCompra({ params }: Props) {
         Una cancelada explica además que el stock volvió: si no, queda la duda
         de si el pedido sigue reservado en algún lado.
       */}
-      <p className="text-body text-ink-secondary">
-        {orden.estado === "activa"
-          ? "Guardamos el stock hasta coordinar el pago y la entrega."
-          : orden.estado === "finalizada"
-            ? "Este pedido ya se entregó."
-            : "Cancelaste este pedido y liberamos el stock. No se cobró nada."}
-      </p>
+      <div className="flex flex-col gap-1">
+        <p className="text-body text-ink-secondary">
+          {orden.estado === "activa"
+            ? "Guardamos el stock hasta coordinar el pago y la entrega."
+            : orden.estado === "finalizada"
+              ? "Este pedido ya se entregó."
+              : orden.cancelacion?.porLaTienda
+                ? "Cancelamos este pedido y liberamos el stock. No se te cobró nada."
+                : "Cancelaste este pedido y liberamos el stock. No se cobró nada."}
+        </p>
+
+        {/*
+          El motivo que escribió la vendedora, cuando lo escribió — RF-23 lo
+          deja opcional. **Se muestra acá y no sólo en el panel** (decisión
+          del 2026-09-16): a quien le cancelaron un pedido, «por qué» es la
+          única pregunta que le queda, y tenerla contestada le ahorra
+          escribir. El propio arrepentimiento no lleva motivo, así que esto
+          aparece únicamente cuando canceló la tienda.
+        */}
+        {orden.cancelacion?.motivo ? (
+          <p className="text-body-sm text-ink-secondary">
+            Motivo: {orden.cancelacion.motivo}
+          </p>
+        ) : null}
+      </div>
 
       <div className="flex w-full flex-col gap-4 rounded-card bg-surface p-5 shadow-md">
         <ul className="flex flex-col gap-3">
