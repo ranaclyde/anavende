@@ -2,17 +2,31 @@ import "server-only";
 
 import { sql } from "drizzle-orm";
 
-import { domainError } from "@/lib/errors";
+import { domainError, isDomainError } from "@/lib/errors";
 import { cancelarOrden } from "@/modules/orders/estados";
-import { liberar, type Transaccion } from "@/modules/stock/operaciones";
+import {
+  liberar,
+  reservar,
+  type Transaccion,
+} from "@/modules/stock/operaciones";
 
 /**
- * Edición de una orden activa — FS RF-22 · TS §8.1. Tarea F4.4.
+ * Edición de una orden activa — FS RF-22 · TS §8.1.
+ * Tareas F4.4 (quitar y reducir) y F7.2a (sumar y agregar).
  *
- * La vendedora completa una orden parcialmente: quita lo que no puede entregar
- * o entrega menos. Lo que se libera vuelve a estar disponible **de inmediato**,
- * que es el punto — una unidad reservada para algo que ya se sabe que no se va
- * a entregar es una unidad que no se le puede vender a nadie.
+ * La vendedora ajusta la orden contra lo que se terminó acordando por
+ * WhatsApp, y eso va en los dos sentidos: quita lo que no puede entregar, y
+ * suma lo que el comprador pidió después.
+ *
+ * **Las dos mitades no son simétricas, y por eso llegaron en tareas
+ * distintas.** Quitar siempre se puede: libera una reserva y no puede fallar,
+ * y lo que se libera vuelve a estar disponible de inmediato —una unidad
+ * apartada para algo que ya se sabe que no se entrega es una unidad que no se
+ * le puede vender a nadie—. Sumar **puede no poderse**: hay que reservar, y el
+ * stock puede no estar. Ahí no se advierte y se deja pasar como en la orden
+ * manual (RF-24, donde la venta ya ocurrió): se niega y se dice cuánto hay,
+ * porque reservar de más rompe el invariante que evita vender dos veces la
+ * misma unidad (§8.1).
  *
  * Tres reglas, y las tres se hacen cumplir acá:
  *
@@ -70,10 +84,7 @@ async function exigirOrdenActiva(
   }
 }
 
-async function elItem(
-  tx: Transaccion,
-  ctx: Contexto,
-): Promise<ItemVivo> {
+async function elItem(tx: Transaccion, ctx: Contexto): Promise<ItemVivo> {
   // El `order_id` en el WHERE no es redundante: sin él, un id de ítem de otra
   // orden editaría esa otra orden con los permisos de esta.
   const [item] = await tx.execute<ItemVivo>(sql`
@@ -255,4 +266,234 @@ export async function reducirCantidad(
       `«${nombrar(item)}» pasó de ${item.quantity} a ${args.nuevaCantidad}`,
     actorUserId: args.actorUserId,
   });
+}
+
+// ── Sumar (RF-22, «Criterios — sumar») ──────────────────────────────────
+
+/** Lo mismo que al reducir: una orden no lleva diez mil unidades de nada. */
+const MAXIMO_POR_RENGLON = 9999;
+
+function exigirCantidad(cantidad: number, que: string): void {
+  if (
+    !Number.isInteger(cantidad) ||
+    cantidad < 1 ||
+    cantidad > MAXIMO_POR_RENGLON
+  ) {
+    throw domainError("VALIDATION", {
+      message: `${que} tiene que ser un número de 1 a ${MAXIMO_POR_RENGLON}.`,
+    });
+  }
+}
+
+/**
+ * Reserva, y si no alcanza dice **cuánto hay** — RF-22 lo pide con esas
+ * palabras: «si no hay stock disponible, no se agrega, y se dice cuánto hay».
+ *
+ * El mensaje de siempre (`INSUFFICIENT_STOCK`) habla de «ese producto» y de
+ * revisar el carrito, porque nació para el comprador. Acá quien lee está
+ * mirando una orden concreta y necesita dos datos para decidir: cuál es y
+ * cuántas quedan. El disponible se lee **después** de que la reserva falló,
+ * que es cuando hace falta, y no antes de cada intento.
+ */
+async function reservarODecirCuantoHay(
+  tx: Transaccion,
+  args: {
+    variantId: string;
+    quantity: number;
+    orderId: string;
+    actorUserId?: string | null;
+    note: string;
+    nombre: string;
+  },
+): Promise<void> {
+  try {
+    await reservar(tx, {
+      variantId: args.variantId,
+      quantity: args.quantity,
+      orderId: args.orderId,
+      actorUserId: args.actorUserId,
+      note: args.note,
+    });
+  } catch (e: unknown) {
+    if (!isDomainError(e) || e.code !== "INSUFFICIENT_STOCK") throw e;
+
+    const [fila] = await tx.execute<{ disponible: number }>(sql`
+      SELECT stock_total - reserved_stock AS disponible
+        FROM product_variants WHERE id = ${args.variantId}`);
+    const hay = fila?.disponible ?? 0;
+
+    throw domainError("INSUFFICIENT_STOCK", {
+      variantId: args.variantId,
+      message:
+        hay > 0
+          ? `Sólo ${hay === 1 ? "queda 1 unidad" : `quedan ${hay} unidades`} de «${args.nombre}», y hacen falta ${args.quantity}. Si va a entrar mercadería, cargá el stock primero.`
+          : `No queda stock de «${args.nombre}». Si va a entrar mercadería, cargá el stock primero.`,
+    });
+  }
+}
+
+/**
+ * Subir la cantidad de un renglón que ya está — RF-22 (F7.2a).
+ *
+ * **La diferencia se reserva, y el precio del renglón no se toca**: las
+ * unidades nuevas van al precio que ya tiene esa línea, que es el que el
+ * comprador vio y aceptó. Cambiarlo sería cambiar el trato desde el panel.
+ *
+ * Es la contracara de `reducirCantidad` y vive aparte por lo mismo que aquélla
+ * se niega a subir: son dos operaciones con riesgos distintos —una libera y la
+ * otra puede fallar— y juntarlas en una sola que mire el signo escondería que
+ * una de las dos puede dejar el trabajo a medias.
+ */
+export async function aumentarCantidad(
+  tx: Transaccion,
+  args: Contexto & { nuevaCantidad: number },
+): Promise<void> {
+  exigirCantidad(args.nuevaCantidad, "La cantidad");
+
+  await exigirOrdenActiva(tx, args.orderId);
+  const item = await elItem(tx, args);
+
+  if (args.nuevaCantidad < item.quantity) {
+    throw domainError("VALIDATION", {
+      message: `Esto sólo sube: la orden tiene ${item.quantity}. Para bajar, usá el botón de quitar unidades.`,
+    });
+  }
+
+  const deMas = args.nuevaCantidad - item.quantity;
+  if (deMas === 0) return;
+
+  // Una variante borrada (§5.6) deja el renglón con `variant_id` en NULL: el
+  // snapshot se lee igual, pero no hay contador que reservar. Sumar unidades
+  // de algo que ya no existe sería comprometer stock inexistente.
+  if (!item.variantId) {
+    throw domainError("VALIDATION", {
+      message: `«${nombrar(item)}» ya no está en el catálogo, así que no se le pueden sumar unidades.`,
+    });
+  }
+
+  const paso = `«${nombrar(item)}» pasó de ${item.quantity} a ${args.nuevaCantidad}`;
+
+  await reservarODecirCuantoHay(tx, {
+    variantId: item.variantId,
+    quantity: deMas,
+    orderId: args.orderId,
+    actorUserId: args.actorUserId,
+    note: paso,
+    nombre: nombrar(item),
+  });
+
+  await tx.execute(sql`
+    UPDATE order_items SET quantity = ${args.nuevaCantidad}
+     WHERE id = ${args.orderItemId}`);
+
+  await recalcularTotal(tx, args.orderId);
+  await anotarEnElHistorial(tx, {
+    orderId: args.orderId,
+    reason: paso,
+    actorUserId: args.actorUserId,
+  });
+}
+
+export type ResultadoDeAgregar = {
+  /** `true` si la variante ya estaba y se sumó sobre su renglón (RF-22). */
+  sumadoAlRenglon: boolean;
+  /** Con cuántas unidades quedó ese renglón. */
+  cantidad: number;
+};
+
+/**
+ * Agregar a la orden un producto que no estaba — RF-22 (F7.2a).
+ *
+ * **Si ya está, suma sobre su renglón** en vez de crear un segundo renglón
+ * igual, que es lo mismo que hace el carrito (RF-08): dos líneas del mismo
+ * color y el mismo precio son una sola cosa contada dos veces, y para la
+ * vendedora que prepara el pedido es una trampa.
+ *
+ * **Y entonces las unidades van al precio de ESE renglón**, no al del catálogo
+ * de hoy: el precio del renglón es el que se acordó para esa línea. Sale solo
+ * de delegar en `aumentarCantidad`, que no toca el precio.
+ *
+ * **Un producto nuevo entra al precio vigente**, con su descuento aplicado
+ * (RN-04b), y queda congelado como cualquier otro renglón (RN-12).
+ */
+export async function agregarItem(
+  tx: Transaccion,
+  args: {
+    orderId: string;
+    variantId: string;
+    cantidad: number;
+    actorUserId?: string | null;
+  },
+): Promise<ResultadoDeAgregar> {
+  exigirCantidad(args.cantidad, "La cantidad");
+  await exigirOrdenActiva(tx, args.orderId);
+
+  // El más viejo si hubiera dos: una orden manual puede haber cargado la
+  // misma variante en dos renglones a precios distintos (F7.4), y en ese caso
+  // sumar sobre el primero es lo previsible.
+  const [existente] = await tx.execute<{ id: string; quantity: number }>(sql`
+    SELECT id, quantity
+      FROM order_items
+     WHERE order_id = ${args.orderId} AND variant_id = ${args.variantId}
+     ORDER BY created_at, id
+     LIMIT 1`);
+
+  if (existente) {
+    const cantidad = existente.quantity + args.cantidad;
+    await aumentarCantidad(tx, {
+      orderId: args.orderId,
+      orderItemId: existente.id,
+      actorUserId: args.actorUserId,
+      nuevaCantidad: cantidad,
+    });
+    return { sumadoAlRenglon: true, cantidad };
+  }
+
+  const [v] = await tx.execute<{
+    productName: string;
+    brandName: string;
+    colorName: string | null;
+    finalPrice: string;
+  }>(sql`
+    SELECT p.name        AS "productName",
+           b.name        AS "brandName",
+           c.name        AS "colorName",
+           p.final_price AS "finalPrice"
+      FROM product_variants v
+      JOIN products p    ON p.id = v.product_id
+      JOIN brands b      ON b.id = p.brand_id
+      LEFT JOIN colors c ON c.id = v.color_id
+     WHERE v.id = ${args.variantId}`);
+
+  if (!v) throw domainError("NOT_FOUND");
+
+  const nombre = v.colorName
+    ? `${v.productName} (${v.colorName})`
+    : v.productName;
+
+  await reservarODecirCuantoHay(tx, {
+    variantId: args.variantId,
+    quantity: args.cantidad,
+    orderId: args.orderId,
+    actorUserId: args.actorUserId,
+    note: `Se agregó «${nombre}» ×${args.cantidad}`,
+    nombre,
+  });
+
+  await tx.execute(sql`
+    INSERT INTO order_items
+      (order_id, variant_id, product_name, brand_name, color_name,
+       unit_price, quantity)
+    VALUES
+      (${args.orderId}, ${args.variantId}, ${v.productName}, ${v.brandName},
+       ${v.colorName}, ${v.finalPrice}, ${args.cantidad})`);
+
+  await recalcularTotal(tx, args.orderId);
+  await anotarEnElHistorial(tx, {
+    orderId: args.orderId,
+    reason: `Se agregó «${nombre}» ×${args.cantidad}`,
+    actorUserId: args.actorUserId,
+  });
+
+  return { sumadoAlRenglon: false, cantidad: args.cantidad };
 }

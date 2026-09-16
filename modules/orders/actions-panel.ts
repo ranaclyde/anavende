@@ -6,7 +6,12 @@ import { z } from "zod";
 import { db } from "@/db";
 import { action } from "@/lib/action";
 import { domainError } from "@/lib/errors";
-import { quitarItem, reducirCantidad } from "@/modules/orders/editar";
+import {
+  agregarItem,
+  aumentarCantidad,
+  quitarItem,
+  reducirCantidad,
+} from "@/modules/orders/editar";
 import { cancelarOrden, finalizarOrden } from "@/modules/orders/estados";
 import { idDeLaOrden } from "@/modules/orders/queries-panel";
 import {
@@ -16,7 +21,7 @@ import {
 
 /**
  * Acciones del panel sobre una orden — FS RF-22, RF-23 · TS §8.1.
- * Tareas F7.2 (editar) y F7.3 (finalizar y cancelar).
+ * Tareas F7.2 (quitar y reducir), F7.3 (finalizar y cancelar) y F7.2a (sumar).
  *
  * **La lógica no está acá.** Quitar un renglón y bajar una cantidad ya estaban
  * resueltos y probados en `modules/orders/editar.ts` desde F4.4, con el
@@ -87,10 +92,10 @@ export const quitarItemDeLaOrden = action
 /**
  * Bajar la cantidad de un renglón — RF-22.
  *
- * Sólo baja: subir unidades hay que reservarlas y el stock puede no estar,
- * así que es su propia operación — **F7.2a**, que llega después de F7.4. Lo
- * rechaza `reducirCantidad`, no este esquema: la cantidad de la que se baja
- * es la de la base, no la que diga el cliente.
+ * Sólo baja; subir es `aumentarCantidadDelItem`, acá abajo. Que sean dos y no
+ * una que mire el signo es del dominio: bajar libera y no puede fallar, subir
+ * reserva y puede no entrar. Lo rechaza `reducirCantidad`, no este esquema: la
+ * cantidad de la que se baja es la de la base, no la que diga el cliente.
  */
 export const reducirCantidadDelItem = action
   .input(laOrden.extend({ cantidad: z.number().int().min(1).max(9999) }))
@@ -184,4 +189,65 @@ export const cancelarLaOrden = action
 
     refresh();
     return { numero: input.numero };
+  });
+
+// ── Sumar a una orden activa (RF-22, F7.2a) ─────────────────────────────
+
+/**
+ * Subir la cantidad de un renglón — RF-22.
+ *
+ * La contracara de `reducirCantidadDelItem`, y la que puede volver con
+ * `INSUFFICIENT_STOCK`: el dominio traduce ese error a un mensaje que dice
+ * **cuántas quedan**, que es lo que el requisito pide y lo que la pantalla
+ * muestra tal cual.
+ */
+export const aumentarCantidadDelItem = action
+  .input(laOrden.extend({ cantidad: z.number().int().min(1).max(9999) }))
+  .auth("admin")
+  .handler(async ({ input, ctx }) => {
+    const orderId = await idDeLaOrdenO404(input.numero);
+
+    await db.transaction((tx) =>
+      aumentarCantidad(tx, {
+        orderId,
+        orderItemId: input.itemId,
+        nuevaCantidad: input.cantidad,
+        actorUserId: ctx.session.profile.id,
+      }),
+    );
+
+    refresh();
+    return { cantidad: input.cantidad };
+  });
+
+/**
+ * Agregar un producto que no estaba — RF-22.
+ *
+ * **Viaja la variante y no el renglón**, al revés que el resto de las
+ * acciones de este archivo: todavía no hay renglón, y si la variante ya está
+ * en la orden el dominio suma sobre el suyo en vez de crear otro igual.
+ */
+export const agregarItemALaOrden = action
+  .input(
+    z.object({
+      numero: z.number().int().positive(),
+      variantId: z.uuid(),
+      cantidad: z.number().int().min(1).max(9999),
+    }),
+  )
+  .auth("admin")
+  .handler(async ({ input, ctx }) => {
+    const orderId = await idDeLaOrdenO404(input.numero);
+
+    const resultado = await db.transaction((tx) =>
+      agregarItem(tx, {
+        orderId,
+        variantId: input.variantId,
+        cantidad: input.cantidad,
+        actorUserId: ctx.session.profile.id,
+      }),
+    );
+
+    refresh();
+    return resultado;
   });
