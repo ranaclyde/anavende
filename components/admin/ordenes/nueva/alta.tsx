@@ -2,18 +2,17 @@
 
 import { Trash2, TriangleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { CamposDeDireccion } from "@/components/admin/ordenes/nueva/direccion";
 import { BuscadorDeComprador } from "@/components/admin/ordenes/nueva/buscador-comprador";
 import { BuscadorDeVariantes } from "@/components/admin/ordenes/nueva/buscador-variantes";
 import { Button } from "@/components/ui/button";
+import { Campo, Opcion, Seccion } from "@/components/admin/formulario";
 import { FieldError } from "@/components/ui/field-error";
 import { Input, Textarea } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { erroresDeSeccion, leerErrores, SIN_ERRORES } from "@/lib/form";
 import { comoMonto, formatMoney, isMoney, multiply, sum } from "@/lib/money";
-import { cn } from "@/lib/utils";
 import { crearLaOrdenManualDelPanel } from "@/modules/orders/actions-manual";
 import type {
   CompradorParaLaOrden,
@@ -513,102 +512,5 @@ function RenglonDeLaOrden({
         </p>
       ) : null}
     </li>
-  );
-}
-
-function Seccion({
-  titulo,
-  ayuda,
-  children,
-}: {
-  titulo: string;
-  ayuda?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-4">
-      <div className="flex flex-col gap-0.5">
-        <h2 className="text-body-sm font-medium text-ink">{titulo}</h2>
-        {ayuda ? (
-          <p className="text-caption text-ink-secondary">{ayuda}</p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-/** Mismo patrón que el checkout (F6.1): un radio de verdad, y la tarjeta es la etiqueta. */
-function Opcion({
-  nombre,
-  elegida,
-  alElegir,
-  titulo,
-  detalle,
-}: {
-  nombre: string;
-  elegida: boolean;
-  alElegir: () => void;
-  titulo: string;
-  detalle: string;
-}) {
-  return (
-    <label
-      className={cn(
-        "flex cursor-pointer gap-2.5 rounded-panel-control border border-border bg-surface p-3",
-        "transition-colors duration-150",
-        "has-checked:border-brand has-checked:bg-brand-tint",
-        "has-focus-visible:shadow-focus",
-      )}
-    >
-      <input
-        type="radio"
-        name={nombre}
-        checked={elegida}
-        onChange={alElegir}
-        className="mt-0.5 size-4 shrink-0 accent-brand"
-      />
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-body-sm font-medium text-ink">{titulo}</span>
-        <span className="text-caption text-ink-secondary">{detalle}</span>
-      </span>
-    </label>
-  );
-}
-
-function Campo({
-  etiqueta,
-  valor,
-  alCambiar,
-  error,
-  ayuda,
-  ...resto
-}: {
-  etiqueta: string;
-  valor: string;
-  alCambiar: (v: string) => void;
-  error?: string;
-  ayuda?: string;
-} & React.ComponentProps<typeof Input>) {
-  const id = useId();
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{etiqueta}</Label>
-      <Input
-        id={id}
-        value={valor}
-        onChange={(ev) => alCambiar(ev.target.value)}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={ayuda ? `${id}-ayuda` : undefined}
-        {...resto}
-      />
-      {ayuda && !error ? (
-        <p id={`${id}-ayuda`} className="text-caption text-ink-tertiary">
-          {ayuda}
-        </p>
-      ) : null}
-      <FieldError>{error}</FieldError>
-    </div>
   );
 }
