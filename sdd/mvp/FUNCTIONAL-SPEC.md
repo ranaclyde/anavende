@@ -611,9 +611,11 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 
 ### RF-22 — Edición de una orden activa
 
-**Descripción:** La administradora puede completar una orden parcialmente, quitando lo que no se pueda entregar.
+**Descripción:** La administradora ajusta una orden `activa` contra lo que se terminó acordando: **quita** lo que no puede entregar y **suma** lo que el comprador pidió después.
 
-**Criterios de aceptación:**
+> **Nació sólo restando, y eso era un hueco** (2026-09-16). El requisito se escribió pensando en una sola situación —«me quedé sin uno de los tres, se lo aviso y le mando dos»— y por eso hablaba únicamente de quitar y reducir. Pero la coordinación por WhatsApp (RN-01) va en los dos sentidos: «¿me mandás otro igual?» y «ya que estás, sumame el cable» son tan frecuentes como la falta de stock, y hoy la única salida sería cancelar la orden y rehacerla, o cargar una segunda orden manual (RF-24) por el agregado — que parte una venta en dos y le arruina el historial al comprador. **Sumar entra al requisito**, y lo implementa **F7.2a**.
+
+**Criterios de aceptación — quitar y reducir** (F7.2):
 - [ ] Se pueden **quitar ítems** de una orden `activa`; el stock reservado de esos ítems se libera de inmediato.
 - [ ] Se puede **reducir la cantidad** de un ítem, ajustando la reserva.
 - [ ] El total se recalcula automáticamente y el cambio queda registrado en el historial de la orden.
@@ -622,6 +624,25 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] Antes de confirmar, la pantalla dice **qué pasa con el stock**: cuántas unidades se liberan y en cuánto queda el disponible de esa variante. Es el número con el que se decide si conviene.
 - [ ] **Quitar y bajar la cantidad son dos acciones separadas**, cada una con su confirmación. Bajar deja el producto en la orden; quitar lo saca, y si era el único, además cancela. Un solo control que llegue hasta cero mezcla las dos y convierte un cero distraído en una cancelación.
 - [ ] **Ninguna se puede deshacer, y las dos lo avisan.** Volver a agregar no está en este requisito —habría que reservar de nuevo y puede no haber stock— y de `cancelada` no se sale (RF-13).
+
+**Criterios de aceptación — sumar** (F7.2a):
+- [ ] Se puede **aumentar la cantidad** de un ítem que ya está en la orden; la diferencia se reserva.
+- [ ] Se puede **agregar un producto que no estaba**, buscándolo por nombre, con su color y su cantidad; se reserva al agregarlo.
+- [ ] **Si no hay stock disponible, no se agrega**, y se dice cuánto hay. Es la diferencia de fondo con quitar: quitar siempre se puede y sumar puede no poderse.
+- [ ] Agregar un producto **que ya está en la orden suma sobre su renglón**, no crea un segundo renglón igual. Es lo mismo que hace el carrito (RF-08).
+- [ ] Las unidades que se suman a un renglón existente van **al precio de ese renglón**, no al del catálogo de hoy: ese es el precio que se acordó para esa línea, y es el que el comprador ya vio.
+- [ ] Un producto nuevo entra **al precio vigente del catálogo**, con su descuento aplicado (RN-04b), y queda congelado como cualquier otro renglón (RN-12).
+- [ ] El total se recalcula y el cambio queda en el historial con su autor, igual que al quitar.
+- [ ] Sólo se puede sumar a órdenes `activas`.
+- [ ] Antes de confirmar, la pantalla dice **qué pasa con el stock**, como en RF-22: cuántas unidades se reservan y en cuánto queda el disponible.
+
+> **El precio no se edita desde acá.** Cambiar el precio de un renglón de una orden web es cambiar lo que el comprador aceptó, y para eso está el canal por el que se acordó. Precio editable existe en las **órdenes manuales** (RF-24), que son ventas ya cerradas fuera de la web. Si hace falta otro precio para las unidades nuevas, se quita el renglón y se carga como corresponda.
+
+> **Sumar no bloquea por falta de stock «con aviso», como sí hace RF-24.** La orden manual registra una venta **que ya ocurrió**, y por eso puede dejar el stock en negativo y limitarse a advertir. Acá la venta todavía no pasó: reservar de más rompería el invariante `reserved_stock <= stock_total` (`TECHNICAL-SPEC.md` §8.1), que es lo único que evita vender dos veces la misma unidad en la tienda. Si va a entrar mercadería, primero se carga el stock (RF-16) y después se suma.
+
+> **El sistema no le avisa al comprador.** No hay emails de cambios de estado (FA-07) ni de confirmación de orden (FA-06): el aviso lo da la vendedora por el mismo WhatsApp donde se acordó. Lo que sí pasa solo es que **«Mis compras» (RF-07) muestra la orden ya cambiada**, con su total nuevo, y el historial deja registrado quién la tocó. La pantalla que suma se lo recuerda.
+
+---
 
 > **La edición se registra en el historial de estados, como `activa → activa`** (F4.4). Es el único historial que tiene la orden, y ensanchar su uso es preferible a partir la línea de tiempo en dos tablas que la pantalla después tiene que volver a unir. **Pero no se muestra así**: el panel lee esas filas y dice lo que pasó —«Se quitó "Auricular Cloud II (Rojo)"»—, porque «Activa → Activa» es la implementación asomándose (F7.2).
 

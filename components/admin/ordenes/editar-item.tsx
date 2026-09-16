@@ -30,8 +30,9 @@ import type { ItemDeLaOrdenDelPanel } from "@/modules/orders/queries-panel";
  * selector que llega hasta cero sería devolver esa confusión por la pantalla.
  *
  * **Las dos preguntan, y las dos dicen qué pasa con el stock.** Ninguna se
- * puede deshacer: RF-22 no tiene «volver a agregar» —habría que reservar de
- * nuevo y puede no haber— y RF-13 no deja salir de `cancelada`. Y lo que se
+ * puede deshacer **por ahora**: sumar es F7.2a —hay que reservar de nuevo y
+ * puede no haber— y de `cancelada` no se sale nunca (RF-13). Cuando F7.2a
+ * exista, los textos de estos diálogos hay que releerlos. Y lo que se
  * libera es lo que importa: el diálogo dice en cuánto queda el disponible,
  * que es el número con el que se decide si conviene o no.
  *

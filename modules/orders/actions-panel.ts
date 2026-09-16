@@ -80,9 +80,10 @@ export const quitarItemDeLaOrden = action
 /**
  * Bajar la cantidad de un renglón — RF-22.
  *
- * Sólo baja: agregar unidades habría que reservarlas y puede no haber stock,
- * y eso no está en el MVP. Lo rechaza `reducirCantidad`, no este esquema: la
- * cantidad de la que se baja es la de la base, no la que diga el cliente.
+ * Sólo baja: subir unidades hay que reservarlas y el stock puede no estar,
+ * así que es su propia operación — **F7.2a**, que llega después de F7.4. Lo
+ * rechaza `reducirCantidad`, no este esquema: la cantidad de la que se baja
+ * es la de la base, no la que diga el cliente.
  */
 export const reducirCantidadDelItem = action
   .input(laOrden.extend({ cantidad: z.number().int().min(1).max(9999) }))
