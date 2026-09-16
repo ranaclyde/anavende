@@ -681,7 +681,9 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] La orden queda marcada con origen **manual** para distinguirla en los reportes (RF-28).
 - [ ] Se anota si fue **envío o retiro**, como en el checkout (RF-11). **Con envío, la dirección es obligatoria**, y el formulario lo dice: una orden sin dirección se lee como retiro (2026-09-14).
 - [ ] Se puede crear directamente como `activa` (reserva stock) o como `finalizada` (descuenta stock de una).
-- [ ] El sistema advierte —sin bloquear— si la cantidad supera el stock disponible, para permitir registrar ventas ya ocurridas.
+- [ ] El sistema advierte —sin bloquear— si la cantidad supera el stock disponible, para permitir registrar ventas ya ocurridas. **Eso vale para la orden que nace `finalizada`**, que es la venta ya hecha: el stock baja y puede quedar en negativo (TS §5.4), y esa es la señal de discrepancia que el panel destaca. **Una orden que nace `activa` sí necesita stock libre**: reservar de más rompería el invariante que impide vender dos veces la misma unidad, y no registraría una venta ocurrida sino que prometería una entrega imposible. Cuando no alcanza, se dice y se ofrecen las dos salidas: cargarla como finalizada si ya se entregó, o ajustar el stock antes (RF-16).
+
+> **El matiz de la última línea se escribió el 2026-09-16, al implementar F7.4.** El requisito decía «advierte sin bloquear» sin distinguir entre los dos estados iniciales que él mismo permite, y para uno de los dos no se puede cumplir: el `CHECK reserved_within_total` de TS §5.4 —el mismo que deja pasar el stock negativo— impide comprometer unidades que no existen. Lo que se conserva es la intención del requisito, que es no obligar a la vendedora a mentirle al sistema sobre una venta que ya ocurrió.
 
 ---
 

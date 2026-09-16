@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -216,8 +216,18 @@ export function SinOrdenes() {
       <p className="text-body-sm text-ink">Todavía no hay ninguna orden.</p>
       <p className="max-w-prose text-caption text-ink-secondary">
         Cuando alguien confirme un pedido en la tienda vas a verlo acá, y te va
-        a llegar un email con el detalle.
+        a llegar un email con el detalle. Las ventas por WhatsApp o en persona
+        se cargan a mano, y también cuentan.
       </p>
+      {/* La acción sugerida que pide §6.9 para un vacío: sin órdenes web
+          todavía, cargar una a mano es lo único que se puede hacer desde
+          esta pantalla. */}
+      <Button asChild variant="secondary" size="sm" className="mt-1">
+        <Link href="/admin/ordenes/nueva">
+          <Plus aria-hidden />
+          Cargar una venta
+        </Link>
+      </Button>
     </div>
   );
 }

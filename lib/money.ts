@@ -35,6 +35,20 @@ export function isMoney(valor: unknown): valor is Money {
 }
 
 /**
+ * De lo que escribe una persona al formato del sistema.
+ *
+ * **La coma decimal es la de acá**, y rechazarla sería pedirle a la vendedora
+ * que escriba como la base. La validación del servidor ya hacía esta misma
+ * conversión antes de mirar el formato (el precio de un producto, F2.4); vive
+ * acá desde F7.4, cuando el alta manual necesitó que **la pantalla** también
+ * la entendiera: el total se calcula mientras se escribe, y con «150000,50»
+ * mostraba $ 0 hasta que alguien pusiera un punto.
+ */
+export function comoMonto(escrito: string): string {
+  return escrito.trim().replace(",", ".");
+}
+
+/**
  * Punto de entrada único. Rechaza cualquier cosa que no sea un monto
  * bien formado: es preferible un error acá que un `NaN` propagándose.
  */

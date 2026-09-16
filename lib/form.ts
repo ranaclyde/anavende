@@ -50,3 +50,26 @@ export function leerErrores<C extends string = string>(
     detalles,
   };
 }
+
+/**
+ * Los errores de un objeto anidado dentro de la entrada — la dirección de una
+ * orden manual (F7.4), que llega como `direccion.street` y no como `street`.
+ *
+ * `leerErrores` aplana un solo nivel a propósito: casi todos los formularios
+ * son planos, y devolver el árbol entero obligaría a cada uno a recorrerlo.
+ * Cuando hay una sección adentro, se pide con esto.
+ */
+export function erroresDeSeccion<C extends string = string>(
+  resultado: Extract<ActionResult<unknown>, { ok: false }>,
+  seccion: string,
+): Partial<Record<C, string>> {
+  const arbol = resultado.details?.fields as ArbolDeErrores | undefined;
+  const rama = arbol?.properties?.[seccion] as ArbolDeErrores | undefined;
+
+  const campos: Partial<Record<C, string>> = {};
+  for (const [campo, valor] of Object.entries(rama?.properties ?? {})) {
+    const primero = valor?.errors?.[0];
+    if (primero) campos[campo as C] = primero;
+  }
+  return campos;
+}

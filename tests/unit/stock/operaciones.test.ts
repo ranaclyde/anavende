@@ -219,6 +219,37 @@ describe("vender", () => {
       });
     });
 
+    test("le descuenta a SU variante y a ninguna otra", async () => {
+      // Este test existe por un error de verdad, encontrado en F7.4 al cargar
+      // la primera orden manual del navegador: se vendieron 2 unidades de un
+      // color y otro color del mismo producto bajó 2 también, sin asiento.
+      //
+      // La causa era de precedencia: la condición de esta operación es la
+      // única con un `OR` adentro, y `WHERE id = X AND a OR b` se lee como
+      // `(id = X AND a) OR b` — la segunda rama actualizaba toda variante que
+      // la cumpliera. Los otros tests no lo veían porque miran una sola
+      // variante, y con una sola no hay nada más que romper.
+      const vendida = await unaVariante({ total: 10 });
+      const testigo = await unaVariante({ total: 3 });
+
+      await enTransaccion((tx) =>
+        vender(tx, {
+          variantId: vendida.variantId,
+          quantity: 2,
+          desdeReserva: false,
+        }),
+      );
+
+      expect(await contadores(vendida.variantId)).toEqual({
+        stockTotal: 8,
+        reservedStock: 0,
+      });
+      expect(await contadores(testigo.variantId)).toEqual({
+        stockTotal: 3,
+        reservedStock: 0,
+      });
+    });
+
     test("pero no puede dejar el total por debajo de lo comprometido", async () => {
       // Bajar de 10 a 4 con 6 reservadas está bien; a 3 no, porque esas 6
       // unidades ya tienen dueño. Sale como resultado del negocio y no como

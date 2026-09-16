@@ -83,9 +83,18 @@ function esUnaEdicion(e: EntradaDelHistorial): boolean {
  * la pantalla. Y una edición **no se anuncia como «Activa → Activa»**, que es
  * la cañería asomándose: el propio motivo —«Se quitó "Auricular Cloud II"»—
  * ya dice qué pasó, y mejor que cualquier resumen.
+ *
+ * **Una orden manual puede nacer finalizada** (RF-24, F7.4), y entonces esa
+ * primera fila es `null → finalizada`: nunca estuvo activa, así que no hay
+ * una segunda fila que contar. Se dice completo, porque «Se creó la orden» a
+ * secas dejaría sin explicar por qué el stock se descontó de una.
  */
 function quePaso(e: EntradaDelHistorial): string {
-  if (e.desde === null) return "Se creó la orden";
+  if (e.desde === null) {
+    return e.hacia === "activa"
+      ? "Se creó la orden"
+      : `Se creó la orden, ya ${nombreDelEstado(e.hacia).toLowerCase()}`;
+  }
   if (esUnaEdicion(e)) return e.motivo ?? "Se editó la orden";
   return `${nombreDelEstado(e.desde)} → ${nombreDelEstado(e.hacia)}`;
 }
