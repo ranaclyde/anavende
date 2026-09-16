@@ -3,11 +3,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { TarjetaDeDevolucion } from "@/components/admin/devoluciones/tarjeta";
 import {
   EstadoDeLaOrden,
   OrigenDeLaOrden,
 } from "@/components/admin/ordenes/estado";
 import { AgregarALaOrden } from "@/components/admin/ordenes/agregar-item";
+import { DevolverDeLaOrden } from "@/components/admin/ordenes/devolver";
 import { EditarElRenglon } from "@/components/admin/ordenes/editar-item";
 import { HistorialDeLaOrden } from "@/components/admin/ordenes/historial";
 import { ResolverLaOrden } from "@/components/admin/ordenes/resolver";
@@ -29,6 +31,11 @@ import {
   leerOrdenDelPanel,
   type OrdenDelPanel,
 } from "@/modules/orders/queries-panel";
+import {
+  devolucionesDeLaOrden,
+  devueltasPorRenglon,
+  type Devolucion,
+} from "@/modules/returns/queries";
 
 type Props = { params: Promise<{ numero: string }> };
 
@@ -48,11 +55,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * Aquél cuenta en qué anda su pedido; éste es la hoja de trabajo: lleva el
  * teléfono, el email, la dirección entera y quién movió qué cosa cuándo.
  *
- * **Las acciones viven acá y sólo mientras la orden está activa**: editar
- * renglón por renglón en la tabla —quitar, bajar y subir (F7.2 y F7.2a)—,
- * agregar un producto al pie de esa misma tabla, y finalizar o cancelar en la
- * cabecera (F7.3). Sobre una finalizada o una cancelada no hay nada que
- * hacer (RF-13), así que no hay controles apagados: simplemente no están.
+ * **Las acciones viven acá, y cada estado tiene las suyas.** Mientras la orden
+ * está activa se edita renglón por renglón en la tabla —quitar, bajar y subir
+ * (F7.2 y F7.2a)—, se agrega un producto al pie de esa misma tabla, y se
+ * finaliza o se cancela en la cabecera (F7.3). **Una vez finalizada lo único
+ * que puede pasarle es una devolución** (RF-25, F7.5), y por eso el botón
+ * aparece recién ahí: lo que todavía no se entregó no se devuelve, se edita o
+ * se cancela. Sobre una cancelada no hay nada que hacer (RF-13), así que no
+ * hay controles apagados: simplemente no están.
  */
 export default async function DetalleDeLaOrden({ params }: Props) {
   const { numero: crudo } = await params;
@@ -60,8 +70,35 @@ export default async function DetalleDeLaOrden({ params }: Props) {
   // Sólo dígitos: `parseInt` aceptaría «1043abc» como 1043.
   if (!/^\d{1,9}$/.test(crudo)) notFound();
 
-  const orden = await leerOrdenDelPanel(Number.parseInt(crudo, 10));
+  const numero = Number.parseInt(crudo, 10);
+
+  // **En paralelo, y las devoluciones se piden siempre.** Esperar a la orden
+  // para sacarle el `id` y recién entonces buscar sus devoluciones sería una
+  // cascada en la pantalla que más se abre del panel; y preguntarlas sólo si
+  // está finalizada obligaría a la misma espera. Una orden sin devoluciones
+  // —que son casi todas— contesta con una lista vacía.
+  const [orden, devoluciones] = await Promise.all([
+    leerOrdenDelPanel(numero),
+    devolucionesDeLaOrden(numero),
+  ]);
   if (!orden) notFound();
+
+  // Lo ya devuelto de cada renglón, contando sólo las devoluciones vigentes:
+  // anular libera el cupo (RF-25). Es el mismo criterio que el tope del
+  // dominio, calculado sobre lo que ya se leyó.
+  const devueltas = devueltasPorRenglon(devoluciones);
+  const paraDevolver = orden.items
+    .map((item) => ({
+      id: item.id,
+      nombre: item.nombre,
+      color: item.color,
+      cantidad: item.cantidad,
+      yaDevueltas: devueltas.get(item.id) ?? 0,
+      stock: item.stock,
+    }))
+    // Un renglón devuelto del todo no se puede volver a devolver: ofrecerlo
+    // sería ofrecer un error (RF-25).
+    .filter((item) => item.cantidad > item.yaDevueltas);
 
   const direccion = orden.shippingAddress;
   const envio = formaDeEntrega(orden) === "envio" && direccion;
@@ -105,6 +142,13 @@ export default async function DetalleDeLaOrden({ params }: Props) {
               Escribirle por WhatsApp
             </a>
           </Button>
+
+          {/* RF-25. Sólo sobre una finalizada, y sólo si queda algo por
+              devolver: un diálogo que se abre para decir que no hay nada es
+              el que sobra. */}
+          {orden.estado === "finalizada" && paraDevolver.length > 0 ? (
+            <DevolverDeLaOrden numero={orden.numero} items={paraDevolver} />
+          ) : null}
 
           {/* RF-23. Sólo desde `activa`: es lo que dice `TRANSICIONES`, y de
               las otras dos no sale ninguna flecha. */}
@@ -153,6 +197,7 @@ export default async function DetalleDeLaOrden({ params }: Props) {
       <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
         <div className="flex flex-col gap-4">
           <Renglones orden={orden} />
+          <Devoluciones devoluciones={devoluciones} />
           <HistorialDeLaOrden entradas={orden.historial} />
         </div>
 
@@ -364,6 +409,37 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
           {formatMoney(orden.total)}
         </p>
       </div>
+    </section>
+  );
+}
+
+/**
+ * Las devoluciones de esta orden — RF-25. Tarea F7.5.
+ *
+ * **Va entre los renglones y el historial**, que es el lugar que le
+ * corresponde por lo que cuenta: qué se vendió, qué volvió de eso, y recién
+ * después quién movió la orden y cuándo. Sin esto, una orden con media
+ * devolución registrada se leería como si se hubiera entregado entera.
+ *
+ * **Cuando no hay ninguna no se dibuja nada.** Una sección vacía titulada
+ * «Devoluciones» en cada una de las órdenes del año es ruido: lo que no pasó
+ * no ocupa lugar (§8).
+ */
+function Devoluciones({ devoluciones }: { devoluciones: Devolucion[] }) {
+  if (devoluciones.length === 0) return null;
+
+  return (
+    <section aria-labelledby="devoluciones" className="flex flex-col gap-2">
+      <h2 id="devoluciones" className="text-body-sm font-medium text-ink">
+        Devoluciones
+      </h2>
+      <ul className="flex flex-col gap-2">
+        {devoluciones.map((devolucion) => (
+          <li key={devolucion.id}>
+            <TarjetaDeDevolucion devolucion={devolucion} />
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

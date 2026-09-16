@@ -8,7 +8,21 @@
  * cambie el otro deja de encontrar y no lo dice.
  */
 
+import {
+  fecha,
+  pagina as leerPagina,
+  texto,
+  unaDe,
+  type ParametrosDeBusqueda,
+} from "@/lib/filtros-url";
 import type { EstadoOrden } from "@/modules/orders/estados";
+
+/**
+ * Leer un valor de la URL sin fallar nunca es de `lib/filtros-url.ts`: lo
+ * comparte con el listado de devoluciones (F7.5), y una segunda definición de
+ * «qué es una fecha válida en la URL» es la que un día deja de coincidir.
+ */
+export type { ParametrosDeBusqueda };
 
 /**
  * Las solapas de RF-21, y por qué son solapas y no un `<select>` más.
@@ -78,45 +92,6 @@ export const FILTROS_VACIOS: FiltrosDeOrdenes = {
  */
 export const POR_PAGINA = 40;
 
-/** Lo que Next entrega tras hacerle `await` a `searchParams` (§10.2). */
-export type ParametrosDeBusqueda = Record<
-  string,
-  string | string[] | undefined
->;
-
-function texto(valor: string | string[] | undefined): string {
-  // Un parámetro repetido —`?q=a&q=b`— llega como arreglo. Se toma el primero
-  // en vez de fallar: la URL la escribe cualquiera, no solo la barra.
-  return (Array.isArray(valor) ? valor[0] : valor)?.trim() ?? "";
-}
-
-function unaDe<T extends string>(
-  valor: string | string[] | undefined,
-  opciones: readonly { valor: T }[],
-  porDefecto: T,
-): T {
-  const v = texto(valor);
-  return opciones.some((o) => o.valor === v) ? (v as T) : porDefecto;
-}
-
-const FECHA = /^\d{4}-\d{2}-\d{2}$/;
-
-/**
- * Una fecha del calendario, o `""`.
- *
- * Se valida la **forma y el valor**: `2026-02-31` tiene forma de fecha y no
- * existe, y entraría a Postgres para hacerlo fallar. Lo que no se reconoce se
- * descarta, como todo lo demás acá.
- */
-function fecha(valor: string | string[] | undefined): string {
-  const v = texto(valor);
-  if (!FECHA.test(v)) return "";
-  const d = new Date(`${v}T00:00:00Z`);
-  return Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== v
-    ? ""
-    : v;
-}
-
 /**
  * Lee los filtros de la URL sin fallar nunca.
  *
@@ -133,7 +108,7 @@ export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeOrdenes {
   const desde = fecha(params.desde);
   const hasta = fecha(params.hasta);
   const alReves = desde && hasta && desde > hasta;
-  const pagina = Number.parseInt(texto(params.pagina), 10);
+  const pagina = leerPagina(params.pagina);
 
   return {
     solapa: unaDe(params.estado, SOLAPAS, FILTROS_VACIOS.solapa),
@@ -141,7 +116,7 @@ export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeOrdenes {
     origen: unaDe(params.origen, ORIGENES, FILTROS_VACIOS.origen),
     desde: alReves ? hasta : desde,
     hasta: alReves ? desde : hasta,
-    pagina: Number.isInteger(pagina) && pagina >= 1 ? pagina : 1,
+    pagina,
   };
 }
 
