@@ -44,13 +44,20 @@ const campos = z.object({
     invalido:
       "Ese teléfono no parece válido. Escribilo con característica, por ejemplo 2920 55 5555.",
   }),
-  street: obligatorio("Escribí la calle.", 80, "Ese nombre es demasiado largo."),
+  street: obligatorio(
+    "Escribí la calle.",
+    80,
+    "Ese nombre es demasiado largo.",
+  ),
   number: obligatorio(
     "Escribí la altura. Si no tiene, poné «S/N».",
     10,
     "Esa altura es demasiado larga.",
   ),
-  apartment: opcional(30, "Eso es demasiado largo para un piso o departamento."),
+  apartment: opcional(
+    30,
+    "Eso es demasiado largo para un piso o departamento.",
+  ),
   /** Una de `LOCALIDADES` u `OTRA_LOCALIDAD`: lo mira `problemasDeUbicacion`. */
   localidad: z.string(),
   otraLocalidad: opcional(60, "Ese nombre es demasiado largo."),
@@ -58,7 +65,7 @@ const campos = z.object({
   notes: opcional(200, "Las referencias pueden tener hasta 200 caracteres."),
 });
 
-type Ubicacion = {
+export type Ubicacion = {
   localidad: string;
   otraLocalidad: string | null;
   provinciaDeOtra?: string;
@@ -67,9 +74,11 @@ type Ubicacion = {
 /**
  * La localidad tiene que ser de la zona, y «Otra localidad cercana» necesita
  * nombre y provincia. Es una función aparte, y no un `superRefine` escrito
- * dos veces, porque la usan el alta y la edición.
+ * dos veces, porque la usan el alta y la edición — y desde F7.4, también la
+ * dirección de una orden manual (RF-24), que no se guarda en ninguna libreta
+ * pero se entrega en la misma zona.
  */
-function problemasDeUbicacion(v: Ubicacion) {
+export function problemasDeUbicacion(v: Ubicacion) {
   const problemas: { campo: keyof Ubicacion; mensaje: string }[] = [];
 
   if (v.localidad === OTRA_LOCALIDAD) {
@@ -79,10 +88,11 @@ function problemasDeUbicacion(v: Ubicacion) {
         mensaje: "Escribí el nombre de la localidad.",
       });
     }
-    if (
-      !PROVINCIAS_DE_LA_ZONA.some((p) => p === v.provinciaDeOtra)
-    ) {
-      problemas.push({ campo: "provinciaDeOtra", mensaje: "Elegí la provincia." });
+    if (!PROVINCIAS_DE_LA_ZONA.some((p) => p === v.provinciaDeOtra)) {
+      problemas.push({
+        campo: "provinciaDeOtra",
+        mensaje: "Elegí la provincia.",
+      });
     }
   } else if (!LOCALIDADES.some((l) => l.nombre === v.localidad)) {
     problemas.push({ campo: "localidad", mensaje: "Elegí la localidad." });
@@ -117,21 +127,46 @@ export const soloIdSchema = z.object({ id: z.uuid() });
 export function aDatosDeDireccion(
   v: z.output<typeof campos>,
 ): DatosDeDireccion {
-  const { localidad, otraLocalidad, provinciaDeOtra, ...resto } = v;
-  const conocida = LOCALIDADES.find((l) => l.nombre === localidad);
-
+  // Campo por campo y no con un `...resto`: los tres de la ubicación no se
+  // guardan como vienen —los reemplaza `ubicacionGuardada`— y descartarlos
+  // desestructurando deja tres variables que nadie usa.
   return {
-    ...resto,
-    ...(conocida
-      ? {
-          city: conocida.nombre,
-          province: conocida.provincia,
-          postalCode: conocida.codigoPostal,
-        }
-      : {
-          city: otraLocalidad ?? "",
-          province: provinciaDeOtra ?? "",
-          postalCode: null,
-        }),
+    label: v.label,
+    recipientName: v.recipientName,
+    phone: v.phone,
+    street: v.street,
+    number: v.number,
+    apartment: v.apartment,
+    notes: v.notes,
+    ...ubicacionGuardada(v),
   };
+}
+
+/**
+ * De la localidad elegida a las tres columnas que se guardan.
+ *
+ * Vive aparte de `aDatosDeDireccion` porque la orden manual (F7.4) necesita
+ * esta mitad y no la otra: arma un snapshot, no una fila de `addresses`. Que
+ * la deducción esté escrita una sola vez es lo que evita que un día la
+ * libreta y las órdenes manuales pongan códigos postales distintos para la
+ * misma localidad.
+ */
+export function ubicacionGuardada(v: Ubicacion): {
+  city: string;
+  province: string;
+  postalCode: string | null;
+} {
+  const conocida = LOCALIDADES.find((l) => l.nombre === v.localidad);
+
+  return conocida
+    ? {
+        city: conocida.nombre,
+        province: conocida.provincia,
+        postalCode: conocida.codigoPostal,
+      }
+    : {
+        city: v.otraLocalidad ?? "",
+        province: v.provinciaDeOtra ?? "",
+        postalCode: null,
+      };
 }

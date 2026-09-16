@@ -75,6 +75,15 @@ type Movimiento = "ajuste" | "reserva" | "liberacion" | "venta" | "devolucion";
  * El `UPDATE` condicional, el `RETURNING` y el asiento, en ese orden y sin
  * nada en el medio. Las cinco operaciones son esta función con otro `SET` y
  * otro `WHERE`.
+ *
+ * **Los paréntesis alrededor de `donde` no son de estilo.** `AND` tiene
+ * precedencia sobre `OR`, así que una condición con un `OR` adentro se leía
+ * como `(id = X AND rama1) OR rama2`, y esa segunda rama **no filtra por
+ * variante**: el `UPDATE` le descontaba stock a toda variante que la
+ * cumpliera. La única condición con `OR` es la de la venta sin reserva
+ * (RF-24), que hasta F7.4 no la usaba nadie. Lo encontró el repaso en el
+ * navegador, con un producto de dos colores: se vendieron 2 del rojo y el
+ * negro bajó 2 también, sin asiento que lo explicara.
  */
 async function mover(
   tx: Transaccion,
@@ -94,7 +103,7 @@ async function mover(
        SET ${movimiento.set},
            updated_at = now()
      WHERE id = ${rastro.variantId}
-       AND ${movimiento.donde}
+       AND (${movimiento.donde})
     RETURNING stock_total AS "stockTotal",
               reserved_stock AS "reservedStock"`);
 
