@@ -14,10 +14,11 @@ import {
 import { historial, limpiarOrdenes } from "@/tests/apoyo/ordenes";
 
 /**
- * F7.2 — Editar una orden activa desde el panel. RF-22 · TS §8.1.
+ * F7.2 y F7.2a — Editar una orden activa desde el panel. RF-22 · TS §8.1.
  *
  * «Hecho cuando»: la vendedora quita renglones y baja cantidades desde la
- * interfaz, y la reserva se libera de inmediato.
+ * interfaz y la reserva se libera de inmediato (F7.2); y sube cantidades y
+ * agrega productos, reservando, sin poder pasarse del stock (F7.2a).
  *
  * **Lo que se prueba acá es la puerta, no la lógica.** Quitar y reducir ya
  * están probados contra Postgres en `editar.test.ts` desde F4.4 —la reserva,
@@ -39,8 +40,12 @@ vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
 /** `refresh()` lanza fuera de una Server Action de verdad (precedente: F5.3). */
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 
-const { quitarItemDeLaOrden, reducirCantidadDelItem } =
-  await import("@/modules/orders/actions-panel");
+const {
+  agregarItemALaOrden,
+  aumentarCantidadDelItem,
+  quitarItemDeLaOrden,
+  reducirCantidadDelItem,
+} = await import("@/modules/orders/actions-panel");
 const { crearOrdenDesdeCarrito } = await import("@/modules/orders/crear");
 const { finalizarOrden } = await import("@/modules/orders/estados");
 const { leerOrdenDelPanel } = await import("@/modules/orders/queries-panel");
@@ -391,5 +396,175 @@ describe("el impacto en el stock que ve la pantalla", () => {
     // que es lo que el diálogo tiene que explicar.
     expect(quedo.items[0].disponible).toBeNull();
     expect(quedo.items[0].nombre).toBeTruthy();
+  });
+});
+
+describe("sumar desde el panel (RF-22, F7.2a)", () => {
+  test("ni el anónimo ni el comprador suben nada", async () => {
+    const comprador = await unComprador();
+    const orden = await unaOrdenDe(comprador, [{ stock: 10, cantidad: 2 }]);
+
+    expect(
+      await aumentarCantidadDelItem({
+        numero: orden.numero,
+        itemId: orden.items[0],
+        cantidad: 5,
+      }),
+    ).toMatchObject({ ok: false, code: "FORBIDDEN" });
+
+    // Ni siquiera sobre su propia orden: lo suyo es cancelarla entera (F6.5).
+    comoSesion(comprador.userId, "customer");
+    expect(
+      await agregarItemALaOrden({
+        numero: orden.numero,
+        variantId: orden.variantes[0],
+        cantidad: 1,
+      }),
+    ).toMatchObject({ ok: false, code: "FORBIDDEN" });
+
+    expect(await contadores(orden.variantes[0])).toMatchObject({
+      reservedStock: 2,
+    });
+  });
+
+  test("subir la cantidad reserva la diferencia", async () => {
+    const comprador = await unComprador();
+    const ana = await unComprador();
+    const orden = await unaOrdenDe(comprador, [{ stock: 10, cantidad: 2 }]);
+
+    comoSesion(ana.userId, "admin");
+    const r = await aumentarCantidadDelItem({
+      numero: orden.numero,
+      itemId: orden.items[0],
+      cantidad: 5,
+    });
+
+    expect(r).toEqual({ ok: true, data: { cantidad: 5 } });
+    expect(await contadores(orden.variantes[0])).toEqual({
+      stockTotal: 10,
+      reservedStock: 5,
+    });
+    // Y el disponible que va a ver el próximo diálogo bajó igual: 8 → 5.
+    const quedo = (await leerOrdenDelPanel(orden.numero))!;
+    expect(quedo.items[0].disponible).toBe(5);
+  });
+
+  test("agregar un producto que no estaba crea su renglón", async () => {
+    const comprador = await unComprador();
+    const ana = await unComprador();
+    const orden = await unaOrdenDe(comprador, [{ stock: 10, cantidad: 2 }]);
+    const { variantId } = await unaVariante({ total: 4 });
+
+    comoSesion(ana.userId, "admin");
+    const r = await agregarItemALaOrden({
+      numero: orden.numero,
+      variantId,
+      cantidad: 3,
+    });
+
+    expect(r).toEqual({
+      ok: true,
+      data: { sumadoAlRenglon: false, cantidad: 3 },
+    });
+    expect(await contadores(variantId)).toEqual({
+      stockTotal: 4,
+      reservedStock: 3,
+    });
+    expect((await leerOrdenDelPanel(orden.numero))!.items).toHaveLength(2);
+  });
+
+  test("agregar lo que ya está suma sobre su renglón", async () => {
+    const comprador = await unComprador();
+    const ana = await unComprador();
+    const orden = await unaOrdenDe(comprador, [{ stock: 10, cantidad: 2 }]);
+
+    comoSesion(ana.userId, "admin");
+    const r = await agregarItemALaOrden({
+      numero: orden.numero,
+      variantId: orden.variantes[0],
+      cantidad: 2,
+    });
+
+    expect(r).toEqual({
+      ok: true,
+      data: { sumadoAlRenglon: true, cantidad: 4 },
+    });
+    const quedo = (await leerOrdenDelPanel(orden.numero))!;
+    expect(quedo.items).toHaveLength(1);
+    expect(quedo.items[0].cantidad).toBe(4);
+  });
+
+  test("sin stock no se suma, y el mensaje dice cuántas quedan", async () => {
+    const comprador = await unComprador();
+    const ana = await unComprador();
+    // 5 en total con 2 reservadas por esta orden: quedan 3.
+    const orden = await unaOrdenDe(comprador, [{ stock: 5, cantidad: 2 }]);
+
+    comoSesion(ana.userId, "admin");
+    const r = await aumentarCantidadDelItem({
+      numero: orden.numero,
+      itemId: orden.items[0],
+      cantidad: 9,
+    });
+
+    expect(r).toMatchObject({ ok: false, code: "INSUFFICIENT_STOCK" });
+    if (r.ok) return;
+    // Es la diferencia de fondo con la orden manual de RF-24, que advierte y
+    // deja pasar: ahí la venta ya ocurrió, acá todavía no.
+    expect(r.message).toContain("3 unidades");
+    expect(await contadores(orden.variantes[0])).toMatchObject({
+      reservedStock: 2,
+    });
+  });
+
+  test("el número de la URL tiene que llevar a SU orden", async () => {
+    const comprador = await unComprador();
+    const ana = await unComprador();
+    const mia = await unaOrdenDe(comprador, [{ stock: 10, cantidad: 2 }]);
+    const ajena = await unaOrdenDe(comprador, [{ stock: 10, cantidad: 4 }]);
+
+    comoSesion(ana.userId, "admin");
+
+    const cruzado = await aumentarCantidadDelItem({
+      numero: mia.numero,
+      itemId: ajena.items[0],
+      cantidad: 6,
+    });
+    expect(cruzado).toMatchObject({ ok: false, code: "NOT_FOUND" });
+    expect(await contadores(ajena.variantes[0])).toMatchObject({
+      reservedStock: 4,
+    });
+
+    const inventada = await agregarItemALaOrden({
+      numero: 999_999_999,
+      variantId: mia.variantes[0],
+      cantidad: 1,
+    });
+    expect(inventada).toMatchObject({ ok: false, code: "NOT_FOUND" });
+  });
+
+  test("a una orden finalizada no se le suma (RF-13)", async () => {
+    const comprador = await unComprador();
+    const ana = await unComprador();
+    const orden = await unaOrdenDe(comprador, [{ stock: 10, cantidad: 2 }]);
+    await db.transaction((tx) =>
+      finalizarOrden(tx, { orderId: orden.orderId }),
+    );
+
+    comoSesion(ana.userId, "admin");
+    expect(
+      await aumentarCantidadDelItem({
+        numero: orden.numero,
+        itemId: orden.items[0],
+        cantidad: 3,
+      }),
+    ).toMatchObject({ ok: false, code: "INVALID_ORDER_STATE" });
+    expect(
+      await agregarItemALaOrden({
+        numero: orden.numero,
+        variantId: orden.variantes[0],
+        cantidad: 1,
+      }),
+    ).toMatchObject({ ok: false, code: "INVALID_ORDER_STATE" });
   });
 });

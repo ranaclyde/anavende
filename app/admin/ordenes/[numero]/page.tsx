@@ -7,6 +7,7 @@ import {
   EstadoDeLaOrden,
   OrigenDeLaOrden,
 } from "@/components/admin/ordenes/estado";
+import { AgregarALaOrden } from "@/components/admin/ordenes/agregar-item";
 import { EditarElRenglon } from "@/components/admin/ordenes/editar-item";
 import { HistorialDeLaOrden } from "@/components/admin/ordenes/historial";
 import { ResolverLaOrden } from "@/components/admin/ordenes/resolver";
@@ -48,7 +49,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * teléfono, el email, la dirección entera y quién movió qué cosa cuándo.
  *
  * **Las acciones viven acá y sólo mientras la orden está activa**: editar
- * renglón por renglón en la tabla (F7.2), y finalizar o cancelar en la
+ * renglón por renglón en la tabla —quitar, bajar y subir (F7.2 y F7.2a)—,
+ * agregar un producto al pie de esa misma tabla, y finalizar o cancelar en la
  * cabecera (F7.3). Sobre una finalizada o una cancelada no hay nada que
  * hacer (RF-13), así que no hay controles apagados: simplemente no están.
  */
@@ -137,10 +139,11 @@ export default async function DetalleDeLaOrden({ params }: Props) {
 
       {orden.estado === "activa" ? (
         <p className="rounded-panel-card border border-dashed border-border bg-surface px-4 py-3 text-body-sm text-ink-secondary">
-          Podés quitar productos o bajar cantidades desde la tabla, y lo que
-          saques vuelve al stock enseguida. Cuando la entregues, finalizala: ahí
-          se descuenta el stock de verdad. Ni finalizarla ni cancelarla tienen
-          vuelta atrás.
+          Podés ajustar el pedido desde la tabla: quitar, bajar o sumar
+          cantidades y agregar productos. Lo que saques vuelve al stock
+          enseguida y lo que sumes se reserva, si hay. Cuando la entregues,
+          finalizala: ahí se descuenta el stock de verdad. Ni finalizarla ni
+          cancelarla tienen vuelta atrás.
         </p>
       ) : null}
 
@@ -343,6 +346,10 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
           </li>
         ))}
       </ul>
+
+      {/* RF-22: agregar va con los renglones y no en la cabecera — es una
+          operación sobre esta lista, y se lee al lado de lo que ya tiene. */}
+      {editable ? <AgregarALaOrden numero={orden.numero} /> : null}
 
       <div className="flex items-baseline justify-between gap-4 border-t border-border bg-surface-sunken px-3 py-3">
         <p className="text-body-sm text-ink">
