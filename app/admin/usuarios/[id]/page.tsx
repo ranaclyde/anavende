@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EstadoDeLaOrden } from "@/components/admin/ordenes/estado";
+import { BajaDeLaCuenta } from "@/components/admin/usuarios/baja";
 import { BloqueoDeLaCuenta } from "@/components/admin/usuarios/bloqueo";
 import {
   EstadoDelUsuario,
@@ -39,19 +40,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Ficha de un usuario — FS RF-26, RF-27. Tareas F7.6 y F7.7.
+ * Ficha de un usuario — FS RF-26, RF-27, RF-34. Tareas F7.6, F7.7 y F7.9.
  *
  * Es la hoja de trabajo de una cuenta: los datos que se corrigen, el rol que
- * se cambia, el email de contraseña nueva que se dispara, el bloqueo, y **sus
- * órdenes**, que es lo que contesta quién es esta persona para la tienda.
+ * se cambia, el email de contraseña nueva que se dispara, el bloqueo, la baja,
+ * y **sus órdenes**, que es lo que contesta quién es esta persona para la
+ * tienda.
  *
  * **La tarjeta de estado está siempre**, también cuando no pasa nada: es de
  * donde se bloquea (F7.7), así que esconderla mientras la cuenta está sana
  * escondería el botón. Antes aparecía sólo con algo que contar, porque no
  * había nada que hacer ahí.
  *
- * **Ejecutar una baja pedida sigue sin estar** (RF-34, F7.9): acá se ve, con
- * su motivo y su fecha, y no hay un botón apagado que no haga nada.
+ * **El bloque de la baja aparece cuando hay una** —pedida o ejecutada—, y no
+ * antes: no se puede dar de baja a quien no la pidió (F7.9), así que un botón
+ * permanente prometería algo que no existe.
  *
  * **Y no hay «eliminar»**, que tampoco va a venir: un comprador con órdenes no
  * se borra ni se puede borrar (§5.6, F4.5b).
@@ -94,6 +97,7 @@ export default async function FichaDeUsuario({ params }: Props) {
           <EstadoDelUsuario
             bloqueado={usuario.bloqueado}
             bajaPedida={usuario.bajaPedida}
+            dadoDeBaja={usuario.dadoDeBaja}
           />
           {esMiCuenta ? (
             <span className="text-caption text-ink-tertiary">(sos vos)</span>
@@ -170,8 +174,16 @@ export default async function FichaDeUsuario({ params }: Props) {
                 </p>
               </div>
             ) : (
+              // Con una baja encima no se dice «entra y compra con
+              // normalidad»: el bloque de abajo cuenta que no, y se
+              // contradirían a tres renglones de distancia. Lo que sí se dice
+              // es lo que esta mitad de la tarjeta contesta —si está
+              // bloqueada—, porque si no el botón queda pegado al título sin
+              // nada que lo ubique.
               <p className="text-body-sm text-ink-secondary">
-                Entra y compra con normalidad.
+                {usuario.dadoDeBaja || usuario.bajaPedida
+                  ? "No está bloqueada."
+                  : "Entra y compra con normalidad."}
               </p>
             )}
 
@@ -179,31 +191,14 @@ export default async function FichaDeUsuario({ params }: Props) {
               id={usuario.id}
               nombre={usuario.firstName}
               bloqueado={usuario.bloqueado}
+              dadoDeBaja={usuario.dadoDeBaja}
               esMiCuenta={esMiCuenta}
               esLaUnicaAdministradora={
                 usuario.rol === "admin" && administradoras <= 1
               }
             />
 
-            {usuario.bajaPedida ? (
-              <div className="flex flex-col gap-1 border-t border-border pt-3">
-                <p className="text-body-sm text-ink">
-                  Pidió la baja de su cuenta
-                  {usuario.bajaPedidaEn
-                    ? ` el ${fechaConHora(usuario.bajaPedidaEn)}`
-                    : ""}
-                  .
-                </p>
-                <p className="text-body-sm text-ink-secondary">
-                  <span className="text-ink-tertiary">Motivo: </span>
-                  {usuario.motivoDeLaBaja}
-                </p>
-                <p className="text-caption text-ink-tertiary">
-                  Mientras tanto su cuenta es de solo lectura: puede entrar y
-                  mirar, no comprar.
-                </p>
-              </div>
-            ) : null}
+            <LaBaja usuario={usuario} />
           </Tarjeta>
 
           <HistorialDeEstado movimientos={usuario.historialDeEstado} />
@@ -214,18 +209,91 @@ export default async function FichaDeUsuario({ params }: Props) {
 }
 
 /**
- * Cada bloqueo y cada desbloqueo — RF-27: «se puede desbloquear, quedando
- * también registrado». Tarea F7.7.
+ * La baja de la cuenta — RF-34, RN-13. Tarea F7.9.
  *
- * **Sin bloqueos no hay tarjeta.** Es el caso de casi todas las cuentas, y un
- * «todavía no pasó nada» ocupando lugar en la columna del costado no le
- * contesta nada a nadie. Distinto de la tarjeta de estado de arriba, que está
- * siempre porque tiene el botón.
+ * **Tres situaciones y no dos.** Sin baja no se dibuja nada: la baja la pide
+ * la persona, así que acá no hay nada que ofrecer. Pedida, se lee el motivo
+ * que escribió y el botón la ejecuta. Ejecutada, se lee quién y cuándo, y el
+ * botón la revierte.
+ *
+ * **El motivo se sigue mostrando después de ejecutarla**: es lo que contesta
+ * por qué esa cuenta ya no está, y es lo primero que se va a querer saber
+ * cuando alguien pregunte. Lo que lo borra es revertir.
+ */
+function LaBaja({ usuario }: { usuario: UsuarioDelPanel }) {
+  if (!usuario.bajaPedida && !usuario.dadoDeBaja) return null;
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-border pt-3">
+      <div className="flex flex-col gap-1">
+        {usuario.dadoDeBaja ? (
+          <p className="text-body-sm text-ink">
+            Dada de baja
+            {usuario.dadoDeBajaEn
+              ? ` el ${fechaConHora(usuario.dadoDeBajaEn)}`
+              : ""}
+            {usuario.dadoDeBajaPor ? ` por ${usuario.dadoDeBajaPor}` : ""}, a
+            pedido suyo
+            {usuario.bajaPedidaEn
+              ? ` del ${fechaCorta(usuario.bajaPedidaEn)}`
+              : ""}
+            .
+          </p>
+        ) : (
+          <p className="text-body-sm text-ink">
+            Pidió la baja de su cuenta
+            {usuario.bajaPedidaEn
+              ? ` el ${fechaConHora(usuario.bajaPedidaEn)}`
+              : ""}
+            .
+          </p>
+        )}
+
+        {/* RF-34: el motivo es obligatorio y lo garantiza un CHECK, así que si
+            hay baja hay motivo. */}
+        <p className="text-body-sm text-ink-secondary">
+          <span className="text-ink-tertiary">Motivo: </span>
+          {usuario.motivoDeLaBaja}
+        </p>
+
+        <p className="text-caption text-ink-tertiary">
+          {usuario.dadoDeBaja
+            ? "No puede entrar, y eso es lo que ve al intentarlo. No se borró nada: revertirla la devuelve con todo lo suyo."
+            : "Mientras tanto su cuenta es de solo lectura: puede entrar y mirar, no comprar. Puede retirar el pedido ella misma."}
+        </p>
+      </div>
+
+      <BajaDeLaCuenta
+        id={usuario.id}
+        nombre={usuario.firstName}
+        dadoDeBaja={usuario.dadoDeBaja}
+      />
+    </div>
+  );
+}
+
+/** Cómo se lee cada fila del historial. */
+const MOVIMIENTOS: Record<MovimientoDeEstado["evento"], string> = {
+  bloqueo: "Bloqueada",
+  desbloqueo: "Desbloqueada",
+  baja: "Dada de baja",
+  reversion_de_baja: "Baja revertida",
+};
+
+/**
+ * Lo que le pasó a la cuenta — RF-27: «se puede desbloquear, quedando también
+ * registrado», y RF-34, que pide lo mismo de la baja. Tareas F7.7 y F7.9.
+ *
+ * **Sin nada que contar no hay tarjeta.** Es el caso de casi todas las
+ * cuentas, y un «todavía no pasó nada» ocupando lugar en la columna del
+ * costado no le contesta nada a nadie. Distinto de la tarjeta de estado de
+ * arriba, que está siempre porque tiene el botón.
  *
  * **Se lee del más nuevo al más viejo** y cada fila dice quién y cuándo, que
- * es lo que §13.5 pide auditar. El motivo se repite en la fila del bloqueo
- * aunque arriba también esté: arriba está el del bloqueo vigente, y acá el de
- * cada uno de los que hubo.
+ * es lo que §13.5 pide auditar. El motivo se repite en la fila aunque arriba
+ * también esté: arriba está el de lo que pasa hoy, y acá el de cada una de las
+ * veces que pasó. **Es lo único que queda de una baja revertida**, que borra
+ * el pedido y su motivo.
  */
 function HistorialDeEstado({
   movimientos,
@@ -235,12 +303,12 @@ function HistorialDeEstado({
   if (movimientos.length === 0) return null;
 
   return (
-    <Tarjeta titulo="Bloqueos">
+    <Tarjeta titulo="Historial de la cuenta">
       <ul className="flex flex-col gap-3">
         {movimientos.map((m) => (
           <li key={m.fecha} className="flex flex-col gap-0.5">
             <p className="text-body-sm text-ink">
-              {m.evento === "bloqueo" ? "Bloqueada" : "Desbloqueada"}
+              {MOVIMIENTOS[m.evento]}
               {" el "}
               <time dateTime={m.fecha}>{fechaConHora(m.fecha)}</time>
               {/* El autor puede faltar: `actor_user_id` es SET NULL, así que

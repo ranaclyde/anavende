@@ -3,6 +3,7 @@ import "server-only";
 import { sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db";
+import type { UserStatusEvent } from "@/db/schema";
 import type { Money } from "@/lib/money";
 import type { EstadoOrden } from "@/modules/orders/estados";
 import {
@@ -28,8 +29,10 @@ export type UsuarioDelListado = {
   telefono: string;
   rol: RolDeUsuario;
   bloqueado: boolean;
-  /** RF-34: la baja pedida y todavía no ejecutada. La ejecuta F7.9. */
+  /** RF-34: la pidió y nadie la ejecutó todavía. Es trabajo por hacer. */
   bajaPedida: boolean;
+  /** RF-34: la baja ya ejecutada (F7.9). No es lo mismo que bloqueado. */
+  dadoDeBaja: boolean;
   creadoEn: string;
   /** Cuántas órdenes tiene, que es lo que dice si es un cliente de verdad. */
   ordenes: number;
@@ -60,11 +63,18 @@ function condiciones(filtros: FiltrosDeUsuarios): SQL {
 
   if (filtros.q) partes.push(condicionDeBusqueda(filtros.q));
   if (filtros.rol !== "todos") partes.push(sql`p.role = ${filtros.rol}`);
-  if (filtros.estado !== "todos") {
+  // «Activos» es lo que queda cuando se sacan las dos formas de estar afuera:
+  // el bloqueo y la baja ejecutada. La baja **pedida** no saca a nadie de ahí
+  // —la cuenta entra, en solo lectura— y por eso es un filtro aparte (RF-34).
+  if (filtros.estado === "bloqueados") partes.push(sql`p.is_banned`);
+  if (filtros.estado === "dados-de-baja")
+    partes.push(sql`p.closed_at IS NOT NULL`);
+  if (filtros.estado === "baja-pedida")
     partes.push(
-      filtros.estado === "bloqueados" ? sql`p.is_banned` : sql`NOT p.is_banned`,
+      sql`p.closure_requested_at IS NOT NULL AND p.closed_at IS NULL`,
     );
-  }
+  if (filtros.estado === "activos")
+    partes.push(sql`NOT p.is_banned AND p.closed_at IS NULL`);
 
   return partes.length
     ? sql`WHERE ${sql.join(partes, sql` AND `)}`
@@ -93,7 +103,9 @@ export async function listarUsuarios(
              p.phone      AS telefono,
              p.role       AS rol,
              p.is_banned  AS bloqueado,
-             p.closure_requested_at IS NOT NULL AS "bajaPedida",
+             (p.closure_requested_at IS NOT NULL
+              AND p.closed_at IS NULL)        AS "bajaPedida",
+             p.closed_at IS NOT NULL          AS "dadoDeBaja",
              p.created_at AS "creadoEn",
              (SELECT count(*)::int FROM orders o WHERE o.user_id = p.id)
                AS ordenes
@@ -116,9 +128,9 @@ export type OrdenDelUsuario = {
   unidades: number;
 };
 
-/** Una fila del historial de bloqueos — RF-27, §5.3. Tarea F7.7. */
+/** Una fila del historial de la cuenta — RF-27, RF-34, §5.3. F7.7 y F7.9. */
 export type MovimientoDeEstado = {
-  evento: "bloqueo" | "desbloqueo";
+  evento: UserStatusEvent;
   motivo: string | null;
   autor: string | null;
   fecha: string;
@@ -131,13 +143,23 @@ export type UsuarioDelPanel = UsuarioDelListado & {
   motivoDelBloqueo: string | null;
   bloqueadoEn: string | null;
   bloqueadoPor: string | null;
-  /** RF-34: el motivo de la baja pedida, que escribió el comprador (F5.8). */
+  /**
+   * RF-34: el motivo de la baja, que escribió el comprador (F5.8).
+   *
+   * **Sigue estando después de ejecutarla**, y es a propósito: es lo que
+   * contesta por qué esa cuenta ya no está. Lo que lo borra es revertirla, y
+   * ahí queda en el historial.
+   */
   motivoDeLaBaja: string | null;
   bajaPedidaEn: string | null;
+  /** RF-34, F7.9: cuándo la ejecutó la administradora, y cuál. */
+  dadoDeBajaEn: string | null;
+  dadoDeBajaPor: string | null;
   /** Las últimas cinco, que es lo que la ficha muestra. */
   ultimasOrdenes: OrdenDelUsuario[];
   /**
-   * Cada bloqueo y cada desbloqueo, del más nuevo al más viejo (RF-27).
+   * Todo lo que le pasó a la cuenta, del más nuevo al más viejo: bloqueos y
+   * desbloqueos (RF-27), bajas ejecutadas y revertidas (RF-34).
    *
    * **Es lo único que queda cuando la cuenta vuelve a estar desbloqueada**:
    * las columnas de arriba dicen cómo está hoy, no lo que pasó. Va entera y
@@ -171,9 +193,13 @@ export async function leerUsuarioDelPanel(
            p.ban_reason AS "motivoDelBloqueo",
            p.banned_at  AS "bloqueadoEn",
            b.full_name  AS "bloqueadoPor",
-           p.closure_requested_at IS NOT NULL AS "bajaPedida",
+           (p.closure_requested_at IS NOT NULL
+            AND p.closed_at IS NULL)        AS "bajaPedida",
+           p.closed_at IS NOT NULL          AS "dadoDeBaja",
            p.closure_reason       AS "motivoDeLaBaja",
            p.closure_requested_at AS "bajaPedidaEn",
+           p.closed_at            AS "dadoDeBajaEn",
+           c.full_name            AS "dadoDeBajaPor",
            p.created_at AS "creadoEn",
            (SELECT count(*)::int FROM orders o WHERE o.user_id = p.id)
              AS ordenes,
@@ -211,6 +237,7 @@ export async function leerUsuarioDelPanel(
              WHERE h.user_id = p.id) AS "historialDeEstado"
       FROM user_profiles p
       LEFT JOIN user_profiles b ON b.id = p.banned_by
+      LEFT JOIN user_profiles c ON c.id = p.closed_by
      WHERE p.id = ${id}`);
 
   return fila ?? null;

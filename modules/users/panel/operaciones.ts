@@ -22,6 +22,10 @@ import type { RolAsignable } from "@/modules/users/panel/schemas";
  * **No hay «eliminar usuario», y es a propósito** (§5.6, F4.5b): un comprador
  * con órdenes no se borra ni se puede borrar —`orders.user_id` es `RESTRICT`—.
  * Lo que existe es bloquear (RF-27, F7.7) y dar de baja (RF-34, F7.9).
+ *
+ * **La baja se EJECUTA acá y se PIDE en `modules/users/baja`**, que es el lado
+ * del comprador. Están separadas porque son dos permisos distintos sobre la
+ * misma columna, y vive de este lado lo que pasa por `.auth("admin")`.
  */
 
 /** A dónde lleva el enlace de los emails que se disparan desde acá. */
@@ -233,18 +237,29 @@ export async function cambiarRolDeUsuario(datos: {
 export async function mandarRecuperacion(id: string): Promise<{
   email: string;
 }> {
-  const [usuario] = await db.execute<{ email: string; isBanned: boolean }>(sql`
-    SELECT email, is_banned AS "isBanned" FROM user_profiles WHERE id = ${id}`);
+  const [usuario] = await db.execute<{
+    email: string;
+    isBanned: boolean;
+    dadoDeBaja: boolean;
+  }>(sql`
+    SELECT email,
+           is_banned AS "isBanned",
+           closed_at IS NOT NULL AS "dadoDeBaja"
+      FROM user_profiles WHERE id = ${id}`);
 
   if (!usuario) throw domainError("NOT_FOUND");
 
   // A una cuenta bloqueada no se le manda a elegir contraseña: no va a poder
-  // entrar igual (RF-27), y el email la invitaría a intentarlo.
-  if (usuario.isBanned) {
+  // entrar igual (RF-27), y el email la invitaría a intentarlo. Con la baja
+  // ejecutada pasa lo mismo, y es peor: a alguien que se fue por su cuenta, un
+  // email para elegir contraseña le llega como si nada hubiera pasado.
+  if (usuario.isBanned || usuario.dadoDeBaja) {
     throw domainError("VALIDATION", {
-      message:
-        "Esa cuenta está bloqueada: desbloqueala primero y después mandale " +
-        "el email.",
+      message: usuario.dadoDeBaja
+        ? "Esa cuenta está dada de baja: revertí la baja primero y después " +
+          "mandale el email."
+        : "Esa cuenta está bloqueada: desbloqueala primero y después mandale " +
+          "el email.",
     });
   }
 
@@ -275,7 +290,7 @@ export async function mandarRecuperacion(id: string): Promise<{
  * **La sesión que ya estaba abierta la cierra `proxy.ts`**, en el próximo
  * pedido a una ruta privada: un JWT emitido no se puede revocar y el
  * `admin.signOut` del SDK pide el token de esa persona, que no tenemos
- * (`modules/users/bloqueo.ts` lo cuenta entero).
+ * (`modules/users/acceso.ts` lo cuenta entero).
  *
  * **El motivo no es una nota interna: es lo que la persona lee al intentar
  * entrar** (`components/shop/login-form.tsx`, desde F1.7). La restricción
@@ -302,14 +317,32 @@ export async function bloquearUsuario(datos: {
   const yaEstaba = await db.transaction(async (tx) => {
     // Se bloquea la fila mientras se decide: sin esto, dos pedidos a la vez
     // escriben dos filas de historial para un solo bloqueo.
-    const [usuario] = await tx.execute<{ role: string; isBanned: boolean }>(sql`
-      SELECT role, is_banned AS "isBanned"
+    const [usuario] = await tx.execute<{
+      role: string;
+      isBanned: boolean;
+      dadoDeBaja: boolean;
+    }>(sql`
+      SELECT role,
+             is_banned AS "isBanned",
+             closed_at IS NOT NULL AS "dadoDeBaja"
         FROM user_profiles
        WHERE id = ${datos.id}
          FOR NO KEY UPDATE`);
 
     if (!usuario) throw domainError("NOT_FOUND");
     if (usuario.isBanned) return true;
+
+    // **Una cuenta dada de baja no se bloquea** (F7.9). Ya no puede entrar, y
+    // las dos marcas juntas dejan a la pantalla de ingreso decidiendo cuál de
+    // los dos mensajes da: el de RN-13 —«te fuiste»— o el del bloqueo. Que no
+    // se puedan cruzar es más barato que elegir bien cada vez.
+    if (usuario.dadoDeBaja) {
+      throw domainError("VALIDATION", {
+        message:
+          "Esa cuenta está dada de baja: ya no puede entrar, así que no hace " +
+          "falta bloquearla.",
+      });
+    }
 
     // La misma regla que el rol (F7.6) por el mismo motivo: bloquear a la
     // última administradora deja la tienda sin nadie que entre al panel, y
@@ -342,7 +375,7 @@ export async function bloquearUsuario(datos: {
 
   return {
     bloqueado: true,
-    errorDeAuth: await enAuth(datos.id, DURACION_DEL_BLOQUEO),
+    errorDeAuth: await sincronizarAuth(datos.id),
   };
 }
 
@@ -389,18 +422,149 @@ export async function desbloquearUsuario(datos: {
 
   if (!estaba) return { desbloqueado: false, errorDeAuth: null };
 
-  return { desbloqueado: true, errorDeAuth: await enAuth(datos.id, "none") };
+  return { desbloqueado: true, errorDeAuth: await sincronizarAuth(datos.id) };
+}
+
+/**
+ * Ejecutar una baja pedida — FS RF-34, RN-13 · TS §13.5b. Tarea F7.9.
+ *
+ * **Solo se ejecuta lo que el comprador pidió** (decisión tuya del
+ * 2026-09-17), y lo sostiene el `CHECK` `closed_was_requested`: acá no hay
+ * forma de dar de baja a alguien que no lo pidió. Para sacar a alguien por
+ * decisión de la vendedora está el bloqueo (RF-27), que además exige un motivo
+ * y se lo muestra. Si se pudieran las dos cosas desde el mismo lugar,
+ * «se fue sola» dejaría de querer decir eso.
+ *
+ * **El motivo no se pide ni se pisa**: el que queda es el que escribió la
+ * persona al pedirla, y es el que va a la fila del historial. La
+ * administradora ejecuta, no redacta.
+ *
+ * **El mismo orden que el bloqueo, y por el mismo motivo**: primero la base
+ * —donde queda registrado quién y cuándo, que es lo que RF-34 pide— y después
+ * Supabase Auth. Al revés, un fallo de la base dejaría a alguien afuera sin
+ * registro de nada.
+ *
+ * Ejecutar lo ya ejecutado no hace nada, igual que bloquear lo bloqueado.
+ */
+export async function ejecutarBaja(datos: {
+  id: string;
+  actorId: string;
+}): Promise<{ ejecutada: boolean; errorDeAuth: string | null }> {
+  const hecha = await db.transaction(async (tx) => {
+    const [usuario] = await tx.execute<{
+      pedida: boolean;
+      yaEsta: boolean;
+      motivo: string | null;
+    }>(sql`
+      SELECT closure_requested_at IS NOT NULL AS pedida,
+             closed_at            IS NOT NULL AS "yaEsta",
+             closure_reason                   AS motivo
+        FROM user_profiles
+       WHERE id = ${datos.id}
+         FOR NO KEY UPDATE`);
+
+    if (!usuario) throw domainError("NOT_FOUND");
+    if (usuario.yaEsta) return false;
+
+    // Pudo retirarlo mientras la administradora miraba la ficha: es una
+    // pantalla que se deja abierta, y el pedido lo retira la persona cuando
+    // quiere. Se dice qué pasó, no «no se pudo».
+    if (!usuario.pedida) {
+      throw domainError("INVALID_ORDER_STATE", {
+        message:
+          "Esa cuenta ya no tiene la baja pedida: la persona retiró el " +
+          "pedido. Actualizá la página.",
+      });
+    }
+
+    await tx.execute(sql`
+      UPDATE user_profiles
+         SET closed_at  = now(),
+             closed_by  = ${datos.actorId},
+             updated_at = now()
+       WHERE id = ${datos.id}`);
+
+    await tx.execute(sql`
+      INSERT INTO user_status_history (user_id, event, reason, actor_user_id)
+      VALUES (${datos.id}, 'baja', ${usuario.motivo}, ${datos.actorId})`);
+
+    return true;
+  });
+
+  if (!hecha) return { ejecutada: false, errorDeAuth: null };
+
+  return {
+    ejecutada: true,
+    errorDeAuth: await sincronizarAuth(datos.id),
+  };
+}
+
+/**
+ * Revertir una baja ejecutada — RF-34: «la persona vuelve con su historial,
+ * sus direcciones y sus favoritos intactos». Tarea F7.9.
+ *
+ * **Vuelve entera, no a medias**: se limpian la ejecución y también el pedido
+ * con su motivo, así que la cuenta queda como cualquier otra. Dejarle el
+ * pedido puesto la devolvería a solo lectura, que es un estado que nadie
+ * eligió: quien pidió la baja fue la persona, y si vuelve es porque lo
+ * arreglaron.
+ *
+ * **Nada que restaurar**: la baja nunca borró nada (§5.6). Es una marca, y
+ * sacarla alcanza.
+ *
+ * El motivo que se limpia no se pierde: quedó en la fila `baja` del historial.
+ */
+export async function revertirBaja(datos: {
+  id: string;
+  actorId: string;
+}): Promise<{ revertida: boolean; errorDeAuth: string | null }> {
+  const estaba = await db.transaction(async (tx) => {
+    const [usuario] = await tx.execute<{ dadoDeBaja: boolean }>(sql`
+      SELECT closed_at IS NOT NULL AS "dadoDeBaja"
+        FROM user_profiles
+       WHERE id = ${datos.id}
+         FOR NO KEY UPDATE`);
+
+    if (!usuario) throw domainError("NOT_FOUND");
+    if (!usuario.dadoDeBaja) return false;
+
+    await tx.execute(sql`
+      UPDATE user_profiles
+         SET closed_at            = NULL,
+             closed_by            = NULL,
+             closure_requested_at = NULL,
+             closure_reason       = NULL,
+             updated_at           = now()
+       WHERE id = ${datos.id}`);
+
+    await tx.execute(sql`
+      INSERT INTO user_status_history (user_id, event, actor_user_id)
+      VALUES (${datos.id}, 'reversion_de_baja', ${datos.actorId})`);
+
+    return true;
+  });
+
+  if (!estaba) return { revertida: false, errorDeAuth: null };
+
+  return { revertida: true, errorDeAuth: await sincronizarAuth(datos.id) };
 }
 
 /**
  * Cien años, que es lo que §13.5 eligió para decir «para siempre»: GoTrue
- * guarda una fecha (`banned_until`) y no un booleano, así que un bloqueo sin
+ * guarda una fecha (`banned_until`) y no un booleano, así que un cierre sin
  * fin se escribe como uno muy largo.
  */
-const DURACION_DEL_BLOQUEO = "876000h";
+const SIN_VENCIMIENTO = "876000h";
 
 /**
- * El paso que le toca a Supabase Auth, y lo que pasa si no contesta.
+ * Dejar a Supabase Auth de acuerdo con el perfil, y lo que pasa si no contesta.
+ *
+ * **No recibe qué escribir: lo deduce.** `ban_duration` es lo único que GoTrue
+ * entiende y **el bloqueo y la baja comparten esa misma llave** (§13.5b), así
+ * que quien levante una tiene que mirar la otra antes: desbloquear a alguien
+ * que además está dado de baja, escribiendo `none` a ciegas, le devolvería el
+ * ingreso a una cuenta que no puede entrar. Con las dos marcas leídas del
+ * perfil ese cruce no se puede escribir mal.
  *
  * **No se reintenta ni se deshace lo guardado.** Con la marca en el perfil, la
  * cuenta ya no puede operar —toda Server Action relee el perfil (§13.3)—, así
@@ -413,9 +577,13 @@ const DURACION_DEL_BLOQUEO = "876000h";
  * es invalidar el token de acceso que ya está emitido —se verifica localmente
  * (§13.3)—, y de eso se encarga el proxy. Medido el 2026-09-16.
  */
-async function enAuth(id: string, duracion: string): Promise<string | null> {
+async function sincronizarAuth(id: string): Promise<string | null> {
+  const [perfil] = await db.execute<{ afuera: boolean }>(sql`
+    SELECT is_banned OR closed_at IS NOT NULL AS afuera
+      FROM user_profiles WHERE id = ${id}`);
+
   const { error } = await createServiceClient().auth.admin.updateUserById(id, {
-    ban_duration: duracion,
+    ban_duration: perfil?.afuera ? SIN_VENCIMIENTO : "none",
   });
   return error?.message ?? null;
 }

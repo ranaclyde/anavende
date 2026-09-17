@@ -82,6 +82,7 @@ export function ListadoDeUsuarios({
                     <EstadoDelUsuario
                       bloqueado={usuario.bloqueado}
                       bajaPedida={usuario.bajaPedida}
+                      dadoDeBaja={usuario.dadoDeBaja}
                     />
                   </div>
                 </TableCell>
@@ -115,6 +116,7 @@ export function ListadoDeUsuarios({
                   <EstadoDelUsuario
                     bloqueado={usuario.bloqueado}
                     bajaPedida={usuario.bajaPedida}
+                    dadoDeBaja={usuario.dadoDeBaja}
                   />
                 </div>
                 <span className="truncate text-caption text-ink-tertiary">

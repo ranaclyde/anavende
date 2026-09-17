@@ -2,9 +2,14 @@
  * Filtros del listado de usuarios del panel — FS RF-26, §10.2. Tarea F7.6.
  *
  * RF-26 pide búsqueda por nombre o email y filtros por **estado** y por
- * **rol**. El estado tiene hoy dos valores y va a tener tres: la baja de
- * cuenta (RF-34) es un estado propio, distinto del bloqueo (RN-13), y lo
- * agrega F7.9 —que es la tarea que la ejecuta— sobre esta misma lista.
+ * **rol**. RF-34 pide que el estado distinga los tres que puede tener una
+ * cuenta: activa, bloqueada y dada de baja.
+ *
+ * **Y hay un cuarto valor que no es un estado: «Con baja pedida»** (decisión
+ * tuya del 2026-09-17, F7.9). La baja pedida no es un estado de la cuenta
+ * —está activa, en solo lectura— sino trabajo por hacer, y es a donde tiene
+ * que llevar el aviso de pendientes del inicio del panel. Sin este valor, ese
+ * enlace no tiene a dónde ir.
  *
  * **No es `server-only`**: la consulta lee estos valores y la barra los
  * escribe, como en los otros dos listados del panel.
@@ -28,9 +33,11 @@ export const ROLES = [
 export type FiltroDeRol = (typeof ROLES)[number]["valor"];
 
 export const ESTADOS = [
-  { valor: "todos", etiqueta: "Activos y bloqueados" },
+  { valor: "todos", etiqueta: "Todos los estados" },
   { valor: "activos", etiqueta: "Solo activos" },
   { valor: "bloqueados", etiqueta: "Solo bloqueados" },
+  { valor: "baja-pedida", etiqueta: "Con baja pedida" },
+  { valor: "dados-de-baja", etiqueta: "Dados de baja" },
 ] as const;
 
 export type FiltroDeEstado = (typeof ESTADOS)[number]["valor"];

@@ -806,7 +806,11 @@ dados es una persona, no un formulario.
       el pedido** él mismo, desde «Mis datos», y la cuenta vuelve a como
       estaba (2026-09-14).
 - [ ] La administradora ve las bajas pendientes en el panel y **las ejecuta**
-      (RF-26). Al ejecutarla queda registrado quién y cuándo.
+      (RF-26). Al ejecutarla queda registrado quién y cuándo. **Solo ejecuta lo
+      pedido** (2026-09-17): no puede dar de baja a quien no la pidió, porque
+      para sacar a alguien por decisión suya está el bloqueo de RF-27, que
+      además exige motivo y se lo muestra. Si las dos cosas salieran del mismo
+      botón, «se fue sola» dejaría de querer decir eso (RN-13).
 - [ ] **La baja es lógica: no se borra nada.** Un usuario dado de baja no puede
       iniciar sesión y, al intentarlo, ve un mensaje **distinto del bloqueo de
       RF-27** — se fue por su cuenta, no lo echaron. Sus sesiones activas se
@@ -814,7 +818,10 @@ dados es una persona, no un formulario.
 - [ ] La administradora puede **revertirla**, y ahí la persona vuelve con su
       historial, sus direcciones y sus favoritos intactos.
 - [ ] El listado de usuarios de RF-26 distingue los tres estados: activo,
-      bloqueado y dado de baja.
+      bloqueado y dado de baja. **Y filtra además por «con baja pedida»**
+      (2026-09-17), que no es un estado de la cuenta —está activa, en solo
+      lectura— sino trabajo por hacer: es a donde lleva el aviso de pendientes
+      del inicio del panel (RF-14).
 
 > **RN-13.** Un usuario dado de baja no es un usuario bloqueado. Comparten el
 > efecto —no puede entrar, no se borra nada, se revierte— y no comparten el

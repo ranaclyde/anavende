@@ -115,3 +115,13 @@ export const bloqueoDeUsuario = z.object({
 });
 
 export const desbloqueoDeUsuario = z.object({ id: z.uuid() });
+
+/**
+ * Ejecutar y revertir una baja — RF-34. Tarea F7.9.
+ *
+ * **Sin motivo, ni en una ni en otra.** El de la baja lo escribió el comprador
+ * al pedirla (F5.8) y es el que queda registrado: la administradora ejecuta lo
+ * pedido, no lo redacta. Y revertir es devolverle la cuenta a alguien que la
+ * quiere de vuelta, que tampoco necesita explicación escrita.
+ */
+export const bajaDeUsuario = z.object({ id: z.uuid() });

@@ -22,21 +22,28 @@ export function nombreDelRol(rol: RolDeUsuario): string {
 /**
  * El estado de la cuenta.
  *
- * **Bloqueado y baja pedida son dos cosas distintas** (RN-13, §13.5b) y por eso
- * son dos etiquetas: el bloqueo lo decide la vendedora (RF-27) y la baja la
- * pide la persona (RF-34). Se ven acá desde F7.6; ejecutarlas es de F7.7 y
- * F7.9.
+ * **Bloqueado y dado de baja son dos cosas distintas** (RN-13, §13.5b) y por
+ * eso son dos etiquetas y no una: el bloqueo lo decide la vendedora (RF-27) y
+ * la baja la pide la persona (RF-34). La misma palabra para las dos sería
+ * decirle a quien se fue solo que lo echaron.
+ *
+ * **«Baja pedida» no dice cómo está la cuenta, dice qué falta hacer**: está
+ * activa, en solo lectura, esperando que alguien la ejecute (F7.9). Por eso es
+ * `warning` y no `danger`, que es el tono de lo que ya no entra.
  */
 export function EstadoDelUsuario({
   bloqueado,
   bajaPedida,
+  dadoDeBaja,
 }: {
   bloqueado: boolean;
   bajaPedida: boolean;
+  dadoDeBaja: boolean;
 }) {
   return (
     <>
       {bloqueado ? <Badge tone="danger">Bloqueado</Badge> : null}
+      {dadoDeBaja ? <Badge tone="neutral">Dado de baja</Badge> : null}
       {bajaPedida ? <Badge tone="warning">Baja pedida</Badge> : null}
     </>
   );

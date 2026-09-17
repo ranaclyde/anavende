@@ -200,12 +200,27 @@ export const ingresar = action
     // RF-27: el bloqueado ve LA RAZÓN. GoTrue devuelve `user_banned` —también
     // cuando la contraseña es incorrecta, comprobado en F1.7— pero no guarda
     // el motivo: ese es nuestro (§13.5).
+    //
+    // **Y `user_banned` son dos cosas distintas** (RN-13, §13.5b): para GoTrue
+    // una cuenta dada de baja y una bloqueada son idénticas —`ban_duration` es
+    // lo único que esa capa entiende—, así que quién es cada una se decide acá,
+    // mirando el perfil. Sin esto, a quien se fue por su cuenta le diríamos
+    // que lo bloquearon.
     if (error.code === "user_banned") {
       const [perfil] = await db
-        .select({ motivo: userProfiles.banReason })
+        .select({
+          motivo: userProfiles.banReason,
+          closedAt: userProfiles.closedAt,
+        })
         .from(userProfiles)
         .where(eq(sql`lower(${userProfiles.email})`, input.email))
         .limit(1);
+
+      if (perfil?.closedAt) {
+        throw domainError("ACCOUNT_CLOSED", {
+          dadaDeBajaEl: perfil.closedAt.toISOString(),
+        });
+      }
 
       throw domainError("USER_BANNED", {
         motivo: perfil?.motivo ?? null,

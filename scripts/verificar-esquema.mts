@@ -80,7 +80,7 @@ const checks = (
     SELECT conname FROM pg_constraint
     WHERE contype = 'c' AND connamespace = 'public'::regnamespace ORDER BY 1`
 ).map((c) => c.conname);
-for (const c of ["ban_has_reason", "discount_valid", "reserved_within_total", "web_order_has_user", "singleton"]) {
+for (const c of ["ban_has_reason", "closure_has_reason", "closed_was_requested", "discount_valid", "reserved_within_total", "web_order_has_user", "singleton"]) {
   ok(checks.includes(c), `CHECK ${c}`);
 }
 

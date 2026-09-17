@@ -8,7 +8,7 @@ import {
   puedeVerLaTiendaCerrada,
   REINTENTAR_EN_SEGUNDOS,
 } from "@/modules/settings/mantenimiento";
-import { estaBloqueado } from "@/modules/users/bloqueo";
+import { tieneElAccesoCortado } from "@/modules/users/acceso";
 
 /**
  * Redirección temprana por sesión ausente — TECHNICAL-SPEC §6.1 y §13.7.
@@ -75,7 +75,9 @@ export async function updateSession(request: NextRequest) {
     return alIngreso(request, pathname);
   }
 
-  // Cuenta bloqueada: se le cierra la sesión acá — RF-27, F7.7.
+  // Cuenta bloqueada o dada de baja: se le cierra la sesión acá — RF-27 y
+  // RF-34; F7.7 y F7.9. Son dos situaciones distintas (RN-13) y acá el trato
+  // es el mismo: afuera. Lo que las separa es el mensaje del ingreso.
   //
   // ES LA ÚNICA CAPA QUE PUEDE HACERLO. Bloquear corta el refresco del token
   // en Supabase Auth, pero el que ya tiene se verifica LOCALMENTE (§13.3) y
@@ -89,7 +91,7 @@ export async function updateSession(request: NextRequest) {
   // a cada visita para eso sería pagar en la pantalla más cargada del sitio
   // por algo que no cambia nada.
   if (esPrivada && typeof data?.claims?.sub === "string") {
-    if (await estaBloqueado(data.claims.sub)) {
+    if (await tieneElAccesoCortado(data.claims.sub)) {
       return alIngreso(request, pathname, { cerrandoSesion: true });
     }
   }
