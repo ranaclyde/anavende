@@ -14,7 +14,19 @@ import {
   sinFiltros,
   urlDeFiltros,
   type FiltrosDeOrdenes,
+  type Solapa,
 } from "@/modules/orders/filtros-panel";
+
+/**
+ * Qué fecha recorta el rango en cada solapa — F7.8. La regla vive en
+ * `queries-panel.ts`; esto es cómo se dice.
+ */
+const FECHA_DE_LA_SOLAPA: Record<Solapa, string> = {
+  activas: "fecha de carga",
+  finalizadas: "fecha de entrega",
+  canceladas: "fecha de cancelación",
+  todas: "fecha de carga",
+};
 
 /**
  * Búsqueda, origen y rango de fechas del listado de órdenes — RF-21, §10.2.
@@ -151,6 +163,7 @@ export function BarraDeFiltros({
           <div className="flex min-w-0 items-center gap-2">
             <label
               htmlFor={`${id}-desde`}
+              title={`Por ${FECHA_DE_LA_SOLAPA[filtros.solapa]}`}
               className="shrink-0 text-body-sm text-ink-secondary"
             >
               Desde
@@ -180,6 +193,15 @@ export function BarraDeFiltros({
               className="min-w-0 flex-1 sm:w-40 sm:flex-none"
             />
           </div>
+
+          {/* Qué fecha se está recortando, porque depende de la solapa
+              (F7.8): en «Finalizadas» el rango mira cuándo se entregó y no
+              cuándo se cargó. Sin decirlo, la misma pareja de campos daría
+              resultados distintos según dónde se esté parada y nadie sabría
+              por qué (§8). */}
+          <p className="text-caption text-ink-tertiary sm:ml-1">
+            Por {FECHA_DE_LA_SOLAPA[filtros.solapa]}
+          </p>
         </div>
       </div>
 

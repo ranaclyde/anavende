@@ -32,14 +32,32 @@ import { cn } from "@/lib/utils";
  * El interruptor de modo oscuro vive al pie del menú.
  */
 
-const SECCIONES = [
+type Seccion = {
+  href: string;
+  etiqueta: string;
+  Icono: typeof LayoutDashboard;
+  exacto?: boolean;
+  /** Si está, la sección todavía no existe: se ve apagada y se dice por qué. */
+  pendiente?: string;
+};
+
+const SECCIONES: Seccion[] = [
   { href: "/admin", etiqueta: "Inicio", Icono: LayoutDashboard, exacto: true },
   { href: "/admin/productos", etiqueta: "Productos", Icono: Package },
   { href: "/admin/ordenes", etiqueta: "Órdenes", Icono: ShoppingBag },
   { href: "/admin/devoluciones", etiqueta: "Devoluciones", Icono: ArrowLeftRight },
   { href: "/admin/catalogo", etiqueta: "Catálogo", Icono: PanelsTopLeft },
   { href: "/admin/usuarios", etiqueta: "Usuarios", Icono: Users },
-  { href: "/admin/reportes", etiqueta: "Reportes", Icono: FileText },
+  // Apagado hasta F9.1, que es la tarea que construye la pantalla (decisión
+  // tuya del 2026-09-17). La entrada estaba y la ruta no existe: era un 404 a
+  // un clic del inicio, y un 404 adentro del panel se lee como que algo se
+  // rompió. Para encenderlo: sacar `pendiente`. Nada más.
+  {
+    href: "/admin/reportes",
+    etiqueta: "Reportes",
+    Icono: FileText,
+    pendiente: "Llega con los reportes de ventas",
+  },
   { href: "/admin/configuracion", etiqueta: "Configuración", Icono: Settings },
 ];
 
@@ -154,11 +172,36 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
 
         <nav className="flex-1 overflow-y-auto p-2">
           <ul className="flex flex-col gap-0.5">
-            {SECCIONES.map(({ href, etiqueta, Icono, exacto }) => {
+            {SECCIONES.map(({ href, etiqueta, Icono, exacto, pendiente }) => {
               const activa = exacto
                 ? pathname === href
                 : pathname === href || pathname.startsWith(`${href}/`);
               const soloIcono = colapsado && !abiertoEnMovil;
+
+              // Sin pantalla a la que ir no hay enlace: un `<span>` apagado,
+              // con el motivo en el `title` y leído por `aria-disabled`. Es el
+              // mismo criterio que los controles apagados del panel (§8): se
+              // ve que está, y se dice por qué todavía no.
+              if (pendiente) {
+                return (
+                  <li key={href}>
+                    <span
+                      aria-disabled
+                      title={soloIcono ? `${etiqueta} — ${pendiente}` : pendiente}
+                      className={cn(
+                        "flex h-10 items-center gap-3 rounded-panel-control px-2.5",
+                        "text-body-sm text-ink-tertiary",
+                        soloIcono && "justify-center px-0",
+                      )}
+                    >
+                      <Icono aria-hidden className="size-4 shrink-0" />
+                      {!soloIcono && (
+                        <span className="truncate">{etiqueta}</span>
+                      )}
+                    </span>
+                  </li>
+                );
+              }
 
               return (
                 <li key={href}>

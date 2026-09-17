@@ -253,6 +253,70 @@ describe("el listado", () => {
     expect(await entre("2026-03-01", "2026-03-09")).toEqual([]);
   });
 
+  test("en «Finalizadas» el rango mira cuándo se entregó, no cuándo se cargó", async () => {
+    const apodo = apellido();
+    const comprador = await unComprador();
+    const { orderId, numero } = await ordenDe(comprador, {
+      nombre: `Rosa ${apodo}`,
+    });
+
+    // Cargada a fin de febrero y entregada en marzo: es la orden que el
+    // tablero del inicio (F7.8) cuenta como venta de marzo, porque RF-28 dice
+    // que la venta ocurre cuando se entrega. Si el rango mirara `created_at`,
+    // ese número abriría un listado donde no está.
+    await db.transaction((tx) => finalizarOrden(tx, { orderId }));
+    await db.execute(sql`
+      UPDATE orders
+         SET created_at   = '2026-02-27 10:00:00-03',
+             finalized_at = '2026-03-05 10:00:00-03'
+       WHERE id = ${orderId}`);
+
+    const enMarzo = async (solapa: "finalizadas" | "todas") =>
+      (
+        await listarOrdenesDelPanel(
+          filtros({
+            solapa,
+            q: apodo,
+            desde: "2026-03-01",
+            hasta: "2026-03-31",
+          }),
+        )
+      ).ordenes.map((o) => o.numero);
+
+    expect(await enMarzo("finalizadas")).toEqual([numero]);
+
+    // «Todas» mezcla los tres estados, así que sigue recortando por la fecha
+    // de carga: ahí la orden es de febrero.
+    expect(await enMarzo("todas")).toEqual([]);
+  });
+
+  test("en «Canceladas» mira cuándo se canceló", async () => {
+    const apodo = apellido();
+    const comprador = await unComprador();
+    const { orderId, numero } = await ordenDe(comprador, {
+      nombre: `Rosa ${apodo}`,
+    });
+
+    await db.transaction((tx) =>
+      cancelarOrden(tx, { orderId, reason: "Se arrepintió" }),
+    );
+    await db.execute(sql`
+      UPDATE orders
+         SET created_at   = '2026-02-27 10:00:00-03',
+             cancelled_at = '2026-03-05 10:00:00-03'
+       WHERE id = ${orderId}`);
+
+    const r = await listarOrdenesDelPanel(
+      filtros({
+        solapa: "canceladas",
+        q: apodo,
+        desde: "2026-03-01",
+        hasta: "2026-03-31",
+      }),
+    );
+    expect(r.ordenes.map((o) => o.numero)).toEqual([numero]);
+  });
+
   test("pagina, y la segunda página no repite la primera", async () => {
     const apodo = apellido();
     const comprador = await unComprador();
