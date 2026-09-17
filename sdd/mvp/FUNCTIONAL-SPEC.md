@@ -594,7 +594,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 
 **Criterios de aceptación:**
 - [ ] Solapas/filtros por estado: **activas**, **finalizadas**, **canceladas** (y «todas»). La solapa por omisión es **activas**: el listado se abre en lo que hay que preparar, no en el archivo histórico.
-- [ ] Filtros por rango de fechas, comprador y origen (web / manual).
+- [ ] Filtros por rango de fechas, comprador y origen (web / manual). **El rango recorta por la fecha del estado que muestra la solapa** (2026-09-17): en «Finalizadas» por la de entrega, en «Canceladas» por la de cancelación, y en «Activas» y «Todas» por la de carga, que es la única que tienen en común. La pantalla dice cuál está usando.
 
 > **El «filtro por comprador» es la búsqueda, y no un desplegable** (F7.1). Una lista con todos los compradores registrados crece sin techo, deja afuera las órdenes manuales —que no tienen cuenta (RF-24)— y obliga a saber el nombre exacto antes de empezar. El mismo campo que busca por número busca por nombre y por email, que es lo que se tiene a mano cuando alguien escribe preguntando por su pedido. Cuando exista la ficha del usuario (RF-26), «ver sus órdenes» va a enlazar a este listado con su nombre puesto.
 

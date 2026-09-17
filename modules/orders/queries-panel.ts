@@ -11,6 +11,7 @@ import {
   estadoDeLaSolapa,
   POR_PAGINA,
   type FiltrosDeOrdenes,
+  type Solapa,
 } from "@/modules/orders/filtros-panel";
 import type { ItemDeLaOrden } from "@/modules/orders/queries";
 
@@ -81,6 +82,29 @@ function condicionDeBusqueda(q: string): SQL {
 }
 
 /**
+ * Qué fecha recorta el rango, según la solapa — decisión tuya del 2026-09-17,
+ * tarea F7.8.
+ *
+ * **La del estado que la solapa muestra.** En «Finalizadas», «desde el 1°»
+ * quiere decir «¿qué vendí este mes?», y no «de lo que cargué este mes, qué
+ * ya cerré», que es una pregunta que no se hace nadie. Lo mismo en
+ * «Canceladas». En «Activas» no hay otra fecha que la de carga, y «Todas»
+ * mezcla los tres estados, así que las dos se quedan con `created_at`.
+ *
+ * **Lo cambió F7.8 y el motivo vino de afuera**: el tablero cuenta las ventas
+ * del mes por `finalized_at`, como manda RF-28 —la venta ocurre cuando se
+ * entrega—, y enlaza a este listado. Con el rango mirando `created_at`, una
+ * orden cargada en agosto y entregada en septiembre entraba en el número y no
+ * aparecía en el listado que ese número abre. Un tablero que abre otra cosa de
+ * la que dice es peor que no tener tablero.
+ */
+function columnaDelRango(solapa: Solapa): SQL {
+  if (solapa === "finalizadas") return sql`o.finalized_at`;
+  if (solapa === "canceladas") return sql`o.cancelled_at`;
+  return sql`o.created_at`;
+}
+
+/**
  * El `WHERE` de los filtros, compartido por el listado y por el conteo: son
  * dos consultas que tienen que contestar sobre el mismo conjunto, y con la
  * condición escrita dos veces un día dejarían de hacerlo.
@@ -98,6 +122,7 @@ function condicionDeBusqueda(q: string): SQL {
  */
 function condiciones(filtros: FiltrosDeOrdenes): SQL {
   const partes: SQL[] = [];
+  const cuando = columnaDelRango(filtros.solapa);
 
   const estado = estadoDeLaSolapa(filtros.solapa);
   if (estado) partes.push(sql`o.status = ${estado}`);
@@ -106,11 +131,11 @@ function condiciones(filtros: FiltrosDeOrdenes): SQL {
   }
   if (filtros.q) partes.push(condicionDeBusqueda(filtros.q));
   if (filtros.desde) {
-    partes.push(sql`o.created_at >=
+    partes.push(sql`${cuando} >=
       (${filtros.desde}::date)::timestamp AT TIME ZONE ${ZONA_HORARIA}`);
   }
   if (filtros.hasta) {
-    partes.push(sql`o.created_at <
+    partes.push(sql`${cuando} <
       (${filtros.hasta}::date + 1)::timestamp AT TIME ZONE ${ZONA_HORARIA}`);
   }
 

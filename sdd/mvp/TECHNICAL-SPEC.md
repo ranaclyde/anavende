@@ -1399,7 +1399,8 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 ## 15. Reportes y exportación (RF-28)
 
 - Consultas agregadas sobre `orders` con `status = 'finalizada'`, restando `return_items` del período.
-- Las sumas de dinero se calculan **en SQL** (`SUM` sobre `numeric`), nunca acumulando en JavaScript (P4).
+- **El período se recorta por `finalized_at`**, que es cuándo ocurrió la venta, y las devoluciones por `returns.created_at`, que es cuándo se registraron (RF-28). El tablero del inicio (RF-14, F7.8) usa la misma definición para «vendido este mes»: dos definiciones para la misma pregunta darían dos números y nadie sabría cuál creer.
+- Las sumas de dinero se calculan **en SQL** (`SUM` sobre `numeric`), nunca acumulando en JavaScript (P4). Se suma `orders.total`, que todos los caminos de escritura dejan igual a `SUM(order_items.subtotal)`, y lo devuelto sale de los precios de esos mismos renglones: las dos mitades de la resta miden lo mismo.
 - La exportación es un **Route Handler** que devuelve un `.xlsx` generado con ExcelJS, respetando exactamente los filtros aplicados en pantalla, con las columnas formateadas como moneda y fecha.
 - La comparativa web/manual sale de `orders.origin`, que se fija en la creación y no se edita.
 

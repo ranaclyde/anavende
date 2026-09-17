@@ -48,3 +48,19 @@ export function fechaCorta(iso: string): string {
 export function fechaConHora(iso: string): string {
   return CON_HORA.format(new Date(iso));
 }
+
+/**
+ * «septiembre» — el mes en curso, en la zona del negocio. Tarea F7.8.
+ *
+ * Lo usa el inicio del panel para que «Este mes» diga cuál es: en el primer
+ * día del mes, un total que cayó a cero de golpe se entiende solo si la
+ * pantalla nombra el mes que está contando.
+ */
+const MES = new Intl.DateTimeFormat("es-AR", {
+  month: "long",
+  timeZone: ZONA_HORARIA,
+});
+
+export function mesEnCurso(): string {
+  return MES.format(new Date());
+}
