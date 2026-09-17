@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { db } from "@/db";
+import { ZONA_HORARIA } from "@/lib/fechas";
 import {
   contadores,
   limpiar,
@@ -602,7 +603,14 @@ describe("lo que la pantalla lee", () => {
       ],
     });
 
-    const hoy = new Date().toISOString().slice(0, 10);
+    // El día se pregunta EN LA ZONA DE LA TIENDA y no en UTC: el filtro
+    // recorta con `AT TIME ZONE` (`lib/fechas.ts`), así que entre las 21 y
+    // las 24 `toISOString()` devolvía el día siguiente y este test fallaba
+    // solo en ese rato. Encontrado el 2026-09-16, corriendo la batería de
+    // F7.7 a las 23:09.
+    const hoy = new Intl.DateTimeFormat("en-CA", {
+      timeZone: ZONA_HORARIA,
+    }).format(new Date());
     const enElRango = async (desde: string, hasta: string) =>
       (
         await listarDevoluciones({ ...FILTROS_VACIOS, desde, hasta })

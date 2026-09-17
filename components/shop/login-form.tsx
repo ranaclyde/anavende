@@ -20,9 +20,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { FieldError } from "@/components/ui/field-error";
+import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { enlaceDeWhatsApp } from "@/lib/whatsapp";
 import { enviarVerificacion, ingresar } from "@/modules/users/actions";
 
 type Campo = "email" | "password";
@@ -35,7 +37,14 @@ type Campo = "email" | "password";
  *   · email sin verificar → se explica y se ofrece reenviar ahí mismo (RF-05)
  *   · cualquier otro      → mensaje genérico que no revela si el email existe
  */
-export function LoginForm({ volver }: { volver?: string }) {
+export function LoginForm({
+  volver,
+  whatsapp,
+}: {
+  volver?: string;
+  /** Para el aviso de cuenta bloqueada. `null` si no está configurado. */
+  whatsapp?: string | null;
+}) {
   const router = useRouter();
   const [enviando, iniciar] = useTransition();
   const [reenviando, iniciarReenvio] = useTransition();
@@ -141,9 +150,28 @@ export function LoginForm({ volver }: { volver?: string }) {
                   Motivo registrado: {motivo}
                 </p>
               )}
-              <p className="text-caption text-ink-secondary">
-                Si creés que es un error, escribinos por WhatsApp y lo vemos.
-              </p>
+              {/* RF-27 pide el motivo Y el canal de contacto. Hasta F7.7 esto
+                  nombraba WhatsApp sin llevar a ningún lado; sin número
+                  configurado sigue siendo la frase, que es mejor que un
+                  enlace roto. */}
+              {whatsapp ? (
+                <a
+                  href={enlaceDeWhatsApp(
+                    whatsapp,
+                    "Hola, mi cuenta figura bloqueada y quería consultar.",
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-pill text-caption text-ink-secondary underline underline-offset-4 hover:text-ink"
+                >
+                  <IconoWhatsApp className="size-3.5" />
+                  Si creés que es un error, escribinos y lo vemos.
+                </a>
+              ) : (
+                <p className="text-caption text-ink-secondary">
+                  Si creés que es un error, escribinos por WhatsApp y lo vemos.
+                </p>
+              )}
             </div>
           )}
 

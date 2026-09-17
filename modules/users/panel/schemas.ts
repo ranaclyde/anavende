@@ -92,3 +92,26 @@ export const cambioDeRol = z.object({
 });
 
 export const restablecerContrasena = z.object({ id: z.uuid() });
+
+/**
+ * Bloqueo y desbloqueo — RF-27. Tarea F7.7.
+ *
+ * **El motivo es obligatorio y no es una nota interna**: es el texto que la
+ * persona lee cuando intenta entrar (§13.5). Por eso el mensaje de error habla
+ * de eso y no de un campo incompleto.
+ *
+ * El tope es el mismo que el del pedido de baja (F5.8): alcanza para
+ * explicarse y no invita a pegar un documento.
+ */
+export const MAXIMO_DEL_MOTIVO = 500;
+
+export const bloqueoDeUsuario = z.object({
+  id: z.uuid(),
+  motivo: z
+    .string()
+    .trim()
+    .min(1, "Escribí el motivo: es lo que va a leer al intentar entrar.")
+    .max(MAXIMO_DEL_MOTIVO, `Hasta ${MAXIMO_DEL_MOTIVO} caracteres.`),
+});
+
+export const desbloqueoDeUsuario = z.object({ id: z.uuid() });

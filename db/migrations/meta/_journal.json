@@ -113,6 +113,13 @@
       "when": 1789411379347,
       "tag": "0015_baja_pedida",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1789605580488,
+      "tag": "0016_historial_de_bloqueos",
+      "breakpoints": true
     }
   ]
 }
