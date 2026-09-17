@@ -30,19 +30,25 @@ import { enviarVerificacion, ingresar } from "@/modules/users/actions";
 type Campo = "email" | "password";
 
 /**
- * Ingreso — RF-06, RF-27.
+ * Ingreso — RF-06, RF-27, RF-34.
  *
- * Tres desenlaces además del normal, y cada uno se presenta distinto:
+ * Cuatro desenlaces además del normal, y cada uno se presenta distinto:
  *   · bloqueado           → se muestra LA RAZÓN registrada (RF-27)
+ *   · dado de baja        → otra cosa, y se dice distinto (RF-34, RN-13)
  *   · email sin verificar → se explica y se ofrece reenviar ahí mismo (RF-05)
  *   · cualquier otro      → mensaje genérico que no revela si el email existe
+ *
+ * **Los dos primeros llegan como el mismo error de GoTrue** (`user_banned`):
+ * quién es cada uno lo decide la acción mirando el perfil (§13.5b). Acá lo
+ * único que cambia es qué se lee, y es todo el punto de RN-13: a quien se fue
+ * por su cuenta no se le dice que está bloqueado.
  */
 export function LoginForm({
   volver,
   whatsapp,
 }: {
   volver?: string;
-  /** Para el aviso de cuenta bloqueada. `null` si no está configurado. */
+  /** Para los avisos de cuenta bloqueada y dada de baja. `null` si no hay. */
   whatsapp?: string | null;
 }) {
   const router = useRouter();
@@ -53,6 +59,7 @@ export function LoginForm({
   const [reenviado, setReenviado] = useState(false);
 
   const bloqueado = errores.codigo === "USER_BANNED";
+  const dadoDeBaja = errores.codigo === "ACCOUNT_CLOSED";
   const sinVerificar = errores.codigo === "EMAIL_NOT_VERIFIED";
   const motivo = errores.detalles?.motivo as string | null | undefined;
   const emailSinVerificar = errores.detalles?.email as string | undefined;
@@ -175,6 +182,44 @@ export function LoginForm({
             </div>
           )}
 
+          {/* RF-34 y RN-13: se fue por su cuenta, no lo echaron. Sin motivo
+              —lo escribió ella misma— y con la puerta de vuelta, que es lo
+              único que le falta saber: volver se pide, y la cuenta está
+              entera. */}
+          {dadoDeBaja && (
+            <div
+              role="alert"
+              className="flex flex-col gap-2 rounded-image border border-border bg-surface-sunken p-4"
+            >
+              <p className="text-body-sm font-medium text-ink">
+                Tu cuenta está dada de baja
+              </p>
+              <p className="text-body-sm text-ink-secondary">
+                La diste de baja vos. No borramos nada: si querés volver,
+                escribinos y la reactivamos con tus compras, tus direcciones y
+                tus favoritos donde los dejaste.
+              </p>
+              {whatsapp ? (
+                <a
+                  href={enlaceDeWhatsApp(
+                    whatsapp,
+                    "Hola, había dado de baja mi cuenta y quería volver.",
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-pill text-caption text-ink-secondary underline underline-offset-4 hover:text-ink"
+                >
+                  <IconoWhatsApp className="size-3.5" />
+                  Escribinos y la reactivamos.
+                </a>
+              ) : (
+                <p className="text-caption text-ink-secondary">
+                  Escribinos por WhatsApp y la reactivamos.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* RF-05: se explica y se resuelve en el mismo lugar. */}
           {sinVerificar && (
             <div
@@ -201,7 +246,7 @@ export function LoginForm({
             </div>
           )}
 
-          {!bloqueado && !sinVerificar && (
+          {!bloqueado && !dadoDeBaja && !sinVerificar && (
             <FieldError>{errores.general}</FieldError>
           )}
 

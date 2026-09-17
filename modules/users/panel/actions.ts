@@ -9,11 +9,14 @@ import {
   cambiarRolDeUsuario,
   desbloquearUsuario,
   editarUsuario,
+  ejecutarBaja,
   invitarUsuario,
   mandarRecuperacion,
+  revertirBaja,
 } from "@/modules/users/panel/operaciones";
 import {
   altaDeUsuario,
+  bajaDeUsuario,
   bloqueoDeUsuario,
   cambioDeRol,
   desbloqueoDeUsuario,
@@ -22,8 +25,8 @@ import {
 } from "@/modules/users/panel/schemas";
 
 /**
- * Acciones del panel sobre usuarios — FS RF-26, RF-27 · TS §13.2. Tareas
- * F7.6 y F7.7.
+ * Acciones del panel sobre usuarios — FS RF-26, RF-27, RF-34 · TS §13.2.
+ * Tareas F7.6, F7.7 y F7.9.
  *
  * **Todas `.auth("admin")`**, sin excepción: son las cosas que se le pueden
  * hacer a la cuenta de otra persona, y ninguna la puede hacer quien no entra
@@ -154,6 +157,41 @@ export const desbloquearCuenta = action
     });
 
     avisarDeAuth(resultado.errorDeAuth, "desbloquear");
+    refresh();
+    return resultado;
+  });
+
+/**
+ * Ejecutar la baja que pidió el comprador — RF-34. Tarea F7.9.
+ *
+ * **Quién la ejecuta sale de la sesión**, como el bloqueo: es lo que queda en
+ * `closed_by` y en el historial, y es la mitad de lo que RF-34 pide registrar.
+ */
+export const ejecutarBajaDeCuenta = action
+  .input(bajaDeUsuario)
+  .auth("admin")
+  .handler(async ({ input, ctx }) => {
+    const resultado = await ejecutarBaja({
+      id: input.id,
+      actorId: ctx.session.profile.id,
+    });
+
+    avisarDeAuth(resultado.errorDeAuth, "baja");
+    refresh();
+    return resultado;
+  });
+
+/** Revertirla — RF-34: la persona vuelve, y con todo lo suyo donde estaba. */
+export const revertirBajaDeCuenta = action
+  .input(bajaDeUsuario)
+  .auth("admin")
+  .handler(async ({ input, ctx }) => {
+    const resultado = await revertirBaja({
+      id: input.id,
+      actorId: ctx.session.profile.id,
+    });
+
+    avisarDeAuth(resultado.errorDeAuth, "revertir_baja");
     refresh();
     return resultado;
   });

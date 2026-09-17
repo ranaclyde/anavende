@@ -24,7 +24,7 @@ const badgeVariants = cva(
         warning: "bg-warning-tint text-warning",
         /** Sin stock · usuario bloqueado. */
         danger: "bg-danger-tint text-danger",
-        /** Orden cancelada · producto inactivo. */
+        /** Orden cancelada · producto inactivo · cuenta dada de baja. */
         neutral: "bg-surface-sunken text-ink-secondary",
         /** Identidad: destacado, oferta. */
         brand: "bg-brand-tint text-brand",

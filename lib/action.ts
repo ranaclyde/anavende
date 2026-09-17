@@ -116,6 +116,20 @@ class ActionBuilder<TInput, L extends AuthLevel> {
           });
         }
 
+        // **Dada de baja: afuera de todo, y antes de mirar el nivel** (RF-34,
+        // F7.9). Va acá arriba y no junto al paso 2b porque aquello es la
+        // cuenta en solo lectura mientras la baja está PEDIDA —con sus
+        // excepciones declaradas— y esto es una cuenta que ya no está: ni
+        // siquiera retirar el pedido, que es lo que quedaría a mano si esto
+        // cayera más abajo. Llega hasta acá quien tiene un token emitido antes
+        // de la baja, hasta que el proxy le cierre la sesión (§13.3).
+        // `!= null` y no `!== null`: la comprobación se inclina hacia dejar
+        // pasar. Una fila leída sin esa columna vale `undefined`, y con la
+        // comparación estricta toda la tienda quedaría dada de baja.
+        if (session.profile.closedAt != null) {
+          return fallo("ACCOUNT_CLOSED", domainMessage("ACCOUNT_CLOSED"));
+        }
+
         if (level === "admin" && session.role !== "admin") {
           return fallo("FORBIDDEN", "No tenés permiso para hacer eso.");
         }

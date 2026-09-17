@@ -131,8 +131,13 @@ export async function pedirBaja(
  * Retirar el pedido. **Retirar lo que no está pedido no es un error**, por lo
  * mismo que pedir dos veces.
  *
- * Cuando exista la baja ejecutada (F7.9), esto tiene que dejar de poder
- * deshacerla: ahí volver se le pide a la administradora (RF-34).
+ * **Una baja ya ejecutada no se deshace desde acá** (F7.9): el `closed_at IS
+ * NULL` del `WHERE` es toda la regla. Volver se le pide a la administradora
+ * (RF-34), y sin esa condición quien fuera dado de baja podría reabrirse la
+ * cuenta solo —el envoltorio de acciones deja pasar ésta con la baja pedida, y
+ * es justo la que no tiene que poder—. Que llegue hasta acá es difícil, no
+ * imposible: la sesión se cierra en la próxima ruta privada, y hasta entonces
+ * el token emitido sigue sirviendo (§13.3).
  */
 export async function retirarBaja(
   userId: string,
@@ -143,17 +148,25 @@ export async function retirarBaja(
          SET closure_requested_at = NULL,
              closure_reason       = NULL,
              updated_at           = now()
-       WHERE id = ${userId} AND closure_requested_at IS NOT NULL
+       WHERE id = ${userId}
+         AND closure_requested_at IS NOT NULL
+         AND closed_at IS NULL
       RETURNING id`)),
   ];
   return { retirada: filas.length > 0 };
 }
 
-/** Para el panel: cuántas bajas esperan que alguien las atienda (F7.8, F7.9). */
+/**
+ * Para el panel: cuántas bajas esperan que alguien las atienda (F7.8, F7.9).
+ *
+ * **Pendientes, no dadas de baja**: una vez ejecutada deja de ser algo que
+ * hacer, y seguir contándola dejaría el panel avisando para siempre de un
+ * trabajo que ya está hecho.
+ */
 export async function contarBajasPendientes(): Promise<number> {
   const [fila] = await db.execute<{ n: number }>(sql`
     SELECT count(*)::int AS n
       FROM user_profiles
-     WHERE closure_requested_at IS NOT NULL`);
+     WHERE closure_requested_at IS NOT NULL AND closed_at IS NULL`);
   return fila.n;
 }

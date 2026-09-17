@@ -55,7 +55,7 @@ const { bloquearCuenta, desbloquearCuenta } = await import(
   "@/modules/users/panel/actions"
 );
 const { leerUsuarioDelPanel } = await import("@/modules/users/panel/queries");
-const { estaBloqueado } = await import("@/modules/users/bloqueo");
+const { tieneElAccesoCortado } = await import("@/modules/users/acceso");
 const { ingresar } = await import("@/modules/users/actions");
 
 function comoSesion(userId: string, role: "admin" | "customer") {
@@ -68,6 +68,7 @@ function comoSesion(userId: string, role: "admin" | "customer") {
       isBanned: false,
       banReason: null,
       closureRequestedAt: null,
+      closedAt: null,
     },
   };
 }
@@ -399,24 +400,24 @@ describe("las dos capas quedan sincronizadas (§13.5)", () => {
 });
 
 describe("la sesión que ya estaba abierta (RF-27, §13.3)", () => {
-  test("`estaBloqueado` es lo que la guardia de ruta consulta", async () => {
+  test("`tieneElAccesoCortado` es lo que la guardia de ruta consulta", async () => {
     const ana = await unComprador();
     const otro = await unComprador();
     comoSesion(ana.userId, "admin");
 
     // El proxy no puede confiar en el token: se verifica localmente y sigue
     // valiendo hasta que vence. Esta lectura es la que cierra esa hora.
-    expect(await estaBloqueado(otro.userId)).toBe(false);
+    expect(await tieneElAccesoCortado(otro.userId)).toBe(false);
 
     await bloquearCuenta({ id: otro.userId, motivo: "Probando" });
-    expect(await estaBloqueado(otro.userId)).toBe(true);
+    expect(await tieneElAccesoCortado(otro.userId)).toBe(true);
 
     await desbloquearCuenta({ id: otro.userId });
-    expect(await estaBloqueado(otro.userId)).toBe(false);
+    expect(await tieneElAccesoCortado(otro.userId)).toBe(false);
   });
 
   test("un id que no existe no está bloqueado", async () => {
-    expect(await estaBloqueado(randomUUID())).toBe(false);
+    expect(await tieneElAccesoCortado(randomUUID())).toBe(false);
   });
 });
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { contarBajasPendientes } from "@/modules/users/baja/operaciones";
@@ -13,8 +14,8 @@ export const metadata: Metadata = { title: "Panel" };
  * bajo. Sin notificaciones que se disparen, se ve al abrir el panel.
  *
  * Por ahora está lo único que ya existe para contar: **las bajas pedidas**
- * (F5.8). El enlace está en su lugar y apagado: se atienden desde
- * «Usuarios», que llega con F7.9.
+ * (F5.8), y desde F7.9 el enlace lleva a donde se atienden: el listado de
+ * usuarios filtrado por «Con baja pedida».
  */
 export default async function PanelInicio() {
   const bajas = await contarBajasPendientes();
@@ -44,22 +45,13 @@ export default async function PanelInicio() {
                 : `${bajas} compradores pidieron la baja de su cuenta.`}
           </p>
           {bajas > 0 ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled
-              aria-describedby="bajas-pendiente"
-            >
-              Ver en Usuarios
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/admin/usuarios?estado=baja-pedida">
+                Ver en Usuarios
+              </Link>
             </Button>
           ) : null}
         </div>
-        {bajas > 0 ? (
-          <p id="bajas-pendiente" className="text-caption text-ink-secondary">
-            Atenderlas desde el panel llega con la sección Usuarios.
-            Mientras tanto, se hacen a mano.
-          </p>
-        ) : null}
       </section>
     </div>
   );

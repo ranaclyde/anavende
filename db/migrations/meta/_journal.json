@@ -120,6 +120,13 @@
       "when": 1789605580488,
       "tag": "0016_historial_de_bloqueos",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789655239363,
+      "tag": "0017_baja_ejecutada",
+      "breakpoints": true
     }
   ]
 }

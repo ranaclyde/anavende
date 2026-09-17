@@ -79,10 +79,30 @@ export const userProfiles = pgTable(
      * bloqueada». Mientras está pedida, la cuenta queda en solo lectura
      * (decisión del 2026-09-14) y el comprador puede retirarla.
      *
-     * Quién la ejecutó y cuándo son de F7.9, que es la tarea que la ejecuta.
+     * Ejecutada, el pedido NO se borra: `closure_requested_at` es la fecha en
+     * que la pidió y `closure_reason` el motivo que escribió, y las dos cosas
+     * son lo que la ficha muestra después. Lo que cambia es que se suma
+     * `closed_at` (F7.9), y desde ahí ya no puede entrar.
      */
     closureRequestedAt: timestamp("closure_requested_at", { withTimezone: true }),
     closureReason: text("closure_reason"),
+
+    /**
+     * La baja EJECUTADA por la administradora — RF-34, F7.9.
+     *
+     * **Separada del pedido y separada de `is_banned`**, por lo mismo que el
+     * pedido: son tres situaciones distintas —pidió, se fue, la echaron— y con
+     * una sola columna no hay forma de decirle a cada una lo que le
+     * corresponde (RN-13, §13.5b).
+     *
+     * Revertirla las limpia a las tres —ésta, el pedido y su motivo—: la
+     * cuenta vuelve a estar como estaba, y lo que pasó queda en
+     * `user_status_history`, igual que con el bloqueo.
+     */
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    closedBy: uuid("closed_by").references((): AnyPgColumn => userProfiles.id, {
+      onDelete: "set null",
+    }),
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -105,6 +125,15 @@ export const userProfiles = pgTable(
       "closure_has_reason",
       sql`${t.closureRequestedAt} IS NULL OR ${t.closureReason} IS NOT NULL`,
     ),
+    // La baja ejecutada nace siempre de un pedido (decisión tuya del
+    // 2026-09-17): la administradora ejecuta lo que el comprador pidió, y para
+    // sacar a alguien por decisión propia está el bloqueo de RF-27. Sin esto,
+    // un `UPDATE` distraído dejaría una cuenta cerrada sin motivo y sin nadie
+    // que la haya pedido, que es exactamente lo que RN-13 no quiere.
+    check(
+      "closed_was_requested",
+      sql`${t.closedAt} IS NULL OR ${t.closureRequestedAt} IS NOT NULL`,
+    ),
     index("user_profiles_email_idx").on(sql`lower(${t.email})`),
   ],
 );
@@ -116,12 +145,17 @@ export type NewUserProfile = typeof userProfiles.$inferInsert;
 export type Role = "admin" | "customer";
 
 /**
- * Historial de bloqueos y desbloqueos — TECHNICAL-SPEC §5.3, §13.5. Tarea F7.7.
+ * Historial de estado de una cuenta — TECHNICAL-SPEC §5.3, §13.5. Tareas F7.7
+ * y F7.9.
  *
  * **Las columnas de `user_profiles` dicen cómo está la cuenta hoy; esta tabla,
  * lo que le pasó.** Son cosas distintas y por eso son dos lugares: desbloquear
  * limpia `ban_reason` —`ban_has_reason` no admite un motivo sin bloqueo—, así
  * que el desbloqueo que RF-27 pide registrar no dejaría rastro de nada.
+ *
+ * **Con la baja pasa lo mismo y por eso vive acá** (RF-34, F7.9): revertirla
+ * limpia el pedido y su motivo, y sin esta tabla una cuenta que se fue y
+ * volvió quedaría idéntica a una que nunca se fue.
  *
  * Es la misma pieza que `order_status_history` (§5.6) y por los mismos
  * motivos: P5 pide auditar los cambios de usuarios en la misma transacción que
@@ -135,7 +169,12 @@ export const userStatusHistory = pgTable(
       .notNull()
       .references(() => userProfiles.id, { onDelete: "cascade" }),
     event: text("event").notNull(),
-    /** El del bloqueo, obligatorio (RF-27). El desbloqueo puede no tenerlo. */
+    /**
+     * El del bloqueo, obligatorio (RF-27). El desbloqueo puede no tenerlo.
+     *
+     * En la fila de la baja es **el que escribió el comprador** al pedirla, no
+     * uno de la administradora: ella ejecuta lo pedido, no lo redacta.
+     */
     reason: text("reason"),
     /**
      * Quién lo hizo. `SET NULL` como el `actor_user_id` del historial de
@@ -157,10 +196,18 @@ export const userStatusHistory = pgTable(
       .default(sql`clock_timestamp()`),
   },
   (t) => [
-    check("user_event_valid", sql`${t.event} IN ('bloqueo', 'desbloqueo')`),
+    check(
+      "user_event_valid",
+      sql`${t.event} IN ('bloqueo', 'desbloqueo', 'baja', 'reversion_de_baja')`,
+    ),
     index("user_status_history_user_idx").on(t.userId, t.createdAt.desc()),
   ],
 );
 
-export type UserStatusEvent = "bloqueo" | "desbloqueo";
+export type UserStatusEvent =
+  | "bloqueo"
+  | "desbloqueo"
+  /** RF-34, F7.9: la baja ejecutada y su reversión. */
+  | "baja"
+  | "reversion_de_baja";
 export type UserStatusHistoryRow = typeof userStatusHistory.$inferSelect;

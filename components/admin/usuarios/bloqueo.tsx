@@ -38,17 +38,21 @@ import { MAXIMO_DEL_MOTIVO } from "@/modules/users/panel/schemas";
  * **Sobre la propia cuenta no hay botón, hay una explicación**, igual que el
  * rol (F7.6): RF-26 impide que una administradora se bloquee a sí misma, y un
  * control que rebota sin decir por qué deja pensando que la pantalla falla.
+ * Con la cuenta dada de baja pasa lo mismo, por otro motivo (F7.9).
  */
 export function BloqueoDeLaCuenta({
   id,
   nombre,
   bloqueado,
+  dadoDeBaja,
   esMiCuenta,
   esLaUnicaAdministradora,
 }: {
   id: string;
   nombre: string;
   bloqueado: boolean;
+  /** Dada de baja no se bloquea: ya no entra (F7.9). */
+  dadoDeBaja: boolean;
   esMiCuenta: boolean;
   /** Bloquearla dejaría la tienda sin nadie que entre al panel. */
   esLaUnicaAdministradora: boolean;
@@ -140,6 +144,17 @@ export function BloqueoDeLaCuenta({
       <p className="text-body-sm text-ink-secondary">
         Es tu cuenta, así que no la bloqueás vos: te dejaría afuera del panel
         en la pantalla siguiente.
+      </p>
+    );
+  }
+
+  // Sin botón, y dicho: la operación lo rechaza, y un control que rebota deja
+  // pensando que la pantalla falla. Lo que sigue estando es revertir la baja.
+  if (dadoDeBaja) {
+    return (
+      <p className="text-body-sm text-ink-secondary">
+        Está dada de baja, así que no hace falta bloquearla: ya no puede
+        entrar.
       </p>
     );
   }

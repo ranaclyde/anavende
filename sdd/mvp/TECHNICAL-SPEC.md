@@ -1304,7 +1304,7 @@ Esa pantalla ya era necesaria: ningún proveedor social entrega teléfono (RF-06
 
 ### 13.5b Baja de cuenta (RF-34, RN-13)
 
-Anotado el 2026-09-06, cuando entró RF-34. **Todavía no está construido** — el diseño fino va con F5.8 y F7.9 —, pero conviene que quede escrito acá lo que ya se sabe, porque cambia poco y se olvida fácil.
+Anotado el 2026-09-06, cuando entró RF-34. Lo construyeron F5.8 —el comprador la pide— y F7.9 —la administradora la ejecuta—, y salió tal como estaba previsto. Lo que dejó cada una está al final de la sección.
 
 **La baja usa la misma maquinaria que el bloqueo y significa otra cosa.** Los tres pasos de arriba sirven igual: marca en `user_profiles`, `ban_duration` en GoTrue para impedir el ingreso, y el proxy cerrando la sesión que estuviera abierta —con su propia marca, no con `is_banned`—. Lo que **no** puede compartir es la marca ni el mensaje.
 
@@ -1315,13 +1315,16 @@ Lo que implica, en concreto:
 | Pieza | Qué hace falta |
 |---|---|
 | `user_profiles` | Una marca propia, separada de `is_banned`, con su motivo, su fecha y quién ejecutó. Más el estado intermedio: **pedida y todavía no ejecutada**, que es lo que la administradora ve como pendiente |
+| `user_status_history` | La baja y su reversión, con autor y fecha (§5.3). Revertir limpia las columnas, así que sin la tabla no quedaría rastro de que la baja existió |
 | `lib/errors.ts` | Su propio mensaje. `USER_BANNED` no sirve: dice otra cosa |
 | §13.5, ingreso | Ante `user_banned`, mirar el perfil y elegir el mensaje según el estado |
 | RF-26, listado | Tres estados en el filtro, no dos |
 
 **Lo que construyó F5.8 (2026-09-14).** El estado intermedio es `closure_requested_at` con `closure_reason`, y el `CHECK` `closure_has_reason` exige el motivo, igual que `ban_has_reason` (migración `0015`). Quién ejecutó y cuándo llegan con F7.9. **Con la baja pedida, la cuenta es de solo lectura**: el envoltorio de §6.2 rechaza toda acción `customer` con `ACCOUNT_CLOSURE_PENDING`, salvo las que se declaran con `.aunConBajaPendiente()` —retirar el pedido y elegir cómo se ve «Favoritos»—. Va en el envoltorio y no en cada acción para que una acción nueva quede cubierta sola. **Sin email a la administradora**: la baja pedida se ve en el inicio del panel.
 
-**Nada de esto borra datos.** Los usuarios no se eliminan (§5.6): la baja es una marca, y revertirla devuelve a la persona con su historial, sus direcciones y sus favoritos intactos.
+**Lo que construyó F7.9 (2026-09-17).** La baja ejecutada es `closed_at` con `closed_by` (migración `0017`), separada del pedido y separada de `is_banned`: son tres situaciones —pidió, se fue, la echaron— y con menos columnas no hay forma de decirle a cada una lo suyo. El `CHECK` `closed_was_requested` **impide dar de baja a quien no la pidió**: la administradora ejecuta lo pedido, y para sacar a alguien por decisión propia está el bloqueo. El ingreso separa los dos `user_banned` mirando el perfil y contesta `ACCOUNT_CLOSED`, que tiene su propio mensaje en `lib/errors.ts`; el envoltorio de §6.2 lo rechaza **antes** del paso 2b, así que ni siquiera se puede retirar el pedido —volver se le pide a la administradora—; y `modules/users/acceso.ts` es la lectura del proxy, que ahora cierra la sesión por cualquiera de los dos motivos. **`ban_duration` es una sola llave para las dos marcas**, así que quien levanta una mira la otra antes: lo hace `sincronizarAuth`, que deduce qué escribir del perfil en vez de recibirlo. Bloqueo y baja no se cruzan: una cuenta dada de baja no se bloquea, y una bloqueada no pide la baja porque no entra.
+
+**Nada de esto borra datos.** Los usuarios no se eliminan (§5.6): la baja es una marca, y revertirla —que además limpia el pedido y su motivo, para que la cuenta quede como cualquier otra— devuelve a la persona con su historial, sus direcciones y sus favoritos intactos. Lo que pasó queda en `user_status_history`, con los eventos `baja` y `reversion_de_baja`.
 
 ### 13.6 Costos asumidos de esta elección
 
