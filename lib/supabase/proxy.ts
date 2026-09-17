@@ -8,6 +8,7 @@ import {
   puedeVerLaTiendaCerrada,
   REINTENTAR_EN_SEGUNDOS,
 } from "@/modules/settings/mantenimiento";
+import { estaBloqueado } from "@/modules/users/bloqueo";
 
 /**
  * Redirección temprana por sesión ausente — TECHNICAL-SPEC §6.1 y §13.7.
@@ -71,11 +72,26 @@ export async function updateSession(request: NextRequest) {
   );
 
   if (esPrivada && !hayIdentidad) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/ingresar";
-    // Para volver a donde estaba después de entrar (RF-07, F5.2).
-    url.searchParams.set("volver", pathname + request.nextUrl.search);
-    return NextResponse.redirect(url);
+    return alIngreso(request, pathname);
+  }
+
+  // Cuenta bloqueada: se le cierra la sesión acá — RF-27, F7.7.
+  //
+  // ES LA ÚNICA CAPA QUE PUEDE HACERLO. Bloquear corta el refresco del token
+  // en Supabase Auth, pero el que ya tiene se verifica LOCALMENTE (§13.3) y
+  // sigue siendo válido hasta que vence: sin esto, quien acaba de ser
+  // bloqueado no puede hacer nada y sin embargo sigue viendo sus pantallas
+  // hasta una hora. Las acciones ya estaban cubiertas por el envoltorio
+  // (§6.2) y el panel por su layout; lo que faltaba era la lectura.
+  //
+  // **Solo en las rutas privadas**, que son las que exigen sesión: el catálogo
+  // lo puede mirar cualquiera, con cuenta o sin ella, y cobrarle una consulta
+  // a cada visita para eso sería pagar en la pantalla más cargada del sitio
+  // por algo que no cambia nada.
+  if (esPrivada && typeof data?.claims?.sub === "string") {
+    if (await estaBloqueado(data.claims.sub)) {
+      return alIngreso(request, pathname, { cerrandoSesion: true });
+    }
   }
 
   // Modo mantenimiento (F2.7b). El orden de las tres preguntas es el de lo
@@ -92,6 +108,42 @@ export async function updateSession(request: NextRequest) {
   // El objeto de respuesta se devuelve tal cual: si se arma uno nuevo hay que
   // copiarle las cookies, o el navegador y el servidor quedan desincronizados.
   return response;
+}
+
+/**
+ * Al ingreso, con a dónde volver (RF-07, F5.2).
+ *
+ * **Con `cerrandoSesion`, además se borran las cookies de sesión**, y eso es
+ * lo que cierra la sesión de una cuenta bloqueada (RF-27). No alcanza con
+ * redirigir: `/ingresar` manda a «Mi cuenta» a quien ya entró, así que con la
+ * cookie puesta las dos pantallas se rebotarían para siempre. Se borran por
+ * nombre y no con `signOut`, que es un pedido a GoTrue —el mismo que a una
+ * cuenta bloqueada le contesta que no— y podría dejar la cookie donde está.
+ *
+ * El token viene partido en varias cookies cuando no entra en una sola
+ * (`…-auth-token.0`, `.1`): por eso el prefijo y no el nombre exacto.
+ */
+function alIngreso(
+  request: NextRequest,
+  pathname: string,
+  opciones?: { cerrandoSesion?: boolean },
+) {
+  const url = request.nextUrl.clone();
+  url.pathname = "/ingresar";
+  url.search = "";
+  url.searchParams.set("volver", pathname + request.nextUrl.search);
+
+  const respuesta = NextResponse.redirect(url);
+
+  if (opciones?.cerrandoSesion) {
+    for (const cookie of request.cookies.getAll()) {
+      if (/^sb-.*-auth-token/.test(cookie.name)) {
+        respuesta.cookies.delete(cookie.name);
+      }
+    }
+  }
+
+  return respuesta;
 }
 
 /**

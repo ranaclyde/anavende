@@ -262,3 +262,160 @@ export async function mandarRecuperacion(id: string): Promise<{
 
   return { email: usuario.email };
 }
+
+/**
+ * Bloquear una cuenta — FS RF-27 · TS §13.5. Tarea F7.7.
+ *
+ * **Primero la base y después Supabase Auth, y el orden es la decisión.** Si
+ * GoTrue falla, la cuenta queda marcada y el envoltorio de acciones (§6.2) ya
+ * la frena, aunque todavía pueda iniciar sesión. Al revés —GoTrue primero— un
+ * fallo de la base dejaría a alguien afuera **sin motivo registrado**, que es
+ * exactamente lo que RF-27 no admite.
+ *
+ * **La sesión que ya estaba abierta la cierra `proxy.ts`**, en el próximo
+ * pedido a una ruta privada: un JWT emitido no se puede revocar y el
+ * `admin.signOut` del SDK pide el token de esa persona, que no tenemos
+ * (`modules/users/bloqueo.ts` lo cuenta entero).
+ *
+ * **El motivo no es una nota interna: es lo que la persona lee al intentar
+ * entrar** (`components/shop/login-form.tsx`, desde F1.7). La restricción
+ * `ban_has_reason` impide guardarlo vacío, y el `UPDATE` y la fila del
+ * historial viajan en la misma transacción, como pide P5.
+ *
+ * **Bloquear lo ya bloqueado no hace nada**, igual que cambiar un rol al que
+ * ya está: es el doble clic y las dos pestañas, y una segunda fila de
+ * historial contaría un bloqueo que no ocurrió.
+ */
+export async function bloquearUsuario(datos: {
+  id: string;
+  motivo: string;
+  actorId: string;
+}): Promise<{ bloqueado: boolean; errorDeAuth: string | null }> {
+  if (datos.id === datos.actorId) {
+    throw domainError("FORBIDDEN", {
+      message:
+        "No podés bloquear tu propia cuenta: te dejaría afuera del panel en " +
+        "la pantalla siguiente.",
+    });
+  }
+
+  const yaEstaba = await db.transaction(async (tx) => {
+    // Se bloquea la fila mientras se decide: sin esto, dos pedidos a la vez
+    // escriben dos filas de historial para un solo bloqueo.
+    const [usuario] = await tx.execute<{ role: string; isBanned: boolean }>(sql`
+      SELECT role, is_banned AS "isBanned"
+        FROM user_profiles
+       WHERE id = ${datos.id}
+         FOR NO KEY UPDATE`);
+
+    if (!usuario) throw domainError("NOT_FOUND");
+    if (usuario.isBanned) return true;
+
+    // La misma regla que el rol (F7.6) por el mismo motivo: bloquear a la
+    // última administradora deja la tienda sin nadie que entre al panel, y
+    // salir de ahí es un UPDATE a mano en la base.
+    if (usuario.role === "admin" && (await contarAdministradoras()) <= 1) {
+      throw domainError("VALIDATION", {
+        message:
+          "Es la única administradora que queda. Nombrá a otra antes de " +
+          "bloquearla: si no, nadie va a poder entrar al panel.",
+      });
+    }
+
+    await tx.execute(sql`
+      UPDATE user_profiles
+         SET is_banned  = true,
+             ban_reason = ${datos.motivo},
+             banned_at  = now(),
+             banned_by  = ${datos.actorId},
+             updated_at = now()
+       WHERE id = ${datos.id}`);
+
+    await tx.execute(sql`
+      INSERT INTO user_status_history (user_id, event, reason, actor_user_id)
+      VALUES (${datos.id}, 'bloqueo', ${datos.motivo}, ${datos.actorId})`);
+
+    return false;
+  });
+
+  if (yaEstaba) return { bloqueado: false, errorDeAuth: null };
+
+  return {
+    bloqueado: true,
+    errorDeAuth: await enAuth(datos.id, DURACION_DEL_BLOQUEO),
+  };
+}
+
+/**
+ * Desbloquear — RF-27: «se puede desbloquear, quedando también registrado».
+ *
+ * **El registro es la fila del historial y no las columnas**: acá se limpian
+ * las cuatro, porque `ban_has_reason` no admite un motivo sin bloqueo. Sin la
+ * tabla, desbloquear borraría toda huella de que el bloqueo existió (§5.3).
+ *
+ * **No pide motivo.** RF-27 lo exige para bloquear —es lo que la persona lee
+ * al intentar entrar— y no para lo contrario: a quien vuelve a entrar no hay
+ * nada que explicarle.
+ */
+export async function desbloquearUsuario(datos: {
+  id: string;
+  actorId: string;
+}): Promise<{ desbloqueado: boolean; errorDeAuth: string | null }> {
+  const estaba = await db.transaction(async (tx) => {
+    const [usuario] = await tx.execute<{ isBanned: boolean }>(sql`
+      SELECT is_banned AS "isBanned"
+        FROM user_profiles
+       WHERE id = ${datos.id}
+         FOR NO KEY UPDATE`);
+
+    if (!usuario) throw domainError("NOT_FOUND");
+    if (!usuario.isBanned) return false;
+
+    await tx.execute(sql`
+      UPDATE user_profiles
+         SET is_banned  = false,
+             ban_reason = NULL,
+             banned_at  = NULL,
+             banned_by  = NULL,
+             updated_at = now()
+       WHERE id = ${datos.id}`);
+
+    await tx.execute(sql`
+      INSERT INTO user_status_history (user_id, event, actor_user_id)
+      VALUES (${datos.id}, 'desbloqueo', ${datos.actorId})`);
+
+    return true;
+  });
+
+  if (!estaba) return { desbloqueado: false, errorDeAuth: null };
+
+  return { desbloqueado: true, errorDeAuth: await enAuth(datos.id, "none") };
+}
+
+/**
+ * Cien años, que es lo que §13.5 eligió para decir «para siempre»: GoTrue
+ * guarda una fecha (`banned_until`) y no un booleano, así que un bloqueo sin
+ * fin se escribe como uno muy largo.
+ */
+const DURACION_DEL_BLOQUEO = "876000h";
+
+/**
+ * El paso que le toca a Supabase Auth, y lo que pasa si no contesta.
+ *
+ * **No se reintenta ni se deshace lo guardado.** Con la marca en el perfil, la
+ * cuenta ya no puede operar —toda Server Action relee el perfil (§13.3)—, así
+ * que el peor caso es alguien bloqueado que todavía puede iniciar sesión y no
+ * hacer nada. Se devuelve el error para que la pantalla lo diga y Sentry lo
+ * anote: «quedó bloqueada» a secas sería mentira.
+ *
+ * **Lo que sí hace acá el bloqueo de GoTrue**: el token de refresco deja de
+ * canjearse (`user_banned`), así que la sesión no se renueva. Lo que no hace
+ * es invalidar el token de acceso que ya está emitido —se verifica localmente
+ * (§13.3)—, y de eso se encarga el proxy. Medido el 2026-09-16.
+ */
+async function enAuth(id: string, duracion: string): Promise<string | null> {
+  const { error } = await createServiceClient().auth.admin.updateUserById(id, {
+    ban_duration: duracion,
+  });
+  return error?.message ?? null;
+}

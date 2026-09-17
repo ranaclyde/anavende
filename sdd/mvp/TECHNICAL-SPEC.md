@@ -349,6 +349,25 @@ CREATE INDEX user_profiles_email_idx ON user_profiles (lower(email));
 
 > **`ban_has_reason` es la regla de negocio, en la base.** RF-27 exige motivo obligatorio; una restricción `CHECK` lo vuelve imposible de olvidar, en vez de confiar en que todo camino del código se acuerde.
 
+**Todo bloqueo y todo desbloqueo dejan una fila** (migración `0016`, 2026-09-16, con F7.7). Las columnas de arriba dicen **cómo está** la cuenta hoy; desbloquear las limpia —`ban_has_reason` no admite un motivo sin bloqueo—, así que sin una tabla aparte el desbloqueo que RF-27 pide registrar no dejaría rastro de nada:
+
+```sql
+CREATE TABLE user_status_history (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+  event         text NOT NULL,          -- 'bloqueo' | 'desbloqueo'
+  reason        text,                   -- el del bloqueo; el desbloqueo puede no tenerlo
+  actor_user_id uuid REFERENCES user_profiles(id) ON DELETE SET NULL,
+  created_at    timestamptz NOT NULL DEFAULT clock_timestamp(),
+
+  CONSTRAINT user_event_valid CHECK (event IN ('bloqueo', 'desbloqueo'))
+);
+CREATE INDEX user_status_history_user_idx
+  ON user_status_history (user_id, created_at DESC);
+```
+
+> **Es la misma pieza que `order_status_history` (§5.6), y por los mismos motivos**: P5 pide que los cambios de usuarios se auditen en la misma transacción que el cambio, `actor_user_id` va en `SET NULL` —perder quién lo hizo empobrece la auditoría pero no deja la fila inconsistente—, y `clock_timestamp()` reemplaza a `now()` para que dos filas escritas en una misma transacción no queden con el timestamp idéntico. **El `ON DELETE CASCADE` no contradice a §5.6**: los usuarios no se eliminan, y si alguna vez se borra una identidad sin órdenes, su historial de bloqueos no tiene a quién pertenecer.
+
 **El perfil lo crea nuestro código, nunca un *trigger*.** La documentación de Supabase propone poblar el perfil con un *trigger* sobre `auth.users` y advierte que, si el *trigger* falla, **bloquea los registros**. Se evita: el flujo de alta lo controla la aplicación (§13.4), donde un fallo se puede reportar y compensar.
 
 > **Nombre y apellido van separados, y `full_name` es una columna generada** (migración `0011`, 2026-09-10). El campo único obligaba a adivinar cuál era cuál, y esa adivinanza ya estaba escrita: el alta partía el nombre por el primer espacio para saludar en los emails, así que quien se registraba como «Sanhueza, Matías» recibía «Hola, Sanhueza,». Se pregunta separado porque separado es como se usa —los emails saludan por el nombre de pila, y RF-26 va a listar y ordenar por apellido—. `full_name` se conserva **generada** para que todo lo que muestra un nombre siga leyendo una sola columna y sea imposible que se desincronice; el `customer_name` de la orden (§5.6) **no** se parte: es un snapshot, una etiqueta congelada, y se compone al crear la orden.
@@ -1222,6 +1241,9 @@ Se usan dos clientes de `@supabase/ssr`, porque el manejo de cookies difiere:
 | Guardia de página (`/admin`, `/mi-cuenta`) | Paso 1, y paso 2 solo si hace falta el rol |
 | **Toda Server Action** | **Pasos 1 y 2, siempre** |
 | Lectura de datos propios | Paso 1, y se filtra por ese id |
+| **`proxy.ts`, en las rutas privadas** | **Paso 1, y `is_banned` de la base** (F7.7) |
+
+> **La última fila la agregó F7.7 (2026-09-16), y tiene un costo que conviene decir.** Un bloqueo no puede invalidar un JWT ya emitido: se verifica localmente contra el JWKS y sigue valiendo hasta que vence, así que sin consultar la base una cuenta recién bloqueada seguiría **viendo** sus pantallas durante lo que le quede de token —operar ya no podía, que eso lo corta el envoltorio—. Es una ida a la base por pedido a `/admin`, `/mi-cuenta`, `/carrito`, `/checkout` y `/orden` con sesión: una búsqueda por clave primaria sobre la LAN de 0,4 ms (F0.8), contra un presupuesto de 300 ms (§20). **El catálogo no la paga**, que es donde estaría el tráfico. Si la consulta falla, se sigue de largo: dejar a toda la tienda afuera de su cuenta por un corte de red es peor que la hora de gracia que esto cierra.
 
 **Por qué las mutaciones consultan la base y no se conforman con el JWT.** Un rol o un bloqueo escritos en el token quedan **congelados hasta que el token se renueve**. RF-27 exige que bloquear invalide las sesiones activas: si la autorización se apoyara solo en el JWT, un usuario recién bloqueado podría seguir operando hasta una hora.
 
@@ -1260,10 +1282,17 @@ Esa pantalla ya era necesaria: ningún proveedor social entrega teléfono (RF-06
 **Al bloquear:**
 ```
 1. UPDATE user_profiles SET is_banned, ban_reason, banned_at, banned_by
+   INSERT user_status_history ('bloqueo', motivo, autor)   → en la MISMA transacción
    (la restricción ban_has_reason impide guardar sin motivo)
 2. admin.updateUserById(id, { ban_duration: '876000h' })   → impide el ingreso
-3. admin.signOut(id, 'global')                             → mata las sesiones activas
+3. proxy.ts, en el próximo pedido privado                  → cierra la sesión abierta
 ```
+
+**El orden importa, y es este.** La base primero: si GoTrue falla, la cuenta queda marcada como bloqueada en el perfil y **el envoltorio de acciones (§6.2) ya la frena**, aunque todavía pueda iniciar sesión. Al revés —GoTrue primero— un fallo de la base dejaría a alguien sin poder entrar y sin motivo registrado, que es exactamente lo que RF-27 no admite. **El paso 2 no se reintenta ni deshace lo guardado**: se informa, se registra, y la cuenta ya no puede operar.
+
+> **El paso 3 decía `admin.signOut(id, 'global')` y no podía funcionar.** Ese método del SDK recibe **el JWT** de quien cierra sesión, no un `id`: sirve para que alguien se desconecte a sí mismo, no para desconectar a otro. Corregido en F7.7 (2026-09-16) con lo que sí cierra la sesión, abajo.
+
+**Las sesiones que ya estaban abiertas las cierra `proxy.ts`, no el paso 3.** Medido contra el stack local el 2026-09-16: bloquear en GoTrue hace que el token de refresco deje de canjearse y que `getUser` conteste `user_banned`, pero **el token de acceso que la persona ya tiene se verifica localmente** (§13.3) y sigue siendo válido hasta que vence, hasta una hora después. El `admin.signOut` del SDK tampoco sirve para esto: pide **el JWT** de esa persona, que sobre una cuenta ajena no se tiene. Así que en la primera ruta privada que pida, el proxy lee `is_banned`, **le borra las cookies de sesión** y la manda al ingreso — que es donde RF-27 quiere que se entere, y con el motivo.
 
 **Al intentar ingresar:** GoTrue devuelve el código `user_banned` (HTTP 400, mensaje `User is banned`), **distinto** del `invalid_credentials` de una contraseña equivocada. Comprobado en F1.7. Detectado ese código, se busca el email en `user_profiles` y se devuelve el motivo registrado.
 
@@ -1271,13 +1300,13 @@ Esa pantalla ya era necesaria: ningún proveedor social entrega teléfono (RF-06
 
 > **Esto revela que el email existe**, y por eso es una excepción deliberada a la regla de no filtrar existencia de cuentas (RF-06). Es inherente al requisito: no se puede mostrar el motivo sin admitir que la cuenta existe. Se acota devolviendo el motivo **solo** cuando la cuenta está efectivamente bloqueada, nunca en un fallo de contraseña común.
 
-**Desbloquear** revierte los tres pasos y deja registro. Todo bloqueo y desbloqueo se audita con autor y fecha.
+**Desbloquear** revierte los tres pasos —limpia las cuatro columnas, `ban_duration: 'none'`— y escribe su propia fila `'desbloqueo'`. Todo bloqueo y desbloqueo se audita con autor y fecha, y el historial es lo único que queda cuando el estado actual vuelve a ser «no bloqueada» (§5.3).
 
 ### 13.5b Baja de cuenta (RF-34, RN-13)
 
 Anotado el 2026-09-06, cuando entró RF-34. **Todavía no está construido** — el diseño fino va con F5.8 y F7.9 —, pero conviene que quede escrito acá lo que ya se sabe, porque cambia poco y se olvida fácil.
 
-**La baja usa la misma maquinaria que el bloqueo y significa otra cosa.** Los tres pasos de arriba sirven igual: marca en `user_profiles`, `ban_duration` en GoTrue para impedir el ingreso, y `signOut` global. Lo que **no** puede compartir es la marca ni el mensaje.
+**La baja usa la misma maquinaria que el bloqueo y significa otra cosa.** Los tres pasos de arriba sirven igual: marca en `user_profiles`, `ban_duration` en GoTrue para impedir el ingreso, y el proxy cerrando la sesión que estuviera abierta —con su propia marca, no con `is_banned`—. Lo que **no** puede compartir es la marca ni el mensaje.
 
 **Y no es una cuestión de prolijidad: GoTrue no las distingue.** `ban_duration` es lo único que esa capa entiende, así que una cuenta dada de baja va a devolver `user_banned` en el intento de ingreso, **el mismo código que un bloqueo**. Quien tiene que separarlas es nuestra capa, con el patrón que §13.5 ya usa: detectado el código, se busca el perfil y se decide **qué** decir. Con un solo `is_banned` esa decisión no se puede tomar, y alguien que se fue por su cuenta leería «tu cuenta está bloqueada».
 

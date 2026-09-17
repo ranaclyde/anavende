@@ -264,6 +264,23 @@ describe("user_profiles — RF-27", () => {
     });
   });
 
+  test("un evento de historial que no existe se rechaza", async () => {
+    // RF-27, F7.7: la tabla guarda dos cosas y nada más. Un 'baja' escrito
+    // de más —que es lo que F7.9 va a querer— tiene que romper acá y no
+    // aparecer como una fila muda en la ficha de alguien.
+    await enTransaccionRevertida(async (tx) => {
+      const id = await unaAdministradora(tx);
+      await rechaza(
+        tx,
+        (sp) =>
+          sp.execute(sql`
+            INSERT INTO user_status_history (user_id, event)
+            VALUES (${id}, 'suspension')`),
+        /user_event_valid/i,
+      );
+    });
+  });
+
   test("un rol que no existe se rechaza", async () => {
     await enTransaccionRevertida(async (tx) => {
       const id = await unaAdministradora(tx);

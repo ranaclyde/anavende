@@ -114,3 +114,53 @@ export type NewUserProfile = typeof userProfiles.$inferInsert;
 
 /** Los dos únicos roles del sistema (§5.3). */
 export type Role = "admin" | "customer";
+
+/**
+ * Historial de bloqueos y desbloqueos — TECHNICAL-SPEC §5.3, §13.5. Tarea F7.7.
+ *
+ * **Las columnas de `user_profiles` dicen cómo está la cuenta hoy; esta tabla,
+ * lo que le pasó.** Son cosas distintas y por eso son dos lugares: desbloquear
+ * limpia `ban_reason` —`ban_has_reason` no admite un motivo sin bloqueo—, así
+ * que el desbloqueo que RF-27 pide registrar no dejaría rastro de nada.
+ *
+ * Es la misma pieza que `order_status_history` (§5.6) y por los mismos
+ * motivos: P5 pide auditar los cambios de usuarios en la misma transacción que
+ * el cambio.
+ */
+export const userStatusHistory = pgTable(
+  "user_status_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => userProfiles.id, { onDelete: "cascade" }),
+    event: text("event").notNull(),
+    /** El del bloqueo, obligatorio (RF-27). El desbloqueo puede no tenerlo. */
+    reason: text("reason"),
+    /**
+     * Quién lo hizo. `SET NULL` como el `actor_user_id` del historial de
+     * órdenes (§5.6): perderlo empobrece la auditoría, no deja la fila
+     * inconsistente.
+     */
+    actorUserId: uuid("actor_user_id").references(
+      (): AnyPgColumn => userProfiles.id,
+      { onDelete: "set null" },
+    ),
+    /**
+     * `clock_timestamp()` y no `now()`, por lo mismo que en el historial de
+     * órdenes: dos filas escritas dentro de una misma transacción quedarían
+     * con el timestamp idéntico y el historial se leería en un orden
+     * cualquiera.
+     */
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`clock_timestamp()`),
+  },
+  (t) => [
+    check("user_event_valid", sql`${t.event} IN ('bloqueo', 'desbloqueo')`),
+    index("user_status_history_user_idx").on(t.userId, t.createdAt.desc()),
+  ],
+);
+
+export type UserStatusEvent = "bloqueo" | "desbloqueo";
+export type UserStatusHistoryRow = typeof userStatusHistory.$inferSelect;

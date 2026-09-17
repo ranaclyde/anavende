@@ -5,24 +5,29 @@ import { refresh } from "next/cache";
 
 import { action } from "@/lib/action";
 import {
+  bloquearUsuario,
   cambiarRolDeUsuario,
+  desbloquearUsuario,
   editarUsuario,
   invitarUsuario,
   mandarRecuperacion,
 } from "@/modules/users/panel/operaciones";
 import {
   altaDeUsuario,
+  bloqueoDeUsuario,
   cambioDeRol,
+  desbloqueoDeUsuario,
   edicionDeUsuario,
   restablecerContrasena,
 } from "@/modules/users/panel/schemas";
 
 /**
- * Acciones del panel sobre usuarios — FS RF-26 · TS §13.2. Tarea F7.6.
+ * Acciones del panel sobre usuarios — FS RF-26, RF-27 · TS §13.2. Tareas
+ * F7.6 y F7.7.
  *
- * **Todas `.auth("admin")`**, sin excepción: son las cuatro cosas que se le
- * pueden hacer a la cuenta de otra persona, y ninguna la puede hacer quien no
- * entra al panel.
+ * **Todas `.auth("admin")`**, sin excepción: son las cosas que se le pueden
+ * hacer a la cuenta de otra persona, y ninguna la puede hacer quien no entra
+ * al panel.
  *
  * **El `id` viaja en la entrada, al revés de las acciones del comprador.** Allá
  * el `WHERE` sale de la sesión y nunca del cliente, porque sin RLS es la única
@@ -111,3 +116,55 @@ export const mandarRestablecerContrasena = action
     const { email } = await mandarRecuperacion(input.id);
     return { email };
   });
+
+/**
+ * Bloquear una cuenta — RF-27. Tarea F7.7.
+ *
+ * **Quién bloquea sale de la sesión**, como en el cambio de rol: es lo que
+ * queda registrado en `banned_by` y en el historial, y leerlo del cliente
+ * sería dejar que quien bloquea firme con el nombre de otra.
+ *
+ * **Si Supabase Auth no contesta, no se falla**: la cuenta ya quedó bloqueada
+ * donde importa —el envoltorio la frena en toda acción— y decir «no pudimos»
+ * sería mentir. Va a Sentry, y vuelve para que el diálogo lo aclare.
+ */
+export const bloquearCuenta = action
+  .input(bloqueoDeUsuario)
+  .auth("admin")
+  .handler(async ({ input, ctx }) => {
+    const resultado = await bloquearUsuario({
+      id: input.id,
+      motivo: input.motivo,
+      actorId: ctx.session.profile.id,
+    });
+
+    avisarDeAuth(resultado.errorDeAuth, "bloquear");
+    refresh();
+    return resultado;
+  });
+
+/** Desbloquear — RF-27. Queda registrado igual que el bloqueo. */
+export const desbloquearCuenta = action
+  .input(desbloqueoDeUsuario)
+  .auth("admin")
+  .handler(async ({ input, ctx }) => {
+    const resultado = await desbloquearUsuario({
+      id: input.id,
+      actorId: ctx.session.profile.id,
+    });
+
+    avisarDeAuth(resultado.errorDeAuth, "desbloquear");
+    refresh();
+    return resultado;
+  });
+
+/**
+ * La base quedó bien y Supabase Auth no: es un incidente para mirar, no un
+ * fallo para la pantalla. Mismo criterio que los metadatos de la edición.
+ */
+function avisarDeAuth(error: string | null, paso: string) {
+  if (!error) return;
+  Sentry.captureException(new Error(error), {
+    tags: { capa: "server-action", paso: `auth_${paso}` },
+  });
+}

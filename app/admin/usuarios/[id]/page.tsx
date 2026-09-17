@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EstadoDeLaOrden } from "@/components/admin/ordenes/estado";
+import { BloqueoDeLaCuenta } from "@/components/admin/usuarios/bloqueo";
 import {
   EstadoDelUsuario,
   RolDelUsuario,
@@ -20,6 +21,7 @@ import { enlaceDeWhatsApp } from "@/lib/whatsapp";
 import {
   contarAdministradoras,
   leerUsuarioDelPanel,
+  type MovimientoDeEstado,
   type UsuarioDelPanel,
 } from "@/modules/users/panel/queries";
 import type { RolAsignable } from "@/modules/users/panel/schemas";
@@ -37,16 +39,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Ficha de un usuario — FS RF-26. Tarea F7.6.
+ * Ficha de un usuario — FS RF-26, RF-27. Tareas F7.6 y F7.7.
  *
  * Es la hoja de trabajo de una cuenta: los datos que se corrigen, el rol que
- * se cambia, el email de contraseña nueva que se dispara, y **sus órdenes**,
- * que es lo que contesta quién es esta persona para la tienda.
+ * se cambia, el email de contraseña nueva que se dispara, el bloqueo, y **sus
+ * órdenes**, que es lo que contesta quién es esta persona para la tienda.
  *
- * **Lo que todavía no está, no está apagado: no está.** Bloquear es RF-27
- * (F7.7) y ejecutar una baja es RF-34 (F7.9); acá el estado **se ve** —con su
- * motivo y su fecha— porque enterarse de que una cuenta está bloqueada es
- * parte de entenderla, pero no hay botones que no hagan nada.
+ * **La tarjeta de estado está siempre**, también cuando no pasa nada: es de
+ * donde se bloquea (F7.7), así que esconderla mientras la cuenta está sana
+ * escondería el botón. Antes aparecía sólo con algo que contar, porque no
+ * había nada que hacer ahí.
+ *
+ * **Ejecutar una baja pedida sigue sin estar** (RF-34, F7.9): acá se ve, con
+ * su motivo y su fecha, y no hay un botón apagado que no haga nada.
  *
  * **Y no hay «eliminar»**, que tampoco va a venir: un comprador con órdenes no
  * se borra ni se puede borrar (§5.6, F4.5b).
@@ -144,54 +149,114 @@ export default async function FichaDeUsuario({ params }: Props) {
             />
           </Tarjeta>
 
-          {usuario.bloqueado || usuario.bajaPedida ? (
-            <Tarjeta titulo="Estado de la cuenta">
-              {usuario.bloqueado ? (
-                <div className="flex flex-col gap-1">
-                  <p className="text-body-sm text-ink">
-                    Bloqueada
-                    {usuario.bloqueadoEn
-                      ? ` el ${fechaConHora(usuario.bloqueadoEn)}`
-                      : ""}
-                    {usuario.bloqueadoPor ? ` por ${usuario.bloqueadoPor}` : ""}
-                    .
-                  </p>
-                  {/* RF-27: el motivo es obligatorio y lo garantiza un CHECK,
-                      así que si hay bloqueo hay motivo. */}
-                  <p className="text-body-sm text-ink-secondary">
-                    <span className="text-ink-tertiary">Motivo: </span>
-                    {usuario.motivoDelBloqueo}
-                  </p>
-                  <p className="text-caption text-ink-tertiary">
-                    No puede entrar, y eso es lo que ve al intentarlo.
-                  </p>
-                </div>
-              ) : null}
+          <Tarjeta titulo="Estado de la cuenta">
+            {usuario.bloqueado ? (
+              <div className="flex flex-col gap-1">
+                <p className="text-body-sm text-ink">
+                  Bloqueada
+                  {usuario.bloqueadoEn
+                    ? ` el ${fechaConHora(usuario.bloqueadoEn)}`
+                    : ""}
+                  {usuario.bloqueadoPor ? ` por ${usuario.bloqueadoPor}` : ""}.
+                </p>
+                {/* RF-27: el motivo es obligatorio y lo garantiza un CHECK,
+                    así que si hay bloqueo hay motivo. */}
+                <p className="text-body-sm text-ink-secondary">
+                  <span className="text-ink-tertiary">Motivo: </span>
+                  {usuario.motivoDelBloqueo}
+                </p>
+                <p className="text-caption text-ink-tertiary">
+                  No puede entrar, y eso es lo que ve al intentarlo.
+                </p>
+              </div>
+            ) : (
+              <p className="text-body-sm text-ink-secondary">
+                Entra y compra con normalidad.
+              </p>
+            )}
 
-              {usuario.bajaPedida ? (
-                <div className="flex flex-col gap-1">
-                  <p className="text-body-sm text-ink">
-                    Pidió la baja de su cuenta
-                    {usuario.bajaPedidaEn
-                      ? ` el ${fechaConHora(usuario.bajaPedidaEn)}`
-                      : ""}
-                    .
-                  </p>
-                  <p className="text-body-sm text-ink-secondary">
-                    <span className="text-ink-tertiary">Motivo: </span>
-                    {usuario.motivoDeLaBaja}
-                  </p>
-                  <p className="text-caption text-ink-tertiary">
-                    Mientras tanto su cuenta es de solo lectura: puede entrar y
-                    mirar, no comprar.
-                  </p>
-                </div>
-              ) : null}
-            </Tarjeta>
-          ) : null}
+            <BloqueoDeLaCuenta
+              id={usuario.id}
+              nombre={usuario.firstName}
+              bloqueado={usuario.bloqueado}
+              esMiCuenta={esMiCuenta}
+              esLaUnicaAdministradora={
+                usuario.rol === "admin" && administradoras <= 1
+              }
+            />
+
+            {usuario.bajaPedida ? (
+              <div className="flex flex-col gap-1 border-t border-border pt-3">
+                <p className="text-body-sm text-ink">
+                  Pidió la baja de su cuenta
+                  {usuario.bajaPedidaEn
+                    ? ` el ${fechaConHora(usuario.bajaPedidaEn)}`
+                    : ""}
+                  .
+                </p>
+                <p className="text-body-sm text-ink-secondary">
+                  <span className="text-ink-tertiary">Motivo: </span>
+                  {usuario.motivoDeLaBaja}
+                </p>
+                <p className="text-caption text-ink-tertiary">
+                  Mientras tanto su cuenta es de solo lectura: puede entrar y
+                  mirar, no comprar.
+                </p>
+              </div>
+            ) : null}
+          </Tarjeta>
+
+          <HistorialDeEstado movimientos={usuario.historialDeEstado} />
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Cada bloqueo y cada desbloqueo — RF-27: «se puede desbloquear, quedando
+ * también registrado». Tarea F7.7.
+ *
+ * **Sin bloqueos no hay tarjeta.** Es el caso de casi todas las cuentas, y un
+ * «todavía no pasó nada» ocupando lugar en la columna del costado no le
+ * contesta nada a nadie. Distinto de la tarjeta de estado de arriba, que está
+ * siempre porque tiene el botón.
+ *
+ * **Se lee del más nuevo al más viejo** y cada fila dice quién y cuándo, que
+ * es lo que §13.5 pide auditar. El motivo se repite en la fila del bloqueo
+ * aunque arriba también esté: arriba está el del bloqueo vigente, y acá el de
+ * cada uno de los que hubo.
+ */
+function HistorialDeEstado({
+  movimientos,
+}: {
+  movimientos: MovimientoDeEstado[];
+}) {
+  if (movimientos.length === 0) return null;
+
+  return (
+    <Tarjeta titulo="Bloqueos">
+      <ul className="flex flex-col gap-3">
+        {movimientos.map((m) => (
+          <li key={m.fecha} className="flex flex-col gap-0.5">
+            <p className="text-body-sm text-ink">
+              {m.evento === "bloqueo" ? "Bloqueada" : "Desbloqueada"}
+              {" el "}
+              <time dateTime={m.fecha}>{fechaConHora(m.fecha)}</time>
+              {/* El autor puede faltar: `actor_user_id` es SET NULL, así que
+                  si esa cuenta se borró queda el hecho sin el nombre. */}
+              {m.autor ? ` por ${m.autor}` : ""}.
+            </p>
+            {m.motivo ? (
+              <p className="text-caption text-ink-secondary">
+                <span className="text-ink-tertiary">Motivo: </span>
+                {m.motivo}
+              </p>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </Tarjeta>
   );
 }
 

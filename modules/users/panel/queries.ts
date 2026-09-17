@@ -116,6 +116,14 @@ export type OrdenDelUsuario = {
   unidades: number;
 };
 
+/** Una fila del historial de bloqueos — RF-27, §5.3. Tarea F7.7. */
+export type MovimientoDeEstado = {
+  evento: "bloqueo" | "desbloqueo";
+  motivo: string | null;
+  autor: string | null;
+  fecha: string;
+};
+
 export type UsuarioDelPanel = UsuarioDelListado & {
   firstName: string;
   lastName: string;
@@ -128,6 +136,15 @@ export type UsuarioDelPanel = UsuarioDelListado & {
   bajaPedidaEn: string | null;
   /** Las últimas cinco, que es lo que la ficha muestra. */
   ultimasOrdenes: OrdenDelUsuario[];
+  /**
+   * Cada bloqueo y cada desbloqueo, del más nuevo al más viejo (RF-27).
+   *
+   * **Es lo único que queda cuando la cuenta vuelve a estar desbloqueada**:
+   * las columnas de arriba dicen cómo está hoy, no lo que pasó. Va entera y
+   * no paginada porque es una lista que casi siempre está vacía y nunca va a
+   * tener veinte filas: una cuenta se bloquea una vez, o ninguna.
+   */
+  historialDeEstado: MovimientoDeEstado[];
 };
 
 /**
@@ -177,7 +194,21 @@ export async function leerUsuarioDelPanel(
               FROM (SELECT o.* FROM orders o
                      WHERE o.user_id = p.id
                      ORDER BY o.created_at DESC, o.order_number DESC
-                     LIMIT 5) u) AS "ultimasOrdenes"
+                     LIMIT 5) u) AS "ultimasOrdenes",
+           (SELECT coalesce(
+                     json_agg(
+                       json_build_object(
+                         'evento', h.event,
+                         'motivo', h.reason,
+                         'autor',  a.full_name,
+                         'fecha',  h.created_at
+                       )
+                       ORDER BY h.created_at DESC
+                     ),
+                     '[]'::json)
+              FROM user_status_history h
+              LEFT JOIN user_profiles a ON a.id = h.actor_user_id
+             WHERE h.user_id = p.id) AS "historialDeEstado"
       FROM user_profiles p
       LEFT JOIN user_profiles b ON b.id = p.banned_by
      WHERE p.id = ${id}`);

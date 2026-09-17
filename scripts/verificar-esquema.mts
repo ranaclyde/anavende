@@ -20,7 +20,7 @@ const TABLAS_ESPERADAS = [
   "category_relations", "colors", "favorites", "legal_pages", "order_items",
   "order_status_history", "orders", "payment_methods", "product_variants",
   "products", "return_items", "returns", "site_settings", "stock_movements",
-  "user_profiles", "variant_images",
+  "user_profiles", "user_status_history", "variant_images",
 ];
 
 const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
