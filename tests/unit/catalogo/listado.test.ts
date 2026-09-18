@@ -43,6 +43,14 @@ const con = (cambios: Partial<Filtros>): Filtros => ({
   ...cambios,
 });
 
+/**
+ * Solo las filas. `listarProductos` devuelve `{ productos, total }` desde que
+ * el listado pagina; lo que estos tests miran es el contenido de la página, y
+ * el total tiene su propio bloque más abajo.
+ */
+const filas = async (...args: Parameters<typeof listarProductos>) =>
+  (await listarProductos(...args)).productos;
+
 describe("la URL (§10.2)", () => {
   test("sin parámetros quedan los valores de siempre", () => {
     expect(leerFiltros({}).orden).toBe("destacados");
@@ -257,7 +265,7 @@ describe("contra la base", () => {
   /** Solo nuestros productos, por el sufijo del nombre. */
   const ids = async (f: Partial<Filtros> = {}) =>
     (
-      await listarProductos(
+      await filas(
         con({ q: marca, marca: "", categoria: "", ...f }),
         3,
       )
@@ -265,7 +273,7 @@ describe("contra la base", () => {
 
   describe("el stock sale de la suma de las variantes", () => {
     test("total, reservado y disponible por producto (RF-15): 10, 2 y 8", async () => {
-      const todos = await listarProductos(con({ q: marca }), 3);
+      const todos = await filas(con({ q: marca }), 3);
       expect(todos.find((p) => p.id === teclado)).toMatchObject({
         stockTotal: 10,
         reservado: 2,
@@ -274,7 +282,7 @@ describe("contra la base", () => {
     });
 
     test("un color en −3 y otro en +10 suman 7: el total esconde la discrepancia", async () => {
-      const todos = await listarProductos(con({ q: marca }), 3);
+      const todos = await filas(con({ q: marca }), 3);
       const m = todos.find((p) => p.id === monitor)!;
       expect(m).toMatchObject({ stockTotal: 7, disponible: 7 });
       // Por eso se cuenta aparte: el producto queda marcado igual, y sin este
@@ -283,7 +291,7 @@ describe("contra la base", () => {
     });
 
     test("un producto sin colores no tiene stock, y se distingue de tenerlo en cero", async () => {
-      const todos = await listarProductos(con({ q: marca }), 3);
+      const todos = await filas(con({ q: marca }), 3);
       expect(todos.find((p) => p.id === auricular)).toMatchObject({
         variantes: 0,
         disponible: 0,
@@ -294,23 +302,23 @@ describe("contra la base", () => {
   describe("la búsqueda (§10.1, la mitad por subcadena)", () => {
     test("el término se busca entero: «teclado cable» no es «teclado» o «cable»", async () => {
       expect(
-        await listarProductos(con({ q: "teclado cable", marca: marcaA }), 3),
+        await filas(con({ q: "teclado cable", marca: marcaA }), 3),
       ).toHaveLength(0);
     });
 
     test("«mecanico» encuentra «Mecánico»: no depende de los acentos", async () => {
-      const r = await listarProductos(con({ q: "mecanico", marca: marcaA }), 3);
+      const r = await filas(con({ q: "mecanico", marca: marcaA }), 3);
       expect(r.map((p) => p.id)).toContain(teclado);
     });
 
     test("buscar por el nombre de la marca trae sus tres productos", async () => {
       expect(
-        await listarProductos(con({ q: `lojitech ${marca}` }), 3),
+        await filas(con({ q: `lojitech ${marca}` }), 3),
       ).toHaveLength(3);
     });
 
     test("la descripción también se busca, y el guion de «USB-C» sobrevive", async () => {
-      const r = await listarProductos(con({ q: "usb-c", marca: marcaA }), 3);
+      const r = await filas(con({ q: "usb-c", marca: marcaA }), 3);
       expect(r.map((p) => p.id)).toEqual([cable]);
     });
 
@@ -321,13 +329,13 @@ describe("contra la base", () => {
      * un porcentaje de verdad.
      */
     test("«%» busca un por ciento, no todo", async () => {
-      const r = await listarProductos(con({ q: "%", marca: marcaA }), 3);
+      const r = await filas(con({ q: "%", marca: marcaA }), 3);
       expect(r.map((p) => p.id)).toEqual([cable]);
     });
 
     test("el guion bajo tampoco es un comodín", async () => {
       expect(
-        await listarProductos(con({ q: "cabl_", marca: marcaA }), 3),
+        await filas(con({ q: "cabl_", marca: marcaA }), 3),
       ).toHaveLength(0);
     });
   });
@@ -378,14 +386,14 @@ describe("contra la base", () => {
     });
 
     test("con el umbral en 1, el cable de 2 unidades ya no hace falta reponerlo", async () => {
-      const r = await listarProductos(con({ q: marca, stock: "reponer" }), 1);
+      const r = await filas(con({ q: marca, stock: "reponer" }), 1);
       expect(r).toHaveLength(2);
     });
   });
 
   describe("el orden (RF-15)", () => {
     const nombres = async (f: Partial<Filtros>) =>
-      (await listarProductos(con({ q: marca, ...f }), 3)).map(
+      (await filas(con({ q: marca, ...f }), 3)).map(
         (p) => p.name.split(" ")[0],
       );
 
@@ -435,6 +443,64 @@ describe("contra la base", () => {
         sql`SELECT low_stock_threshold AS u FROM site_settings WHERE id = 1`,
       );
       expect(await umbralDeStockBajo()).toBe(fila?.u ?? 3);
+    });
+  });
+
+  describe("la paginación (§6.9)", () => {
+    /** Los cinco de esta suite, ordenados por nombre para que no bailen. */
+    const pagina = async (n: number, porPagina = 2) => {
+      const todos = await filas(
+        con({ q: marca, orden: "nombre", dir: "asc" }),
+        3,
+      );
+      return todos.slice((n - 1) * porPagina, n * porPagina).map((p) => p.name);
+    };
+
+    test("el total es el de los filtros, no el de la página", async () => {
+      const { productos, total } = await listarProductos(
+        con({ q: marca, orden: "nombre", dir: "asc" }),
+        3,
+      );
+      // Cinco productos y el tope es 40, así que entran todos en una página:
+      // el total y el largo coinciden. Lo que se fija es que `total` cuente
+      // las filas YA agrupadas —el filtro de stock vive en un HAVING— y no
+      // las de `products`.
+      expect(total).toBe(5);
+      expect(productos).toHaveLength(5);
+    });
+
+    test("el total respeta el filtro de stock, que se resuelve en HAVING", async () => {
+      const { productos, total } = await listarProductos(
+        con({ q: marca, stock: "sin" }),
+        3,
+      );
+      expect(total).toBe(productos.length);
+      expect(total).toBeLessThan(5);
+    });
+
+    test("el orden desempata, así que las páginas no se pisan", async () => {
+      // Sin criterio único, un producto puede caer en dos páginas o en
+      // ninguna. Se comprueba sobre el corte, que es lo que hace el LIMIT.
+      const primera = await pagina(1);
+      const segunda = await pagina(2);
+      const tercera = await pagina(3);
+      expect([...primera, ...segunda, ...tercera]).toEqual(
+        ["Auricular", "Cable", "Monitor", "Mouse", "Teclado"].map((n) =>
+          expect.stringContaining(n),
+        ),
+      );
+      expect(new Set([...primera, ...segunda, ...tercera]).size).toBe(5);
+    });
+
+    test("pedir una página que no existe devuelve vacío, no falla", async () => {
+      const { productos, total } = await listarProductos(
+        con({ q: marca, pagina: 99 }),
+        3,
+      );
+      expect(productos).toHaveLength(0);
+      // El total sigue siendo el de los filtros: es lo que la pantalla usa
+      // para mandar a la última página que sí existe.
+      expect(total).toBe(5);
     });
   });
 });

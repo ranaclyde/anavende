@@ -279,11 +279,11 @@ describe("el umbral guardado es el que usa el listado (§10.3)", () => {
     const { productId } = await unaVariante({ total: 5 });
 
     const paraReponer = async () => {
-      const filas = await listarProductos(
+      const { productos } = await listarProductos(
         { ...FILTROS_VACIOS, stock: "reponer" },
         await umbralDeStockBajo(),
       );
-      return filas.some((f) => f.id === productId);
+      return productos.some((f) => f.id === productId);
     };
 
     await escribirLaConfiguracion(valido({ ...base, lowStockThreshold: 5 }).data!);

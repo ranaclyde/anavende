@@ -2606,10 +2606,11 @@ con el formato de §6.9 —«Anterior / Página N de M / Siguiente», sin dibuja
 los pasos que no existen— y **40 por página**. Las tres repiten además el
 mismo guardia `if (filtros.pagina > paginas) redirect(...)`.
 
-**No paginan, y tienen que pasar a hacerlo:** Productos, Marcas, Categorías,
-Colores y Medios de pago. El caso serio es **Productos**: `listarProductos`
-(`modules/catalog/products/queries.ts`) **no tiene `limit` ni `offset`**, así
-que trae el catálogo entero en cada carga. Hoy son 26 productos sembrados;
+**~~No paginan, y tienen que pasar a hacerlo:~~** Productos, Marcas,
+Categorías, Colores y Medios de pago. **Productos quedó hecho el 2026-09-18**;
+los cuatro de catálogo siguen pendientes. El caso serio era **Productos**:
+`listarProductos` (`modules/catalog/products/queries.ts`) **no tenía `limit` ni
+`offset`**, así que traía el catálogo entero en cada carga. Hoy son 26 productos sembrados;
 con el catálogo real de F2.8 adentro eso se nota. Los cuatro de catálogo
 crecen más despacio, pero el criterio es el mismo. **El tamaño a usar es 40**,
 el que ya usan los otros tres —`POR_PAGINA` en `modules/orders/filtros-panel.ts`,
@@ -2617,9 +2618,41 @@ el que ya usan los otros tres —`POR_PAGINA` en `modules/orders/filtros-panel.t
 24 y esa es otra escala—.
 
 Al sumar paginación hay que llevar también el `pagina: 1` al cambiar un filtro,
-como ya hacen los otros tres. Hoy `productos/filtros.tsx` no lo tiene, y **no
-es un error**: no existe el parámetro porque no existe la paginación. Pasa a
-serlo en el momento en que se agregue.
+como ya hacen los otros tres. Hasta el 2026-09-18 `productos/filtros.tsx` no lo
+tenía, y **no era un error**: no existía el parámetro porque no existía la
+paginación. Al agregarla pasó a serlo, y entró en el mismo commit.
+
+**Lo que hizo falta en Productos, y no era solo un `LIMIT`** (2026-09-18):
+
+- **Dos totales, y son preguntas distintas.** `listarProductos` pasó a devolver
+  `{ productos, total }`, donde el total es **el de los filtros puestos**: con
+  paginación `productos.length` es el tamaño de la página y dejó de servir para
+  el contador de la barra («12 de 26 productos»). El total **sin** filtros sigue
+  siendo `contarProductos()`, que es lo único que separa «todavía no cargaste
+  ninguno» de «ninguno coincide con esto» (§8). Confundirlos habría hecho que un
+  catálogo lleno con una búsqueda sin resultados dijera que está vacío.
+- **El conteo va por subconsulta.** El filtro de stock vive en un `HAVING` sobre
+  una suma, así que hay que contar las filas **ya agrupadas** y no las de
+  `products`: `SELECT count(*) FROM (SELECT p.id … GROUP BY … HAVING …) t`, con
+  las mismas junturas, porque la búsqueda mira `b.name`.
+- **El desempate del `ORDER BY` dejó de ser cosmético.** Ya estaba —nombre y
+  después id—, y el comentario decía que era para que la pantalla no bailara
+  entre cargas. Con `LIMIT`/`OFFSET` pasa a ser correctitud: sin criterio único,
+  un producto puede salir en dos páginas o en ninguna.
+- **Filtrar y reordenar vuelven a la primera página.** Filtrar estando en la 3
+  puede dejar dos resultados y una página vacía, y reordenar cambia qué hay en
+  cada página.
+- **`modules/catalog/products/filtros.ts` tenía su propia copia de `texto` y
+  `unaDe`**, idénticas a las de `lib/filtros-url.ts` —cuyo comentario ya decía
+  «y el tercero va a querer las mismas tres reglas»—. Se borraron y ahora importa
+  las compartidas, que es de donde sale `pagina`.
+- **Cuatro tests nuevos** sobre el corte por página, el total filtrado, el
+  respeto del `HAVING` en el conteo y qué pasa al pedir una página que no
+  existe. Los doce usos que esperaban un arreglo pasaron por un helper.
+
+Verificado en el navegador bajando el tope a 2 a propósito: «Página 2 de 13»,
+dos filas, `?pagina=99` redirige a la 13, y buscar desde la página 5 vuelve a
+la 1. Después se restauró el 40.
 
 ### Dos reglas de la tabla están escritas y no hacen nada
 

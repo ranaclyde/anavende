@@ -8,6 +8,15 @@
  * encontrar sin decir nada.
  */
 
+import {
+  pagina as leerPagina,
+  texto,
+  unaDe,
+  type ParametrosDeBusqueda,
+} from "@/lib/filtros-url";
+
+export type { ParametrosDeBusqueda };
+
 export const ORDENES = [
   // El de siempre, y el que queda cuando no hay nada en la URL: es el orden
   // con el que se venía mostrando el listado desde F2.3.
@@ -51,6 +60,7 @@ export type FiltrosDeProductos = {
   stock: FiltroDeStock;
   orden: OrdenDeProductos;
   dir: Direccion;
+  pagina: number;
 };
 
 /**
@@ -77,31 +87,14 @@ export const FILTROS_VACIOS: FiltrosDeProductos = {
   stock: "todos",
   orden: "destacados",
   dir: DIRECCION_NATURAL.destacados,
+  pagina: 1,
 };
 
-/** Lo que Next entrega tras hacerle `await` a `searchParams` (§10.2). */
-export type ParametrosDeBusqueda = Record<
-  string,
-  string | string[] | undefined
->;
+/** El mismo tope que los otros listados del panel: filas de 44px (§6.9). */
+export const POR_PAGINA = 40;
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function texto(valor: string | string[] | undefined): string {
-  // Un parámetro repetido —`?q=a&q=b`— llega como arreglo. Se toma el
-  // primero en vez de fallar: la URL la escribe cualquiera, no solo la barra.
-  return (Array.isArray(valor) ? valor[0] : valor)?.trim() ?? "";
-}
-
-function unaDe<T extends string>(
-  valor: string | string[] | undefined,
-  opciones: readonly { valor: T }[],
-  porDefecto: T,
-): T {
-  const v = texto(valor);
-  return opciones.some((o) => o.valor === v) ? (v as T) : porDefecto;
-}
 
 /**
  * Lee los filtros de la URL sin fallar nunca.
@@ -129,6 +122,7 @@ export function leerFiltros(
     stock: unaDe(params.stock, FILTROS_DE_STOCK, FILTROS_VACIOS.stock),
     orden,
     dir: dir === "asc" || dir === "desc" ? dir : DIRECCION_NATURAL[orden],
+    pagina: leerPagina(params.pagina),
   };
 }
 
@@ -154,6 +148,7 @@ export function urlDeFiltros(
   if (filtros.dir !== DIRECCION_NATURAL[filtros.orden]) {
     params.set("dir", filtros.dir);
   }
+  if (filtros.pagina > 1) params.set("pagina", String(filtros.pagina));
 
   const cadena = params.toString();
   return cadena ? `${base}?${cadena}` : base;
@@ -166,6 +161,9 @@ export function urlDeFiltros(
  * vuelta. Cambiar de criterio arranca por su dirección natural en vez de
  * heredar la anterior — venir de «más nuevos primero» no tiene por qué
  * dejar los precios de mayor a menor.
+ *
+ * **Vuelve a la primera página.** Reordenar cambia qué hay en cada página, así
+ * que quedarse en la 3 deja a la persona en un lugar que no eligió.
  */
 export function urlDeOrden(
   filtros: FiltrosDeProductos,
@@ -178,7 +176,7 @@ export function urlDeOrden(
         : "asc"
       : DIRECCION_NATURAL[orden];
 
-  return urlDeFiltros({ ...filtros, orden, dir });
+  return urlDeFiltros({ ...filtros, orden, dir, pagina: 1 });
 }
 
 /** Si hay algo que limpiar: búsqueda o filtros, no el orden. */

@@ -53,8 +53,13 @@ export function BarraDeFiltros({
   const campo = useRef<HTMLInputElement>(null);
   const idBusqueda = useId();
 
+  // Cualquier cambio vuelve a la primera página, como en los otros tres
+  // listados: filtrar estando en la 3 puede dejar dos resultados y una página
+  // vacía, y quien filtró no eligió estar ahí.
   const aplicar = (cambios: Partial<FiltrosDeProductos>) => {
-    iniciar(() => router.push(urlDeFiltros({ ...filtros, ...cambios })));
+    iniciar(() =>
+      router.push(urlDeFiltros({ ...filtros, ...cambios, pagina: 1 })),
+    );
   };
 
   const buscar = (e: React.FormEvent) => {

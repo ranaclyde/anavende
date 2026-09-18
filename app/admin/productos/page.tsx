@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 
+import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { BarraDeFiltros } from "@/components/admin/productos/filtros";
 import {
   ListadoDeProductos,
@@ -10,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   leerFiltros,
+  POR_PAGINA,
+  urlDeFiltros,
   type ParametrosDeBusqueda,
 } from "@/modules/catalog/products/filtros";
 import {
@@ -42,11 +46,24 @@ export default async function ProductosDelPanel({
   // ya vino. Es una lectura por clave primaria de una fila.
   const umbral = await umbralDeStockBajo();
 
-  const [items, total, { marcas, categorias }] = await Promise.all([
-    listarProductos(filtros, umbral),
-    contarProductos(),
-    opcionesDeProducto(),
-  ]);
+  // Dos totales, y son preguntas distintas: `coincidencias` es cuántos pasan
+  // los filtros —lo que cuenta la barra y lo que decide cuántas páginas hay— y
+  // `total` es cuántos hay cargados, que es lo único que separa «todavía no
+  // cargaste ninguno» de «ninguno coincide con esto» (§8).
+  const [{ productos, total: coincidencias }, total, { marcas, categorias }] =
+    await Promise.all([
+      listarProductos(filtros, umbral),
+      contarProductos(),
+      opcionesDeProducto(),
+    ]);
+
+  // Pedir una página que ya no existe —un enlace viejo, o borrar productos
+  // estando en la última— lleva a la última que sí existe, como en los otros
+  // tres listados del panel.
+  const paginas = Math.max(1, Math.ceil(coincidencias / POR_PAGINA));
+  if (filtros.pagina > paginas) {
+    redirect(urlDeFiltros({ ...filtros, pagina: paginas }));
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -82,14 +99,20 @@ export default async function ProductosDelPanel({
             filtros={filtros}
             marcas={marcas}
             categorias={categorias}
-            mostrados={items.length}
+            mostrados={coincidencias}
             total={total}
           />
 
           <ListadoDeProductos
-            items={items}
+            items={productos}
             filtros={filtros}
             umbral={umbral}
+          />
+
+          <PaginacionDelPanel
+            pagina={filtros.pagina}
+            paginas={paginas}
+            href={(n) => urlDeFiltros({ ...filtros, pagina: n })}
           />
         </>
       )}
