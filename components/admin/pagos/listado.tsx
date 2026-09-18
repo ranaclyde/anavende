@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { DialogoDeMedioDePago } from "@/components/admin/pagos/dialogo";
+import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +38,7 @@ import {
   eliminarUnMedioDePago,
   moverMedioDePago,
 } from "@/modules/settings/actions";
+import { urlDePagina } from "@/modules/catalog/filtros-panel";
 import type { MedioDePagoDelPanel } from "@/modules/settings/queries";
 
 /**
@@ -51,9 +53,26 @@ import type { MedioDePagoDelPanel } from "@/modules/settings/queries";
  */
 export function ListadoDeMediosDePago({
   items,
+  total,
+  pagina,
+  paginas,
+  base,
 }: {
+  /** Los de ESTA página. Para contar, el estado vacío y el botón va `total`. */
   items: MedioDePagoDelPanel[];
+  total: number;
+  pagina: number;
+  paginas: number;
+  /** La ruta de la solapa. El enlace lo arma acá: una función no cruza de
+      servidor a cliente. */
+  base: string;
 }) {
+  // «Bajar» se apaga solo en el último de TODOS, no en el último de la página:
+  // el último de la página 1 sí se puede bajar —pasa a la 2—, y apagarlo ahí
+  // sería mentir con un `title` que dice «ya es el último».
+  const esElUltimo = (i: number) =>
+    pagina === paginas && i === items.length - 1;
+
   const [enCurso, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
@@ -90,17 +109,17 @@ export function ListadoDeMediosDePago({
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-body-sm text-ink-secondary">
-          {items.length === 0
+          {total === 0
             ? "Sin medios de pago"
-            : items.length === 1
+            : total === 1
               ? "1 medio de pago"
-              : `${items.length} medios de pago`}
+              : `${total} medios de pago`}
         </p>
         {/* Con la lista vacía este botón no está: el estado vacío ya ofrece
             el mismo primer paso en el medio de la pantalla, y dos botones de
             marca iguales a 100px uno del otro se leen como un error (§6.3:
             una sola por pantalla). */}
-        {items.length === 0 ? null : (
+        {total === 0 ? null : (
           <Button variant="brand" size="sm" onClick={() => setCreando(true)}>
             <Plus aria-hidden />
             Nuevo medio de pago
@@ -114,7 +133,7 @@ export function ListadoDeMediosDePago({
         </p>
       )}
 
-      {items.length === 0 ? (
+      {total === 0 ? (
         <Vacio alCrear={() => setCreando(true)} />
       ) : (
         <>
@@ -145,7 +164,7 @@ export function ListadoDeMediosDePago({
                       <Acciones
                         medio={medio}
                         primero={i === 0}
-                        ultimo={i === items.length - 1}
+                        ultimo={esElUltimo(i)}
                         ocupado={enCurso}
                         alSubir={() => mover(medio, "arriba")}
                         alBajar={() => mover(medio, "abajo")}
@@ -175,7 +194,7 @@ export function ListadoDeMediosDePago({
                   <Acciones
                     medio={medio}
                     primero={i === 0}
-                    ultimo={i === items.length - 1}
+                    ultimo={esElUltimo(i)}
                     ocupado={enCurso}
                     alSubir={() => mover(medio, "arriba")}
                     alBajar={() => mover(medio, "abajo")}
@@ -187,6 +206,12 @@ export function ListadoDeMediosDePago({
               </li>
             ))}
           </ul>
+
+          <PaginacionDelPanel
+            pagina={pagina}
+            paginas={paginas}
+            href={(n) => urlDePagina(base, n)}
+          />
         </>
       )}
 

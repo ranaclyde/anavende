@@ -3,6 +3,7 @@ import "server-only";
 import { sql } from "drizzle-orm";
 
 import { db } from "@/db";
+import { POR_PAGINA } from "@/modules/catalog/filtros-panel";
 import { urlDeLogo } from "@/modules/media/subir";
 
 /**
@@ -104,22 +105,41 @@ export type MedioDePagoDelPanel = {
   isActive: boolean;
 };
 
-export async function listarMediosDePago(): Promise<MedioDePagoDelPanel[]> {
-  const filas = await db.execute<
-    Omit<MedioDePagoDelPanel, "logoUrl"> & { logoKey: string | null }
-  >(sql`
+/**
+ * Los medios de pago del panel, paginados desde el 2026-09-18 (§6.9).
+ *
+ * Devuelve `{ items, total }` por lo mismo que las otras tres de catálogo: con
+ * `LIMIT`, el largo del arreglo es el de la página, y el contador y el estado
+ * vacío de la pantalla necesitan el total de verdad.
+ */
+export async function listarMediosDePago(
+  pagina = 1,
+): Promise<{ items: MedioDePagoDelPanel[]; total: number }> {
+  const [filas, [conteo]] = await Promise.all([
+    db.execute<Omit<MedioDePagoDelPanel, "logoUrl"> & { logoKey: string | null }>(
+      sql`
     SELECT id, name, description,
            logo_key   AS "logoKey",
            sort_order AS "sortOrder",
            is_active  AS "isActive"
       FROM payment_methods
-     ORDER BY sort_order, immutable_unaccent(lower(name))
-  `);
+     -- El id desempata: dos medios con el mismo orden y el mismo nombre
+     -- podrían cambiar de página entre dos cargas.
+     ORDER BY sort_order, immutable_unaccent(lower(name)), id
+     LIMIT ${POR_PAGINA} OFFSET ${(pagina - 1) * POR_PAGINA}`,
+    ),
+    db.execute<{ total: number }>(
+      sql`SELECT count(*)::int AS total FROM payment_methods`,
+    ),
+  ]);
 
-  return filas.map(({ logoKey, ...fila }) => ({
-    ...fila,
-    logoUrl: urlDeLogo(logoKey, "thumb"),
-  }));
+  return {
+    items: filas.map(({ logoKey, ...fila }) => ({
+      ...fila,
+      logoUrl: urlDeLogo(logoKey, "thumb"),
+    })),
+    total: conteo?.total ?? 0,
+  };
 }
 
 // ── Lo que la tienda necesita de la configuración ───────────────────────

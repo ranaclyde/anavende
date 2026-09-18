@@ -2607,8 +2607,9 @@ los pasos que no existen— y **40 por página**. Las tres repiten además el
 mismo guardia `if (filtros.pagina > paginas) redirect(...)`.
 
 **~~No paginan, y tienen que pasar a hacerlo:~~** Productos, Marcas,
-Categorías, Colores y Medios de pago. **Productos quedó hecho el 2026-09-18**;
-los cuatro de catálogo siguen pendientes. El caso serio era **Productos**:
+Categorías, Colores y Medios de pago. **Los cinco quedaron hechos el
+2026-09-18**, así que los seis listados del panel paginan con el mismo
+componente y el mismo tope de 40. El caso serio era **Productos**:
 `listarProductos` (`modules/catalog/products/queries.ts`) **no tenía `limit` ni
 `offset`**, así que traía el catálogo entero en cada carga. Hoy son 26 productos sembrados;
 con el catálogo real de F2.8 adentro eso se nota. Los cuatro de catálogo
@@ -2653,6 +2654,43 @@ paginación. Al agregarla pasó a serlo, y entró en el mismo commit.
 Verificado en el navegador bajando el tope a 2 a propósito: «Página 2 de 13»,
 dos filas, `?pagina=99` redirige a la 13, y buscar desde la página 5 vuelve a
 la 1. Después se restauró el 40.
+
+**Y lo que hizo falta en las cuatro de Catálogo** (2026-09-18):
+
+- **No tenían ningún parámetro en la URL.** Se sumó
+  `modules/catalog/filtros-panel.ts`, que es lo único que les faltaba: el tope,
+  la lectura de `?pagina=`, el armado del enlace y la cuenta de páginas. Va en
+  la dirección y no en estado de cliente por §10.2, y porque
+  `PaginacionDelPanel` dibuja enlaces y necesita un `href`.
+- **Los contadores mentían apenas apareció el `LIMIT`.** «4 marcas» salía de
+  `items.length`, que pasa a ser el tamaño de la página; ahora sale del total.
+  Lo mismo el botón «Nueva marca» y el estado vacío, que decidían por el mismo
+  número.
+- **`href` no cruza de servidor a cliente.** Los dos componentes son `"use
+  client"`, así que la página les pasa la ruta base como texto y el enlace se
+  arma adentro. Con la función se rompía el render.
+- **Un bug latente en Medios de pago**: «Bajar en la lista» se apagaba en el
+  último de la **página**, con un `title` que decía «Ya es el último». Con
+  paginación eso es falso —el último de la página 1 baja a la 2—, así que ahora
+  solo se apaga en el último de todos. Verificado: en la página 1 los dos
+  botones quedan activos, en la última se apaga.
+- **`LISTADOS` se borró** de `modules/catalog/queries.ts`: se exportaba y no lo
+  usaba nadie en todo el repositorio.
+- **11 tests nuevos**, y uno corrigió una suposición: `?pagina=2.5` **no** se
+  descarta, se trunca a 2, porque `parseInt` corta en el punto. Es lo que ya
+  hacían los otros tres listados —sale de la misma `pagina()` de
+  `lib/filtros-url`— y quedó documentado en vez de cambiar código compartido.
+
+**Una hora perdida por correr `next build` con `next dev` levantado.** Los dos
+escriben en `.next`, y el build le pisó la caché al servidor de desarrollo, que
+quedó ejecutando la versión **vieja** de `modules/settings/queries.ts`: la
+pantalla de Medios de pago tiraba «Cannot read properties of undefined» y las
+otras tres andaban. Se descartó que fuera un error del código instrumentando la
+página —la función devolvía un arreglo de 3, la firma anterior, mientras el
+disco decía `{ items, total }` y Vitest daba la forma nueva—. Se resolvió
+frenando `next dev`, reconstruyendo y verificando contra `next start`. **La
+regla del build sin base de `CLAUDE.md` no avisa de esto y convendría que lo
+haga.**
 
 ### Dos reglas de la tabla están escritas y no hacen nada
 

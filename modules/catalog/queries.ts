@@ -5,7 +5,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { brands, categories, colors } from "@/db/schema/catalog";
 import { urlDeLogo } from "@/modules/media/subir";
-import type { TipoDeItem } from "@/modules/catalog/schemas";
+import { POR_PAGINA } from "@/modules/catalog/filtros-panel";
 
 /**
  * Lecturas del catálogo para el panel — RF-18.
@@ -17,6 +17,10 @@ import type { TipoDeItem } from "@/modules/catalog/schemas";
  *
  * Los conteos vienen en la MISMA consulta que el listado, con `count(...)
  * FILTER`. Pedirlos aparte serían N+1 consultas para pintar una tabla.
+ *
+ * **Los tres paginan desde el 2026-09-18** (§6.9). Devuelven `{ items, total }`
+ * porque con `LIMIT` el largo del arreglo es el de la página, y el contador de
+ * la pantalla —«4 marcas»— y el estado vacío necesitan el total de verdad.
  */
 
 export type ItemDeCatalogo = {
@@ -45,7 +49,9 @@ export type ItemDeCatalogo = {
   inactivos: number;
 };
 
-export async function listarMarcas(): Promise<ItemDeCatalogo[]> {
+export async function listarMarcas(
+  pagina = 1,
+): Promise<{ items: ItemDeCatalogo[]; total: number }> {
   const filas = await db.execute<ItemDeCatalogo & { logoKey: string | null }>(sql`
     SELECT b.id, b.name, b.slug, NULL::text AS "hexCode",
            NULL::boolean AS "isFeatured",
@@ -56,15 +62,21 @@ export async function listarMarcas(): Promise<ItemDeCatalogo[]> {
       FROM ${brands} b
       LEFT JOIN products p ON p.brand_id = b.id
      GROUP BY b.id
-     ORDER BY immutable_unaccent(lower(b.name))
+     -- El id desempata: sin criterio único, con LIMIT una marca puede salir
+     -- en dos páginas o en ninguna.
+     ORDER BY immutable_unaccent(lower(b.name)), b.id
+     LIMIT ${POR_PAGINA} OFFSET ${(pagina - 1) * POR_PAGINA}
   `);
 
   // La clave se convierte en URL acá y no en la consulta: la base guarda
   // claves justamente para no saber en qué servidor vive Storage (§9.4).
-  return filas.map(({ logoKey, ...fila }) => ({
-    ...fila,
-    logoUrl: urlDeLogo(logoKey, "thumb"),
-  }));
+  return {
+    items: filas.map(({ logoKey, ...fila }) => ({
+      ...fila,
+      logoUrl: urlDeLogo(logoKey, "thumb"),
+    })),
+    total: await contar(sql`${brands}`),
+  };
 }
 
 /**
@@ -73,8 +85,10 @@ export async function listarMarcas(): Promise<ItemDeCatalogo[]> {
  * propio a propósito — destacar es una decisión sobre el orden, y se juzga
  * mal si la pantalla donde se toma la muestra de otra manera.
  */
-export async function listarCategorias(): Promise<ItemDeCatalogo[]> {
-  return db.execute<ItemDeCatalogo>(sql`
+export async function listarCategorias(
+  pagina = 1,
+): Promise<{ items: ItemDeCatalogo[]; total: number }> {
+  const filas = await db.execute<ItemDeCatalogo>(sql`
     SELECT c.id, c.name, c.slug, NULL::text AS "hexCode",
            c.is_featured AS "isFeatured",
            NULL::text AS "logoUrl",
@@ -84,11 +98,16 @@ export async function listarCategorias(): Promise<ItemDeCatalogo[]> {
       FROM ${categories} c
       LEFT JOIN products p ON p.category_id = c.id
      GROUP BY c.id
-     ORDER BY c.is_featured DESC, immutable_unaccent(lower(c.name))
+     ORDER BY c.is_featured DESC, immutable_unaccent(lower(c.name)), c.id
+     LIMIT ${POR_PAGINA} OFFSET ${(pagina - 1) * POR_PAGINA}
   `);
+
+  return { items: [...filas], total: await contar(sql`${categories}`) };
 }
 
-export async function listarColores(): Promise<ItemDeCatalogo[]> {
+export async function listarColores(
+  pagina = 1,
+): Promise<{ items: ItemDeCatalogo[]; total: number }> {
   // Un color se usa a través de las VARIANTES, no de los productos. Se cuenta
   // el producto una sola vez aunque tenga dos variantes de ese color —no
   // puede, por `variant_product_color_key`, pero el DISTINCT deja la consulta
@@ -105,7 +124,7 @@ export async function listarColores(): Promise<ItemDeCatalogo[]> {
   // ofrecerlo»: el producto puede estar inactivo, o tener apagada justo la
   // variante de este color. En los dos casos desactivar el color no rompe
   // nada, que es lo que la columna tiene que responder.
-  return db.execute<ItemDeCatalogo>(sql`
+  const filas = await db.execute<ItemDeCatalogo>(sql`
     SELECT c.id, c.name, c.slug, c.hex_code AS "hexCode",
            NULL::boolean AS "isFeatured",
            NULL::text AS "logoUrl",
@@ -118,12 +137,17 @@ export async function listarColores(): Promise<ItemDeCatalogo[]> {
       LEFT JOIN product_variants v ON v.color_id = c.id
       LEFT JOIN products p ON p.id = v.product_id
      GROUP BY c.id
-     ORDER BY immutable_unaccent(lower(c.name))
+     ORDER BY immutable_unaccent(lower(c.name)), c.id
+     LIMIT ${POR_PAGINA} OFFSET ${(pagina - 1) * POR_PAGINA}
   `);
+
+  return { items: [...filas], total: await contar(sql`${colors}`) };
 }
 
-export const LISTADOS: Record<TipoDeItem, () => Promise<ItemDeCatalogo[]>> = {
-  marca: listarMarcas,
-  categoria: listarCategorias,
-  color: listarColores,
-};
+/** Cuántas filas tiene la tabla, sin mirar la página. */
+async function contar(tabla: ReturnType<typeof sql>): Promise<number> {
+  const [fila] = await db.execute<{ total: number }>(
+    sql`SELECT count(*)::int AS total FROM ${tabla}`,
+  );
+  return fila?.total ?? 0;
+}

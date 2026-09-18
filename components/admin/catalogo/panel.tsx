@@ -10,6 +10,7 @@ import {
   type PalabrasDeItem,
 } from "@/components/admin/catalogo/copy";
 import { DialogoDeItem } from "@/components/admin/catalogo/dialogo";
+import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,7 @@ import {
   cambiarEstado,
   eliminar,
 } from "@/modules/catalog/actions";
+import { urlDePagina } from "@/modules/catalog/filtros-panel";
 import type { ItemDeCatalogo } from "@/modules/catalog/queries";
 import type { TipoDeItem } from "@/modules/catalog/schemas";
 
@@ -55,9 +57,20 @@ type Confirmacion = { accion: "borrar" | "desactivar"; item: ItemDeCatalogo };
 export function PanelDeCatalogo({
   tipo,
   items,
+  total,
+  pagina,
+  paginas,
+  base,
 }: {
   tipo: TipoDeItem;
+  /** Los de ESTA página. Para contar, el estado vacío y el botón va `total`. */
   items: ItemDeCatalogo[];
+  total: number;
+  pagina: number;
+  paginas: number;
+  /** La ruta de la solapa. El enlace lo arma acá: una función no cruza de
+      servidor a cliente. */
+  base: string;
 }) {
   const palabras = PALABRAS[tipo];
   // `isFeatured` es `null` en los tipos que no se destacan (RF-18): la vista
@@ -113,17 +126,17 @@ export function PanelDeCatalogo({
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-body-sm text-ink-secondary">
-          {items.length === 0
+          {total === 0
             ? `Sin ${palabras.plural}`
-            : items.length === 1
+            : total === 1
               ? `1 ${palabras.singular}`
-              : `${items.length} ${palabras.plural}`}
+              : `${total} ${palabras.plural}`}
         </p>
         {/* Con la lista vacía este botón no está: el estado vacío ya ofrece
             el mismo primer paso en el medio de la pantalla, y dos botones de
             marca iguales a 100px uno del otro se leen como un error (§6.3:
             una sola por pantalla). */}
-        {items.length === 0 ? null : (
+        {total === 0 ? null : (
           <Button variant="brand" size="sm" onClick={() => setCreando(true)}>
             <Plus aria-hidden />
             {palabras.nuevo}
@@ -137,7 +150,7 @@ export function PanelDeCatalogo({
         </p>
       )}
 
-      {items.length === 0 ? (
+      {total === 0 ? (
         <Vacio tipo={tipo} alCrear={() => setCreando(true)} />
       ) : (
         <>
@@ -233,6 +246,12 @@ export function PanelDeCatalogo({
               </li>
             ))}
           </ul>
+
+          <PaginacionDelPanel
+            pagina={pagina}
+            paginas={paginas}
+            href={(n) => urlDePagina(base, n)}
+          />
         </>
       )}
 
