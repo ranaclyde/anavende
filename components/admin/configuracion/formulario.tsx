@@ -177,7 +177,7 @@ export function FormularioDeConfiguracion({
       {guardado === null ? <SinConfigurar umbral={umbralPorDefecto} /> : null}
 
       {/* ── Lo que ve el comprador ───────────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card bg-surface p-4 shadow-sm sm:p-5">
+      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-col gap-1">
           <h2 className="text-heading text-ink">Contacto</h2>
           <p className="text-body-sm text-ink-secondary">
@@ -211,7 +211,7 @@ export function FormularioDeConfiguracion({
       </section>
 
       {/* ── Lo que ve solo la vendedora ──────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card bg-surface p-4 shadow-sm sm:p-5">
+      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-col gap-1">
           <h2 className="text-heading text-ink">Avisos</h2>
           <p className="text-body-sm text-ink-secondary">

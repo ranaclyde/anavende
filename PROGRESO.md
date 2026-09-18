@@ -2536,7 +2536,7 @@ agranda, porque solo se ensanchan las que no tienen tope. Existe
 `--container-shop: 1200px` como token (`app/globals.css:231`); **no hay
 equivalente para el panel**, así que cada pantalla inventa el suyo.
 
-### Dos idiomas de tarjeta, y el segundo desaparece en oscuro
+### ~~Dos idiomas de tarjeta, y el segundo desaparece en oscuro~~ — arreglado el 2026-09-18
 
 §3.6 dice «las tarjetas se separan por sombra, no por borde». En el panel hay
 **29 apariciones** de `rounded-panel-card border border-border bg-surface`
@@ -2552,8 +2552,30 @@ mueve de 242 a 228,5, y por eso ahí sí funciona. Traducido: **en modo oscuro
 esas nueve tarjetas no tienen ningún borde visible**. Son
 `configuracion/formulario.tsx:180,214`, `mantenimiento.tsx:55`,
 `productos/formulario.tsx:202,279,328,354`, `variantes.tsx:105` y
-`configuracion/loading.tsx:42`. Está **calculado, no visto**: falta
-confirmarlo en pantalla.
+`configuracion/loading.tsx:42`.
+
+**Arreglado el 2026-09-18, y la especificación primero.** Decisión tuya entre
+las dos direcciones posibles: **todas con borde**, alineando las 9 con las 29,
+en vez de llevar las 29 a sombra y tener que inventar un valor de sombra para
+oscuro que el sistema no tiene. §3.6 de `DESIGN-REFERENCE.md` pasó de «las
+tarjetas se separan por sombra, no por borde» a repartirlo por escala —tienda
+por sombra, panel por borde— con los números que lo justifican, y `DESIGN.md`
+quedó sincronizado. Recién después se tocaron las nueve clases.
+
+Apareció una décima que el inventario no había visto: `components/ui/card.tsx`
+declaraba `admin:shadow-sm`. **Hoy no la usa ninguna pantalla del panel** —sus
+doce consumidores son todos de la tienda—, así que no se veía en ningún lado,
+pero dejaba escrita la regla vieja para el próximo que la usara. Quedó en
+`admin:border admin:border-border admin:shadow-none`.
+
+Verificado en el navegador, en los dos temas: en oscuro las tarjetas de
+Configuración pasaron de una mancha sin filo a bloques con borde nítido, y en
+claro quedan igual de limpias y ahora coinciden con las de Órdenes y Usuarios.
+**Acá hay que corregir algo de lo que escribí más arriba**: las tarjetas no
+estaban *invisibles* en oscuro, estaban **sin filo** —la superficie se
+distingue apenas del canvas, pero no hay ningún borde que la recorte—. El
+número, 1,11:1, era correcto; la palabra era más categórica de lo que
+corresponde.
 
 ### Las mismas tres pantallas son «el otro panel»
 

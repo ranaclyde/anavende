@@ -52,7 +52,7 @@ export function ModoMantenimiento({
   return (
     <section
       aria-labelledby="mantenimiento-titulo"
-      className="flex flex-col gap-4 rounded-panel-card bg-surface p-4 shadow-sm sm:p-5"
+      className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5"
     >
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">

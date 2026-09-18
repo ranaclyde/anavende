@@ -102,7 +102,7 @@ export function VariantesDelProducto({
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-panel-card bg-surface p-4 shadow-sm sm:p-5">
+    <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-heading text-ink">Colores y stock</h2>

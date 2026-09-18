@@ -356,8 +356,11 @@ qué.
 
 ### Named Rules
 
-**La regla de sombra o borde, nunca los dos.** Las tarjetas se separan por sombra.
-Sombra y borde juntos ensucian y aplanan la elevación.
+**La regla de sombra o borde, nunca los dos.** La tienda separa por sombra; el
+panel, por borde. El panel tiene modo oscuro y ahí la sombra no existe: sobre el
+canvas `#141416`, `--shadow-sm` mueve el píxel 0,18 sobre 255, y la superficie
+contra el canvas da 1,11:1. Sombra y borde juntos ensucian y aplanan la
+elevación.
 
 **La regla del foco que sobrevive.** El anillo de foco se muestra sólo ante teclado
 (`:focus-visible`) y viaja con un `outline` transparente de 2px. No es decorativo:
@@ -413,8 +416,8 @@ fondo blanco se fundan con la página.
 ### Cards / Containers
 
 - **Corner:** 28px en la tienda, 12px en el panel.
-- **Background:** superficie blanca. **Shadow:** `md` en la tienda, `sm` en el panel.
-- **Border:** ninguno. Ver la regla de sombra o borde.
+- **Background:** superficie blanca. **Shadow:** `md` en la tienda; el panel no lleva sombra.
+- **Border:** ninguno en la tienda; `--border` en el panel. Ver la regla de sombra o borde.
 - **Padding:** 20px de cabecera en la tienda, 16px en el panel.
 
 ### Navigation

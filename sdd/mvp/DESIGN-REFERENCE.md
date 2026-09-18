@@ -361,7 +361,16 @@ Escala de base 4px:
 | `brand` | Solo el botón de envío del buscador y el botón principal del hero |
 | `focus` | Anillo de foco de teclado, en todo elemento interactivo |
 
-**Las tarjetas se separan por sombra, no por borde.** Sombra y borde juntos ensucian y aplanan la elevación.
+**Sombra y borde nunca van juntos.** Ensucian y aplanan la elevación. Cuál de los dos separa depende de la escala, y es una excepción que se anota (2026-09-18):
+
+| Escala | Separa por | Por qué |
+|---|---|---|
+| Tienda | **Sombra** | Es siempre clara. La sombra da volumen y deja la tarjeta sin contorno duro, que es el lenguaje de la referencia |
+| Panel | **Borde** (`--border`) | Tiene modo oscuro, y ahí la sombra no existe |
+
+**El motivo del panel es medible, no de gusto.** Las tres sombras se tiñen con `--ink` —`rgb(17 16 16 / …)`— y **no se redefinen** en `[data-theme="dark"]`. Sobre el canvas oscuro (`#141416`), `--shadow-sm` mueve el píxel **de 20 a 19,82 sobre 255**: no se ve. Y la superficie contra el canvas da **1,11:1**, así que sin borde la tarjeta no tiene filo: se adivina en vez de verse. En claro esa misma sombra lo mueve de 242 a 228,5, y por eso ahí alcanza sola.
+
+Hasta el 2026-09-18 la regla decía «por sombra» para las dos escalas, y el panel la incumplía en 29 de sus 38 tarjetas. Se alineó hacia el borde, que es lo que la mayoría ya hacía y lo único que funciona en los dos temas.
 
 > **Las sombras se tiñen con `--ink`, no con negro.** Al pasar la familia de grises a cálida hubo que mover también el tinte de las tres sombras (`rgba(22,24,26)` → `rgba(17,16,16)`): una sombra azulada debajo de una tarjeta cálida se nota, aunque nadie sepa decir por qué.
 

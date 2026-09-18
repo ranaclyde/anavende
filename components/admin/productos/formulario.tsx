@@ -199,7 +199,7 @@ export function FormularioDeProducto({
   return (
     <form onSubmit={enviar} noValidate className="flex flex-col gap-6">
       {/* ── Qué es ────────────────────────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card bg-surface p-4 shadow-sm sm:p-5">
+      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
         <h2 className="text-heading text-ink">Datos del producto</h2>
 
         <div className="flex flex-col gap-1.5">
@@ -276,7 +276,7 @@ export function FormularioDeProducto({
       </section>
 
       {/* ── Cuánto sale ───────────────────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card bg-surface p-4 shadow-sm sm:p-5">
+      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
         <h2 className="text-heading text-ink">Precio</h2>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -325,7 +325,7 @@ export function FormularioDeProducto({
       </section>
 
       {/* ── Cómo se cuenta ────────────────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card bg-surface p-4 shadow-sm sm:p-5">
+      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
         <div className="flex flex-col gap-1">
           <h2 className="text-heading text-ink">Descripción</h2>
           <p className="text-body-sm text-ink-secondary">
@@ -351,7 +351,7 @@ export function FormularioDeProducto({
       </section>
 
       {/* ── Dónde se ve ───────────────────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card bg-surface p-4 shadow-sm sm:p-5">
+      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
         <h2 className="text-heading text-ink">Publicación</h2>
 
         <label className="flex items-start gap-3">

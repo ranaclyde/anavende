@@ -39,7 +39,7 @@ function Tarjeta({
   lineasDeAyuda: number;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-panel-card bg-surface p-4 shadow-sm sm:p-5">
+    <div className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
       <div className="flex flex-col gap-1">
         <Skeleton className="h-6 w-28" />
         <Skeleton className="h-5 w-64" />
