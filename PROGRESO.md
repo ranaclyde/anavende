@@ -2487,12 +2487,13 @@ primero** (revisión del 2026-09-18, pedido tuyo). Las 19 pantallas de
 `app/admin/**` pasaron por `impeccable audit` y por cuatro revisiones de
 código en paralelo. **El detector mecánico dio cero hallazgos**, y eso es
 parte del diagnóstico: cada pantalla, leída sola, está bien escrita. Lo que
-falla es la relación entre ellas. Nada de esto se arregló todavía; acá queda
-lo encontrado, lo medido y lo que falta decidir.
+falla es la relación entre ellas. Acá queda lo encontrado, lo medido y lo que
+falta decidir; **lo que se va arreglando se tacha en su propio punto**, en el
+commit que lo arregla.
 
-### Lo primero, porque es una falla de accesibilidad
+### ~~Lo primero, porque es una falla de accesibilidad~~ — arreglado el 2026-09-18
 
-**El botón destructivo sólido da 2,77:1 en modo oscuro.**
+**~~El botón destructivo sólido da 2,77:1 en modo oscuro.~~**
 `components/ui/button.tsx:56` es la única variante del sistema que usa
 `text-white` crudo; `brand` y `alterna`, dos líneas más arriba, usan
 `text-ink-inverse`, que **se invierte con el tema**. En oscuro el rojo se
@@ -2501,8 +2502,16 @@ incluso para texto grande. Con el token daría **6,65:1**. En claro, blanco
 sobre `#dc2626`, da 4,83:1 y pasa. Es el botón de confirmar de los nueve
 diálogos destructivos del panel —«Sí, bloquear», «Sacar el color», «Anular la
 devolución», «Cancelar la orden», borrar producto, borrar medio de pago—, y
-RNF-02 es requisito del producto, no aspiración. **Se arregla cambiando una
-palabra.**
+RNF-02 es requisito del producto, no aspiración.
+
+**Arreglado el 2026-09-18**, cambiando una palabra: `text-white` pasó a
+`text-ink-inverse`, el token que ya usan `brand` y `alterna`. Verificado en el
+navegador con el diálogo de borrar un producto abierto en los dos temas,
+leyendo el color calculado del DOM y no la hoja de estilos: en oscuro el texto
+queda en `rgb(20, 20, 22)` sobre `rgb(248, 113, 113)` —los 6,65:1— y en claro
+sigue en `rgb(255, 255, 255)` sobre `rgb(220, 38, 38)`, **idéntico a antes**,
+porque en claro los dos valores coinciden. La tienda, que es siempre clara y
+usa la misma variante en cuatro lugares, no cambió en nada.
 
 ### El ancho: cinco comportamientos para la misma cosa
 

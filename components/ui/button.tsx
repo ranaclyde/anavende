@@ -53,7 +53,12 @@ const buttonVariants = cva(
           "bg-transparent text-ink-secondary hover:bg-canvas hover:text-ink active:bg-border",
         destructive:
           "border border-danger bg-transparent text-danger hover:bg-danger-tint",
-        "destructive-solid": "bg-danger text-white hover:opacity-90",
+        // `text-ink-inverse`, no `text-white`: el token se invierte con el
+        // tema y `text-white` no. En oscuro `--danger` se aclara a #f87171 y
+        // el blanco encima da 2,77:1 — por debajo de AA incluso para texto
+        // grande. Con el token da 6,65:1. En claro los dos valen #ffffff, así
+        // que la tienda no cambia.
+        "destructive-solid": "bg-danger text-ink-inverse hover:opacity-90",
       },
       size: {
         // Tienda: píldora. Panel: 8px de radio (§3.5).
@@ -131,10 +136,7 @@ function Button({
     >
       {/* El contenido se mantiene en el flujo para conservar el ancho. */}
       <span
-        className={cn(
-          "inline-flex items-center gap-2",
-          loading && "invisible",
-        )}
+        className={cn("inline-flex items-center gap-2", loading && "invisible")}
       >
         {children}
       </span>
