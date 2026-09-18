@@ -1786,39 +1786,88 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 
 ## Pendiente detectado, sin tarea propia
 
-**Segundo color: bordó + azul pizarra, decidido y sin aplicar** (decisión
-tuya del 2026-09-14; se encara en una tarea aparte). **El bordó `#832833` y el
-logo se quedan**, y la tienda suma un **azul pizarra `#2f4a6d`** como segundo
-color. Salió del checkout de F6.1: la opción elegida —envío, retiro, la
-dirección— lleva borde bordó sobre `--brand-tint` (`#f7edef`), un rosa casi
-igual al fondo de error (`--danger-tint`, `#fef2f2`), y se lee como una
-alerta; además, los botones secundarios son blanco sobre blanco. Se eligió
-viendo tres opciones aplicadas a piezas de la tienda (solo bordó, + azul
-pizarra, + petróleo): <https://claude.ai/artifact/DpcoVFJHRhj12yDYjNwvQ3>.
+**Segundo color: bordó + azul pizarra, aplicado a medias** (decisión tuya del
+2026-09-14; primera mitad hecha el 2026-09-17). **El bordó `#832833` y el logo
+se quedan**, y la tienda suma un **azul pizarra `#2f4a6d`** como segundo color.
+Salió del checkout de F6.1: la opción elegida —envío, retiro, la dirección—
+lleva borde bordó sobre `--brand-tint` (`#f7edef`), un rosa casi igual al fondo
+de error (`--danger-tint`, `#fef2f2`), y se lee como una alerta; además, los
+botones secundarios son blanco sobre blanco. Se eligió viendo tres opciones
+aplicadas a piezas de la tienda (solo bordó, + azul pizarra, + petróleo):
+<https://claude.ai/artifact/DpcoVFJHRhj12yDYjNwvQ3>.
 
 Por qué ese azul: da 9,05:1 contra blanco, el mismo peso que el bordó
 (9,07:1), y queda lejos de los tres colores de estado —146° del rojo de
-error, 72° del verde de éxito, 178° del ámbar—. El petróleo quedó descartado
+error, 71° del verde de éxito, 172° del ámbar—. El petróleo quedó descartado
 por estar a 43° del verde: lo elegido se podía leer como «correcto».
+(Los dos primeros números decían 72° y 178°; remedidos el 2026-09-17 dan 71° y
+172°. No cambia nada: los tres siguen lejísimos.)
 
-Lo que tiene que hacer esa tarea:
+### Hecho el 2026-09-17
 
-- **Primero la especificación**, porque es un desvío: DESIGN-REFERENCE §1
-  («un solo color saturado») y §11 («no sumar un segundo color saturado»),
-  la paleta de §2 y la fila en «Decisiones que cambiaron las
-  especificaciones».
-- **Los tokens**, en `app/globals.css`: el azul y su tinte, como en la
-  comparación —`#2f4a6d`, tinte `#eef2f7`, borde del tinte `#d5deea`—. En
-  oscuro, que hoy solo existe en `/admin`, hay que aclararlo como se hizo
-  con el bordó; decidir si el panel lo usa.
-- **El reparto**: el bordó queda para la marca, la acción principal
-  («Confirmar pedido», «Agregá al carrito») y el precio en oferta. El azul
-  toma **lo elegido** (las opciones del checkout, con borde de 2 px y el
-  tinte), **los filtros** activos y aplicados del catálogo, **el botón
-  secundario** (borde y texto azules sobre blanco) y **los enlaces**.
-  Decidir si el anillo de foco pasa al azul.
-- **Recorrer la tienda entera** buscando `brand-tint` y `bg-brand` fuera
-  de esos roles, y mirar cada pantalla con Playwright a 390 y 1280.
+**La especificación primero**, como pedía esta entrada: §1.2 suma la fila del
+desvío, §11 pasa de «no sumar un segundo color» a «no sumar un **tercer**
+color», **§2.5 nueva** con el reparto y los números, §2.1 anota que el burdeos
+se había filtrado a los estados, §3.1 y §3.2 los tokens en claro y en oscuro, y
+§6.3 la variante nueva y el terciario ghost. `DESIGN.md` y
+`.impeccable/design.json` quedaron sincronizados: 27 de 27 colores coinciden
+con `app/globals.css`.
+
+**Los tokens**, en `app/globals.css`: `--accent` `#2f4a6d` con hover `#3c5d87`,
+activo `#24394f` y los dos tintes de la comparación. En oscuro se aclara a
+`#7d9dc4` (5,93:1), porque el original da 1,84:1 sobre la superficie del panel.
+Los dos `-tint` quedaron **definidos y sin uso**, marcados como reservados: los
+va a usar la segunda mitad.
+
+**La variante `alterna`** y **«Comprá ya por WhatsApp»** de la ficha, que pasó
+de contorno blanco a relleno pizarra.
+
+**El terciario es ghost**: texto solo en reposo, plato de `--canvas` al hover.
+No hubo que tocar ningún llamado — los cancelar inocuos ya usaban `tertiary` y
+los de diálogo destructivo ya usaban `secondary`, que es el reparto correcto.
+
+**Dos estados que estaban en burdeos y no debían**: el círculo de «tu pedido
+quedó registrado» pasó a `--success` y el checkbox marcado a `--accent`. Un
+círculo casi rojo con un tilde se lee como problema en el instante en que hay
+que decir que salió bien. **No hizo falta color nuevo**: los cuatro semánticos
+ya existían y estaban en uso; faltaba usarlos en los controles.
+
+### Lo que cambió del plan original, y por qué
+
+**El botón secundario se queda en contorno gris.** Esta entrada decía que el
+azul tomaba «el botón secundario (borde y texto azules sobre blanco)». No pasó
+eso, por una precisión tuya del 2026-09-17: **el segundo botón de la ficha es
+la compra directa**, no una acción de apoyo — es la otra forma de cerrar la
+venta. Eso lo convierte en **par** del carrito y no en escalón debajo, así que
+el pizarra entró como **relleno** en una variante nueva (`alterna`) y no como
+contorno. «Guardar» y «Compartir» bajaron a tercer plano y ahí el contorno gris
+está bien.
+
+**Hallazgo nuevo, a vigilar:** el pizarra queda a **13°** de matiz del
+`--info`, la insignia «En preparación» de una orden. Los textos se distinguen
+(dE 64) pero los dos tintes de fondo son casi el mismo pálido (dE 15). Donde
+pueden verse juntos es **«Mis compras»**. Si molesta, la salida es correr el
+`--info` a un azul más franco, no mover el pizarra. La entrada original no lo
+había medido porque comparó sólo contra rojo, verde y ámbar.
+
+### Lo que falta, la segunda mitad
+
+- **Lo elegido en el checkout**: las opciones de entrega y la dirección siguen
+  con borde bordó sobre `--brand-tint`. Es el caso que originó esta entrada y
+  **sigue sin arreglar**: ese rosa está a 12° del tinte de error.
+- **Los filtros** del catálogo: chip activo, chips de filtro aplicado y el
+  contador siguen en bordó.
+- **Los enlaces**, y decidir si el anillo de foco pasa al azul.
+- **Recorrer la tienda entera** buscando `brand-tint` y `bg-brand` fuera de los
+  roles de §2.1, y mirar cada pantalla con Playwright a 390 y 1280.
+- **Decidir si el panel usa el pizarra** o se queda acromático.
+
+Verificado lo hecho: `DATABASE_URL= npx next build` pasa, `tsc --noEmit` limpio,
+el detector de impeccable sin hallazgos, y la pila de la ficha mirada en el
+navegador a 1280 y 390 —burdeos 9,07:1 arriba, pizarra 9,05:1 abajo, contorno
+gris debajo—. El checkbox y el círculo verde quedaron verificados en código y
+en contraste (5,02:1 el tilde sobre verde) pero **no renderizados**: viven
+detrás de sesión y de una orden real.
 
 **Completar el perfil no debería ser una pantalla aparte** (pedido tuyo del
 2026-09-13, para ver más adelante). Hoy quien entra por Google o Facebook sin

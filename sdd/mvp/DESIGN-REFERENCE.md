@@ -35,6 +35,7 @@ Toma el sistema de shop.app como referencia estructural —canvas claro, tarjeta
 | **Encabezado superior** en lugar del riel lateral de 64px | Un riel de íconos sin etiquetas obliga a adivinar. Una tienda chica necesita que sus categorías se lean |
 | **Segunda escala, más densa, para el panel** | El lenguaje aéreo de la tienda vuelve ilegible una tabla de órdenes. Ver §4 |
 | **Modo oscuro solo en el panel** | La tienda vive del blanco; el panel es donde se pasan horas |
+| **Un segundo color: azul pizarra `#2f4a6d`** (2026-09-17) | La ficha tiene **dos formas de comprar** y ninguna es el plan B de la otra. Un solo color no puede decir eso: el segundo botón quedaba en contorno blanco, a 1,08:1 contra el canvas. El pizarra da 9,05:1 contra los 9,07:1 del burdeos, así que pesan igual. Ver §2.5 |
 
 ### 1.3 Lo que cambió el canvas de F3.8
 
@@ -85,7 +86,16 @@ El canvas tampoco resuelve el catálogo tal como se implementa: propone un panel
 - Anillo de foco
 - Elementos de identidad: logo, isotipo
 
-**Dónde no aparece nunca:** fondos de sección, bordes decorativos, íconos generales, texto de párrafo, cabeceras de tabla.
+**Dónde no aparece nunca:** fondos de sección, bordes decorativos, íconos generales, texto de párrafo, cabeceras de tabla, **y estados de resultado** —éxito, error, aviso—, que tienen sus propios semánticos (§3.1).
+
+> **Corregido: el burdeos se había filtrado a los estados.** El círculo de
+> «tu pedido quedó registrado» era `--brand` con un tilde adentro, y el
+> checkbox marcado también. Un círculo casi rojo con un tilde se lee como
+> problema justo en el instante en que hay que decir que salió bien: el
+> burdeos está a **7°** de matiz del rojo de error (§2.2). El círculo pasó a
+> `--success` y el checkbox a `--accent` (§2.5). Esto **no es un color nuevo
+> para los estados**: los cuatro semánticos ya existían y estaban en uso; lo
+> que faltaba era usarlos en los controles en vez del burdeos.
 
 ### 2.2 El problema del rojo, y cómo se resuelve
 
@@ -135,6 +145,43 @@ Es un juego con el nombre: «Ana **vende**» y del otro lado quien elige. Repart
 
 **Nunca:** cambiar el orden de las dos mitades, tutearlo («tú eliges»), ni sustituir la palabra final por una marca —«vos elegís Logitech» convierte la identidad en publicidad de un tercero—.
 
+### 2.5 El segundo color
+
+> **Azul pizarra `#2f4a6d`.** Tiene dos trabajos y nada más: **la otra acción
+> de compra** —«Comprá ya por WhatsApp» en la ficha— y **lo elegido**, como el
+> checkbox marcado.
+
+**Es un desvío deliberado de §1 y §11**, que pedían un solo color. Se toma por
+un motivo que no es estético: en la ficha hay **dos formas de comprar**, el
+carrito y el WhatsApp, y la segunda es la que cierra la venta de verdad. Estaba
+en contorno blanco, con un borde de **1,08:1** contra el canvas —muy por debajo
+del 3:1 que WCAG pide para el contorno de un control—, así que se leía igual
+que «Compartir».
+
+| Propiedad | Valor | Consecuencia |
+|---|---|---|
+| Contraste sobre blanco | **9,05:1** | El burdeos da 9,07:1 |
+| **Diferencia de peso con el burdeos** | **0,02** | Es la cifra que lo eligió |
+| Contraste sobre canvas | 8,20:1 | De sobra para el contorno de un control |
+| Tilde blanco encima | 9,05:1 | Sirve de relleno con texto o ícono adentro |
+
+**Por qué ese número y no otro.** Los dos botones son **pares**: dos caminos
+igual de válidos para lo mismo. Con 0,02 de diferencia ninguno grita por encima
+del otro y la persona elige por lo que dicen, no por cuál se ve más. Los otros
+candidatos fallaban ahí: la tinta `#111010` daba 19:1 —más del doble que el
+burdeos, se lo comía— y el petróleo `#0f5c63` daba 7,69:1, más liviano, con lo
+que la compra por WhatsApp pesaba menos que el carrito.
+
+**El punto a vigilar.** El pizarra queda a **13°** de matiz del `--info`, la
+insignia «En preparación» de una orden. No coinciden en la ficha; donde pueden
+verse juntos es **«Mis compras»**. Si alguna vez se confunden, la salida es
+correr el `--info` a un azul más franco, no mover el pizarra. La alternativa
+descartada, si hiciera falta más separación, es ciruela `#6b21a8`: 0,35 de
+diferencia de peso y 72° del `--info`.
+
+**Nunca:** usarlo en la acción principal, en el precio, en el logo, ni como
+fondo de sección.
+
 ---
 
 ## 3. Tokens
@@ -150,6 +197,13 @@ Es un juego con el nombre: «Ana **vende**» y del otro lado quien elige. Repart
   --brand-tint:       #f7edef;   /* fondo de etiquetas y estados suaves */
   --brand-tint-border:#f2dcdf;
   --brand-shadow:     rgba(131, 40, 51, 0.34);
+
+  /* ── Segundo color (§2.5) ──────────────────────────── */
+  --accent:           #2f4a6d;   /* la otra acción de compra, lo elegido */
+  --accent-hover:     #3c5d87;   /* MÁS CLARO: el color base ya es oscuro */
+  --accent-active:    #24394f;
+  --accent-tint:      #eef2f7;   /* reservado; todavía sin uso */
+  --accent-tint-border:#d5deea;  /* reservado; todavía sin uso */
 
   /* ── Superficies ───────────────────────────────────── */
   --canvas:           #f2f4f5;   /* fondo de página */
@@ -187,6 +241,8 @@ Es un juego con el nombre: «Ana **vende**» y del otro lado quien elige. Repart
 | `--ink-secondary` sobre `--canvas` | **4,58:1** | AA — es el caso que manda (ver abajo) |
 | `--ink-tertiary` sobre `--surface` | 3,37:1 | Solo texto ≥ 24px o elementos decorativos |
 | `--brand` sobre `--surface` | **9,07:1** | AAA |
+| `--accent` sobre `--surface` | **9,05:1** | AAA. A 0,02 del burdeos: pesan igual |
+| `--success` sobre `--surface` | 5,02:1 | AA. Tilde blanco en el círculo de orden confirmada |
 | `--ink-inverse` sobre `--brand` | **9,07:1** | AAA |
 | `--danger` sobre `--surface` | 4,83:1 | AA |
 | `--success` sobre `--surface` | 5,02:1 | AA |
@@ -201,6 +257,13 @@ Es un juego con el nombre: «Ana **vende**» y del otro lado quien elige. Repart
   --brand-tint:       #2a1a1d;
   --brand-tint-border:#3d2429;
   --brand-shadow:     rgba(212, 105, 122, 0.20);
+
+  /* ACLARADO: #2f4a6d da 1,84:1 sobre la superficie oscura, ilegible. */
+  --accent:           #7d9dc4;
+  --accent-hover:     #94b0d4;
+  --accent-active:    #6b8cb5;
+  --accent-tint:      #1a2230;
+  --accent-tint-border:#2a3648;
 
   --canvas:           #141416;
   --surface:          #1e1e21;
@@ -439,8 +502,9 @@ El componente firmado del sistema, heredado directamente de la referencia.
 | Variante | Fondo | Texto | Borde | Uso |
 |---|---|---|---|---|
 | **Principal** | `--brand` | blanco | — | Una sola por pantalla |
-| **Secundario** | `--surface` | `--ink` | `--border` | Acciones alternativas |
-| **Terciario** | transparente | `--ink-secondary` | — | «Cancelar», «Volver» |
+| **Alterna** | `--accent` | blanco | — | **Par de la principal**, no escalón debajo: la otra forma de hacer lo mismo (§2.5) |
+| **Secundario** | `--surface` | `--ink` | `--border` | Acciones de apoyo entre pares: «Guardar», «Compartir» |
+| **Terciario** | transparente | `--ink-secondary` | — | **Ghost.** «Cancelar», «Volver». Al pasar el puntero aparece el plato de `--canvas` |
 | **Destructivo** | transparente | `--danger` | `--danger` | Eliminar, cancelar orden. **Con ícono** |
 | **Destructivo confirmado** | `--danger` | blanco | — | **Solo dentro del diálogo de confirmación** |
 
@@ -451,6 +515,19 @@ El componente firmado del sistema, heredado directamente de la referencia.
 | `lg` | 48px | 16px | 24px |
 
 **Estados:** hover cambia a `--brand-hover` (más claro); `active` a `--brand-active`; `disabled` va al 40% de opacidad sin cambiar de color y con `cursor: not-allowed`; `loading` reemplaza el texto por un indicador **conservando el ancho del botón**, para que la interfaz no salte.
+
+**La escalera de énfasis**, de más a menos peso: Principal → Alterna →
+Secundario → Terciario. **Alterna no es un escalón**: es el par de Principal, y
+sólo se usa cuando hay dos caminos igual de válidos. Dos rellenos de color al
+lado que *no* son pares obligan a decidir cuál manda, que es lo que la escalera
+evita.
+
+**El terciario es ghost, y el hover no es su única señal.** En reposo se ve el
+texto; al pasar el puntero aparece el plato. En táctil no hay hover, así que el
+texto tiene que alcanzar solo — por eso nunca es sólo un ícono sin rótulo, y
+mantiene el área táctil de su tamaño (§9). Para el **«Cancelar» de un diálogo
+destructivo** se usa Secundario y no Terciario: ahí cancelar es la salida
+segura y tiene que pesar lo mismo que el botón que borra, no menos.
 
 **Un botón deshabilitado siempre explica por qué** — en texto adyacente o en un *tooltip*. Un botón apagado sin explicación es un callejón sin salida (RNF-08).
 
@@ -871,7 +948,11 @@ La misma persona escribe toda la interfaz: **cercana, directa, rioplatense**.
 
 ### No hacer
 
-- **No sumar un segundo color saturado.** El sistema tiene uno y de ahí sale su fuerza.
+- **No sumar un TERCER color saturado.** El sistema tiene dos —el burdeos y el
+  azul pizarra de §2.5— y de ahí sale su fuerza. El pizarra entró el 2026-09-17
+  por un motivo estructural, no estético: en la ficha hay dos formas de comprar
+  y tienen que pesar igual. Cualquier otro caso se resuelve con la escala de
+  grises, con el contorno o con los semánticos, que ya existen.
 - **No usar burdeos relleno para acciones destructivas.** Están a 7 grados de matiz del rojo de peligro: se separan por forma (§2.2).
 - No usar pesos de 700 o más: la jerarquía sale del grado y del tracking.
 - No poner texto por debajo de 12px.

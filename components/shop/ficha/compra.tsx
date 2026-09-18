@@ -515,7 +515,7 @@ function BotonDeWhatsApp({
   children,
 }: {
   href: string;
-  variante: "brand" | "secondary";
+  variante: "brand" | "alterna" | "secondary";
   children: ReactNode;
 }) {
   return (
@@ -591,9 +591,15 @@ function ConStock({
           />
         )}
 
+        {/*
+          Relleno pizarra y no contorno: comprar por WhatsApp no es una acción
+          de apoyo, es la otra forma de comprar —y la que cierra la venta—.
+          Va a la par del carrito, no debajo. En blanco su borde daba 1,08:1
+          contra el canvas y quedaba igual que «Compartir».
+        */}
         {whatsapp ? (
           <BotonDeWhatsApp
-            variante="secondary"
+            variante="alterna"
             href={enlaceDeWhatsApp(
               whatsapp,
               mensajeDeCompra(mensaje, cantidad, precioUnitario),

@@ -13,6 +13,23 @@ import { cn } from "@/lib/utils";
  * `destructive` es contorno; `destructive-solid` es relleno y vive
  * únicamente dentro del diálogo de confirmación, donde no hay un botón de
  * marca al lado con el cual confundirlo.
+ *
+ * ESCALERA DE ÉNFASIS, de más a menos peso:
+ *
+ *   brand      relleno burdeos  — LA acción de la pantalla, una sola
+ *   alterna    relleno pizarra  — la OTRA forma de hacer lo mismo, a la par
+ *   secondary  contorno gris    — acciones de apoyo entre pares
+ *   tertiary   sin caja         — cancelar, volver, lo que no debe pesar
+ *
+ * `alterna` no es un escalón más abajo de `brand`: es su PAR. Da 9,05:1
+ * contra blanco y el burdeos da 9,07:1, así que los dos pesan lo mismo y la
+ * persona elige por lo que dicen, no por cuál se ve más. Es para cuando hay
+ * dos caminos igual de válidos —el carrito y el WhatsApp de la ficha—, no
+ * para jerarquizar.
+ *
+ * `tertiary` es el ghost: texto solo en reposo, y al pasar el puntero aparece
+ * el plato de `--canvas`. En táctil no hay hover, por eso el texto se ve
+ * siempre y el área táctil sigue siendo la del tamaño elegido (§9).
  */
 const buttonVariants = cva(
   [
@@ -28,9 +45,12 @@ const buttonVariants = cva(
         // Una sola por pantalla.
         brand:
           "bg-brand text-ink-inverse hover:bg-brand-hover active:bg-brand-active",
+        alterna:
+          "bg-accent text-ink-inverse hover:bg-accent-hover active:bg-accent-active",
         secondary:
           "border border-border bg-surface text-ink hover:bg-surface-sunken hover:border-border-strong",
-        tertiary: "bg-transparent text-ink-secondary hover:text-ink",
+        tertiary:
+          "bg-transparent text-ink-secondary hover:bg-canvas hover:text-ink active:bg-border",
         destructive:
           "border border-danger bg-transparent text-danger hover:bg-danger-tint",
         "destructive-solid": "bg-danger text-white hover:opacity-90",
