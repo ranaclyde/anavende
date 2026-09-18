@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-16.
+Última actualización: 2026-09-18.
 
 **Qué significa cada estado**
 
@@ -2481,6 +2481,257 @@ hay que resolver al armarlo:
 - **El script `prepare` de Husky corre en cada instalación**, incluida la del
   `Dockerfile`. Ahí tiene que no hacer nada, o rompe el despliegue: mirar el
   primer despliegue después de agregarlo.
+
+**El panel tiene dos diseños conviviendo, y el ancho es lo que se nota
+primero** (revisión del 2026-09-18, pedido tuyo). Las 19 pantallas de
+`app/admin/**` pasaron por `impeccable audit` y por cuatro revisiones de
+código en paralelo. **El detector mecánico dio cero hallazgos**, y eso es
+parte del diagnóstico: cada pantalla, leída sola, está bien escrita. Lo que
+falla es la relación entre ellas. Nada de esto se arregló todavía; acá queda
+lo encontrado, lo medido y lo que falta decidir.
+
+### Lo primero, porque es una falla de accesibilidad
+
+**El botón destructivo sólido da 2,77:1 en modo oscuro.**
+`components/ui/button.tsx:56` es la única variante del sistema que usa
+`text-white` crudo; `brand` y `alterna`, dos líneas más arriba, usan
+`text-ink-inverse`, que **se invierte con el tema**. En oscuro el rojo se
+aclara a `#f87171` y el texto sigue blanco: **2,77:1**, por debajo de AA
+incluso para texto grande. Con el token daría **6,65:1**. En claro, blanco
+sobre `#dc2626`, da 4,83:1 y pasa. Es el botón de confirmar de los nueve
+diálogos destructivos del panel —«Sí, bloquear», «Sacar el color», «Anular la
+devolución», «Cancelar la orden», borrar producto, borrar medio de pago—, y
+RNF-02 es requisito del producto, no aspiración. **Se arregla cambiando una
+palabra.**
+
+### El ancho: cinco comportamientos para la misma cosa
+
+§4 de `DESIGN-REFERENCE.md` es explícito —«Ancho máximo: panel, ancho
+completo, menos el menú lateral»— y `app/admin/layout.tsx:62` lo cumple. Son
+las pantallas las que se ponen un tope por su cuenta, y **ninguna de la misma
+manera**:
+
+| Pantalla | Contenedor | A 1280px |
+|---|---|---|
+| Órdenes, Productos, Usuarios, Devoluciones, Catálogo, detalle de orden, detalle de usuario y **orden nueva** | `flex flex-col gap-4` | 992px |
+| Producto nuevo y editar | `mx-auto flex w-full max-w-3xl` | 768px, centrado |
+| Usuario nuevo | `flex max-w-3xl` —sin `mx-auto`, sin `w-full`— | 768px, a la izquierda |
+| Configuración | `mx-auto flex w-full max-w-2xl` | 672px, centrado |
+| Tablero | sin tope en el contenedor, `max-w-3xl` **en cada tarjeta**, y `gap-6` donde el resto usa `gap-4` | 768px, a la izquierda |
+
+Usuario nuevo y Producto nuevo **miden lo mismo y no están en el mismo
+lugar**: ir de uno al otro corre el formulario 112px sin que cambie nada. Y
+«Orden nueva» es el único formulario a ancho completo. En 1920 la diferencia
+entre pantallas hermanas es 1632px contra 672px, y colapsar el menú a 64px la
+agranda, porque solo se ensanchan las que no tienen tope. Existe
+`--container-shop: 1200px` como token (`app/globals.css:231`); **no hay
+equivalente para el panel**, así que cada pantalla inventa el suyo.
+
+### Dos idiomas de tarjeta, y el segundo desaparece en oscuro
+
+§3.6 dice «las tarjetas se separan por sombra, no por borde». En el panel hay
+**29 apariciones** de `rounded-panel-card border border-border bg-surface`
+—borde, sin sombra— y **9** de `rounded-panel-card bg-surface … shadow-sm`
+—sombra, sin borde—. Ninguna combina las dos, así que la mitad prohibida de la
+regla se respeta; la mitad afirmativa la incumplen 29.
+
+Pero el problema real está en las 9. En oscuro el canvas es `#141416` y la
+superficie `#1e1e21`: **1,11:1**. Y `--shadow-sm` es `rgb(17 16 16 / 0.06)`,
+que sobre ese canvas mueve el píxel **de 20 a 19,82 sobre 255**. Las sombras
+**no se redefinen** en `[data-theme="dark"]`. En claro esa misma sombra lo
+mueve de 242 a 228,5, y por eso ahí sí funciona. Traducido: **en modo oscuro
+esas nueve tarjetas no tienen ningún borde visible**. Son
+`configuracion/formulario.tsx:180,214`, `mantenimiento.tsx:55`,
+`productos/formulario.tsx:202,279,328,354`, `variantes.tsx:105` y
+`configuracion/loading.tsx:42`. Está **calculado, no visto**: falta
+confirmarlo en pantalla.
+
+### Las mismas tres pantallas son «el otro panel»
+
+No es casualidad que Configuración y Producto nuevo/editar aparezcan en los dos
+puntos anteriores. Los cuatro formularios del panel están partidos en dos
+familias que casi no comparten nada:
+
+| | Producto · Configuración | Usuario nuevo · Orden nueva |
+|---|---|---|
+| Contenedor | topeado y centrado | sin tope, o topeado sin centrar |
+| Tarjeta | `bg-surface p-4 shadow-sm sm:p-5` | `border border-border bg-surface p-4` |
+| Título de sección | `text-heading` (20px) | `text-body-sm font-medium` (14px) |
+| Elemento raíz | **`<form>`** con `type="submit"` | **`<div>`** con botones `onClick` |
+| Foco al fallar | va al primer campo con error | no se mueve |
+| Error general | con ícono, vía `FieldError` | `<p role="alert">` pelado |
+| `aria-describedby` | apunta al error | apunta solo a la ayuda, nunca al error |
+| Volver | `<Link>` de texto, o ninguno | `Button variant="tertiary" -ml-3` |
+
+**Lo de `<form>` no es cosmético**: en Usuario nuevo y Orden nueva —las dos
+altas del panel— Enter no envía, no hay validación nativa y el lector de
+pantalla no anuncia un formulario.
+
+### Paginación: decisión tuya del 2026-09-18, va en todos los listados
+
+El estado de hoy, que no era el que suponíamos: **tres de seis ya paginan**.
+Órdenes, Usuarios y Devoluciones comparten `components/admin/paginacion.tsx`
+con el formato de §6.9 —«Anterior / Página N de M / Siguiente», sin dibujar
+los pasos que no existen— y **40 por página**. Las tres repiten además el
+mismo guardia `if (filtros.pagina > paginas) redirect(...)`.
+
+**No paginan, y tienen que pasar a hacerlo:** Productos, Marcas, Categorías,
+Colores y Medios de pago. El caso serio es **Productos**: `listarProductos`
+(`modules/catalog/products/queries.ts`) **no tiene `limit` ni `offset`**, así
+que trae el catálogo entero en cada carga. Hoy son 26 productos sembrados;
+con el catálogo real de F2.8 adentro eso se nota. Los cuatro de catálogo
+crecen más despacio, pero el criterio es el mismo. **El tamaño a usar es 40**,
+el que ya usan los otros tres —`POR_PAGINA` en `modules/orders/filtros-panel.ts`,
+`modules/users/panel/filtros.ts` y `modules/returns/filtros.ts`; la tienda usa
+24 y esa es otra escala—.
+
+Al sumar paginación hay que llevar también el `pagina: 1` al cambiar un filtro,
+como ya hacen los otros tres. Hoy `productos/filtros.tsx` no lo tiene, y **no
+es un error**: no existe el parámetro porque no existe la paginación. Pasa a
+serlo en el momento en que se agregue.
+
+### Dos reglas de la tabla están escritas y no hacen nada
+
+Las dos en `components/ui/table.tsx`, y las dos se leen bien mirando el
+componente:
+
+- **`data-[clickable=true]:cursor-pointer`** (línea 48): `data-clickable` no
+  se usa **ni una vez** en todo el repositorio. Las filas de Órdenes y
+  Usuarios sí son clicables —por el `<Link>` de la primera celda— y no
+  muestran el cursor que §6.9 pide.
+- **`sticky top-0 z-10`** en la cabecera (línea 31): no se fija nunca. El
+  wrapper interno es `overflow-auto` **sin `max-h`**, el de cada listado es
+  `overflow-hidden`, y **no hay un solo `max-h` en ningún listado del panel**.
+  El contenedor de scroll no scrollea, así que el `sticky` no tiene contra qué
+  fijarse. §6.9 pide cabecera fija; el código la declara y el layout la anula.
+
+**Qué hacer con la cabecera fija queda abierto**, y conviene resolverlo junto
+con la paginación. El argumento de que paginar la vuelve innecesaria no cierra
+solo: **40 filas de 44px son 1.760px**, o sea que una página llena sigue
+scrolleando en cualquier pantalla. Las salidas son tres —darle `max-h` a la
+tabla para que la cabecera se fije de verdad, bajar el tamaño de página a lo
+que entre sin scroll, o borrar esas dos líneas del componente y sacar la
+cabecera fija de §6.9— y la decisión no está tomada.
+
+### Botones: dónde el sistema se contradice
+
+- **Dos botones de marca en la misma pantalla**, que `DESIGN.md` prohíbe
+  explícitamente. En `/admin/productos/[id]` conviven «Guardar cambios»
+  (`productos/formulario.tsx:403`) y «Cargar el primero» del estado vacío de
+  colores (`variantes.tsx:409`), que aparece cuando el producto no tiene
+  variantes. Los otros estados vacíos con `brand` se blindan con
+  `total === 0 ? null :` para no coincidir con el botón del encabezado; este
+  no.
+- **El confirmar de «Cerrar la tienda al público» usa `brand`**
+  (`mantenimiento.tsx:143`). Es una acción destructiva y todos sus pares usan
+  `destructive-solid`.
+- **Seis acciones destructivas se pintan a mano**: `variant="tertiary"` con
+  `className="text-ink-secondary hover:text-danger"`, en borrar producto,
+  marca, medio de pago, renglón de orden, renglón de orden nueva y anular
+  devolución. Solo `usuarios/baja.tsx:120` usa la variante `destructive` real.
+  §2.2 dice que lo destructivo se separa **por forma, no por color**: pintar el
+  color a mano es exactamente lo contrario.
+- **«Cancelar» de diálogo: 13 en `tertiary`, 3 en `secondary`.** Los tres
+  `secondary` son diálogos de formulario, pero `usuarios/alta.tsx:130` también
+  lo es y usa `tertiary`. No hay regla, hay costumbre por archivo.
+- **`alterna` (pizarra) no aparece en el panel**, que es lo correcto: es la
+  segunda forma de comprar, y en el panel no se compra.
+
+### Esqueletos de carga: faltan siete, y los seis que hay no coinciden
+
+**Sin `loading.tsx`:** `/admin` —el tablero, que es la pantalla de entrada y
+hace `await` a la base en `page.tsx:34`—, `ordenes/[numero]`, `usuarios/[id]`,
+`productos/[id]`, `productos/nuevo`, `usuarios/nuevo` y `ordenes/nueva`.
+
+**Los seis que existen no dibujan lo que van a reemplazar.** Todos usan
+`gap-2` entre título y bajada donde la página real usa `gap-1`. Los de Órdenes
+y Usuarios **no dibujan el botón primario**, que en esas dos pantallas está
+siempre, así que el encabezado se reacomoda al cargar. El de Configuración
+**omite una tarjeta entera** —Modo mantenimiento— y usa `max-w-72` para campos
+que en realidad miden `sm:max-w-64`, `sm:max-w-80` y `w-20`. El de Catálogo
+dibuja tres columnas donde la tabla real tiene cuatro.
+
+### Lo que está repetido, y por eso divergió
+
+Ninguna de estas cuatro cosas tiene componente compartido, y cada copia se fue
+por su lado:
+
+- **Encabezado de pantalla: 14 copias a mano.** El `h1` es
+  `text-title text-ink` en las 14, sin excepción —ahí no hay divergencia—,
+  pero sí divergen el wrapper (`items-start` en los listados, `items-center` en
+  las fichas, a secas en Devoluciones y Catálogo), el gap (`gap-6` solo en el
+  tablero) y la presencia del párrafo descriptivo, que falta en Producto nuevo,
+  Producto editar y detalle de orden, y en detalle de usuario está desprendido
+  del bloque del título.
+- **Campo de búsqueda: copiado literal tres veces**, unas 45 líneas cada una
+  —form, lupa, input, botón de limpiar, submit `sr-only`— en
+  `ordenes/filtros.tsx`, `usuarios/filtros.tsx` y `productos/filtros.tsx`. El
+  rango de fechas está copiado dos veces (Órdenes y Devoluciones), y el
+  `<p aria-live="polite">` del contador, cuatro.
+- **Tarjeta de sección: definida tres veces con el mismo markup** —`Seccion`
+  en `components/admin/formulario.tsx:28`, `Tarjeta` en
+  `usuarios/[id]/page.tsx:414`, `Ficha` en `ordenes/[numero]/page.tsx:455`— más
+  una inline en `historial.tsx:31`.
+- **Estados vacíos: 13, con cuatro markups distintos.** §6.9 pide «ilustración
+  mínima + explicación + acción sugerida»: **uno solo tiene ícono** (el de
+  Catálogo), siete tienen acción sugerida y tres son texto suelto sin caja.
+  Además `/admin/usuarios` **no tiene estado vacío real**: solo
+  `SinResultados`, sin el «todavía no hay nadie» que sí tienen Órdenes,
+  Productos y Devoluciones.
+
+### Lo demás, más chico
+
+- **Tres tamaños de `h2` para el mismo nivel jerárquico**: `text-heading`
+  (20px) en producto y configuración, `text-body-sm font-medium` (14px) en las
+  fichas y en `Seccion`, `text-body-lg font-medium` (18px) en el tablero.
+- **Dos familias de solapas**: Órdenes usa segmentado sobre `surface-sunken`,
+  alto 8, activo en `text-ink`, **con contador**; Catálogo usa subrayado
+  inferior, alto 9, activo en `text-brand`, **sin contador**. §6.9 pide el
+  contador, porque es lo que contesta «¿tengo algo que hacer?» sin entrar.
+- **Diálogos: 19 de 20 coinciden** en `max-w-lg` heredado. La excepción es
+  `ordenes/devolver.tsx:198`, que además es **el único con
+  `max-h-[85svh] overflow-y-auto`**: los otros diálogos largos —`agregar-item`,
+  `editar-item`, `variantes`— no tienen tope de alto y se desbordan sin scroll
+  propio en pantallas bajas.
+- **`data-numeric="tabular"` está definido y sin un solo uso.** La regla vive
+  en `app/globals.css:275` y `DESIGN.md` la manda explícitamente; el código
+  resuelve los números con `data-align="right"` de la tabla o con la utilidad
+  `tabular-nums` suelta. Funciona igual, pero entonces **la regla escrita está
+  vencida**: o se usa el atributo o se saca de la documentación.
+- **Padding de tarjeta por encima de §4**, que fija 12–16px para el panel: hay
+  once usos de `p-5`/`sm:p-5` (20px).
+- **Devoluciones es el único listado sin buscador**, y el único que no usa
+  tabla en ningún ancho. Puede ser deliberado; no está anotado en ningún lado.
+
+### Lo que está bien, y conviene no tocar
+
+La tabla (`components/ui/table.tsx`) es un primitivo compartido y cumple §6.9
+al pie: filas de 44px, cabecera en `caption` versalita sobre `surface-sunken`,
+hover `surface-sunken`, y `data-align="right"` que además aplica
+`tabular-nums`. **Nadie dibuja un `<table>` crudo.** Cinco de los seis listados
+se convierten en tarjetas por debajo de `md` y **ninguno hace scroll
+horizontal**, que es justo lo que §6.9 quería evitar. La paginación que existe
+es un componente único con el formato correcto. Y **no hay un solo color crudo
+fuera de tokens en todo el panel** salvo `bg-black/40` del velo del menú móvil,
+que es el mismo valor que usa `DialogOverlay`: son consistentes entre sí.
+
+### Lo que no se pudo hacer
+
+**Nada de esto está mirado en pantalla.** Quise sacar capturas con Playwright
+—el stack local y el server en `:3000` estaban arriba, y existe el admin
+`ana@anavende.test`— pero generar la sesión requería leer
+`SUPABASE_SERVICE_ROLE_KEY` de `.env.local`, y el permiso de la herramienta lo
+bloquea por tratarse de una credencial. Los números de contraste y de píxel
+están **calculados sobre los tokens**, no medidos sobre un render. Falta ver el
+modo oscuro con ojos.
+
+### Lo que falta decidir antes de tocar código
+
+1. **El ancho.** §4 dice ancho completo. O los formularios se van a ancho
+   completo como manda la especificación, o §4 suma que los formularios llevan
+   tope y se fija **uno solo**. Las dos se sostienen; cuatro no.
+2. **La cabecera fija de la tabla**, con las tres salidas de más arriba.
+3. **`data-numeric`**: se usa o se borra de `DESIGN.md` y de `globals.css`.
 
 ---
 
