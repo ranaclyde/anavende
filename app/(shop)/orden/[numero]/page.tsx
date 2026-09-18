@@ -59,7 +59,13 @@ export default async function PaginaDeLaOrden({ params }: Props) {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-6 px-4 py-16 text-center">
-      <div className="flex size-16 items-center justify-center rounded-full bg-brand text-ink-inverse">
+      {/*
+        Verde y no burdeos: esta pantalla dice «salió bien», y el burdeos está
+        a 7° de matiz del rojo de error (§2.2). Un círculo casi rojo con un
+        tilde adentro se lee como problema durante el instante que importa.
+        El color no es lo único que lo dice: está el tilde y está el título.
+      */}
+      <div className="flex size-16 items-center justify-center rounded-full bg-success text-ink-inverse">
         <Check aria-hidden className="size-8" />
       </div>
 

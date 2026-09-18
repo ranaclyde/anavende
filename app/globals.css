@@ -27,6 +27,22 @@
   --brand-shadow: rgb(131 40 51 / 0.34);
   --shadow-focus-raw: 0 0 0 3px #f7edef, 0 0 0 1px #832833;
 
+  /*
+   * Segundo color: azul pizarra. Su trabajo es LA OTRA ACCIÓN DE COMPRA
+   * —«Comprá ya por WhatsApp», que no es apoyo sino la forma que cierra la
+   * venta— y LO ELEGIDO, como el checkbox marcado.
+   *
+   * Se eligió por un solo número: 9,05:1 contra blanco, contra los 9,07:1 del
+   * burdeos. Con 0,02 de diferencia los dos botones pesan igual y ninguno
+   * grita por encima del otro, que es lo que hace falta cuando son dos
+   * caminos para lo mismo. El hover ACLARA, igual que el de marca.
+   */
+  --accent: #2f4a6d;
+  --accent-hover: #3c5d87;
+  --accent-active: #24394f;
+  --accent-tint: #eef2f7;
+  --accent-tint-border: #d5deea;
+
   /* Superficies */
   --canvas: #f2f4f5; /* fondo de página */
   --surface: #ffffff; /* tarjetas, campos, encabezado */
@@ -74,6 +90,13 @@
   --brand-shadow: rgb(212 105 122 / 0.2);
   --shadow-focus-raw: 0 0 0 3px #2a1a1d, 0 0 0 1px #d4697a;
 
+  /* ACLARADO: #2f4a6d da 1,84:1 sobre la superficie oscura, ilegible. */
+  --accent: #7d9dc4;
+  --accent-hover: #94b0d4;
+  --accent-active: #6b8cb5;
+  --accent-tint: #1a2230;
+  --accent-tint-border: #2a3648;
+
   --canvas: #141416;
   --surface: #1e1e21;
   --surface-sunken: #18181b;
@@ -104,6 +127,12 @@
   --color-brand-active: var(--brand-active);
   --color-brand-tint: var(--brand-tint);
   --color-brand-tint-border: var(--brand-tint-border);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-tint: var(--accent-tint);
+  --color-accent-tint-border: var(--accent-tint-border);
 
   --color-canvas: var(--canvas);
   --color-logo-chip: var(--logo-chip);
