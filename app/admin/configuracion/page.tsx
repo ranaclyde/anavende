@@ -29,7 +29,7 @@ export default async function ConfiguracionDelSitio() {
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="flex w-full max-w-admin-form flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h1 className="text-title text-ink">Configuración</h1>
         <p className="text-body-sm text-ink-secondary">

@@ -320,9 +320,17 @@ dígitos de ancho variable hacen bailar una columna de precios.
 ## Layout
 
 La tienda se centra en un ancho máximo de **1200px** y separa sus secciones con 64
-a 80px. El panel ocupa el ancho completo menos el menú lateral, separa bloques con
-24 a 32px y corre sus filas de tabla a 44px de alto. La escala de espaciado es de
-base 4px.
+a 80px. El panel separa bloques con 24 a 32px y corre sus filas de tabla a 44px de
+alto. La escala de espaciado es de base 4px.
+
+**El panel tiene dos anchos, y ninguno se centra.** Los listados y las fichas
+ocupan el ancho completo menos el menú: ahí cada píxel es una columna más que se
+lee sin apretar. Los formularios y el tablero se topean en
+`--container-admin-form` (1024px) y van **alineados a la izquierda**, sin
+`mx-auto`: un formulario de una sola columna a 1920px deja campos de 1580px, y
+centrarlo hacía que el contenido saltara de lugar al pasar de un listado a su
+formulario. Sin centrar, el borde izquierdo cae en el mismo punto en las siete
+pantallas y en toda resolución.
 
 El móvil es prioridad de diseño en la tienda, no una adaptación: el área táctil
 mínima es de 44px y está resuelta **en la variante del componente**, no en cada

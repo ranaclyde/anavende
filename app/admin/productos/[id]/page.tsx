@@ -44,7 +44,7 @@ export default async function EditarProducto({ params }: Props) {
   if (!producto) notFound();
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+    <div className="flex w-full max-w-admin-form flex-col gap-4">
       <Link
         href="/admin/productos"
         className="inline-flex items-center gap-1 self-start text-body-sm text-ink-secondary hover:text-ink"

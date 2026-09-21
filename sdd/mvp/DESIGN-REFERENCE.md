@@ -406,12 +406,31 @@ El sistema tiene **una paleta y una tipografía**, pero **dos escalas de densida
 | Padding de tarjeta | 16 – 20px | 12 – 16px |
 | Separación entre secciones | 64 – 80px | 24 – 32px |
 | Alto de fila de tabla | — | 44px |
-| Ancho máximo | 1200px | Ancho completo, menos el menú lateral |
+| Ancho máximo | 1200px | Ancho completo menos el menú **en listados y fichas**; **1024px en formularios y en el tablero**, alineados a la izquierda (§4.1) |
 | Modo oscuro | No | Sí |
 
 **Por qué no son idénticas.** El lenguaje de la tienda —radios de 24px, 80px entre secciones, tarjetas flotantes— existe para que se luzcan cinco o seis productos por pantalla. Aplicado a una tabla de cuarenta órdenes produce una pantalla donde entran seis filas y hay que hacer scroll para todo. La vendedora no está descubriendo productos: está buscando la orden 1043 lo más rápido posible.
 
 **Qué se comparte, y no es negociable:** la paleta, Inter, el rol del color de marca, el estilo del foco, la voz de los mensajes y todos los componentes de formulario.
+
+#### 4.1 El ancho del panel
+
+**Hasta el 2026-09-21 esta fila decía «ancho completo» a secas, y ninguna pantalla de formulario la cumplía.** Había cuatro criterios conviviendo —768px centrado, 768px a la izquierda, 672px centrado y sin tope— porque no existía un lugar donde el número estuviera escrito. Se resolvió así (decisión tuya del 2026-09-21, tomada viendo las cuatro opciones aplicadas a «Nuevo producto»):
+
+| | Ancho | Alineación |
+|---|---|---|
+| Listados y fichas | Completo, menos el menú | — |
+| **Formularios y tablero** | **`--container-admin-form`, 1024px** | **A la izquierda**, sin `mx-auto` |
+
+**Por qué los formularios llevan tope.** Son de una sola columna, y a ancho completo el campo «Nombre» mide 1100px en una pantalla de 1440 y 1580px en una de 1920, para escribir «Teclado mecánico K120». La línea original se escribió pensando en tablas, que es donde el ancho completo sí sirve: ahí cada píxel de más es una columna que se lee sin apretar.
+
+**Por qué a la izquierda y no centrado.** Es lo que resuelve el problema que se reportó, que no era cuánto medían sino que **se movían**. Sin `mx-auto`, el borde izquierdo del contenido cae en el mismo lugar en las siete pantallas y en toda resolución —medido: x=264 a 1280, 1440 y 1920—, así que el título de un formulario queda alineado con el del listado del que se viene y nada salta al navegar. Centrado, «Nuevo producto» aparecía 190px a la derecha de «Productos».
+
+**Por qué 1024 y no el 768 que ya se usaba.** Con 1024 los pares de campos —precio y descuento, marca y categoría— respiran, y el texto de ayuda entra en un renglón en vez de dos. Por debajo de 1288px de viewport el tope no llega a morder y formulario y listado miden exactamente lo mismo, que es el caso de la mayoría de las pantallas reales.
+
+**El número vive en `app/globals.css` como `--container-admin-form`**, no como una clase suelta, por el mismo motivo por el que existe `--container-shop`: sin un lugar donde esté escrito, la próxima pantalla inventa el suyo.
+
+---
 
 **Lo que se pinta en un portal se lleva la escala puesta.** Diálogos, menús y globos de ayuda salen a `document.body` para que ningún `overflow` los recorte, y ahí arriba ya no hay `data-scale`: un diálogo abierto desde el panel se pintaba con la escala de la tienda —16px y campos con forma de píldora— aunque sus clases `admin:` estuvieran escritas. Se resuelve en `components/ui/escala.tsx`, que marca el atributo y además lo pasa por contexto, para que el contenido portaleado lo repita sobre sí mismo. El modo oscuro no tiene el problema: `data-theme` vive en `<html>`, y `body` está adentro.
 

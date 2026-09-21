@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Nueva cuenta" };
  */
 export default function NuevaCuenta() {
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
+    <div className="flex w-full max-w-admin-form flex-col gap-4">
       <div>
         <Button asChild variant="tertiary" size="sm" className="-ml-3">
           <Link href="/admin/usuarios">

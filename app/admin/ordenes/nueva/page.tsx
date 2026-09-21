@@ -21,7 +21,7 @@ export const metadata: Metadata = { title: "Nueva orden" };
  */
 export default function NuevaOrden() {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-admin-form flex-col gap-4">
       <div>
         <Button asChild variant="tertiary" size="sm" className="-ml-3">
           <Link href="/admin/ordenes">

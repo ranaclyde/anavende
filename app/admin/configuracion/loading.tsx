@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export default function CargandoConfiguracion() {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="flex w-full max-w-admin-form flex-col gap-4">
       <div className="flex flex-col gap-1">
         <Skeleton className="h-7 w-40" />
         <Skeleton className="h-5 w-full max-w-md" />

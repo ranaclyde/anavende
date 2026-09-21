@@ -229,6 +229,11 @@
 
   /* Anchos máximos (§4) */
   --container-shop: 1200px;
+  /* El panel va a ancho completo menos el menú, SALVO los formularios y el
+     tablero, que se topean acá. Existe como token y no como una clase suelta
+     por lo que pasó hasta el 2026-09-21: sin un lugar donde estuviera escrito,
+     cada pantalla inventó el suyo y hubo cuatro criterios conviviendo. */
+  --container-admin-form: 1024px;
 }
 
 /* ═══ Base ═════════════════════════════════════════════════════════════ */

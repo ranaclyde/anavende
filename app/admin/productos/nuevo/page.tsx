@@ -30,7 +30,7 @@ export default async function NuevoProducto() {
   ].filter((r) => r.opciones.every((o) => !o.isActive));
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+    <div className="flex w-full max-w-admin-form flex-col gap-4">
       <Volver />
       <h1 className="text-title text-ink">Nuevo producto</h1>
 

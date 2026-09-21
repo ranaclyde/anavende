@@ -38,7 +38,7 @@ export default async function PanelInicio() {
   ]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex w-full max-w-admin-form flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h1 className="text-title text-ink">Panel</h1>
         <p className="text-body-sm text-ink-secondary">
@@ -75,7 +75,7 @@ function ParaHacer({
   return (
     <section
       aria-labelledby="para-hacer"
-      className="flex max-w-3xl flex-col gap-3 rounded-panel-card border border-border bg-surface p-5"
+      className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-5"
     >
       <h2 id="para-hacer" className="text-body-lg font-medium text-ink">
         Para hacer
@@ -195,7 +195,7 @@ function EsteMes({
   return (
     <section
       aria-labelledby="este-mes"
-      className="flex max-w-3xl flex-col gap-3 rounded-panel-card border border-border bg-surface p-5"
+      className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-5"
     >
       <h2 id="este-mes" className="text-body-lg font-medium text-ink">
         Este mes{" "}

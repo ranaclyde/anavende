@@ -2518,7 +2518,7 @@ sigue en `rgb(255, 255, 255)` sobre `rgb(220, 38, 38)`, **idéntico a antes**,
 porque en claro los dos valores coinciden. La tienda, que es siempre clara y
 usa la misma variante en cuatro lugares, no cambió en nada.
 
-### El ancho: cinco comportamientos para la misma cosa
+### ~~El ancho: cinco comportamientos para la misma cosa~~ — unificado el 2026-09-21
 
 §4 de `DESIGN-REFERENCE.md` es explícito —«Ancho máximo: panel, ancho
 completo, menos el menú lateral»— y `app/admin/layout.tsx:62` lo cumple. Son
@@ -2537,9 +2537,48 @@ Usuario nuevo y Producto nuevo **miden lo mismo y no están en el mismo
 lugar**: ir de uno al otro corre el formulario 112px sin que cambie nada. Y
 «Orden nueva» es el único formulario a ancho completo. En 1920 la diferencia
 entre pantallas hermanas es 1632px contra 672px, y colapsar el menú a 64px la
-agranda, porque solo se ensanchan las que no tienen tope. Existe
-`--container-shop: 1200px` como token (`app/globals.css:231`); **no hay
-equivalente para el panel**, así que cada pantalla inventa el suyo.
+agranda, porque solo se ensanchan las que no tienen tope. Existía
+`--container-shop: 1200px` como token; **no había equivalente para el panel**,
+así que cada pantalla inventaba el suyo.
+
+**Resuelto el 2026-09-21, decisión tuya viendo las cuatro opciones aplicadas a
+«Nuevo producto»** —ancho completo, 768 centrado, 768 a la izquierda y 1024 a
+la izquierda—:
+
+| | Ancho | Alineación |
+|---|---|---|
+| Listados y fichas | Completo, menos el menú | — |
+| Formularios y tablero | `--container-admin-form`, **1024px** | **A la izquierda**, sin `mx-auto` |
+
+**El ancho completo de §4 se descartó viéndolo**: el formulario es de una sola
+columna, así que el campo «Nombre» quedaba en 1100px a 1440 y en 1580px a 1920,
+para escribir «Teclado mecánico K120». Esa línea de §4 se había escrito pensando
+en tablas, que es donde el ancho completo sí sirve.
+
+**Lo de la izquierda es lo que arregla el problema que reportaste**, que no era
+cuánto medían sino que **se movían**. Sin `mx-auto` el borde izquierdo cae en el
+mismo lugar en las siete pantallas y en las tres resoluciones —medido: **x=264 a
+1280, 1440 y 1920**—, así que el título de un formulario queda alineado con el
+del listado del que se viene. Centrado, «Nuevo producto» aparecía 190px a la
+derecha de «Productos».
+
+**Por debajo de 1288px de viewport el tope no llega a morder**: formulario y
+listado miden exactamente lo mismo, 992px a 1280. Recién a 1440 se separan.
+
+**El número vive como token**, `--container-admin-form` en `app/globals.css`, y
+no como una clase suelta, por el mismo motivo por el que existe
+`--container-shop`: sin un lugar donde esté escrito, la próxima pantalla inventa
+el suyo. §4 suma la sección **4.1** con el reparto y los cuatro porqués, y
+`DESIGN.md` quedó sincronizado.
+
+El tablero tenía el tope **en cada tarjeta** y no en el contenedor; ahora lo pone
+el contenedor, como las otras seis. Comprobado también en teléfono: 358px de
+contenido y **sin scroll horizontal** en las tres pantallas que se miraron.
+
+**Queda una hermana sin resolver, y es de otra tarea**: el tablero era el único
+con `gap-6` donde el resto usa `gap-4`. Se igualó a `gap-4` en el mismo cambio
+porque era la misma línea; si alguna vez se quiere más aire entre bloques del
+panel, se decide para los seis juntos.
 
 ### ~~Dos idiomas de tarjeta, y el segundo desaparece en oscuro~~ — arreglado el 2026-09-18
 
