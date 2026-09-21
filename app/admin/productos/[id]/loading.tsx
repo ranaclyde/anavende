@@ -16,7 +16,7 @@ export default function CargandoLaEdicion() {
       <EsqueletoDeFormularioDeProducto />
 
       {/* Colores y stock */}
-      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
+      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
             <Skeleton className="h-6 w-40" />

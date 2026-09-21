@@ -20,7 +20,7 @@ export default function CargandoElPanel() {
       <EsqueletoDeEncabezado titulo="w-24" bajada="w-72 max-w-full" />
 
       {/* Para hacer */}
-      <section className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-5">
+      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
         <Skeleton className="h-6 w-28" />
         <div className="flex flex-col divide-y divide-border">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -36,7 +36,7 @@ export default function CargandoElPanel() {
       </section>
 
       {/* Este mes */}
-      <section className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-5">
+      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
         <Skeleton className="h-6 w-40" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (

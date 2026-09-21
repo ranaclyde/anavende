@@ -3,6 +3,7 @@
 import { CheckCircle2 } from "lucide-react";
 import { useId, useRef, useState, useTransition } from "react";
 
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
@@ -177,13 +178,11 @@ export function FormularioDeConfiguracion({
       {guardado === null ? <SinConfigurar umbral={umbralPorDefecto} /> : null}
 
       {/* ── Lo que ve el comprador ───────────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-heading text-ink">Contacto</h2>
-          <p className="text-body-sm text-ink-secondary">
-            Es lo único de esta pantalla que ve el comprador.
-          </p>
-        </div>
+            <TarjetaDeSeccion
+        id="contacto"
+        titulo="Contacto"
+        ayuda="Es lo único de esta pantalla que ve el comprador."
+      >
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={campo("whatsappNumber").id}>Número de WhatsApp</Label>
@@ -208,16 +207,14 @@ export function FormularioDeConfiguracion({
             </FieldHint>
           )}
         </div>
-      </section>
+      </TarjetaDeSeccion>
 
       {/* ── Lo que ve solo la vendedora ──────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-heading text-ink">Avisos</h2>
-          <p className="text-body-sm text-ink-secondary">
-            Nada de esto se muestra en la tienda.
-          </p>
-        </div>
+            <TarjetaDeSeccion
+        id="avisos"
+        titulo="Avisos"
+        ayuda="Nada de esto se muestra en la tienda."
+      >
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={campo("adminNotificationEmail").id}>
@@ -288,7 +285,7 @@ export function FormularioDeConfiguracion({
             </FieldHint>
           )}
         </div>
-      </section>
+      </TarjetaDeSeccion>
 
       <div ref={errorGeneral} tabIndex={-1} className="outline-none">
         <FieldError>{errores.general}</FieldError>

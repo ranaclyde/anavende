@@ -7,36 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-/**
- * Las tres piezas con las que se arma un formulario del panel — DR §6.6.
- *
- * Salieron de la orden manual (F7.4), que fue el primer formulario largo del
- * panel, y viven acá desde F7.6, que es el segundo: dos copias de «cómo se ve
- * un campo con su error» son dos copias que un día dejan de parecerse.
- */
-
-export function Seccion({
-  titulo,
-  ayuda,
-  children,
-}: {
-  titulo: string;
-  ayuda?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-4">
-      <div className="flex flex-col gap-0.5">
-        <h2 className="text-body-sm font-medium text-ink">{titulo}</h2>
-        {ayuda ? (
-          <p className="text-caption text-ink-secondary">{ayuda}</p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
 /** Mismo patrón que el checkout (F6.1): un radio de verdad, y la tarjeta es la etiqueta. */
 export function Opcion({
   nombre,

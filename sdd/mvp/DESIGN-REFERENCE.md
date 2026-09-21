@@ -796,6 +796,25 @@ Dos piezas de la misma decisión (FS RF-15): dónde se escribe la descripción y
 
 **El fantasma vive en el mismo archivo** (`EsqueletoDeEncabezado`, §8). Es lo único que evita que se separen con el tiempo: el esqueleto de la ficha de producto dibujaba el volver de 20px porque estaba escrito en otro lado y nadie los había visto juntos.
 
+### 6.13 Tarjeta de sección del panel
+
+**Todo bloque con título dentro de una pantalla del panel es una `TarjetaDeSeccion`** (`components/admin/tarjeta.tsx`). Hasta el 2026-09-21 estaba escrita cinco veces —`Seccion`, `Tarjeta`, `Ficha`, una suelta en el historial y ocho a mano en los formularios— y había **quince tarjetas con tres paddings, tres separaciones y tres tamaños de título**.
+
+| | Valor | Por qué |
+|---|---|---|
+| Padding | `p-4`, 16px | §4 fija 12–16px para el panel, y nueve de quince estaban en 20px sin que la desviación estuviera anotada |
+| Separación interna | `gap-4`, 16px | Con 16px de padding, el mismo número adentro da un solo ritmo |
+| Título | `body` 16px, peso 500 | Decisión tuya del 2026-09-21 |
+| Nombre accesible | `aria-labelledby` al `h2` | Decisión tuya del mismo día |
+
+**Por qué 16px y no los 20 del formulario ni los 14 de la ficha.** Eran el mismo nivel jerárquico dicho de tres maneras. A 14px el título de una sección medía lo mismo que el rótulo de un campo y dejaba de separar; a 20px, en una columna de 352px, pesaba tanto como el dato que anunciaba. Es además el tamaño del título de `VacioDelPanel`, así que el panel tiene **una sola voz para «esto es una sección»**. De yapa, el esqueleto quedó exacto: `text-body` da 24px de alto y `h-6` son 24px, mientras que contra los 20px de antes se quedaba un píxel corto.
+
+**Por qué se anuncia como región.** Antes lo hacían cuatro de quince. Un `<section>` sin nombre accesible **no es una región**: para un lector de pantalla es un contenedor más, así que once de esas tarjetas eran un `div` con pasos de más. Con nombre se salta entre «Comprador», «Envío» e «Historial» sin recorrer el contenido, que es exactamente lo que §6.9 quiere de una pantalla de trabajo. El `id` se pide por parámetro y no se genera: estas tarjetas se pintan en el servidor, donde `useId` no corre.
+
+**La alineación del encabezado la decide la ayuda**, la misma regla que §6.12: con ayuda son dos renglones y va `items-start`; sin ayuda es uno y va `items-center`.
+
+**Dos excepciones, las dos a propósito.** El envoltorio de una tabla no lleva padding —una tabla llena la tarjeta de borde a borde— y su título va en `sr-only`, porque la cabecera de la tabla ya dice qué es cada columna. Y una tarjeta que solo lleva un mensaje, sin título, no es una sección: no se anuncia ni se nombra.
+
 ## 7. Composición de pantallas
 
 ### 7.1 Home

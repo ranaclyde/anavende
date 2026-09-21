@@ -2956,10 +2956,39 @@ por su lado:
   ahí hay una sola fecha posible—. A 390px el desborde horizontal es **0px**.
   Los cuatro contadores con `aria-live="polite"`, y el de productos con el
   filtro puesto dice «6 de 26 productos».
-- **Tarjeta de sección: definida tres veces con el mismo markup** —`Seccion`
-  en `components/admin/formulario.tsx:28`, `Tarjeta` en
-  `usuarios/[id]/page.tsx:414`, `Ficha` en `ordenes/[numero]/page.tsx:455`— más
-  una inline en `historial.tsx:31`.
+- **~~Tarjeta de sección: definida tres veces con el mismo markup.~~**
+  Resuelto el 2026-09-21, junto con los dos hallazgos de más abajo —los tres
+  tamaños de `h2` y el padding por encima de §4—, porque **eran el mismo
+  hallazgo visto por tres lados**: la caja, su título y su relleno los decidía
+  cada pantalla por su cuenta.
+
+  **Eran cinco definiciones, no tres.** A `Seccion`, `Tarjeta` y `Ficha` hay
+  que sumarles la del historial y **ocho escritas a mano en los formularios**,
+  que el informe no miró porque no tenían nombre. Barriendo todas las
+  `<section>` del panel salieron **quince tarjetas con tres paddings, tres
+  separaciones y tres tamaños de título**:
+
+  | | Padding | Gap | `h2` |
+  |---|---|---|---|
+  | Formularios (7) | `p-4 sm:p-5` | `gap-4` | `text-heading`, 20px |
+  | Fichas (5) | `p-4` | `gap-3` | `text-body-sm`, 14px |
+  | Tablero (2) | `p-5` | `gap-3` | `text-body-lg`, 18px |
+
+  Ahora las quince son `TarjetaDeSeccion` (`components/admin/tarjeta.tsx`), y
+  DR §6.13 dice por qué cada número es el que es. **El padding lo resolvió la
+  especificación sola**: §4 fija 12–16px para el panel y nueve de quince
+  estaban en 20px sin que la desviación estuviera anotada en ningún lado.
+
+  **Un efecto que no se buscaba:** al bajar el título de 20px a 16px, el
+  esqueleto quedó **exacto**. `text-body` da 24px de alto y el fantasma dibuja
+  `h-6`, que son 24px; contra los 20px de antes se quedaba un píxel corto en
+  cada tarjeta. Medido en el navegador, no deducido.
+
+  Verificado contra `next start` sobre las ocho pantallas que tienen tarjetas:
+  **28 tarjetas, un solo padding (16px), un solo gap (16px) y un solo título
+  (16px/500)**. Las dos únicas excepciones son deliberadas y quedaron escritas
+  en §6.13: el envoltorio de la tabla de la orden, sin padding y con el título
+  en `sr-only`, y las tarjetas que solo llevan un mensaje sin título.
 - **~~Estados vacíos: 13, con cuatro markups distintos.~~** Resuelto el
   2026-09-21. **Eran 11 vacíos y 3 notas**, no 13 vacíos: la caja punteada de
   la ficha de orden, la de «Todavía no guardaste la configuración» y la del
@@ -3001,9 +3030,13 @@ por su lado:
 
 ### Lo demás, más chico
 
-- **Tres tamaños de `h2` para el mismo nivel jerárquico**: `text-heading`
-  (20px) en producto y configuración, `text-body-sm font-medium` (14px) en las
-  fichas y en `Seccion`, `text-body-lg font-medium` (18px) en el tablero.
+- **~~Tres tamaños de `h2` para el mismo nivel jerárquico.~~** Resuelto el
+  2026-09-21 con la tarjeta compartida: **los quince quedaron en `body` de
+  16px con peso 500**, decisión tuya entre las tres. A 14px el título de una
+  sección medía lo mismo que el rótulo de un campo y dejaba de separar; a
+  20px, en la columna de 352px de una ficha, pesaba tanto como el dato que
+  anunciaba. Es además el tamaño del título de `VacioDelPanel`, así que el
+  panel quedó con una sola voz para «esto es una sección».
 - **Dos familias de solapas**: Órdenes usa segmentado sobre `surface-sunken`,
   alto 8, activo en `text-ink`, **con contador**; Catálogo usa subrayado
   inferior, alto 9, activo en `text-brand`, **sin contador**. §6.9 pide el
@@ -3018,8 +3051,12 @@ por su lado:
   resuelve los números con `data-align="right"` de la tabla o con la utilidad
   `tabular-nums` suelta. Funciona igual, pero entonces **la regla escrita está
   vencida**: o se usa el atributo o se saca de la documentación.
-- **Padding de tarjeta por encima de §4**, que fija 12–16px para el panel: hay
-  once usos de `p-5`/`sm:p-5` (20px).
+- **~~Padding de tarjeta por encima de §4.~~** Resuelto el 2026-09-21 con la
+  tarjeta compartida: las quince pasaron a `p-4`, los 16px que §4 ya fijaba.
+  **Eran nueve y no once**: de los once usos de `p-5`/`sm:p-5` que contó el
+  informe, dos son de la tienda, que tiene su propia escala (§4) y ahí 20px
+  está dentro de lo escrito. Gana lo que dice la especificación, que era lo
+  que ninguna pantalla había mirado.
 - **Devoluciones es el único listado sin buscador**, y el único que no usa
   tabla en ningún ancho. Puede ser deliberado; no está anotado en ningún lado.
 

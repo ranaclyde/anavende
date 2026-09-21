@@ -36,7 +36,7 @@ export default function CargandoConfiguracion() {
       {/* Modo mantenimiento: la tercera tarjeta, que el esqueleto no dibujaba.
           Está FUERA del formulario, debajo de la barra de acciones, así que
           al llegar los datos aparecía un bloque entero de la nada. */}
-      <div className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
+      <div className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <Skeleton className="h-6 w-24" />
@@ -60,7 +60,7 @@ function Tarjeta({
   lineasDeAyuda: number;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
+    <div className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
       <div className="flex flex-col gap-1">
         <Skeleton className="h-6 w-28" />
         <Skeleton className="h-5 w-64" />

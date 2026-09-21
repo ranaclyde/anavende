@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
 import { Palette, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { ImagenesDeVariante } from "@/components/admin/productos/imagenes";
@@ -103,26 +104,12 @@ export function VariantesDelProducto({
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-heading text-ink">Colores y stock</h2>
-          <p className="text-body-sm text-ink-secondary">
-            Cada color lleva su stock y sus fotos. Si el producto no se vende
-            por color, alcanza con uno solo.
-          </p>
-          {/* Las reglas de las fotos, dichas una vez para toda la sección: en
-              cada tarjeta serían dos renglones repetidos por color. */}
-          {variantes.length === 0 ? null : (
-            <p className="text-caption text-ink-secondary">
-              Hasta 5 fotos por color. Arrastralas desde tu computadora a la
-              fila del color, o tocá «Agregar»: JPG, PNG o WEBP de hasta 10 MB,
-              que se guardan optimizadas. La primera es la que se ve en el
-              catálogo, y se cambia arrastrando o desde el menú de cada foto.
-            </p>
-          )}
-        </div>
-        {variantes.length === 0 ? null : (
+    <TarjetaDeSeccion
+      id="colores-y-stock"
+      titulo="Colores y stock"
+      ayuda="Cada color lleva su stock y sus fotos. Si el producto no se vende por color, alcanza con uno solo."
+      acciones={
+        variantes.length === 0 ? null : (
           <Button
             variant="secondary"
             size="sm"
@@ -131,8 +118,20 @@ export function VariantesDelProducto({
             <Plus aria-hidden />
             Agregar color
           </Button>
-        )}
-      </div>
+        )
+      }
+    >
+      {/* Las reglas de las fotos, dichas una vez para toda la sección: en cada
+          tarjeta serían dos renglones repetidos por color. Van de ancho
+          completo y no apretadas contra el botón. */}
+      {variantes.length === 0 ? null : (
+        <p className="text-caption text-ink-secondary">
+          Hasta 5 fotos por color. Arrastralas desde tu computadora a la fila
+          del color, o tocá «Agregar»: JPG, PNG o WEBP de hasta 10 MB, que se
+          guardan optimizadas. La primera es la que se ve en el catálogo, y se
+          cambia arrastrando o desde el menú de cada foto.
+        </p>
+      )}
 
       {error === null ? null : (
         <p role="alert" className="text-body-sm text-danger">
@@ -252,7 +251,7 @@ export function VariantesDelProducto({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </TarjetaDeSeccion>
   );
 }
 

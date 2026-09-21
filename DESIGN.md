@@ -442,6 +442,16 @@ Encabezado sobre superficie blanca que toma `shadow-lg` al hacer scroll. El esta
 activo se marca en Malbec. El buscador vive en el encabezado y se retira cuando la
 página trae el suyo.
 
+### Tarjeta de sección del panel
+
+Todo bloque con título dentro de una pantalla del panel es una
+`TarjetaDeSeccion`: `p-4` (los 12–16px que fija §4), `gap-4`, título en `body`
+de 16px con peso 500, y **nombre accesible** vía `aria-labelledby`, porque un
+`<section>` sin nombre no es una región. Estaba escrita cinco veces, con tres
+paddings, tres separaciones y tres tamaños de título para el mismo nivel
+jerárquico. La alineación del encabezado la decide la ayuda, igual que en el
+encabezado de pantalla. DR §6.13.
+
 ### Barra de filtros del panel
 
 No es el buscador firmado de la tienda: es un campo de 40px con la lupa adentro,

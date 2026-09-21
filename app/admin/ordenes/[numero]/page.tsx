@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { TarjetaDeDevolucion } from "@/components/admin/devoluciones/tarjeta";
 import {
@@ -197,7 +198,7 @@ export default async function DetalleDeLaOrden({ params }: Props) {
         </div>
 
         <div className="flex flex-col gap-4">
-          <Ficha titulo="Comprador">
+          <Ficha id="comprador" titulo="Comprador">
             <Dato titulo="A nombre de" valor={orden.customerName} />
             <Dato titulo="Teléfono" valor={orden.customerPhone} />
             <Dato
@@ -222,7 +223,7 @@ export default async function DetalleDeLaOrden({ params }: Props) {
             />
           </Ficha>
 
-          <Ficha titulo={envio ? "Envío" : "Entrega"}>
+          <Ficha id="entrega" titulo={envio ? "Envío" : "Entrega"}>
             {envio ? (
               <>
                 <Dato titulo="Recibe" valor={direccion.recipientName} />
@@ -249,7 +250,7 @@ export default async function DetalleDeLaOrden({ params }: Props) {
           </Ficha>
 
           {orden.notas ? (
-            <Ficha titulo="Notas">
+            <Ficha id="notas" titulo="Notas">
               <p className="text-body-sm whitespace-pre-line text-ink">
                 {orden.notas}
               </p>
@@ -440,17 +441,20 @@ function Devoluciones({ devoluciones }: { devoluciones: Devolucion[] }) {
 }
 
 function Ficha({
+  id,
   titulo,
   children,
 }: {
+  id: string;
   titulo: string;
   children: React.ReactNode;
 }) {
+  // Lo único propio es el `<dl>`: estas tres tarjetas son listas de
+  // definiciones —rótulo y dato—, y la caja ya la pone la compartida.
   return (
-    <section className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-4">
-      <h2 className="text-body-sm font-medium text-ink">{titulo}</h2>
+    <TarjetaDeSeccion id={id} titulo={titulo}>
       <dl className="flex flex-col gap-2.5">{children}</dl>
-    </section>
+    </TarjetaDeSeccion>
   );
 }
 

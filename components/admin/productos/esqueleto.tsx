@@ -73,7 +73,7 @@ function Seccion({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
+    <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
       <div className="flex flex-col gap-1">
         <Skeleton className={`h-6 ${titulo}`} />
         {ayuda ? <Skeleton className="h-5 w-full max-w-96" /> : null}

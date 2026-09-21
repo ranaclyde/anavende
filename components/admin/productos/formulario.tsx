@@ -9,6 +9,7 @@ import {
   EditorDeDescripcion,
   leerMarkdown,
 } from "@/components/admin/productos/editor";
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError } from "@/components/ui/field-error";
@@ -199,8 +200,7 @@ export function FormularioDeProducto({
   return (
     <form onSubmit={enviar} noValidate className="flex flex-col gap-6">
       {/* ── Qué es ────────────────────────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
-        <h2 className="text-heading text-ink">Datos del producto</h2>
+            <TarjetaDeSeccion id="datos" titulo="Datos del producto">
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={campo("name").id}>Nombre</Label>
@@ -273,11 +273,10 @@ export function FormularioDeProducto({
             </FieldError>
           </div>
         </div>
-      </section>
+      </TarjetaDeSeccion>
 
       {/* ── Cuánto sale ───────────────────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
-        <h2 className="text-heading text-ink">Precio</h2>
+            <TarjetaDeSeccion id="precio" titulo="Precio">
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
@@ -322,17 +321,14 @@ export function FormularioDeProducto({
         </div>
 
         <ResumenDePrecio vista={vista} />
-      </section>
+      </TarjetaDeSeccion>
 
       {/* ── Cómo se cuenta ────────────────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-heading text-ink">Descripción</h2>
-          <p className="text-body-sm text-ink-secondary">
-            Se ve en la ficha del producto. Podés usar negrita, cursiva, listas
-            y un subtítulo.
-          </p>
-        </div>
+            <TarjetaDeSeccion
+        id="descripcion"
+        titulo="Descripción"
+        ayuda="Se ve en la ficha del producto. Podés usar negrita, cursiva, listas y un subtítulo."
+      >
 
         <EditorDeDescripcion
           id={`${idBase}-description`}
@@ -348,11 +344,10 @@ export function FormularioDeProducto({
         <FieldError id={`${idBase}-description-error`}>
           {errores.campos.description}
         </FieldError>
-      </section>
+      </TarjetaDeSeccion>
 
       {/* ── Dónde se ve ───────────────────────────────────────────── */}
-      <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5">
-        <h2 className="text-heading text-ink">Publicación</h2>
+            <TarjetaDeSeccion id="publicacion" titulo="Publicación">
 
         <label className="flex items-start gap-3">
           <Checkbox
@@ -385,7 +380,7 @@ export function FormularioDeProducto({
             </span>
           </span>
         </label>
-      </section>
+      </TarjetaDeSeccion>
 
       <div ref={errorGeneral} tabIndex={-1} className="outline-none">
         <FieldError>{errores.general}</FieldError>

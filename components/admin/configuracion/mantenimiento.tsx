@@ -3,6 +3,7 @@
 import { Lock, LockOpen } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,37 +51,31 @@ export function ModoMantenimiento({
   const cerrada = activo === true;
 
   return (
-    <section
-      aria-labelledby="mantenimiento-titulo"
-      className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 sm:p-5"
+    <TarjetaDeSeccion
+      id="mantenimiento-titulo"
+      titulo="Tienda"
+      insignias={
+        /* Con texto siempre, no solo el color (§6.4, §9). Se omite sin fila:
+           «abierta» sería cierto, pero es un estado que todavía no se puede
+           cambiar, y la frase de abajo ya lo explica. */
+        activo === null ? null : cerrada ? (
+          <Badge tone="warning">
+            <Lock aria-hidden />
+            Cerrada al público
+          </Badge>
+        ) : (
+          <Badge tone="success">
+            <LockOpen aria-hidden />
+            Abierta
+          </Badge>
+        )
+      }
+      ayuda={
+        cerrada
+          ? "Quien entra ve un aviso de que volvemos en un rato, y no puede registrarse. Vos la seguís viendo normal."
+          : "Cerrala mientras cargás productos: los compradores ven un aviso de que volvemos en un rato, y vos la seguís viendo normal para revisar cada ficha."
+      }
     >
-      <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 id="mantenimiento-titulo" className="text-heading text-ink">
-            Tienda
-          </h2>
-          {/* Con texto siempre, no solo el color (§6.4, §9). Se omite sin
-              fila: «abierta» sería cierto, pero es un estado que todavía no
-              se puede cambiar, y la frase de abajo ya lo explica. */}
-          {activo === null ? null : cerrada ? (
-            <Badge tone="warning">
-              <Lock aria-hidden />
-              Cerrada al público
-            </Badge>
-          ) : (
-            <Badge tone="success">
-              <LockOpen aria-hidden />
-              Abierta
-            </Badge>
-          )}
-        </div>
-        <p className="text-body-sm text-ink-secondary">
-          {cerrada
-            ? "Quien entra ve un aviso de que volvemos en un rato, y no puede registrarse. Vos la seguís viendo normal."
-            : "Cerrala mientras cargás productos: los compradores ven un aviso de que volvemos en un rato, y vos la seguís viendo normal para revisar cada ficha."}
-        </p>
-      </div>
-
       {error === null ? null : (
         <p role="alert" className="text-body-sm text-danger">
           {error}
@@ -120,8 +115,8 @@ export function ModoMantenimiento({
             id="mantenimiento-sin-configurar"
             className="text-caption text-ink-secondary"
           >
-            Guardá primero la configuración de arriba: hasta que exista, no
-            hay dónde anotar que la tienda está cerrada.
+            Guardá primero la configuración de arriba: hasta que exista, no hay
+            dónde anotar que la tienda está cerrada.
           </p>
         ) : null}
       </div>
@@ -151,6 +146,6 @@ export function ModoMantenimiento({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </TarjetaDeSeccion>
   );
 }
