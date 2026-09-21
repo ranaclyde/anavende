@@ -189,7 +189,9 @@ export function FormularioDeProducto({
       // recién hecho, que es donde están los colores, el stock y las fotos
       // (F2.4): un producto sin variantes no se puede vender, así que mandar
       // al listado sería cortar el trabajo justo antes de la mitad.
-      router.push(producto ? "/admin/productos" : `/admin/productos/${resultado.data.id}`);
+      router.push(
+        producto ? "/admin/productos" : `/admin/productos/${resultado.data.id}`,
+      );
       router.refresh();
     });
   }
@@ -200,8 +202,7 @@ export function FormularioDeProducto({
   return (
     <form onSubmit={enviar} noValidate className="flex flex-col gap-6">
       {/* ── Qué es ────────────────────────────────────────────────── */}
-            <TarjetaDeSeccion id="datos" titulo="Datos del producto">
-
+      <TarjetaDeSeccion id="datos" titulo="Datos del producto">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={campo("name").id}>Nombre</Label>
           <Input
@@ -276,8 +277,7 @@ export function FormularioDeProducto({
       </TarjetaDeSeccion>
 
       {/* ── Cuánto sale ───────────────────────────────────────────── */}
-            <TarjetaDeSeccion id="precio" titulo="Precio">
-
+      <TarjetaDeSeccion id="precio" titulo="Precio">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={campo("price").id}>Precio</Label>
@@ -324,12 +324,11 @@ export function FormularioDeProducto({
       </TarjetaDeSeccion>
 
       {/* ── Cómo se cuenta ────────────────────────────────────────── */}
-            <TarjetaDeSeccion
+      <TarjetaDeSeccion
         id="descripcion"
         titulo="Descripción"
         ayuda="Se ve en la ficha del producto. Podés usar negrita, cursiva, listas y un subtítulo."
       >
-
         <EditorDeDescripcion
           id={`${idBase}-description`}
           valorInicial={producto?.description ?? ""}
@@ -347,8 +346,7 @@ export function FormularioDeProducto({
       </TarjetaDeSeccion>
 
       {/* ── Dónde se ve ───────────────────────────────────────────── */}
-            <TarjetaDeSeccion id="publicacion" titulo="Publicación">
-
+      <TarjetaDeSeccion id="publicacion" titulo="Publicación">
         <label className="flex items-start gap-3">
           <Checkbox
             checked={activo}

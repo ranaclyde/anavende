@@ -337,6 +337,22 @@ centrarlo hacía que el contenido saltara de lugar al pasar de un listado a su
 formulario. Sin centrar, el borde izquierdo cae en el mismo punto en las siete
 pantallas y en toda resolución.
 
+**La edición de un producto está en la primera fila, no en la segunda.** El tope
+de 1024 se justifica en que un formulario es de una sola columna, y esa pantalla
+dejó de serlo: el `<form>` convive con «Colores y stock», que es su hermana
+porque cada color se guarda solo. Apiladas, el título del stock empezaba a
+y=1280 con una ventana de 900 —no se asomaba al abrir— y es, junto con el
+precio, lo que más se toca. Desde `xl` van en dos columnas topeadas en `34rem` y
+`44rem`: lo que necesitan los pares de campos para no apilarse, y lo que
+necesita una fila de cinco fotos más la de «Agregar» para entrar entera. Medido,
+el título pasó a y=134. `/admin/productos/nuevo` sigue siendo formulario: no
+tiene stock que mostrar.
+
+**Y el argumento de «1024 para que la ayuda entre en un renglón» era el
+equivocado.** Ese renglón medía 102 caracteres, contra el techo de 68 que pone la
+tipografía. A 34rem los cinco textos de ayuda del formulario quedan entre 35 y
+51: dos renglones cortos se leen mejor que uno largo.
+
 El móvil es prioridad de diseño en la tienda, no una adaptación: el área táctil
 mínima es de 44px y está resuelta **en la variante del componente**, no en cada
 llamada —el botón de tamaño medio sube a `h-11` por debajo de `md` porque sus 40px

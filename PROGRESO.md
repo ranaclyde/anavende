@@ -3185,7 +3185,7 @@ El plan acordado son cuatro movimientos, de mayor a menor rendimiento:
 
 1. **Reponer desde el listado.** ✅ Hecho.
 2. **Subir «Colores y stock» en la ficha**, a dos columnas desde `xl` como la
-   ficha de usuario. Pendiente.
+   ficha de usuario. ✅ Hecho.
 3. **Que el alta termine donde empieza el trabajo**: crear deja el diálogo de
    «Agregar color» abierto. Pendiente.
 4. **Avisos flotantes.** Pendiente, y último a propósito: son la consecuencia
@@ -3236,6 +3236,56 @@ debajo de lo reservado se rechaza con la frase del dominio —«Hay 2 unidades
 reservadas en órdenes activas, así que el stock no puede bajar de 2»—, el globo
 **queda abierto** y la fila no cambió. Los datos de prueba se dejaron como
 estaban.
+
+**Lo hecho (2).** De **y=1280 a y=134**: «Colores y stock» ahora se asoma al
+abrir la ficha, y la página bajó de 1872 a 1373px de alto. La pantalla pasa a
+dos columnas desde `xl` —el formulario a la izquierda, el stock a la derecha—
+y con eso **cambia de fila en §4.1**: deja de ser «formulario» y pasa a
+«ficha», que es lo que ya era. El tope de 1024 se justificaba en que un
+formulario es de una sola columna, y ésta dejó de serlo. `/admin/productos/nuevo`
+sigue siendo formulario: no tiene stock que mostrar.
+
+- **Las dos columnas llevan tope, y los dos números están medidos.** `34rem` es
+  lo que necesitan los pares de campos —precio y descuento, marca y categoría—
+  para no apilarse: medidos, 247px cada uno. `44rem` es lo que necesita una
+  fila de fotos para entrar entera: cinco de 96px más la de «Agregar» con 8 de
+  separación son 616, y la tarjeta se lleva 56 entre su relleno y el del color.
+- **Sin el segundo tope la pantalla quedaba mal a 1920**, y se vio mirándola:
+  la columna de stock medía 1072, «Agregar color» quedaba a 900px de su título
+  y dos fotos flotaban en un desierto. Con tope, a 1536 entra la fila entera de
+  seis y de ahí para arriba no crece.
+- **Por debajo de `xl` no cambia nada**, a propósito. El orden del DOM y el de
+  la vista son el mismo en los dos casos, así que el recorrido con teclado no
+  se despega de lo que se ve. Poner el stock primero en el teléfono habría sido
+  cambiar un entierro por otro —para tocar el precio habría que pasar por todas
+  las galerías—, y desde el punto 1 el stock del teléfono se repone desde el
+  listado, sin entrar a la ficha.
+- **Un defecto que destapó el ancho nuevo**, y que estaba desde antes: el
+  encabezado de cada color se envolvía, y con «12 en total · 0 reservadas · 12
+  disponibles» los botones de editar y sacar se caían a un renglón propio
+  mientras que en el color de al lado quedaban a la derecha. Era el `flex-wrap`
+  del encabezado, que prefería tirar los botones abajo antes que encoger el
+  bloque de la izquierda. Sin él, la línea de cifras envuelve sola. Verificado
+  a 390, 768, 1024, 1280, 1440, 1536 y 1920: los dos colores en un renglón en
+  todos.
+
+**Y el argumento de «1024 para que la ayuda entre en un renglón» resultó ser el
+equivocado.** Medido ahora, ese renglón tenía **102 caracteres** en
+«Publicación» y 83 en «Descripción», contra el techo de **68** que pone §7. A
+`34rem` los cinco textos de ayuda del formulario quedan **entre 35 y 51**. Dos
+renglones cortos se leen mejor que uno largo; la línea original perseguía el
+número de renglones cuando lo que importaba era el largo de cada uno.
+
+**Lo que no se arregló, y se anota para no perderlo.** Los textos de la propia
+tarjeta de stock siguen por encima de 68 caracteres por renglón: el de las
+fotos bajó de 127 a 85, y la bajada de la tarjeta queda en 97. Cortarlos es
+tocar `TarjetaDeSeccion`, que usan cinco pantallas, así que no entra en este
+movimiento.
+
+Verificado con Playwright contra `next start` a siete anchos: sin desborde
+horizontal en ninguno, sin errores de consola, y el borde izquierdo del
+contenido sigue en **x=264** a 1280, 1440 y 1920, que es la garantía de §4.1 —
+nada se movió de lugar al pasar del listado a la ficha.
 
 ### Lo que falta decidir antes de tocar código
 

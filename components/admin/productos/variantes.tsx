@@ -153,7 +153,7 @@ export function VariantesDelProducto({
               key={v.id}
               className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface-sunken p-3"
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   <Muestra hex={v.colorHex} />
                   <div className="flex min-w-0 flex-col">
