@@ -130,7 +130,9 @@ export function Galeria({
               <div className="relative aspect-square">
                 <Image
                   src={img.grande}
-                  alt={img.alt ?? `${descripcion} (${i + 1} de ${imagenes.length})`}
+                  alt={
+                    img.alt ?? `${descripcion} (${i + 1} de ${imagenes.length})`
+                  }
                   fill
                   sizes="(min-width: 1024px) 55vw, 100vw"
                   // La primera es el LCP de esta pantalla: es lo más grande
@@ -438,7 +440,9 @@ function Visor({
     >
       <DialogContent
         closeLabel="Cerrar la galería"
-        className="h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-none gap-0 overflow-hidden p-0"
+        // `max-h-none`: la galería fija su alto y el tope de 85svh del
+        // diálogo la achicaría. Acá la caja ES la pantalla.
+        className="h-[calc(100dvh-2rem)] max-h-none w-[calc(100vw-2rem)] max-w-none gap-0 overflow-hidden p-0"
         onKeyDown={(e) => {
           if (e.key === "ArrowLeft") irA(actual - 1);
           if (e.key === "ArrowRight") irA(actual + 1);

@@ -3081,11 +3081,39 @@ por su lado:
   con la búsqueda** —con `?q=zzzz` las cinco solapas dicen lo mismo—, que es
   literalmente lo que §6.9 pide. Y «Limpiar todo» borra la búsqueda dejando
   `?estado=bloqueados` puesto.
-- **Diálogos: 19 de 20 coinciden** en `max-w-lg` heredado. La excepción es
-  `ordenes/devolver.tsx:198`, que además es **el único con
-  `max-h-[85svh] overflow-y-auto`**: los otros diálogos largos —`agregar-item`,
-  `editar-item`, `variantes`— no tienen tope de alto y se desbordan sin scroll
-  propio en pantallas bajas.
+- **~~Diálogos: el único con tope de alto era `devolver.tsx`.~~** Resuelto el
+  2026-09-21. **Son 25 y no 20**, y el tope lo tenía **uno**: el de registrar
+  una devolución, que es el que alguien vio romperse y arregló ahí mismo. Ahora
+  vive en el primitivo (`components/ui/dialog.tsx`) y `devolver.tsx` dejó de
+  ponerlo a mano. DR §6.14.
+
+  **El síntoma no era el que decía el informe.** Un diálogo más alto que la
+  pantalla no «se desborda»: se corta **por los dos lados**, porque la caja
+  está centrada con `translate(-50%, -50%)`. Y lo que queda afuera es
+  **inalcanzable**, no incómodo: la caja es `position: fixed` —así que
+  scrollear no la mueve— y encima Radix bloquea el scroll del cuerpo mientras
+  el modal está abierto (`data-scroll-locked`). Las tres cosas se comprobaron
+  en el navegador.
+
+  Medido a 320px de alto, reproduciendo el comportamiento viejo: «Cancelar la
+  orden» perdía **40px** —20 arriba y 20 abajo— y «Nueva marca», **44**. A
+  400px ya ninguno se cortaba con los datos de prueba: el defecto es real pero
+  **solo aparece en pantallas bajas o con listas largas**, que es por qué
+  sobrevivió sin que nadie lo viera salvo en devoluciones.
+
+  **Lo que scrollea es el contenido y no la caja**, y esa parte no es un
+  detalle: la × está en `absolute top-4 right-4`, y dentro de un contenedor con
+  scroll se iría con el contenido, dejando al diálogo sin su salida visible.
+  Comprobado: al scrollear hasta el final, la × **no se mueve** y sigue dentro
+  de la caja.
+
+  **El envoltorio del scroll tuvo que hacerse transparente**, y eso salió de
+  romper algo: la galería de la ficha de producto fija `h-[calc(100dvh-2rem)]`
+  y `gap-0` desde afuera, y meterle una caja en el medio le rompía las dos.
+  Lleva `flex-1` para no achatar a quien fija su alto y `gap-[inherit]` para no
+  imponer el suyo; la galería además anula el tope con `max-h-none`, porque ahí
+  la caja **es** la pantalla. Verificado: 868px de alto con la ventana en 900,
+  `gap: 0` heredado, y el hijo llenando el envoltorio entero.
 - **`data-numeric="tabular"` está definido y sin un solo uso.** La regla vive
   en `app/globals.css:275` y `DESIGN.md` la manda explícitamente; el código
   resuelve los números con `data-align="right"` de la tabla o con la utilidad

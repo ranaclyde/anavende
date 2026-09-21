@@ -195,7 +195,7 @@ function DialogoDeDevolver({
 
   return (
     <Dialog open={abierto} onOpenChange={(v) => (v ? null : cerrar())}>
-      <DialogContent className="max-h-[85svh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             Registrar una devolución de la orden #{numero}

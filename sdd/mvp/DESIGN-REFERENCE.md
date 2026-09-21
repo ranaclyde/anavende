@@ -830,6 +830,18 @@ Dos piezas de la misma decisión (FS RF-15): dónde se escribe la descripción y
 
 **Dos excepciones, las dos a propósito.** El envoltorio de una tabla no lleva padding —una tabla llena la tarjeta de borde a borde— y su título va en `sr-only`, porque la cabecera de la tabla ya dice qué es cada columna. Y una tarjeta que solo lleva un mensaje, sin título, no es una sección: no se anuncia ni se nombra.
 
+### 6.14 Diálogos
+
+**Tope de alto: `max-h-[85svh]`, en el primitivo y no en cada diálogo.** Hasta el 2026-09-21 lo tenía **uno de los veinticinco** —el de registrar una devolución, que es el que alguien vio romperse—; los otros veinticuatro no tenían ninguno.
+
+Sin tope, un diálogo más alto que la pantalla **no se corta por abajo: se corta por los dos lados**, porque la caja está centrada con `translate(-50%, -50%)`. Y lo que queda afuera es **inalcanzable**: la caja es `position: fixed`, así que no se mueve al scrollear, y además Radix bloquea el scroll del cuerpo mientras el modal está abierto (`data-scroll-locked`). Medido a 320px de alto: «Cancelar la orden» perdía 40px —20 arriba y 20 abajo— y «Nueva marca», 44.
+
+**`svh` y no `vh`:** en el teléfono la barra del navegador se come parte de `vh` y el diálogo terminaba debajo de ella.
+
+**Lo que scrollea es el contenido, no la caja.** La × está posicionada con `absolute top-4 right-4`; dentro de un contenedor con scroll se iría con el contenido y el diálogo se quedaría sin su salida visible. Por eso los hijos van en un envoltorio propio con el scroll, y la × queda fija contra la caja.
+
+**Ese envoltorio es transparente**, y tiene que serlo: hay diálogos que fijan su alto y su separación desde afuera —la galería de la ficha manda `h-[calc(100dvh-2rem)]` y `gap-0`—, así que el envoltorio lleva `flex-1` para no achatar a quien fija su alto y `gap-[inherit]` para no imponer el suyo. **Un diálogo que es la pantalla entera anula el tope con `max-h-none`**, que es el único caso previsto.
+
 ## 7. Composición de pantallas
 
 ### 7.1 Home

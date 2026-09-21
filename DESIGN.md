@@ -442,6 +442,17 @@ Encabezado sobre superficie blanca que toma `shadow-lg` al hacer scroll. El esta
 activo se marca en Malbec. El buscador vive en el encabezado y se retira cuando la
 página trae el suyo.
 
+### Diálogos
+
+Tope de alto `max-h-[85svh]` en el primitivo, no en cada diálogo: sin él, una
+caja más alta que la pantalla se corta **por los dos lados** —está centrada con
+`translate(-50%, -50%)`— y lo que queda afuera es inalcanzable, porque es
+`position: fixed` y el scroll del cuerpo está bloqueado. Lo que scrollea es el
+contenido y no la caja, para que la × no se vaya con él. El envoltorio del
+scroll lleva `flex-1` y `gap-[inherit]` para no pisar a los diálogos que fijan
+su alto desde afuera; uno que ocupa la pantalla entera anula el tope con
+`max-h-none`. DR §6.14.
+
 ### Solapas del panel
 
 Dos formas, y la diferencia significa algo (`SolapasDelPanel`). **Segmentado**

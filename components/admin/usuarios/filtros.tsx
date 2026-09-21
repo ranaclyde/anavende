@@ -18,7 +18,11 @@ import {
 } from "@/modules/users/panel/filtros";
 
 /**
- * Búsqueda, rol y estado del listado de usuarios — RF-26, §10.2. Tarea F7.6.
+ * Búsqueda y rol del listado de usuarios — RF-26, §10.2. Tarea F7.6.
+ *
+ * **El estado ya no está acá**: desde el 2026-09-21 son solapas (§6.9,
+ * `usuarios/solapas.tsx`), que es lo que esta pantalla necesitaba para que
+ * «Baja pedida» —trabajo por hacer, RF-34— se vea sin abrir nada.
  *
  * Todo se escribe en la URL, como en los otros listados del panel: la barra no
  * guarda nada, el enlace se comparte y el botón atrás deshace un filtro en vez
