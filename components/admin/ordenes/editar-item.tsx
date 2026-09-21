@@ -89,10 +89,9 @@ export function EditarElRenglon({
       ) : null}
 
       <Button
-        variant="tertiary"
+        variant="destructive-ghost"
         size="icon"
         title="Quitar de la orden"
-        className="text-ink-secondary hover:text-danger"
         onClick={() => setAbierto("quitar")}
       >
         <Trash2 aria-hidden />

@@ -449,9 +449,8 @@ function RenglonDeLaOrden({
 
         <Button
           type="button"
-          variant="tertiary"
+          variant="destructive-ghost"
           size="icon"
-          className="text-ink-secondary hover:text-danger"
           onClick={alQuitar}
         >
           <Trash2 aria-hidden />

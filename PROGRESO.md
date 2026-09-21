@@ -2737,12 +2737,40 @@ cabecera fija de §6.9— y la decisión no está tomada.
   `destructive-solid`. Su par más cercano es «Sí, bloquear» de una cuenta, que
   tampoco borra nada y también confirma en rojo; cerrar la tienda deja a
   cualquiera que entre con «Volvemos en un rato» y el registro apagado.
-- **Seis acciones destructivas se pintan a mano**: `variant="tertiary"` con
-  `className="text-ink-secondary hover:text-danger"`, en borrar producto,
-  marca, medio de pago, renglón de orden, renglón de orden nueva y anular
-  devolución. Solo `usuarios/baja.tsx:120` usa la variante `destructive` real.
-  §2.2 dice que lo destructivo se separa **por forma, no por color**: pintar el
-  color a mano es exactamente lo contrario.
+- **~~Seis acciones destructivas se pintan a mano~~** —**siete**: el inventario
+  no había visto la de sacar un color en `variantes.tsx`—. **Arregladas el
+  2026-09-21, y el problema era peor de lo que decía esta entrada.** No era
+  solo que no usaran la variante: en reposo eran **grises, idénticas a
+  «Editar»**, y el rojo aparecía únicamente al pasar el puntero. En táctil no
+  hay puntero, y Ana opera en tablet (RNF-01), así que en su pantalla borrar un
+  producto y editarlo se veían iguales.
+
+  Se compararon tres caminos sobre la tabla real de Productos: dejarlo como
+  estaba, el contorno rojo de §6.3 tal cual, y un ícono rojo sin caja. **El
+  contorno se descartó viéndolo**: una caja roja por fila, cuarenta por página,
+  deja una columna de alertas al lado de lo que hay que leer. Entró la tercera,
+  como variante nueva del sistema —`destructive-ghost`—, así que **no queda una
+  sola clase de color pintada a mano en el panel**. La séptima, «Anular» de una
+  devolución, lleva rótulo y vive sola al pie de una tarjeta: ésa sí fue al
+  contorno de §6.3, como «Cancelar la orden».
+
+  **Y §2.2 cambió, por decisión tuya del 2026-09-21**: el panel queda **exento
+  de la separación por forma y puede distinguir por color**. El argumento es
+  tuyo y quedó escrito con él: con dos colores y ninguna otra señal, que una
+  administradora se equivoque en algún lado es cuestión de tiempo. La excepción
+  está acotada —no habilita colores nuevos, ni que el burdeos decore, ni
+  relleno rojo fuera del diálogo, ni que un estado se comunique solo por color
+  (§9 sigue igual)— y **en la tienda la regla original sigue entera**.
+
+  Verificado en el navegador, en los dos temas: el ícono da `#dc2626` en claro
+  y `#f87171` en oscuro —4,83:1 y 6,01:1, sobre los 3:1 que pide un ícono— y
+  «Anular» quedó con contorno rojo.
+
+  **Queda una cosa a la vista y sin decidir**: en esa misma fila, la estrella de
+  «destacado» es `--brand`, y ahora tiene al lado un tacho en `--danger`. Son
+  los dos rojos a 7° que §2.2 nombra. Se distinguen por claridad —9,07:1 contra
+  4,83:1— y en pantalla no se confunden, pero es el caso exacto que la regla
+  vieja quería evitar, así que se anota en vez de darlo por bueno en silencio.
 - **«Cancelar» de diálogo: 13 en `tertiary`, 3 en `secondary`.** Los tres
   `secondary` son diálogos de formulario, pero `usuarios/alta.tsx:130` también
   lo es y usa `tertiary`. No hay regla, hay costumbre por archivo.

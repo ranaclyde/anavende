@@ -258,11 +258,19 @@ aparece en fondos de sección, bordes decorativos, íconos generales, texto de
 párrafo ni cabeceras de tabla. Si una pantalla tiene dos cosas en burdeos que no
 son la acción principal, una de las dos está mal.
 
-**La regla de la forma, no el color.** El burdeos de marca (352,7°) y el rojo de
-peligro (0°) están a siete grados de matiz: son el mismo tono para cualquiera que
-no los vea uno al lado del otro. Lo destructivo se separa **por forma** —contorno
-rojo sobre fondo transparente, con ícono—, nunca por color. El relleno rojo existe
-sólo dentro del diálogo de confirmación, donde no hay un botón de marca al lado.
+**La regla de la forma, no el color — y su excepción, el panel.** El burdeos de
+marca (352,7°) y el rojo de peligro (0°) están a siete grados de matiz: son el
+mismo tono para cualquiera que no los vea uno al lado del otro. **En la tienda**
+lo destructivo se separa por forma —contorno rojo sobre fondo transparente, con
+ícono—, nunca por color. El relleno rojo existe sólo dentro del diálogo de
+confirmación, donde no hay un botón de marca al lado.
+
+**El panel distingue por color, y es deliberado.** Ahí la misma acción se repite
+decenas de veces por fila, suele ser un ícono sin rótulo, y Ana opera en tablet,
+donde no hay hover: un contorno por fila es una columna de alertas y un rojo que
+depende del puntero no se ve nunca. El ícono destructivo va en `--danger` desde
+el reposo (`destructive-ghost`). No habilita colores nuevos, ni que el burdeos
+decore, ni un relleno rojo fuera del diálogo.
 
 **La regla del par.** El pizarra no es «el color secundario» en el sentido de
 más débil: pesa lo mismo que el burdeos a propósito. Se usa **sólo** cuando hay
@@ -396,7 +404,7 @@ fondo blanco se fundan con la página.
 - **Alterna:** relleno pizarra, texto inverso. La otra forma de hacer lo mismo, a la par de la marca. En la ficha es «Comprá ya por WhatsApp» debajo del carrito.
 - **Secondary:** superficie blanca con borde; el hover hunde el fondo y marca el borde. Es para acciones de apoyo entre pares —«Guardar», «Compartir»— y para el «Cancelar» de un diálogo destructivo, donde la salida segura tiene que pesar igual que el botón que borra.
 - **Tertiary (ghost):** sin caja en reposo; al pasar el puntero aparece el plato de `canvas` y la tinta sube a plena. Es el «Cancelar» y el «Volver». En táctil no hay hover, así que el texto tiene que alcanzar solo: nunca un ícono sin rótulo.
-- **Destructive:** contorno rojo sobre transparente, con ícono. **Destructive solid:** relleno rojo, exclusivo del diálogo de confirmación.
+- **Destructive:** contorno rojo sobre transparente, con ícono; para acciones con rótulo. **Destructive ghost:** ícono rojo sin caja, plato `--danger-tint` al hover — **sólo el panel**, para la columna de acciones de una tabla. **Destructive solid:** relleno rojo, exclusivo del diálogo de confirmación.
 - **Disabled:** 40% de opacidad **sin cambiar de color**. No hay un gris de deshabilitado.
 - **Loading:** el contenido se queda en el flujo e invisible y el indicador se superpone, para que el botón conserve el ancho y la interfaz no salte. El indicador anuncia qué se está haciendo al lector de pantalla.
 - **Emphasis `glow`:** `shadow-brand`, y sólo lo llevan el envío del buscador y el principal del hero.

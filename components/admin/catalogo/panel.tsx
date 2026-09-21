@@ -456,12 +456,11 @@ function Acciones({
       </Button>
 
       <Button
-        variant="tertiary"
+        variant="destructive-ghost"
         size="icon"
         onClick={alBorrar}
         disabled={ocupado}
         title={`Borrar ${palabras.singular} ${item.name}`}
-        className="text-ink-secondary hover:text-danger"
       >
         <Trash2 aria-hidden />
         <span className="sr-only">

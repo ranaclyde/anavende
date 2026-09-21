@@ -53,6 +53,17 @@ const buttonVariants = cva(
           "bg-transparent text-ink-secondary hover:bg-canvas hover:text-ink active:bg-border",
         destructive:
           "border border-danger bg-transparent text-danger hover:bg-danger-tint",
+        // Ghost destructivo — §2.2, §6.3. **Solo el panel.**
+        //
+        // Es el destructivo de una columna de acciones: el ícono en rojo desde
+        // el reposo, sin caja. El contorno de `destructive` no entra ahí —una
+        // caja por fila, cuarenta por página, se lee como una columna de
+        // alertas— y el terciario gris tampoco servía: dejaba el rojo colgado
+        // del hover, y en táctil no hay hover. Ana opera en tablet (RNF-01),
+        // así que borrar y editar se veían iguales justo donde más caro sale
+        // confundirlos.
+        "destructive-ghost":
+          "bg-transparent text-danger hover:bg-danger-tint active:bg-danger-tint",
         // `text-ink-inverse`, no `text-white`: el token se invierte con el
         // tema y `text-white` no. En oscuro `--danger` se aclara a #f87171 y
         // el blanco encima da 2,77:1 — por debajo de AA incluso para texto

@@ -180,12 +180,11 @@ export function VariantesDelProducto({
                     <span className="sr-only">Editar {nombreDe(v)}</span>
                   </Button>
                   <Button
-                    variant="tertiary"
+                    variant="destructive-ghost"
                     size="icon"
                     onClick={() => setPorBorrar(v)}
                     disabled={enCurso}
                     title="Sacar"
-                    className="text-ink-secondary hover:text-danger"
                   >
                     <Trash2 aria-hidden />
                     <span className="sr-only">Sacar {nombreDe(v)}</span>

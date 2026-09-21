@@ -45,10 +45,12 @@ export function AnularLaDevolucion({
 
   return (
     <>
+      {/* Contorno y no ghost: éste lleva rótulo y vive solo al pie de una
+          tarjeta, no en una columna de acciones. Es el mismo caso que
+          «Cancelar la orden» (§6.3). */}
       <Button
-        variant="tertiary"
+        variant="destructive"
         size="sm"
-        className="text-ink-secondary hover:text-danger"
         onClick={() => {
           setAperturas((n) => n + 1);
           setAbierto(true);

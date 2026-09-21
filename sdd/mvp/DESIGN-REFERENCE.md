@@ -111,6 +111,23 @@ El burdeos de marca (352,7°) y un rojo destructivo estándar (0°) están a **7
 
 La tercera es segura porque dentro del diálogo **no hay ningún botón de marca al lado** con el cual confundirla. Toda acción destructiva pasa por confirmación de todos modos (RF-15, RF-23).
 
+**El panel queda exento de la separación por forma, y puede distinguir por color** (decisión tuya del 2026-09-21). La regla de arriba se escribió para la tienda, que es donde el color lo tiene que poner la foto del producto y donde un relleno rojo compite con el burdeos de «Agregar al carrito». En el panel no pasa ninguna de las dos cosas, y sí pasan tres que la vuelven contraproducente:
+
+1. **La acción se repite decenas de veces por pantalla.** Un contorno rojo por fila, cuarenta por página, deja una columna de alertas al lado del contenido que hay que leer.
+2. **Muchas acciones son un ícono sin rótulo**, así que «con ícono» no las distingue de nada: sus vecinas también son íconos.
+3. **Ana opera en tablet** (RNF-01) y ahí **no hay hover**. Un destructivo que se pone rojo recién al pasar el puntero es un destructivo que en su pantalla no se ve nunca.
+
+Con dos colores y ninguna otra señal, equivocarse es cuestión de tiempo, y en el panel equivocarse cuesta un producto borrado. Así que **el rojo semántico distingue por sí solo**: el ícono de una acción destructiva va en `--danger` desde el reposo, sin caja y sin depender del hover (variante `destructive-ghost`, §6.3). Da 4,83:1 en claro y 6,01:1 en oscuro, sobre los 3:1 que pide un ícono.
+
+**Lo que la exención NO habilita**, porque si no deja de ser un sistema:
+
+- **No se inventan colores.** El panel distingue con los cuatro semánticos que ya existen —éxito, aviso, peligro, información— y con el burdeos y el pizarra. Ninguno más.
+- **El burdeos sigue sin decorar.** La regla de una sola voz (§2.1) no se toca: marca acción principal e identidad, y nada más.
+- **El relleno rojo sigue siendo solo del diálogo de confirmación.** Lo que se habilita es el ícono y el texto en rojo, no una caja roja suelta al lado de una de marca.
+- **El color nunca va solo cuando comunica un estado.** §9 sigue pidiendo que todo estado tenga texto además de color; esto es sobre qué hace una acción, no sobre en qué estado está algo.
+
+En la tienda la regla original sigue en pie, entera.
+
 ### 2.3 El logo
 
 Una cuadrícula de cuatro celdas —**A**, un joystick, unos auriculares y una **V**— dibujada a trazo burdeos sobre transparente. Dice de qué es el negocio sin escribirlo, y el trazo abierto convive con los radios generosos del sistema.
@@ -514,7 +531,8 @@ El componente firmado del sistema, heredado directamente de la referencia.
 | **Alterna** | `--accent` | blanco | — | **Par de la principal**, no escalón debajo: la otra forma de hacer lo mismo (§2.5) |
 | **Secundario** | `--surface` | `--ink` | `--border` | Acciones de apoyo entre pares: «Guardar», «Compartir» |
 | **Terciario** | transparente | `--ink-secondary` | — | **Ghost.** «Cancelar», «Volver». Al pasar el puntero aparece el plato de `--canvas` |
-| **Destructivo** | transparente | `--danger` | `--danger` | Eliminar, cancelar orden. **Con ícono** |
+| **Destructivo** | transparente | `--danger` | `--danger` | Eliminar, cancelar orden, **con rótulo**. **Con ícono** |
+| **Destructivo ghost** | transparente | `--danger` | — | **Solo el panel** (§2.2). El destructivo de una columna de acciones: ícono rojo desde el reposo, sin caja; al pasar el puntero aparece el plato `--danger-tint` |
 | **Destructivo confirmado** | `--danger` | blanco | — | **Solo dentro del diálogo de confirmación** |
 
 > **«Blanco» en esa columna quiere decir `--ink-inverse`, no `#ffffff`.** Las tres variantes de relleno —principal, alterna y destructivo confirmado— usan el token, que en claro vale blanco y **en oscuro se da vuelta**. Escribirlo literal cuesta caro justo en el destructivo confirmado: en oscuro `--danger` se aclara a `#f87171`, y el blanco encima da **2,77:1**, por debajo de AA incluso para texto grande; con el token da 6,65:1. Estuvo así hasta el 2026-09-18, en los nueve diálogos destructivos del panel.

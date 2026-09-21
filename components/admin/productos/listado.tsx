@@ -513,12 +513,11 @@ function Acciones({
         </span>
       </Button>
       <Button
-        variant="tertiary"
+        variant="destructive-ghost"
         size="icon"
         disabled={ocupado}
         onClick={alBorrar}
         title="Borrar"
-        className="text-ink-secondary hover:text-danger"
       >
         <Trash2 aria-hidden />
         <span className="sr-only">Borrar {producto.name}</span>
