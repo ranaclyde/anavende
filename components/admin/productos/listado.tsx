@@ -494,7 +494,16 @@ function Acciones({
         aria-pressed={producto.isFeatured}
         title={producto.isFeatured ? "Quitar de destacados" : "Destacar"}
       >
-        <Star aria-hidden className={producto.isFeatured ? "fill-brand text-brand" : ""} />
+        {/* Acá la estrella es un INTERRUPTOR, y lo que tiene que decir es
+            encendido o apagado: eso ya lo dice el relleno. El color sobra, y
+            en burdeos quedaba a siete grados del tacho rojo de al lado (§2.2).
+            La insignia «Destacada» y la estrellita del nombre sí van en
+            burdeos: ahí el burdeos significa identidad, no estado de un
+            control. */}
+        <Star
+          aria-hidden
+          className={producto.isFeatured ? "fill-ink text-ink" : ""}
+        />
         <span className="sr-only">
           {producto.isFeatured ? "Quitar de destacados" : "Destacar"}{" "}
           {producto.name}

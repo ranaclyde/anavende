@@ -417,7 +417,12 @@ function Acciones({
               ? `${DESTACADO.quitar}: ${item.name}`
               : `${DESTACADO.destacar}: ${item.name}`
           }
-          className={item.isFeatured ? "text-brand hover:text-brand" : undefined}
+          className={
+            // Interruptor: el estado lo dice el relleno, no el color. En
+            // burdeos quedaba a siete grados del tacho de al lado (§2.2). La
+            // insignia «Destacada» sí va en burdeos: ahí significa identidad.
+            item.isFeatured ? "text-ink hover:text-ink" : undefined
+          }
         >
           <Star aria-hidden className={item.isFeatured ? "fill-current" : ""} />
           <span className="sr-only">

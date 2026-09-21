@@ -2766,11 +2766,24 @@ cabecera fija de §6.9— y la decisión no está tomada.
   y `#f87171` en oscuro —4,83:1 y 6,01:1, sobre los 3:1 que pide un ícono— y
   «Anular» quedó con contorno rojo.
 
-  **Queda una cosa a la vista y sin decidir**: en esa misma fila, la estrella de
-  «destacado» es `--brand`, y ahora tiene al lado un tacho en `--danger`. Son
-  los dos rojos a 7° que §2.2 nombra. Se distinguen por claridad —9,07:1 contra
-  4,83:1— y en pantalla no se confunden, pero es el caso exacto que la regla
-  vieja quería evitar, así que se anota en vez de darlo por bueno en silencio.
+  **~~Queda una cosa a la vista y sin decidir~~** — resuelto el mismo día. En
+  esa misma fila, la estrella de «destacado» era `--brand` y quedaba al lado de
+  un tacho en `--danger`: los dos rojos a 7° que §2.2 nombra. **Se le sacó el
+  color a la estrella del interruptor**: en la columna de acciones es un
+  encendido/apagado, y eso ya lo dice el **relleno**; ahora va en `--ink`
+  rellena cuando está destacado y en contorno gris cuando no. La fila quedó con
+  **un solo rojo**, que es el destructivo.
+
+  **El burdeos no se movió de donde significa identidad**: la insignia
+  «Destacada» del catálogo y la estrellita junto al nombre del producto siguen
+  en `#832833`, comprobado en el navegador. §6.4 no se tocó.
+
+  **Se descartó el ámbar, que era la primera idea y estaba mal.** §6.4 le
+  asigna el burdeos a «destacado», y el ámbar ya significa otra cosa **en esa
+  misma tabla**: «Stock bajo — Quedan N» y «Origen manual». Además separaba
+  peor: `--warning` da 5,02:1 contra los 4,83:1 del tacho —casi la misma
+  claridad—, mientras que el burdeos daba 9,07:1, el doble de oscuro. La
+  claridad era justamente lo que los distinguía.
 - **«Cancelar» de diálogo: 13 en `tertiary`, 3 en `secondary`.** Los tres
   `secondary` son diálogos de formulario, pero `usuarios/alta.tsx:130` también
   lo es y usa `tertiary`. No hay regla, hay costumbre por archivo.
