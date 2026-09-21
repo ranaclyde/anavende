@@ -1,8 +1,7 @@
-import { ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { TarjetaDeDevolucion } from "@/components/admin/devoluciones/tarjeta";
 import {
   EstadoDeLaOrden,
@@ -105,72 +104,68 @@ export default async function DetalleDeLaOrden({ params }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        {/* Al listado a secas, sin los filtros que traía: el botón atrás del
-            navegador sí los conserva, y esto es la salida de emergencia. */}
-        <Button asChild variant="tertiary" size="sm" className="-ml-3">
-          <Link href="/admin/ordenes">
-            <ChevronLeft aria-hidden />
-            Órdenes
-          </Link>
-        </Button>
-      </div>
+      {/* El volver va al listado a secas, sin los filtros que traía: el botón
+          atrás del navegador sí los conserva, y esto es la salida de
+          emergencia. */}
+      <EncabezadoDePanel
+        titulo={`Orden #${orden.numero}`}
+        volver={{ href: "/admin/ordenes", etiqueta: "Órdenes" }}
+        insignias={
+          <>
+            <EstadoDeLaOrden estado={orden.estado} />
+            <OrigenDeLaOrden origen={orden.origen} />
+          </>
+        }
+        acciones={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* El atajo de RF-21. El teléfono del pedido es obligatorio en las
+                tres vías de alta (RF-05), así que el botón siempre puede estar.
+                **Dejó de ser el de marca** cuando llegó «Finalizar» (F7.3): de
+                esta pantalla se sale finalizando o cancelando, escribirle es el
+                paso previo, y §6.3 admite un solo botón de marca por pantalla. */}
+            <Button asChild variant="secondary" size="sm">
+              <a
+                href={enlaceDeWhatsApp(
+                  orden.customerPhone,
+                  mensajeParaElComprador(orden.numero),
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <IconoWhatsApp className="size-4" />
+                Escribirle por WhatsApp
+              </a>
+            </Button>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-title text-ink">Orden #{orden.numero}</h1>
-          <EstadoDeLaOrden estado={orden.estado} />
-          <OrigenDeLaOrden origen={orden.origen} />
-        </div>
+            {/* RF-25. Sólo sobre una finalizada, y sólo si queda algo por
+                devolver: un diálogo que se abre para decir que no hay nada es
+                el que sobra. */}
+            {orden.estado === "finalizada" && paraDevolver.length > 0 ? (
+              <DevolverDeLaOrden numero={orden.numero} items={paraDevolver} />
+            ) : null}
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* El atajo de RF-21. El teléfono del pedido es obligatorio en las
-              tres vías de alta (RF-05), así que el botón siempre puede estar.
-              **Dejó de ser el de marca** cuando llegó «Finalizar» (F7.3): de
-              esta pantalla se sale finalizando o cancelando, escribirle es el
-              paso previo, y §6.3 admite un solo botón de marca por pantalla. */}
-          <Button asChild variant="secondary" size="sm">
-            <a
-              href={enlaceDeWhatsApp(
-                orden.customerPhone,
-                mensajeParaElComprador(orden.numero),
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <IconoWhatsApp className="size-4" />
-              Escribirle por WhatsApp
-            </a>
-          </Button>
-
-          {/* RF-25. Sólo sobre una finalizada, y sólo si queda algo por
-              devolver: un diálogo que se abre para decir que no hay nada es
-              el que sobra. */}
-          {orden.estado === "finalizada" && paraDevolver.length > 0 ? (
-            <DevolverDeLaOrden numero={orden.numero} items={paraDevolver} />
-          ) : null}
-
-          {/* RF-23. Sólo desde `activa`: es lo que dice `TRANSICIONES`, y de
-              las otras dos no sale ninguna flecha. */}
-          {orden.estado === "activa" ? (
-            <ResolverLaOrden
-              numero={orden.numero}
-              // Sólo lo que los diálogos usan (§ rendimiento: lo que viaja al
-              // cliente se serializa entero). Los precios están en la tabla y
-              // no cambian con esto.
-              items={orden.items.map((item) => ({
-                id: item.id,
-                nombre: item.nombre,
-                color: item.color,
-                cantidad: item.cantidad,
-                disponible: item.disponible,
-                stock: item.stock,
-              }))}
-              loLeeElComprador={orden.cuenta !== null}
-            />
-          ) : null}
-        </div>
-      </div>
+            {/* RF-23. Sólo desde `activa`: es lo que dice `TRANSICIONES`, y de
+                las otras dos no sale ninguna flecha. */}
+            {orden.estado === "activa" ? (
+              <ResolverLaOrden
+                numero={orden.numero}
+                // Sólo lo que los diálogos usan (§ rendimiento: lo que viaja al
+                // cliente se serializa entero). Los precios están en la tabla y
+                // no cambian con esto.
+                items={orden.items.map((item) => ({
+                  id: item.id,
+                  nombre: item.nombre,
+                  color: item.color,
+                  cantidad: item.cantidad,
+                  disponible: item.disponible,
+                  stock: item.stock,
+                }))}
+                loLeeElComprador={orden.cuenta !== null}
+              />
+            ) : null}
+          </div>
+        }
+      />
 
       <p className="text-body-sm text-ink-secondary">
         Creada el {fechaConHora(orden.creadaEn)}

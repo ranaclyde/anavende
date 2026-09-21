@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { BarraDeFiltros } from "@/components/admin/productos/filtros";
 import {
@@ -67,26 +68,24 @@ export default async function ProductosDelPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-title text-ink">Productos</h1>
-          <p className="text-body-sm text-ink-secondary">
-            Lo que se ve en la tienda: nombre, precio, stock y estado.
-          </p>
-        </div>
-        {/* Con el catálogo vacío este botón no está: el estado vacío ya
-            ofrece el mismo primer paso en el medio de la pantalla, y dos
-            botones de marca iguales a 100px uno del otro se leen como un
-            error, no como una invitación (§6.3: una sola por pantalla). */}
-        {total === 0 ? null : (
-          <Button asChild variant="brand" size="sm">
-            <Link href="/admin/productos/nuevo">
-              <Plus aria-hidden />
-              Nuevo producto
-            </Link>
-          </Button>
-        )}
-      </div>
+      <EncabezadoDePanel
+        titulo="Productos"
+        bajada="Lo que se ve en la tienda: nombre, precio, stock y estado."
+        acciones={
+          /* Con el catálogo vacío este botón no está: el estado vacío ya
+             ofrece el mismo primer paso en el medio de la pantalla, y dos
+             botones de marca iguales a 100px uno del otro se leen como un
+             error, no como una invitación (§6.3: una sola por pantalla). */
+          total === 0 ? null : (
+            <Button asChild variant="brand" size="sm">
+              <Link href="/admin/productos/nuevo">
+                <Plus aria-hidden />
+                Nuevo producto
+              </Link>
+            </Button>
+          )
+        }
+      />
 
       {/* Sin ningún producto cargado la barra no tiene sobre qué operar:
           cuatro filtros vacíos arriba de un cartel que dice «todavía no

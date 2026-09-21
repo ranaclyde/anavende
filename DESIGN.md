@@ -442,6 +442,17 @@ Encabezado sobre superficie blanca que toma `shadow-lg` al hacer scroll. El esta
 activo se marca en Malbec. El buscador vive en el encabezado y se retira cuando la
 página trae el suyo.
 
+### Encabezado de pantalla del panel
+
+Uno solo para las trece pantallas (`EncabezadoDePanel`): volver, título, insignias,
+bajada y acciones, todo opcional menos el título. **La alineación la decide la
+bajada y no el tipo de pantalla** — con bajada la columna izquierda son dos
+renglones y va `items-start`, sin bajada es uno y va `items-center` —, que es el
+criterio que los listados y las fichas venían aplicando cada uno por su lado. El
+volver es siempre el botón terciario `sm` con `-ml-3`, nunca un enlace pintado a
+mano. Su fantasma para los `loading.tsx` vive en el mismo archivo, que es lo único
+que evita que el esqueleto y lo real se separen. DR §6.12.
+
 ### Tarjeta de producto (signature)
 
 El componente que define la tienda. Tarjeta de 28px con 12px de padding; adentro,

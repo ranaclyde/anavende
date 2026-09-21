@@ -1,3 +1,4 @@
+import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -10,13 +11,11 @@ export default function CargandoUsuarios() {
     <div className="flex flex-col gap-4">
       {/* El botón primario va: en esta pantalla está SIEMPRE, y sin él el
           encabezado se reacomodaba al llegar los datos. */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <Skeleton className="h-7 w-32" />
-          <Skeleton className="h-5 w-96 max-w-full" />
-        </div>
-        <Skeleton className="h-8 w-36 rounded-panel-control" />
-      </div>
+      <EsqueletoDeEncabezado
+        titulo="w-32"
+        bajada="w-96 max-w-full"
+        acciones={["w-36"]}
+      />
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2 md:flex-row md:flex-wrap">

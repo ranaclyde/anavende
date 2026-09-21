@@ -743,6 +743,24 @@ Dos piezas de la misma decisión (FS RF-15): dónde se escribe la descripción y
 
 ---
 
+### 6.12 Encabezado de pantalla del panel
+
+**Toda pantalla del panel abre con el mismo encabezado**, y lo pone `EncabezadoDePanel` (`components/admin/encabezado.tsx`). Son cinco piezas, y la única obligatoria es el título:
+
+| Pieza | Cuándo va | Forma |
+|---|---|---|
+| Volver | La pantalla se abrió desde otra | Botón terciario `sm` con `-ml-3`, `ChevronLeft` y el nombre de a dónde vuelve |
+| Título | Siempre | `title`, `--ink` |
+| Insignias | El título es un dato que tiene estado — una orden, una cuenta | Píldoras de §6.4, al lado del título |
+| Bajada | La pantalla necesita decir qué es | `body-sm`, `--ink-secondary`, debajo del título |
+| Acciones | Hay algo para hacer que no es sobre una fila | Arriba a la derecha, §6.3 |
+
+**La alineación la decide la bajada, y no el tipo de pantalla.** Con bajada, la columna izquierda son dos renglones y el bloque va `items-start`, para que el botón de la derecha se alinee con el título en vez de flotar en el medio; sin bajada es un renglón solo y va `items-center`. Hasta el 2026-09-21 los listados hacían lo primero y las fichas lo segundo, y parecían dos criterios: es uno solo mirado en dos formas.
+
+**Por qué es un componente y no una receta escrita acá.** Las trece pantallas lo armaban a mano y habían llegado a cinco formas de la misma cosa. La que más se notaba era el volver: cuatro pantallas usaban el botón terciario y la ficha de producto un `<Link>` pintado a mano en `body-sm`/`--ink-secondary` — 20px contra 32px, otro color y la mitad del área para el dedo, en la misma posición de la misma pantalla.
+
+**El fantasma vive en el mismo archivo** (`EsqueletoDeEncabezado`, §8). Es lo único que evita que se separen con el tiempo: el esqueleto de la ficha de producto dibujaba el volver de 20px porque estaba escrito en otro lado y nadie los había visto juntos.
+
 ## 7. Composición de pantallas
 
 ### 7.1 Home

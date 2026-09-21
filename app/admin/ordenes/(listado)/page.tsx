@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { BarraDeFiltros } from "@/components/admin/ordenes/filtros";
 import {
   ListadoDeOrdenes,
@@ -61,24 +62,21 @@ export default async function OrdenesDelPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-title text-ink">Órdenes</h1>
-          <p className="text-body-sm text-ink-secondary">
-            Los pedidos de la tienda y los que cargues a mano, con su estado.
-          </p>
-        </div>
-
-        {/* RF-24. Acá arriba y no adentro de las solapas: cargar una venta no
-            es una acción sobre lo que se está mirando, es lo otro que se
-            puede hacer en esta pantalla. */}
-        <Button asChild variant="brand" size="sm">
-          <Link href="/admin/ordenes/nueva">
-            <Plus aria-hidden />
-            Nueva orden
-          </Link>
-        </Button>
-      </div>
+      <EncabezadoDePanel
+        titulo="Órdenes"
+        bajada="Los pedidos de la tienda y los que cargues a mano, con su estado."
+        acciones={
+          /* RF-24. Acá arriba y no adentro de las solapas: cargar una venta no
+             es una acción sobre lo que se está mirando, es lo otro que se
+             puede hacer en esta pantalla. */
+          <Button asChild variant="brand" size="sm">
+            <Link href="/admin/ordenes/nueva">
+              <Plus aria-hidden />
+              Nueva orden
+            </Link>
+          </Button>
+        }
+      />
 
       {/* Sin una sola orden, las solapas y los filtros no tienen sobre qué
           operar: cuatro controles arriba de un cartel que dice «todavía no

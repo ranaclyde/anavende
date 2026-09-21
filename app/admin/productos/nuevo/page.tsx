@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { Button } from "@/components/ui/button";
 import { FormularioDeProducto } from "@/components/admin/productos/formulario";
 import { opcionesDeProducto } from "@/modules/catalog/products/queries";
@@ -31,8 +31,10 @@ export default async function NuevoProducto() {
 
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
-      <Volver />
-      <h1 className="text-title text-ink">Nuevo producto</h1>
+      <EncabezadoDePanel
+        titulo="Nuevo producto"
+        volver={{ href: "/admin/productos", etiqueta: "Productos" }}
+      />
 
       {/* El formulario NO se pinta si no se puede completar. Sin esta guarda
           el selector de marca queda con una sola opción —«Elegí una marca»,
@@ -50,18 +52,6 @@ export default async function NuevoProducto() {
         />
       )}
     </div>
-  );
-}
-
-function Volver() {
-  return (
-    <Link
-      href="/admin/productos"
-      className="inline-flex items-center gap-1 self-start text-body-sm text-ink-secondary hover:text-ink"
-    >
-      <ChevronLeft aria-hidden className="size-4" />
-      Productos
-    </Link>
   );
 }
 
@@ -84,8 +74,8 @@ function FaltaCargar({
         </h2>
         <p className="mx-auto max-w-md text-body-sm text-ink-secondary">
           Todo producto lleva una marca y una categoría: son las que arman el
-          menú de la tienda y por las que el comprador filtra. Se cargan una
-          vez y sirven para todo el catálogo.
+          menú de la tienda y por las que el comprador filtra. Se cargan una vez
+          y sirven para todo el catálogo.
         </p>
       </div>
 

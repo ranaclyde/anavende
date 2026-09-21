@@ -1,8 +1,8 @@
-import { ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { EstadoDeLaOrden } from "@/components/admin/ordenes/estado";
 import { BajaDeLaCuenta } from "@/components/admin/usuarios/baja";
 import { BloqueoDeLaCuenta } from "@/components/admin/usuarios/bloqueo";
@@ -81,51 +81,46 @@ export default async function FichaDeUsuario({ params }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <Button asChild variant="tertiary" size="sm" className="-ml-3">
-          <Link href="/admin/usuarios">
-            <ChevronLeft aria-hidden />
-            Usuarios
-          </Link>
-        </Button>
-      </div>
+      <EncabezadoDePanel
+        titulo={usuario.nombre}
+        volver={{ href: "/admin/usuarios", etiqueta: "Usuarios" }}
+        insignias={
+          <>
+            <RolDelUsuario rol={usuario.rol} />
+            <EstadoDelUsuario
+              bloqueado={usuario.bloqueado}
+              bajaPedida={usuario.bajaPedida}
+              dadoDeBaja={usuario.dadoDeBaja}
+            />
+            {esMiCuenta ? (
+              <span className="text-caption text-ink-tertiary">(sos vos)</span>
+            ) : null}
+          </>
+        }
+        acciones={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="secondary" size="sm">
+              <a
+                href={enlaceDeWhatsApp(
+                  usuario.telefono,
+                  `¡Hola, ${usuario.firstName}! Te escribo de AnaVende.`,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <IconoWhatsApp className="size-4" />
+                Escribirle por WhatsApp
+              </a>
+            </Button>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-title text-ink">{usuario.nombre}</h1>
-          <RolDelUsuario rol={usuario.rol} />
-          <EstadoDelUsuario
-            bloqueado={usuario.bloqueado}
-            bajaPedida={usuario.bajaPedida}
-            dadoDeBaja={usuario.dadoDeBaja}
-          />
-          {esMiCuenta ? (
-            <span className="text-caption text-ink-tertiary">(sos vos)</span>
-          ) : null}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="secondary" size="sm">
-            <a
-              href={enlaceDeWhatsApp(
-                usuario.telefono,
-                `¡Hola, ${usuario.firstName}! Te escribo de AnaVende.`,
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <IconoWhatsApp className="size-4" />
-              Escribirle por WhatsApp
-            </a>
-          </Button>
-
-          <RestablecerContrasena
-            id={usuario.id}
-            nombre={usuario.firstName}
-            email={usuario.email}
-          />
-        </div>
-      </div>
+            <RestablecerContrasena
+              id={usuario.id}
+              nombre={usuario.firstName}
+              email={usuario.email}
+            />
+          </div>
+        }
+      />
 
       <p className="text-body-sm text-ink-secondary">
         {usuario.email} · cuenta creada el {fechaCorta(usuario.creadoEn)}

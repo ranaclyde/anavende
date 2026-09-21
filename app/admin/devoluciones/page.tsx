@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { BarraDeFiltros } from "@/components/admin/devoluciones/filtros";
 import {
   ListadoDeDevoluciones,
@@ -54,13 +55,10 @@ export default async function DevolucionesDelPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-title text-ink">Devoluciones</h1>
-        <p className="text-body-sm text-ink-secondary">
-          Lo que volvió de las órdenes entregadas, con lo que se repuso al stock
-          y lo que se descartó.
-        </p>
-      </div>
+      <EncabezadoDePanel
+        titulo="Devoluciones"
+        bajada="Lo que volvió de las órdenes entregadas, con lo que se repuso al stock y lo que se descartó."
+      />
 
       {/* Sin una sola devolución, los filtros no tienen sobre qué operar:
           tres controles arriba de un cartel que dice «todavía no hay

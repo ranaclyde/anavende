@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { BarraDeFiltros } from "@/components/admin/usuarios/filtros";
 import { ListadoDeUsuarios } from "@/components/admin/usuarios/listado";
@@ -44,22 +45,18 @@ export default async function UsuariosDelPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-title text-ink">Usuarios</h1>
-          <p className="text-body-sm text-ink-secondary">
-            Quién compra, quién entra al panel, y en qué estado está cada
-            cuenta.
-          </p>
-        </div>
-
-        <Button asChild variant="brand" size="sm">
-          <Link href="/admin/usuarios/nuevo">
-            <Plus aria-hidden />
-            Nueva cuenta
-          </Link>
-        </Button>
-      </div>
+      <EncabezadoDePanel
+        titulo="Usuarios"
+        bajada="Quién compra, quién entra al panel, y en qué estado está cada cuenta."
+        acciones={
+          <Button asChild variant="brand" size="sm">
+            <Link href="/admin/usuarios/nuevo">
+              <Plus aria-hidden />
+              Nueva cuenta
+            </Link>
+          </Button>
+        }
+      />
 
       <BarraDeFiltros filtros={filtros} total={total} />
       <ListadoDeUsuarios usuarios={usuarios} filtros={filtros} />

@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 
 import { EsqueletoDeFormularioDeProducto } from "@/components/admin/productos/esqueleto";
 
@@ -12,8 +12,7 @@ import { EsqueletoDeFormularioDeProducto } from "@/components/admin/productos/es
 export default function CargandoElAlta() {
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
-      <Skeleton className="h-5 w-24 self-start" />
-      <Skeleton className="h-7 w-48" />
+      <EsqueletoDeEncabezado titulo="w-48" volver="w-28" />
       <EsqueletoDeFormularioDeProducto />
     </div>
   );

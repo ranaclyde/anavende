@@ -1,3 +1,4 @@
+import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { EsqueletoDeFormularioDeProducto } from "@/components/admin/productos/esqueleto";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -11,8 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CargandoLaEdicion() {
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
-      <Skeleton className="h-5 w-24 self-start" />
-      <Skeleton className="h-7 w-64" />
+      <EsqueletoDeEncabezado titulo="w-64" volver="w-28" />
       <EsqueletoDeFormularioDeProducto />
 
       {/* Colores y stock */}

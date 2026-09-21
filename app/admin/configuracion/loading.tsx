@@ -1,3 +1,4 @@
+import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -13,10 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CargandoConfiguracion() {
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <Skeleton className="h-7 w-40" />
-        <Skeleton className="h-5 w-full max-w-md" />
-      </div>
+      <EsqueletoDeEncabezado titulo="w-40" bajada="w-full max-w-md" />
 
       {/* Contacto: el WhatsApp. Su ayuda ocupa dos renglones y la de los
           avisos uno: es la diferencia que más se nota si el esqueleto la

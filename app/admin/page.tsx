@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { Button } from "@/components/ui/button";
 import { mesEnCurso } from "@/lib/fechas";
 import { formatMoney } from "@/lib/money";
@@ -39,12 +40,10 @@ export default async function PanelInicio() {
 
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-title text-ink">Panel</h1>
-        <p className="text-body-sm text-ink-secondary">
-          Lo que hay para hacer, y cómo viene el mes.
-        </p>
-      </div>
+      <EncabezadoDePanel
+        titulo="Panel"
+        bajada="Lo que hay para hacer, y cómo viene el mes."
+      />
 
       <ParaHacer datos={paraHacer} />
       <EsteMes datos={mes} />

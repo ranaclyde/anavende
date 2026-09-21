@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { FormularioDeProducto } from "@/components/admin/productos/formulario";
 import { VariantesDelProducto } from "@/components/admin/productos/variantes";
 import {
@@ -45,14 +44,10 @@ export default async function EditarProducto({ params }: Props) {
 
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
-      <Link
-        href="/admin/productos"
-        className="inline-flex items-center gap-1 self-start text-body-sm text-ink-secondary hover:text-ink"
-      >
-        <ChevronLeft aria-hidden className="size-4" />
-        Productos
-      </Link>
-      <h1 className="text-title text-ink">{producto.name}</h1>
+      <EncabezadoDePanel
+        titulo={producto.name}
+        volver={{ href: "/admin/productos", etiqueta: "Productos" }}
+      />
       <FormularioDeProducto
         producto={producto}
         marcas={opciones.marcas}

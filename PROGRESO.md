@@ -2888,13 +2888,44 @@ mismo día, uno por uno:
 Ninguna de estas cuatro cosas tiene componente compartido, y cada copia se fue
 por su lado:
 
-- **Encabezado de pantalla: 14 copias a mano.** El `h1` es
-  `text-title text-ink` en las 14, sin excepción —ahí no hay divergencia—,
-  pero sí divergen el wrapper (`items-start` en los listados, `items-center` en
-  las fichas, a secas en Devoluciones y Catálogo), el gap (`gap-6` solo en el
-  tablero) y la presencia del párrafo descriptivo, que falta en Producto nuevo,
-  Producto editar y detalle de orden, y en detalle de usuario está desprendido
-  del bloque del título.
+- **~~Encabezado de pantalla: 14 copias a mano.~~** Resuelto el 2026-09-21.
+  **Eran 13, no 14** —el conteo del informe se hizo leyendo, y una de las rutas
+  que listó toma el encabezado del layout de Catálogo en vez de escribir el
+  suyo—. El `h1` era `text-title text-ink` en las 13, sin excepción, pero
+  divergían el wrapper (`items-start` en los listados, `items-center` en las
+  fichas, a secas en Devoluciones y Catálogo), el gap y la presencia del
+  párrafo descriptivo. Mirándolas en el navegador apareció **una diferencia
+  peor que las que el informe había contado, y que no se veía leyendo**: el
+  «volver» estaba escrito de dos maneras. Cuatro pantallas usaban el botón
+  terciario `sm`; la ficha de producto y «Nuevo producto», un `<Link>` pintado
+  a mano en `body-sm`/`ink-secondary`. Medido: **20px de alto contra 32, otro
+  color y la mitad del área para el dedo**, en la misma posición de la misma
+  pantalla.
+
+  Ahora lo pone `EncabezadoDePanel` (`components/admin/encabezado.tsx`), con
+  las cinco piezas de DR §6.12 —volver, título, insignias, bajada y acciones—,
+  todas opcionales menos el título. **La alineación dejó de ser una elección de
+  cada pantalla**: la decide la bajada, que es lo que los listados y las fichas
+  venían aplicando cada uno por su lado sin saber que era la misma regla. Con
+  bajada la columna izquierda son dos renglones y va `items-start`, para que el
+  botón de la derecha se alinee con el título; sin bajada es un renglón y va
+  `items-center`.
+
+  **El fantasma quedó en el mismo archivo** (`EsqueletoDeEncabezado`), y los
+  once `loading.tsx` lo usan. Es lo único que evita que se vuelvan a separar:
+  los esqueletos de las dos pantallas de producto dibujaban el volver de 20px
+  porque estaban escritos en otro lado y nadie los había visto juntos — eso
+  sólo son **12px de salto** que ya no ocurren.
+
+  Verificado en el navegador contra `next start`, no leyendo: las **13
+  pantallas** tienen el `h1` en **x=264 y 29px de alto**, y las cinco que
+  vuelven tienen el botón en **x=252, 32px y `rgb(113,110,109)`**, las tres
+  cifras iguales. El encabezado fantasma mide 52px contra los 53 del real —el
+  `h-7` contra los 29px de `text-title`, que ya estaba anotado—.
+
+  **Queda una cosa sin decidir, y es de texto:** «Nuevo producto» no tiene
+  bajada y «Nueva orden» y «Nueva cuenta» sí, siendo las tres altas. Escribirla
+  es inventar copia de interfaz, así que no se hizo sin preguntar.
 - **Campo de búsqueda: copiado literal tres veces**, unas 45 líneas cada una
   —form, lupa, input, botón de limpiar, submit `sr-only`— en
   `ordenes/filtros.tsx`, `usuarios/filtros.tsx` y `productos/filtros.tsx`. El

@@ -1,9 +1,7 @@
-import { ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { AltaDeOrdenManual } from "@/components/admin/ordenes/nueva/alta";
-import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Nueva orden" };
 
@@ -22,23 +20,11 @@ export const metadata: Metadata = { title: "Nueva orden" };
 export default function NuevaOrden() {
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
-      <div>
-        <Button asChild variant="tertiary" size="sm" className="-ml-3">
-          <Link href="/admin/ordenes">
-            <ChevronLeft aria-hidden />
-            Órdenes
-          </Link>
-        </Button>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <h1 className="text-title text-ink">Nueva orden</h1>
-        <p className="text-body-sm text-ink-secondary">
-          Para las ventas que no pasaron por la tienda: por WhatsApp, por
-          teléfono o en persona. Queda marcada como manual y mueve el stock
-          igual que una web.
-        </p>
-      </div>
+      <EncabezadoDePanel
+        titulo="Nueva orden"
+        bajada="Para las ventas que no pasaron por la tienda: por WhatsApp, por teléfono o en persona. Queda marcada como manual y mueve el stock igual que una web."
+        volver={{ href: "/admin/ordenes", etiqueta: "Órdenes" }}
+      />
 
       <AltaDeOrdenManual />
     </div>

@@ -1,3 +1,4 @@
+import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -16,10 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CargandoElPanel() {
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <Skeleton className="h-7 w-24" />
-        <Skeleton className="h-5 w-72 max-w-full" />
-      </div>
+      <EsqueletoDeEncabezado titulo="w-24" bajada="w-72 max-w-full" />
 
       {/* Para hacer */}
       <section className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-5">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { FormularioDeConfiguracion } from "@/components/admin/configuracion/formulario";
 import { ModoMantenimiento } from "@/components/admin/configuracion/mantenimiento";
 import {
@@ -30,13 +31,10 @@ export default async function ConfiguracionDelSitio() {
 
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-title text-ink">Configuración</h1>
-        <p className="text-body-sm text-ink-secondary">
-          Por dónde te escriben, dónde te avisamos y cuándo un producto se
-          está por acabar.
-        </p>
-      </div>
+      <EncabezadoDePanel
+        titulo="Configuración"
+        bajada="Por dónde te escriben, dónde te avisamos y cuándo un producto se está por acabar."
+      />
 
       <FormularioDeConfiguracion
         configuracion={configuracion}

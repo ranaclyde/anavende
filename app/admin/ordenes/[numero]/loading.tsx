@@ -1,3 +1,4 @@
+import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -14,20 +15,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CargandoLaOrden() {
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <Skeleton className="ml-0 h-8 w-28 rounded-panel-control" />
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <Skeleton className="h-7 w-36" />
-          <Skeleton className="h-5 w-20 rounded-pill" />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Skeleton className="h-8 w-28 rounded-panel-control" />
-          <Skeleton className="h-8 w-24 rounded-panel-control" />
-        </div>
-      </div>
+      <EsqueletoDeEncabezado
+        titulo="w-36"
+        volver="w-28"
+        insignias={1}
+        acciones={["w-28", "w-24"]}
+      />
 
       <Skeleton className="h-4 w-64 max-w-full" />
 
