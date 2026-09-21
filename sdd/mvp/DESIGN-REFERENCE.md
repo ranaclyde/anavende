@@ -736,6 +736,8 @@ Ahora ese `div` lleva **`max-h-[calc(100svh-20rem)]`** y es el que scrollea. De 
 
 **Las `20rem` están medidas contra el peor caso** —órdenes o usuarios, que tienen encabezado, solapas, barra de filtros, contador y paginación a la vez— en una ventana de 700px. Con 19 la página quedaba scrolleando 11px, que es justo lo que este tope viene a evitar; con 20 sobran 5. Cuesta una fila: siete en vez de ocho a 700px, doce a 900.
 
+**Una celda puede llevar su propia acción, y el número sigue pegado a la derecha.** En el listado de productos, la columna «Disponible» tiene el botón de reponer **antes** de las cifras: puesto después, la columna terminaba en el botón y los números dejaban de caer bajo su encabezado. El bloque de cifras va `shrink-0 whitespace-nowrap`, porque comprimido parte «de 15 · 2 reservadas» en dos renglones y sube la fila de 55px a 72 sólo en los productos con reservas, dejando la tabla despareja.
+
 **En móvil las tablas se vuelven tarjetas**, no un scroll horizontal. Una tabla de siete columnas en un teléfono es inoperable.
 
 **Paginación:** «Anterior / Página N de M / Siguiente», no un botón por página como la tienda (F7.1). Un listado del panel puede crecer sin techo —las órdenes se acumulan solas—, y una tira de cien números no sirve de nada: a una orden vieja se llega por la búsqueda o el rango de fechas, no acordándose de en qué página estaba. Los pasos que no existen —«anterior» en la primera— **no se dibujan apagados**: un enlace deshabilitado no se puede enfocar ni explica por qué no anda, y el «Página N de M» del medio ya dice dónde está el límite.

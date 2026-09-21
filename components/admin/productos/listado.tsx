@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { ReponerStock } from "@/components/admin/productos/reponer";
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { Badge } from "@/components/ui/badge";
@@ -151,11 +152,14 @@ export function ListadoDeProductos({
                   >
                     Precio
                   </Cabecera>
+                  {/* Más ancha desde el 2026-09-21: acá entra también el
+                      botón de reponer, y apretado partía el renglón de 44px
+                      que pide §6.9. */}
                   <Cabecera
                     filtros={filtros}
                     orden="stock"
                     align="right"
-                    className="w-40"
+                    className="w-72"
                   >
                     Disponible
                   </Cabecera>
@@ -178,7 +182,19 @@ export function ListadoDeProductos({
                       <Precio producto={p} />
                     </TableCell>
                     <TableCell data-align="right">
-                      <Stock producto={p} umbral={umbral} />
+                      {/* El botón va ANTES del número y no después: §6.9
+                          pide los números pegados a la derecha, y con el
+                          botón al final la columna terminaba en él y las
+                          cifras dejaban de caer bajo «Disponible». */}
+                      <div className="flex items-center justify-end gap-3">
+                        <ReponerStock
+                          productId={p.id}
+                          nombre={p.name}
+                          variantes={p.variantes}
+                          alGuardar={setAviso}
+                        />
+                        <Stock producto={p} umbral={umbral} />
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Estado producto={p} umbral={umbral} />
@@ -217,7 +233,13 @@ export function ListadoDeProductos({
                   <Precio producto={p} />
                   <Stock producto={p} umbral={umbral} />
                 </div>
-                <div className="flex justify-end">
+                <div className="flex items-center justify-between gap-3">
+                  <ReponerStock
+                    productId={p.id}
+                    nombre={p.name}
+                    variantes={p.variantes}
+                    alGuardar={setAviso}
+                  />
                   <Acciones
                     producto={p}
                     ocupado={enCurso}
@@ -352,7 +374,11 @@ function Precio({ producto }: { producto: ProductoDelListado }) {
   const hayOferta = producto.finalPrice !== producto.price;
 
   return (
-    <div className="flex flex-col items-end gap-0.5 tabular-nums">
+    // `shrink-0` y `whitespace-nowrap`: al lado del botón de reponer este
+    // bloque se comprimía y «de 15 · 2 reservadas» pasaba a dos renglones,
+    // que subía la fila de 55px a 72 en los productos con reservas y dejaba
+    // la tabla despareja.
+    <div className="flex shrink-0 flex-col items-end gap-0.5 whitespace-nowrap tabular-nums">
       <span className="font-medium text-ink">
         {formatMoney(producto.finalPrice)}
       </span>

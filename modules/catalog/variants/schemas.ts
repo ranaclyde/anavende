@@ -23,7 +23,10 @@ import { MAXIMO_POR_VARIANTE } from "@/modules/media/tamanos";
 const stock = z
   .number({ error: "Poné cuántas unidades hay, en números enteros." })
   .int("El stock se cuenta en unidades enteras.")
-  .min(0, "El stock no puede ser negativo. Se ajusta con una venta o una devolución, no a mano.")
+  .min(
+    0,
+    "El stock no puede ser negativo. Se ajusta con una venta o una devolución, no a mano.",
+  )
   // Un tope alto que igual atrapa el resbalón de teclado —pegar el precio en
   // el campo del stock— antes de que quede guardado como si fuera cierto.
   .max(1_000_000, "Ese número es demasiado grande. Revisalo.");
@@ -47,6 +50,25 @@ export const editarVariante = z.object({
 
 export const soloVariante = z.object({ id: z.uuid() });
 
+export const soloProducto = z.object({ productId: z.uuid() });
+
+/**
+ * Reponer desde el listado — el globo de «Reponer» de `/admin/productos`.
+ *
+ * Manda **todas** las variantes del producto y no solo las que cambiaron: la
+ * vendedora abre el globo, corrige los números que quiere y guarda una vez.
+ * Filtrar acá cuáles cambiaron sería adivinar contra una foto vieja; del lado
+ * del servidor `ajustar()` ya no asienta un movimiento cuando la diferencia
+ * es cero, así que mandar de más no ensucia el libro.
+ */
+export const reposicion = z.object({
+  productId: z.uuid(),
+  ajustes: z
+    .array(z.object({ variantId: z.uuid(), nuevoTotal: stock }))
+    .min(1, "No hay ningún color al que ponerle stock.")
+    .max(50),
+});
+
 export const cambioDeEstadoDeVariante = z.object({
   id: z.uuid(),
   activo: z.boolean(),
@@ -68,10 +90,7 @@ export const fuenteDeImagenes = z.object({
  */
 export const ordenDeImagenes = z.object({
   variantId: z.uuid(),
-  ids: z
-    .array(z.uuid())
-    .min(1)
-    .max(MAXIMO_POR_VARIANTE),
+  ids: z.array(z.uuid()).min(1).max(MAXIMO_POR_VARIANTE),
 });
 
 export const soloImagen = z.object({ id: z.uuid() });

@@ -447,6 +447,14 @@ Encabezado sobre superficie blanca que toma `shadow-lg` al hacer scroll. El esta
 activo se marca en Malbec. El buscador vive en el encabezado y se retira cuando la
 página trae el suyo.
 
+### Reponer desde el listado
+
+El listado de productos edita el stock sin abrir la ficha: un botón por fila
+abre un globo con un renglón por color y un «Guardar» explícito. **Globo y no
+diálogo**, porque la operación se repite fila tras fila y un diálogo hace
+perder de vista cuáles faltan. Se escribe el total, no lo disponible, y cada
+renglón muestra la cuenta al lado.
+
 ### Tabla del panel
 
 Filas de 44px, cabecera en `caption` versalita sobre `--surface-sunken`, hover

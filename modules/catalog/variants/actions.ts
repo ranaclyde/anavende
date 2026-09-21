@@ -14,12 +14,15 @@ import {
   reordenarImagenesDeVariante,
 } from "@/modules/media/subir";
 import { ajustar } from "@/modules/stock/operaciones";
+import { variantesParaReponer } from "@/modules/catalog/variants/queries";
 import {
   crearVariante,
   editarVariante,
   fuenteDeImagenes,
   ordenDeImagenes,
+  reposicion,
   soloImagen,
+  soloProducto,
   soloVariante,
 } from "@/modules/catalog/variants/schemas";
 
@@ -222,6 +225,71 @@ export const editarUnaVariante = action
     }
   });
 
+// ── Reponer desde el listado (RF-16, RF-20, §8.3) ───────────────────────
+
+/**
+ * Los colores de un producto con su stock, para el globo de «Reponer».
+ *
+ * Es una lectura y va por acción igual que los buscadores del alta manual:
+ * una ruta paralela sería otra puerta que asegurar por separado (§6.2), y
+ * acá el envoltorio le pone la misma guardia `admin` que a la escritura.
+ */
+export const leerParaReponer = action
+  .input(soloProducto)
+  .auth("admin")
+  .handler(async ({ input }) => ({
+    variantes: await variantesParaReponer(input.productId),
+  }));
+
+/**
+ * Poner el stock de varios colores de una vez — RF-16, §8.3.
+ *
+ * **Una sola transacción para todo el producto.** Si el tercer color falla
+ * —porque tiene más reservado de lo que se le quiere dejar—, no puede quedar
+ * el primero guardado y el resto no: la vendedora vería números a medias y no
+ * sabría cuáles. O entran los cuatro o no entra ninguno.
+ *
+ * **El stock lo mueve `ajustar()` y nadie más** (F4.1, §8.3 regla 3): además
+ * de escribir el contador, asienta el movimiento en el libro con quién lo
+ * hizo. Un segundo lugar que toque `stock_total` es un segundo lugar que
+ * puede olvidarse del asiento, y ahí se pierde la única forma de auditar una
+ * discrepancia. Por eso esta acción **no escribe una sola columna de stock**:
+ * arma la lista y se la pasa.
+ *
+ * La nota dice de dónde vino, y no es decorativa: en el libro, un ajuste
+ * hecho al pasar desde el listado y uno hecho abriendo la ficha se leen igual
+ * si nadie los distingue.
+ */
+export const reponerStock = action
+  .input(reposicion)
+  .auth("admin")
+  .handler(async ({ input, ctx }) => {
+    const suyas = await db.execute<{ id: string }>(sql`
+      SELECT id FROM product_variants WHERE product_id = ${input.productId}`);
+    const permitidas = new Set(suyas.map((v) => v.id));
+
+    // El producto llega del cliente y las variantes también: sin esto, una
+    // petición armada a mano podría mover el stock de OTRO producto pasando
+    // su id acá adentro.
+    for (const ajuste of input.ajustes) {
+      if (!permitidas.has(ajuste.variantId)) throw domainError("NOT_FOUND");
+    }
+
+    await db.transaction(async (tx) => {
+      for (const ajuste of input.ajustes) {
+        await ajustar(tx, {
+          variantId: ajuste.variantId,
+          nuevoTotal: ajuste.nuevoTotal,
+          actorUserId: ctx.session.profile.id,
+          note: "Reposición desde el listado",
+        });
+      }
+    });
+
+    refrescar();
+    return { cuantos: input.ajustes.length };
+  });
+
 // ── Baja (RF-16, RN-11) ─────────────────────────────────────────────────
 
 export const eliminarUnaVariante = action
@@ -299,7 +367,12 @@ export const eliminarUnaVariante = action
     if (archivos.length) await borrarArchivos(archivos);
 
     refrescar();
-    return { id: input.id, resultado: "borrado" as const, ordenes: 0, carritos: 0 };
+    return {
+      id: input.id,
+      resultado: "borrado" as const,
+      ordenes: 0,
+      carritos: 0,
+    };
   });
 
 // ── Reutilizar las imágenes de otra variante (RF-16, §9.5) ──────────────

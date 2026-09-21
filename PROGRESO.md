@@ -3167,6 +3167,76 @@ bloquea por tratarse de una credencial. Los números de contraste y de píxel
 están **calculados sobre los tokens**, no medidos sobre un render. Falta ver el
 modo oscuro con ojos.
 
+### Reponer el stock sin salir del listado — hecho el 2026-09-21
+
+**No salió del repaso sino de mirarlo usándolo** (observación tuya): al crear
+un producto no se le puede poner stock hasta que existe; al editarlo hay que
+scrollear hasta el fondo para cambiarlo, siendo lo que más se actualiza junto
+con el precio; y cambiarlo no confirma nada.
+
+Medido antes de tocar: **«Colores y stock» arranca en y=1280** con una ventana
+de 900, o sea que al abrir la ficha **no se asoma**. Y el recorrido real es
+peor que el número: el tablero dice «5 productos para reponer» y enlaza al
+listado filtrado, y desde ahí cada producto cuesta **seis pasos** —abrir la
+ficha, scrollear 480px, abrir el diálogo del color, escribir, guardar,
+volver—.
+
+El plan acordado son cuatro movimientos, de mayor a menor rendimiento:
+
+1. **Reponer desde el listado.** ✅ Hecho.
+2. **Subir «Colores y stock» en la ficha**, a dos columnas desde `xl` como la
+   ficha de usuario. Pendiente.
+3. **Que el alta termine donde empieza el trabajo**: crear deja el diálogo de
+   «Agregar color» abierto. Pendiente.
+4. **Avisos flotantes.** Pendiente, y último a propósito: son la consecuencia
+   de los otros tres y no el arreglo. Un aviso que dice «se guardó» no
+   arregla que hayas tenido que scrollear 480px para guardarlo.
+
+**Lo hecho (1).** El botón «Reponer» de cada fila abre un globo con un renglón
+por color (`components/admin/productos/reponer.tsx`). Seis pasos pasan a uno, y
+la lista de lo que falta no se pierde de vista en el medio.
+
+- **Globo y no diálogo**, decisión tuya: un diálogo oscurece la pantalla y se
+  queda con el foco, y acá la operación se repite fila tras fila.
+- **Con «Guardar» explícito**, también decisión tuya: un campo que se guarda
+  solo al salir del foco mueve stock sin que nadie lo haya pedido.
+- **Se escribe el total, no lo disponible**, y cada renglón muestra la cuenta
+  al lado. La columna dice lo disponible y el campo pide el total; sin decirlo,
+  quien ve «0 disponibles» y escribe 10 esperaría vender diez habiendo dos
+  reservadas.
+- **Se lee al abrir y no con el listado**: son cuarenta productos por página y
+  se repone uno o dos. Traerlas todas sería mandar el inventario entero para
+  que se usen dos renglones.
+- **`@radix-ui/react-popover` es dependencia nueva**, y hacía falta de verdad:
+  la tabla ahora scrollea sobre sí misma, así que un globo posicionado adentro
+  lo recortaría el `overflow`. Necesita portal, y por el portal necesita
+  llevarse la escala puesta (`escala.tsx`).
+
+**7 tests** (`tests/unit/catalogo/reponer.test.ts`), y lo que prueban no se ve
+leyendo el código: que sea **una sola transacción** —si el segundo color es
+rechazado, el primero tampoco queda guardado—, que **cada ajuste asiente su
+movimiento** en el libro con su nota, que un color que no cambió **no ensucie
+el libro** con un asiento en cero, y que no se pueda mover el stock de **otro
+producto** pasando el id de una variante ajena, que es real porque el
+`productId` y los `variantId` llegan los dos del cliente.
+
+**Dos cosas se rompieron al construirlo y quedaron medidas.** La consulta
+pedía `c.hex` y la columna es `hex_code`, así que el globo abría con un error
+genérico. Y el botón apretaba el bloque de cifras, que partía «de 15 · 2
+reservadas» en dos renglones y subía **de 55px a 72** sólo las filas con
+reservas: se arregló con `shrink-0 whitespace-nowrap` y la columna a `w-72`.
+Verificado después: **todas las filas en 55px**, el mismo alto que las de
+`/admin/usuarios`.
+
+Probado en el navegador contra `next start`: el globo lee los dos colores con
+su reservado y su disponible, «Guardar» está apagado sin cambios, guardar
+actualiza la fila —13 disponibles pasan a 16, el total de 15 a 18— y el aviso
+dice «"Auricular Cloud II" quedó con 18 unidades en total». Bajar un color por
+debajo de lo reservado se rechaza con la frase del dominio —«Hay 2 unidades
+reservadas en órdenes activas, así que el stock no puede bajar de 2»—, el globo
+**queda abierto** y la fila no cambió. Los datos de prueba se dejaron como
+estaban.
+
 ### Lo que falta decidir antes de tocar código
 
 **Las tres se decidieron, y ninguna queda abierta.**
