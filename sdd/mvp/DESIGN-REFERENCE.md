@@ -734,7 +734,22 @@ Si la foto ya entra a 1:1 no hay segundo nivel y el cursor no lo promete — pas
 
 **Paginación:** «Anterior / Página N de M / Siguiente», no un botón por página como la tienda (F7.1). Un listado del panel puede crecer sin techo —las órdenes se acumulan solas—, y una tira de cien números no sirve de nada: a una orden vieja se llega por la búsqueda o el rango de fechas, no acordándose de en qué página estaba. Los pasos que no existen —«anterior» en la primera— **no se dibujan apagados**: un enlace deshabilitado no se puede enfocar ni explica por qué no anda, y el «Página N de M» del medio ya dice dónde está el límite.
 
-**Solapas por estado:** cuando un listado tiene un estado que decide qué se está mirando —órdenes, usuarios—, va **a la vista y con el número de cada una**, no adentro de un desplegable más. Es la pregunta con la que se abre la pantalla, y el número contesta «¿tengo algo que hacer?» sin entrar. Ese número es el del total, no el del filtro puesto: si cambiara con cada búsqueda dejaría de ser un indicador para ser un resultado más.
+**Solapas: son dos, y la diferencia significa algo** (decidido el 2026-09-21, al sacarlas a `SolapasDelPanel` en `components/admin/solapas.tsx`). Hasta ese día existían las dos sin que nadie lo hubiera escrito, así que divergían en todo lo demás —alto, color de la activa, elemento contenedor— y parecían dos gustos en vez de dos trabajos.
+
+| | Cambia | Forma | Número |
+|---|---|---|---|
+| **Segmentado** | Qué se ve del mismo listado | Pastilla blanca sobre fondo hundido: se lee «elegí uno de estos» | **Sí** |
+| **Subrayado** | En qué pantalla se está | Subrayado en color de marca: se lee «esta es la sección» | **No** |
+
+**Las dos miden 40px de alto**, para que el renglón no salte al pasar de una pantalla a otra: el segmentado son 4 + 32 + 4 y el subrayado es un ítem de 40 apoyado sobre el borde.
+
+**El segmentado lleva el número de cada solapa, y no es decoración.** Es la pregunta con la que se abre la pantalla, y contesta «¿tengo algo que hacer?» sin entrar. Ese número es el del total, no el del filtro puesto: si cambiara con cada búsqueda dejaría de ser un indicador para ser un resultado más. Va en `aria-hidden` con una frase completa al lado en `sr-only` —«(11 cuentas)»—, porque «Activas 11» leído en voz alta no dice once qué.
+
+**El subrayado no lleva número a propósito:** cada solapa es otra tabla, así que no hay un total que contestar. Sumarle uno obligaría a cuatro consultas para decir cuántas filas tiene cada pantalla vecina, que es un dato que nadie fue a buscar.
+
+**Las dos pantallas que llevan segmentado son órdenes y usuarios.** Usuarios lo ganó el 2026-09-21: esta regla lo nombraba desde que se escribió y la pantalla tenía un desplegable de cinco opciones sin un solo número, así que la regla estaba vencida. El estado que más importa ahí es «Baja pedida», que es trabajo por hacer (RF-34) y antes no se veía sin abrir el desplegable.
+
+**La solapa no es un filtro que se limpia.** «Limpiar todo» borra la búsqueda y los desplegables y **conserva la solapa**: dice dónde se está parada, y limpiar filtros no tiene por qué mover a nadie de pantalla. Cambiar de solapa, al revés, conserva los filtros y vuelve a la página 1.
 
 ### 6.10 Logo de marca
 

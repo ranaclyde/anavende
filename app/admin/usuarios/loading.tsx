@@ -17,11 +17,15 @@ export default function CargandoUsuarios() {
         acciones={["w-36"]}
       />
 
+      {/* La tira de solapas: 40px, los mismos que mide el segmentado real
+          (§6.9). Desde el 2026-09-21 el estado es solapa y no desplegable, así
+          que acá hay una tira más y un campo menos que antes. */}
+      <Skeleton className="h-10 w-96 max-w-full rounded-panel-control" />
+
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2 md:flex-row md:flex-wrap">
           <Skeleton className="h-10 flex-1 rounded-panel-control md:min-w-64" />
           <Skeleton className="h-10 rounded-panel-control md:w-48" />
-          <Skeleton className="h-10 rounded-panel-control md:w-52" />
         </div>
         <Skeleton className="h-4 w-24" />
       </div>

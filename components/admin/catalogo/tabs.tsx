@@ -1,16 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { cn } from "@/lib/utils";
+import { SolapasDelPanel } from "@/components/admin/solapas";
 
 /**
  * Navegación entre marcas, categorías, colores y medios de pago — RF-18,
  * RF-19.
  *
- * Son rutas, no pestañas de cliente: así cada listado tiene su propia
- * dirección, el botón atrás funciona y cada uno se puede compartir.
+ * **Subrayado y sin número** (§6.9): acá cada solapa es otra tabla, así que no
+ * hay un total que contestar, y lo que cambia no es qué se ve del mismo
+ * listado sino en qué pantalla se está.
+ *
+ * Son rutas y no pestañas de cliente: cada listado tiene su dirección, el
+ * botón atrás funciona y cada uno se puede compartir. Lo único que hace falta
+ * del cliente es saber cuál está abierta.
  */
 const SOLAPAS = [
   { href: "/admin/catalogo/marcas", etiqueta: "Marcas" },
@@ -27,31 +31,10 @@ export function SolapasDeCatalogo() {
   const pathname = usePathname();
 
   return (
-    <nav
-      aria-label="Secciones del catálogo"
-      className="flex gap-1 border-b border-border"
-    >
-      {SOLAPAS.map(({ href, etiqueta }) => {
-        const activa = pathname === href;
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={activa ? "page" : undefined}
-            className={cn(
-              "-mb-px flex h-9 items-center rounded-t-panel-control px-3",
-              "border-b-2 text-body-sm transition-colors duration-150",
-              activa
-                ? // Subrayado Y color: el estado no se comunica solo con
-                  // color (§9).
-                  "border-brand font-medium text-brand"
-                : "border-transparent text-ink-secondary hover:text-ink",
-            )}
-          >
-            {etiqueta}
-          </Link>
-        );
-      })}
-    </nav>
+    <SolapasDelPanel
+      etiqueta="Secciones del catálogo"
+      variante="subrayado"
+      solapas={SOLAPAS.map((s) => ({ ...s, activa: pathname === s.href }))}
+    />
   );
 }

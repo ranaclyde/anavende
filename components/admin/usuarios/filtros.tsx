@@ -10,10 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
-  ESTADOS,
-  FILTROS_VACIOS,
   ROLES,
   hayFiltros,
+  sinFiltros,
   urlDeFiltros,
   type FiltrosDeUsuarios,
 } from "@/modules/users/panel/filtros";
@@ -72,21 +71,6 @@ export function BarraDeFiltros({
             </option>
           ))}
         </Select>
-
-        <Select
-          aria-label="Filtrar por estado"
-          value={filtros.estado}
-          onChange={(e) =>
-            aplicar({ estado: e.target.value as FiltrosDeUsuarios["estado"] })
-          }
-          className="md:w-52"
-        >
-          {ESTADOS.map((o) => (
-            <option key={o.valor} value={o.valor}>
-              {o.etiqueta}
-            </option>
-          ))}
-        </Select>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -99,7 +83,7 @@ export function BarraDeFiltros({
             size="sm"
             onClick={() => {
               setTexto("");
-              iniciar(() => router.push(urlDeFiltros(FILTROS_VACIOS)));
+              iniciar(() => router.push(urlDeFiltros(sinFiltros(filtros))));
             }}
           >
             Limpiar todo

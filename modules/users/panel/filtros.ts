@@ -32,12 +32,18 @@ export const ROLES = [
 
 export type FiltroDeRol = (typeof ROLES)[number]["valor"];
 
+/**
+ * Los cinco estados, que desde el 2026-09-21 son **solapas** y ya no un
+ * desplegable (§6.9). Las etiquetas se acortaron con el cambio: «Solo
+ * activos» decía «solo» porque convivía con «Todos los estados» adentro de
+ * una lista; como solapa, el «solo» es el hecho de estar parada ahí.
+ */
 export const ESTADOS = [
-  { valor: "todos", etiqueta: "Todos los estados" },
-  { valor: "activos", etiqueta: "Solo activos" },
-  { valor: "bloqueados", etiqueta: "Solo bloqueados" },
-  { valor: "baja-pedida", etiqueta: "Con baja pedida" },
-  { valor: "dados-de-baja", etiqueta: "Dados de baja" },
+  { valor: "todos", etiqueta: "Todas" },
+  { valor: "activos", etiqueta: "Activas" },
+  { valor: "bloqueados", etiqueta: "Bloqueadas" },
+  { valor: "baja-pedida", etiqueta: "Baja pedida" },
+  { valor: "dados-de-baja", etiqueta: "Dadas de baja" },
 ] as const;
 
 export type FiltroDeEstado = (typeof ESTADOS)[number]["valor"];
@@ -87,9 +93,18 @@ export function urlDeFiltros(
   return cadena ? `${base}?${cadena}` : base;
 }
 
-/** Si hay algo que limpiar. */
+/**
+ * Si hay algo que limpiar.
+ *
+ * **El estado no cuenta**, desde que es una solapa y no un desplegable
+ * (2026-09-21): la solapa dice dónde se está parada, y «Limpiar todo» no
+ * mueve a nadie de pantalla. Es el mismo criterio que la solapa de órdenes.
+ */
 export function hayFiltros(filtros: FiltrosDeUsuarios): boolean {
-  return (
-    filtros.q !== "" || filtros.rol !== "todos" || filtros.estado !== "todos"
-  );
+  return filtros.q !== "" || filtros.rol !== "todos";
+}
+
+/** Lo mismo pero conservando la solapa, para el botón «Limpiar todo». */
+export function sinFiltros(filtros: FiltrosDeUsuarios): FiltrosDeUsuarios {
+  return { ...FILTROS_VACIOS, estado: filtros.estado };
 }

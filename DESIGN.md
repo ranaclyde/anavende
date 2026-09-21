@@ -442,6 +442,16 @@ Encabezado sobre superficie blanca que toma `shadow-lg` al hacer scroll. El esta
 activo se marca en Malbec. El buscador vive en el encabezado y se retira cuando la
 página trae el suyo.
 
+### Solapas del panel
+
+Dos formas, y la diferencia significa algo (`SolapasDelPanel`). **Segmentado**
+—pastilla blanca sobre fondo hundido— cuando cambia qué se ve del mismo
+listado, y lleva el número de cada solapa; **subrayado** cuando cambia en qué
+pantalla se está, y no lo lleva, porque cada solapa es otra tabla y no hay un
+total que contestar. Las dos miden 40px de alto. El número es el del total y no
+el del filtro puesto, y se lee con una frase completa en `sr-only`. La solapa no
+es un filtro que se limpia: «Limpiar todo» la conserva. DR §6.9.
+
 ### Tarjeta de sección del panel
 
 Todo bloque con título dentro de una pantalla del panel es una

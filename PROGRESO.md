@@ -3037,10 +3037,50 @@ por su lado:
   20px, en la columna de 352px de una ficha, pesaba tanto como el dato que
   anunciaba. Es además el tamaño del título de `VacioDelPanel`, así que el
   panel quedó con una sola voz para «esto es una sección».
-- **Dos familias de solapas**: Órdenes usa segmentado sobre `surface-sunken`,
-  alto 8, activo en `text-ink`, **con contador**; Catálogo usa subrayado
-  inferior, alto 9, activo en `text-brand`, **sin contador**. §6.9 pide el
-  contador, porque es lo que contesta «¿tengo algo que hacer?» sin entrar.
+- **~~Dos familias de solapas.~~** Resuelto el 2026-09-21, y **las dos se
+  quedan** (decisión tuya): hacen dos trabajos distintos, y la diferencia pasa
+  a significar algo en vez de parecer dos gustos. Segmentado cuando cambia
+  **qué se ve del mismo listado** —lleva número—; subrayado cuando cambia **en
+  qué pantalla se está** —no lleva, porque cada solapa es otra tabla y no hay
+  un total que contestar—. Las dos salen ahora de `SolapasDelPanel`
+  (`components/admin/solapas.tsx`), miden **40px de alto** las dos para que el
+  renglón no salte al navegar, y DR §6.9 dice cuál va cuándo.
+
+  **Y apareció una regla vencida que el informe no vio: §6.9 nombraba a
+  Usuarios** —«órdenes, usuarios»— desde que se escribió, y esa pantalla tenía
+  un desplegable de cinco opciones **sin un solo número**. Ahora tiene solapas
+  con contador, por decisión tuya de seguir la regla al pie. El estado que más
+  importa ahí es **«Baja pedida»**, que es trabajo por hacer (RF-34) y antes
+  no se veía sin abrir el desplegable.
+
+  Lo que hizo falta para eso: `contarPorEstado()` en
+  `modules/users/panel/queries.ts` —**una sola consulta con `FILTER`** y no
+  cinco viajes—, las etiquetas acortadas («Solo activos» decía «solo» porque
+  convivía con «Todos los estados» adentro de una lista; como solapa, el
+  «solo» es estar parada ahí), y `hayFiltros` dejó de contar el estado más un
+  `sinFiltros` nuevo: **la solapa no es un filtro que se limpia**, dice dónde
+  se está parada, y «Limpiar todo» no tiene por qué mover a nadie de pantalla.
+
+  **8 tests nuevos** (`tests/unit/usuarios/solapas.test.ts`), y lo que prueban
+  no se ve leyendo la consulta: que los cinco números digan **exactamente** lo
+  que el listado de esa solapa va a mostrar. Son dos lugares que repiten las
+  mismas condiciones —`FILTER` en el conteo y `WHERE` en `condiciones()`— y si
+  se separan la solapa dice 3 y la tabla trae 2. También que **los cinco no
+  suman el total y está bien**: son cinco filtros y no una partición, así que
+  una cuenta bloqueada que además pidió la baja aparece en las dos. Escribirlos
+  destapó tres restricciones de la base que no estaban a la vista —
+  `ban_has_reason`, `closure_has_reason` y `closed_was_requested`—: una baja
+  ejecutada **tuvo que pedirse antes**, así que «Dadas de baja» es siempre un
+  subconjunto de las que pidieron.
+
+  Verificado en el navegador contra `next start`: las tres tiras miden **40px**
+  —ítems de 32 en el segmentado y de 40 en el subrayado—, la activa se marca
+  con **forma y peso 500** y no solo con color (§9), el número se lee «11
+  cuentas» y no «11» a secas, y tocar una solapa **conserva la búsqueda** y
+  vuelve a la página 1. Lo más importante que se probó: **el número no cambia
+  con la búsqueda** —con `?q=zzzz` las cinco solapas dicen lo mismo—, que es
+  literalmente lo que §6.9 pide. Y «Limpiar todo» borra la búsqueda dejando
+  `?estado=bloqueados` puesto.
 - **Diálogos: 19 de 20 coinciden** en `max-w-lg` heredado. La excepción es
   `ordenes/devolver.tsx:198`, que además es **el único con
   `max-h-[85svh] overflow-y-auto`**: los otros diálogos largos —`agregar-item`,
