@@ -140,7 +140,12 @@ export function ModoMantenimiento({
             <Button variant="tertiary" onClick={() => setConfirmando(false)}>
               Cancelar
             </Button>
-            <Button variant="brand" onClick={() => cambiar(true)}>
+            {/* `destructive-solid`, como todo confirmar de algo que saca
+                algo de circulación (§6.3): cerrar la tienda deja a cualquiera
+                que entre con «Volvemos en un rato» y con el registro apagado.
+                Su par más cercano es «Sí, bloquear» de una cuenta, que tampoco
+                borra nada y también confirma en rojo. */}
+            <Button variant="destructive-solid" onClick={() => cambiar(true)}>
               Cerrar la tienda
             </Button>
           </DialogFooter>

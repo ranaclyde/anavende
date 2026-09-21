@@ -2504,6 +2504,11 @@ diálogos destructivos del panel —«Sí, bloquear», «Sacar el color», «Anu
 devolución», «Cancelar la orden», borrar producto, borrar medio de pago—, y
 RNF-02 es requisito del producto, no aspiración.
 
+**La especificación decía «blanco» y quedó sincronizada el 2026-09-21**: la
+tabla de §6.3 pone «blanco» en la columna de texto de las tres variantes de
+relleno, y lo que usan es `--ink-inverse`. Se sumó la nota al pie con el
+porqué, que es justamente este caso.
+
 **Arreglado el 2026-09-18**, cambiando una palabra: `text-white` pasó a
 `text-ink-inverse`, el token que ya usan `brand` y `alterna`. Verificado en el
 navegador con el diálogo de borrar un producto abierto en los dos temas,
@@ -2715,18 +2720,23 @@ tabla para que la cabecera se fije de verdad, bajar el tamaño de página a lo
 que entre sin scroll, o borrar esas dos líneas del componente y sacar la
 cabecera fija de §6.9— y la decisión no está tomada.
 
-### Botones: dónde el sistema se contradice
+### ~~Botones: dónde el sistema se contradice~~ — los dos primeros, arreglados el 2026-09-21
 
-- **Dos botones de marca en la misma pantalla**, que `DESIGN.md` prohíbe
-  explícitamente. En `/admin/productos/[id]` conviven «Guardar cambios»
-  (`productos/formulario.tsx:403`) y «Cargar el primero» del estado vacío de
-  colores (`variantes.tsx:409`), que aparece cuando el producto no tiene
-  variantes. Los otros estados vacíos con `brand` se blindan con
-  `total === 0 ? null :` para no coincidir con el botón del encabezado; este
-  no.
-- **El confirmar de «Cerrar la tienda al público» usa `brand`**
-  (`mantenimiento.tsx:143`). Es una acción destructiva y todos sus pares usan
-  `destructive-solid`.
+- **~~Dos botones de marca en la misma pantalla~~**, que `DESIGN.md` prohíbe
+  explícitamente. En `/admin/productos/[id]` convivían «Guardar cambios» y
+  «Cargar el primero» del estado vacío de colores, que aparece cuando el
+  producto no tiene variantes. **Arreglado el 2026-09-21**, y no con el truco
+  de los otros: ellos esconden el botón del encabezado mientras la lista está
+  vacía, y acá el otro botón es el submit del formulario, que no se puede
+  esconder. El vacío bajó a `secondary`, que además es lo que ya usa el
+  «Agregar color» de la cabecera de esa misma sección —el vacío pesa igual que
+  su reemplazo— y es lo que hacen los vacíos de Órdenes y Devoluciones.
+  Verificado contando los botones de marca en la pantalla: **uno**.
+- **~~El confirmar de «Cerrar la tienda al público» usa `brand`~~**
+  (`mantenimiento.tsx`). **Arreglado el 2026-09-21**: pasó a
+  `destructive-solid`. Su par más cercano es «Sí, bloquear» de una cuenta, que
+  tampoco borra nada y también confirma en rojo; cerrar la tienda deja a
+  cualquiera que entre con «Volvemos en un rato» y el registro apagado.
 - **Seis acciones destructivas se pintan a mano**: `variant="tertiary"` con
   `className="text-ink-secondary hover:text-danger"`, en borrar producto,
   marca, medio de pago, renglón de orden, renglón de orden nueva y anular

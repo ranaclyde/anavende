@@ -517,6 +517,8 @@ El componente firmado del sistema, heredado directamente de la referencia.
 | **Destructivo** | transparente | `--danger` | `--danger` | Eliminar, cancelar orden. **Con ícono** |
 | **Destructivo confirmado** | `--danger` | blanco | — | **Solo dentro del diálogo de confirmación** |
 
+> **«Blanco» en esa columna quiere decir `--ink-inverse`, no `#ffffff`.** Las tres variantes de relleno —principal, alterna y destructivo confirmado— usan el token, que en claro vale blanco y **en oscuro se da vuelta**. Escribirlo literal cuesta caro justo en el destructivo confirmado: en oscuro `--danger` se aclara a `#f87171`, y el blanco encima da **2,77:1**, por debajo de AA incluso para texto grande; con el token da 6,65:1. Estuvo así hasta el 2026-09-18, en los nueve diálogos destructivos del panel.
+
 | Tamaño | Alto | Texto | Padding |
 |---|---|---|---|
 | `sm` | 32px | 14px | 12px |

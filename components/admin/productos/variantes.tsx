@@ -406,7 +406,14 @@ function Vacio({ alAgregar }: { alAgregar: () => void }) {
         Sin colores cargados no hay stock ni fotos, así que el producto no se
         puede vender.
       </p>
-      <Button variant="brand" size="sm" onClick={alAgregar}>
+      {/* Secundario y no de marca: esta tarjeta convive con «Guardar
+          cambios» del formulario de arriba, que es la principal de la
+          pantalla, y §6.3 admite una sola. Los otros vacíos del panel sí usan
+          la de marca porque su pantalla esconde la del encabezado mientras
+          están vacíos; acá no se puede esconder el submit del formulario.
+          Además el «Agregar color» de la cabecera de esta misma sección ya es
+          secundario, así que el vacío ahora pesa igual que su reemplazo. */}
+      <Button variant="secondary" size="sm" onClick={alAgregar}>
         <Plus aria-hidden />
         Cargar el primero
       </Button>
