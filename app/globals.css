@@ -276,11 +276,6 @@
     outline-offset: 2px;
   }
 
-  /* Los precios y toda columna de números usan variantes tabulares (§3.3). */
-  [data-numeric="tabular"] {
-    font-variant-numeric: tabular-nums;
-  }
-
 }
 
 /*

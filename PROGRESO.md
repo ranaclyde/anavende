@@ -2736,28 +2736,41 @@ frenando `next dev`, reconstruyendo y verificando contra `next start`. **La
 regla del build sin base de `CLAUDE.md` no avisa de esto y convendría que lo
 haga.**
 
-### Dos reglas de la tabla están escritas y no hacen nada
+### ~~Dos reglas de la tabla están escritas y no hacen nada~~ — las dos, el 2026-09-21
 
-Las dos en `components/ui/table.tsx`, y las dos se leen bien mirando el
-componente:
+- **~~`sticky top-0 z-10` en la cabecera: no se fija nunca.~~** Resuelto
+  haciendo que **la que scrollee sea la tabla y no la página** (decisión tuya
+  entre las tres salidas). El envoltorio propio de la tabla lleva ahora
+  `max-h-[calc(100svh-20rem)]` y es el ancestro scrolleable dentro del cual el
+  `sticky` se ancla.
 
-- **`data-[clickable=true]:cursor-pointer`** (línea 48): `data-clickable` no
-  se usa **ni una vez** en todo el repositorio. Las filas de Órdenes y
-  Usuarios sí son clicables —por el `<Link>` de la primera celda— y no
-  muestran el cursor que §6.9 pide.
-- **`sticky top-0 z-10`** en la cabecera (línea 31): no se fija nunca. El
-  wrapper interno es `overflow-auto` **sin `max-h`**, el de cada listado es
-  `overflow-hidden`, y **no hay un solo `max-h` en ningún listado del panel**.
-  El contenedor de scroll no scrollea, así que el `sticky` no tiene contra qué
-  fijarse. §6.9 pide cabecera fija; el código la declara y el layout la anula.
+  **Comprobado que estaba roto antes de tocarlo**, no deducido: en
+  `/admin/productos`, con 26 filas, al scrollear 600px la cabecera terminaba en
+  **y = −398**. En órdenes y usuarios *parecía* andar, y no: con diez filas la
+  página apenas scrollea 163px y la cabecera no llegaba a irse. La misma
+  medición identificó al culpable —`div.relative` con `overflow-y: auto` y
+  `scrollea: false`—, que es el envoltorio que el propio componente pone.
 
-**Qué hacer con la cabecera fija queda abierto**, y conviene resolverlo junto
-con la paginación. El argumento de que paginar la vuelve innecesaria no cierra
-solo: **40 filas de 44px son 1.760px**, o sea que una página llena sigue
-scrolleando en cualquier pantalla. Las salidas son tres —darle `max-h` a la
-tabla para que la cabecera se fije de verdad, bajar el tamaño de página a lo
-que entre sin scroll, o borrar esas dos líneas del componente y sacar la
-cabecera fija de §6.9— y la decisión no está tomada.
+  De paso resuelve algo que no era el problema declarado: **con 40 filas la
+  tabla mide 1.760px**, así que el encabezado, los filtros y la paginación se
+  iban de la pantalla apenas se empezaba a bajar. Ahora no se van nunca.
+
+  **Las `20rem` están medidas, no elegidas a ojo.** Se probaron 17, 18, 19 y 20
+  contra el peor caso —órdenes o usuarios, que tienen encabezado, solapas,
+  barra de filtros, contador y paginación a la vez— en una ventana de 700px,
+  inyectando la paginación para que estuviera presente. Con 17 la página
+  scrolleaba 43px, con 18 27px, con 19 **11px**, y con 20 sobran 5. Cuesta una
+  fila: siete en vez de ocho a 700px, doce a 900.
+
+- **~~`data-[clickable=true]:cursor-pointer`: cero usos.~~** Borrada
+  (decisión tuya). **El informe se equivocaba en el motivo**: decía que «las
+  filas de Órdenes y Usuarios sí son clicables y no muestran el cursor», y no
+  es así. Lo clicable es el `<Link>` de la primera celda, que ya muestra el
+  cursor por ser un enlace; **la fila entera no es clicable en ninguna
+  pantalla**. §6.9 pide el cursor «si la fila es clicable» —condicional—, así
+  que la regla del documento sigue siendo cierta y lo que sobraba era la línea
+  del componente, que aparentaba una capacidad que no existe. El día que una
+  fila se vuelva clicable, se agrega entonces.
 
 ### ~~Botones: dónde el sistema se contradice~~ — los dos primeros, arreglados el 2026-09-21
 
@@ -3114,11 +3127,15 @@ por su lado:
   imponer el suyo; la galería además anula el tope con `max-h-none`, porque ahí
   la caja **es** la pantalla. Verificado: 868px de alto con la ventana en 900,
   `gap: 0` heredado, y el hijo llenando el envoltorio entero.
-- **`data-numeric="tabular"` está definido y sin un solo uso.** La regla vive
-  en `app/globals.css:275` y `DESIGN.md` la manda explícitamente; el código
-  resuelve los números con `data-align="right"` de la tabla o con la utilidad
-  `tabular-nums` suelta. Funciona igual, pero entonces **la regla escrita está
-  vencida**: o se usa el atributo o se saca de la documentación.
+- **~~`data-numeric="tabular"` está definido y sin un solo uso.~~** Resuelto
+  el 2026-09-21: **se fue de `globals.css` y de `DESIGN.md`** (decisión tuya).
+  Lo que el código hace de verdad quedó escrito en su lugar: dentro de una
+  tabla del panel no hay que pedir nada, porque la celda con
+  `data-align="right"` ya aplica `tabular-nums`; fuera de la tabla va la
+  utilidad, que son los 62 usos que ya había. La alternativa era reemplazar
+  esos 62 por el atributo para llegar al mismo píxel y en contra del idioma de
+  Tailwind que usa todo el resto del proyecto. **Una regla escrita que el
+  código no sigue es peor que no tenerla.**
 - **~~Padding de tarjeta por encima de §4.~~** Resuelto el 2026-09-21 con la
   tarjeta compartida: las quince pasaron a `p-4`, los 16px que §4 ya fijaba.
   **Eran nueve y no once**: de los once usos de `p-5`/`sm:p-5` que contó el
@@ -3152,11 +3169,13 @@ modo oscuro con ojos.
 
 ### Lo que falta decidir antes de tocar código
 
-1. **El ancho.** §4 dice ancho completo. O los formularios se van a ancho
-   completo como manda la especificación, o §4 suma que los formularios llevan
-   tope y se fija **uno solo**. Las dos se sostienen; cuatro no.
-2. **La cabecera fija de la tabla**, con las tres salidas de más arriba.
-3. **`data-numeric`**: se usa o se borra de `DESIGN.md` y de `globals.css`.
+**Las tres se decidieron, y ninguna queda abierta.**
+
+1. **~~El ancho.~~** Resuelto el 2026-09-21: §4.1 fija 1024px para formularios
+   y tablero, alineados a la izquierda.
+2. **~~La cabecera fija de la tabla.~~** Resuelto el 2026-09-21: scrollea la
+   tabla, no la página.
+3. **~~`data-numeric`.~~** Resuelto el 2026-09-21: se borró de los dos lados.
 
 ---
 

@@ -314,8 +314,13 @@ apretados y sólidos sin necesidad de un peso más alto.
 ahí, en ninguna escala, por ninguna razón.
 
 **La regla de la columna alineada.** Todo precio y toda columna de números lleva
-`font-variant-numeric: tabular-nums` (atributo `data-numeric="tabular"`). Los
-dígitos de ancho variable hacen bailar una columna de precios.
+`font-variant-numeric: tabular-nums`: los dígitos de ancho variable hacen bailar
+una columna de precios. **En una tabla del panel no hay que pedirlo**: la celda
+con `data-align="right"` ya lo aplica. Fuera de la tabla va la utilidad
+`tabular-nums`. Hubo además un atributo `data-numeric="tabular"` escrito en
+`globals.css` y mandado acá que **nunca se usó en un solo lugar**; se quitó el
+2026-09-21, porque una regla escrita que el código no sigue es peor que no
+tenerla.
 
 ## Layout
 
@@ -442,6 +447,15 @@ Encabezado sobre superficie blanca que toma `shadow-lg` al hacer scroll. El esta
 activo se marca en Malbec. El buscador vive en el encabezado y se retira cuando la
 página trae el suyo.
 
+### Tabla del panel
+
+Filas de 44px, cabecera en `caption` versalita sobre `--surface-sunken`, hover
+`--surface-sunken`, y `data-align="right"` que además aplica `tabular-nums`.
+**La cabecera se fija porque la que scrollea es la tabla y no la página**: su
+envoltorio lleva `max-h-[calc(100svh-20rem)]` y es el ancestro scrolleable
+dentro del cual `sticky` se ancla. Sin ese tope el `sticky` no hacía nada, y la
+página medía 1760px con 40 filas. DR §6.9.
+
 ### Diálogos
 
 Tope de alto `max-h-[85svh]` en el primitivo, no en cada diálogo: sin él, una
@@ -533,7 +547,7 @@ botón de limpiar cuando hay texto, y su etiqueta vive en `sr-only`.
 - **Do** teñir toda sombra con `rgb(17 16 16 / …)`, la tinta cálida, nunca con negro.
 - **Do** resolver el área táctil de 44px en la variante del componente, no en la llamada.
 - **Do** acompañar todo estado con texto: una etiqueta nunca comunica sólo por color.
-- **Do** poner `data-numeric="tabular"` en precios y columnas de números.
+- **Do** dejar que la tabla resuelva los números con `data-align="right"`, y usar la utilidad `tabular-nums` fuera de ella.
 - **Do** pintar los estados con los semánticos: un resultado exitoso es verde, aunque el burdeos esté a mano.
 - **Do** reservar el pizarra para cuando hay dos caminos igual de válidos; si hay un principal claro, el otro va en contorno.
 - **Do** usar la variante `admin:` para la densidad del panel, y marcar la escala a mano en lo que se pinta por portal.

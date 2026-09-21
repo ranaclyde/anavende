@@ -708,7 +708,7 @@ Si la foto ya entra a 1:1 no hay segundo nivel y el cursor no lo promete — pas
 | Elemento | Especificación |
 |---|---|
 | Alto de fila | 44px |
-| Cabecera | `caption` 12px/500, `--ink-secondary`, versalitas, fondo `--surface-sunken`, fija al scrollear |
+| Cabecera | `caption` 12px/500, `--ink-secondary`, versalitas, fondo `--surface-sunken`, **fija al scrollear la tabla** |
 | Celda | `body-sm` 14px |
 | Separador | 1px `--border` entre filas |
 | Hover de fila | Fondo `--surface-sunken`, cursor de puntero si la fila es clicable |
@@ -729,6 +729,12 @@ Si la foto ya entra a 1:1 no hay segundo nivel y el cursor no lo promete — pas
 **Un vacío adentro de una tarjeta hunde el fondo** (`--surface-sunken`) y se acorta, porque ahí no hay una pantalla que llenar y dos tarjetas apoyadas una sobre otra se leen mal. Es el caso de «Colores y stock» en la ficha de producto.
 
 **No todo recuadro punteado es un vacío.** Quedan tres notas —la de la ficha de orden, la de «Todavía no guardaste la configuración» y la del buscador de productos del alta manual— que son un párrafo dentro de un flujo, sin título ni acción. Un ícono y un encabezado ahí gritarían.
+
+**La cabecera se fija, y para eso la que scrollea es la tabla y no la página** (resuelto el 2026-09-21; hasta ese día la línea de arriba decía «fija al scrollear» y **no lo era**). `position: sticky` se fija dentro del ancestro que scrollea, y ese ancestro era el `div` propio de la tabla, que no scrolleaba nunca: la página se deslizaba por debajo y se llevaba la cabecera puesta. Medido en `/admin/productos` con 26 filas: al scrollear 600px la cabecera terminaba en y=−398. En órdenes y usuarios *parecía* andar, pero sólo porque con diez filas la página apenas scrollea 163px.
+
+Ahora ese `div` lleva **`max-h-[calc(100svh-20rem)]`** y es el que scrollea. De paso resuelve algo que no era el problema declarado: con 40 filas por página la tabla mide 1760px, así que el encabezado, los filtros y la paginación se iban de la pantalla apenas se empezaba a bajar. **La página ya no scrollea: scrollea la tabla.**
+
+**Las `20rem` están medidas contra el peor caso** —órdenes o usuarios, que tienen encabezado, solapas, barra de filtros, contador y paginación a la vez— en una ventana de 700px. Con 19 la página quedaba scrolleando 11px, que es justo lo que este tope viene a evitar; con 20 sobran 5. Cuesta una fila: siete en vez de ocho a 700px, doce a 900.
 
 **En móvil las tablas se vuelven tarjetas**, no un scroll horizontal. Una tabla de siete columnas en un teléfono es inoperable.
 

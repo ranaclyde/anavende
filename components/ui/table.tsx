@@ -14,7 +14,24 @@ import { cn } from "@/lib/utils";
  */
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
-    <div className="relative w-full overflow-auto">
+    // **Este div es el que scrollea, y por eso existe el tope de alto.**
+    // `sticky` se fija dentro del ancestro que scrollea, y hasta el
+    // 2026-09-21 ése era este mismo div, que no scrolleaba nunca: la página
+    // se deslizaba por debajo y se llevaba la cabecera puesta. Medido en
+    // `/admin/productos` con 26 filas: al scrollear 600px la cabecera
+    // terminaba en y=−398. En órdenes y usuarios *parecía* andar, pero sólo
+    // porque con diez filas la página apenas scrollea 163px.
+    //
+    // El tope deja la tabla del alto de lo que queda de ventana, así que el
+    // encabezado, los filtros y la paginación no se van nunca de la pantalla
+    // y la página deja de medir 1760px. Cuando la tabla es corta no muerde.
+    //
+    // **Las `20rem` están medidas contra el peor caso**, que es órdenes o
+    // usuarios —encabezado, solapas, barra de filtros, contador y paginación
+    // a la vez— en una ventana de 700px. Ahí 19rem dejaban la página
+    // scrolleando 11px, que es justo lo que este tope viene a evitar; con 20
+    // sobran 5. Cuesta una fila: siete en vez de ocho a 700px, doce a 900.
+    <div className="relative max-h-[calc(100svh-20rem)] w-full overflow-auto">
       <table
         data-slot="table"
         className={cn("w-full caption-bottom border-collapse", className)}
@@ -28,6 +45,8 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
+      // Opaca y por encima de las filas, que es lo que la hace legible
+      // mientras el resto pasa por debajo.
       className={cn("sticky top-0 z-10 bg-surface-sunken", className)}
       {...props}
     />
@@ -45,7 +64,6 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
       className={cn(
         "h-11 border-b border-border transition-colors duration-150",
         "hover:bg-surface-sunken",
-        "data-[clickable=true]:cursor-pointer",
         className,
       )}
       {...props}
