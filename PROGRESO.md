@@ -2829,19 +2829,59 @@ cabecera fija de §6.9— y la decisión no está tomada.
 - **`alterna` (pizarra) no aparece en el panel**, que es lo correcto: es la
   segunda forma de comprar, y en el panel no se compra.
 
-### Esqueletos de carga: faltan siete, y los seis que hay no coinciden
+### ~~Esqueletos de carga: faltan siete, y los seis que hay no coinciden~~ — hecho el 2026-09-21
 
-**Sin `loading.tsx`:** `/admin` —el tablero, que es la pantalla de entrada y
-hace `await` a la base en `page.tsx:34`—, `ordenes/[numero]`, `usuarios/[id]`,
-`productos/[id]`, `productos/nuevo`, `usuarios/nuevo` y `ordenes/nueva`.
+**Eran siete, y hacían falta cinco.** `usuarios/nuevo` y `ordenes/nueva` son
+componentes **sincrónicos** —ni un `await`, ni una consulta: el catálogo y los
+compradores se buscan mientras se escribe—, así que su esqueleto no se
+mostraría nunca. Los cinco que sí: `/admin` —el tablero, que es la pantalla de
+entrada y espera tres consultas—, `ordenes/[numero]`, `usuarios/[id]`,
+`productos/[id]` y `productos/nuevo`.
 
-**Los seis que existen no dibujan lo que van a reemplazar.** Todos usan
-`gap-2` entre título y bajada donde la página real usa `gap-1`. Los de Órdenes
-y Usuarios **no dibujan el botón primario**, que en esas dos pantallas está
-siempre, así que el encabezado se reacomoda al cargar. El de Configuración
-**omite una tarjeta entera** —Modo mantenimiento— y usa `max-w-72` para campos
-que en realidad miden `sm:max-w-64`, `sm:max-w-80` y `w-20`. El de Catálogo
-dibuja tres columnas donde la tabla real tiene cuatro.
+**El fantasma del formulario de producto quedó como componente**
+(`components/admin/productos/esqueleto.tsx`) y no copiado en dos `loading.tsx`,
+porque el formulario real también es uno solo: con una copia por pantalla, el
+día que sume una sección hay que acordarse de dos lugares.
+
+**Se verificaron viendo el esqueleto en pantalla**, no leyendo el código. La
+caché del router se come el estado de carga en una navegación de cliente, así
+que hubo que meter una demora de 4 segundos en las cinco páginas, fotografiar,
+medir y sacarla. Lo que se midió es **el salto**: el alto del esqueleto contra
+el de la página ya cargada.
+
+| Pantalla | Salto |
+|---|---|
+| Tablero | −25px |
+| Producto nuevo | +36px |
+| Ficha de usuario | +114px |
+| Producto editar | +282px |
+| Ficha de orden | +263px |
+
+Los dos primeros son de forma fija y se afinaron sección por sección —el
+formulario pasó de +172 a +36 midiendo las cuatro tarjetas: las etiquetas eran
+`h-3.5` donde el texto real da 20px, la ayuda del descuento se dibujaba en dos
+renglones y entra en uno, y **Publicación tiene dos casillas con ayuda, no
+una**—. Las tres fichas dependen de cuántas filas traiga cada orden o cada
+usuario, así que el resto del salto no es afinable: un esqueleto que se pasa de
+alto y después encoge es un salto igual.
+
+**~~Los seis que existen no dibujan lo que van a reemplazar.~~** Corregidos el
+mismo día, uno por uno:
+
+- **`gap-2` donde la página usa `gap-1`**, en los seis. Y el título fantasma
+  medía `h-6` donde `text-title` da 29px, y la bajada `h-4` donde `text-body-sm`
+  da 20px: ahora son `h-7` y `h-5`.
+- **Órdenes y Usuarios no dibujaban el botón primario**, que en esas dos
+  pantallas está siempre. Ahora el encabezado es la misma fila
+  `flex-wrap items-start justify-between` que la página real, con el botón.
+- **Configuración omitía una tarjeta entera** —Modo mantenimiento, que va fuera
+  del formulario y debajo de la barra— y dibujaba los tres campos en
+  `max-w-72`, que no es el ancho de ninguno: son `sm:max-w-64`, `sm:max-w-80` y
+  `w-20`. También le faltaba el «Todo guardado.» a la izquierda del botón.
+- **Catálogo dibujaba tres columnas** y la tabla de marcas, categorías y
+  colores tiene cuatro. Medios de pago sí tiene tres y comparte el esqueleto:
+  se eligió el caso de las tres solapas que se abren más seguido.
+- **Productos** no llevaba `flex-wrap` en el encabezado y la página sí.
 
 ### Lo que está repetido, y por eso divergió
 

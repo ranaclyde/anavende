@@ -20,9 +20,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CargandoOrdenes() {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-6 w-32" />
-        <Skeleton className="h-4 w-80 max-w-full" />
+      {/* El botón primario va: en esta pantalla está SIEMPRE, y sin él el
+          encabezado se reacomodaba al llegar los datos. */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <Skeleton className="h-7 w-32" />
+          <Skeleton className="h-5 w-80 max-w-full" />
+        </div>
+        <Skeleton className="h-8 w-32 rounded-panel-control" />
       </div>
 
       <Skeleton className="h-10 w-72 max-w-full rounded-panel-control" />
