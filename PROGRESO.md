@@ -2926,11 +2926,36 @@ por su lado:
   **Queda una cosa sin decidir, y es de texto:** «Nuevo producto» no tiene
   bajada y «Nueva orden» y «Nueva cuenta» sí, siendo las tres altas. Escribirla
   es inventar copia de interfaz, así que no se hizo sin preguntar.
-- **Campo de búsqueda: copiado literal tres veces**, unas 45 líneas cada una
-  —form, lupa, input, botón de limpiar, submit `sr-only`— en
-  `ordenes/filtros.tsx`, `usuarios/filtros.tsx` y `productos/filtros.tsx`. El
-  rango de fechas está copiado dos veces (Órdenes y Devoluciones), y el
-  `<p aria-live="polite">` del contador, cuatro.
+- **~~Campo de búsqueda: copiado literal tres veces.~~** Resuelto el
+  2026-09-21, junto con el rango de fechas y el contador. Las tres piezas viven
+  ahora en `components/admin/filtros.tsx`, y DR §6.2.1 dice qué guardan.
+
+  Las tres copias del buscador eran idénticas carácter por carácter, incluidos
+  los dos manejadores (`buscar` y `limpiarBusqueda`); lo único que cambiaba era
+  el rótulo y el marcador. **Lo caro no era el largo: eran los tres arreglos
+  que cada copia tenía que acordarse de traer**, y que la próxima pantalla con
+  buscador iba a nacer sin alguno de ellos —el `admin:pl-9` que evita que la
+  lupa se apoye sobre la primera letra, la cruz nativa de `type="search"`
+  retirada, y el `role="search"` acotado a la búsqueda y no a toda la barra—.
+
+  **El texto sigue en manos de cada barra** y no se escondió adentro del
+  componente: es parte del estado del filtro, y «Limpiar todo» también lo
+  borra. Metido adentro, ese botón se quedaba sin forma de vaciar el campo.
+
+  Las cuatro barras bajaron de 837 líneas a 592, y el archivo compartido tiene
+  247 —cerca de cien son la documentación de por qué cada cosa está donde
+  está—. En líneas es un empate; **en lugares donde arreglar algo, tres pasan a
+  uno**.
+
+  Verificado en el navegador contra `next start`, no leyendo. Los tres
+  buscadores: alto 40, `padding-left` 36px —o sea que el `admin:pl-9` está
+  ganando—, Enter escribe `q` en la URL, la cruz aparece sólo con texto, y al
+  limpiarla **el foco vuelve al campo** en las tres. Los dos rangos: los dos
+  campos de 160×40 en la misma fila, borrar la fecha saca el filtro, y el «Por
+  la fecha de…» aparece en órdenes y no en devoluciones, que es lo correcto —
+  ahí hay una sola fecha posible—. A 390px el desborde horizontal es **0px**.
+  Los cuatro contadores con `aria-live="polite"`, y el de productos con el
+  filtro puesto dice «6 de 26 productos».
 - **Tarjeta de sección: definida tres veces con el mismo markup** —`Seccion`
   en `components/admin/formulario.tsx:28`, `Tarjeta` en
   `usuarios/[id]/page.tsx:414`, `Ficha` en `ordenes/[numero]/page.tsx:455`— más

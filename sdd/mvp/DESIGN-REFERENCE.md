@@ -542,6 +542,28 @@ El componente firmado del sistema, heredado directamente de la referencia.
 - Al enfocar, el borde pasa a `--border-strong` y aparece el anillo de foco.
 - Con texto escrito aparece una «×» para limpiar, antes del botón de envío.
 
+#### 6.2.1 La barra de filtros del panel
+
+**No es el buscador de la tienda.** Aquél es la firma del sistema —píldora de 48px, botón burdeos con `--shadow-brand`— y vive solo sobre fondo de tienda. El del panel es un campo común de 40px con la lupa adentro, porque convive con tres o cuatro controles más en el mismo renglón y un botón de marca ahí sería el segundo de la pantalla (§6.3).
+
+Las tres piezas viven en `components/admin/filtros.tsx`, y desde el 2026-09-21 **una sola vez**: el buscador estaba copiado en las tres barras que lo tienen, el rango de fechas en las dos, y el contador en las cuatro.
+
+| Pieza | Dónde | Qué guarda |
+|---|---|---|
+| `BuscadorDelPanel` | Órdenes, usuarios, productos | El `role="search"` acotado, la lupa y la limpieza |
+| `RangoDeFechas` | Órdenes, devoluciones | «Desde» y «Hasta», apilados en el teléfono |
+| `ContadorDeResultados` | Las cuatro | «N resultados», anunciado |
+
+Tres cosas que cada copia tenía que acordarse de traer, y que ahora están escritas una vez:
+
+- **`admin:pl-9` además de `pl-9`.** `Input` trae su propio `admin:px-3`, que le gana a un `pl-*` suelto —misma especificidad, y las variantes van después—. Sin repetirlo en la escala del panel, **la lupa se apoya sobre la primera letra**.
+- **La cruz nativa de `type="search"` se retira** (`appearance: none`): no se puede enfocar con el teclado ni tiene nombre accesible. La limpieza es un botón propio, y al tocarlo **el foco vuelve al campo** — si no, se cae al `<body>`, porque el botón que se acaba de tocar deja de existir.
+- **`role="search"` envuelve la búsqueda y nada más.** Alrededor de toda la barra anunciaría los filtros como parte del buscador, que es justo lo que no son.
+
+**El rango no tiene botón de limpiar**: el navegador manda `""` al borrar la fecha, que es exactamente el valor de «sin filtro». **Y se apila en el teléfono**, que no es un gusto: un campo de fecha nativo no baja de unos 130px, y dos con sus rótulos en una línea de 390px desbordaban la pantalla 156px hacia la derecha.
+
+**El contador se anuncia** (`aria-live="polite"`): quien no ve la lista tiene que enterarse igual de cuántos quedaron (§9). Mientras la navegación está en curso dice «Buscando…» y se atenúa, porque el número anterior ya no es el de ahora y dejarlo firme sería mentir por un instante.
+
 ### 6.3 Botones
 
 | Variante | Fondo | Texto | Borde | Uso |

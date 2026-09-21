@@ -442,6 +442,17 @@ Encabezado sobre superficie blanca que toma `shadow-lg` al hacer scroll. El esta
 activo se marca en Malbec. El buscador vive en el encabezado y se retira cuando la
 página trae el suyo.
 
+### Barra de filtros del panel
+
+No es el buscador firmado de la tienda: es un campo de 40px con la lupa adentro,
+porque convive con tres o cuatro controles en el mismo renglón. Sus tres piezas
+—`BuscadorDelPanel`, `RangoDeFechas` y `ContadorDeResultados`— viven en
+`components/admin/filtros.tsx` y guardan lo que cada copia tenía que acordarse de
+traer: el `admin:pl-9` que evita que la lupa se apoye sobre la primera letra, la
+cruz nativa de `type="search"` retirada a favor de un botón que devuelve el foco
+al campo, y el `role="search"` acotado a la búsqueda y no a toda la barra. El
+contador se anuncia con `aria-live`. DR §6.2.1.
+
 ### Estado vacío del panel
 
 Uno solo para los once (`VacioDelPanel`), y **son dos situaciones**: «todavía no

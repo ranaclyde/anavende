@@ -1,13 +1,14 @@
 "use client";
 
-import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
+import {
+  BuscadorDelPanel,
+  ContadorDeResultados,
+} from "@/components/admin/filtros";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import {
   ESTADOS,
   FILTROS_VACIOS,
@@ -35,8 +36,6 @@ export function BarraDeFiltros({
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
   const [texto, setTexto] = useState(filtros.q);
-  const campo = useRef<HTMLInputElement>(null);
-  const id = useId();
 
   // Cualquier cambio vuelve a la página 1.
   const aplicar = (cambios: Partial<FiltrosDeUsuarios>) =>
@@ -44,59 +43,20 @@ export function BarraDeFiltros({
       router.push(urlDeFiltros({ ...filtros, ...cambios, pagina: 1 })),
     );
 
+  // Lo llama el buscador con el texto ya recortado, y también con la cadena
+  // vacía cuando se limpia: para la barra son la misma operación.
+  const buscar = (q: string) => aplicar({ q });
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-        <form
-          role="search"
-          onSubmit={(e) => {
-            e.preventDefault();
-            aplicar({ q: texto.trim() });
-          }}
-          className="relative min-w-0 flex-1 md:min-w-64"
-        >
-          <label htmlFor={id} className="sr-only">
-            Buscar por nombre o email
-          </label>
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-tertiary"
-          />
-          <Input
-            id={id}
-            ref={campo}
-            type="search"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="Buscar por nombre o email…"
-            className={cn(
-              "pl-9 admin:pl-9",
-              texto ? "pr-10 admin:pr-10" : "",
-              "[&::-webkit-search-cancel-button]:appearance-none",
-            )}
-          />
-          {texto === "" ? null : (
-            <button
-              type="button"
-              onClick={() => {
-                setTexto("");
-                campo.current?.focus();
-                aplicar({ q: "" });
-              }}
-              className={cn(
-                "absolute top-1/2 right-1 grid size-8 -translate-y-1/2 place-items-center",
-                "rounded-panel-control text-ink-tertiary transition-colors duration-150",
-                "hover:bg-surface-sunken hover:text-ink",
-              )}
-            >
-              <X aria-hidden className="size-4" />
-              <span className="sr-only">Limpiar la búsqueda</span>
-            </button>
-          )}
-          <button type="submit" className="sr-only">
-            Buscar
-          </button>
-        </form>
+        <BuscadorDelPanel
+          etiqueta="Buscar por nombre o email"
+          marcador="Buscar por nombre o email…"
+          texto={texto}
+          alEscribir={setTexto}
+          alBuscar={buscar}
+        />
 
         <Select
           aria-label="Filtrar por rol"
@@ -130,15 +90,9 @@ export function BarraDeFiltros({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <p
-          aria-live="polite"
-          className={cn(
-            "text-body-sm text-ink-secondary transition-opacity duration-150",
-            pendiente ? "opacity-60" : "",
-          )}
-        >
-          {pendiente ? "Buscando…" : cuantos(total)}
-        </p>
+        <ContadorDeResultados pendiente={pendiente}>
+          {cuantos(total)}
+        </ContadorDeResultados>
         {hayFiltros(filtros) ? (
           <Button
             variant="tertiary"

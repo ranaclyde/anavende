@@ -1,12 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useTransition } from "react";
+import { useTransition } from "react";
 
+import {
+  RangoDeFechas,
+  ContadorDeResultados,
+} from "@/components/admin/filtros";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import {
   ESTADOS,
   FILTROS_VACIOS,
@@ -39,7 +41,6 @@ export function BarraDeFiltros({
 }) {
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
-  const id = useId();
 
   // Cualquier cambio vuelve a la página 1: filtrar estando en la 4 y quedarse
   // ahí es el camino corto a una tabla vacía que parece un error.
@@ -85,54 +86,19 @@ export function BarraDeFiltros({
           ))}
         </Select>
 
-        {/* En el teléfono se apilan: dos campos de fecha con sus rótulos no
-            entran en una línea de 390px (lo encontró el repaso de F7.1). */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="flex min-w-0 items-center gap-2">
-            <label
-              htmlFor={`${id}-desde`}
-              className="shrink-0 text-body-sm text-ink-secondary"
-            >
-              Desde
-            </label>
-            <Input
-              id={`${id}-desde`}
-              type="date"
-              value={filtros.desde}
-              onChange={(e) => aplicar({ desde: e.target.value })}
-              className="min-w-0 flex-1 sm:w-40 sm:flex-none"
-            />
-          </div>
-          <div className="flex min-w-0 items-center gap-2">
-            <label
-              htmlFor={`${id}-hasta`}
-              className="shrink-0 text-body-sm text-ink-secondary"
-            >
-              Hasta
-            </label>
-            <Input
-              id={`${id}-hasta`}
-              type="date"
-              value={filtros.hasta}
-              onChange={(e) => aplicar({ hasta: e.target.value })}
-              className="min-w-0 flex-1 sm:w-40 sm:flex-none"
-            />
-          </div>
-        </div>
+        <RangoDeFechas
+          desde={filtros.desde}
+          hasta={filtros.hasta}
+          alCambiar={aplicar}
+        />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         {/* El resultado se anuncia: quien no ve la lista tiene que enterarse
             igual de cuántas quedaron (§9). */}
-        <p
-          aria-live="polite"
-          className={cn(
-            "text-body-sm text-ink-secondary transition-opacity duration-150",
-            pendiente ? "opacity-60" : "",
-          )}
-        >
-          {pendiente ? "Buscando…" : cuantas(total)}
-        </p>
+        <ContadorDeResultados pendiente={pendiente}>
+          {cuantas(total)}
+        </ContadorDeResultados>
         {hayFiltros(filtros) ? (
           <Button
             variant="tertiary"
