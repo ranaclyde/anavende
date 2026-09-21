@@ -2935,12 +2935,44 @@ por su lado:
   en `components/admin/formulario.tsx:28`, `Tarjeta` en
   `usuarios/[id]/page.tsx:414`, `Ficha` en `ordenes/[numero]/page.tsx:455`— más
   una inline en `historial.tsx:31`.
-- **Estados vacíos: 13, con cuatro markups distintos.** §6.9 pide «ilustración
-  mínima + explicación + acción sugerida»: **uno solo tiene ícono** (el de
-  Catálogo), siete tienen acción sugerida y tres son texto suelto sin caja.
-  Además `/admin/usuarios` **no tiene estado vacío real**: solo
-  `SinResultados`, sin el «todavía no hay nadie» que sí tienen Órdenes,
-  Productos y Devoluciones.
+- **~~Estados vacíos: 13, con cuatro markups distintos.~~** Resuelto el
+  2026-09-21. **Eran 11 vacíos y 3 notas**, no 13 vacíos: la caja punteada de
+  la ficha de orden, la de «Todavía no guardaste la configuración» y la del
+  buscador del alta manual son un párrafo dentro de un flujo, sin título ni
+  acción, y la de configuración lo dice en su propio comentario («no es una
+  lista sin filas»). **Esas tres quedaron como estaban**: un ícono y un
+  encabezado ahí gritarían. Lo que sí era cierto: de los 11, **uno solo tenía
+  ícono** y tres eran una línea de texto gris y un botón, sin explicación
+  ninguna.
+
+  Ahora los once salen de `VacioDelPanel` (`components/admin/vacio.tsx`), y de
+  paso quedó escrito en DR §6.9 lo que la fila de la tabla no distinguía:
+  **son dos situaciones**. «Todavía no hay ninguno» lleva ícono, explicación y
+  el primer paso; «nada coincide con los filtros» lleva lo que se buscó y
+  «Limpiar todo», **sin ícono** — aparece y desaparece con cada tecla, y un
+  dibujo que parpadea ahí es ruido. Adentro de una tarjeta el fondo se hunde y
+  la caja se acorta (`dentro`), que es el caso de «Colores y stock».
+
+  **Tres ganaron explicación, que antes no tenían**: Productos («cada uno lleva
+  una marca y una categoría, que se cargan desde Catálogo, y después los
+  colores y el stock»), Medios de pago y Colores. Seis ganaron ícono. Y
+  `FaltaCargar` —el «Antes hay que cargar una marca», que reemplaza al
+  formulario entero— entró al componente **conservando su `<h2>`**: bajarlo a
+  `<p>` le sacaba a un lector de pantalla el único punto de referencia de esa
+  pantalla después del `h1`. Por eso el componente tiene `como`.
+
+  **El informe se equivocaba en una cosa, y es un falso positivo:**
+  «`/admin/usuarios` no tiene estado vacío real». No puede tenerlo. La consulta
+  es `FROM user_profiles p ${where}` sin excluir a nadie
+  (`modules/users/panel/queries.ts:112`), así que sin filtros el listado
+  siempre contiene por lo menos a la administradora que lo está mirando. Un
+  «todavía no hay nadie» ahí sería código muerto, y no se escribió.
+
+  Verificado en el navegador contra `next start`, **en claro y en oscuro**: los
+  ocho casos renderizados juntos en una ruta descartable que se borró después.
+  El modo oscuro sale entero de tokens —no hay un color crudo en el
+  componente— y el fondo hundido del `dentro` se distingue del de la tarjeta
+  que lo contiene.
 
 ### Lo demás, más chico
 

@@ -1,6 +1,8 @@
+import { Tags } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { Button } from "@/components/ui/button";
 import { FormularioDeProducto } from "@/components/admin/productos/formulario";
@@ -33,6 +35,7 @@ export default async function NuevoProducto() {
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EncabezadoDePanel
         titulo="Nuevo producto"
+        bajada="Acá van los datos y el precio. Los colores, el stock y las fotos se cargan después, en la pantalla que se abre sola al crearlo."
         volver={{ href: "/admin/productos", etiqueta: "Productos" }}
       />
 
@@ -67,30 +70,28 @@ function FaltaCargar({
   faltan: readonly { nombre: string; href: string; accion: string }[];
 }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-heading text-ink">
-          Antes hay que cargar {faltan.map((f) => f.nombre).join(" y ")}
-        </h2>
-        <p className="mx-auto max-w-md text-body-sm text-ink-secondary">
-          Todo producto lleva una marca y una categoría: son las que arman el
-          menú de la tienda y por las que el comprador filtra. Se cargan una vez
-          y sirven para todo el catálogo.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap justify-center gap-2">
-        {faltan.map((f, i) => (
-          <Button
-            key={f.href}
-            asChild
-            variant={i === 0 ? "brand" : "secondary"}
-            size="sm"
-          >
-            <Link href={f.href}>{f.accion}</Link>
-          </Button>
-        ))}
-      </div>
-    </div>
+    <VacioDelPanel
+      como="h2"
+      icono={Tags}
+      titulo={`Antes hay que cargar ${faltan.map((f) => f.nombre).join(" y ")}`}
+      accion={
+        <div className="flex flex-wrap justify-center gap-2">
+          {faltan.map((f, i) => (
+            <Button
+              key={f.href}
+              asChild
+              variant={i === 0 ? "brand" : "secondary"}
+              size="sm"
+            >
+              <Link href={f.href}>{f.accion}</Link>
+            </Button>
+          ))}
+        </div>
+      }
+    >
+      Todo producto lleva una marca y una categoría: son las que arman el menú
+      de la tienda y por las que el comprador filtra. Se cargan una vez y sirven
+      para todo el catálogo.
+    </VacioDelPanel>
   );
 }

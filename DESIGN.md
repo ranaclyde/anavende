@@ -442,6 +442,15 @@ Encabezado sobre superficie blanca que toma `shadow-lg` al hacer scroll. El esta
 activo se marca en Malbec. El buscador vive en el encabezado y se retira cuando la
 página trae el suyo.
 
+### Estado vacío del panel
+
+Uno solo para los once (`VacioDelPanel`), y **son dos situaciones**: «todavía no
+hay ninguno» lleva ícono, explicación de dónde sale lo que va a aparecer y la
+acción del primer paso; «nada coincide con los filtros» lleva el texto buscado y
+«Limpiar todo», **sin ícono** — aparece y desaparece con cada tecla, y un dibujo
+que parpadea ahí es ruido. Adentro de una tarjeta el fondo se hunde y la caja se
+acorta. DR §6.9.
+
 ### Encabezado de pantalla del panel
 
 Uno solo para las trece pantallas (`EncabezadoDePanel`): volver, título, insignias,

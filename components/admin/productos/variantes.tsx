@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
 import { Palette, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { ImagenesDeVariante } from "@/components/admin/productos/imagenes";
 import { Badge } from "@/components/ui/badge";
@@ -224,7 +225,9 @@ export function VariantesDelProducto({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Sacar «{porBorrar ? nombreDe(porBorrar) : ""}»</DialogTitle>
+            <DialogTitle>
+              Sacar «{porBorrar ? nombreDe(porBorrar) : ""}»
+            </DialogTitle>
             <DialogDescription>
               {porBorrar?.ordenes
                 ? "Este color está en órdenes ya hechas, así que no se borra: lo desactivamos para que dejen de leerse enteras."
@@ -273,9 +276,7 @@ function Stock({ variante }: { variante: VarianteDelPanel }) {
       <span>{reservedStock} reservadas</span>
       <span aria-hidden>·</span>
       <span
-        className={
-          disponible <= 0 ? "font-medium text-warning" : "text-ink"
-        }
+        className={disponible <= 0 ? "font-medium text-warning" : "text-ink"}
       >
         {disponible} disponibles
       </span>
@@ -400,23 +401,28 @@ function Reutilizar({
 
 function Vacio({ alAgregar }: { alAgregar: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-panel-card border border-dashed border-border bg-surface-sunken px-6 py-10 text-center">
-      <p className="text-body-sm text-ink-secondary">
-        Sin colores cargados no hay stock ni fotos, así que el producto no se
-        puede vender.
-      </p>
-      {/* Secundario y no de marca: esta tarjeta convive con «Guardar
-          cambios» del formulario de arriba, que es la principal de la
-          pantalla, y §6.3 admite una sola. Los otros vacíos del panel sí usan
-          la de marca porque su pantalla esconde la del encabezado mientras
-          están vacíos; acá no se puede esconder el submit del formulario.
-          Además el «Agregar color» de la cabecera de esta misma sección ya es
-          secundario, así que el vacío ahora pesa igual que su reemplazo. */}
-      <Button variant="secondary" size="sm" onClick={alAgregar}>
-        <Plus aria-hidden />
-        Cargar el primero
-      </Button>
-    </div>
+    <VacioDelPanel
+      dentro
+      icono={Palette}
+      titulo="Todavía no cargaste ningún color."
+      accion={
+        /* Secundario y no de marca: esta tarjeta convive con «Guardar
+           cambios» del formulario de arriba, que es la principal de la
+           pantalla, y §6.3 admite una sola. Los otros vacíos del panel sí
+           usan la de marca porque su pantalla esconde la del encabezado
+           mientras están vacíos; acá no se puede esconder el submit del
+           formulario. Además el «Agregar color» de la cabecera de esta misma
+           sección ya es secundario, así que el vacío pesa igual que su
+           reemplazo. */
+        <Button variant="secondary" size="sm" onClick={alAgregar}>
+          <Plus aria-hidden />
+          Cargar el primero
+        </Button>
+      }
+    >
+      Sin colores cargados no hay stock ni fotos, así que el producto no se
+      puede vender.
+    </VacioDelPanel>
   );
 }
 
@@ -472,7 +478,9 @@ function DialogoDeVariante({
    * Los colores que se pueden elegir de verdad. Se mira lo mismo que filtra
    * el selector: los activos, más el que esta variante ya tenga puesto.
    */
-  const hayColores = colores.some((c) => c.isActive || c.id === variante?.colorId);
+  const hayColores = colores.some(
+    (c) => c.isActive || c.id === variante?.colorId,
+  );
 
   const stockValido = ENTERO.test(stock.trim());
 
@@ -483,7 +491,9 @@ function DialogoDeVariante({
     if (!color) {
       setErrores({
         ...SIN_ERRORES,
-        campos: { colorId: "Elegí un color, o «Único» si no se vende por color." },
+        campos: {
+          colorId: "Elegí un color, o «Único» si no se vende por color.",
+        },
       });
       return;
     }
@@ -491,7 +501,9 @@ function DialogoDeVariante({
     if (!stockValido) {
       setErrores({
         ...SIN_ERRORES,
-        campos: { stockTotal: "Poné cuántas unidades hay, en números enteros." },
+        campos: {
+          stockTotal: "Poné cuántas unidades hay, en números enteros.",
+        },
       });
       return;
     }
@@ -539,7 +551,9 @@ function DialogoDeVariante({
               onChange={(e) => setColor(e.target.value)}
               aria-invalid={!!errores.campos.colorId || undefined}
               aria-describedby={
-                errores.campos.colorId ? `${idBase}-e-color` : `${idBase}-ayuda-color`
+                errores.campos.colorId
+                  ? `${idBase}-e-color`
+                  : `${idBase}-ayuda-color`
               }
             >
               <option value="">Elegí un color</option>
@@ -552,11 +566,7 @@ function DialogoDeVariante({
                 // cambiaría sin que nadie lo hubiera pedido.
                 .filter((c) => c.isActive || c.id === variante?.colorId)
                 .map((c) => (
-                  <option
-                    key={c.id}
-                    value={c.id}
-                    disabled={tomados.has(c.id)}
-                  >
+                  <option key={c.id} value={c.id} disabled={tomados.has(c.id)}>
                     {c.name}
                     {tomados.has(c.id) ? " (ya cargado)" : ""}
                     {c.isActive ? "" : " (color inactivo)"}

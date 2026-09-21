@@ -5,6 +5,7 @@ import {
   EstadoDelUsuario,
   RolDelUsuario,
 } from "@/components/admin/usuarios/estado";
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -144,22 +145,23 @@ export function ListadoDeUsuarios({
  */
 function SinResultados({ filtros }: { filtros: FiltrosDeUsuarios }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink">
-        {filtros.q
+    <VacioDelPanel
+      titulo={
+        filtros.q
           ? `No encontramos a nadie para «${filtros.q}».`
-          : "Nadie coincide con los filtros."}
-      </p>
-      {hayFiltros(filtros) ? (
-        <>
-          <p className="text-caption text-ink-secondary">
-            Probá con menos filtros, o revisá cómo quedó escrito.
-          </p>
-          <Button asChild variant="secondary" size="sm" className="mt-2">
+          : "Nadie coincide con los filtros."
+      }
+      accion={
+        hayFiltros(filtros) ? (
+          <Button asChild variant="secondary" size="sm">
             <Link href={urlDeFiltros(FILTROS_VACIOS)}>Limpiar todo</Link>
           </Button>
-        </>
-      ) : null}
-    </div>
+        ) : null
+      }
+    >
+      {hayFiltros(filtros)
+        ? "Probá con menos filtros, o revisá cómo quedó escrito."
+        : null}
+    </VacioDelPanel>
   );
 }

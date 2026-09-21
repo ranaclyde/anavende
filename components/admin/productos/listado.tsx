@@ -8,12 +8,14 @@ import {
   ChevronsUpDown,
   Eye,
   EyeOff,
+  Package,
   Pencil,
   Plus,
   Star,
   Trash2,
 } from "lucide-react";
 
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -286,9 +288,7 @@ function Cabecera({
       data-align={align}
       // Lo lee el lector de pantalla: por qué columna está ordenada la tabla
       // y hacia dónde, sin depender de ver la flecha (§9).
-      aria-sort={
-        activa ? (ascendente ? "ascending" : "descending") : "none"
-      }
+      aria-sort={activa ? (ascendente ? "ascending" : "descending") : "none"}
       className={cn("p-0", className)}
     >
       <Link
@@ -543,35 +543,40 @@ function Acciones({
  */
 function SinResultados({ filtros }: { filtros: FiltrosDeProductos }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink">
-        {filtros.q
+    <VacioDelPanel
+      titulo={
+        filtros.q
           ? `No encontramos ningún producto para «${filtros.q}».`
-          : "Ningún producto coincide con los filtros."}
-      </p>
-      <p className="text-caption text-ink-secondary">
-        Probá con menos filtros, o revisá cómo quedó escrito.
-      </p>
-      <Button asChild variant="secondary" size="sm" className="mt-2">
-        <Link href={urlDeFiltros(sinFiltros(filtros))}>Limpiar todo</Link>
-      </Button>
-    </div>
+          : "Ningún producto coincide con los filtros."
+      }
+      accion={
+        <Button asChild variant="secondary" size="sm">
+          <Link href={urlDeFiltros(sinFiltros(filtros))}>Limpiar todo</Link>
+        </Button>
+      }
+    >
+      Probá con menos filtros, o revisá cómo quedó escrito.
+    </VacioDelPanel>
   );
 }
 
 /** Estado vacío (§8): dice qué falta y ofrece el primer paso. */
 export function SinProductos() {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink-secondary">
-        Todavía no cargaste ningún producto.
-      </p>
-      <Button asChild variant="brand" size="sm">
-        <Link href="/admin/productos/nuevo">
-          <Plus aria-hidden />
-          Cargar el primero
-        </Link>
-      </Button>
-    </div>
+    <VacioDelPanel
+      icono={Package}
+      titulo="Todavía no cargaste ningún producto."
+      accion={
+        <Button asChild variant="brand" size="sm">
+          <Link href="/admin/productos/nuevo">
+            <Plus aria-hidden />
+            Cargar el primero
+          </Link>
+        </Button>
+      }
+    >
+      Es lo que se ve en la tienda. Cada uno lleva una marca y una categoría,
+      que se cargan desde Catálogo, y después los colores y el stock.
+    </VacioDelPanel>
   );
 }

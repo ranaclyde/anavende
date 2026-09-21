@@ -695,6 +695,19 @@ Si la foto ya entra a 1:1 no hay segundo nivel y el cursor no lo promete — pas
 | Vacío | Ilustración mínima + explicación + acción sugerida. Nunca una tabla vacía a secas |
 | Carga | Filas fantasma del alto real, no un spinner centrado |
 
+**El vacío son dos situaciones y no una** (escrito el 2026-09-21, al sacarlo a `VacioDelPanel` en `components/admin/vacio.tsx`). Hasta ese día la fila de arriba decía una sola cosa, y de once vacíos **uno solo tenía ícono**: tres eran una línea de texto gris y un botón, sin ninguna explicación. No era descuido de una pantalla, era que no existía el componente.
+
+| | Cuándo | Lleva |
+|---|---|---|
+| **Todavía no hay ninguno** | Se entra por primera vez | Ícono, título, explicación de dónde sale lo que va a aparecer acá, y la acción del primer paso |
+| **Nada coincide con los filtros** | Se llega buscando | Título con lo que se buscó, qué probar, y «Limpiar todo». **Sin ícono** |
+
+**Por qué el segundo no lleva ícono.** Aparece y desaparece con cada tecla mientras se filtra, y un dibujo que parpadea ahí es ruido; además quien filtró ya sabe en qué pantalla está, que es la mitad de lo que el ícono venía a decir. La acción tampoco es la misma: en el primero es el primer paso, en el segundo es la salida.
+
+**Un vacío adentro de una tarjeta hunde el fondo** (`--surface-sunken`) y se acorta, porque ahí no hay una pantalla que llenar y dos tarjetas apoyadas una sobre otra se leen mal. Es el caso de «Colores y stock» en la ficha de producto.
+
+**No todo recuadro punteado es un vacío.** Quedan tres notas —la de la ficha de orden, la de «Todavía no guardaste la configuración» y la del buscador de productos del alta manual— que son un párrafo dentro de un flujo, sin título ni acción. Un ícono y un encabezado ahí gritarían.
+
 **En móvil las tablas se vuelven tarjetas**, no un scroll horizontal. Una tabla de siete columnas en un teléfono es inoperable.
 
 **Paginación:** «Anterior / Página N de M / Siguiente», no un botón por página como la tienda (F7.1). Un listado del panel puede crecer sin techo —las órdenes se acumulan solas—, y una tira de cien números no sirve de nada: a una orden vieja se llega por la búsqueda o el rango de fechas, no acordándose de en qué página estaba. Los pasos que no existen —«anterior» en la primera— **no se dibujan apagados**: un enlace deshabilitado no se puede enfocar ni explica por qué no anda, y el «Página N de M» del medio ya dice dónde está el límite.

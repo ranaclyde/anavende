@@ -13,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { DialogoDeMedioDePago } from "@/components/admin/pagos/dialogo";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
@@ -405,15 +406,17 @@ function Acciones({
 /** Estado vacío (§8): dice qué falta y ofrece la acción. */
 function Vacio({ alCrear }: { alCrear: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink-secondary">
-        Todavía no cargaste ningún medio de pago. Son los que ve el comprador
-        para saber cómo puede pagar.
-      </p>
-      <Button variant="brand" size="sm" onClick={alCrear}>
-        <Plus aria-hidden />
-        Cargar el primero
-      </Button>
-    </div>
+    <VacioDelPanel
+      icono={CreditCard}
+      titulo="Todavía no cargaste ningún medio de pago."
+      accion={
+        <Button variant="brand" size="sm" onClick={alCrear}>
+          <Plus aria-hidden />
+          Cargar el primero
+        </Button>
+      }
+    >
+      Son los que ve el comprador para saber cómo puede pagar.
+    </VacioDelPanel>
   );
 }

@@ -9,6 +9,7 @@ import {
   PALABRAS,
   type PalabrasDeItem,
 } from "@/components/admin/catalogo/copy";
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { DialogoDeItem } from "@/components/admin/catalogo/dialogo";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
@@ -240,7 +241,9 @@ export function PanelDeCatalogo({
                     alDesactivar={() =>
                       abrirConfirmacion({ accion: "desactivar", item })
                     }
-                    alBorrar={() => abrirConfirmacion({ accion: "borrar", item })}
+                    alBorrar={() =>
+                      abrirConfirmacion({ accion: "borrar", item })
+                    }
                   />
                 </div>
               </li>
@@ -449,9 +452,7 @@ function Acciones({
         onClick={item.isActive ? alDesactivar : alActivar}
         disabled={ocupado}
         title={
-          item.isActive
-            ? `Desactivar ${item.name}`
-            : `Activar ${item.name}`
+          item.isActive ? `Desactivar ${item.name}` : `Activar ${item.name}`
         }
       >
         {item.isActive ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
@@ -476,34 +477,22 @@ function Acciones({
   );
 }
 
-function Vacio({
-  tipo,
-  alCrear,
-}: {
-  tipo: TipoDeItem;
-  alCrear: () => void;
-}) {
+function Vacio({ tipo, alCrear }: { tipo: TipoDeItem; alCrear: () => void }) {
   const palabras = PALABRAS[tipo];
   return (
-    <div className="flex flex-col items-center gap-3 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <span
-        aria-hidden
-        className="grid size-12 place-items-center rounded-full bg-surface-sunken text-ink-tertiary"
-      >
-        <Tags className="size-5" />
-      </span>
-      <div className="flex flex-col gap-1">
-        <p className="text-body font-medium text-ink">{palabras.vacio}</p>
-        <p className="max-w-sm text-body-sm text-ink-secondary">
-          Se eligen al cargar un producto, así que conviene tener al menos una
-          antes de empezar.
-        </p>
-      </div>
-      <Button variant="brand" size="sm" onClick={alCrear}>
-        <Plus aria-hidden />
-        {palabras.nuevo}
-      </Button>
-    </div>
+    <VacioDelPanel
+      icono={Tags}
+      titulo={palabras.vacio}
+      accion={
+        <Button variant="brand" size="sm" onClick={alCrear}>
+          <Plus aria-hidden />
+          {palabras.nuevo}
+        </Button>
+      }
+    >
+      Se eligen al cargar un producto, así que conviene tener al menos una antes
+      de empezar.
+    </VacioDelPanel>
   );
 }
 
@@ -586,7 +575,9 @@ function DialogoDeConfirmacion({
 
         <DialogFooter>
           <Button variant="secondary" onClick={alCerrar} disabled={ocupado}>
-            {bloqueadoPorUso && !puedeDesactivarEnSuLugar ? "Entendido" : "Cancelar"}
+            {bloqueadoPorUso && !puedeDesactivarEnSuLugar
+              ? "Entendido"
+              : "Cancelar"}
           </Button>
 
           {puedeDesactivarEnSuLugar && (

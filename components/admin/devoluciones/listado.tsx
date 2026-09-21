@@ -1,5 +1,7 @@
+import { Undo2 } from "lucide-react";
 import Link from "next/link";
 
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { TarjetaDeDevolucion } from "@/components/admin/devoluciones/tarjeta";
 import { Button } from "@/components/ui/button";
 import { FILTROS_VACIOS, urlDeFiltros } from "@/modules/returns/filtros";
@@ -45,17 +47,16 @@ export function ListadoDeDevoluciones({
  */
 function SinResultados() {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink">
-        Ninguna devolución coincide con los filtros.
-      </p>
-      <p className="text-caption text-ink-secondary">
-        Probá con un rango de fechas más ancho.
-      </p>
-      <Button asChild variant="secondary" size="sm" className="mt-2">
-        <Link href={urlDeFiltros(FILTROS_VACIOS)}>Limpiar todo</Link>
-      </Button>
-    </div>
+    <VacioDelPanel
+      titulo="Ninguna devolución coincide con los filtros."
+      accion={
+        <Button asChild variant="secondary" size="sm">
+          <Link href={urlDeFiltros(FILTROS_VACIOS)}>Limpiar todo</Link>
+        </Button>
+      }
+    >
+      Probá con un rango de fechas más ancho.
+    </VacioDelPanel>
   );
 }
 
@@ -68,20 +69,20 @@ function SinResultados() {
  */
 export function SinDevoluciones() {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink">
-        Todavía no registraste ninguna devolución.
-      </p>
-      <p className="max-w-prose text-caption text-ink-secondary">
-        Se registran desde la orden que se devuelve, y sólo sobre órdenes
-        finalizadas: abrí la orden y usá «Registrar devolución». Ahí elegís qué
-        productos vuelven y cuáles vuelven al stock.
-      </p>
-      <Button asChild variant="secondary" size="sm" className="mt-1">
-        <Link href="/admin/ordenes?estado=finalizadas">
-          Ver las órdenes finalizadas
-        </Link>
-      </Button>
-    </div>
+    <VacioDelPanel
+      icono={Undo2}
+      titulo="Todavía no registraste ninguna devolución."
+      accion={
+        <Button asChild variant="secondary" size="sm">
+          <Link href="/admin/ordenes?estado=finalizadas">
+            Ver las órdenes finalizadas
+          </Link>
+        </Button>
+      }
+    >
+      Se registran desde la orden que se devuelve, y sólo sobre órdenes
+      finalizadas: abrí la orden y usá «Registrar devolución». Ahí elegís qué
+      productos vuelven y cuáles vuelven al stock.
+    </VacioDelPanel>
   );
 }
