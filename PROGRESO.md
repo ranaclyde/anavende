@@ -3186,8 +3186,22 @@ por su lado:
   informe, dos son de la tienda, que tiene su propia escala (§4) y ahí 20px
   está dentro de lo escrito. Gana lo que dice la especificación, que era lo
   que ninguna pantalla había mirado.
-- **Devoluciones es el único listado sin buscador**, y el único que no usa
-  tabla en ningún ancho. Puede ser deliberado; no está anotado en ningún lado.
+- **~~Devoluciones es el único listado sin buscador~~**, y el único que no usa
+  tabla en ningún ancho. **Las dos cosas son deliberadas, y sí estaban
+  anotadas**: no en este archivo ni en las especificaciones, sino en el
+  encabezado de cada componente, que es donde no las busqué. Revisado el
+  2026-09-22 y queda acá para no volver a abrirlo.
+  - **Sin buscador** (`components/admin/devoluciones/filtros.tsx`): RF-25 pide
+    «filtros por fecha y por reposición» y nada más. A una devolución concreta
+    se llega **por su orden** —«la de la señora que trajo el auricular»—, y el
+    listado de órdenes sí tiene buscador. Uno acá sería una segunda forma de
+    encontrar lo mismo.
+  - **Tarjeta y no tabla** (`components/admin/devoluciones/tarjeta.tsx`): una
+    orden entra en una fila porque tiene un total y un estado; una devolución
+    tiene **un número variable de renglones**, cada uno con su cantidad, su
+    destino —vuelve al stock o se descarta— y a veces su motivo. Eso en una
+    celda es dibujar una lista adentro de una tabla. La misma tarjeta se usa
+    en el detalle de la orden, que es el otro lugar donde aparece.
 
 ### Lo que está bien, y conviene no tocar
 
