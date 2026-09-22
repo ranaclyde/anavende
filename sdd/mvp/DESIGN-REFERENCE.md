@@ -1082,6 +1082,15 @@ Es lo que hace que se lean como bloques flotando y no como cinco tarjetas
 pegadas en diagonal, y con la hilera de logos son el único movimiento continuo
 de la tienda.
 
+**Y se puede parar a mano, con un botón.** Arriba a la derecha del arco, en el
+margen que los bloques dejan libre en todos los anchos, y **siempre a la
+vista**. No es un lujo: WCAG 2.2.2 pide una forma de detener cualquier
+movimiento que arranque solo y dure más de cinco segundos, y frenar con el
+mouse encima no le sirve a quien entra desde el teléfono —que acá es la mayoría
+(RNF-01)—. El botón detiene **las dos cosas**, la vuelta de categoría y el
+vaivén: parar una sola sería un freno a medias. Con `prefers-reduced-motion` no
+se dibuja, porque ahí no hay nada que parar.
+
 **Se frena mientras lo estás mirando.** Con el mouse encima o el foco del
 teclado adentro, la rotación se detiene: los bloques son **enlaces a la ficha**
 y un enlace que se va justo cuando lo apuntás es peor que no tenerlo. Con

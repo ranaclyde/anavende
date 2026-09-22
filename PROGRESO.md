@@ -636,7 +636,7 @@ rotulación — **la tarjeta, el catálogo y el precio siguen sin esa pasada**.
 | F3.4 | Catálogo: filtros, orden, paginación, todo en la URL | 🟡 | `/productos` con filtros por categoría, marca, color, **rango de precio** y descuento, cinco órdenes y paginación, y **todo el estado en la dirección** (§10.2): el botón atrás funciona, el enlace se manda por WhatsApp tal como se está viendo, y la pantalla no necesita una línea de estado de cliente para lo que muestra. Tres pantallas vacías distintas y no una —«todavía no hay productos», «no encontramos nada para esto» y la que apareció probando, `?pagina=9` a mano, que antes ofrecía «Limpiar todo» sin ningún filtro puesto—. El conteo es `aria-live`, la paginación son enlaces y las cuatro primeras tarjetas cargan con prioridad, por el LCP. **Completada el 2026-09-08**: categoría, marca y color pasaron a **multiselección** y entró el **rango de precio**, que eran las dos funciones que RF-02 pedía y no estaban. Un chip por valor aplicado, contador por valor, y el precio sobre el precio **final**. **34 tests nuevos** sobre un módulo que no tenía ninguno. **Pasó por `impeccable` (audit) y por `ui-ux-pro-max`** el mismo día: de ahí salieron nueve arreglos de accesibilidad, todos medidos y ninguno visible. Abajo están |
 | F3.5 | Ficha de producto con galería y selector de color | 🟡 | `/productos/[slug]`, y con esto **la tarjeta del catálogo dejó de apuntar a un 404**. Están la galería de §6.8, el selector de color de §6.5, la cantidad con tope en el stock, la descripción con formato pintada como React y no como HTML, y los tres estados de compra: con stock, **sin stock** y «todavía no está a la venta» —un producto activo sin ninguna variante, que RN-05 muestra igual—. Cambiar de color cambia foto, stock y mensaje **sin recargar** y escribe `?color=` con `replaceState`; un producto inactivo da 404. **17 tests** sobre la consulta y los mensajes. **Rehecha el 2026-09-08 con diecisiete pedidos tuyos**: miniaturas a la izquierda y siempre dibujadas —el salto de la foto al cambiar de color era eso—, foto al borde de la tarjeta, flechas, visor de dos niveles con recorrido a tamaño real, galería pegada con la columna derecha desplazando, descripción adentro de esa columna, recuadro «¿Cómo sigue después de comprar?», y Guardar y Compartir. Arriba está el detalle. Pasó por `impeccable` y `ui-ux-pro-max`. **Falta mirarla en un teléfono** y **falta ver moverse la galería**: el navegador de esta máquina no entrega cuadros, así que el desplazamiento suave no ocurre —la instrucción sale bien, está comprobado—. Le faltan los recomendados de RF-03, que son F8.2 y F8.4 |
 | F3.6 | Enlaces de WhatsApp | 🟡 | `lib/whatsapp.ts`, que es donde §4 lo tenía previsto, y **se hizo junto con F3.5 por decisión tuya**: la ficha no tiene ninguna otra acción, así que sin esto salía una pantalla que no se podía terminar de probar. **Son dos mensajes y no uno**: el de compra —producto, color, cantidad, precio y enlace— y el de **consulta de disponibilidad**, que lleva producto, color y enlace y **no** lleva precio ni cantidad: no se está comprando, y un precio sobre algo que todavía no existe es un precio que después hay que desdecir. El criterio de RF-04 —acentos, saltos de línea y el `$` bien codificados— está probado, y el número se limpia a dígitos venga como venga. Sin número configurado **no se dibuja ningún botón**: `wa.me/` sin destino abre WhatsApp en la nada. **Falta abrir uno en un teléfono con WhatsApp de verdad**: lo verificado es la dirección, no la entrega |
-| F3.7 | Home | 🟡 | **Construida y corregida el 2026-09-22**, sobre el lineamiento de F3.8 y con el contenido que definiste: **hero con bloques flotantes** que rotan de categoría destacada —y se frenan al pasarles el mouse o el foco—, la marca, el buscador, **hasta siete chips** de categoría destacada, **una sección por cada una** con una fila de productos, «Destacados», «En oferta», la **hilera de medios de pago** —sólo los que tienen logo— y «Más categorías» con el «Ver todas» apagado. El aviso de zona (RN-10) va arriba, pegado a los chips. Cada bloque **desaparece solo si no tiene qué mostrar**, que es lo que la protege del riesgo P1. **«Más categorías» quedó en píldoras**: las tarjetas con foto esperan a que se decida de dónde sale la imagen de una categoría, postergado a pedido tuyo. Falta la pasada de `impeccable` y `ui-ux-pro-max` que §12.4 exige para cerrarla, y el umbral de F3.3 sigue esperando el catálogo real |
+| F3.7 | Home | ✅ | **Construida y corregida el 2026-09-22**, sobre el lineamiento de F3.8 y con el contenido que definiste: **hero con bloques flotantes** que rotan de categoría destacada —y se frenan al pasarles el mouse o el foco—, la marca, el buscador, **hasta siete chips** de categoría destacada, **una sección por cada una** con una fila de productos, «Destacados», «En oferta», la **hilera de medios de pago** —sólo los que tienen logo— y «Más categorías» con el «Ver todas» apagado. El aviso de zona (RN-10) va arriba, pegado a los chips. Cada bloque **desaparece solo si no tiene qué mostrar**, que es lo que la protege del riesgo P1. **«Más categorías» quedó en píldoras**: las tarjetas con foto esperan a que se decida de dónde sale la imagen de una categoría, postergado a pedido tuyo. Las dos pasadas de §12.4 están hechas: `impeccable` corrigió cinco cosas y `ui-ux-pro-max` encontró que al hero le faltaba el botón de pausa que pide WCAG 2.2.2. El umbral de F3.3 sigue esperando el catálogo real |
 | F3.8 | Rediseño de la tienda desde el canvas aprobado | 🟡 | **Tarea nueva, agregada al plan el 2026-09-08**; abajo está entera. Cuatro pasadas —tokens, estructura del catálogo, ajustes de panel y tarjeta, y encabezado— aplicadas a la capa de tokens, al catálogo y al navbar. **Falta bajarlo a la home, a la sección de categorías, al pie, al carrito y a la ficha**, y eso no se hace de una: cada pantalla lo adopta cuando se construye. **El panel de administración queda afuera**: el rediseño es de la tienda, lo que ve el comprador |
 | F3.9 | SEO: URLs, metadatos, datos estructurados, sitemap | ⬜ | Era F3.8 hasta el 2026-09-08 |
 
@@ -786,9 +786,8 @@ test ya se había arreglado —toma el primero **de la tabla** y compara con
 `endsWith`, justamente porque la base local puede tener medios cargados de
 antes—. Verificado: 24 en verde con las ocho filas.
 
-**Falta para cerrar F3.7**: la pasada de `impeccable` y `ui-ux-pro-max` que
-§12.4 exige para cualquier pantalla de la tienda. Por eso queda en 🟡 y no en
-✅.
+**F3.7 quedó cerrada el 2026-09-22**, con las dos pasadas de §12.4 hechas y lo
+que encontraron, abajo.
 
 #### La corrección del mismo día, con tu boceto delante
 
@@ -832,6 +831,47 @@ tenía. RF-01 y §7.1 se volvieron a escribir antes de tocar nada.
   la home**: ahí la marca no acompaña a la navegación, **es** la pantalla. El
   texto del DOM sigue diciendo «AnaVende» —las minúsculas las hace CSS—, así
   que un lector de pantalla y el portapapeles leen el nombre bien escrito.
+
+#### Las dos skills de §12.4, y lo que encontraron
+
+`impeccable` mira **el resultado dibujado** y no el código, y por eso encontró
+lo que ninguna medida del código decía:
+
+- **El bloque más bajo del arco se le montaba a la palabra de la marca.** El
+  desnivel se hace con `translate`, que no ocupa lugar en el layout: el relleno
+  de abajo ahora reserva los 44px que el arco baja, y el de arriba los 36 que
+  sube.
+- **Siete discos de inicial en burdeos** son siete cosas en burdeos que no son
+  la acción de la pantalla, y **el camión del aviso** es un ícono general. Los
+  dos pasaron a gris: la regla de una sola voz (§3.1) dice que si hay dos
+  burdeos que no son la acción, una de las dos está mal. El único burdeos del
+  hero vuelve a ser el botón del buscador.
+- **A 390 los siete chips con disco caían en cuatro renglones**, y cuatro
+  renglones de atajos ya no son un atajo. El disco aparece desde `sm`.
+- **La selección de texto venía en el azul de fábrica de Chrome** —el único
+  azul de toda la tienda—, y aparece cada vez que alguien copia el nombre de un
+  producto para pegarlo en WhatsApp, que en esta tienda **es el gesto que
+  cierra la venta**. Ahora es el tinte de la marca. Quedó como §3.7.
+- Su detector marcó el `text-[3.5rem]` de la palabra de la marca. Un tamaño
+  escrito a mano en una pantalla es el primero de los cuatro criterios de
+  «grande» que después conviven, así que entró a la escala como `marca` (§3.3),
+  con su fila en la tabla y su entrada en `DESIGN.md`.
+
+`ui-ux-pro-max` encontró **una sola cosa, y era la importante**: «todo contenido
+que rota solo necesita un control de la persona; frenar con el mouse encima o
+con el foco no alcanza». Es WCAG **2.2.2** —cualquier movimiento que arranca
+solo y dura más de cinco segundos tiene que poder detenerse— y acá pegaba
+doble: **desde un teléfono no había ninguna forma de parar el hero**, porque en
+un teléfono no hay mouse encima. Y el móvil es prioridad de diseño (RNF-01).
+
+Hay ahora un **botón de pausa a la vista**, arriba a la derecha del arco, que
+detiene las dos cosas —la vuelta de categoría y el vaivén—. Con
+`prefers-reduced-motion` no se dibuja: ahí no hay nada que parar.
+
+La misma skill avisa que «las animaciones infinitas son para indicadores de
+carga, no para decoración». Es un desvío consciente y tuyo —el vaivén lo
+pediste—, y la respuesta no es sacarlo sino lo que ya está: que se pueda parar,
+y que se pare solo con `prefers-reduced-motion`.
 
 **Lo que quedó pendiente, a pedido tuyo: la foto de las categorías.** El boceto
 pide «Más categorías» como **tarjetas con imagen y nombre**, parecidas a las de

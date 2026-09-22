@@ -96,7 +96,7 @@ Ver detalle en §12 (Fuera de alcance).
 
 **Contenido**, en este orden (detallado el 2026-09-22 y **corregido el mismo día** contra el boceto que pasaste; el dibujo está en `DESIGN-REFERENCE.md` §7.1):
 
-1. **Hero con bloques flotantes.** Hasta cinco productos de **una** categoría destacada, en tarjetas escalonadas, con la marca y la bajada debajo. Los bloques **cambian de categoría cada tanto** —unos mouses, después unos teclados— y **cada uno enlaza a su ficha**.
+1. **Hero con bloques flotantes.** Hasta cinco productos de **una** categoría destacada, en tarjetas escalonadas que flotan, con la marca y la bajada debajo. Los bloques **cambian de categoría cada tanto** —unos mouses, después unos teclados—, **cada uno enlaza a su ficha** y el movimiento **se puede parar** con un botón.
 2. **Buscador**, con la invitación «¿Qué estás buscando hoy?». Sigue siendo lo que la pantalla pide hacer: no hay foto de portada ni banner.
 3. **Chips de categoría**: las **destacadas** (RF-18), **hasta siete**. Las que no entran no se muestran acá. Cada chip lleva al catálogo **ya filtrado por esa categoría**, no a una pantalla propia.
 4. **Aviso de la zona de entrega** (RN-10), **pegado a los chips**: es lo primero que alguien de afuera necesita saber para decidir si esta tienda le sirve. Acá va **en una línea** —hasta dónde llevamos y que el envío se coordina por WhatsApp—; la versión completa, con el retiro en el punto de entrega, la sigue diciendo el pie del sitio, que está en todas las pantallas.
@@ -119,6 +119,7 @@ Ver detalle en §12 (Fuera de alcance).
 - [ ] Las secciones por categoría muestran **hasta una fila** de productos y enlazan a esa categoría en el catálogo.
 - [ ] El hero **muestra los productos que haya**: una categoría con cuatro dibuja cuatro bloques. Entra a la rotación la que tenga **al menos tres productos activos con foto** —con menos no es un hero, es un hueco—, y sólo entran productos **con foto**.
 - [ ] La rotación del hero **se detiene** mientras el mouse está encima o el foco del teclado está adentro, para que el enlace no se escape mientras se lo apunta.
+- [ ] El hero tiene un **botón de pausa a la vista** que detiene el movimiento —la rotación y el vaivén— y lo vuelve a arrancar. Es lo que pide WCAG 2.2.2 para todo movimiento que arranca solo y dura más de cinco segundos, y es la única forma de frenarlo desde un teléfono, donde no hay mouse encima.
 - [ ] El hero **no rota** si el visitante pidió menos movimiento (`prefers-reduced-motion`): se queda en la primera categoría, con todo su contenido alcanzable.
 - [ ] La hilera de medios de pago **queda quieta** si el visitante pidió menos movimiento (`prefers-reduced-motion`), y no es la única forma de llegar a esa información.
 

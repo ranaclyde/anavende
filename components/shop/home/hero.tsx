@@ -1,5 +1,6 @@
 "use client";
 
+import { Pause, Play } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -23,6 +24,13 @@ import { cn } from "@/lib/utils";
  * desfasados son cosas que flotan. Es el único movimiento continuo de la
  * pantalla junto con la hilera de logos, y la regla global lo apaga entero con
  * `prefers-reduced-motion`.
+ *
+ * **Y se puede parar a mano.** El botón de pausa no es un lujo: WCAG 2.2.2
+ * pide una forma de detener cualquier movimiento que arranque solo y dure más
+ * de cinco segundos, y frenar con el mouse encima no le sirve a quien entra
+ * desde el teléfono —que acá es la mayoría (RNF-01)—. Para ellos, hasta que
+ * existió este botón, el hero no tenía freno. Detiene las dos cosas: la vuelta
+ * de categoría y el vaivén.
  *
  * **Se frena mientras lo mirás.** Los bloques son enlaces a la ficha, y un
  * enlace que se va justo cuando lo estás apuntando es peor que no tenerlo: con
@@ -67,6 +75,9 @@ export function BloquesDelHero({
   const [indice, setIndice] = useState(0);
   const [pausado, setPausado] = useState(false);
   const [quieto, setQuieto] = useState(false);
+  /** Lo pidió la persona, con el botón. Distinto de `pausado`, que es el
+   *  mouse o el foco y se va solo cuando se van. */
+  const [detenido, setDetenido] = useState(false);
 
   // El estado y no una lectura suelta de `matchMedia`: quien cambia la
   // preferencia del sistema con la pestaña abierta espera que el movimiento
@@ -80,13 +91,13 @@ export function BloquesDelHero({
   }, []);
 
   useEffect(() => {
-    if (quieto || pausado || conjuntos.length < 2) return;
+    if (quieto || detenido || pausado || conjuntos.length < 2) return;
     const reloj = setInterval(
       () => setIndice((n) => (n + 1) % conjuntos.length),
       VUELTA,
     );
     return () => clearInterval(reloj);
-  }, [quieto, pausado, conjuntos.length]);
+  }, [quieto, detenido, pausado, conjuntos.length]);
 
   if (conjuntos.length === 0) return null;
 
@@ -102,8 +113,36 @@ export function BloquesDelHero({
       onMouseLeave={() => setPausado(false)}
       onFocus={() => setPausado(true)}
       onBlur={() => setPausado(false)}
-      className="w-full"
+      className="relative w-full"
     >
+      {/*
+        El freno. Va arriba a la derecha, en el margen que el arco deja libre
+        en todos los anchos, y **siempre a la vista**: revelarlo al pasar el
+        mouse lo dejaría inalcanzable justo para quien más lo necesita, que es
+        quien entra desde el teléfono y no tiene hover. Con
+        `prefers-reduced-motion` no se dibuja: ahí no hay nada que parar.
+      */}
+      {quieto ? null : (
+        <button
+          type="button"
+          onClick={() => setDetenido((v) => !v)}
+          // El rótulo va dos veces: en `sr-only` para el lector de pantalla y
+          // en `title` para el globo del navegador. Un botón de ícono sin
+          // rótulo visible necesita las dos.
+          title={detenido ? "Reanudar el movimiento" : "Pausar el movimiento"}
+          className="absolute top-0 right-0 z-10 grid size-11 place-items-center rounded-pill text-ink-secondary transition-colors duration-150 hover:bg-surface hover:text-ink"
+        >
+          {detenido ? (
+            <Play aria-hidden className="size-4" />
+          ) : (
+            <Pause aria-hidden className="size-4" />
+          )}
+          <span className="sr-only">
+            {detenido ? "Reanudar el movimiento" : "Pausar el movimiento"}
+          </span>
+        </button>
+      )}
+
       {/*
         La `key` es el índice, y eso es lo que hace la animación de entrada:
         React desmonta la tanda anterior y monta la nueva, así que los bloques
@@ -115,7 +154,7 @@ export function BloquesDelHero({
         // baja hasta 44px con `translate`, que no ocupa lugar en el layout. Sin
         // esa reserva, el bloque más bajo se le montaba a la palabra de la
         // marca —se veía, y ninguna medida del código lo decía—.
-        className="flex items-center justify-center gap-2.5 pt-6 pb-10 sm:gap-4 sm:pt-10 sm:pb-16"
+        className="flex items-center justify-center gap-2.5 pt-8 pb-10 sm:gap-4 sm:pt-10 sm:pb-16"
       >
         {actual.productos.map((producto, i) => (
           <li
@@ -138,7 +177,12 @@ export function BloquesDelHero({
                 y el `hover` de la tarjeta no levantaría nada—.
               */}
               <div
-                className="animate-vaiven"
+                className={cn(
+                  "animate-vaiven",
+                  // El botón para las DOS cosas: parar la vuelta y dejar los
+                  // bloques flotando sería un freno a medias.
+                  detenido && "[animation-play-state:paused]",
+                )}
                 // Cada uno con su tiempo: en sincronía serían un ascensor de
                 // cinco puertas. Desfasados son cosas que flotan.
                 style={{
