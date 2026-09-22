@@ -3,6 +3,7 @@
 import { PackagePlus } from "lucide-react";
 import { useId, useState, useTransition } from "react";
 
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -46,14 +47,11 @@ export function ReponerStock({
   productId,
   nombre,
   variantes: cuantas,
-  alGuardar,
 }: {
   productId: string;
   nombre: string;
   /** Cuántos colores tiene. Sin ninguno no hay nada que reponer. */
   variantes: number;
-  /** Lo que se le dice a la vendedora, para el aviso del listado. */
-  alGuardar: (mensaje: string) => void;
 }) {
   const [abierto, setAbierto] = useState(false);
   const [filas, setFilas] = useState<VarianteParaReponer[] | null>(null);
@@ -113,7 +111,10 @@ export function ReponerStock({
         (n, v) => n + Number.parseInt(valores[v.id] || "0", 10),
         0,
       );
-      alGuardar(
+      // El globo se acaba de cerrar y la fila cambia de números sin decir
+      // por qué: es el caso de DR §6.15. Antes esto era un renglón arriba del
+      // listado, a una pantalla de distancia de la fila que cambió.
+      avisar(
         `«${nombre}» quedó con ${total === 1 ? "1 unidad" : `${total} unidades`} en total.`,
       );
     });

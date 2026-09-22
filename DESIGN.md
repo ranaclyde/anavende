@@ -372,6 +372,20 @@ globos— se lleva la escala puesta explícitamente (`components/ui/escala.tsx`)
 Arriba de `document.body` ya no hay `data-scale`, y un diálogo abierto desde el
 panel se pintaría con la escala de la tienda aunque tenga sus clases `admin:`.
 
+**La regla del aviso.** Toda acción que muta dice que salió bien; lo que se
+elige es dónde. Flotante cuando el lugar donde pasó la cosa desapareció —un
+diálogo que se cerró, una fila que se borró— o cuando la pantalla no cambia de
+forma visible. En su lugar cuando lo que pasó se ve: subir una foto la hace
+aparecer, y un cartel al lado que diga «subimos la foto» es ruido. **Los avisos
+flotantes confirman y no reportan errores**: un error tiene que decir qué hacer
+y a veces ofrecer reintentar, y eso no entra en algo que se va a los cuatro
+segundos, así que se queda donde estuvo la acción. Una sola región, en el
+layout del panel, porque un `aria-live` tiene que existir antes que su
+contenido y porque el aviso tiene que sobrevivir a la navegación que lo
+dispara. Va en `z-60`, el único lugar que pasa de 50: a la misma altura que un
+diálogo ganaba la capa oscura, y el aviso quedaba atenuado y sin poder tocarse
+justo cuando conviven.
+
 **La regla del diálogo que se abre solo.** Si lo abre una acción de quien mira
 la pantalla, es estado del cliente. Si lo abre de dónde se viene, va en la
 dirección y quien lo cierra lo limpia. El caso es el alta de un producto, que

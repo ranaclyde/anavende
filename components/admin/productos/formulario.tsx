@@ -10,6 +10,7 @@ import {
   leerMarkdown,
 } from "@/components/admin/productos/editor";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError } from "@/components/ui/field-error";
@@ -195,6 +196,17 @@ export function FormularioDeProducto({
       // al crearlo»— y hasta hoy no era cierto: se aterrizaba en la ficha con
       // la tarjeta de colores abajo de todo, que es la mitad del trabajo
       // escondida al pie de la página.
+      // El aviso va ANTES de empujar y no después: las dos pantallas a las
+      // que se llega no muestran lo que acaba de pasar —el listado no
+      // distingue el producto nuevo, y la ficha se abre con el diálogo del
+      // color encima—, así que sin esto guardar no confirma nada. Es
+      // exactamente el caso que DR §6.15 llama flotante.
+      avisar(
+        producto
+          ? `Guardamos los cambios de «${nombre.trim()}».`
+          : `Creaste «${nombre.trim()}». Cargale un color para poder venderlo.`,
+      );
+
       router.push(
         producto
           ? "/admin/productos"

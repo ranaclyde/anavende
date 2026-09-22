@@ -8,6 +8,7 @@ import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { ImagenesDeVariante } from "@/components/admin/productos/imagenes";
+import { avisar } from "@/components/ui/aviso";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -53,6 +54,11 @@ import type {
 /** El valor del `<select>` para la variante sin color (RF-16). */
 const UNICO = "unico";
 
+/** «1 unidad» y no «1 unidades», que es lo que se lee en los avisos. */
+function unidades(n: number): string {
+  return n === 1 ? "1 unidad" : `${n} unidades`;
+}
+
 /** Cómo se llama una variante en un cartel. */
 function nombreDe(v: { colorName: string | null }): string {
   return v.colorName ?? "Único";
@@ -75,7 +81,6 @@ export function VariantesDelProducto({
   const [enEdicion, setEnEdicion] = useState<VarianteDelPanel | null>(null);
   const [agregando, setAgregando] = useState(abrirAlta);
   const [porBorrar, setPorBorrar] = useState<VarianteDelPanel | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enCurso, iniciar] = useTransition();
   const router = useRouter();
@@ -93,7 +98,6 @@ export function VariantesDelProducto({
 
   const borrar = (v: VarianteDelPanel) => {
     setPorBorrar(null);
-    setAviso(null);
     setError(null);
 
     iniciar(async () => {
@@ -102,7 +106,10 @@ export function VariantesDelProducto({
         setError(r.message);
         return;
       }
-      setAviso(
+      // La tarjeta del color desapareció: no queda dónde poner la respuesta
+      // en su lugar (DR §6.15). El error sí se queda acá arriba, que es
+      // donde estuvo la acción.
+      avisar(
         r.data.resultado === "borrado"
           ? `Sacamos «${nombreDe(v)}».`
           : `«${nombreDe(v)}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede sacar: la desactivamos y ya no se ofrece en la tienda.`,
@@ -162,12 +169,6 @@ export function VariantesDelProducto({
           {error}
         </p>
       )}
-      {aviso === null ? null : (
-        <p role="status" className="text-body-sm text-ink-secondary">
-          {aviso}
-        </p>
-      )}
-
       {variantes.length === 0 ? (
         <Vacio alAgregar={() => setAgregando(true)} />
       ) : (
@@ -549,6 +550,19 @@ function DialogoDeVariante({
         setErrores(leerErrores<Campo>(r));
         return;
       }
+
+      // Avisa el diálogo y no quien lo cierra: `alCerrar` es también lo que
+      // llama «Cancelar», y cancelar no confirma nada. Acá adentro se sabe
+      // además si fue alta o edición, y con qué color.
+      const comoSeLlama =
+        color === UNICO
+          ? "Único"
+          : (colores.find((c) => c.id === color)?.name ?? "el color");
+      avisar(
+        variante
+          ? `«${comoSeLlama}» quedó con ${unidades(datos.stockTotal)} en total.`
+          : `Agregaste «${comoSeLlama}» con ${unidades(datos.stockTotal)}.`,
+      );
       alCerrar();
     });
   };

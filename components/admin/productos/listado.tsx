@@ -19,6 +19,7 @@ import { ReponerStock } from "@/components/admin/productos/reponer";
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { Badge } from "@/components/ui/badge";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -75,12 +76,13 @@ export function ListadoDeProductos({
 }) {
   const [enCurso, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
   const [porBorrar, setPorBorrar] = useState<ProductoDelListado | null>(null);
 
+  // Destacar y desactivar NO avisan, y es a propósito: la estrella se
+  // rellena y la insignia cambia en la fila que se tocó. Un cartel que
+  // repita lo que ya se ve es ruido (DR §6.15).
   const correr = (fn: () => Promise<{ ok: boolean; message?: string }>) => {
     setError(null);
-    setAviso(null);
     iniciar(async () => {
       const r = await fn();
       if (!r.ok) setError(r.message ?? null);
@@ -104,14 +106,15 @@ export function ListadoDeProductos({
   const borrar = (p: ProductoDelListado) => {
     setPorBorrar(null);
     setError(null);
-    setAviso(null);
     iniciar(async () => {
       const r = await eliminarUnProducto({ id: p.id });
       if (!r.ok) {
         setError(r.message);
         return;
       }
-      setAviso(
+      // Acá sí: la fila que se tocó ya no está, así que no queda dónde
+      // poner la respuesta.
+      avisar(
         r.data.resultado === "borrado"
           ? `Borramos «${p.name}».`
           : `«${p.name}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede borrar: lo desactivamos y ya no se ve en la tienda.`,
@@ -126,12 +129,6 @@ export function ListadoDeProductos({
           {error}
         </p>
       )}
-      {aviso === null ? null : (
-        <p role="status" className="text-body-sm text-ink-secondary">
-          {aviso}
-        </p>
-      )}
-
       {items.length === 0 ? (
         <SinResultados filtros={filtros} />
       ) : (
@@ -191,7 +188,6 @@ export function ListadoDeProductos({
                           productId={p.id}
                           nombre={p.name}
                           variantes={p.variantes}
-                          alGuardar={setAviso}
                         />
                         <Stock producto={p} umbral={umbral} />
                       </div>
@@ -238,7 +234,6 @@ export function ListadoDeProductos({
                     productId={p.id}
                     nombre={p.name}
                     variantes={p.variantes}
-                    alGuardar={setAviso}
                   />
                   <Acciones
                     producto={p}

@@ -878,6 +878,28 @@ Hay un caso en que abrir un diálogo no lo decide quien mira la pantalla: **el a
 
 **La regla, para el próximo diálogo que quiera abrirse solo:** si lo abre una acción de quien mira, es estado del cliente; si lo abre de dónde se viene, va en la dirección, y quien lo cierra lo limpia.
 
+### 6.15 Avisos flotantes
+
+**Confirman, no reportan errores.** Un error tiene que decir qué pasó, qué hacer y a veces ofrecer reintentar (§8), y nada de eso entra en algo que se va solo a los cuatro segundos. Los errores se quedan **donde estuvo la acción**: el diálogo que falla no se cierra y lo muestra adentro. Por eso hay un solo tono y no hay variantes de color.
+
+**Cuándo va uno y cuándo no**, que es lo único que hay que decidir:
+
+| | |
+|---|---|
+| **Flotante** | El lugar donde pasó la cosa **desapareció** —un diálogo que se cerró, una fila que se borró, un globo que se fue— o la pantalla **no cambia de forma visible** |
+| **En su lugar** | Lo que pasó **se ve**: subir una foto la hace aparecer, destacar un producto rellena su estrella, desactivarlo le cambia la insignia. Un cartel que repita lo que ya está a la vista es ruido |
+| **Tampoco** | Guardar y quedarse en la misma pantalla, que ya tiene su «Listo, se guardó» en línea (Configuración) |
+
+**Una sola región, en el layout del panel y no en cada pantalla.** Dos motivos, los dos de fondo: un `aria-live` **tiene que estar en el DOM antes que su contenido** o el lector de pantalla no lo anuncia; y los avisos **sobreviven a la navegación** —crear un producto empuja a otra pantalla y la confirmación tiene que llegar ahí—, y el layout es lo único que no se vuelve a montar al navegar dentro del panel.
+
+**Sin proveedor ni contexto.** El estado vive en el módulo y se lee con `useSyncExternalStore`: `avisar()` se llama desde cualquier componente de cliente sin envolver el árbol ni repintarlo.
+
+**`z-60`, y es el único lugar del proyecto que pasa de 50.** El momento en que un aviso y un diálogo conviven es justo el que importa: crear un producto avisa y aterriza con «Agregar color» abierto. A la misma altura ganaba la capa oscura —sale por un portal, así que está después en el DOM—, y medido con `elementFromPoint` el aviso quedaba debajo: atenuado y con su × imposible de tocar. **La captura no alcanzaba para verlo**: 40% de negro sobre una tarjeta blanca sigue pareciendo clara.
+
+**Lo demás:** cuatro segundos, **tres a la vez** —se cae el más viejo—, × para cerrarlo, y **el reloj se detiene con el puntero encima o el foco adentro**, porque que un aviso se vaya justo cuando lo estabas leyendo es peor que no tenerlo. Abajo a la derecha en escritorio y abajo a lo ancho en el teléfono: la misma esquina en los dos, y lejos de la barra fija del menú móvil. La entrada usa el mismo vocabulario que los diálogos y se apaga bajo `prefers-reduced-motion`.
+
+**Qué falta.** Se cablearon las pantallas de productos y stock, que es de donde salió el pedido. **Quedan sin confirmar unas veinte acciones del panel** —catálogo, medios de pago, órdenes, devoluciones, usuarios—, y casi todas caen del lado flotante de la tabla de arriba porque pasan dentro de un diálogo que se cierra. Es una pasada aparte.
+
 ## 7. Composición de pantallas
 
 ### 7.1 Home
@@ -1075,6 +1097,7 @@ Un componente no está terminado hasta que sus cinco estados están definidos.
 | **Sin resultados** | Repetir el término buscado, sugerir quitar filtros, y ofrecer «Limpiar todo» |
 | **Error** | Qué pasó, en castellano, y qué hacer. Con acción de reintentar. Nunca un código ni un *stack trace* |
 | **Deshabilitado** | Siempre acompañado del motivo, visible o en *tooltip* |
+| **Confirmado** | Toda acción que muta dice que salió bien. Flotante o en su lugar según §6.15; nunca en silencio |
 
 **Transiciones:** 150ms para color y opacidad, 200ms para transformaciones, `cubic-bezier(0.4, 0, 0.2, 1)`. Nada por encima de 300ms. Todo se desactiva bajo `prefers-reduced-motion`.
 

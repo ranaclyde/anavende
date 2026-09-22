@@ -3188,7 +3188,7 @@ El plan acordado son cuatro movimientos, de mayor a menor rendimiento:
    lugar para los dos. ✅ Hecho.
 3. **Que el alta termine donde empieza el trabajo**: crear deja el diálogo de
    «Agregar color» abierto. ✅ Hecho.
-4. **Avisos flotantes.** Pendiente, y último a propósito: son la consecuencia
+4. **Avisos flotantes.** ✅ Hecho, y último a propósito: son la consecuencia
    de los otros tres y no el arreglo. Un aviso que dice «se guardó» no
    arregla que hayas tenido que scrollear 480px para guardarlo.
 
@@ -3315,6 +3315,55 @@ listado, sin pasar por el alta de color. Detrás del diálogo se lee el nombre
 del producto en el `h1`, que es la única señal de que se guardó hasta que
 lleguen los avisos del punto 4. Los dos productos de prueba se borraron: el
 catálogo quedó como estaba.
+
+**Lo hecho (4).** `components/ui/aviso.tsx`, sin dependencias nuevas: una sola
+región en el layout del panel y un `avisar()` que se llama desde cualquier
+componente de cliente. Era tu pedido textual —«cambiás un stock o agregás algo
+y no hay ningún mensaje de que eso se hizo»—, y hasta hoy de **24 componentes
+del panel que mutan, 4 confirmaban algo**.
+
+- **Confirman, no reportan errores.** Un error tiene que decir qué pasó, qué
+  hacer y a veces ofrecer reintentar (§8), y nada de eso entra en algo que se
+  va a los cuatro segundos. Los errores se quedan donde estuvo la acción: el
+  diálogo que falla no se cierra y lo muestra adentro. Un solo tono, sin
+  variantes de color.
+- **La regla de dónde va**, escrita en §6.15: flotante cuando el lugar donde
+  pasó la cosa desapareció —un diálogo que se cerró, una fila que se borró— o
+  cuando la pantalla no cambia de forma visible; en su lugar cuando lo que
+  pasó se ve. Por eso destacar y desactivar **no** avisan: la estrella y la
+  insignia cambian en la fila que se tocó.
+- **Sin proveedor ni contexto**: el estado vive en el módulo y se lee con
+  `useSyncExternalStore`. Eso es lo que hace que un aviso **sobreviva a la
+  navegación**, que es el caso de crear un producto: empuja a otra pantalla y
+  la confirmación tiene que llegar ahí.
+- **Los dos avisos en línea de productos se fueron**: el de `listado.tsx`
+  estaba arriba de la tabla, a una pantalla de distancia de la fila que había
+  cambiado, y el de `variantes.tsx` quedaba en una tarjeta cuyo color acababa
+  de desaparecer.
+
+**El defecto que la captura escondía.** Con el aviso en `z-50`, la capa oscura
+del diálogo le ganaba —sale por un portal, así que está después en el DOM— y
+el aviso quedaba **atenuado y con su × imposible de tocar**, justo en el único
+momento en que conviven: crear un producto avisa y aterriza con «Agregar
+color» abierto. En la captura no se veía, porque 40% de negro sobre una
+tarjeta blanca sigue pareciendo clara; lo encontró `elementFromPoint`, que
+devolvía `div[dialog-overlay]`. Ahora el aviso va en **`z-60`**, el único lugar
+del proyecto que pasa de 50, y el mismo sondeo devuelve el aviso.
+
+Probado en el navegador contra `next start`, **13 comprobaciones**: la región
+existe en el DOM con la página vacía —un `aria-live` que aparece con su
+contenido no se anuncia—; crear un producto avisa y el aviso **cruza la
+navegación**; agregar, editar y sacar un color avisan, y reponer desde el
+listado también; a los 4 segundos se va solo; **con el puntero encima sigue
+ahí a los 5** y se va al sacarlo; la × lo saca en el acto; y en el teléfono
+ocupa 358 de 390px, entra en la pantalla y no desborda. El producto de prueba
+se borró.
+
+**Lo que falta, y no es poco.** Quedan sin confirmar unas **veinte acciones**
+del panel —catálogo, medios de pago, órdenes, devoluciones, usuarios—, y casi
+todas caen del lado flotante de la tabla de §6.15 porque pasan dentro de un
+diálogo que se cierra. El mecanismo ya está; es una pasada aparte, con su
+propia verificación.
 
 ### Lo que falta decidir antes de tocar código
 
