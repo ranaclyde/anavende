@@ -125,20 +125,30 @@ export function BarraDeFiltros({
             ))}
           </Select>
 
-          <Select
-            aria-label="Filtrar por stock"
-            value={filtros.stock}
-            onChange={(e) =>
-              aplicar({ stock: e.target.value as FiltrosDeProductos["stock"] })
-            }
-            className="md:w-40"
-          >
-            {FILTROS_DE_STOCK.map((o) => (
-              <option key={o.valor} value={o.valor}>
-                {o.etiqueta}
-              </option>
-            ))}
-          </Select>
+          {/* El `div` es para la grilla y no para el `Select`: `Select`
+              envuelve al `<select>` en un `div` propio —ahí adentro va el
+              chevron—, así que una clase suya cae en el control y no en el
+              ítem de la grilla. Ocupa las dos columnas en el teléfono: cuando
+              el estado pasó a solapa quedaron tres filtros, y el tercero solo
+              en su fila se lee como si faltara algo al lado. */}
+          <div className="col-span-2 md:col-span-1">
+            <Select
+              aria-label="Filtrar por stock"
+              value={filtros.stock}
+              onChange={(e) =>
+                aplicar({
+                  stock: e.target.value as FiltrosDeProductos["stock"],
+                })
+              }
+              className="md:w-40"
+            >
+              {FILTROS_DE_STOCK.map((o) => (
+                <option key={o.valor} value={o.valor}>
+                  {o.etiqueta}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
       </div>
 

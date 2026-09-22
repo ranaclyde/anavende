@@ -94,7 +94,7 @@ export function ThemeToggle({
       aria-pressed={tema === null ? undefined : esOscuro}
       title={soloIcono ? (esOscuro ? "Modo oscuro" : "Modo claro") : undefined}
       className={cn(
-        "flex h-9 items-center gap-2 rounded-panel-control px-2.5",
+        "flex h-9 max-md:h-11 items-center gap-2 rounded-panel-control px-2.5",
         "text-body-sm text-ink-secondary transition-colors duration-150",
         "hover:bg-surface-sunken hover:text-ink",
         soloIcono && "justify-center px-0",

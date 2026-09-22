@@ -149,7 +149,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
         >
           <Link
             href="/admin"
-            className="inline-flex items-center gap-2.5 rounded-panel-control"
+            className="inline-flex h-8 max-md:h-11 items-center gap-2.5 rounded-panel-control"
             aria-label="AnaVende, inicio del panel"
           >
             <IsotipoSegunTema />
@@ -163,7 +163,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
           <button
             type="button"
             onClick={() => setAbiertoEnMovil(false)}
-            className="ml-auto grid size-9 place-items-center rounded-panel-control text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink lg:hidden"
+            className="ml-auto grid size-9 max-md:size-11 place-items-center rounded-panel-control text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink lg:hidden"
           >
             <X aria-hidden className="size-5" />
             <span className="sr-only">Cerrar el menú</span>
@@ -189,7 +189,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
                       aria-disabled
                       title={soloIcono ? `${etiqueta} — ${pendiente}` : pendiente}
                       className={cn(
-                        "flex h-10 items-center gap-3 rounded-panel-control px-2.5",
+                        "flex h-10 max-md:h-11 items-center gap-3 rounded-panel-control px-2.5",
                         "text-body-sm text-ink-tertiary",
                         soloIcono && "justify-center px-0",
                       )}
@@ -210,7 +210,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
                     aria-current={activa ? "page" : undefined}
                     title={soloIcono ? etiqueta : undefined}
                     className={cn(
-                      "flex h-10 items-center gap-3 rounded-panel-control px-2.5",
+                      "flex h-10 max-md:h-11 items-center gap-3 rounded-panel-control px-2.5",
                       "text-body-sm transition-colors duration-150",
                       soloIcono && "justify-center px-0",
                       activa
@@ -235,7 +235,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
           <Link
             href="/"
             className={cn(
-              "flex h-9 items-center gap-2 rounded-panel-control px-2.5",
+              "flex h-9 max-md:h-11 items-center gap-2 rounded-panel-control px-2.5",
               "text-body-sm text-ink-secondary transition-colors duration-150",
               "hover:bg-surface-sunken hover:text-ink",
               colapsado && !abiertoEnMovil && "justify-center px-0",
