@@ -3215,7 +3215,7 @@ es un componente único con el formato correcto. Y **no hay un solo color crudo
 fuera de tokens en todo el panel** salvo `bg-black/40` del velo del menú móvil,
 que es el mismo valor que usa `DialogOverlay`: son consistentes entre sí.
 
-### Lo que no se pudo hacer
+### ~~Lo que no se pudo hacer~~ — mirado el 2026-09-22
 
 **Nada de esto está mirado en pantalla.** Quise sacar capturas con Playwright
 —el stack local y el server en `:3000` estaban arriba, y existe el admin
@@ -3224,6 +3224,79 @@ que es el mismo valor que usa `DialogOverlay`: son consistentes entre sí.
 bloquea por tratarse de una credencial. Los números de contraste y de píxel
 están **calculados sobre los tokens**, no medidos sobre un render. Falta ver el
 modo oscuro con ojos.
+
+**Hecho el 2026-09-22, por el otro camino**: el navegador, con la sesión de
+administradora que ya estaba abierta, en modo oscuro. Se recorrieron el
+tablero, los seis listados, las dos altas y Configuración, y se midió el
+contraste **sobre el render** —color calculado del texto contra el fondo
+calculado del ancestro, con la opacidad heredada incluida— en vez de sobre los
+tokens.
+
+**Dos advertencias sobre el método, para el próximo**: en `next dev` el DOM que
+ve un script no siempre es el que está pintado —el contenido aparece adentro de
+un `div` oculto hasta que termina de transmitirse, y la medición de una página
+recién cargada se queda con quince elementos en vez de ciento sesenta, así que
+hay que contar cuántos midió antes de creerle—; y **la ventana no se dejó
+achicar** a 1280 ni a 390 desde la herramienta, así que lo de abajo está visto
+a 2560, que es donde el panel ya estaba topeado en 1024. El ancho chico del
+panel sigue sin mirarse.
+
+Lo bueno: **las tarjetas, las tablas, las solapas, los estados vacíos y los
+botones se ven como dicen las últimas correcciones**, y el único hallazgo de
+contraste que devolvió el barrido en cuatro pantallas es el de abajo, más la
+entrada «Reportes» del menú, que está **desactivada** a propósito hasta F9.1 y
+por eso no cuenta (WCAG exime los controles inactivos).
+
+### El terciario está escrito para 24px y se usa en 12 y en 14
+
+**Es el hallazgo del 2026-09-22**, y es de los que no aparecen leyendo el
+código: cada uso, mirado solo, es una clase del sistema.
+
+`--ink-tertiary` vale `#8f8b8a` en claro y `#6e6e73` en oscuro. Medido sobre el
+render: **3,28:1** sobre `--surface` en oscuro, 3,49 sobre `--surface-sunken` y
+3,63 sobre `--canvas`; en claro, 3,37 / 3,25 / 3,10. **AA pide 4,5:1 para texto
+normal**, así que ninguna de las seis combinaciones alcanza. No es cosa del
+modo oscuro: los dos temas están igual.
+
+**La regla ya está escrita.** `DESIGN-REFERENCE.md` §3.1, en la tabla de
+verificación de contraste, tiene la fila `--ink-tertiary` sobre `--surface` con
+3,37:1 y el nivel **«Solo texto ≥ 24px o elementos decorativos»**. Es la única
+fila de esa tabla que no dice AA, y está puesta a propósito.
+
+**Y no se cumple en ningún lado.** Hay **69 usos** de `text-ink-tertiary` en 33
+archivos, panel y tienda: **41 llevan al lado `text-caption` (12px) o
+`text-body-sm` (14px)**, y de los 28 restantes la mayoría hereda esos mismos
+tamaños —«Motivo: », «(opcional)», «Sin uso», el guion de una celda vacía, la
+marca de un renglón—. Los legítimos son pocos y se cuentan: las viñetas de
+lista (`marker:`), las lupas de los buscadores, los chevrones de las filas y
+los marcadores de posición de los campos. **Ni uno solo es texto de 24px.**
+
+**El peor caso es la devolución anulada**: la tarjeta se apaga con
+`opacity-70`, que se multiplica con lo de arriba y deja los metadatos en
+**2,17:1**. Eso es la mitad de lo que pide AA, y es el único número que solo
+aparece midiendo el render: el cálculo sobre tokens no ve la opacidad del
+ancestro.
+
+**Tres salidas, y ninguna es gratis:**
+
+1. **Pasar a `--ink-secondary` los usos que son texto** y dejar el terciario
+   para lo decorativo, que es exactamente lo que la referencia ya manda. No
+   inventa ningún color: el secundario da 5,06:1 en claro y 6,46:1 en oscuro.
+   Cuesta unos 45 reemplazos en 33 archivos, panel y tienda, y **achata la
+   escala de grises a dos niveles de texto** —lo que hoy se lee como «esto es
+   metadato» va a pesar lo mismo que una etiqueta—.
+2. **Subir el token** hasta 4,5:1 en los dos temas. Un solo cambio, pero el
+   valor que lo cumple queda pegado al secundario, así que el resultado es el
+   mismo achatamiento **y además** deja la referencia mintiendo en §3.1 hasta
+   que se reescriba.
+3. **Anotarlo y dejarlo para F10.3** (repaso de accesibilidad), que es donde el
+   plan lo tiene. La contra: cuanto más tarde, más usos hay que revisar, y la
+   otra falla de contraste de este repaso —el botón destructivo en 2,77:1, el
+   2026-09-18— se arregló en el momento y no esperó a F10.
+
+Falta tu decisión. **La `opacity-70` de la devolución anulada conviene
+arreglarla en cualquiera de los tres casos**: sea cual sea el gris, apagar una
+tarjeta entera multiplicando la opacidad es lo que rompe el número.
 
 ### Reponer el stock sin salir del listado — hecho el 2026-09-21
 
