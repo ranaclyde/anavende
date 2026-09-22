@@ -3334,6 +3334,57 @@ grises quedó en dos niveles de texto más uno decorativo, así que un metadato
 pesa lo mismo que una etiqueta. Lo que ordena la jerarquía de ahora en más es
 el tamaño y el peso.
 
+### Productos era el único listado sin solapas — hecho el 2026-09-22
+
+**Observación tuya, mirándolo usándolo.** Los otros cinco listados del panel
+muestran su estado arriba, en solapas con su número; productos lo tenía
+adentro de un desplegable de tres opciones, al lado de los de categoría, marca
+y stock. La pregunta que contesta —«¿qué cargué y todavía no publiqué?»—
+costaba abrir la lista, elegir, y recién ahí ver cuántos eran.
+
+Ahora son **tres solapas segmentadas con su conteo**: Todos, Activos,
+Inactivos. La forma sale de `SolapasDelPanel`, la misma de órdenes y usuarios,
+y el desplegable de estado se fue de la barra, que quedó con tres filtros.
+
+Lo que hubo que decidir de paso:
+
+- **El parámetro de la URL se sigue llamando `estado`.** El tablero enlaza
+  `?estado=activos&stock=reponer` y `?estado=activos` (F7.8): renombrarlo los
+  habría roto sin avisar.
+- **El estado dejó de contar como «filtro puesto»**, igual que en órdenes y
+  usuarios: estar parada en «Inactivos» es qué listado se mira, no un filtro
+  encima. Si contara, «Limpiar todo» devolvería a otra solapa sin que nadie la
+  tocara. `sinFiltros` ahora la conserva.
+- **El «de cuántos» del contador es el de la solapa**, no el del catálogo
+  entero: en «Inactivos», «3 de 47 productos» sería contar contra un listado
+  que no se está mirando.
+- `contarProductos()` **se fue y quedó `contarPorEstado()`**, que trae los tres
+  números en una sola consulta —`count(*) FILTER (WHERE is_active)`— y ahorra
+  la ida que antes se hacía para saber si el catálogo estaba vacío.
+
+**Acá las tres solapas sí suman**, al revés que las cinco de usuarios: activo e
+inactivo son una partición, no cinco filtros que se pisan. Quedó escrito como
+test, junto con el que importa: que **el número de cada solapa sea el que su
+listado va a mostrar**. Son dos lugares repitiendo la misma condición, y si se
+separan la solapa dice 25 y la tabla trae 24. `npm test` de ese archivo: 46 en
+verde.
+
+### El ícono del calendario era negro sobre negro — hecho el 2026-09-22
+
+**Observación tuya, con captura.** En oscuro, los campos de fecha de órdenes y
+devoluciones mostraban el botón del calendario en negro sobre el campo oscuro:
+invisible. El campo estaba bien pintado; el ícono no es nuestro.
+
+**Hay piezas que dibuja el navegador y no la hoja de estilos**: ese ícono, el
+calendario que abre, las barras de scroll y la lista desplegada de un
+`<select>`. Sin `color-scheme` el navegador las pinta siempre para fondo claro.
+Ningún token lo podía arreglar, porque esos píxeles no son nuestros. `:root`
+ahora declara `light` y el bloque de oscuro declara `dark`; son dos líneas, y
+§3.2 de `DESIGN-REFERENCE.md` lo explica para que no se borre por parecer de
+más. Verificado en el navegador: el ícono se ve, y de yapa las barras de scroll
+y los desplegables nativos dejaron de aparecer en claro adentro del panel
+oscuro.
+
 ### Reponer el stock sin salir del listado — hecho el 2026-09-21
 
 **No salió del repaso sino de mirarlo usándolo** (observación tuya): al crear

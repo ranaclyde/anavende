@@ -30,6 +30,15 @@
 
 /* ═══ Tokens crudos — tienda y panel en claro (§3.1) ═══════════════════ */
 :root {
+  /*
+   * Lo que el navegador pinta y nosotros no: el ícono del calendario de un
+   * `<input type="date">`, el calendario que abre, las barras de scroll y la
+   * lista de un `<select>`. Sin esto los dibuja siempre para fondo claro, y
+   * en el panel en oscuro el ícono del calendario quedaba negro sobre negro
+   * —invisible— aunque el campo estuviera bien pintado (2026-09-22).
+   */
+  color-scheme: light;
+
   /* Marca */
   --brand: #832833; /* acción principal, identidad, precio en oferta */
   --brand-hover: #9d3040; /* MÁS CLARO: el color base ya es oscuro */
@@ -94,6 +103,8 @@
 
 /* ═══ Tokens crudos — modo oscuro del panel (§3.2) ═════════════════════ */
 [data-theme="dark"] {
+  color-scheme: dark;
+
   --brand: #d4697a; /* ACLARADO: #832833 da 1,83:1 en oscuro, ilegible */
   --brand-hover: #e08a97;
   --brand-active: #c04a5c;

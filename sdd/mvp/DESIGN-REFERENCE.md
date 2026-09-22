@@ -295,6 +295,8 @@ sus metadatos en **2,17:1**. Para que algo retroceda se cambia su superficie
 
 ```css
 [data-theme="dark"] {
+  color-scheme: dark;            /* lo que pinta el navegador y no nosotros */
+
   --brand:            #d4697a;   /* ACLARADO: #832833 da 1,83:1 en oscuro, ilegible */
   --brand-hover:      #e08a97;
   --brand-active:     #c04a5c;
@@ -327,6 +329,15 @@ sus metadatos en **2,17:1**. Para que algo retroceda se cambia su superficie
   --info:    #38bdf8;  --info-tint:    #05202e;
 }
 ```
+
+**`color-scheme` no es un token, y hace falta igual** (2026-09-22). Hay piezas
+que dibuja el navegador y no la hoja de estilos: el ícono del calendario de un
+`<input type="date">`, el calendario que abre, las barras de scroll y la lista
+desplegada de un `<select>`. Sin declararlo, el navegador las pinta siempre
+para fondo claro, y en el panel en oscuro **el ícono del calendario quedaba
+negro sobre negro**: el campo se veía bien y el botón para abrirlo no existía.
+`:root` declara `light` y el bloque de oscuro declara `dark`; ningún token lo
+podía arreglar, porque esos píxeles no son nuestros.
 
 > **El acento cambia de valor, no de identidad.** `#832833` sobre fondo oscuro da 1,83:1 y es directamente ilegible; `#d4697a` da 4,83:1. Es el mismo matiz, aclarado. El modo oscuro **solo existe en `/admin`**: la tienda es siempre clara.
 
