@@ -1,13 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Campo, Opcion } from "@/components/admin/formulario";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
-import { leerErrores, SIN_ERRORES } from "@/lib/form";
+import { FieldError } from "@/components/ui/field-error";
+import { type ErroresDeFormulario, leerErrores, SIN_ERRORES } from "@/lib/form";
 import { darDeAltaUsuario } from "@/modules/users/panel/actions";
 import {
   ROLES_ASIGNABLES,
@@ -25,11 +27,18 @@ import {
  *
  * **El teléfono es obligatorio** aunque RF-26 no lo nombre: RF-05 lo pide en
  * las tres vías de alta y sin él no se puede coordinar una entrega (`schemas.ts`).
+ *
+ * **Es un `<form>` de verdad** desde el 2026-09-22, como el de producto y el
+ * de configuración: Enter envía, el navegador lo anuncia como formulario y el
+ * foco va al primer campo que falló. Hasta hoy era un `<div>` con botones
+ * `onClick`, que se ve igual y se usa peor.
  */
 export function AltaDeUsuario() {
   const router = useRouter();
+  const idBase = useId();
   const [guardando, iniciar] = useTransition();
-  const [errores, setErrores] = useState(SIN_ERRORES);
+  const [errores, setErrores] =
+    useState<ErroresDeFormulario<CampoDelAlta>>(SIN_ERRORES);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -37,7 +46,27 @@ export function AltaDeUsuario() {
   const [phone, setPhone] = useState("");
   const [rol, setRol] = useState<RolAsignable>("customer");
 
-  function guardar() {
+  /**
+   * Adónde va el foco cuando el envío falla. Sin esto queda en el botón, que
+   * no dice cuál de los cinco campos hay que corregir: el mensaje se anuncia
+   * —cada `FieldError` es `role="alert"`— pero anunciar no es llevar hasta el
+   * problema.
+   */
+  const errorGeneral = useRef<HTMLDivElement | null>(null);
+
+  function irAlPrimerError(nuevos: ErroresDeFormulario<CampoDelAlta>) {
+    const primero = CAMPOS.find((c) => nuevos.campos[c]);
+    const control = primero
+      ? document.getElementById(`${idBase}-${primero}`)
+      : null;
+
+    // Sin campo señalado —un email ya usado, que el servidor no cuelga de
+    // ninguno— el foco va al mensaje, que es lo único que explica qué pasó.
+    (control ?? errorGeneral.current)?.focus();
+  }
+
+  function enviar(evento: React.FormEvent) {
+    evento.preventDefault();
     setErrores(SIN_ERRORES);
 
     iniciar(async () => {
@@ -50,7 +79,9 @@ export function AltaDeUsuario() {
       });
 
       if (!r.ok) {
-        setErrores(leerErrores<CampoDelAlta>(r));
+        const nuevos = leerErrores<CampoDelAlta>(r);
+        setErrores(nuevos);
+        irAlPrimerError(nuevos);
         return;
       }
 
@@ -64,10 +95,11 @@ export function AltaDeUsuario() {
   const e = errores.campos;
 
   return (
-    <div className="flex flex-col gap-4">
+    <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
       <TarjetaDeSeccion id="datos-persona" titulo="Datos de la persona">
         <div className="grid gap-3 sm:grid-cols-2">
           <Campo
+            id={`${idBase}-firstName`}
             etiqueta="Nombre"
             valor={firstName}
             alCambiar={setFirstName}
@@ -75,6 +107,7 @@ export function AltaDeUsuario() {
             autoComplete="off"
           />
           <Campo
+            id={`${idBase}-lastName`}
             etiqueta="Apellido"
             valor={lastName}
             alCambiar={setLastName}
@@ -84,6 +117,7 @@ export function AltaDeUsuario() {
         </div>
 
         <Campo
+          id={`${idBase}-email`}
           etiqueta="Email"
           type="email"
           valor={email}
@@ -94,6 +128,7 @@ export function AltaDeUsuario() {
         />
 
         <Campo
+          id={`${idBase}-phone`}
           etiqueta="Teléfono"
           type="tel"
           valor={phone}
@@ -110,9 +145,10 @@ export function AltaDeUsuario() {
         ayuda="Define a qué puede entrar. Se puede cambiar después desde su ficha."
       >
         <div className="grid gap-2 sm:grid-cols-2">
-          {ROLES_ASIGNABLES.map((opcion) => (
+          {ROLES_ASIGNABLES.map((opcion, i) => (
             <Opcion
               key={opcion.valor}
+              id={i === 0 ? `${idBase}-rol` : undefined}
               nombre="rol"
               elegida={rol === opcion.valor}
               alElegir={() => setRol(opcion.valor)}
@@ -121,33 +157,40 @@ export function AltaDeUsuario() {
             />
           ))}
         </div>
+        <FieldError id={`${idBase}-rol-error`}>{e.rol}</FieldError>
       </TarjetaDeSeccion>
 
-      {errores.general === null ? null : (
-        <p role="alert" className="text-body-sm text-danger">
-          {errores.general}
-        </p>
-      )}
+      <div ref={errorGeneral} tabIndex={-1} className="outline-none">
+        <FieldError>{errores.general}</FieldError>
+      </div>
 
+      {/* En el panel la acción principal va a la derecha, y el escape queda a
+          mano: cancelar es un enlace y no un botón, porque no hace nada, va a
+          otro lado. */}
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button
-          variant="tertiary"
-          disabled={guardando}
-          onClick={() => router.push("/admin/usuarios")}
-        >
-          Cancelar
+        <Button asChild variant="tertiary">
+          <Link href="/admin/usuarios">Cancelar</Link>
         </Button>
         <Button
+          type="submit"
           variant="brand"
           loading={guardando}
           loadingLabel="Creando"
-          onClick={guardar}
         >
           Crear cuenta y mandar el email
         </Button>
       </div>
-    </div>
+    </form>
   );
 }
 
 type CampoDelAlta = "firstName" | "lastName" | "email" | "phone" | "rol";
+
+/** El orden en que se leen en pantalla, que es el orden en que se corrigen. */
+const CAMPOS: CampoDelAlta[] = [
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "rol",
+];

@@ -94,6 +94,10 @@ export function BuscadorDeComprador({
           value={termino}
           onChange={(e) => setTermino(e.target.value)}
           placeholder="Buscar por nombre o email"
+          // Enter acá no envía el formulario de la orden: este campo busca.
+          onKeyDown={(ev) => {
+            if (ev.key === "Enter") ev.preventDefault();
+          }}
           // `admin:pl-9` además de `pl-9`: la escala del panel trae su
           // propio `admin:px-3`, que sin esto le gana y la lupa termina
           // encima del texto.

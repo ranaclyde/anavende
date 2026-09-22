@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-18.
+Última actualización: 2026-09-22.
 
 **Qué significa cada estado**
 
@@ -2621,7 +2621,7 @@ distingue apenas del canvas, pero no hay ningún borde que la recorte—. El
 número, 1,11:1, era correcto; la palabra era más categórica de lo que
 corresponde.
 
-### Las mismas tres pantallas son «el otro panel»
+### ~~Las mismas tres pantallas son «el otro panel»~~ — unificado el 2026-09-22
 
 No es casualidad que Configuración y Producto nuevo/editar aparezcan en los dos
 puntos anteriores. Los cuatro formularios del panel están partidos en dos
@@ -2641,6 +2641,50 @@ familias que casi no comparten nada:
 **Lo de `<form>` no es cosmético**: en Usuario nuevo y Orden nueva —las dos
 altas del panel— Enter no envía, no hay validación nativa y el lector de
 pantalla no anuncia un formulario.
+
+**Las cuatro primeras filas se habían cerrado solas el 2026-09-21**, con el
+encabezado y la tarjeta compartidos: las dos altas ya usan
+`EncabezadoDePanel`, `max-w-admin-form` y `TarjetaDeSeccion`, así que
+contenedor, tarjeta, título de sección y «volver» son los mismos de los otros
+dos formularios. **Las otras cuatro, el 2026-09-22**, que son las que se
+notaban al usarlo:
+
+- **Las dos altas son `<form onSubmit>`**, con `noValidate` y el botón
+  principal en `type="submit"`. Enter envía, y «Cancelar» pasó a ser un
+  `<Link>` adentro de `Button asChild`, como en Producto: no hace nada, va a
+  otro lado.
+- **El foco va al primer campo que falló.** Para eso `Campo` y `Opcion` ahora
+  aceptan un `id` desde afuera: el formulario tiene que poder nombrar a un
+  campo antes de que exista. Los candidatos se recorren en orden de lectura y
+  se enfoca **el primero que exista de verdad** —«productos» y «dirección» son
+  secciones, no controles, y la dirección escrita sólo está en pantalla cuando
+  no se eligió una guardada—; lo que no tiene dónde aterrizar cae al mensaje
+  general, que es un `div` con `tabIndex={-1}`.
+- **El error general va en `FieldError`**, con su ícono, y no en un `<p>`
+  pelado: el color dejó de ser el único que avisa (§9).
+- **`aria-describedby` apunta al error** cuando lo hay, y a la ayuda cuando no.
+  Antes nombraba siempre a la ayuda, que justo se esconde cuando hay error: el
+  lector de pantalla leía cómo escribir el teléfono y no por qué ese teléfono
+  fue rechazado.
+
+Dos cosas que aparecieron al hacerlo. **El rol no tenía dónde mostrar su
+error**: con `campos.rol` puesto, `leerErrores` deja el mensaje general en
+`null`, así que un rechazo del rol no se veía en ningún lado —ahora tiene su
+`FieldError`—. Y **`direccion.tsx` tenía su propia copia de `Campo`**, igual a
+la compartida menos la ayuda, que por eso se quedó sin el arreglo de
+`aria-describedby`: se borró y usa la de todos. Una copia menos de las que
+cuenta el punto «Lo que está repetido».
+
+**Enter adentro de los dos buscadores no envía la orden.** Es la contra de
+tener un `<form>` de verdad: quien escribe «teclado» y aprieta Enter espera la
+lista, no cargar una venta a medio llenar.
+
+Verificado en el navegador, con la sesión de administradora del stack local y
+en modo oscuro: en Usuario nuevo, Enter envía y el foco cae en el primer campo
+con error, con `aria-invalid` y `aria-describedby` apuntando a su mensaje; en
+Orden nueva, Enter en el buscador **no** envía; y con productos cargados pero
+la dirección vacía, el foco cae en «Recibe», que es el primer campo que falló
+cuatro tarjetas más abajo del botón.
 
 ### Paginación: decisión tuya del 2026-09-18, va en todos los listados
 

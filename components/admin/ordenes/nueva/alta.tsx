@@ -1,11 +1,15 @@
 "use client";
 
 import { Trash2, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
-import { CamposDeDireccion } from "@/components/admin/ordenes/nueva/direccion";
+import {
+  CAMPOS_DE_DIRECCION,
+  CamposDeDireccion,
+} from "@/components/admin/ordenes/nueva/direccion";
 import { BuscadorDeComprador } from "@/components/admin/ordenes/nueva/buscador-comprador";
 import { BuscadorDeVariantes } from "@/components/admin/ordenes/nueva/buscador-variantes";
 import { avisar } from "@/components/ui/aviso";
@@ -13,7 +17,12 @@ import { Button } from "@/components/ui/button";
 import { Campo, Opcion } from "@/components/admin/formulario";
 import { FieldError } from "@/components/ui/field-error";
 import { Input, Textarea } from "@/components/ui/input";
-import { erroresDeSeccion, leerErrores, SIN_ERRORES } from "@/lib/form";
+import {
+  type ErroresDeFormulario,
+  erroresDeSeccion,
+  leerErrores,
+  SIN_ERRORES,
+} from "@/lib/form";
 import { comoMonto, formatMoney, isMoney, multiply, sum } from "@/lib/money";
 import { crearLaOrdenManualDelPanel } from "@/modules/orders/actions-manual";
 import type {
@@ -36,6 +45,11 @@ import { OTRA_LOCALIDAD } from "@/modules/users/direcciones/constantes";
  * por eso el aviso no apaga el botón. La otra mitad la decide el dominio: una
  * orden que nace **activa** sí necesita stock libre para reservar, y eso se
  * explica cuando vuelve el error (`manual.ts`).
+ *
+ * **Es un `<form>` de verdad** desde el 2026-09-22, como el de producto y el
+ * de configuración: Enter envía, el navegador lo anuncia como formulario y el
+ * foco va al primer campo que falló —la dirección incluida—. Hasta hoy era un
+ * `<div>` con botones `onClick`.
  */
 
 type Renglon = {
@@ -61,8 +75,10 @@ type CampoDelFormulario =
 
 export function AltaDeOrdenManual() {
   const router = useRouter();
+  const idBase = useId();
   const [guardando, iniciar] = useTransition();
-  const [errores, setErrores] = useState(SIN_ERRORES);
+  const [errores, setErrores] =
+    useState<ErroresDeFormulario<CampoDelFormulario>>(SIN_ERRORES);
   const [erroresDeDireccion, setErroresDeDireccion] = useState<
     Partial<Record<string, string>>
   >({});
@@ -119,7 +135,37 @@ export function AltaDeOrdenManual() {
     setDireccionGuardada(null);
   }
 
-  function guardar() {
+  /**
+   * Adónde va el foco cuando el envío falla. Sin esto queda en el botón, al
+   * pie de un formulario largo, y el campo que hay que corregir puede estar
+   * cuatro tarjetas más arriba, fuera de la pantalla.
+   */
+  const errorGeneral = useRef<HTMLDivElement | null>(null);
+
+  function irAlPrimerError(
+    nuevos: ErroresDeFormulario<CampoDelFormulario>,
+    deLaDireccion: Partial<Record<string, string>>,
+  ) {
+    // Los candidatos en orden de lectura, y se enfoca el primero que exista
+    // de verdad: «direccion» y «items» son secciones y no controles, y la
+    // dirección escrita sólo está en pantalla cuando no se eligió una
+    // guardada. Lo que no tiene dónde aterrizar cae al mensaje de abajo.
+    const candidatos = [
+      ...CAMPOS.filter((c) => nuevos.campos[c]).map((c) => `${idBase}-${c}`),
+      ...CAMPOS_DE_DIRECCION.filter((c) => deLaDireccion[c]).map(
+        (c) => `${idBase}-direccion-${c}`,
+      ),
+    ];
+
+    const control = candidatos
+      .map((id) => document.getElementById(id))
+      .find((el) => el !== null);
+
+    (control ?? errorGeneral.current)?.focus();
+  }
+
+  function enviar(evento: React.FormEvent) {
+    evento.preventDefault();
     setErrores(SIN_ERRORES);
     setErroresDeDireccion({});
 
@@ -148,8 +194,11 @@ export function AltaDeOrdenManual() {
     iniciar(async () => {
       const r = await crearLaOrdenManualDelPanel(datos);
       if (!r.ok) {
-        setErrores(leerErrores<CampoDelFormulario>(r));
-        setErroresDeDireccion(erroresDeSeccion(r, "direccion"));
+        const nuevos = leerErrores<CampoDelFormulario>(r);
+        const deLaDireccion = erroresDeSeccion(r, "direccion");
+        setErrores(nuevos);
+        setErroresDeDireccion(deLaDireccion);
+        irAlPrimerError(nuevos, deLaDireccion);
         return;
       }
       // Al detalle de la orden recién creada: es donde se la revisa, se le
@@ -162,9 +211,9 @@ export function AltaDeOrdenManual() {
   const e = errores.campos;
 
   return (
-    <div className="flex flex-col gap-4">
+    <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
       <TarjetaDeSeccion id="productos" titulo="Productos">
-        <BuscadorDeVariantes alElegir={agregar} />
+        <BuscadorDeVariantes id={`${idBase}-items`} alElegir={agregar} />
 
         {renglones.length === 0 ? (
           <p className="rounded-panel-card border border-dashed border-border px-3 py-6 text-center text-body-sm text-ink-secondary">
@@ -195,7 +244,7 @@ export function AltaDeOrdenManual() {
           </ul>
         )}
 
-        <FieldError>{e.items}</FieldError>
+        <FieldError id={`${idBase}-items-error`}>{e.items}</FieldError>
 
         {renglones.length > 0 ? (
           <div className="flex items-baseline justify-between border-t border-border pt-3">
@@ -220,6 +269,7 @@ export function AltaDeOrdenManual() {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Campo
+            id={`${idBase}-nombre`}
             etiqueta="A nombre de"
             valor={nombre}
             alCambiar={setNombre}
@@ -227,6 +277,7 @@ export function AltaDeOrdenManual() {
             autoComplete="off"
           />
           <Campo
+            id={`${idBase}-telefono`}
             etiqueta="Teléfono"
             valor={telefono}
             alCambiar={setTelefono}
@@ -236,6 +287,7 @@ export function AltaDeOrdenManual() {
           />
         </div>
         <Campo
+          id={`${idBase}-email`}
           etiqueta="Email (opcional)"
           valor={email}
           alCambiar={setEmail}
@@ -247,6 +299,7 @@ export function AltaDeOrdenManual() {
       <TarjetaDeSeccion id="entrega" titulo="Entrega">
         <div className="grid gap-2 sm:grid-cols-2">
           <Opcion
+            id={`${idBase}-entrega`}
             nombre="entrega"
             elegida={entrega === "retiro"}
             alElegir={() => setEntrega("retiro")}
@@ -290,6 +343,7 @@ export function AltaDeOrdenManual() {
 
             {direccionGuardada === null ? (
               <CamposDeDireccion
+                idBase={`${idBase}-direccion`}
                 valores={direccion}
                 alCambiar={(cambios) =>
                   setDireccion((previa) => ({ ...previa, ...cambios }))
@@ -298,7 +352,9 @@ export function AltaDeOrdenManual() {
               />
             ) : null}
 
-            <FieldError>{e.direccion}</FieldError>
+            <FieldError id={`${idBase}-direccion-error`}>
+              {e.direccion}
+            </FieldError>
           </div>
         ) : null}
       </TarjetaDeSeccion>
@@ -310,6 +366,7 @@ export function AltaDeOrdenManual() {
       >
         <div className="grid gap-2 sm:grid-cols-2">
           <Opcion
+            id={`${idBase}-estado`}
             nombre="estado"
             elegida={estado === "finalizada"}
             alElegir={() => setEstado("finalizada")}
@@ -324,46 +381,58 @@ export function AltaDeOrdenManual() {
             detalle="Falta entregarla: reserva el stock hasta que la finalices."
           />
         </div>
-        <FieldError>{e.estado}</FieldError>
+        <FieldError id={`${idBase}-estado-error`}>{e.estado}</FieldError>
       </TarjetaDeSeccion>
 
       <TarjetaDeSeccion id="notas" titulo="Notas (opcional)">
         <Textarea
+          id={`${idBase}-notas`}
           value={notas}
+          aria-invalid={e.notas ? true : undefined}
+          aria-describedby={e.notas ? `${idBase}-notas-error` : undefined}
           onChange={(ev) => setNotas(ev.target.value)}
           maxLength={MAXIMO_DE_NOTAS}
           className="min-h-16"
           placeholder="Lo que haga falta recordar de esta venta."
         />
-        <FieldError>{e.notas}</FieldError>
+        <FieldError id={`${idBase}-notas-error`}>{e.notas}</FieldError>
       </TarjetaDeSeccion>
 
-      {errores.general ? (
-        <p role="alert" className="text-body-sm text-danger">
-          {errores.general}
-        </p>
-      ) : null}
+      <div ref={errorGeneral} tabIndex={-1} className="outline-none">
+        <FieldError>{errores.general}</FieldError>
+      </div>
 
+      {/* En el panel la acción principal va a la derecha, y el escape queda a
+          mano: cancelar es un enlace y no un botón, porque no hace nada, va a
+          otro lado. */}
       <div className="flex flex-wrap justify-end gap-2">
-        <Button
-          variant="tertiary"
-          disabled={guardando}
-          onClick={() => router.push("/admin/ordenes")}
-        >
-          Cancelar
+        <Button asChild variant="tertiary">
+          <Link href="/admin/ordenes">Cancelar</Link>
         </Button>
         <Button
+          type="submit"
           variant="brand"
           loading={guardando}
           loadingLabel="Guardando"
-          onClick={guardar}
         >
           Cargar la orden
         </Button>
       </div>
-    </div>
+    </form>
   );
 }
+
+/** El orden en que se leen en pantalla, que es el orden en que se corrigen. */
+const CAMPOS: CampoDelFormulario[] = [
+  "items",
+  "nombre",
+  "telefono",
+  "email",
+  "entrega",
+  "direccion",
+  "estado",
+  "notas",
+];
 
 /** Cero mientras el precio no sea un monto: lo que no se entiende no suma. */
 function subtotalDelRenglon(r: Renglon): string {

@@ -28,14 +28,18 @@ import type { VarianteParaLaOrden } from "@/modules/orders/queries-manual";
 export function BuscadorDeVariantes({
   alElegir,
   etiqueta = "Buscar un producto",
+  id,
 }: {
   alElegir: (variante: VarianteParaLaOrden) => void;
   etiqueta?: string;
+  /** Para que el formulario de afuera pueda enfocar acá cuando falta un ítem. */
+  id?: string;
 }) {
   const [termino, setTermino] = useState("");
   const [resultados, setResultados] = useState<VarianteParaLaOrden[]>([]);
   const [buscando, setBuscando] = useState(false);
-  const campo = useId();
+  const propio = useId();
+  const campo = id ?? propio;
 
   /**
    * Una petición por pausa al escribir, no una por tecla. Y el contador
@@ -55,14 +59,14 @@ export function BuscadorDeVariantes({
 
     setBuscando(true);
     const mia = ++ultima.current;
-    const id = setTimeout(async () => {
+    const temporizador = setTimeout(async () => {
       const r = await buscarVariantes({ q });
       if (mia !== ultima.current) return;
       setResultados(r.ok ? r.data.resultados : []);
       setBuscando(false);
     }, 300);
 
-    return () => clearTimeout(id);
+    return () => clearTimeout(temporizador);
   }, [termino]);
 
   return (
@@ -81,6 +85,12 @@ export function BuscadorDeVariantes({
           value={termino}
           onChange={(e) => setTermino(e.target.value)}
           placeholder="Nombre del producto o marca"
+          // Enter acá no envía el formulario de la orden: este campo busca,
+          // y quien escribe «teclado» y aprieta Enter está esperando la
+          // lista, no cargar una venta a medio llenar.
+          onKeyDown={(ev) => {
+            if (ev.key === "Enter") ev.preventDefault();
+          }}
           // `admin:pl-9` además de `pl-9`: la escala del panel trae su
           // propio `admin:px-3`, que sin esto le gana y la lupa termina
           // encima del texto.
