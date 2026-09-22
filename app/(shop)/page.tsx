@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BotonFavorito } from "@/components/shop/favorito";
+import { BloquesDelHero } from "@/components/shop/home/hero";
 import { HileraDePagos } from "@/components/shop/home/pagos";
 import {
   GrillaDeLaHome,
@@ -21,17 +22,18 @@ export const metadata: Metadata = {
   // a todo lo demás (`app/layout.tsx`). Con uno propio acá la pestaña decía
   // «AnaVende · AnaVende».
   description:
-    "Teclados, mouses, auriculares, cables y accesorios. Entrega en Viedma, Carmen de Patagones y alrededores.",
+    "Insumos informáticos nuevos, en caja: teclados, mouses, auriculares, cables y accesorios. Entrega en Viedma, Carmen de Patagones y alrededores.",
 };
 
 /**
  * Home — RF-01, §7.1. Tarea F3.7.
  *
  * **Lo que la pantalla contesta es «¿qué hay acá?»**, y por eso las categorías
- * aparecen dos veces y hacen dos cosas distintas: arriba son chips —un atajo
- * para quien ya sabe qué busca— y en el medio son secciones con producto
- * adentro, para quien no. La de abajo es la tercera cara: el resto del
- * catálogo, donde lo que importa no es cada producto sino que existan.
+ * aparecen tres veces y hacen tres cosas distintas: en el hero son producto a
+ * la vista, arriba son chips —un atajo para quien ya sabe qué busca— y en el
+ * medio son secciones con producto adentro, para quien no. La de abajo es la
+ * cuarta cara: el resto del catálogo, donde lo que importa no es cada producto
+ * sino que existan.
  *
  * **Cada bloque desaparece solo si no tiene qué mostrar**, y eso no es un
  * adorno defensivo: es lo que protege a esta pantalla del riesgo P1 del plan.
@@ -55,18 +57,16 @@ export default async function Home() {
   const guardados = new Set(favoritos ?? []);
 
   /** La tarjeta es la misma de todas las pantallas (§6.1), con su corazón. */
-  const tarjetas = (
-    productos: (typeof datos)["destacados"],
-    prioridad = false,
-  ) =>
-    productos.map((producto, i) => (
+  const tarjetas = (productos: (typeof datos)["destacados"]) =>
+    productos.map((producto) => (
       <li key={producto.slug}>
         <TarjetaProducto
           producto={producto}
-          // Sólo la primera fila de la primera sección: es lo único que está
-          // arriba del pliegue, y marcar todo como prioritario es no marcar
-          // nada.
-          prioridad={prioridad && i < 4}
+          // NINGUNA va con prioridad, y eso cambió el 2026-09-22: arriba del
+          // pliegue ahora están los bloques del hero, que son los que la
+          // piden. Marcar además la primera fila de tarjetas sería pedirle al
+          // navegador nueve imágenes urgentes, que es lo mismo que no pedirle
+          // ninguna.
           accionFavorito={
             <BotonFavorito
               forma="corazon"
@@ -82,16 +82,32 @@ export default async function Home() {
     ));
 
   return (
-    <div className="mx-auto w-full max-w-shop px-4 py-10 sm:px-6 lg:px-8">
-      {/* ── El hero, que es el buscador (§7.1) ─────────────────────── */}
-      <section className="flex flex-col items-center gap-5 py-10 text-center sm:py-14">
-        <h1 className="text-display text-ink">Todo para tu setup</h1>
+    <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8">
+      {/* ── El hero: el catálogo, la marca y el buscador (§7.1) ────── */}
+      <section className="flex flex-col items-center gap-5 pb-10 text-center">
+        <BloquesDelHero conjuntos={datos.hero} />
+
+        {/*
+          La palabra de la marca, en burdeos y en minúsculas: es el único
+          lugar donde se usa así (§2.3, desvío anotado el 2026-09-22). El
+          texto del DOM sigue diciendo «AnaVende» —las minúsculas las hace
+          CSS—, que es lo que lee un lector de pantalla y lo que se copia al
+          portapapeles.
+        */}
+        <h1 className="text-display lowercase text-brand sm:text-[3.5rem] sm:leading-none">
+          AnaVende
+        </h1>
+
         <p className="max-w-prose text-body-lg text-ink-secondary">
-          Periféricos y accesorios, con entrega en Viedma, Carmen de Patagones y
-          alrededores.
+          Insumos informáticos nuevos, en caja. Elegí, armá tu pedido y te lo
+          llevamos.
         </p>
 
-        <SearchBox principal className="w-full max-w-[560px]" />
+        <SearchBox
+          principal
+          placeholder="¿Qué estás buscando hoy?"
+          className="w-full max-w-[560px]"
+        />
 
         {datos.destacadas.length > 0 ? (
           <nav aria-label="Categorías destacadas" className="w-full">
@@ -100,8 +116,19 @@ export default async function Home() {
                 <li key={categoria.id}>
                   <Link
                     href={urlDeTienda({ categoria: [categoria.id] })}
-                    className="flex h-11 items-center rounded-pill border border-border bg-surface px-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand"
+                    className="flex h-11 items-center gap-2 rounded-pill border border-border bg-surface pl-2 pr-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand"
                   >
+                    {/*
+                      La inicial es del boceto y es decoración: el nombre está
+                      al lado, así que un lector de pantalla no tiene por qué
+                      escuchar «T, Teclados».
+                    */}
+                    <span
+                      aria-hidden
+                      className="grid size-7 place-items-center rounded-full bg-brand-tint text-caption text-brand"
+                    >
+                      {categoria.nombre.slice(0, 1)}
+                    </span>
                     {categoria.nombre}
                   </Link>
                 </li>
@@ -109,11 +136,36 @@ export default async function Home() {
             </ul>
           </nav>
         ) : null}
+
+        {/* ── El aviso de zona (RN-10) ─────────────────────────────── */}
+        {/*
+          Va ACÁ ARRIBA, pegado a los chips: hasta dónde llevamos es lo primero
+          que alguien de Viedma necesita saber para decidir si esta tienda le
+          sirve. El pie del sitio lo repite en todas las pantallas y por eso
+          acá se dice en una línea —la versión larga, con el retiro en el punto
+          de entrega, la sigue diciendo el pie—.
+        */}
+        <p className="flex w-full items-center justify-center gap-2.5 rounded-card bg-surface p-4 text-left text-body-sm text-ink-secondary shadow-sm">
+          <Truck aria-hidden className="size-5 shrink-0 text-brand" />
+          <span>
+            <span className="font-medium text-ink">
+              Envíos a Viedma, Carmen de Patagones y alrededores
+            </span>{" "}
+            — coordinamos día y horario por WhatsApp.
+          </span>
+        </p>
       </section>
 
-      <div className="flex flex-col gap-16 pt-6 pb-4 sm:gap-20">
+      <div className="flex flex-col gap-16 pb-4 sm:gap-20">
+        {/* ── Destacados: lo que la vendedora quiere empujar hoy ───── */}
+        {datos.destacados.length > 0 ? (
+          <SeccionDeLaHome titulo="Destacados">
+            <GrillaDeLaHome>{tarjetas(datos.destacados)}</GrillaDeLaHome>
+          </SeccionDeLaHome>
+        ) : null}
+
         {/* ── Una sección por categoría destacada ──────────────────── */}
-        {datos.destacadas.map((categoria, i) =>
+        {datos.destacadas.map((categoria) =>
           categoria.productos.length === 0 ? null : (
             <SeccionDeLaHome
               key={categoria.id}
@@ -123,19 +175,10 @@ export default async function Home() {
                 etiqueta: `Ver todo en ${categoria.nombre}`,
               }}
             >
-              <GrillaDeLaHome>
-                {tarjetas(categoria.productos, i === 0)}
-              </GrillaDeLaHome>
+              <GrillaDeLaHome>{tarjetas(categoria.productos)}</GrillaDeLaHome>
             </SeccionDeLaHome>
           ),
         )}
-
-        {/* ── Destacados y ofertas ─────────────────────────────────── */}
-        {datos.destacados.length > 0 ? (
-          <SeccionDeLaHome titulo="Destacados">
-            <GrillaDeLaHome>{tarjetas(datos.destacados)}</GrillaDeLaHome>
-          </SeccionDeLaHome>
-        ) : null}
 
         {datos.ofertas.length > 0 ? (
           <SeccionDeLaHome
@@ -151,27 +194,15 @@ export default async function Home() {
 
         <HileraDePagos medios={datos.mediosDePago} />
 
-        {/* ── El aviso de zona (RN-10) ─────────────────────────────── */}
-        {/*
-          Va PEGADO a los medios de pago y no al final, aunque §7.1 lo dibuje
-          abajo de todo: el pie de página lo repite palabra por palabra en
-          todas las pantallas, y los dos párrafos uno abajo del otro se leen
-          como un error de la página. Acá arriba cierra el bloque de «cómo
-          funciona esto», que es de lo que los dos hablan.
-        */}
-        <p className="flex items-start gap-2.5 rounded-card bg-surface-sunken p-5 text-body-sm text-ink-secondary">
-          <Truck aria-hidden className="mt-0.5 size-5 shrink-0 text-brand" />
-          <span>
-            Entregamos a domicilio en{" "}
-            <span className="font-medium text-ink">
-              Viedma, Carmen de Patagones y alrededores
-            </span>
-            , o lo retirás por nuestro punto de entrega. El envío se coordina
-            por WhatsApp cuando armamos tu pedido.
-          </span>
-        </p>
-
         {/* ── Más categorías, con la salida apagada ────────────────── */}
+        {/*
+          El boceto las pide como TARJETAS con foto y nombre. Para eso hace
+          falta una imagen de categoría, y `categories` no tiene ninguna: de
+          dónde sale —la foto de uno de sus productos o un campo propio, con
+          su migración y su subida en el panel— quedó postergado a pedido tuyo
+          el 2026-09-22 y está anotado en PROGRESO.md. Hasta entonces, las
+          píldoras que ya funcionaban.
+        */}
         {datos.masCategorias.length > 0 ? (
           <section
             aria-labelledby="mas-categorias"

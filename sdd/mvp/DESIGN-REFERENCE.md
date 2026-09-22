@@ -150,6 +150,12 @@ Una cuadrícula de cuatro celdas —**A**, un joystick, unos auriculares y una *
 
 **Nunca:** deformar la proporción, cambiarle el color —salvo la versión clara de esta tabla—, ponerle sombra, rotarlo, ni apoyarlo sobre una foto sin una superficie sólida debajo.
 
+**La palabra sola, grande y en burdeos, es un uso más y vive en un solo lugar:
+el hero de la home** (§7.1, agregado el 2026-09-22). Ahí no acompaña a la
+navegación —**es** la pantalla—, así que va en minúsculas, en burdeos y por
+encima de la escala tipográfica. El isotipo no la acompaña y no cambia de
+tamaño ni de color en ningún caso: lo de esta tabla sigue valiendo tal cual.
+
 ### 2.4 El eslogan
 
 > **Ana vende, vos elegís la tecnología.**
@@ -968,29 +974,38 @@ Tres decisiones de integración, las tres con motivo:
 
 ### 7.1 Home
 
-> **Detallada el 2026-09-22, pedido tuyo.** El canvas dejaba «Destacados / En
-> oferta / Vistos recientemente» y nada más; lo que faltaba era qué hace la
-> home con las **categorías**, que es lo que esta tienda tiene para ofrecer
-> antes de que nadie sepa qué busca. El dibujo de abajo reemplaza al anterior.
+> **Detallada el 2026-09-22, pedido tuyo, y corregida el mismo día contra tu
+> boceto.** El canvas dejaba «Destacados / En oferta / Vistos recientemente» y
+> nada más; lo que faltaba era qué hace la home con las **categorías**, que es
+> lo que esta tienda tiene para ofrecer antes de que nadie sepa qué busca. La
+> corrección agrega el hero —el buscador solo dejaba la pantalla vacía arriba—,
+> sube el aviso de zona junto a los chips y pone «Destacados» antes que las
+> categorías.
 
 ```
 ┌────────────────────────────────────────────────────┐
+│           ┌────┐        ┌────┐                     │
+│   ┌────┐  │    │ ┌────┐ │    │  ┌────┐             │  bloques flotantes:
+│   │    │  │    │ │    │ └────┘  │    │             │  hasta 5 productos de
+│   └────┘  └────┘ └────┘         └────┘             │  UNA categoría, que
+│                                                    │  cambia cada tanto
+│                   anavende                         │  la palabra, burdeos
+│      Insumos informáticos nuevos, en caja.         │  body-lg, secundario
+│      Elegí, armá tu pedido y te lo llevamos.       │
 │                                                    │
-│            Todo para tu setup                      │  display 36px
-│      Periféricos y accesorios con envío            │  body-lg, secundario
-│                                                    │
-│         (  Buscar productos...        (→)  )       │  buscador, máx 560px
+│      (  ¿Qué estás buscando hoy?        (→)  )     │  buscador, máx 560px
 │                                                    │
 │   [Teclados] [Mouses] [Auriculares] [Cables] …     │  píldoras, hasta 7
 │                                                    │
+│  [🚚 Envíos a Viedma, Carmen de Patagones y …  ]   │  el aviso de RN-10
 ├──────────────────────── 80px ──────────────────────┤
-│  Teclados                                     →    │  heading 20px
+│  Destacados                                   →    │  heading 20px
 │  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │  una fila, grilla de 4
 ├──────────────────────── 80px ──────────────────────┤
-│  Mouses                                       →    │  una sección por cada
+│  Teclados                                     →    │  una sección por cada
 │  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │  categoría destacada
 ├──────────────────────── 80px ──────────────────────┤
-│  Destacados                                   →    │
+│  Mouses                                       →    │
 │  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │
 ├──────────────────────── 80px ──────────────────────┤
 │  En oferta                                    →    │
@@ -1002,23 +1017,61 @@ Tres decisiones de integración, las tres con motivo:
 ├──────────────────────── 80px ──────────────────────┤
 │  Más categorías                    (Ver todas)     │  el botón, apagado
 │  [Cables] [Sillas] [Monitores] [Adaptadores]       │
-├────────────────────────────────────────────────────┤
-│  Entregamos en Viedma, Patagones y alrededores     │
 └────────────────────────────────────────────────────┘
 ```
 
-Sin *hero* fotográfico: el hero es el buscador. Es una tienda de reventa, no una marca de estilo de vida, y la foto genérica de banco de imágenes le resta credibilidad.
+**Sigue sin haber foto de portada, y ahora el hero tampoco está vacío.** La
+foto genérica de banco de imágenes le resta credibilidad a una tienda de
+reventa; lo que llena el hero es **el catálogo mismo**, en cinco bloques
+escalonados. Es la respuesta más corta a «¿qué hay acá?»: productos de verdad,
+con su nombre y su categoría, antes de haber leído una sola línea.
 
-**Las categorías aparecen dos veces, y hacen dos cosas distintas.** Arriba son
-**chips**: un atajo para quien ya sabe qué busca, y por eso están pegadas al
-buscador y llevan directo al catálogo filtrado. En el medio son **secciones con
-producto adentro**: son para quien no sabe qué busca y necesita ver qué hay. La
-de abajo es la tercera cara —**el resto del catálogo**, las que no están
-destacadas— y ahí lo que importa no es cada producto sino que existan.
+**Los bloques son de UNA categoría por vez, y la categoría cambia.** Primero
+unos mouses, al rato unos teclados. Mezclarlos daría una vitrina bonita y muda;
+de a una categoría, el hero cuenta el catálogo por partes y cada vuelta dice
+algo nuevo. **Se dibujan los que haya**: una categoría con cuatro productos
+muestra cuatro bloques y el arco se reacomoda —es la misma regla de las
+secciones—. Entra a la rotación la que tenga **al menos tres productos activos
+con foto**: con menos no es un hero, es un hueco.
+
+| Propiedad | Valor | Por qué |
+|---|---|---|
+| Bloques | hasta 5 | Más no entran sin achicarlos por debajo de lo que se reconoce |
+| En teléfono | 3 | A 390px, cinco bloques serían cinco estampillas |
+| Vuelta | 6s | Alcanza para mirar cinco fotos sin que parezca un cartel de ruta |
+| Mínimo para rotar | 3 productos con foto | Debajo de eso la categoría no entra |
+
+**Se frena mientras lo estás mirando.** Con el mouse encima o el foco del
+teclado adentro, la rotación se detiene: los bloques son **enlaces a la ficha**
+y un enlace que se va justo cuando lo apuntás es peor que no tenerlo. Con
+`prefers-reduced-motion` no arranca nunca —se queda en la primera categoría,
+entera y alcanzable (§8)—.
+
+**La palabra de la marca va en burdeos y en minúsculas, y sólo acá.** Es un
+desvío anotado de §2.3, que la fija en tinta al lado del isotipo: ahí la marca
+acompaña a la navegación y no puede competir con ella, y acá **es** la
+pantalla. El isotipo no se agranda ni se recolorea; lo que crece es la palabra.
+
+**Las categorías aparecen tres veces, y hacen tres cosas distintas.** Arriba
+son **chips**: un atajo para quien ya sabe qué busca, y por eso están pegadas
+al buscador y llevan directo al catálogo filtrado. En el medio son **secciones
+con producto adentro**: son para quien no sabe qué busca y necesita ver qué
+hay. La de abajo es la tercera cara —**el resto del catálogo**, las que no
+están destacadas— y ahí lo que importa no es cada producto sino que existan.
 
 **Tope de siete chips.** Con más, la fila envuelve a tres renglones y deja de
 leerse como un atajo. Las que no entran no desaparecen del sitio: están en el
 menú del encabezado, en los filtros del catálogo y en la sección de abajo.
+
+**El aviso de zona va arriba, pegado a los chips.** Estuvo un rato abajo, junto
+a los medios de pago, para no chocar con el pie que lo repite; el boceto lo
+sube y tiene razón: quién sos y hasta dónde llevás es lo primero que alguien de
+Viedma necesita saber para decidir si esta tienda le sirve. El pie sigue
+diciéndolo para las otras pantallas; acá se dice **más corto**, en una línea.
+
+**«Destacados» va antes que las categorías.** Es la sección que la vendedora
+mueve a mano (RF-20): lo que ella quiere empujar hoy tiene que estar a la vista
+antes de que la pantalla se ponga a explicar el catálogo.
 
 **Una fila por sección, y si no llena, no se rellena.** Una categoría con dos
 productos muestra dos. Una sin ninguno activo **no dibuja su sección**: media
@@ -1030,6 +1083,14 @@ mañana con el de Ana, que va a tener otra forma—.
 `prefers-reduced-motion`** (§9). Van sólo los que tienen logo: un nombre suelto
 en una fila de logos se lee como una imagen que no cargó. Los que no tienen
 logo siguen estando donde importan —§7.3, la ficha, donde se nombran—.
+
+**«Más categorías» va en píldoras, y es provisorio.** El boceto las pide como
+**tarjetas con foto y nombre**, parecidas a las de producto, y para eso hace
+falta una imagen de categoría que la base no tiene: `categories` es nombre,
+slug y dos banderas. Elegir de dónde sale esa foto —la de uno de sus productos
+o un campo propio con su migración y su subida en el panel— quedó **postergado
+a pedido tuyo el 2026-09-22**, así que la sección se dibuja como está y se
+rehace cuando esa decisión exista.
 
 **«Ver todas» nace apagado, con el motivo al lado** (RNF-08): la pantalla de
 categorías no existe todavía y no tiene tarea en ninguna fase. La sección se
