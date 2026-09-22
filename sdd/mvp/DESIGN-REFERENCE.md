@@ -1039,7 +1039,15 @@ con foto**: con menos no es un hero, es un hueco.
 | Bloques | hasta 5 | Más no entran sin achicarlos por debajo de lo que se reconoce |
 | En teléfono | 3 | A 390px, cinco bloques serían cinco estampillas |
 | Vuelta | 6s | Alcanza para mirar cinco fotos sin que parezca un cartel de ruta |
+| Vaivén | 8px en 5s | Flotan de arriba abajo, cada uno con su retraso y su duración |
 | Mínimo para rotar | 3 productos con foto | Debajo de eso la categoría no entra |
+
+**Se mueven, apenas.** Los bloques flotan de arriba abajo —ocho píxeles en
+cinco segundos, menos de lo que se mueve una hoja—, y cada uno con su propio
+retraso y su propia duración: en sincronía serían un ascensor de cinco puertas.
+Es lo que hace que se lean como bloques flotando y no como cinco tarjetas
+pegadas en diagonal, y con la hilera de logos son el único movimiento continuo
+de la tienda.
 
 **Se frena mientras lo estás mirando.** Con el mouse encima o el foco del
 teclado adentro, la rotación se detiene: los bloques son **enlaces a la ficha**

@@ -286,6 +286,25 @@
     }
   }
 
+  /* El vaiven de los bloques del hero (§7.1): 8px de recorrido en cinco
+     segundos, que es menos de lo que se mueve una hoja. Arranca arriba y baja,
+     y cada bloque entra con su propio retraso y su propia duracion: en
+     sincronia serian un ascensor, desfasados son cosas que flotan. Va en un
+     envoltorio propio y no en el enlace porque la tarjeta ya usa `transform`
+     para levantarse al pasarle el mouse, y una animacion en curso le gana a
+     cualquier `translate` de la misma capa. */
+  --animate-vaiven: vaiven 5s ease-in-out infinite;
+
+  @keyframes vaiven {
+    0%,
+    100% {
+      transform: translateY(-4px);
+    }
+    50% {
+      transform: translateY(4px);
+    }
+  }
+
   /* Anchos máximos (§4) */
   --container-shop: 1200px;
   /* El panel va a ancho completo menos el menú, SALVO los formularios y el

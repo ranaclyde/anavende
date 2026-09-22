@@ -18,6 +18,12 @@ import { cn } from "@/lib/utils";
  * categorías daría una vitrina linda y muda; de a una, cada vuelta cuenta una
  * parte del catálogo —ahora mouses, al rato teclados—.
  *
+ * **Flotan.** Ocho píxeles de recorrido en cinco segundos, cada bloque con su
+ * retraso y su duración: en sincronía serían un ascensor de cinco puertas, y
+ * desfasados son cosas que flotan. Es el único movimiento continuo de la
+ * pantalla junto con la hilera de logos, y la regla global lo apaga entero con
+ * `prefers-reduced-motion`.
+ *
  * **Se frena mientras lo mirás.** Los bloques son enlaces a la ficha, y un
  * enlace que se va justo cuando lo estás apuntando es peor que no tenerlo: con
  * el mouse encima o el foco del teclado adentro, el reloj se para. Y con
@@ -121,45 +127,62 @@ export function BloquesDelHero({
               // parpadeo. Inline porque es un número por bloque, no una clase.
               style={{ animationDelay: `${i * 80}ms` }}
             >
-              <Link
-                href={`/productos/${producto.slug}`}
-                className={cn(
-                  "group flex w-22 flex-col rounded-card bg-surface p-2 shadow-md sm:w-28 lg:w-38",
-                  "transition-shadow duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
-                  "hover:shadow-lg focus-visible:shadow-focus",
-                  "motion-safe:transition-[box-shadow,transform] motion-safe:hover:-translate-y-0.5",
-                )}
+              {/*
+                El vaivén va en su propio envoltorio, entre la entrada y el
+                enlace: las tres son `transform` y en el mismo elemento se
+                pisan —la entrada terminaría clavando el bloque a media altura
+                y el `hover` de la tarjeta no levantaría nada—.
+              */}
+              <div
+                className="animate-vaiven"
+                // Cada uno con su tiempo: en sincronía serían un ascensor de
+                // cinco puertas. Desfasados son cosas que flotan.
+                style={{
+                  animationDelay: `${i * 700}ms`,
+                  animationDuration: `${5 + i * 0.4}s`,
+                }}
               >
-                <div className="relative aspect-square overflow-hidden rounded-image bg-surface-sunken">
-                  {/*
-                    `alt` vacío a propósito: el nombre del producto está acá
-                    abajo, DENTRO del mismo enlace, así que un texto
-                    alternativo lo repetiría —«Teclado Kumara K552, Teclado
-                    Kumara K552»— cada vez que alguien recorre la página con
-                    un lector de pantalla.
-                  */}
-                  <Image
-                    src={producto.src}
-                    alt=""
-                    fill
-                    // Es el ancho de la IMAGEN, no el del bloque: el bloque tiene 8px
-                    // de relleno de cada lado, así que 152 son 136 de foto.
-                    sizes="(min-width: 1024px) 136px, (min-width: 640px) 96px, 72px"
-                    // Sólo la primera tanda, que es la que está arriba del
-                    // pliegue en el primer pintado. Las que siguen llegan
-                    // cuando ya no hay nada que disputarle al LCP.
-                    priority={indice === 0}
-                    className="object-cover"
-                  />
-                </div>
+                <Link
+                  href={`/productos/${producto.slug}`}
+                  className={cn(
+                    "group flex w-22 flex-col rounded-card bg-surface p-2 shadow-md sm:w-28 lg:w-38",
+                    "transition-shadow duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
+                    "hover:shadow-lg focus-visible:shadow-focus",
+                    "motion-safe:transition-[box-shadow,transform] motion-safe:hover:-translate-y-0.5",
+                  )}
+                >
+                  <div className="relative aspect-square overflow-hidden rounded-image bg-surface-sunken">
+                    {/*
+                      `alt` vacío a propósito: el nombre del producto está acá
+                      abajo, DENTRO del mismo enlace, así que un texto
+                      alternativo lo repetiría —«Teclado Kumara K552, Teclado
+                      Kumara K552»— cada vez que alguien recorre la página con
+                      un lector de pantalla.
+                    */}
+                    <Image
+                      src={producto.src}
+                      alt=""
+                      fill
+                      // Es el ancho de la IMAGEN, no el del bloque: el bloque
+                      // tiene 8px de relleno de cada lado, así que 152 son 136
+                      // de foto.
+                      sizes="(min-width: 1024px) 136px, (min-width: 640px) 96px, 72px"
+                      // Sólo la primera tanda, que es la que está arriba del
+                      // pliegue en el primer pintado. Las que siguen llegan
+                      // cuando ya no hay nada que disputarle al LCP.
+                      priority={indice === 0}
+                      className="object-cover"
+                    />
+                  </div>
 
-                <p className="truncate pt-2 text-caption font-medium text-ink">
-                  {producto.nombre}
-                </p>
-                <p className="truncate text-caption text-ink-secondary">
-                  {actual.categoria}
-                </p>
-              </Link>
+                  <p className="truncate pt-2 text-caption font-medium text-ink">
+                    {producto.nombre}
+                  </p>
+                  <p className="truncate text-caption text-ink-secondary">
+                    {actual.categoria}
+                  </p>
+                </Link>
+              </div>
             </div>
           </li>
         ))}
