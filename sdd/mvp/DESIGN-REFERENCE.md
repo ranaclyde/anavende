@@ -968,6 +968,11 @@ Tres decisiones de integración, las tres con motivo:
 
 ### 7.1 Home
 
+> **Detallada el 2026-09-22, pedido tuyo.** El canvas dejaba «Destacados / En
+> oferta / Vistos recientemente» y nada más; lo que faltaba era qué hace la
+> home con las **categorías**, que es lo que esta tienda tiene para ofrecer
+> antes de que nadie sepa qué busca. El dibujo de abajo reemplaza al anterior.
+
 ```
 ┌────────────────────────────────────────────────────┐
 │                                                    │
@@ -976,24 +981,60 @@ Tres decisiones de integración, las tres con motivo:
 │                                                    │
 │         (  Buscar productos...        (→)  )       │  buscador, máx 560px
 │                                                    │
-│      [Teclados] [Mouses] [Auriculares] [Cables]    │  píldoras
+│   [Teclados] [Mouses] [Auriculares] [Cables] …     │  píldoras, hasta 7
 │                                                    │
 ├──────────────────────── 80px ──────────────────────┤
-│  Destacados                                   →    │  heading 20px
-│  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │  grilla de 4
+│  Teclados                                     →    │  heading 20px
+│  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │  una fila, grilla de 4
+├──────────────────────── 80px ──────────────────────┤
+│  Mouses                                       →    │  una sección por cada
+│  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │  categoría destacada
+├──────────────────────── 80px ──────────────────────┤
+│  Destacados                                   →    │
+│  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │
 ├──────────────────────── 80px ──────────────────────┤
 │  En oferta                                    →    │
 │  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │
 ├──────────────────────── 80px ──────────────────────┤
-│  Vistos recientemente                              │  solo si hay historial
-│  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │
+│  (Vistos recientemente)                            │  F8.4, todavía no
 ├──────────────────────── 80px ──────────────────────┤
-│  Medios de pago:  [logo] [logo] [logo]             │
-│  Entregamos en Viedma, Patagones y alrededores      │
+│  ←  [logo] [logo] [logo] [logo] [logo] [logo]  →   │  hilera que gira
+├──────────────────────── 80px ──────────────────────┤
+│  Más categorías                    (Ver todas)     │  el botón, apagado
+│  [Cables] [Sillas] [Monitores] [Adaptadores]       │
+├────────────────────────────────────────────────────┤
+│  Entregamos en Viedma, Patagones y alrededores     │
 └────────────────────────────────────────────────────┘
 ```
 
 Sin *hero* fotográfico: el hero es el buscador. Es una tienda de reventa, no una marca de estilo de vida, y la foto genérica de banco de imágenes le resta credibilidad.
+
+**Las categorías aparecen dos veces, y hacen dos cosas distintas.** Arriba son
+**chips**: un atajo para quien ya sabe qué busca, y por eso están pegadas al
+buscador y llevan directo al catálogo filtrado. En el medio son **secciones con
+producto adentro**: son para quien no sabe qué busca y necesita ver qué hay. La
+de abajo es la tercera cara —**el resto del catálogo**, las que no están
+destacadas— y ahí lo que importa no es cada producto sino que existan.
+
+**Tope de siete chips.** Con más, la fila envuelve a tres renglones y deja de
+leerse como un atajo. Las que no entran no desaparecen del sitio: están en el
+menú del encabezado, en los filtros del catálogo y en la sección de abajo.
+
+**Una fila por sección, y si no llena, no se rellena.** Una categoría con dos
+productos muestra dos. Una sin ninguno activo **no dibuja su sección**: media
+pantalla de secciones vacías es peor que una home más corta, y es lo que
+protege a esta pantalla del riesgo P1 —hoy se ve con un catálogo sembrado y
+mañana con el de Ana, que va a tener otra forma—.
+
+**La hilera de medios de pago gira, y se queda quieta con
+`prefers-reduced-motion`** (§9). Van sólo los que tienen logo: un nombre suelto
+en una fila de logos se lee como una imagen que no cargó. Los que no tienen
+logo siguen estando donde importan —§7.3, la ficha, donde se nombran—.
+
+**«Ver todas» nace apagado, con el motivo al lado** (RNF-08): la pantalla de
+categorías no existe todavía y no tiene tarea en ninguna fase. La sección se
+construye igual porque el hueco es real; el botón se enciende el día que esa
+pantalla exista.
 
 ### 7.2 Catálogo
 

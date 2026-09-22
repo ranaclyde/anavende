@@ -250,6 +250,23 @@
   --shadow-brand: 0 4px 24px var(--brand-shadow);
   --shadow-focus: var(--shadow-focus-raw);
 
+  /* Movimiento (§9) — la única animación propia del sistema.
+     La hilera de medios de pago de la home (§7.1) recorre media lista: la
+     lista va duplicada, así que al llegar al 50% el dibujo es idéntico al del
+     principio y el salto no se ve. Con `prefers-reduced-motion` la regla de
+     más abajo la deja quieta, que es por lo que no hace falta apagarla a mano
+     en cada uso. */
+  --animate-hilera: hilera 40s linear infinite;
+
+  @keyframes hilera {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
   /* Anchos máximos (§4) */
   --container-shop: 1200px;
   /* El panel va a ancho completo menos el menú, SALVO los formularios y el

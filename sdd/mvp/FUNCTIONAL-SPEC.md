@@ -94,20 +94,28 @@ Ver detalle en §12 (Fuera de alcance).
 
 **Descripción:** Página de entrada con la propuesta visual de descubrimiento (ver `DESIGN-REFERENCE.md`).
 
-**Contenido:**
-- Buscador destacado.
-- Accesos rápidos a categorías (chips/píldoras), con las **destacadas primero** (RF-18).
-- Sección de productos destacados y/o novedades.
-- Sección de productos en oferta (con descuento activo).
-- Bloque «Vistos recientemente», si el visitante tiene historial (RF-33).
-- Franja informativa de medios de pago.
-- Aviso de la zona de entrega y del retiro en el punto de entrega (RN-10).
+**Contenido**, en este orden (detallado el 2026-09-22, pedido tuyo; el dibujo está en `DESIGN-REFERENCE.md` §7.1):
+
+1. **Buscador destacado.** Es el *hero*: no hay foto de portada.
+2. **Chips de categoría**: las **destacadas** (RF-18), **hasta siete**. Las que no entran no se muestran acá. Cada chip lleva al catálogo **ya filtrado por esa categoría**, no a una pantalla propia.
+3. **Una sección por cada categoría destacada**, con sus productos —los que entren en una fila—. La sección no aparece si la categoría no tiene ninguno activo.
+4. **Sección de productos destacados** (RF-20).
+5. **Sección de productos en oferta** (con descuento activo).
+6. **Franja de medios de pago**: **sólo los que tienen logo cargado** (RF-19), en una sola hilera que gira. Va abajo y no arriba: es información de respaldo, no la propuesta de la pantalla.
+7. **Sección de más categorías**, con el mismo aspecto que las de arriba, y un botón **«Ver todas»**.
+8. **Aviso de la zona de entrega y del retiro** en el punto de entrega (RN-10).
+
+**Lo que no entra, y por qué:**
+- **«Vistos recientemente»** es RF-33 y se construye en F8.4. Su lugar en la pantalla está previsto en §7.1; hasta entonces no se dibuja.
+- **La pantalla de listado de categorías no existe** y no tiene tarea en ninguna fase. Por eso **«Ver todas» nace deshabilitado, con el motivo al lado** (RNF-08): la sección se construye ahora y el botón se enciende el día que esa pantalla exista.
 
 **Criterios de aceptación:**
-- [ ] La home carga sin productos cargados (estado vacío controlado, sin errores).
+- [ ] La home carga sin productos cargados (estado vacío controlado, sin errores), y **cada bloque desaparece solo** cuando no tiene qué mostrar: sin destacados no hay sección de destacados, sin ofertas no hay ofertas, sin medios de pago con logo no hay franja.
 - [ ] Todos los bloques enlazan a listados filtrados del catálogo.
 - [ ] Sólo se muestran productos con `isActive = true`.
-- [ ] Los accesos rápidos muestran primero las categorías **destacadas** y, entre iguales, por nombre. Sólo se muestran categorías activas.
+- [ ] Los accesos rápidos muestran las categorías **destacadas**, ordenadas entre ellas por nombre (§5.4), **con un tope de siete**. Sólo se muestran categorías activas.
+- [ ] Las secciones por categoría muestran **hasta una fila** de productos y enlazan a esa categoría en el catálogo.
+- [ ] La hilera de medios de pago **queda quieta** si el visitante pidió menos movimiento (`prefers-reduced-motion`), y no es la única forma de llegar a esa información.
 
 ---
 
