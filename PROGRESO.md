@@ -3187,7 +3187,7 @@ El plan acordado son cuatro movimientos, de mayor a menor rendimiento:
 2. **Subir «Colores y stock» en la ficha**, a dos columnas desde `xl` como la
    ficha de usuario. ✅ Hecho.
 3. **Que el alta termine donde empieza el trabajo**: crear deja el diálogo de
-   «Agregar color» abierto. Pendiente.
+   «Agregar color» abierto. ✅ Hecho.
 4. **Avisos flotantes.** Pendiente, y último a propósito: son la consecuencia
    de los otros tres y no el arreglo. Un aviso que dice «se guardó» no
    arregla que hayas tenido que scrollear 480px para guardarlo.
@@ -3286,6 +3286,41 @@ Verificado con Playwright contra `next start` a siete anchos: sin desborde
 horizontal en ninguno, sin errores de consola, y el borde izquierdo del
 contenido sigue en **x=264** a 1280, 1440 y 1920, que es la garantía de §4.1 —
 nada se movió de lugar al pasar del listado a la ficha.
+
+**Lo hecho (3).** Crear un producto ahora aterriza en su ficha **con el diálogo
+de «Agregar color» ya abierto**. La bajada de «Nuevo producto» lo venía
+prometiendo —«los colores, el stock y las fotos se cargan después, en la
+pantalla que se abre sola al crearlo»— y no era cierto: se aterrizaba en la
+ficha con la tarjeta de colores al pie. Un producto sin colores no tiene stock
+ni fotos, así que no se puede vender, y crear el producto es media tarea.
+
+- **El estado viaja en la dirección** (`?agregar=color`), no en memoria (§10.2).
+  Tres cosas salen de ahí: el enlace se puede pegar en cualquier lado —«andá a
+  cargarle un color a esto»—, el atrás funciona, y dos pantallas no tienen que
+  ponerse de acuerdo sobre algo invisible.
+- **Al cerrar, el parámetro se saca.** Si se quedara, recargar volvería a abrir
+  el alta encima de un color ya cargado. Se saca navegando —`router.replace` a
+  la dirección sin él— y no refrescando: la navegación ya trae los datos
+  nuevos, y hacer las dos cosas sería pedir la misma página dos veces.
+- **El diálogo sigue a la dirección y no sólo la lee al montarse.** Con el
+  valor inicial del `useState` alcanza hoy, porque se llega desde `/nuevo`, que
+  es otro segmento y monta el componente de cero. El día que algo enlace a
+  `?agregar=color` desde la ficha misma, React reusaría la instancia y el
+  diálogo no se abriría — el valor inicial de un `useState` se lee una vez.
+- **La regla quedó escrita en §6.14.1**, para el próximo diálogo que quiera
+  abrirse solo: si lo abre una acción de quien mira, es estado del cliente; si
+  lo abre de dónde se viene, va en la dirección, y quien lo cierra lo limpia.
+
+Probado en el navegador contra `next start`, **13 comprobaciones**: crear lleva
+a `?agregar=color` con el diálogo abierto y el foco adentro, en el selector de
+color; cancelar lo cierra, saca el parámetro y deja a la vista el vacío con su
+«Cargar el primero»; recargar **no** lo vuelve a abrir; entrar a mano con el
+parámetro también lo abre; guardar un color lo cierra, limpia la dirección y
+deja «7 en total»; y **editar** un producto que ya existía sigue volviendo al
+listado, sin pasar por el alta de color. Detrás del diálogo se lee el nombre
+del producto en el `h1`, que es la única señal de que se guardó hasta que
+lleguen los avisos del punto 4. Los dos productos de prueba se borraron: el
+catálogo quedó como estaba.
 
 ### Lo que falta decidir antes de tocar código
 

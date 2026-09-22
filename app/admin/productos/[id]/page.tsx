@@ -15,8 +15,30 @@ import {
 
 export const metadata: Metadata = { title: "Editar producto" };
 
-/** En Next 16 `params` es asíncrono: hay que esperarlo (§10.2). */
-type Props = { params: Promise<{ id: string }> };
+/** En Next 16 `params` y `searchParams` son asíncronos (§10.2). */
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ agregar?: string }>;
+};
+
+/**
+ * El alta de un producto termina acá **con el diálogo de «Agregar color» ya
+ * abierto**, y eso viaja en la dirección y no en memoria.
+ *
+ * Un producto sin colores no tiene stock ni fotos, así que no se puede
+ * vender: crear el producto es media tarea, y la bajada de «Nuevo producto»
+ * ya promete «la pantalla que se abre sola al crearlo». Hasta hoy la promesa
+ * era falsa — se llegaba a la ficha con la tarjeta de colores abajo de todo y
+ * había que encontrarla.
+ *
+ * **En la URL y no en un estado que se pasa de una pantalla a otra** (§10.2):
+ * así el enlace se puede pegar en cualquier lado —«andá a cargarle un color a
+ * esto»—, el atrás funciona, y no hace falta que dos pantallas se pongan de
+ * acuerdo sobre algo invisible. Al cerrar el diálogo el parámetro se saca,
+ * porque si se quedara, recargar volvería a abrirlo sobre un color ya
+ * cargado.
+ */
+const ABRIR_ALTA_DE_COLOR = "color";
 
 /**
  * La dirección la escribe cualquiera. Sin esta guarda, `/admin/productos/hola`
@@ -26,8 +48,8 @@ type Props = { params: Promise<{ id: string }> };
 const ES_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export default async function EditarProducto({ params }: Props) {
-  const { id } = await params;
+export default async function EditarProducto({ params, searchParams }: Props) {
+  const [{ id }, consulta] = await Promise.all([params, searchParams]);
 
   if (!ES_UUID.test(id)) notFound();
 
@@ -82,6 +104,7 @@ export default async function EditarProducto({ params }: Props) {
           productoActivo={producto.isActive}
           variantes={variantes}
           colores={colores}
+          abrirAlta={consulta.agregar === ABRIR_ALTA_DE_COLOR}
         />
       </div>
     </div>

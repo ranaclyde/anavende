@@ -869,6 +869,16 @@ Sin tope, un diálogo más alto que la pantalla **no se corta por abajo: se cort
 
 **Ese envoltorio es transparente**, y tiene que serlo: hay diálogos que fijan su alto y su separación desde afuera —la galería de la ficha manda `h-[calc(100dvh-2rem)]` y `gap-0`—, así que el envoltorio lleva `flex-1` para no achatar a quien fija su alto y `gap-[inherit]` para no imponer el suyo. **Un diálogo que es la pantalla entera anula el tope con `max-h-none`**, que es el único caso previsto.
 
+#### 6.14.1 Un diálogo que se abre solo se abre desde la dirección (2026-09-21)
+
+Hay un caso en que abrir un diálogo no lo decide quien mira la pantalla: **el alta de un producto termina en su ficha con «Agregar color» ya abierto**. Un producto sin colores no tiene stock ni fotos, así que no se puede vender; crear el producto es media tarea, y la bajada de «Nuevo producto» venía prometiendo «la pantalla que se abre sola al crearlo» sin que eso fuera cierto — se aterrizaba en la ficha con la tarjeta de colores al pie.
+
+**Ese estado viaja en la URL y no en memoria** (`?agregar=color`, §10.2). Tres cosas salen de ahí y ninguna sale de pasarse un dato entre pantallas: el enlace se puede pegar en cualquier lado —«andá a cargarle un color a esto»—, el botón atrás funciona, y dos pantallas no tienen que ponerse de acuerdo sobre algo invisible.
+
+**Y al cerrar, el parámetro se saca.** Si se quedara, recargar volvería a abrir el alta encima de un color que ya se cargó. Se saca navegando (`router.replace` a la dirección sin él) y no refrescando: la navegación ya trae los datos nuevos, y hacer las dos cosas sería pedir la misma página dos veces.
+
+**La regla, para el próximo diálogo que quiera abrirse solo:** si lo abre una acción de quien mira, es estado del cliente; si lo abre de dónde se viene, va en la dirección, y quien lo cierra lo limpia.
+
 ## 7. Composición de pantallas
 
 ### 7.1 Home

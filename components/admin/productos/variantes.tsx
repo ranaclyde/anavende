@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
 import { Palette, Pencil, Plus, Trash2 } from "lucide-react";
 
@@ -63,19 +63,33 @@ export function VariantesDelProducto({
   productoActivo,
   variantes,
   colores,
+  abrirAlta = false,
 }: {
   productId: string;
   productoActivo: boolean;
   variantes: VarianteDelPanel[];
   colores: OpcionDeColor[];
+  /** Llegó `?agregar=color`: el alta termina acá y sigue sola. */
+  abrirAlta?: boolean;
 }) {
   const [enEdicion, setEnEdicion] = useState<VarianteDelPanel | null>(null);
-  const [agregando, setAgregando] = useState(false);
+  const [agregando, setAgregando] = useState(abrirAlta);
   const [porBorrar, setPorBorrar] = useState<VarianteDelPanel | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enCurso, iniciar] = useTransition();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // El estado arranca con lo que diga la dirección, y además la sigue. Con
+  // sólo el valor inicial alcanza HOY, porque se llega desde `/nuevo`, que es
+  // otro segmento y monta este componente de cero. Pero el día que algo
+  // enlace a `?agregar=color` desde la ficha misma —el listado, por ejemplo—
+  // React reusaría esta instancia y el diálogo no se abriría: el valor
+  // inicial de un `useState` se lee una sola vez.
+  useEffect(() => {
+    if (abrirAlta) setAgregando(true);
+  }, [abrirAlta]);
 
   const borrar = (v: VarianteDelPanel) => {
     setPorBorrar(null);
@@ -100,6 +114,16 @@ export function VariantesDelProducto({
   const cerrarDialogo = () => {
     setEnEdicion(null);
     setAgregando(false);
+
+    // Con `?agregar=color` puesto, cerrar navega a la dirección sin él: si se
+    // quedara, recargar la pantalla volvería a abrir el alta sobre un color
+    // que ya se cargó. Es una navegación y no un `refresh`, así que trae los
+    // datos nuevos igual; llamar a los dos sería pedir la misma página dos
+    // veces.
+    if (abrirAlta) {
+      router.replace(pathname, { scroll: false });
+      return;
+    }
     router.refresh();
   };
 

@@ -189,8 +189,16 @@ export function FormularioDeProducto({
       // recién hecho, que es donde están los colores, el stock y las fotos
       // (F2.4): un producto sin variantes no se puede vender, así que mandar
       // al listado sería cortar el trabajo justo antes de la mitad.
+      //
+      // Y llega con `?agregar=color`, que abre el alta del primer color sola.
+      // La bajada de esta pantalla lo promete —«la pantalla que se abre sola
+      // al crearlo»— y hasta hoy no era cierto: se aterrizaba en la ficha con
+      // la tarjeta de colores abajo de todo, que es la mitad del trabajo
+      // escondida al pie de la página.
       router.push(
-        producto ? "/admin/productos" : `/admin/productos/${resultado.data.id}`,
+        producto
+          ? "/admin/productos"
+          : `/admin/productos/${resultado.data.id}?agregar=color`,
       );
       router.refresh();
     });

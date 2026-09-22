@@ -370,6 +370,16 @@ globos— se lleva la escala puesta explícitamente (`components/ui/escala.tsx`)
 Arriba de `document.body` ya no hay `data-scale`, y un diálogo abierto desde el
 panel se pintaría con la escala de la tienda aunque tenga sus clases `admin:`.
 
+**La regla del diálogo que se abre solo.** Si lo abre una acción de quien mira
+la pantalla, es estado del cliente. Si lo abre de dónde se viene, va en la
+dirección y quien lo cierra lo limpia. El caso es el alta de un producto, que
+termina en su ficha con «Agregar color» abierto (`?agregar=color`): un producto
+sin colores no tiene stock ni fotos y no se puede vender, así que crearlo es
+media tarea. En la URL y no en memoria, el enlace se puede pegar en cualquier
+lado, el atrás funciona, y dos pantallas no tienen que ponerse de acuerdo sobre
+algo invisible. Si el parámetro no se sacara al cerrar, recargar volvería a
+abrir el alta sobre un color ya cargado.
+
 **La regla del buscador único.** El buscador del encabezado se esconde por CSS
 cuando la página ya trae el suyo a la vista, y vuelve cuando ese se va de pantalla.
 Es CSS y no estado de React a propósito: con estado, el encabezado se pinta con su
