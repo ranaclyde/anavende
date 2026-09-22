@@ -30,6 +30,12 @@ colors:
   info: "#0369a1"
   info-tint: "#f0f9ff"
 typography:
+  marca:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, sans-serif"
+    fontSize: "3.5rem"
+    fontWeight: 600
+    lineHeight: 1
+    letterSpacing: "-0.035em"
   display:
     fontFamily: "Inter, system-ui, -apple-system, Segoe UI, sans-serif"
     fontSize: "2.25rem"
@@ -303,6 +309,7 @@ apretados y sólidos sin necesidad de un peso más alto.
 
 ### Hierarchy
 
+- **Marca** (600, 3.5rem/56px, 1.0): la palabra «AnaVende» en el hero de la home, en minúsculas y en Malbec, y en ningún otro lado. Debajo de `sm` cae a Display.
 - **Display** (600, 2.25rem/36px, 1.1): el hero de la portada, y sólo ahí.
 - **Title** (600, 1.5rem/24px, 1.2): nombre del producto en la ficha, títulos de pantalla.
 - **Heading** (600, 1.25rem/20px, 1.25): encabezados de sección.

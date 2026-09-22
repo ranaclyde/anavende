@@ -53,7 +53,7 @@ function condicionDeBusqueda(q: string): SQL {
  * alguien afloje esa expresión. Es la misma decisión que el reordenamiento de
  * imágenes de `modules/media/subir.ts`.
  */
-function enLaLista(columna: SQL, ids: readonly string[]): SQL {
+export function enLaLista(columna: SQL, ids: readonly string[]): SQL {
   return sql`${columna} IN (${sql.join(
     ids.map((id) => sql`${id}::uuid`),
     sql`, `,

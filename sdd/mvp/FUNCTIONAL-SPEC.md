@@ -94,20 +94,34 @@ Ver detalle en §12 (Fuera de alcance).
 
 **Descripción:** Página de entrada con la propuesta visual de descubrimiento (ver `DESIGN-REFERENCE.md`).
 
-**Contenido:**
-- Buscador destacado.
-- Accesos rápidos a categorías (chips/píldoras), con las **destacadas primero** (RF-18).
-- Sección de productos destacados y/o novedades.
-- Sección de productos en oferta (con descuento activo).
-- Bloque «Vistos recientemente», si el visitante tiene historial (RF-33).
-- Franja informativa de medios de pago.
-- Aviso de la zona de entrega y del retiro en el punto de entrega (RN-10).
+**Contenido**, en este orden (detallado el 2026-09-22 y **corregido el mismo día** contra el boceto que pasaste; el dibujo está en `DESIGN-REFERENCE.md` §7.1):
+
+1. **Hero con bloques flotantes.** Hasta cinco productos de **una** categoría destacada, en tarjetas escalonadas que flotan, con la marca y la bajada debajo. Los bloques **cambian de categoría cada tanto** —unos mouses, después unos teclados—, **cada uno enlaza a su ficha** y el movimiento **se puede parar** con un botón.
+2. **Buscador**, con la invitación «¿Qué estás buscando hoy?». Sigue siendo lo que la pantalla pide hacer: no hay foto de portada ni banner.
+3. **Chips de categoría**: las **destacadas** (RF-18), **hasta siete**. Las que no entran no se muestran acá. Cada chip lleva al catálogo **ya filtrado por esa categoría**, no a una pantalla propia.
+4. **Aviso de la zona de entrega** (RN-10), **pegado a los chips**: es lo primero que alguien de afuera necesita saber para decidir si esta tienda le sirve. Acá va **en una línea** —hasta dónde llevamos y que el envío se coordina por WhatsApp—; la versión completa, con el retiro en el punto de entrega, la sigue diciendo el pie del sitio, que está en todas las pantallas.
+5. **Sección de productos destacados** (RF-20).
+6. **Una sección por cada categoría destacada**, con sus productos —los que entren en una fila—. La sección no aparece si la categoría no tiene ninguno activo.
+7. **Sección de productos en oferta** (con descuento activo).
+8. **Franja de medios de pago**: **sólo los que tienen logo cargado** (RF-19), en una sola hilera que gira. Va abajo y no arriba: es información de respaldo, no la propuesta de la pantalla.
+9. **Sección de más categorías**, con un botón **«Ver todas»**.
+
+**Lo que no entra, y por qué:**
+- **«Vistos recientemente»** es RF-33 y se construye en F8.4. Su lugar en la pantalla está previsto en §7.1; hasta entonces no se dibuja.
+- **La pantalla de listado de categorías no existe** y no tiene tarea en ninguna fase. Por eso **«Ver todas» nace deshabilitado, con el motivo al lado** (RNF-08): la sección se construye ahora y el botón se enciende el día que esa pantalla exista.
+- **«Más categorías» va en píldoras y no en tarjetas.** La tarjeta con foto que pediste necesita una imagen de categoría, y `categories` no tiene ninguna: la decisión —usar la foto de uno de sus productos o darle campo propio, con su migración y su subida en el panel— quedó **postergada a pedido tuyo el 2026-09-22** y está anotada en `PROGRESO.md`.
 
 **Criterios de aceptación:**
-- [ ] La home carga sin productos cargados (estado vacío controlado, sin errores).
+- [ ] La home carga sin productos cargados (estado vacío controlado, sin errores), y **cada bloque desaparece solo** cuando no tiene qué mostrar: sin destacados no hay sección de destacados, sin ofertas no hay ofertas, sin medios de pago con logo no hay franja, y **sin categorías con fotos suficientes el hero queda en marca, bajada y buscador**.
 - [ ] Todos los bloques enlazan a listados filtrados del catálogo.
 - [ ] Sólo se muestran productos con `isActive = true`.
-- [ ] Los accesos rápidos muestran primero las categorías **destacadas** y, entre iguales, por nombre. Sólo se muestran categorías activas.
+- [ ] Los accesos rápidos muestran las categorías **destacadas**, ordenadas entre ellas por nombre (§5.4), **con un tope de siete**. Sólo se muestran categorías activas.
+- [ ] Las secciones por categoría muestran **hasta una fila** de productos y enlazan a esa categoría en el catálogo.
+- [ ] El hero **muestra los productos que haya**: una categoría con cuatro dibuja cuatro bloques. Entra a la rotación la que tenga **al menos tres productos activos con foto** —con menos no es un hero, es un hueco—, y sólo entran productos **con foto**.
+- [ ] La rotación del hero **se detiene** mientras el mouse está encima o el foco del teclado está adentro, para que el enlace no se escape mientras se lo apunta.
+- [ ] El hero tiene un **botón de pausa a la vista** que detiene el movimiento —la rotación y el vaivén— y lo vuelve a arrancar. Es lo que pide WCAG 2.2.2 para todo movimiento que arranca solo y dura más de cinco segundos, y es la única forma de frenarlo desde un teléfono, donde no hay mouse encima.
+- [ ] El hero **no rota** si el visitante pidió menos movimiento (`prefers-reduced-motion`): se queda en la primera categoría, con todo su contenido alcanzable.
+- [ ] La hilera de medios de pago **queda quieta** si el visitante pidió menos movimiento (`prefers-reduced-motion`), y no es la única forma de llegar a esa información.
 
 ---
 

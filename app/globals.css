@@ -195,6 +195,16 @@
 
   /* Escala tipográfica: tamaño / interlínea / tracking / peso.
      La firma del sistema es el tracking negativo: lo grande se comprime. */
+  /* 56px — la palabra de la marca en el hero de la home, y nada más (§3.3,
+     §7.1). Existe como escalón y no como número suelto en la clase porque la
+     escala tipográfica es un contrato: un tamaño escrito a mano en una pantalla
+     es el primero de los cuatro criterios que después conviven. Debajo de `sm`
+     la palabra cae a `display`, que es el tope de la escala. */
+  --text-marca: 3.5rem;
+  --text-marca--line-height: 1;
+  --text-marca--letter-spacing: -0.035em;
+  --text-marca--font-weight: 600;
+
   --text-display: 2.25rem; /* 36px — hero de la home, solo ahí */
   --text-display--line-height: 1.1;
   --text-display--letter-spacing: -0.035em;
@@ -250,6 +260,61 @@
   --shadow-brand: 0 4px 24px var(--brand-shadow);
   --shadow-focus: var(--shadow-focus-raw);
 
+  /* Movimiento (§9) — la única animación propia del sistema.
+     La hilera de medios de pago de la home (§7.1) recorre media lista: la
+     lista va duplicada, así que al llegar al 50% el dibujo es idéntico al del
+     principio y el salto no se ve. Con `prefers-reduced-motion` la regla de
+     más abajo la deja quieta, que es por lo que no hace falta apagarla a mano
+     en cada uso. */
+  --animate-hilera: hilera 40s linear infinite;
+
+  @keyframes hilera {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* La entrada de un bloque del hero cuando el hero cambia de categoría
+     (§7.1). Sube 12px y aparece: es el mismo gesto que la tarjeta de producto
+     hace al pasarle el mouse, así que el hero se mueve como se mueve el resto
+     del sistema. El retraso lo pone cada bloque —escalonados, la tanda entra
+     como una tanda y no como un parpadeo—, y la regla global de más abajo la
+     apaga entera con `prefers-reduced-motion`. */
+  --animate-bloque: bloque 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+
+  @keyframes bloque {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* El vaiven de los bloques del hero (§7.1): 8px de recorrido en cinco
+     segundos, que es menos de lo que se mueve una hoja. Arranca arriba y baja,
+     y cada bloque entra con su propio retraso y su propia duracion: en
+     sincronia serian un ascensor, desfasados son cosas que flotan. Va en un
+     envoltorio propio y no en el enlace porque la tarjeta ya usa `transform`
+     para levantarse al pasarle el mouse, y una animacion en curso le gana a
+     cualquier `translate` de la misma capa. */
+  --animate-vaiven: vaiven 5s ease-in-out infinite;
+
+  @keyframes vaiven {
+    0%,
+    100% {
+      transform: translateY(-4px);
+    }
+    50% {
+      transform: translateY(4px);
+    }
+  }
+
   /* Anchos máximos (§4) */
   --container-shop: 1200px;
   /* El panel va a ancho completo menos el menú, SALVO los formularios y el
@@ -269,6 +334,16 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+  }
+
+  /* La seleccion de texto (§3.7). Venia en el azul de fabrica de Chrome, que
+     es el unico azul de toda la tienda, y aparece cada vez que alguien copia
+     un nombre de producto para pegarlo en WhatsApp —que aca es un gesto
+     habitual, porque la venta se cierra ahi—. En tinte y no en burdeos pleno:
+     la seleccion marca, no grita, y el tinte sirve a los dos temas. */
+  ::selection {
+    background-color: var(--brand-tint);
+    color: var(--ink);
   }
 
   body {

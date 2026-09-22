@@ -636,7 +636,7 @@ rotulación — **la tarjeta, el catálogo y el precio siguen sin esa pasada**.
 | F3.4 | Catálogo: filtros, orden, paginación, todo en la URL | 🟡 | `/productos` con filtros por categoría, marca, color, **rango de precio** y descuento, cinco órdenes y paginación, y **todo el estado en la dirección** (§10.2): el botón atrás funciona, el enlace se manda por WhatsApp tal como se está viendo, y la pantalla no necesita una línea de estado de cliente para lo que muestra. Tres pantallas vacías distintas y no una —«todavía no hay productos», «no encontramos nada para esto» y la que apareció probando, `?pagina=9` a mano, que antes ofrecía «Limpiar todo» sin ningún filtro puesto—. El conteo es `aria-live`, la paginación son enlaces y las cuatro primeras tarjetas cargan con prioridad, por el LCP. **Completada el 2026-09-08**: categoría, marca y color pasaron a **multiselección** y entró el **rango de precio**, que eran las dos funciones que RF-02 pedía y no estaban. Un chip por valor aplicado, contador por valor, y el precio sobre el precio **final**. **34 tests nuevos** sobre un módulo que no tenía ninguno. **Pasó por `impeccable` (audit) y por `ui-ux-pro-max`** el mismo día: de ahí salieron nueve arreglos de accesibilidad, todos medidos y ninguno visible. Abajo están |
 | F3.5 | Ficha de producto con galería y selector de color | 🟡 | `/productos/[slug]`, y con esto **la tarjeta del catálogo dejó de apuntar a un 404**. Están la galería de §6.8, el selector de color de §6.5, la cantidad con tope en el stock, la descripción con formato pintada como React y no como HTML, y los tres estados de compra: con stock, **sin stock** y «todavía no está a la venta» —un producto activo sin ninguna variante, que RN-05 muestra igual—. Cambiar de color cambia foto, stock y mensaje **sin recargar** y escribe `?color=` con `replaceState`; un producto inactivo da 404. **17 tests** sobre la consulta y los mensajes. **Rehecha el 2026-09-08 con diecisiete pedidos tuyos**: miniaturas a la izquierda y siempre dibujadas —el salto de la foto al cambiar de color era eso—, foto al borde de la tarjeta, flechas, visor de dos niveles con recorrido a tamaño real, galería pegada con la columna derecha desplazando, descripción adentro de esa columna, recuadro «¿Cómo sigue después de comprar?», y Guardar y Compartir. Arriba está el detalle. Pasó por `impeccable` y `ui-ux-pro-max`. **Falta mirarla en un teléfono** y **falta ver moverse la galería**: el navegador de esta máquina no entrega cuadros, así que el desplazamiento suave no ocurre —la instrucción sale bien, está comprobado—. Le faltan los recomendados de RF-03, que son F8.2 y F8.4 |
 | F3.6 | Enlaces de WhatsApp | 🟡 | `lib/whatsapp.ts`, que es donde §4 lo tenía previsto, y **se hizo junto con F3.5 por decisión tuya**: la ficha no tiene ninguna otra acción, así que sin esto salía una pantalla que no se podía terminar de probar. **Son dos mensajes y no uno**: el de compra —producto, color, cantidad, precio y enlace— y el de **consulta de disponibilidad**, que lleva producto, color y enlace y **no** lleva precio ni cantidad: no se está comprando, y un precio sobre algo que todavía no existe es un precio que después hay que desdecir. El criterio de RF-04 —acentos, saltos de línea y el `$` bien codificados— está probado, y el número se limpia a dígitos venga como venga. Sin número configurado **no se dibuja ningún botón**: `wa.me/` sin destino abre WhatsApp en la nada. **Falta abrir uno en un teléfono con WhatsApp de verdad**: lo verificado es la dirección, no la entrega |
-| F3.7 | Home | ⬜ | Hoy `/` es un **marcador de posición deliberado** —título, bajada y nada más—, y lo dice en su propio archivo: construir la home contra productos inventados es el riesgo P1 del plan. Recibió los tokens nuevos de F3.8 como todo lo demás, y ninguna otra cosa del canvas |
+| F3.7 | Home | ✅ | **Construida y corregida el 2026-09-22**, sobre el lineamiento de F3.8 y con el contenido que definiste: **hero con bloques flotantes** que rotan de categoría destacada —y se frenan al pasarles el mouse o el foco—, la marca, el buscador, **hasta siete chips** de categoría destacada, **una sección por cada una** con una fila de productos, «Destacados», «En oferta», la **hilera de medios de pago** —sólo los que tienen logo— y «Más categorías» con el «Ver todas» apagado. El aviso de zona (RN-10) va arriba, pegado a los chips. Cada bloque **desaparece solo si no tiene qué mostrar**, que es lo que la protege del riesgo P1. **«Más categorías» quedó en píldoras**: las tarjetas con foto esperan a que se decida de dónde sale la imagen de una categoría, postergado a pedido tuyo. Las dos pasadas de §12.4 están hechas: `impeccable` corrigió cinco cosas y `ui-ux-pro-max` encontró que al hero le faltaba el botón de pausa que pide WCAG 2.2.2. El umbral de F3.3 sigue esperando el catálogo real |
 | F3.8 | Rediseño de la tienda desde el canvas aprobado | 🟡 | **Tarea nueva, agregada al plan el 2026-09-08**; abajo está entera. Cuatro pasadas —tokens, estructura del catálogo, ajustes de panel y tarjeta, y encabezado— aplicadas a la capa de tokens, al catálogo y al navbar. **Falta bajarlo a la home, a la sección de categorías, al pie, al carrito y a la ficha**, y eso no se hace de una: cada pantalla lo adopta cuando se construye. **El panel de administración queda afuera**: el rediseño es de la tienda, lo que ve el comprador |
 | F3.9 | SEO: URLs, metadatos, datos estructurados, sitemap | ⬜ | Era F3.8 hasta el 2026-09-08 |
 
@@ -705,15 +705,14 @@ los mismos en los dos lados en vez de dos familias distintas.
    del encabezado desaparece cuando la página ya tiene el suyo**: dos
    buscadores uno arriba del otro hacen dudar de cuál usar.
 
-**Lo que falta.** El canvas cubre siete pantallas y el rediseño llegó a tres y
-media: tokens, catálogo, navbar y —desde el 2026-09-08— **la ficha, que nació
-sobre el lineamiento en vez de ser rediseñada después**, que era exactamente el
-plan. Quedan **la home, la sección de categorías, el pie y el carrito**. No
-entran como pasadas nuevas de rediseño sino con la pantalla: F3.7 (home) y F5.5
-(carrito) se construyen ya sobre el lineamiento, porque rediseñar algo que
-todavía no existe es hacer dos veces el mismo trabajo. El plan lo dice en la
-nota de F3. **La sección de categorías es la excepción y no tiene tarea**: está
-abajo.
+**Lo que falta.** El canvas cubre siete pantallas y el rediseño llegó a cuatro
+y media: tokens, catálogo, navbar, **la ficha** —desde el 2026-09-08, nacida
+sobre el lineamiento en vez de rediseñada después— y **la home**, el
+2026-09-22, por el mismo camino. Quedan **el pie y el carrito**. No entran como
+pasadas nuevas de rediseño sino con la pantalla: F5.5 (carrito) ya existe, así
+que ése sí es una pasada; el pie entra con la pantalla que lo obligue a
+cambiar. **La sección de categorías** dejó de ser una pantalla pendiente y pasó
+a ser un bloque de la home: está abajo.
 
 **Dos cosas del canvas que no se adoptaron, y son de forma distinta.** Una es
 de aspecto y está en DR §1.3 con las otras cinco: tipografía, tamaños de 10px,
@@ -725,6 +724,163 @@ botón atrás funcione, y la tienda sí. También se revirtieron los enlaces
 «Inicio · Productos · Categorías · Destacados» del navbar: dos de esas cuatro
 secciones no existen todavía, y el pedido era acomodar el navbar, no sumar
 navegación.
+
+---
+
+### La home (F3.7), y lo que definió al hacerse — 2026-09-22
+
+**La construimos con el contenido que pediste**, que es más concreto de lo que
+tenían el plan y el canvas: ellos decían «destacados, ofertas, vistos
+recientemente» y no contestaban qué hace la home con las **categorías**, que es
+lo que esta tienda tiene para ofrecer antes de que nadie sepa qué busca.
+`FUNCTIONAL-SPEC.md` RF-01 y `DESIGN-REFERENCE.md` §7.1 se reescribieron
+**antes** de tocar código, como en el segundo color.
+
+De arriba abajo: el buscador como hero, **hasta siete chips** de categoría
+destacada, **una sección por cada una de esas siete** con una fila de
+productos, «Destacados», «En oferta», la **hilera de medios de pago** y **«Más
+categorías»** con el «Ver todas» apagado. El aviso de zona (RN-10) cierra.
+
+Lo que hubo que decidir al hacerla:
+
+- **Las siete de los chips son las siete de las secciones.** Hay ocho
+  destacadas sembradas a propósito: la octava —«Webcams»— no entra en los chips
+  y cae en «Más categorías», que es donde tiene que estar. Si los chips y las
+  secciones usaran listas distintas, habría una categoría con sección y sin
+  chip, y nadie sabría por qué.
+- **Una fila por sección, y si no llena, no se rellena**; una categoría sin
+  productos activos **no dibuja su sección**. Es lo que protege a la pantalla
+  del riesgo P1: hoy se mira contra un catálogo sembrado y mañana contra el de
+  Ana, que va a tener otra forma.
+- **«Vistos recientemente» no está**: es RF-33 y se construye en F8.4. Su lugar
+  quedó marcado en §7.1.
+- **El aviso de zona subió, al lado de los medios de pago.** §7.1 lo dibujaba
+  abajo de todo, pero **el pie de página lo repite palabra por palabra en todas
+  las pantallas**, y los dos párrafos pegados se leen como un error. *(Al día
+  siguiente el boceto lo subió más todavía —pegado a los chips— y ahí se quedó:
+  está en la corrección de abajo.)*
+- **La pestaña decía «AnaVende · AnaVende»**: el layout ya pone el sufijo, así
+  que la home no lleva `title` propio.
+
+**Una consulta y no siete.** Las secciones por categoría salen de un solo
+`SELECT` con `row_number()` sobre la partición de categoría: una consulta por
+sección serían siete viajes a la base para dibujar la pantalla de entrada. Las
+tarjetas usan **los mismos fragmentos SQL que el catálogo** —una segunda
+definición de «qué necesita una tarjeta» terminaría mostrando otra portada o
+otro stock según la pantalla—, y el ayudante `enLaLista` se exportó en vez de
+copiarse: pasar un arreglo de JavaScript como parámetro no da un `uuid[]`, da
+una lista de parámetros, y la primera versión de la consulta falló por eso.
+
+**El catálogo de demostración creció para que la home se pueda mirar** (pedido
+tuyo): de 26 productos a **50**, de 4 categorías a **12** —ocho destacadas y
+cuatro sin destacar—, y **cinco medios de pago nuevos con logo inventado**, que
+se suman a los tres que ya habías cargado a mano. «Efectivo» va **sin logo** a
+propósito: es el caso que la hilera tiene que dejar afuera sin dejar un hueco.
+El seed siembra los medios que **falten por nombre**, así que no duplica ni
+pisa los tuyos, y `--limpiar` se lleva sólo los que siguen teniendo su
+descripción de demostración.
+
+**Y el comentario que decía que los medios de pago no se sembraban quedó
+desactualizado.** Decía que sembrarlos ponía en rojo a `pagos.test.ts`; ese
+test ya se había arreglado —toma el primero **de la tabla** y compara con
+`endsWith`, justamente porque la base local puede tener medios cargados de
+antes—. Verificado: 24 en verde con las ocho filas.
+
+**F3.7 quedó cerrada el 2026-09-22**, con las dos pasadas de §12.4 hechas y lo
+que encontraron, abajo.
+
+#### La corrección del mismo día, con tu boceto delante
+
+Pasaste el boceto de la home y con él tres cosas que la primera versión no
+tenía. RF-01 y §7.1 se volvieron a escribir antes de tocar nada.
+
+- **El hero dejó de estar vacío.** Ya no es el buscador solo: arriba van
+  **hasta cinco bloques flotantes** con productos **de una categoría
+  destacada**, y la categoría **cambia cada seis segundos** —unos mouses, al
+  rato unos teclados—. Debajo, la palabra de la marca en burdeos, la bajada y
+  el buscador con «¿Qué estás buscando hoy?».
+- **Son enlaces, así que se frenan.** Con el mouse encima o el foco del teclado
+  adentro, la rotación para: un enlace que se va justo cuando lo apuntás es
+  peor que no tenerlo. Con `prefers-reduced-motion` no arranca nunca —la regla
+  global de CSS no alcanzaba acá, porque el que mueve esto es un reloj de
+  JavaScript, no una animación—.
+- **Se dibujan los que haya.** Elegiste esa regla para las categorías cortas:
+  con cuatro productos van cuatro bloques y el arco se reacomoda. Entra a la
+  rotación la que tenga **al menos tres productos activos con foto** —con menos
+  es un hueco, no un hero—, y sólo entran productos **con foto**: el bloque es
+  casi toda imagen.
+- **Orden nuevo**: hero, buscador, chips, **aviso de zona**, «Destacados», las
+  categorías destacadas, «En oferta», medios de pago y «Más categorías». El
+  aviso subió del todo —hasta dónde llevamos es lo primero que alguien de
+  Viedma necesita saber— y ahí se dice **en una línea**; la versión larga, con
+  el retiro, la sigue diciendo el pie.
+- **Sin consulta nueva.** El hero sale de la **misma** consulta que las
+  secciones: son los mismos productos mirados de otra manera, y una consulta
+  propia podía traer otro orden —el hero mostrando un teclado que su sección
+  no muestra—. Al usarla para dos cosas apareció **un error latente**: la
+  subconsulta con `row_number()` no tenía `ORDER BY` afuera, así que «los
+  primeros cuatro» eran «cuatro cualesquiera» cada vez que a Postgres se le
+  daba por devolverlos en otro orden.
+- **Al hero le viaja lo mínimo**: es un componente de cliente, así que recibe
+  `{slug, nombre, src}` y no la tarjeta entera. Mandarle precios, colores y
+  stock de hasta 35 productos para dibujar una foto y dos renglones habría
+  engordado el HTML de la pantalla de entrada, que es la que más caro paga
+  cada milisegundo (RNF-03).
+- **La palabra de la marca en burdeos y en minúsculas es un desvío anotado de
+  §2.3**, que la fija en tinta al lado del isotipo. Vale **sólo en el hero de
+  la home**: ahí la marca no acompaña a la navegación, **es** la pantalla. El
+  texto del DOM sigue diciendo «AnaVende» —las minúsculas las hace CSS—, así
+  que un lector de pantalla y el portapapeles leen el nombre bien escrito.
+
+#### Las dos skills de §12.4, y lo que encontraron
+
+`impeccable` mira **el resultado dibujado** y no el código, y por eso encontró
+lo que ninguna medida del código decía:
+
+- **El bloque más bajo del arco se le montaba a la palabra de la marca.** El
+  desnivel se hace con `translate`, que no ocupa lugar en el layout: el relleno
+  de abajo ahora reserva los 44px que el arco baja, y el de arriba los 36 que
+  sube.
+- **Siete discos de inicial en burdeos** son siete cosas en burdeos que no son
+  la acción de la pantalla, y **el camión del aviso** es un ícono general. Los
+  dos pasaron a gris: la regla de una sola voz (§3.1) dice que si hay dos
+  burdeos que no son la acción, una de las dos está mal. El único burdeos del
+  hero vuelve a ser el botón del buscador.
+- **A 390 los siete chips con disco caían en cuatro renglones**, y cuatro
+  renglones de atajos ya no son un atajo. El disco aparece desde `sm`.
+- **La selección de texto venía en el azul de fábrica de Chrome** —el único
+  azul de toda la tienda—, y aparece cada vez que alguien copia el nombre de un
+  producto para pegarlo en WhatsApp, que en esta tienda **es el gesto que
+  cierra la venta**. Ahora es el tinte de la marca. Quedó como §3.7.
+- Su detector marcó el `text-[3.5rem]` de la palabra de la marca. Un tamaño
+  escrito a mano en una pantalla es el primero de los cuatro criterios de
+  «grande» que después conviven, así que entró a la escala como `marca` (§3.3),
+  con su fila en la tabla y su entrada en `DESIGN.md`.
+
+`ui-ux-pro-max` encontró **una sola cosa, y era la importante**: «todo contenido
+que rota solo necesita un control de la persona; frenar con el mouse encima o
+con el foco no alcanza». Es WCAG **2.2.2** —cualquier movimiento que arranca
+solo y dura más de cinco segundos tiene que poder detenerse— y acá pegaba
+doble: **desde un teléfono no había ninguna forma de parar el hero**, porque en
+un teléfono no hay mouse encima. Y el móvil es prioridad de diseño (RNF-01).
+
+Hay ahora un **botón de pausa a la vista**, arriba a la derecha del arco, que
+detiene las dos cosas —la vuelta de categoría y el vaivén—. Con
+`prefers-reduced-motion` no se dibuja: ahí no hay nada que parar.
+
+La misma skill avisa que «las animaciones infinitas son para indicadores de
+carga, no para decoración». Es un desvío consciente y tuyo —el vaivén lo
+pediste—, y la respuesta no es sacarlo sino lo que ya está: que se pueda parar,
+y que se pare solo con `prefers-reduced-motion`.
+
+**Lo que quedó pendiente, a pedido tuyo: la foto de las categorías.** El boceto
+pide «Más categorías» como **tarjetas con imagen y nombre**, parecidas a las de
+producto, y `categories` no tiene ninguna imagen: es nombre, slug y dos
+banderas. Las dos salidas son **usar la foto de uno de sus productos** —sin
+migración ni trabajo en el panel, pero la elige la consulta— o **darle campo
+propio**, con su migración, su subida en el alta y la edición de categorías
+(F2.x), y su limpieza en Storage. Dijiste de seguir y volver después, así que
+la sección quedó **en píldoras** y esto espera acá.
 
 ---
 
@@ -2345,14 +2501,23 @@ antes, si aparece otra tarea que toque `button.tsx`.
 
 ---
 
-**La sección de categorías no tiene tarea en ninguna fase.** El canvas
-aprobado tiene su pantalla y vos la pediste; el plan no la nombra. Lo más
-cercano es RF-01, que pide **chips de categoría en la home** (F3.7), y el menú
-del encabezado — ninguno de los dos es un listado de categorías con su imagen.
-Anotado y no inventado: decidir si entra en F3.7, si es una tarea nueva de F3 o
-si va después del MVP es tuyo, y arrastra a FA-21 —la imagen chica de
-categoría, que hoy está sexta en la lista de después del MVP— porque es
-justamente la pantalla que la necesitaría.
+**~~La sección de categorías no tiene tarea en ninguna fase.~~ Decidido el
+2026-09-22.** El canvas aprobado tiene su pantalla y vos la pediste; el plan no
+la nombra. Lo más cercano era RF-01, que pide chips de categoría en la home, y
+el menú del encabezado — ninguno de los dos es un listado de categorías con su
+imagen.
+
+**Lo que decidiste**: las categorías entran en la home, y de tres formas
+distintas (§7.1) — **chips** arriba para quien ya sabe qué busca, **una sección
+con productos por cada destacada** para quien no, y una **sección de «Más
+categorías»** abajo con el resto. Los chips y las secciones llevan al catálogo
+filtrado, no a una pantalla propia.
+
+**La pantalla de listado de categorías sigue sin existir y sin tarea**, y ahora
+el hueco se ve: la sección de abajo tiene un botón **«Ver todas» apagado**, con
+el motivo en el `title` (RNF-08). Se enciende el día que esa pantalla exista, y
+ahí vuelve a aparecer FA-21 —la imagen chica de categoría—, que es lo que esa
+pantalla necesitaría para no ser una lista de nombres.
 
 **Los tests y el desarrollo local comparten base.** `.env.test` y `.env.local`
 apuntan hoy al mismo `127.0.0.1:54322`, así que `npm test` le consume el stock
