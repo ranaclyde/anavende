@@ -17,6 +17,7 @@ import { VacioDelPanel } from "@/components/admin/vacio";
 import { DialogoDeMedioDePago } from "@/components/admin/pagos/dialogo";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -96,9 +97,16 @@ export function ListadoDeMediosDePago({
       cambiarEstadoDeMedioDePago({ id: medio.id, activo: !medio.isActive }),
     );
 
+  // Avisa el borrado y nada más. Mover, activar y desactivar le cambian el
+  // lugar o la insignia a la fila que estás mirando; borrar se la lleva, y
+  // ahí no queda dónde poner la respuesta (§6.15).
   const borrar = (medio: MedioDePagoDelPanel) => {
     setPorBorrar(null);
-    correr(() => eliminarUnMedioDePago({ id: medio.id }));
+    correr(async () => {
+      const r = await eliminarUnMedioDePago({ id: medio.id });
+      if (r.ok) avisar(`Borramos «${medio.name}».`);
+      return r;
+    });
   };
 
   const desactivarEnSuLugar = (medio: MedioDePagoDelPanel) => {

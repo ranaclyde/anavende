@@ -3372,11 +3372,65 @@ El modo oscuro se probó **guardando un color sin cambiarle nada**, que avisa y
 no mueve un solo dato. Un producto de demostración quedó desactivado al probar
 el tono «pero» y **se volvió a activar**; los productos de prueba se borraron.
 
-**Lo que falta, y no es poco.** Quedan sin confirmar unas **veinte acciones**
-del panel —catálogo, medios de pago, órdenes, devoluciones, usuarios—, y casi
-todas caen del lado flotante de la tabla de §6.15 porque pasan dentro de un
-diálogo que se cierra. El mecanismo ya está; es una pasada aparte, con su
-propia verificación.
+### El panel entero confirma lo que hace — hecho el 2026-09-21
+
+La pasada que quedaba del punto 4. De **4 componentes que confirmaban algo** se
+pasó a **26 avisos en 18 componentes**, y a seis lugares donde **no** va un
+aviso flotante y está decidido por qué.
+
+| Área | Qué avisa ahora |
+|---|---|
+| Catálogo | Crear y editar marca, categoría y color; **borrar** |
+| Medios de pago | Crear, editar y **borrar** |
+| Órdenes | Crear una orden manual; agregar, subir, bajar y quitar un ítem; finalizar; cancelar; registrar una devolución |
+| Devoluciones | Anular |
+| Usuarios | Alta, cambio de rol, bloqueo y desbloqueo, baja y reversión |
+| Productos | Ya venía del commit anterior |
+
+**Los seis que no llevan aviso, y es la otra mitad de la regla.** Configuración
+—que tiene su «Listo, se guardó» en línea—, el modo mantenimiento —la insignia
+pasa de «Abierta» a «Cerrada al público» ahí mismo—, los datos de un usuario
+—guardan en su lugar—, restablecer la contraseña —**el diálogo no se cierra**:
+se da vuelta y muestra «Listo», así que un flotante encima diría dos veces lo
+mismo—, las fotos de un producto —aparecen y desaparecen— y destacar, activar,
+desactivar y reordenar filas, que cambian la estrella, la insignia o el lugar
+de la fila que tenés delante.
+
+**Dónde borrar y desactivar se separan.** En catálogo y en medios de pago el
+borrado avisa y la desactivación no: borrar se lleva la fila y no queda dónde
+mirar, mientras que desactivar le cambia la insignia a la fila que seguís
+teniendo enfrente. Es el mismo criterio que ya usaba productos.
+
+**Dos canales que no se pisan.** Bloquear y dar de baja una cuenta tienen las
+dos cosas: el flotante confirma que se hizo, y la caja de aviso que ya existía
+se queda **sólo cuando Supabase Auth no respondió**. Eso no es un éxito limpio
+—la persona todavía puede iniciar sesión— y hay que ir a revisarlo: un cartel
+que se va a los cuatro segundos no sirve para eso.
+
+**Un caso que corrió el límite de la regla.** Subir o bajar la cantidad de un
+ítem cambia el renglón a la vista, así que por la tabla de §6.15 no haría falta
+aviso. Lleva uno igual, porque **cada movimiento escribe en el libro de stock**
+—agregar reserva unidades, quitar las libera— y eso es justo lo que no se ve
+desde la pantalla. La regla quedó reescrita en consecuencia: la pregunta no es
+«¿cambió algo en pantalla?» sino «¿alcanza lo que cambió para saber qué pasó?».
+
+**Probado en el navegador contra `next start`, eligiendo lo reversible**: crear,
+editar y borrar una marca; crear y borrar un medio de pago; subir y bajar la
+cantidad de un ítem; bloquear y desbloquear una cuenta. Los ocho avisos salieron
+con el tono correcto y con su texto. La marca, el medio de pago y el bloqueo se
+deshicieron enteros.
+
+**Lo que sí quedó escrito y no se puede deshacer:** tres renglones en el
+historial de la orden #7188, del ir y venir de la cantidad. El ítem volvió a 1,
+que es como se creó la orden —lo confirma el propio historial—, pero las
+entradas del registro quedan: son un libro de auditoría y no se borran desde el
+panel. Es una base de prueba.
+
+**Un error de medición, anotado.** En la primera corrida leí el aviso
+equivocado: tomaba el primero del DOM, y como el anterior todavía no se había
+ido, el de «bajar» mostraba el texto de «subir». Daba dos veces el mismo
+número. Se corrigió leyendo el último y esperando a que la pantalla quede
+limpia entre paso y paso.
 
 ### Lo que falta decidir antes de tocar código
 

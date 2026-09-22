@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 
 import { AvisoAlComprador } from "@/components/admin/ordenes/editar-item";
 import { BuscadorDeVariantes } from "@/components/admin/ordenes/nueva/buscador-variantes";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -121,6 +122,15 @@ function DialogoDeAgregar({
         setError(r.message);
         return;
       }
+      // Los cuatro movimientos de ítems avisan, y el motivo no es que la
+      // pantalla no cambie —el renglón y el total cambian a la vista— sino
+      // que **cada uno escribe en el libro de stock**, que es lo único que
+      // no se ve desde acá: agregar reserva unidades y quitar las libera.
+      avisar(
+        `Agregaste ${cantidad === 1 ? "1 unidad" : `${cantidad} unidades`} de ${variante.nombre}${
+          variante.color ? ` (${variante.color.toLowerCase()})` : ""
+        } a la orden #${numero}.`,
+      );
       alAgregar();
     });
   }

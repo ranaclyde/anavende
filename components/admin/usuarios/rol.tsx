@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -81,6 +82,11 @@ export function RolDelUsuarioEditable({
         setError(r.message);
         return;
       }
+      avisar(
+        elegido === "admin"
+          ? `${nombre} ahora entra al panel.`
+          : `${nombre} ya no entra al panel.`,
+      );
       setAbierto(false);
     });
   }

@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Campo, Opcion } from "@/components/admin/formulario";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { leerErrores, SIN_ERRORES } from "@/lib/form";
 import { darDeAltaUsuario } from "@/modules/users/panel/actions";
@@ -55,6 +56,7 @@ export function AltaDeUsuario() {
 
       // A su ficha: el alta casi siempre sigue con «y ahora quiero ver cómo
       // quedó», y ahí está lo que se le puede hacer a esa cuenta.
+      avisar(`Creaste la cuenta de ${firstName.trim()} ${lastName.trim()}.`);
       router.push(`/admin/usuarios/${r.data.id}`);
     });
   }

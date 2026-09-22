@@ -3,6 +3,7 @@
 import { Undo2 } from "lucide-react";
 import { useId, useState, useTransition } from "react";
 
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -189,6 +190,9 @@ function DialogoDeDevolver({
         return;
       }
 
+      avisar(
+        `Registraste la devolución de ${elegidos.length === 1 ? "1 renglón" : `${elegidos.length} renglones`} de la orden #${numero}.`,
+      );
       cerrar();
     });
   }

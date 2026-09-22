@@ -394,6 +394,12 @@ La biblioteca es `sonner`, montada dentro del marco de escala porque no usa
 portal y así hereda `data-scale`; va `unstyled`, para que el aspecto salga
 entero de los tokens y no dependa del orden de las hojas.
 
+La pregunta que decide no es «¿cambió algo en pantalla?» sino **«¿alcanza lo
+que cambió para saber qué pasó?»**. Subir la cantidad de un ítem cambia el
+renglón a la vista y lleva aviso igual, porque además escribe en el libro de
+stock, que es lo que no se ve. Guardar la configuración no lleva ninguno,
+porque la pantalla se queda y ya lo dice en su lugar.
+
 **La regla del diálogo que se abre solo.** Si lo abre una acción de quien mira
 la pantalla, es estado del cliente. Si lo abre de dónde se viene, va en la
 dirección y quien lo cierra lo limpia. El caso es el alta de un producto, que

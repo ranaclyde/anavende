@@ -911,7 +911,20 @@ Tres decisiones de integración, las tres con motivo:
 
 **Lo único que se le corrige a la biblioteca son los 400ms** de su transición, que pasan el techo de 300 de §8. La regla vive en `globals.css` con el selector repetido —`[data-sonner-toast][data-sonner-toast]`— porque la hoja del paquete queda después y a igual peso ganaría la suya; repetirlo sube la especificidad sin `!important`, que no se usa en ninguna otra parte del proyecto.
 
-**Qué falta.** Se cablearon las pantallas de productos y stock, que es de donde salió el pedido. **Quedan sin confirmar unas veinte acciones del panel** —catálogo, medios de pago, órdenes, devoluciones, usuarios—, y casi todas caen del lado flotante de la tabla de arriba porque pasan dentro de un diálogo que se cierra. Es una pasada aparte.
+**El panel entero está cableado** (2026-09-21). Son **26 avisos en 18 componentes**. Y seis lugares que mutan **no llevan aviso flotante a propósito**, que es la otra mitad de la regla:
+
+| Dónde | Por qué no |
+|---|---|
+| Configuración | Ya tiene su «Listo, se guardó» en línea, y la pantalla no se va |
+| Modo mantenimiento | La insignia pasa de «Abierta» a «Cerrada al público» ahí mismo |
+| Datos de un usuario | Guarda en su lugar, los campos quedan a la vista con lo guardado |
+| Restablecer contraseña | El diálogo **no se cierra**: se da vuelta y muestra «Listo». Un flotante encima sería decir dos veces lo mismo |
+| Fotos de un producto | La foto aparece o desaparece. «Subimos la foto» al lado de la foto es ruido |
+| Destacar, activar, desactivar y reordenar filas | La estrella, la insignia o el lugar de la fila cambian delante tuyo |
+
+**Dos canales que no se pisan.** Bloquear y dar de baja una cuenta tienen las dos cosas: el flotante confirma que se hizo, y la caja de aviso que ya estaba se queda **sólo cuando Supabase Auth no respondió**. Eso último no es un éxito limpio —la persona todavía puede iniciar sesión— y es información que hay que ir a revisar: un cartel que se va a los cuatro segundos no sirve para eso.
+
+**Y un caso que enseña dónde está el límite de la regla.** Subir o bajar la cantidad de un ítem cambia el renglón a la vista, así que por la tabla de arriba no haría falta aviso. Lleva uno igual, y el motivo es que **cada uno escribe en el libro de stock**: agregar reserva unidades y quitar las libera, y eso es justamente lo que no se ve desde la pantalla. La pregunta no es «¿cambió algo en pantalla?» sino «¿alcanza lo que cambió para saber qué pasó?».
 
 ## 7. Composición de pantallas
 

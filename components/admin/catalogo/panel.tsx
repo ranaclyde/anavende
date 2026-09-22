@@ -13,6 +13,7 @@ import { VacioDelPanel } from "@/components/admin/vacio";
 import { DialogoDeItem } from "@/components/admin/catalogo/dialogo";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -98,6 +99,16 @@ export function PanelDeCatalogo({
       if (!resultado.ok) {
         setErrorDelServidor(resultado.message);
         return;
+      }
+
+      // Avisa el borrado y no la desactivación: borrar se lleva la fila y no
+      // queda dónde mirar, mientras que desactivar le cambia la insignia a la
+      // fila que seguís teniendo delante (§6.15). Lo mismo vale para
+      // «Destacar» y «Activar», que por eso no avisan nada.
+      if (c.accion === "borrar") {
+        avisar(
+          `Borramos ${palabras.articulo} ${palabras.singular} «${c.item.name}».`,
+        );
       }
       setConfirmacion(null);
     });

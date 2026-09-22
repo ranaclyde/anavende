@@ -8,6 +8,7 @@ import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { CamposDeDireccion } from "@/components/admin/ordenes/nueva/direccion";
 import { BuscadorDeComprador } from "@/components/admin/ordenes/nueva/buscador-comprador";
 import { BuscadorDeVariantes } from "@/components/admin/ordenes/nueva/buscador-variantes";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Campo, Opcion } from "@/components/admin/formulario";
 import { FieldError } from "@/components/ui/field-error";
@@ -153,6 +154,7 @@ export function AltaDeOrdenManual() {
       }
       // Al detalle de la orden recién creada: es donde se la revisa, se le
       // escribe al comprador o se la corrige (F7.1, F7.2).
+      avisar(`Creaste la orden #${r.data.numero}.`);
       router.push(`/admin/ordenes/${r.data.numero}`);
     });
   }

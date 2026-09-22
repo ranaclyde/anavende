@@ -3,6 +3,7 @@
 import { Ban } from "lucide-react";
 import { useId, useState, useTransition } from "react";
 
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -102,6 +103,7 @@ function Dialogo({
         setError(errores.general);
         return;
       }
+      avisar("Anulaste la devolución.");
       cerrar();
     });
   }
