@@ -176,7 +176,7 @@ export function RangoDeFechas({
       />
 
       {porQueFecha ? (
-        <p className="text-caption text-ink-tertiary sm:ml-1">
+        <p className="text-caption text-ink-secondary sm:ml-1">
           Por {porQueFecha}
         </p>
       ) : null}
@@ -236,10 +236,10 @@ export function ContadorDeResultados({
   return (
     <p
       aria-live="polite"
-      className={cn(
-        "text-body-sm text-ink-secondary transition-opacity duration-150",
-        pendiente ? "opacity-60" : "",
-      )}
+      // Sin `opacity` mientras busca (§3.1, 2026-09-22): apagar el texto lo
+      // bajaba a 2,6:1 justo cuando dice algo. Que esté buscando ya lo dice
+      // la palabra, que es lo que se anuncia además por `aria-live`.
+      className="text-body-sm text-ink-secondary"
     >
       {pendiente ? "Buscando…" : children}
     </p>

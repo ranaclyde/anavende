@@ -105,7 +105,7 @@ export function RolDelUsuarioEditable({
         ))}
       </Select>
 
-      <p className="text-caption text-ink-tertiary">{nuevo.ayuda}</p>
+      <p className="text-caption text-ink-secondary">{nuevo.ayuda}</p>
 
       <div className="flex justify-end">
         <Button

@@ -31,11 +31,16 @@ export function TarjetaDeDevolucion({
 
   return (
     <article
-      className={`flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-4 ${
-        // La anulada se apaga: sigue estando —revertir stock deja rastro— pero
-        // no es lo que cuenta. El color no es lo único que lo dice: arriba
-        // lleva la etiqueta «Anulada» (§9).
-        anulada ? "opacity-70" : ""
+      className={`flex flex-col gap-3 rounded-panel-card border border-border p-4 ${
+        // La anulada retrocede: sigue estando —revertir stock deja rastro—
+        // pero no es lo que cuenta. El color no es lo único que lo dice:
+        // arriba lleva la etiqueta «Anulada» (§9).
+        //
+        // **Retrocede por superficie y no por `opacity`** (§3.1, 2026-09-22):
+        // apagar la tarjeta entera multiplicaba el contraste de todo lo de
+        // adentro y dejaba los metadatos en 2,17:1, la mitad de lo que pide
+        // AA. `surface-sunken` la hunde sin tocar el texto.
+        anulada ? "bg-surface-sunken" : "bg-surface"
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -58,7 +63,7 @@ export function TarjetaDeDevolucion({
             {anulada ? <Badge tone="neutral">Anulada</Badge> : null}
           </div>
 
-          <p className="text-caption text-ink-tertiary">
+          <p className="text-caption text-ink-secondary">
             {orden ? `${orden.customerName} · ` : ""}
             <time dateTime={devolucion.creadaEn}>
               {fechaConHora(devolucion.creadaEn)}
@@ -72,7 +77,7 @@ export function TarjetaDeDevolucion({
             {formatMoney(devolucion.monto)}
           </span>
           {orden ? (
-            <span className="text-caption text-ink-tertiary tabular-nums">
+            <span className="text-caption text-ink-secondary tabular-nums">
               {devolucion.unidades}{" "}
               {devolucion.unidades === 1 ? "unidad" : "unidades"}
             </span>
@@ -87,7 +92,7 @@ export function TarjetaDeDevolucion({
       </ul>
 
       <p className="text-body-sm text-ink-secondary">
-        <span className="text-ink-tertiary">Motivo: </span>
+        <span className="text-ink-secondary">Motivo: </span>
         {devolucion.motivo}
       </p>
 
@@ -149,7 +154,7 @@ function Renglon({ item }: { item: ItemDevuelto }) {
         {item.repone ? "Volvió al stock" : "No volvió al stock"}
       </Badge>
       {item.motivo ? (
-        <span className="text-caption text-ink-tertiary">{item.motivo}</span>
+        <span className="text-caption text-ink-secondary">{item.motivo}</span>
       ) : null}
     </li>
   );

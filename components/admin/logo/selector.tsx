@@ -97,7 +97,7 @@ export function SelectorDeLogo({
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>
         {LOGO.etiqueta}{" "}
-        <span className="font-normal text-ink-tertiary">{LOGO.opcional}</span>
+        <span className="font-normal text-ink-secondary">{LOGO.opcional}</span>
       </Label>
 
       <div className="flex items-center gap-3">

@@ -10,6 +10,7 @@ import {
   ListadoDeProductos,
   SinProductos,
 } from "@/components/admin/productos/listado";
+import { SolapasDeEstadoDeProducto } from "@/components/admin/productos/solapas";
 import { Button } from "@/components/ui/button";
 import {
   leerFiltros,
@@ -18,7 +19,7 @@ import {
   type ParametrosDeBusqueda,
 } from "@/modules/catalog/products/filtros";
 import {
-  contarProductos,
+  contarPorEstado,
   listarProductos,
   opcionesDeProducto,
 } from "@/modules/catalog/products/queries";
@@ -47,14 +48,15 @@ export default async function ProductosDelPanel({
   // ya vino. Es una lectura por clave primaria de una fila.
   const umbral = await umbralDeStockBajo();
 
-  // Dos totales, y son preguntas distintas: `coincidencias` es cuántos pasan
-  // los filtros —lo que cuenta la barra y lo que decide cuántas páginas hay— y
-  // `total` es cuántos hay cargados, que es lo único que separa «todavía no
-  // cargaste ninguno» de «ninguno coincide con esto» (§8).
-  const [{ productos, total: coincidencias }, total, { marcas, categorias }] =
+  // Dos cuentas, y son preguntas distintas: `coincidencias` es cuántos pasan
+  // la solapa y los filtros —lo que decide cuántas páginas hay— y `conteo` es
+  // cuántos hay en cada solapa sin mirar nada más, que es lo que dibujan las
+  // solapas y lo que separa «todavía no cargaste ninguno» de «ninguno
+  // coincide con esto» (§8).
+  const [{ productos, total: coincidencias }, conteo, { marcas, categorias }] =
     await Promise.all([
       listarProductos(filtros, umbral),
-      contarProductos(),
+      contarPorEstado(),
       opcionesDeProducto(),
     ]);
 
@@ -76,7 +78,7 @@ export default async function ProductosDelPanel({
              ofrece el mismo primer paso en el medio de la pantalla, y dos
              botones de marca iguales a 100px uno del otro se leen como un
              error, no como una invitación (§6.3: una sola por pantalla). */
-          total === 0 ? null : (
+          conteo.todos === 0 ? null : (
             <Button asChild variant="brand" size="sm">
               <Link href="/admin/productos/nuevo">
                 <Plus aria-hidden />
@@ -87,19 +89,25 @@ export default async function ProductosDelPanel({
         }
       />
 
-      {/* Sin ningún producto cargado la barra no tiene sobre qué operar:
-          cuatro filtros vacíos arriba de un cartel que dice «todavía no
-          cargaste ninguno» son ruido, no ayuda (§8). */}
-      {total === 0 ? (
+      {/* Sin ningún producto cargado las solapas y la barra no tienen sobre
+          qué operar: tres solapas en cero y tres filtros vacíos arriba de un
+          cartel que dice «todavía no cargaste ninguno» son ruido, no ayuda
+          (§8). */}
+      {conteo.todos === 0 ? (
         <SinProductos />
       ) : (
         <>
+          <SolapasDeEstadoDeProducto filtros={filtros} conteo={conteo} />
+
           <BarraDeFiltros
             filtros={filtros}
             marcas={marcas}
             categorias={categorias}
             mostrados={coincidencias}
-            total={total}
+            // El «de cuántos» es el de la solapa donde se está parada, no el
+            // del catálogo entero: en «Inactivos», «3 de 47 productos» sería
+            // contar contra un listado que no se está mirando.
+            total={conteo[filtros.estado]}
           />
 
           <ListadoDeProductos

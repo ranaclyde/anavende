@@ -383,7 +383,7 @@ function Precio({ producto }: { producto: ProductoDelListado }) {
         {formatMoney(producto.finalPrice)}
       </span>
       {hayOferta ? (
-        <span className="text-caption text-ink-tertiary line-through">
+        <span className="text-caption text-ink-secondary line-through">
           {formatMoney(producto.price)}
         </span>
       ) : null}
@@ -412,7 +412,7 @@ function Stock({
   // la etiqueta de al lado: repetir «Sin colores» acá sería decir dos veces
   // lo mismo en dos columnas contiguas.
   if (producto.variantes === 0) {
-    return <span className="text-ink-tertiary">—</span>;
+    return <span className="text-ink-secondary">—</span>;
   }
 
   const tono =
@@ -425,7 +425,7 @@ function Stock({
   return (
     <div className="flex flex-col items-end gap-0.5 tabular-nums">
       <span className={cn("font-medium", tono)}>{producto.disponible}</span>
-      <span className="text-caption text-ink-tertiary">
+      <span className="text-caption text-ink-secondary">
         de {producto.stockTotal} ·{" "}
         {producto.reservado === 1
           ? "1 reservada"

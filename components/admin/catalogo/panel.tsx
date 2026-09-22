@@ -347,7 +347,7 @@ function Nombre({ item, tipo }: { item: ItemDeCatalogo; tipo: TipoDeItem }) {
       {tipo === "color" && item.hexCode && (
         // El código va escrito, no solo pintado: la muestra sola no sirve a
         // quien no distingue ese matiz (§9).
-        <span className="font-mono text-caption text-ink-tertiary">
+        <span className="font-mono text-caption text-ink-secondary">
           {item.hexCode}
         </span>
       )}
@@ -373,14 +373,14 @@ function Uso({ item }: { item: ItemDeCatalogo }) {
   const total = item.activos + item.inactivos;
 
   if (total === 0) {
-    return <span className="text-ink-tertiary">Sin uso</span>;
+    return <span className="text-ink-secondary">Sin uso</span>;
   }
 
   return (
     <span className="tabular-nums">
       {item.activos > 0 && <span className="text-ink">{item.activos}</span>}
       {item.activos > 0 && item.inactivos > 0 && (
-        <span className="text-ink-tertiary"> · </span>
+        <span className="text-ink-secondary"> · </span>
       )}
       {item.inactivos > 0 && (
         <span className="text-ink-secondary">

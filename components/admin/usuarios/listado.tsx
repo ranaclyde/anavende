@@ -69,7 +69,7 @@ export function ListadoDeUsuarios({
                     >
                       {usuario.nombre}
                     </Link>
-                    <span className="truncate text-caption text-ink-tertiary">
+                    <span className="truncate text-caption text-ink-secondary">
                       {usuario.email}
                     </span>
                   </div>
@@ -120,10 +120,10 @@ export function ListadoDeUsuarios({
                     dadoDeBaja={usuario.dadoDeBaja}
                   />
                 </div>
-                <span className="truncate text-caption text-ink-tertiary">
+                <span className="truncate text-caption text-ink-secondary">
                   {usuario.email}
                 </span>
-                <span className="text-caption text-ink-tertiary tabular-nums">
+                <span className="text-caption text-ink-secondary tabular-nums">
                   {usuario.telefono} ·{" "}
                   {usuario.ordenes === 1
                     ? "1 orden"

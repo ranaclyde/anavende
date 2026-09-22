@@ -29,8 +29,21 @@ export const ORDENES = [
 
 export type OrdenDeProductos = (typeof ORDENES)[number]["valor"];
 
+/**
+ * Las solapas por estado — §6.9. **Son solapas desde el 2026-09-22**, pedido
+ * tuyo: productos era el único de los seis listados que escondía su estado en
+ * un desplegable, y la pregunta «¿qué tengo sin publicar?» costaba dos clics
+ * y no se veía contestada hasta abrirlo.
+ *
+ * «Todos los estados» perdió el «los estados»: adentro de una lista hacía
+ * falta para saber de qué lista era, y como solapa el encabezado ya lo dice.
+ *
+ * **El parámetro de la URL se sigue llamando `estado`**, que es lo que ya
+ * escribían los dos enlaces del tablero (`?estado=activos&stock=reponer` y
+ * `?estado=activos`): cambiarle el nombre los habría roto sin avisar.
+ */
 export const ESTADOS = [
-  { valor: "todos", etiqueta: "Todos los estados" },
+  { valor: "todos", etiqueta: "Todos" },
   { valor: "activos", etiqueta: "Activos" },
   { valor: "inactivos", etiqueta: "Inactivos" },
 ] as const;
@@ -179,18 +192,29 @@ export function urlDeOrden(
   return urlDeFiltros({ ...filtros, orden, dir, pagina: 1 });
 }
 
-/** Si hay algo que limpiar: búsqueda o filtros, no el orden. */
+/**
+ * Si hay algo que limpiar: búsqueda o filtros, no el orden **ni la solapa**.
+ *
+ * El estado salió de esta cuenta cuando pasó a ser solapa (2026-09-22), por
+ * lo mismo que en órdenes y en usuarios: estar parada en «Inactivos» no es un
+ * filtro puesto encima de un listado, es qué listado se está mirando. Si
+ * contara, «Limpiar todo» devolvería a otra solapa sin que nadie la tocara.
+ */
 export function hayFiltros(filtros: FiltrosDeProductos): boolean {
   return (
     filtros.q !== "" ||
     filtros.categoria !== "" ||
     filtros.marca !== "" ||
-    filtros.estado !== "todos" ||
     filtros.stock !== "todos"
   );
 }
 
-/** Limpia la búsqueda y los filtros, y conserva el orden elegido. */
+/** Limpia la búsqueda y los filtros, y conserva el orden y la solapa. */
 export function sinFiltros(filtros: FiltrosDeProductos): FiltrosDeProductos {
-  return { ...FILTROS_VACIOS, orden: filtros.orden, dir: filtros.dir };
+  return {
+    ...FILTROS_VACIOS,
+    estado: filtros.estado,
+    orden: filtros.orden,
+    dir: filtros.dir,
+  };
 }

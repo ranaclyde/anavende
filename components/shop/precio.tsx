@@ -78,7 +78,7 @@ export function Precio({
           oculto evita que se lean dos precios seguidos sin decir cuál es cuál.
         */}
         {hayOferta ? (
-          <s className="text-caption text-ink-tertiary tabular-nums">
+          <s className="text-caption text-ink-secondary tabular-nums">
             <span className="sr-only">Antes: </span>
             {formatMoney(precio)}
           </s>
@@ -120,7 +120,7 @@ export function Precio({
         mentalmente sobre un monto que todavía no se leyó.
       */}
       {hayOferta ? (
-        <s className="text-caption text-ink-tertiary tabular-nums">
+        <s className="text-caption text-ink-secondary tabular-nums">
           <span className="sr-only">Antes: </span>
           {formatMoney(precio)}
         </s>

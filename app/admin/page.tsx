@@ -253,7 +253,7 @@ function Numero({
         <span className="text-body-lg font-medium text-ink tabular-nums">
           {valor}
         </span>
-        <span className="text-caption text-ink-tertiary">{ayuda}</span>
+        <span className="text-caption text-ink-secondary">{ayuda}</span>
       </Link>
     </li>
   );

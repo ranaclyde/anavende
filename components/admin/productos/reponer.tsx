@@ -197,7 +197,7 @@ export function ReponerStock({
                   <p
                     className={cn(
                       "pl-6 text-caption tabular-nums",
-                      v.disponible <= 0 ? "text-danger" : "text-ink-tertiary",
+                      v.disponible <= 0 ? "text-danger" : "text-ink-secondary",
                     )}
                   >
                     {v.reservedStock === 0

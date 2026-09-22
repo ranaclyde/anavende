@@ -181,7 +181,7 @@ export function DialogoDeMedioDePago({
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${idBase}-desc`}>
               Descripción{" "}
-              <span className="font-normal text-ink-tertiary">(opcional)</span>
+              <span className="font-normal text-ink-secondary">(opcional)</span>
             </Label>
             <Input
               id={`${idBase}-desc`}

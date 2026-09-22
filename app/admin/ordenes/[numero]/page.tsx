@@ -329,7 +329,7 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
             <TableRow key={item.id}>
               <TableCell>
                 <span className="font-medium text-ink">{item.nombre}</span>{" "}
-                <span className="text-ink-tertiary">{item.marca}</span>
+                <span className="text-ink-secondary">{item.marca}</span>
               </TableCell>
               <TableCell className="text-ink-secondary">
                 {item.color ?? "—"}
@@ -365,7 +365,7 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
             <span className="text-body-sm font-medium text-ink">
               {item.nombre}
             </span>
-            <span className="text-caption text-ink-tertiary">
+            <span className="text-caption text-ink-secondary">
               {item.marca}
               {item.color ? ` · ${item.color}` : ""}
             </span>
@@ -482,7 +482,7 @@ function Dato({
       <dt className="text-caption text-ink-secondary">{titulo}</dt>
       <dd
         className={
-          valor ? "text-body-sm text-ink" : "text-body-sm text-ink-tertiary"
+          valor ? "text-body-sm text-ink" : "text-body-sm text-ink-secondary"
         }
       >
         {valor ?? vacio}

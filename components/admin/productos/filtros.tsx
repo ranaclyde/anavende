@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
   DIRECCION_NATURAL,
-  ESTADOS,
   FILTROS_DE_STOCK,
   ORDENES,
   hayFiltros,
@@ -93,8 +92,10 @@ export function BarraDeFiltros({
           alBuscar={buscar}
         />
 
-        {/* En el teléfono los cuatro filtros van en dos columnas: uno debajo
-            del otro deja la tabla fuera de la pantalla antes de empezar. */}
+        {/* En el teléfono los filtros van en dos columnas: uno debajo del
+            otro deja la tabla fuera de la pantalla antes de empezar.
+            **El estado ya no está acá**: desde el 2026-09-22 es una solapa,
+            arriba de esta barra, como en órdenes y usuarios (§6.9). */}
         <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
           <Select
             aria-label="Filtrar por categoría"
@@ -120,23 +121,6 @@ export function BarraDeFiltros({
             {marcas.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.isActive ? m.name : `${m.name} (inactiva)`}
-              </option>
-            ))}
-          </Select>
-
-          <Select
-            aria-label="Filtrar por estado"
-            value={filtros.estado}
-            onChange={(e) =>
-              aplicar({
-                estado: e.target.value as FiltrosDeProductos["estado"],
-              })
-            }
-            className="md:w-44"
-          >
-            {ESTADOS.map((o) => (
-              <option key={o.valor} value={o.valor}>
-                {o.etiqueta}
               </option>
             ))}
           </Select>

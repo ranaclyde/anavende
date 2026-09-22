@@ -152,7 +152,7 @@ export function TarjetaProducto({
               className="flex h-full items-center justify-center"
               aria-hidden="true"
             >
-              <span className="text-caption text-ink-tertiary">Sin foto</span>
+              <span className="text-caption text-ink-secondary">Sin foto</span>
             </div>
           )}
 
@@ -266,7 +266,7 @@ export function PuntosDeColor({ colores }: { colores: { nombre: string; hex: str
       ))}
       {resto > 0 ? (
         <span
-          className="text-caption text-ink-tertiary tabular-nums"
+          className="text-caption text-ink-secondary tabular-nums"
           aria-hidden="true"
         >
           +{resto}

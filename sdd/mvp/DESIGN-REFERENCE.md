@@ -230,7 +230,7 @@ fondo de sección.
   /* ── Texto ─────────────────────────────────────────── */
   --ink:              #111010;   /* primario */
   --ink-secondary:    #716e6d;   /* secundario, etiquetas */
-  --ink-tertiary:     #8f8b8a;   /* metadatos, marcadores de posición */
+  --ink-tertiary:     #8f8b8a;   /* decorativo, NUNCA texto — ver abajo */
   --ink-inverse:      #ffffff;
 
   /* ── Líneas ────────────────────────────────────────── */
@@ -256,7 +256,7 @@ fondo de sección.
 | `--ink` sobre `--surface` | 19,0:1 | AAA |
 | `--ink-secondary` sobre `--surface` | 5,06:1 | AA |
 | `--ink-secondary` sobre `--canvas` | **4,58:1** | AA — es el caso que manda (ver abajo) |
-| `--ink-tertiary` sobre `--surface` | 3,37:1 | Solo texto ≥ 24px o elementos decorativos |
+| `--ink-tertiary` sobre `--surface` | 3,37:1 | **No es un color de texto**: ver abajo |
 | `--brand` sobre `--surface` | **9,07:1** | AAA |
 | `--accent` sobre `--surface` | **9,05:1** | AAA. A 0,02 del burdeos: pesan igual |
 | `--success` sobre `--surface` | 5,02:1 | AA. Tilde blanco en el círculo de orden confirmada |
@@ -264,10 +264,39 @@ fondo de sección.
 | `--danger` sobre `--surface` | 4,83:1 | AA |
 | `--success` sobre `--surface` | 5,02:1 | AA |
 
+**`--ink-tertiary` no se usa para texto, y desde el 2026-09-22 está dicho
+así.** La fila de arriba decía «solo texto ≥ 24px o elementos decorativos», y
+esa primera mitad no la cumplía nadie: había **69 usos en 33 archivos, 41 de
+ellos pegados a `text-caption` (12px) o `text-body-sm` (14px)**, y ni uno solo
+de 24px. Medido sobre el render del panel en oscuro da **3,28:1**, y en claro
+3,37: AA pide 4,5 para texto normal. El terciario existe igual, y su lista de
+usos es cerrada:
+
+| Vale | No vale |
+|---|---|
+| Marcadores de posición (`placeholder:`) | Metadatos, ayudas y leyendas |
+| Viñetas y numeración de listas (`marker:`) | Precios tachados |
+| Íconos decorativos —lupas, chevrones, el ícono del estado vacío— | Cualquier texto de 12 o 14px |
+| Separadores `aria-hidden` («·», «/») | Etiquetas y valores de una ficha |
+| Controles desactivados, que WCAG exime | |
+
+**Lo que era terciario y es texto pasa a `--ink-secondary`** (5,06:1 en claro,
+6,46:1 en oscuro). La consecuencia se asume: la escala de tres grises queda en
+**dos niveles de texto más uno decorativo**, y un metadato pesa lo mismo que
+una etiqueta. Lo que ordena la jerarquía es el tamaño y el peso, que siguen
+estando.
+
+**Y una tarjeta no se apaga con `opacity`.** La devolución anulada usaba
+`opacity-70`, que multiplica el contraste de todo lo que hay adentro y dejaba
+sus metadatos en **2,17:1**. Para que algo retroceda se cambia su superficie
+—`--surface-sunken`—, que no toca el contraste del texto.
+
 ### 3.2 Color — modo oscuro del panel
 
 ```css
 [data-theme="dark"] {
+  color-scheme: dark;            /* lo que pinta el navegador y no nosotros */
+
   --brand:            #d4697a;   /* ACLARADO: #832833 da 1,83:1 en oscuro, ilegible */
   --brand-hover:      #e08a97;
   --brand-active:     #c04a5c;
@@ -288,7 +317,7 @@ fondo de sección.
 
   --ink:              #ececee;
   --ink-secondary:    #a1a1a6;
-  --ink-tertiary:     #6e6e73;
+  --ink-tertiary:     #6e6e73;   /* decorativo, NUNCA texto — ver §3.1 */
   --ink-inverse:      #141416;
 
   --border:           #2e2e33;
@@ -300,6 +329,15 @@ fondo de sección.
   --info:    #38bdf8;  --info-tint:    #05202e;
 }
 ```
+
+**`color-scheme` no es un token, y hace falta igual** (2026-09-22). Hay piezas
+que dibuja el navegador y no la hoja de estilos: el ícono del calendario de un
+`<input type="date">`, el calendario que abre, las barras de scroll y la lista
+desplegada de un `<select>`. Sin declararlo, el navegador las pinta siempre
+para fondo claro, y en el panel en oscuro **el ícono del calendario quedaba
+negro sobre negro**: el campo se veía bien y el botón para abrirlo no existía.
+`:root` declara `light` y el bloque de oscuro declara `dark`; ningún token lo
+podía arreglar, porque esos píxeles no son nuestros.
 
 > **El acento cambia de valor, no de identidad.** `#832833` sobre fondo oscuro da 1,83:1 y es directamente ilegible; `#d4697a` da 4,83:1. Es el mismo matiz, aclarado. El modo oscuro **solo existe en `/admin`**: la tienda es siempre clara.
 
@@ -676,11 +714,11 @@ Componente propio, porque aparece en todas partes y tiene que ser consistente.
 FICHA (§7.3) — apilado
 Sin oferta:      $ 27.500,00              ink, peso 600, 24px
 Con oferta:      $ 24.500,00              burdeos, peso 600, 24px
-                 $ 27.500,00              tachado, terciario, 12px
+                 $ 27.500,00              tachado, secundario, 12px
 
 TARJETA (§6.1) — una línea
 Sin oferta:      $ 27.500,00              ink, peso 600
-Con oferta:      $ 27.500,00 $ 24.500,00  tachado terciario 12px, después burdeos 600
+Con oferta:      $ 27.500,00 $ 24.500,00  tachado secundario 12px, después burdeos 600
 ```
 
 **Dos números en las dos, y lo único que cambia es la disposición.** La ficha llevó «Ahorrás $ 3.000,00» hasta el 2026-09-08 y ya no: una oferta se comunica con cuánto valía y cuánto vale, y el tercer número dice la misma oferta otra vez (RN-04c). Lo que separa las dos composiciones es el lugar. En la grilla el precio comparte renglón con los puntos de color y tiene que entrar en una línea; en la ficha es lo primero que se lee después del nombre, sube a 24px y el tachado baja, donde no le compite.
@@ -996,7 +1034,7 @@ El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del con
 │ └──┘                 │  Teclado mecánico K120      │  title 24px
 │ ┌──┐    imagen       │                             │
 │ └──┘  principal   ›  │  $ 24.500,00                │  burdeos, 24px
-│ ┌──┐                 │  $ 27.500,00                │  tachado, terciario, 12px
+│ ┌──┐                 │  $ 27.500,00                │  tachado, secundario, 12px
 │ └──┘                 │                             │
 │                      │  Color: Negro               │
 │    ↑ pegada          │  ● ○ ○ ⊘                    │

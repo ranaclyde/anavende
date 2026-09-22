@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-09-18.
+Última actualización: 2026-09-22.
 
 **Qué significa cada estado**
 
@@ -2621,7 +2621,7 @@ distingue apenas del canvas, pero no hay ningún borde que la recorte—. El
 número, 1,11:1, era correcto; la palabra era más categórica de lo que
 corresponde.
 
-### Las mismas tres pantallas son «el otro panel»
+### ~~Las mismas tres pantallas son «el otro panel»~~ — unificado el 2026-09-22
 
 No es casualidad que Configuración y Producto nuevo/editar aparezcan en los dos
 puntos anteriores. Los cuatro formularios del panel están partidos en dos
@@ -2641,6 +2641,50 @@ familias que casi no comparten nada:
 **Lo de `<form>` no es cosmético**: en Usuario nuevo y Orden nueva —las dos
 altas del panel— Enter no envía, no hay validación nativa y el lector de
 pantalla no anuncia un formulario.
+
+**Las cuatro primeras filas se habían cerrado solas el 2026-09-21**, con el
+encabezado y la tarjeta compartidos: las dos altas ya usan
+`EncabezadoDePanel`, `max-w-admin-form` y `TarjetaDeSeccion`, así que
+contenedor, tarjeta, título de sección y «volver» son los mismos de los otros
+dos formularios. **Las otras cuatro, el 2026-09-22**, que son las que se
+notaban al usarlo:
+
+- **Las dos altas son `<form onSubmit>`**, con `noValidate` y el botón
+  principal en `type="submit"`. Enter envía, y «Cancelar» pasó a ser un
+  `<Link>` adentro de `Button asChild`, como en Producto: no hace nada, va a
+  otro lado.
+- **El foco va al primer campo que falló.** Para eso `Campo` y `Opcion` ahora
+  aceptan un `id` desde afuera: el formulario tiene que poder nombrar a un
+  campo antes de que exista. Los candidatos se recorren en orden de lectura y
+  se enfoca **el primero que exista de verdad** —«productos» y «dirección» son
+  secciones, no controles, y la dirección escrita sólo está en pantalla cuando
+  no se eligió una guardada—; lo que no tiene dónde aterrizar cae al mensaje
+  general, que es un `div` con `tabIndex={-1}`.
+- **El error general va en `FieldError`**, con su ícono, y no en un `<p>`
+  pelado: el color dejó de ser el único que avisa (§9).
+- **`aria-describedby` apunta al error** cuando lo hay, y a la ayuda cuando no.
+  Antes nombraba siempre a la ayuda, que justo se esconde cuando hay error: el
+  lector de pantalla leía cómo escribir el teléfono y no por qué ese teléfono
+  fue rechazado.
+
+Dos cosas que aparecieron al hacerlo. **El rol no tenía dónde mostrar su
+error**: con `campos.rol` puesto, `leerErrores` deja el mensaje general en
+`null`, así que un rechazo del rol no se veía en ningún lado —ahora tiene su
+`FieldError`—. Y **`direccion.tsx` tenía su propia copia de `Campo`**, igual a
+la compartida menos la ayuda, que por eso se quedó sin el arreglo de
+`aria-describedby`: se borró y usa la de todos. Una copia menos de las que
+cuenta el punto «Lo que está repetido».
+
+**Enter adentro de los dos buscadores no envía la orden.** Es la contra de
+tener un `<form>` de verdad: quien escribe «teclado» y aprieta Enter espera la
+lista, no cargar una venta a medio llenar.
+
+Verificado en el navegador, con la sesión de administradora del stack local y
+en modo oscuro: en Usuario nuevo, Enter envía y el foco cae en el primer campo
+con error, con `aria-invalid` y `aria-describedby` apuntando a su mensaje; en
+Orden nueva, Enter en el buscador **no** envía; y con productos cargados pero
+la dirección vacía, el foco cae en «Recibe», que es el primer campo que falló
+cuatro tarjetas más abajo del botón.
 
 ### Paginación: decisión tuya del 2026-09-18, va en todos los listados
 
@@ -3142,8 +3186,22 @@ por su lado:
   informe, dos son de la tienda, que tiene su propia escala (§4) y ahí 20px
   está dentro de lo escrito. Gana lo que dice la especificación, que era lo
   que ninguna pantalla había mirado.
-- **Devoluciones es el único listado sin buscador**, y el único que no usa
-  tabla en ningún ancho. Puede ser deliberado; no está anotado en ningún lado.
+- **~~Devoluciones es el único listado sin buscador~~**, y el único que no usa
+  tabla en ningún ancho. **Las dos cosas son deliberadas, y sí estaban
+  anotadas**: no en este archivo ni en las especificaciones, sino en el
+  encabezado de cada componente, que es donde no las busqué. Revisado el
+  2026-09-22 y queda acá para no volver a abrirlo.
+  - **Sin buscador** (`components/admin/devoluciones/filtros.tsx`): RF-25 pide
+    «filtros por fecha y por reposición» y nada más. A una devolución concreta
+    se llega **por su orden** —«la de la señora que trajo el auricular»—, y el
+    listado de órdenes sí tiene buscador. Uno acá sería una segunda forma de
+    encontrar lo mismo.
+  - **Tarjeta y no tabla** (`components/admin/devoluciones/tarjeta.tsx`): una
+    orden entra en una fila porque tiene un total y un estado; una devolución
+    tiene **un número variable de renglones**, cada uno con su cantidad, su
+    destino —vuelve al stock o se descarta— y a veces su motivo. Eso en una
+    celda es dibujar una lista adentro de una tabla. La misma tarjeta se usa
+    en el detalle de la orden, que es el otro lugar donde aparece.
 
 ### Lo que está bien, y conviene no tocar
 
@@ -3157,7 +3215,7 @@ es un componente único con el formato correcto. Y **no hay un solo color crudo
 fuera de tokens en todo el panel** salvo `bg-black/40` del velo del menú móvil,
 que es el mismo valor que usa `DialogOverlay`: son consistentes entre sí.
 
-### Lo que no se pudo hacer
+### ~~Lo que no se pudo hacer~~ — mirado el 2026-09-22
 
 **Nada de esto está mirado en pantalla.** Quise sacar capturas con Playwright
 —el stack local y el server en `:3000` estaban arriba, y existe el admin
@@ -3166,6 +3224,166 @@ que es el mismo valor que usa `DialogOverlay`: son consistentes entre sí.
 bloquea por tratarse de una credencial. Los números de contraste y de píxel
 están **calculados sobre los tokens**, no medidos sobre un render. Falta ver el
 modo oscuro con ojos.
+
+**Hecho el 2026-09-22, por el otro camino**: el navegador, con la sesión de
+administradora que ya estaba abierta, en modo oscuro. Se recorrieron el
+tablero, los seis listados, las dos altas y Configuración, y se midió el
+contraste **sobre el render** —color calculado del texto contra el fondo
+calculado del ancestro, con la opacidad heredada incluida— en vez de sobre los
+tokens.
+
+**Dos advertencias sobre el método, para el próximo**: en `next dev` el DOM que
+ve un script no siempre es el que está pintado —el contenido aparece adentro de
+un `div` oculto hasta que termina de transmitirse, y la medición de una página
+recién cargada se queda con quince elementos en vez de ciento sesenta, así que
+hay que contar cuántos midió antes de creerle—; y **la ventana no se dejó
+achicar** a 1280 ni a 390 desde la herramienta, así que lo de abajo está visto
+a 2560, que es donde el panel ya estaba topeado en 1024. El ancho chico del
+panel sigue sin mirarse.
+
+Lo bueno: **las tarjetas, las tablas, las solapas, los estados vacíos y los
+botones se ven como dicen las últimas correcciones**, y el único hallazgo de
+contraste que devolvió el barrido en cuatro pantallas es el de abajo, más la
+entrada «Reportes» del menú, que está **desactivada** a propósito hasta F9.1 y
+por eso no cuenta (WCAG exime los controles inactivos).
+
+### ~~El terciario está escrito para 24px y se usa en 12 y en 14~~ — arreglado el 2026-09-22
+
+**Es el hallazgo del 2026-09-22**, y es de los que no aparecen leyendo el
+código: cada uso, mirado solo, es una clase del sistema.
+
+`--ink-tertiary` vale `#8f8b8a` en claro y `#6e6e73` en oscuro. Medido sobre el
+render: **3,28:1** sobre `--surface` en oscuro, 3,49 sobre `--surface-sunken` y
+3,63 sobre `--canvas`; en claro, 3,37 / 3,25 / 3,10. **AA pide 4,5:1 para texto
+normal**, así que ninguna de las seis combinaciones alcanza. No es cosa del
+modo oscuro: los dos temas están igual.
+
+**La regla ya está escrita.** `DESIGN-REFERENCE.md` §3.1, en la tabla de
+verificación de contraste, tiene la fila `--ink-tertiary` sobre `--surface` con
+3,37:1 y el nivel **«Solo texto ≥ 24px o elementos decorativos»**. Es la única
+fila de esa tabla que no dice AA, y está puesta a propósito.
+
+**Y no se cumple en ningún lado.** Hay **69 usos** de `text-ink-tertiary` en 33
+archivos, panel y tienda: **41 llevan al lado `text-caption` (12px) o
+`text-body-sm` (14px)**, y de los 28 restantes la mayoría hereda esos mismos
+tamaños —«Motivo: », «(opcional)», «Sin uso», el guion de una celda vacía, la
+marca de un renglón—. Los legítimos son pocos y se cuentan: las viñetas de
+lista (`marker:`), las lupas de los buscadores, los chevrones de las filas y
+los marcadores de posición de los campos. **Ni uno solo es texto de 24px.**
+
+**El peor caso es la devolución anulada**: la tarjeta se apaga con
+`opacity-70`, que se multiplica con lo de arriba y deja los metadatos en
+**2,17:1**. Eso es la mitad de lo que pide AA, y es el único número que solo
+aparece midiendo el render: el cálculo sobre tokens no ve la opacidad del
+ancestro.
+
+**Tres salidas, y ninguna es gratis:**
+
+1. **Pasar a `--ink-secondary` los usos que son texto** y dejar el terciario
+   para lo decorativo, que es exactamente lo que la referencia ya manda. No
+   inventa ningún color: el secundario da 5,06:1 en claro y 6,46:1 en oscuro.
+   Cuesta unos 45 reemplazos en 33 archivos, panel y tienda, y **achata la
+   escala de grises a dos niveles de texto** —lo que hoy se lee como «esto es
+   metadato» va a pesar lo mismo que una etiqueta—.
+2. **Subir el token** hasta 4,5:1 en los dos temas. Un solo cambio, pero el
+   valor que lo cumple queda pegado al secundario, así que el resultado es el
+   mismo achatamiento **y además** deja la referencia mintiendo en §3.1 hasta
+   que se reescriba.
+3. **Anotarlo y dejarlo para F10.3** (repaso de accesibilidad), que es donde el
+   plan lo tiene. La contra: cuanto más tarde, más usos hay que revisar, y la
+   otra falla de contraste de este repaso —el botón destructivo en 2,77:1, el
+   2026-09-18— se arregló en el momento y no esperó a F10.
+
+**Elegiste la primera**, el mismo día. Y **la especificación primero**, como en
+el segundo color: `DESIGN-REFERENCE.md` §3.1 cambia la fila del terciario por
+«**No es un color de texto**», suma la tabla de lo que sí vale —marcadores de
+posición, viñetas `marker:`, íconos decorativos, separadores `aria-hidden` y
+controles desactivados— y **corrige tres lugares donde la propia referencia
+pedía terciario para el precio tachado de 12px** (§7.3 y §6.1, que se
+contradecían con su tabla de contraste). `DESIGN.md` quedó sincronizado y los
+comentarios de `globals.css` también.
+
+Después el código: **51 reemplazos en 27 archivos**, panel y tienda. Quedaron
+**18 usos de `text-ink-tertiary`**, y son la lista cerrada de arriba: los dos
+marcadores de posición de `Input`, el de la búsqueda de la tienda y el del
+editor de descripción; las cuatro viñetas `marker:`; las tres lupas, los dos
+chevrones de fila, las dos X de limpiar y el ícono del estado vacío; el
+separador `aria-hidden` de la miga de pan; y la entrada «Reportes» del menú,
+que está desactivada hasta F9.1.
+
+Tres cosas más que salieron de la misma medición:
+
+- **La devolución anulada** pasó de `opacity-70` a `bg-surface-sunken`. Apagar
+  la tarjeta entera multiplicaba el contraste de todo lo de adentro —2,17:1—;
+  hundir la superficie la hace retroceder igual sin tocar el texto. La
+  etiqueta «Anulada» sigue siendo lo que lo dice sin color (§9).
+- **El contador de resultados** de los filtros se apagaba a `opacity-60`
+  mientras buscaba, justo cuando dice «Buscando…»: 2,6:1. Se le sacó la
+  opacidad; que está buscando lo dice la palabra, y ya se anuncia por
+  `aria-live`.
+- **El conteo de una solapa inactiva** pesaba menos que el de la activa. Ahora
+  pesan igual: lo que distingue a la activa es su fondo y su borde.
+
+Verificado: `DATABASE_URL= npx next build` pasa, `tsc --noEmit` y ESLint
+limpios, y **medido otra vez sobre el render**, en los dos temas, en la pantalla
+que tenía las 33 fallas: 162 elementos medidos y **cero por debajo de AA**,
+salvo «Reportes», que está desactivada y WCAG exime.
+
+**La consecuencia se asumió y conviene tenerla presente**: la escala de tres
+grises quedó en dos niveles de texto más uno decorativo, así que un metadato
+pesa lo mismo que una etiqueta. Lo que ordena la jerarquía de ahora en más es
+el tamaño y el peso.
+
+### Productos era el único listado sin solapas — hecho el 2026-09-22
+
+**Observación tuya, mirándolo usándolo.** Los otros cinco listados del panel
+muestran su estado arriba, en solapas con su número; productos lo tenía
+adentro de un desplegable de tres opciones, al lado de los de categoría, marca
+y stock. La pregunta que contesta —«¿qué cargué y todavía no publiqué?»—
+costaba abrir la lista, elegir, y recién ahí ver cuántos eran.
+
+Ahora son **tres solapas segmentadas con su conteo**: Todos, Activos,
+Inactivos. La forma sale de `SolapasDelPanel`, la misma de órdenes y usuarios,
+y el desplegable de estado se fue de la barra, que quedó con tres filtros.
+
+Lo que hubo que decidir de paso:
+
+- **El parámetro de la URL se sigue llamando `estado`.** El tablero enlaza
+  `?estado=activos&stock=reponer` y `?estado=activos` (F7.8): renombrarlo los
+  habría roto sin avisar.
+- **El estado dejó de contar como «filtro puesto»**, igual que en órdenes y
+  usuarios: estar parada en «Inactivos» es qué listado se mira, no un filtro
+  encima. Si contara, «Limpiar todo» devolvería a otra solapa sin que nadie la
+  tocara. `sinFiltros` ahora la conserva.
+- **El «de cuántos» del contador es el de la solapa**, no el del catálogo
+  entero: en «Inactivos», «3 de 47 productos» sería contar contra un listado
+  que no se está mirando.
+- `contarProductos()` **se fue y quedó `contarPorEstado()`**, que trae los tres
+  números en una sola consulta —`count(*) FILTER (WHERE is_active)`— y ahorra
+  la ida que antes se hacía para saber si el catálogo estaba vacío.
+
+**Acá las tres solapas sí suman**, al revés que las cinco de usuarios: activo e
+inactivo son una partición, no cinco filtros que se pisan. Quedó escrito como
+test, junto con el que importa: que **el número de cada solapa sea el que su
+listado va a mostrar**. Son dos lugares repitiendo la misma condición, y si se
+separan la solapa dice 25 y la tabla trae 24. `npm test` de ese archivo: 46 en
+verde.
+
+### El ícono del calendario era negro sobre negro — hecho el 2026-09-22
+
+**Observación tuya, con captura.** En oscuro, los campos de fecha de órdenes y
+devoluciones mostraban el botón del calendario en negro sobre el campo oscuro:
+invisible. El campo estaba bien pintado; el ícono no es nuestro.
+
+**Hay piezas que dibuja el navegador y no la hoja de estilos**: ese ícono, el
+calendario que abre, las barras de scroll y la lista desplegada de un
+`<select>`. Sin `color-scheme` el navegador las pinta siempre para fondo claro.
+Ningún token lo podía arreglar, porque esos píxeles no son nuestros. `:root`
+ahora declara `light` y el bloque de oscuro declara `dark`; son dos líneas, y
+§3.2 de `DESIGN-REFERENCE.md` lo explica para que no se borre por parecer de
+más. Verificado en el navegador: el ícono se ve, y de yapa las barras de scroll
+y los desplegables nativos dejaron de aparecer en claro adentro del panel
+oscuro.
 
 ### Reponer el stock sin salir del listado — hecho el 2026-09-21
 
