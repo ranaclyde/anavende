@@ -8,7 +8,7 @@ import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { ImagenesDeVariante } from "@/components/admin/productos/imagenes";
-import { avisar } from "@/components/ui/aviso";
+import { avisar, avisarConPero } from "@/components/ui/aviso";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -109,11 +109,13 @@ export function VariantesDelProducto({
       // La tarjeta del color desapareció: no queda dónde poner la respuesta
       // en su lugar (DR §6.15). El error sí se queda acá arriba, que es
       // donde estuvo la acción.
-      avisar(
-        r.data.resultado === "borrado"
-          ? `Sacamos «${nombreDe(v)}».`
-          : `«${nombreDe(v)}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede sacar: la desactivamos y ya no se ofrece en la tienda.`,
-      );
+      if (r.data.resultado === "borrado") {
+        avisar(`Sacamos «${nombreDe(v)}».`);
+      } else {
+        avisarConPero(
+          `«${nombreDe(v)}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede sacar: la desactivamos y ya no se ofrece en la tienda.`,
+        );
+      }
       router.refresh();
     });
   };

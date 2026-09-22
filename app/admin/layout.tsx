@@ -2,8 +2,8 @@ import { notFound, redirect } from "next/navigation";
 
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { scriptDeTema } from "@/components/admin/theme";
-import { AvisosFlotantes } from "@/components/ui/aviso";
 import { MarcoDeEscala } from "@/components/ui/escala";
+import { Toaster } from "@/components/ui/sonner";
 import { getSession } from "@/lib/session";
 
 /**
@@ -62,14 +62,17 @@ export default async function AdminLayout({
         <AdminSidebar nombre={session.profile.fullName} />
         <main className="min-w-0 flex-1 p-4 lg:p-6">{children}</main>
 
-        {/* La región de los avisos vive acá y no en cada pantalla, por dos
-            motivos. Uno: un `aria-live` tiene que estar en el DOM antes que
-            su contenido, o el lector de pantalla no lo anuncia. Dos: los
-            avisos **sobreviven a la navegación** —crear un producto empuja a
-            otra pantalla y la confirmación tiene que llegar ahí—, y el layout
-            es lo único que no se vuelve a montar al navegar dentro del
-            panel. */}
-        <AvisosFlotantes />
+        {/* Los avisos viven acá y no en cada pantalla, por dos motivos. Uno:
+            un `aria-live` tiene que estar en el DOM antes que su contenido, o
+            el lector de pantalla no lo anuncia. Dos: **sobreviven a la
+            navegación** —crear un producto empuja a otra pantalla y la
+            confirmación tiene que llegar ahí—, y el layout es lo único que no
+            se vuelve a montar al navegar dentro del panel.
+
+            Adentro de `MarcoDeEscala` a propósito: `sonner` no usa un portal,
+            así que hereda el `data-scale` y la variante `admin:` funciona sin
+            el truco de `escala.tsx`. */}
+        <Toaster />
       </MarcoDeEscala>
     </>
   );

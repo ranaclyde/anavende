@@ -379,12 +379,20 @@ forma visible. En su lugar cuando lo que pasó se ve: subir una foto la hace
 aparecer, y un cartel al lado que diga «subimos la foto» es ruido. **Los avisos
 flotantes confirman y no reportan errores**: un error tiene que decir qué hacer
 y a veces ofrecer reintentar, y eso no entra en algo que se va a los cuatro
-segundos, así que se queda donde estuvo la acción. Una sola región, en el
-layout del panel, porque un `aria-live` tiene que existir antes que su
-contenido y porque el aviso tiene que sobrevivir a la navegación que lo
-dispara. Va en `z-60`, el único lugar que pasa de 50: a la misma altura que un
-diálogo ganaba la capa oscura, y el aviso quedaba atenuado y sin poder tocarse
-justo cuando conviven.
+segundos, así que se queda donde estuvo la acción.
+
+**Dos tonos, cada uno con su disco.** Un glifo relleno dentro de un círculo de
+color, no un trazo suelto: verde con el check cuando salió como se pidió,
+ámbar con el triángulo cuando salió **pero no como se pidió** —borrar un
+producto que está en una orden lo desactiva en vez de borrarlo, y con el check
+verde esa frase se lee de reojo como «listo, borrado»—. El disco va en el color
+semántico y el glifo en su tinte, nunca en blanco fijo: así el par se da vuelta
+solo en modo oscuro, donde un check blanco sobre el verde claro quedaría en
+1,5:1 contra el 3:1 que pide la accesibilidad.
+
+La biblioteca es `sonner`, montada dentro del marco de escala porque no usa
+portal y así hereda `data-scale`; va `unstyled`, para que el aspecto salga
+entero de los tokens y no dependa del orden de las hojas.
 
 **La regla del diálogo que se abre solo.** Si lo abre una acción de quien mira
 la pantalla, es estado del cliente. Si lo abre de dónde se viene, va en la

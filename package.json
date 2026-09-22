@@ -55,6 +55,7 @@
     "react-email": "6.9.3",
     "server-only": "^0.0.1",
     "sharp": "^0.35.4",
+    "sonner": "^2.0.8",
     "tailwind-merge": "^3.3.0",
     "zod": "^4.5.4"
   },

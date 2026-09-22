@@ -3316,48 +3316,61 @@ del producto en el `h1`, que es la única señal de que se guardó hasta que
 lleguen los avisos del punto 4. Los dos productos de prueba se borraron: el
 catálogo quedó como estaba.
 
-**Lo hecho (4).** `components/ui/aviso.tsx`, sin dependencias nuevas: una sola
-región en el layout del panel y un `avisar()` que se llama desde cualquier
-componente de cliente. Era tu pedido textual —«cambiás un stock o agregás algo
-y no hay ningún mensaje de que eso se hizo»—, y hasta hoy de **24 componentes
-del panel que mutan, 4 confirmaban algo**.
+**Lo hecho (4).** Era tu pedido textual —«cambiás un stock o agregás algo y no
+hay ningún mensaje de que eso se hizo»—, y hasta hoy de **24 componentes del
+panel que mutan, 4 confirmaban algo**.
 
-- **Confirman, no reportan errores.** Un error tiene que decir qué pasó, qué
-  hacer y a veces ofrecer reintentar (§8), y nada de eso entra en algo que se
-  va a los cuatro segundos. Los errores se quedan donde estuvo la acción: el
-  diálogo que falla no se cierra y lo muestra adentro. Un solo tono, sin
-  variantes de color.
-- **La regla de dónde va**, escrita en §6.15: flotante cuando el lugar donde
-  pasó la cosa desapareció —un diálogo que se cerró, una fila que se borró— o
-  cuando la pantalla no cambia de forma visible; en su lugar cuando lo que
-  pasó se ve. Por eso destacar y desactivar **no** avisan: la estrella y la
-  insignia cambian en la fila que se tocó.
-- **Sin proveedor ni contexto**: el estado vive en el módulo y se lee con
-  `useSyncExternalStore`. Eso es lo que hace que un aviso **sobreviva a la
-  navegación**, que es el caso de crear un producto: empuja a otra pantalla y
-  la confirmación tiene que llegar ahí.
-- **Los dos avisos en línea de productos se fueron**: el de `listado.tsx`
-  estaba arriba de la tabla, a una pantalla de distancia de la fila que había
-  cambiado, y el de `variantes.tsx` quedaba en una tarjeta cuyo color acababa
-  de desaparecer.
+**Salió en dos pasadas.** La primera fue un componente propio, sin
+dependencias. **No te gustó: «no se ven»**, y tenías razón —un check de trazo
+fino al lado de un renglón gris no se distingue de un párrafo—. La segunda usa
+**`sonner`**, la misma biblioteca que shadcn, que es lo que pediste.
 
-**El defecto que la captura escondía.** Con el aviso en `z-50`, la capa oscura
-del diálogo le ganaba —sale por un portal, así que está después en el DOM— y
-el aviso quedaba **atenuado y con su × imposible de tocar**, justo en el único
-momento en que conviven: crear un producto avisa y aterriza con «Agregar
-color» abierto. En la captura no se veía, porque 40% de negro sobre una
-tarjeta blanca sigue pareciendo clara; lo encontró `elementFromPoint`, que
-devolvía `div[dialog-overlay]`. Ahora el aviso va en **`z-60`**, el único lugar
-del proyecto que pasa de 50, y el mismo sondeo devuelve el aviso.
+- **Dos tonos, cada uno con su disco**: un glifo relleno dentro de un círculo
+  de color, no un trazo suelto. **Verde con el check** cuando salió como se
+  pidió; **ámbar con el triángulo** cuando salió *pero no como se pidió*. Ese
+  segundo tono no es decoración: «Borrar» un producto que está en una orden
+  **no borra, desactiva** (RF-15), y con el check verde al lado esa frase se
+  lee de reojo como «listo, borrado». Pasa lo mismo al sacar un color.
+- **El disco va en el color semántico y el glifo en su tinte**, no en blanco
+  fijo. En claro da el disco verde con el check casi blanco, que es lo que
+  pediste; en oscuro el par se da vuelta solo. Con blanco fijo, el check sobre
+  el verde del modo oscuro (`#4ade80`) queda en **1,5:1** y §9 pide 3:1 para
+  un objeto gráfico. Medido en los dos temas.
+- **Sin `next-themes`**, que es lo que trae la receta de shadcn: acá el tema es
+  `data-theme` y los tokens ya se dan vuelta solos. Dos fuentes para el mismo
+  color es una de más.
+- **`unstyled`**: los selectores de `sonner` pesan lo mismo que una utilidad de
+  Tailwind y quién gana depende del orden de las hojas. Apagadas sus reglas de
+  aspecto no hay empate, y el aviso se dibuja con los tokens del panel.
+- **Montado adentro de `MarcoDeEscala`**: `sonner` no usa portal, así que
+  hereda el `data-scale` y no hace falta el truco de `escala.tsx`. Verificado:
+  el aviso sale a 14px, la tipografía del panel.
+- **Confirman, no reportan errores**, y **no todo lo que sale bien lleva
+  aviso**: destacar y desactivar no avisan, porque la estrella y la insignia
+  cambian en la fila que se tocó. La regla entera quedó en §6.15, y §8 ganó la
+  fila «Confirmado», que le faltaba a la tabla de los cinco estados.
 
-Probado en el navegador contra `next start`, **13 comprobaciones**: la región
-existe en el DOM con la página vacía —un `aria-live` que aparece con su
-contenido no se anuncia—; crear un producto avisa y el aviso **cruza la
-navegación**; agregar, editar y sacar un color avisan, y reponer desde el
-listado también; a los 4 segundos se va solo; **con el puntero encima sigue
-ahí a los 5** y se va al sacarlo; la × lo saca en el acto; y en el teléfono
-ocupa 358 de 390px, entra en la pantalla y no desborda. El producto de prueba
-se borró.
+**Dos cosas que sólo aparecieron midiendo.** Una: la transición de `sonner` es
+de **400ms** y §8 pone el techo en 300; la regla que la corrige lleva el
+selector repetido, porque la hoja del paquete queda después y a igual peso
+ganaría la suya. Dos: el apilado **no necesita ayuda** —`sonner` usa
+`z-index: 999999999` y ni su lista ni la capa del diálogo tienen un ancestro
+que cree contexto, así que el aviso pinta encima—. Mientras el diálogo está
+abierto el aviso se lee pero no se puede tocar, porque Radix marca el `<body>`
+con `pointer-events: none`: eso es lo correcto para un modal y no se corrige.
+
+**Un error propio, anotado.** En la primera pasada di por bueno el apilado
+mirando una captura, y estaba mal: 40% de negro sobre una tarjeta blanca sigue
+pareciendo clara. Lo encontró `elementFromPoint`. Mirar una imagen no alcanza
+para afirmar que algo está encima de otra cosa.
+
+Probado en el navegador contra `next start`: el aviso de crear un producto
+**cruza la navegación** y convive con el diálogo del color; los dos tonos salen
+con su disco —comprobado el `data-type` y los colores calculados—; la
+tipografía y la transición son las del proyecto; y se vio en claro y en oscuro.
+El modo oscuro se probó **guardando un color sin cambiarle nada**, que avisa y
+no mueve un solo dato. Un producto de demostración quedó desactivado al probar
+el tono «pero» y **se volvió a activar**; los productos de prueba se borraron.
 
 **Lo que falta, y no es poco.** Quedan sin confirmar unas **veinte acciones**
 del panel —catálogo, medios de pago, órdenes, devoluciones, usuarios—, y casi

@@ -16,6 +16,18 @@
    compartidos se adaptan solos. Así no hay dos Button ni dos Input. */
 @custom-variant admin (&:where([data-scale="admin"], [data-scale="admin"] *));
 
+/* `sonner` mueve sus avisos en 400ms y §8 pone el techo en 300. Su propia
+   regla de `prefers-reduced-motion` ya los deja quietos, así que acá sólo se
+   corrige la duración.
+
+   El selector va repetido a propósito: la hoja de `sonner` la inyecta el
+   paquete y queda DESPUÉS de ésta, así que con un `[data-sonner-toast]` a
+   secas empatan en peso y gana la suya. Repetirlo sube la especificidad sin
+   recurrir a `!important`, que no se usa en ninguna otra parte del proyecto. */
+[data-sonner-toast][data-sonner-toast] {
+  transition-duration: 200ms;
+}
+
 /* ═══ Tokens crudos — tienda y panel en claro (§3.1) ═══════════════════ */
 :root {
   /* Marca */

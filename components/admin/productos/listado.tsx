@@ -19,7 +19,7 @@ import { ReponerStock } from "@/components/admin/productos/reponer";
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { Badge } from "@/components/ui/badge";
-import { avisar } from "@/components/ui/aviso";
+import { avisar, avisarConPero } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -114,11 +114,16 @@ export function ListadoDeProductos({
       }
       // Acá sí: la fila que se tocó ya no está, así que no queda dónde
       // poner la respuesta.
-      avisar(
-        r.data.resultado === "borrado"
-          ? `Borramos «${p.name}».`
-          : `«${p.name}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede borrar: lo desactivamos y ya no se ve en la tienda.`,
-      );
+      // Dos finales, dos tonos. Desactivar no es lo que se apretó, y con el
+      // check verde al lado la frase se lee de reojo como «listo, borrado»,
+      // que es justo lo que no pasó.
+      if (r.data.resultado === "borrado") {
+        avisar(`Borramos «${p.name}».`);
+      } else {
+        avisarConPero(
+          `«${p.name}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede borrar: lo desactivamos y ya no se ve en la tienda.`,
+        );
+      }
     });
   };
 
