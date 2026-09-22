@@ -202,7 +202,7 @@ function DialogoDeFinalizar({
             desde que entró la orden (§8.1). Sin decirlo, el catálogo después
             parece no haberse enterado.
           */}
-          <p className="text-caption text-ink-tertiary">
+          <p className="text-caption text-ink-secondary">
             El disponible no cambia: estas unidades ya estaban reservadas para
             esta orden desde que se hizo.
           </p>
@@ -307,7 +307,7 @@ function DialogoDeCancelar({
             placeholder="Nos quedamos sin stock del rojo"
             aria-describedby={`${campo}-ayuda`}
           />
-          <p id={`${campo}-ayuda`} className="text-caption text-ink-tertiary">
+          <p id={`${campo}-ayuda`} className="text-caption text-ink-secondary">
             {loLeeElComprador
               ? "Queda en el historial de la orden y el comprador lo ve en su compra."
               : "Queda en el historial de la orden. Esta orden no tiene cuenta asociada, así que nadie más lo va a ver."}

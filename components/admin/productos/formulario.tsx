@@ -437,7 +437,7 @@ function ResumenDePrecio({ vista }: { vista: Vista }) {
       className="flex min-h-14 flex-col justify-center rounded-panel-control bg-surface-sunken px-3 py-2"
     >
       {vista.estado === "incompleto" ? (
-        <p className="text-body-sm text-ink-tertiary">
+        <p className="text-body-sm text-ink-secondary">
           Poné el precio y acá vas a ver cómo queda.
         </p>
       ) : vista.estado === "descuento-invalido" ? (
@@ -458,7 +458,7 @@ function ResumenDePrecio({ vista }: { vista: Vista }) {
           <span className="text-heading font-semibold tabular-nums text-brand">
             {formatMoney(vista.final)}
           </span>
-          <span className="text-body-sm tabular-nums text-ink-tertiary line-through">
+          <span className="text-body-sm tabular-nums text-ink-secondary line-through">
             {formatMoney(vista.precio)}
           </span>
           {/*

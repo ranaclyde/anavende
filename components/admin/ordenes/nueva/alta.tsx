@@ -515,7 +515,7 @@ function RenglonDeLaOrden({
               </span>
             ) : null}
           </span>
-          <span className="text-caption text-ink-tertiary">
+          <span className="text-caption text-ink-secondary">
             {variante.marca}
             {variante.inactiva ? " · dado de baja" : ""}
           </span>

@@ -121,7 +121,7 @@ export function ListadoDeOrdenes({
                   <OrigenDeLaOrden origen={orden.origen} />
                 </div>
                 <Comprador orden={orden} />
-                <span className="text-caption text-ink-tertiary tabular-nums">
+                <span className="text-caption text-ink-secondary tabular-nums">
                   <Fecha iso={orden.creadaEn} /> · {orden.unidades}{" "}
                   {orden.unidades === 1 ? "unidad" : "unidades"}
                 </span>
@@ -157,7 +157,7 @@ function Comprador({ orden }: { orden: OrdenDelListado }) {
         {orden.customerName}
       </span>
       {orden.customerEmail ? (
-        <span className="truncate text-caption text-ink-tertiary">
+        <span className="truncate text-caption text-ink-secondary">
           {orden.customerEmail}
         </span>
       ) : null}

@@ -243,7 +243,11 @@ cuatro semánticos que sólo hablan cuando hay algo que decir.
 
 - **Tinta** (`ink`): texto primario. Casi negro y **cálido**, no negro puro.
 - **Tinta Secundaria** (`ink-secondary`): texto secundario y etiquetas.
-- **Tinta Terciaria** (`ink-tertiary`): metadatos y marcadores de posición.
+- **Tinta Terciaria** (`ink-tertiary`): **no es un color de texto**. Da 3,37:1
+  en claro y 3,28:1 en oscuro, y AA pide 4,5. Vale para marcadores de
+  posición, viñetas, íconos decorativos y separadores `aria-hidden`; un
+  metadato o una ayuda van en `ink-secondary`
+  (`DESIGN-REFERENCE.md` §3.1, 2026-09-22).
 - **Canvas** (`canvas`): fondo de página. Gris frío, y esa frialdad es lo que hace
   resaltar al Malbec.
 - **Superficie** (`surface`): tarjetas, campos, encabezado.

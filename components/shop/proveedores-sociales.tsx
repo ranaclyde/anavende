@@ -102,7 +102,7 @@ export function ProveedoresSociales({
 
       <div
         className={cn(
-          "flex items-center gap-3 text-caption text-ink-tertiary",
+          "flex items-center gap-3 text-caption text-ink-secondary",
           "before:h-px before:flex-1 before:bg-border",
           "after:h-px after:flex-1 after:bg-border",
         )}

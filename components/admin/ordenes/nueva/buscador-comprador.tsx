@@ -128,7 +128,7 @@ export function BuscadorDeComprador({
                 <span className="truncate text-body-sm text-ink">
                   {c.nombre}
                 </span>
-                <span className="truncate text-caption text-ink-tertiary">
+                <span className="truncate text-caption text-ink-secondary">
                   {c.email}
                 </span>
               </button>

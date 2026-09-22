@@ -94,7 +94,7 @@ export default async function FichaDeUsuario({ params }: Props) {
               dadoDeBaja={usuario.dadoDeBaja}
             />
             {esMiCuenta ? (
-              <span className="text-caption text-ink-tertiary">(sos vos)</span>
+              <span className="text-caption text-ink-secondary">(sos vos)</span>
             ) : null}
           </>
         }
@@ -162,10 +162,10 @@ export default async function FichaDeUsuario({ params }: Props) {
                 {/* RF-27: el motivo es obligatorio y lo garantiza un CHECK,
                     así que si hay bloqueo hay motivo. */}
                 <p className="text-body-sm text-ink-secondary">
-                  <span className="text-ink-tertiary">Motivo: </span>
+                  <span className="text-ink-secondary">Motivo: </span>
                   {usuario.motivoDelBloqueo}
                 </p>
-                <p className="text-caption text-ink-tertiary">
+                <p className="text-caption text-ink-secondary">
                   No puede entrar, y eso es lo que ve al intentarlo.
                 </p>
               </div>
@@ -248,11 +248,11 @@ function LaBaja({ usuario }: { usuario: UsuarioDelPanel }) {
         {/* RF-34: el motivo es obligatorio y lo garantiza un CHECK, así que si
             hay baja hay motivo. */}
         <p className="text-body-sm text-ink-secondary">
-          <span className="text-ink-tertiary">Motivo: </span>
+          <span className="text-ink-secondary">Motivo: </span>
           {usuario.motivoDeLaBaja}
         </p>
 
-        <p className="text-caption text-ink-tertiary">
+        <p className="text-caption text-ink-secondary">
           {usuario.dadoDeBaja
             ? "No puede entrar, y eso es lo que ve al intentarlo. No se borró nada: revertirla la devuelve con todo lo suyo."
             : "Mientras tanto su cuenta es de solo lectura: puede entrar y mirar, no comprar. Puede retirar el pedido ella misma."}
@@ -313,7 +313,7 @@ function HistorialDeEstado({
             </p>
             {m.motivo ? (
               <p className="text-caption text-ink-secondary">
-                <span className="text-ink-tertiary">Motivo: </span>
+                <span className="text-ink-secondary">Motivo: </span>
                 {m.motivo}
               </p>
             ) : null}
@@ -384,7 +384,7 @@ function SusOrdenes({ usuario }: { usuario: UsuarioDelPanel }) {
                 #{orden.numero}
               </span>
               <EstadoDeLaOrden estado={orden.estado} />
-              <span className="text-caption text-ink-tertiary tabular-nums">
+              <span className="text-caption text-ink-secondary tabular-nums">
                 <time dateTime={orden.creadaEn}>
                   {fechaCorta(orden.creadaEn)}
                 </time>{" "}

@@ -157,7 +157,7 @@ function Dialogo({
             placeholder="Me equivoqué de producto"
             aria-describedby={`${campo}-ayuda`}
           />
-          <p id={`${campo}-ayuda`} className="text-caption text-ink-tertiary">
+          <p id={`${campo}-ayuda`} className="text-caption text-ink-secondary">
             Obligatorio: es lo que explica un movimiento de stock que va y
             vuelve.
           </p>

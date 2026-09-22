@@ -256,7 +256,7 @@ function DialogoDeDevolver({
             placeholder="Le quedaba chico y lo trajo al día siguiente"
             aria-describedby={`${campo}-ayuda`}
           />
-          <p id={`${campo}-ayuda`} className="text-caption text-ink-tertiary">
+          <p id={`${campo}-ayuda`} className="text-caption text-ink-secondary">
             Queda con la devolución y es lo único que va a explicar, dentro de
             seis meses, por qué volvió esta mercadería.
           </p>
@@ -335,7 +335,7 @@ function RenglonDevuelto({
           <label htmlFor={id} className="text-body-sm font-medium text-ink">
             {nombrar(item)}
           </label>
-          <span className="text-caption text-ink-tertiary">
+          <span className="text-caption text-ink-secondary">
             {item.cantidad === 1
               ? "1 unidad vendida"
               : `${item.cantidad} unidades vendidas`}

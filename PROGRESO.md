@@ -3247,7 +3247,7 @@ contraste que devolvió el barrido en cuatro pantallas es el de abajo, más la
 entrada «Reportes» del menú, que está **desactivada** a propósito hasta F9.1 y
 por eso no cuenta (WCAG exime los controles inactivos).
 
-### El terciario está escrito para 24px y se usa en 12 y en 14
+### ~~El terciario está escrito para 24px y se usa en 12 y en 14~~ — arreglado el 2026-09-22
 
 **Es el hallazgo del 2026-09-22**, y es de los que no aparecen leyendo el
 código: cada uso, mirado solo, es una clase del sistema.
@@ -3294,9 +3294,45 @@ ancestro.
    otra falla de contraste de este repaso —el botón destructivo en 2,77:1, el
    2026-09-18— se arregló en el momento y no esperó a F10.
 
-Falta tu decisión. **La `opacity-70` de la devolución anulada conviene
-arreglarla en cualquiera de los tres casos**: sea cual sea el gris, apagar una
-tarjeta entera multiplicando la opacidad es lo que rompe el número.
+**Elegiste la primera**, el mismo día. Y **la especificación primero**, como en
+el segundo color: `DESIGN-REFERENCE.md` §3.1 cambia la fila del terciario por
+«**No es un color de texto**», suma la tabla de lo que sí vale —marcadores de
+posición, viñetas `marker:`, íconos decorativos, separadores `aria-hidden` y
+controles desactivados— y **corrige tres lugares donde la propia referencia
+pedía terciario para el precio tachado de 12px** (§7.3 y §6.1, que se
+contradecían con su tabla de contraste). `DESIGN.md` quedó sincronizado y los
+comentarios de `globals.css` también.
+
+Después el código: **51 reemplazos en 27 archivos**, panel y tienda. Quedaron
+**18 usos de `text-ink-tertiary`**, y son la lista cerrada de arriba: los dos
+marcadores de posición de `Input`, el de la búsqueda de la tienda y el del
+editor de descripción; las cuatro viñetas `marker:`; las tres lupas, los dos
+chevrones de fila, las dos X de limpiar y el ícono del estado vacío; el
+separador `aria-hidden` de la miga de pan; y la entrada «Reportes» del menú,
+que está desactivada hasta F9.1.
+
+Tres cosas más que salieron de la misma medición:
+
+- **La devolución anulada** pasó de `opacity-70` a `bg-surface-sunken`. Apagar
+  la tarjeta entera multiplicaba el contraste de todo lo de adentro —2,17:1—;
+  hundir la superficie la hace retroceder igual sin tocar el texto. La
+  etiqueta «Anulada» sigue siendo lo que lo dice sin color (§9).
+- **El contador de resultados** de los filtros se apagaba a `opacity-60`
+  mientras buscaba, justo cuando dice «Buscando…»: 2,6:1. Se le sacó la
+  opacidad; que está buscando lo dice la palabra, y ya se anuncia por
+  `aria-live`.
+- **El conteo de una solapa inactiva** pesaba menos que el de la activa. Ahora
+  pesan igual: lo que distingue a la activa es su fondo y su borde.
+
+Verificado: `DATABASE_URL= npx next build` pasa, `tsc --noEmit` y ESLint
+limpios, y **medido otra vez sobre el render**, en los dos temas, en la pantalla
+que tenía las 33 fallas: 162 elementos medidos y **cero por debajo de AA**,
+salvo «Reportes», que está desactivada y WCAG exime.
+
+**La consecuencia se asumió y conviene tenerla presente**: la escala de tres
+grises quedó en dos niveles de texto más uno decorativo, así que un metadato
+pesa lo mismo que una etiqueta. Lo que ordena la jerarquía de ahora en más es
+el tamaño y el peso.
 
 ### Reponer el stock sin salir del listado — hecho el 2026-09-21
 

@@ -95,12 +95,10 @@ export function SolapasDelPanel({
                 <>
                   <span
                     aria-hidden
-                    className={cn(
-                      "text-caption tabular-nums",
-                      solapa.activa
-                        ? "text-ink-secondary"
-                        : "text-ink-tertiary",
-                    )}
+                    // El conteo pesa igual en la solapa activa y en la
+                    // inactiva: lo que distingue a la activa es su fondo y su
+                    // borde, no un gris más claro que no llega a AA (§3.1).
+                    className="text-caption tabular-nums text-ink-secondary"
                   >
                     {solapa.cuantos}
                   </span>

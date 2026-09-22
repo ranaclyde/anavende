@@ -140,7 +140,7 @@ export function BuscadorDeVariantes({
                       <span className="text-ink-secondary"> · {v.color}</span>
                     ) : null}
                   </span>
-                  <span className="text-caption text-ink-tertiary">
+                  <span className="text-caption text-ink-secondary">
                     {v.marca}
                     {v.inactiva ? " · dado de baja" : ""}
                   </span>
@@ -153,7 +153,7 @@ export function BuscadorDeVariantes({
                   <span
                     className={
                       v.disponible > 0
-                        ? "block text-caption text-ink-tertiary tabular-nums"
+                        ? "block text-caption text-ink-secondary tabular-nums"
                         : "block text-caption text-danger tabular-nums"
                     }
                   >

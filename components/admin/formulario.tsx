@@ -102,7 +102,7 @@ export function Campo({
         {...resto}
       />
       {ayuda && !error ? (
-        <p id={`${idCampo}-ayuda`} className="text-caption text-ink-tertiary">
+        <p id={`${idCampo}-ayuda`} className="text-caption text-ink-secondary">
           {ayuda}
         </p>
       ) : null}

@@ -76,7 +76,7 @@ export function Galeria({
   if (imagenes.length === 0) {
     return (
       <div className="flex aspect-square items-center justify-center rounded-card bg-surface shadow-md">
-        <p className="text-body-sm text-ink-tertiary">
+        <p className="text-body-sm text-ink-secondary">
           Todavía no cargamos las fotos de este producto.
         </p>
       </div>

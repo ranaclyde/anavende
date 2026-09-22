@@ -191,7 +191,7 @@ function Renglon({ item }: { item: ItemDelCarrito }) {
                 descuento={item.descuento}
                 precioFinal={item.precioFinal}
               />
-              <span className="text-caption text-ink-tertiary">c/u</span>
+              <span className="text-caption text-ink-secondary">c/u</span>
             </div>
             {vigente ? null : <Badge tone="danger">Sin stock</Badge>}
           </div>

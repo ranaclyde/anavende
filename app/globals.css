@@ -74,7 +74,7 @@
   /* Texto */
   --ink: #111010; /* primario — casi negro, no negro puro (§3.1) */
   --ink-secondary: #716e6d; /* secundario, etiquetas */
-  --ink-tertiary: #8f8b8a; /* metadatos, marcadores de posición */
+  --ink-tertiary: #8f8b8a; /* decorativo, NUNCA texto (§3.1) */
   --ink-inverse: #ffffff;
 
   /* Líneas */
@@ -115,7 +115,7 @@
 
   --ink: #ececee;
   --ink-secondary: #a1a1a6;
-  --ink-tertiary: #6e6e73;
+  --ink-tertiary: #6e6e73; /* decorativo, NUNCA texto (§3.1) */
   --ink-inverse: #141416;
 
   --border: #2e2e33;
