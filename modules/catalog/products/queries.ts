@@ -5,6 +5,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import {
   POR_PAGINA,
+  type EstadoDeProductos,
   type FiltrosDeProductos,
 } from "@/modules/catalog/products/filtros";
 
@@ -182,17 +183,30 @@ export async function listarProductos(
 }
 
 /**
- * Cuántos productos hay, sin mirar los filtros.
+ * Cuántos productos hay en cada solapa, sin mirar los filtros.
  *
- * Es lo que separa «todavía no cargaste ninguno» de «ninguno coincide con lo
- * que buscaste» (§8). Las dos pantallas dicen cosas distintas y ofrecen
- * acciones distintas, y sin este número no se pueden distinguir.
+ * El `todos` es además lo que separa «todavía no cargaste ninguno» de
+ * «ninguno coincide con lo que buscaste» (§8): las dos pantallas dicen cosas
+ * distintas y ofrecen acciones distintas, y sin ese número no se distinguen.
+ *
+ * **El conteo NO mira los filtros, a propósito**, igual que en órdenes y en
+ * usuarios: si cambiara con cada búsqueda, la solapa dejaría de contestar
+ * «¿cuántos tengo sin publicar?» para pasar a ser un resultado más (§6.9).
+ *
+ * **Acá los tres sí suman**, al revés que en usuarios: activo e inactivo son
+ * una partición —`is_active` es un booleano y no admite un producto que esté
+ * en las dos—, así que `todos` es la suma de los otros dos.
  */
-export async function contarProductos(): Promise<number> {
-  const [fila] = await db.execute<{ total: number }>(
-    sql`SELECT count(*)::int AS total FROM products`,
-  );
-  return fila?.total ?? 0;
+export async function contarPorEstado(): Promise<
+  Record<EstadoDeProductos, number>
+> {
+  const [fila] = await db.execute<Record<EstadoDeProductos, number>>(sql`
+    SELECT count(*)::int                                     AS "todos",
+           count(*) FILTER (WHERE is_active)::int            AS "activos",
+           count(*) FILTER (WHERE NOT is_active)::int        AS "inactivos"
+      FROM products`);
+
+  return fila ?? { todos: 0, activos: 0, inactivos: 0 };
 }
 
 export type ProductoParaEditar = {

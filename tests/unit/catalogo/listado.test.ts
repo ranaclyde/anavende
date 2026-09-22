@@ -13,7 +13,7 @@ import {
   urlDeOrden,
 } from "@/modules/catalog/products/filtros";
 import {
-  contarProductos,
+  contarPorEstado,
   listarProductos,
 } from "@/modules/catalog/products/queries";
 import { umbralDeStockBajo } from "@/modules/settings/queries";
@@ -115,6 +115,35 @@ describe("la URL (§10.2)", () => {
     expect(
       sinFiltros(con({ q: "algo", orden: "precio", dir: "desc" })).orden,
     ).toBe("precio");
+  });
+
+  /**
+   * Desde el 2026-09-22 el estado es una solapa y no un desplegable (§6.9),
+   * y eso lo saca de la cuenta de «hay filtros puestos»: estar parada en
+   * «Inactivos» no es un filtro encima de un listado, es qué listado se está
+   * mirando. Si contara, «Limpiar todo» devolvería a otra solapa sin que
+   * nadie la tocara.
+   */
+  test("la solapa tampoco es un filtro: no enciende «Limpiar todo»", () => {
+    expect(hayFiltros(con({ estado: "inactivos" }))).toBe(false);
+    expect(hayFiltros(con({ stock: "reponer" }))).toBe(true);
+  });
+
+  test("«Limpiar todo» conserva la solapa y borra lo demás", () => {
+    const limpio = sinFiltros(
+      con({ q: "algo", stock: "sin", estado: "inactivos", pagina: 4 }),
+    );
+    expect(limpio.estado).toBe("inactivos");
+    expect(limpio.q).toBe("");
+    expect(limpio.stock).toBe("todos");
+    expect(limpio.pagina).toBe(1);
+  });
+
+  /** El parámetro se sigue llamando `estado`: es el que enlaza el tablero. */
+  test("el enlace de cada solapa conserva la búsqueda y los filtros", () => {
+    expect(urlDeFiltros(con({ estado: "activos", stock: "reponer" }))).toBe(
+      "/admin/productos?estado=activos&stock=reponer",
+    );
   });
 });
 
@@ -429,13 +458,62 @@ describe("contra la base", () => {
 
   describe("lo que separa «vacío» de «sin resultados» (§8)", () => {
     /**
-     * `contarProductos()` ignora los filtros a propósito: es lo que decide si
-     * la pantalla dice «todavía no cargaste nada» o «no hay resultados para
-     * esta búsqueda». Con el conteo filtrado, un catálogo lleno con una
-     * búsqueda sin resultados diría que está vacío.
+     * `contarPorEstado()` ignora los filtros a propósito: su `todos` es lo que
+     * decide si la pantalla dice «todavía no cargaste nada» o «no hay
+     * resultados para esta búsqueda». Con el conteo filtrado, un catálogo
+     * lleno con una búsqueda sin resultados diría que está vacío.
      */
     test("el total cuenta todos los productos, sin mirar los filtros", async () => {
-      expect(await contarProductos()).toBeGreaterThanOrEqual(5);
+      const conteo = await contarPorEstado();
+      expect(conteo.todos).toBeGreaterThanOrEqual(5);
+    });
+
+    /**
+     * Las tres solapas son una partición, al revés que las de usuarios: un
+     * producto está activo o no lo está, así que los dos números tienen que
+     * dar el total. Si algún día dejaran de sumar, la solapa estaría
+     * prometiendo un listado que no existe.
+     */
+    test("activos e inactivos suman el total", async () => {
+      const conteo = await contarPorEstado();
+      expect(conteo.activos + conteo.inactivos).toBe(conteo.todos);
+      expect(conteo.inactivos).toBeGreaterThanOrEqual(1);
+    });
+
+    /**
+     * Lo que no se ve leyendo la consulta: que el número de la solapa sea
+     * exactamente el que el listado de esa solapa va a mostrar. Son dos
+     * lugares repitiendo la misma condición —`FILTER (WHERE is_active)` en el
+     * conteo y `p.is_active` en el `WHERE` del listado—, y si se separan la
+     * solapa dice 25 y la tabla trae 24.
+     */
+    test("cada solapa dice el número que su listado va a mostrar", async () => {
+      const conteo = await contarPorEstado();
+      const umbral = await umbralDeStockBajo();
+
+      for (const estado of ["todos", "activos", "inactivos"] as const) {
+        const { total } = await listarProductos(
+          { ...FILTROS_VACIOS, estado },
+          umbral,
+        );
+        expect(
+          conteo[estado],
+          `la solapa «${estado}» dice ${conteo[estado]} y el listado trae ${total}`,
+        ).toBe(total);
+      }
+    });
+
+    test("«todos» es el total de la tabla, sin filtros de por medio", async () => {
+      const conteo = await contarPorEstado();
+      const [fila] = await db.execute<{ total: number }>(
+        sql`SELECT count(*)::int AS total FROM products`,
+      );
+      expect(Object.keys(conteo).sort()).toEqual([
+        "activos",
+        "inactivos",
+        "todos",
+      ]);
+      expect(conteo.todos).toBe(fila.total);
     });
 
     test("el umbral sale de site_settings, y sin fila es 3", async () => {
