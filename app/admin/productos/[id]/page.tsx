@@ -71,41 +71,56 @@ export default async function EditarProducto({ params, searchParams }: Props) {
         volver={{ href: "/admin/productos", etiqueta: "Productos" }}
       />
 
-      {/* Dos columnas desde `xl`, como la ficha de usuario (§4.1): a la
-          izquierda el formulario, a la derecha el stock. Por debajo siguen
-          una debajo de la otra y EN ESTE ORDEN, que es el orden del DOM: así
-          el recorrido con teclado y el de la vista son el mismo en los dos
-          casos.
+      {/* Dos columnas cuando hay lugar para las dos, y una sola cuando no.
 
-          **Las dos columnas llevan tope, y los dos números están medidos.**
-          34rem es lo que necesita el formulario para que los pares —precio y
-          descuento, marca y categoría— sigan en dos columnas; 44rem es lo
-          que necesita una fila de fotos para entrar entera: cinco de 96px
-          más la de «Agregar», con 8 de separación, son 616, y la tarjeta se
-          lleva 56 entre su relleno y el del color. Sin el segundo tope, a
-          1920 la columna medía 1072: el botón «Agregar color» quedaba a 900
-          del título y dos fotos flotaban en un desierto. */}
-      <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,34rem)_minmax(0,44rem)] xl:items-start">
-        <FormularioDeProducto
-          producto={producto}
-          marcas={opciones.marcas}
-          categorias={opciones.categorias}
-        />
+          **El formulario conserva el ancho que tiene en el alta**, 1024px, y
+          el stock se queda con el resto. Es lo único que impide el salto que
+          §4.1 existe para evitar: se viene de «Nuevo producto», que es este
+          mismo formulario, y si acá midiera otra cosa los campos cambiarían
+          de tamaño entre una pantalla y la siguiente. Antes el salto era de
+          lugar y se arregló alineando a la izquierda; éste era de ancho, y lo
+          introdujo el paso anterior de este mismo trabajo.
 
-        {/* Fuera del formulario, y a propósito: cada variante se guarda sola,
-            en el momento. Meterlas adentro obligaría a apretar «Guardar
-            cambios» para que una foto ya subida quedara en firme, y a
-            explicar por qué una imagen que ya está en Storage todavía no
-            cuenta. Que sea hermana y no hija es también lo que permite
-            ponerla en la otra columna sin anidar un `<form>` adentro de
-            otro. */}
-        <VariantesDelProducto
-          productId={producto.id}
-          productoActivo={producto.isActive}
-          variantes={variantes}
-          colores={colores}
-          abrirAlta={consulta.agregar === ABRIR_ALTA_DE_COLOR}
-        />
+          **La consulta es de contenedor y no de ventana**, y ahí hay una
+          razón concreta: el menú lateral se contrae a pedido y libera 176px.
+          Con una consulta de ventana, contraerlo —que es justo lo que se hace
+          para ganar ancho— no cambiaría nada. `@container` mide lo que de
+          verdad hay.
+
+          **1400px es la suma de lo que hace falta**: 1024 del formulario, 16
+          de separación y 360 del stock, que es lo que necesita una fila de
+          tres fotos. Por debajo van apiladas y las dos topeadas en 1024,
+          exactamente como se veía la pantalla antes de partirla en dos.
+
+          El orden de las columnas es el del DOM en los dos casos, así que el
+          recorrido con teclado no se despega de lo que se ve. */}
+      <div className="@container">
+        <div className="flex max-w-admin-form flex-col gap-4 @min-[1400px]:max-w-none @min-[1400px]:flex-row @min-[1400px]:items-start">
+          <div className="min-w-0 @min-[1400px]:w-admin-form @min-[1400px]:shrink-0">
+            <FormularioDeProducto
+              producto={producto}
+              marcas={opciones.marcas}
+              categorias={opciones.categorias}
+            />
+          </div>
+
+          {/* Fuera del formulario, y a propósito: cada variante se guarda
+              sola, en el momento. Meterlas adentro obligaría a apretar
+              «Guardar cambios» para que una foto ya subida quedara en firme,
+              y a explicar por qué una imagen que ya está en Storage todavía
+              no cuenta. Que sea hermana y no hija es también lo que permite
+              ponerla en la otra columna sin anidar un `<form>` adentro de
+              otro. */}
+          <div className="min-w-0 @min-[1400px]:flex-1">
+            <VariantesDelProducto
+              productId={producto.id}
+              productoActivo={producto.isActive}
+              variantes={variantes}
+              colores={colores}
+              abrirAlta={consulta.agregar === ABRIR_ALTA_DE_COLOR}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

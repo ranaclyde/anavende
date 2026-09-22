@@ -430,24 +430,23 @@ El sistema tiene **una paleta y una tipografía**, pero **dos escalas de densida
 
 **El número vive en `app/globals.css` como `--container-admin-form`**, no como una clase suelta, por el mismo motivo por el que existe `--container-shop`: sin un lugar donde esté escrito, la próxima pantalla inventa el suyo.
 
-##### La edición de un producto es una ficha, no un formulario (2026-09-21)
+##### La edición de un producto lleva el formulario al lado del stock (2026-09-21)
 
-La tabla de arriba reparte por forma, no por nombre de archivo, y el tope de 1024 se justifica en una línea: **«son de una sola columna»**. La pantalla de edición de un producto dejó de serlo, así que cambia de fila. `/admin/productos/nuevo` sigue siendo formulario: no tiene stock que mostrar.
+En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y no su hija —cada color se guarda solo, en el momento (F2.4)—. Puestas una debajo de la otra, el título de la tarjeta de stock empezaba **a y=1280 con una ventana de 900**: al abrir un producto no se asomaba. Y el stock es, junto con el precio, lo que más se toca. Van al lado, y el título pasa a **y=134**.
 
-**Qué la sacó de la fila.** En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y no su hija —cada color se guarda solo, en el momento (F2.4)—. Puestas una debajo de la otra, el título de la tarjeta de stock empezaba **a y=1280 con una ventana de 900**: al abrir un producto no se asomaba. Y el stock es, junto con el precio, lo que más se toca.
+**El formulario conserva el ancho que tiene en el alta: 1024px, `--container-admin-form`.** No es una comodidad, es la regla de esta misma sección. Se viene de «Nuevo producto», que es este mismo formulario, y todo el punto de §4.1 es que el contenido **no se mueva** al navegar. El primer intento le puso un tope propio de `34rem` y produjo exactamente eso: los campos medían 1024 en el alta y 488 en la ficha, y el salto se veía al crear un producto. Lo reportaste con las dos capturas al lado. El ancho del formulario no se negocia por pantalla.
 
-**Cómo queda.** Dos columnas desde `xl`, como la ficha de usuario: el formulario a la izquierda, el stock a la derecha. Por debajo de `xl` siguen una debajo de la otra y **en el orden del DOM**, que es el mismo que el de la vista, así que el recorrido con teclado no se despega de lo que se ve en ninguno de los dos casos. Medido: **el título pasó de y=1280 a y=134**, y la página bajó de 1872 a 1373px de alto.
+| Columna | Ancho |
+|---|---|
+| Formulario | `--container-admin-form`, el mismo que en el alta y en las otras seis pantallas de formulario |
+| Colores y stock | El resto |
 
-| Columna | Tope | De dónde sale el número |
-|---|---|---|
-| Formulario | `34rem` | Lo que necesitan los pares —precio y descuento, marca y categoría— para seguir en dos columnas: medidos, 247px cada campo |
-| Colores y stock | `44rem` | Lo que necesita una fila de fotos para entrar entera: cinco de 96px más la de «Agregar», con 8 de separación, son 616, y la tarjeta se lleva 56 entre su relleno y el del color |
+**La consulta es de contenedor y no de ventana** (`@container` / `@min-[1400px]`), y la razón es concreta: **el menú lateral se contrae a pedido y libera 176px**. Con una consulta de ventana, contraerlo —que es justo el gesto de quien quiere más ancho— no cambiaría nada. Medido a 1600px de ventana: con el menú desplegado el stock va abajo, y contrayéndolo se pone al costado. Es la primera consulta de contenedor del proyecto, y entró por este motivo y no por novedad.
 
-**Por qué la columna de stock también lleva tope**, y no se queda con lo que sobra. Sin él, a 1920 medía 1072: «Agregar color» quedaba a 900px de su título y dos fotos flotaban en un desierto. Con tope, a 1536 entra la fila entera de seis y de ahí para arriba no crece más. A 1280 las dos columnas no entran a su tamaño y se encogen parejas, a 488 cada una.
+**1400px es una suma, no un número redondo**: 1024 del formulario, 16 de separación y 360 del stock, que es lo que necesita una fila de tres fotos. Por debajo van apiladas y **las dos topeadas en 1024**, que es exactamente como se veía la pantalla antes de partirla en dos.
 
-**Lo que este cambio le hizo al texto de ayuda, que es lo contrario de lo que dice el párrafo de arriba.** El argumento de «1024 y no 768» era que la ayuda entra en un renglón. Medido ahora, ese renglón tenía **102 caracteres** en «Publicación» y 83 en «Descripción», contra el techo de 68 que pone §7. A 34rem los cinco textos del formulario quedan **entre 35 y 51**. Dos renglones cortos se leen mejor que uno largo: la línea original perseguía el número de renglones cuando lo que importaba era el largo de cada uno.
+**Lo que esto deja sin resolver, y se anota para no perderlo.** Los textos de ayuda del formulario siguen en **102 caracteres por renglón** en «Publicación», contra el techo de **68** que pone §7; los de la tarjeta de stock, alrededor de 97. Angostar el formulario los arreglaba —bajaban a 51— pero a cambio del salto que se acaba de sacar, así que no es por ahí: se arreglan cortando el texto o topeando el párrafo, que es trabajo aparte y toca `TarjetaDeSeccion`, que usan cinco pantallas.
 
-**Lo que quedó sin arreglar, y se anota para no perderlo.** Los textos de la propia tarjeta de stock siguen por encima de 68: el de las fotos pasó de 127 caracteres por renglón a 85, y la bajada de la tarjeta queda en 97. Cortarlos es tocar `TarjetaDeSeccion`, que la usan cinco pantallas, así que no entra acá.
 
 ---
 

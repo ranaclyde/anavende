@@ -337,21 +337,23 @@ centrarlo hacía que el contenido saltara de lugar al pasar de un listado a su
 formulario. Sin centrar, el borde izquierdo cae en el mismo punto en las siete
 pantallas y en toda resolución.
 
-**La edición de un producto está en la primera fila, no en la segunda.** El tope
-de 1024 se justifica en que un formulario es de una sola columna, y esa pantalla
-dejó de serlo: el `<form>` convive con «Colores y stock», que es su hermana
-porque cada color se guarda solo. Apiladas, el título del stock empezaba a
-y=1280 con una ventana de 900 —no se asomaba al abrir— y es, junto con el
-precio, lo que más se toca. Desde `xl` van en dos columnas topeadas en `34rem` y
-`44rem`: lo que necesitan los pares de campos para no apilarse, y lo que
-necesita una fila de cinco fotos más la de «Agregar» para entrar entera. Medido,
-el título pasó a y=134. `/admin/productos/nuevo` sigue siendo formulario: no
-tiene stock que mostrar.
+**La edición de un producto pone el formulario al lado del stock, y el
+formulario no cambia de ancho.** El `<form>` convive ahí con «Colores y stock»,
+que es su hermana porque cada color se guarda solo; apiladas, el título del
+stock empezaba a y=1280 con una ventana de 900 y no se asomaba al abrir. Al
+lado, pasa a y=134. **El formulario conserva sus 1024px**, los mismos del alta:
+se viene de «Nuevo producto», que es este mismo formulario, y el punto de la
+regla de arriba es que el contenido no se mueva al navegar. Un primer intento
+le puso un tope propio de 34rem y produjo justamente eso —1024 en el alta, 488
+en la ficha—, con el salto a la vista al crear un producto. El stock se queda
+con el resto.
 
-**Y el argumento de «1024 para que la ayuda entre en un renglón» era el
-equivocado.** Ese renglón medía 102 caracteres, contra el techo de 68 que pone la
-tipografía. A 34rem los cinco textos de ayuda del formulario quedan entre 35 y
-51: dos renglones cortos se leen mejor que uno largo.
+**La consulta es de contenedor y no de ventana.** El menú lateral se contrae a
+pedido y libera 176px; con una consulta de ventana, contraerlo —que es el gesto
+de quien quiere más ancho— no cambiaría nada. A 1600px de ventana, con el menú
+desplegado el stock va abajo y contrayéndolo se pone al costado. El umbral,
+1400px, es una suma: 1024 del formulario, 16 de separación y 360 del stock, que
+es una fila de tres fotos. Por debajo van apiladas y las dos topeadas en 1024.
 
 El móvil es prioridad de diseño en la tienda, no una adaptación: el área táctil
 mínima es de 44px y está resuelta **en la variante del componente**, no en cada
