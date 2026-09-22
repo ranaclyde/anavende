@@ -53,7 +53,23 @@ const buttonVariants = cva(
           "bg-transparent text-ink-secondary hover:bg-canvas hover:text-ink active:bg-border",
         destructive:
           "border border-danger bg-transparent text-danger hover:bg-danger-tint",
-        "destructive-solid": "bg-danger text-white hover:opacity-90",
+        // Ghost destructivo — §2.2, §6.3. **Solo el panel.**
+        //
+        // Es el destructivo de una columna de acciones: el ícono en rojo desde
+        // el reposo, sin caja. El contorno de `destructive` no entra ahí —una
+        // caja por fila, cuarenta por página, se lee como una columna de
+        // alertas— y el terciario gris tampoco servía: dejaba el rojo colgado
+        // del hover, y en táctil no hay hover. Ana opera en tablet (RNF-01),
+        // así que borrar y editar se veían iguales justo donde más caro sale
+        // confundirlos.
+        "destructive-ghost":
+          "bg-transparent text-danger hover:bg-danger-tint active:bg-danger-tint",
+        // `text-ink-inverse`, no `text-white`: el token se invierte con el
+        // tema y `text-white` no. En oscuro `--danger` se aclara a #f87171 y
+        // el blanco encima da 2,77:1 — por debajo de AA incluso para texto
+        // grande. Con el token da 6,65:1. En claro los dos valen #ffffff, así
+        // que la tienda no cambia.
+        "destructive-solid": "bg-danger text-ink-inverse hover:opacity-90",
       },
       size: {
         // Tienda: píldora. Panel: 8px de radio (§3.5).
@@ -131,10 +147,7 @@ function Button({
     >
       {/* El contenido se mantiene en el flujo para conservar el ancho. */}
       <span
-        className={cn(
-          "inline-flex items-center gap-2",
-          loading && "invisible",
-        )}
+        className={cn("inline-flex items-center gap-2", loading && "invisible")}
       >
         {children}
       </span>

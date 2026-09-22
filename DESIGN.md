@@ -258,11 +258,19 @@ aparece en fondos de sección, bordes decorativos, íconos generales, texto de
 párrafo ni cabeceras de tabla. Si una pantalla tiene dos cosas en burdeos que no
 son la acción principal, una de las dos está mal.
 
-**La regla de la forma, no el color.** El burdeos de marca (352,7°) y el rojo de
-peligro (0°) están a siete grados de matiz: son el mismo tono para cualquiera que
-no los vea uno al lado del otro. Lo destructivo se separa **por forma** —contorno
-rojo sobre fondo transparente, con ícono—, nunca por color. El relleno rojo existe
-sólo dentro del diálogo de confirmación, donde no hay un botón de marca al lado.
+**La regla de la forma, no el color — y su excepción, el panel.** El burdeos de
+marca (352,7°) y el rojo de peligro (0°) están a siete grados de matiz: son el
+mismo tono para cualquiera que no los vea uno al lado del otro. **En la tienda**
+lo destructivo se separa por forma —contorno rojo sobre fondo transparente, con
+ícono—, nunca por color. El relleno rojo existe sólo dentro del diálogo de
+confirmación, donde no hay un botón de marca al lado.
+
+**El panel distingue por color, y es deliberado.** Ahí la misma acción se repite
+decenas de veces por fila, suele ser un ícono sin rótulo, y Ana opera en tablet,
+donde no hay hover: un contorno por fila es una columna de alertas y un rojo que
+depende del puntero no se ve nunca. El ícono destructivo va en `--danger` desde
+el reposo (`destructive-ghost`). No habilita colores nuevos, ni que el burdeos
+decore, ni un relleno rojo fuera del diálogo.
 
 **La regla del par.** El pizarra no es «el color secundario» en el sentido de
 más débil: pesa lo mismo que el burdeos a propósito. Se usa **sólo** cuando hay
@@ -306,15 +314,46 @@ apretados y sólidos sin necesidad de un peso más alto.
 ahí, en ninguna escala, por ninguna razón.
 
 **La regla de la columna alineada.** Todo precio y toda columna de números lleva
-`font-variant-numeric: tabular-nums` (atributo `data-numeric="tabular"`). Los
-dígitos de ancho variable hacen bailar una columna de precios.
+`font-variant-numeric: tabular-nums`: los dígitos de ancho variable hacen bailar
+una columna de precios. **En una tabla del panel no hay que pedirlo**: la celda
+con `data-align="right"` ya lo aplica. Fuera de la tabla va la utilidad
+`tabular-nums`. Hubo además un atributo `data-numeric="tabular"` escrito en
+`globals.css` y mandado acá que **nunca se usó en un solo lugar**; se quitó el
+2026-09-21, porque una regla escrita que el código no sigue es peor que no
+tenerla.
 
 ## Layout
 
 La tienda se centra en un ancho máximo de **1200px** y separa sus secciones con 64
-a 80px. El panel ocupa el ancho completo menos el menú lateral, separa bloques con
-24 a 32px y corre sus filas de tabla a 44px de alto. La escala de espaciado es de
-base 4px.
+a 80px. El panel separa bloques con 24 a 32px y corre sus filas de tabla a 44px de
+alto. La escala de espaciado es de base 4px.
+
+**El panel tiene dos anchos, y ninguno se centra.** Los listados y las fichas
+ocupan el ancho completo menos el menú: ahí cada píxel es una columna más que se
+lee sin apretar. Los formularios y el tablero se topean en
+`--container-admin-form` (1024px) y van **alineados a la izquierda**, sin
+`mx-auto`: un formulario de una sola columna a 1920px deja campos de 1580px, y
+centrarlo hacía que el contenido saltara de lugar al pasar de un listado a su
+formulario. Sin centrar, el borde izquierdo cae en el mismo punto en las siete
+pantallas y en toda resolución.
+
+**La edición de un producto pone el formulario al lado del stock, y el
+formulario no cambia de ancho.** El `<form>` convive ahí con «Colores y stock»,
+que es su hermana porque cada color se guarda solo; apiladas, el título del
+stock empezaba a y=1280 con una ventana de 900 y no se asomaba al abrir. Al
+lado, pasa a y=134. **El formulario conserva sus 1024px**, los mismos del alta:
+se viene de «Nuevo producto», que es este mismo formulario, y el punto de la
+regla de arriba es que el contenido no se mueva al navegar. Un primer intento
+le puso un tope propio de 34rem y produjo justamente eso —1024 en el alta, 488
+en la ficha—, con el salto a la vista al crear un producto. El stock se queda
+con el resto.
+
+**La consulta es de contenedor y no de ventana.** El menú lateral se contrae a
+pedido y libera 176px; con una consulta de ventana, contraerlo —que es el gesto
+de quien quiere más ancho— no cambiaría nada. A 1600px de ventana, con el menú
+desplegado el stock va abajo y contrayéndolo se pone al costado. El umbral,
+1400px, es una suma: 1024 del formulario, 16 de separación y 360 del stock, que
+es una fila de tres fotos. Por debajo van apiladas y las dos topeadas en 1024.
 
 El móvil es prioridad de diseño en la tienda, no una adaptación: el área táctil
 mínima es de 44px y está resuelta **en la variante del componente**, no en cada
@@ -332,6 +371,44 @@ la variante `admin:`. No existen dos botones ni dos campos.
 globos— se lleva la escala puesta explícitamente (`components/ui/escala.tsx`).
 Arriba de `document.body` ya no hay `data-scale`, y un diálogo abierto desde el
 panel se pintaría con la escala de la tienda aunque tenga sus clases `admin:`.
+
+**La regla del aviso.** Toda acción que muta dice que salió bien; lo que se
+elige es dónde. Flotante cuando el lugar donde pasó la cosa desapareció —un
+diálogo que se cerró, una fila que se borró— o cuando la pantalla no cambia de
+forma visible. En su lugar cuando lo que pasó se ve: subir una foto la hace
+aparecer, y un cartel al lado que diga «subimos la foto» es ruido. **Los avisos
+flotantes confirman y no reportan errores**: un error tiene que decir qué hacer
+y a veces ofrecer reintentar, y eso no entra en algo que se va a los cuatro
+segundos, así que se queda donde estuvo la acción.
+
+**Dos tonos, cada uno con su disco.** Un glifo relleno dentro de un círculo de
+color, no un trazo suelto: verde con el check cuando salió como se pidió,
+ámbar con el triángulo cuando salió **pero no como se pidió** —borrar un
+producto que está en una orden lo desactiva en vez de borrarlo, y con el check
+verde esa frase se lee de reojo como «listo, borrado»—. El disco va en el color
+semántico y el glifo en su tinte, nunca en blanco fijo: así el par se da vuelta
+solo en modo oscuro, donde un check blanco sobre el verde claro quedaría en
+1,5:1 contra el 3:1 que pide la accesibilidad.
+
+La biblioteca es `sonner`, montada dentro del marco de escala porque no usa
+portal y así hereda `data-scale`; va `unstyled`, para que el aspecto salga
+entero de los tokens y no dependa del orden de las hojas.
+
+La pregunta que decide no es «¿cambió algo en pantalla?» sino **«¿alcanza lo
+que cambió para saber qué pasó?»**. Subir la cantidad de un ítem cambia el
+renglón a la vista y lleva aviso igual, porque además escribe en el libro de
+stock, que es lo que no se ve. Guardar la configuración no lleva ninguno,
+porque la pantalla se queda y ya lo dice en su lugar.
+
+**La regla del diálogo que se abre solo.** Si lo abre una acción de quien mira
+la pantalla, es estado del cliente. Si lo abre de dónde se viene, va en la
+dirección y quien lo cierra lo limpia. El caso es el alta de un producto, que
+termina en su ficha con «Agregar color» abierto (`?agregar=color`): un producto
+sin colores no tiene stock ni fotos y no se puede vender, así que crearlo es
+media tarea. En la URL y no en memoria, el enlace se puede pegar en cualquier
+lado, el atrás funciona, y dos pantallas no tienen que ponerse de acuerdo sobre
+algo invisible. Si el parámetro no se sacara al cerrar, recargar volvería a
+abrir el alta sobre un color ya cargado.
 
 **La regla del buscador único.** El buscador del encabezado se esconde por CSS
 cuando la página ya trae el suyo a la vista, y vuelve cuando ese se va de pantalla.
@@ -356,8 +433,11 @@ qué.
 
 ### Named Rules
 
-**La regla de sombra o borde, nunca los dos.** Las tarjetas se separan por sombra.
-Sombra y borde juntos ensucian y aplanan la elevación.
+**La regla de sombra o borde, nunca los dos.** La tienda separa por sombra; el
+panel, por borde. El panel tiene modo oscuro y ahí la sombra no existe: sobre el
+canvas `#141416`, `--shadow-sm` mueve el píxel 0,18 sobre 255, y la superficie
+contra el canvas da 1,11:1. Sombra y borde juntos ensucian y aplanan la
+elevación.
 
 **La regla del foco que sobrevive.** El anillo de foco se muestra sólo ante teclado
 (`:focus-visible`) y viaja con un `outline` transparente de 2px. No es decorativo:
@@ -393,7 +473,7 @@ fondo blanco se fundan con la página.
 - **Alterna:** relleno pizarra, texto inverso. La otra forma de hacer lo mismo, a la par de la marca. En la ficha es «Comprá ya por WhatsApp» debajo del carrito.
 - **Secondary:** superficie blanca con borde; el hover hunde el fondo y marca el borde. Es para acciones de apoyo entre pares —«Guardar», «Compartir»— y para el «Cancelar» de un diálogo destructivo, donde la salida segura tiene que pesar igual que el botón que borra.
 - **Tertiary (ghost):** sin caja en reposo; al pasar el puntero aparece el plato de `canvas` y la tinta sube a plena. Es el «Cancelar» y el «Volver». En táctil no hay hover, así que el texto tiene que alcanzar solo: nunca un ícono sin rótulo.
-- **Destructive:** contorno rojo sobre transparente, con ícono. **Destructive solid:** relleno rojo, exclusivo del diálogo de confirmación.
+- **Destructive:** contorno rojo sobre transparente, con ícono; para acciones con rótulo. **Destructive ghost:** ícono rojo sin caja, plato `--danger-tint` al hover — **sólo el panel**, para la columna de acciones de una tabla. **Destructive solid:** relleno rojo, exclusivo del diálogo de confirmación.
 - **Disabled:** 40% de opacidad **sin cambiar de color**. No hay un gris de deshabilitado.
 - **Loading:** el contenido se queda en el flujo e invisible y el indicador se superpone, para que el botón conserve el ancho y la interfaz no salte. El indicador anuncia qué se está haciendo al lector de pantalla.
 - **Emphasis `glow`:** `shadow-brand`, y sólo lo llevan el envío del buscador y el principal del hero.
@@ -413,8 +493,8 @@ fondo blanco se fundan con la página.
 ### Cards / Containers
 
 - **Corner:** 28px en la tienda, 12px en el panel.
-- **Background:** superficie blanca. **Shadow:** `md` en la tienda, `sm` en el panel.
-- **Border:** ninguno. Ver la regla de sombra o borde.
+- **Background:** superficie blanca. **Shadow:** `md` en la tienda; el panel no lleva sombra.
+- **Border:** ninguno en la tienda; `--border` en el panel. Ver la regla de sombra o borde.
 - **Padding:** 20px de cabecera en la tienda, 16px en el panel.
 
 ### Navigation
@@ -422,6 +502,85 @@ fondo blanco se fundan con la página.
 Encabezado sobre superficie blanca que toma `shadow-lg` al hacer scroll. El estado
 activo se marca en Malbec. El buscador vive en el encabezado y se retira cuando la
 página trae el suyo.
+
+### Reponer desde el listado
+
+El listado de productos edita el stock sin abrir la ficha: un botón por fila
+abre un globo con un renglón por color y un «Guardar» explícito. **Globo y no
+diálogo**, porque la operación se repite fila tras fila y un diálogo hace
+perder de vista cuáles faltan. Se escribe el total, no lo disponible, y cada
+renglón muestra la cuenta al lado.
+
+### Tabla del panel
+
+Filas de 44px, cabecera en `caption` versalita sobre `--surface-sunken`, hover
+`--surface-sunken`, y `data-align="right"` que además aplica `tabular-nums`.
+**La cabecera se fija porque la que scrollea es la tabla y no la página**: su
+envoltorio lleva `max-h-[calc(100svh-20rem)]` y es el ancestro scrolleable
+dentro del cual `sticky` se ancla. Sin ese tope el `sticky` no hacía nada, y la
+página medía 1760px con 40 filas. DR §6.9.
+
+### Diálogos
+
+Tope de alto `max-h-[85svh]` en el primitivo, no en cada diálogo: sin él, una
+caja más alta que la pantalla se corta **por los dos lados** —está centrada con
+`translate(-50%, -50%)`— y lo que queda afuera es inalcanzable, porque es
+`position: fixed` y el scroll del cuerpo está bloqueado. Lo que scrollea es el
+contenido y no la caja, para que la × no se vaya con él. El envoltorio del
+scroll lleva `flex-1` y `gap-[inherit]` para no pisar a los diálogos que fijan
+su alto desde afuera; uno que ocupa la pantalla entera anula el tope con
+`max-h-none`. DR §6.14.
+
+### Solapas del panel
+
+Dos formas, y la diferencia significa algo (`SolapasDelPanel`). **Segmentado**
+—pastilla blanca sobre fondo hundido— cuando cambia qué se ve del mismo
+listado, y lleva el número de cada solapa; **subrayado** cuando cambia en qué
+pantalla se está, y no lo lleva, porque cada solapa es otra tabla y no hay un
+total que contestar. Las dos miden 40px de alto. El número es el del total y no
+el del filtro puesto, y se lee con una frase completa en `sr-only`. La solapa no
+es un filtro que se limpia: «Limpiar todo» la conserva. DR §6.9.
+
+### Tarjeta de sección del panel
+
+Todo bloque con título dentro de una pantalla del panel es una
+`TarjetaDeSeccion`: `p-4` (los 12–16px que fija §4), `gap-4`, título en `body`
+de 16px con peso 500, y **nombre accesible** vía `aria-labelledby`, porque un
+`<section>` sin nombre no es una región. Estaba escrita cinco veces, con tres
+paddings, tres separaciones y tres tamaños de título para el mismo nivel
+jerárquico. La alineación del encabezado la decide la ayuda, igual que en el
+encabezado de pantalla. DR §6.13.
+
+### Barra de filtros del panel
+
+No es el buscador firmado de la tienda: es un campo de 40px con la lupa adentro,
+porque convive con tres o cuatro controles en el mismo renglón. Sus tres piezas
+—`BuscadorDelPanel`, `RangoDeFechas` y `ContadorDeResultados`— viven en
+`components/admin/filtros.tsx` y guardan lo que cada copia tenía que acordarse de
+traer: el `admin:pl-9` que evita que la lupa se apoye sobre la primera letra, la
+cruz nativa de `type="search"` retirada a favor de un botón que devuelve el foco
+al campo, y el `role="search"` acotado a la búsqueda y no a toda la barra. El
+contador se anuncia con `aria-live`. DR §6.2.1.
+
+### Estado vacío del panel
+
+Uno solo para los once (`VacioDelPanel`), y **son dos situaciones**: «todavía no
+hay ninguno» lleva ícono, explicación de dónde sale lo que va a aparecer y la
+acción del primer paso; «nada coincide con los filtros» lleva el texto buscado y
+«Limpiar todo», **sin ícono** — aparece y desaparece con cada tecla, y un dibujo
+que parpadea ahí es ruido. Adentro de una tarjeta el fondo se hunde y la caja se
+acorta. DR §6.9.
+
+### Encabezado de pantalla del panel
+
+Uno solo para las trece pantallas (`EncabezadoDePanel`): volver, título, insignias,
+bajada y acciones, todo opcional menos el título. **La alineación la decide la
+bajada y no el tipo de pantalla** — con bajada la columna izquierda son dos
+renglones y va `items-start`, sin bajada es uno y va `items-center` —, que es el
+criterio que los listados y las fichas venían aplicando cada uno por su lado. El
+volver es siempre el botón terciario `sm` con `-ml-3`, nunca un enlace pintado a
+mano. Su fantasma para los `loading.tsx` vive en el mismo archivo, que es lo único
+que evita que el esqueleto y lo real se separen. DR §6.12.
 
 ### Tarjeta de producto (signature)
 
@@ -452,7 +611,7 @@ botón de limpiar cuando hay texto, y su etiqueta vive en `sr-only`.
 - **Do** teñir toda sombra con `rgb(17 16 16 / …)`, la tinta cálida, nunca con negro.
 - **Do** resolver el área táctil de 44px en la variante del componente, no en la llamada.
 - **Do** acompañar todo estado con texto: una etiqueta nunca comunica sólo por color.
-- **Do** poner `data-numeric="tabular"` en precios y columnas de números.
+- **Do** dejar que la tabla resuelva los números con `data-align="right"`, y usar la utilidad `tabular-nums` fuera de ella.
 - **Do** pintar los estados con los semánticos: un resultado exitoso es verde, aunque el burdeos esté a mano.
 - **Do** reservar el pizarra para cuando hay dos caminos igual de válidos; si hay un principal claro, el otro va en contorno.
 - **Do** usar la variante `admin:` para la densidad del panel, y marcar la escala a mano en lo que se pinta por portal.

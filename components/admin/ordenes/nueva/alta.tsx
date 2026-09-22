@@ -4,11 +4,13 @@ import { Trash2, TriangleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { CamposDeDireccion } from "@/components/admin/ordenes/nueva/direccion";
 import { BuscadorDeComprador } from "@/components/admin/ordenes/nueva/buscador-comprador";
 import { BuscadorDeVariantes } from "@/components/admin/ordenes/nueva/buscador-variantes";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
-import { Campo, Opcion, Seccion } from "@/components/admin/formulario";
+import { Campo, Opcion } from "@/components/admin/formulario";
 import { FieldError } from "@/components/ui/field-error";
 import { Input, Textarea } from "@/components/ui/input";
 import { erroresDeSeccion, leerErrores, SIN_ERRORES } from "@/lib/form";
@@ -152,6 +154,7 @@ export function AltaDeOrdenManual() {
       }
       // Al detalle de la orden recién creada: es donde se la revisa, se le
       // escribe al comprador o se la corrige (F7.1, F7.2).
+      avisar(`Creaste la orden #${r.data.numero}.`);
       router.push(`/admin/ordenes/${r.data.numero}`);
     });
   }
@@ -160,7 +163,7 @@ export function AltaDeOrdenManual() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Seccion titulo="Productos">
+      <TarjetaDeSeccion id="productos" titulo="Productos">
         <BuscadorDeVariantes alElegir={agregar} />
 
         {renglones.length === 0 ? (
@@ -202,9 +205,10 @@ export function AltaDeOrdenManual() {
             </span>
           </div>
         ) : null}
-      </Seccion>
+      </TarjetaDeSeccion>
 
-      <Seccion
+      <TarjetaDeSeccion
+        id="comprador"
         titulo="Comprador"
         ayuda="Los datos son de este pedido. Si tiene cuenta, asociala para que le aparezca en «Mis compras»."
       >
@@ -238,9 +242,9 @@ export function AltaDeOrdenManual() {
           error={e.email}
           type="email"
         />
-      </Seccion>
+      </TarjetaDeSeccion>
 
-      <Seccion titulo="Entrega">
+      <TarjetaDeSeccion id="entrega" titulo="Entrega">
         <div className="grid gap-2 sm:grid-cols-2">
           <Opcion
             nombre="entrega"
@@ -297,9 +301,10 @@ export function AltaDeOrdenManual() {
             <FieldError>{e.direccion}</FieldError>
           </div>
         ) : null}
-      </Seccion>
+      </TarjetaDeSeccion>
 
-      <Seccion
+      <TarjetaDeSeccion
+        id="como-queda"
         titulo="Cómo queda la orden"
         ayuda="De esto depende qué pasa con el stock."
       >
@@ -320,9 +325,9 @@ export function AltaDeOrdenManual() {
           />
         </div>
         <FieldError>{e.estado}</FieldError>
-      </Seccion>
+      </TarjetaDeSeccion>
 
-      <Seccion titulo="Notas (opcional)">
+      <TarjetaDeSeccion id="notas" titulo="Notas (opcional)">
         <Textarea
           value={notas}
           onChange={(ev) => setNotas(ev.target.value)}
@@ -331,7 +336,7 @@ export function AltaDeOrdenManual() {
           placeholder="Lo que haga falta recordar de esta venta."
         />
         <FieldError>{e.notas}</FieldError>
-      </Seccion>
+      </TarjetaDeSeccion>
 
       {errores.general ? (
         <p role="alert" className="text-body-sm text-danger">
@@ -449,9 +454,8 @@ function RenglonDeLaOrden({
 
         <Button
           type="button"
-          variant="tertiary"
+          variant="destructive-ghost"
           size="icon"
-          className="text-ink-secondary hover:text-danger"
           onClick={alQuitar}
         >
           <Trash2 aria-hidden />

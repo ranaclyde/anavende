@@ -1,6 +1,7 @@
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, Receipt } from "lucide-react";
 import Link from "next/link";
 
+import { VacioDelPanel } from "@/components/admin/vacio";
 import {
   EstadoDeLaOrden,
   OrigenDeLaOrden,
@@ -182,25 +183,26 @@ function Fecha({ iso }: { iso: string }) {
  */
 function SinResultados({ filtros }: { filtros: FiltrosDeOrdenes }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink">
-        {filtros.q
+    <VacioDelPanel
+      titulo={
+        filtros.q
           ? `No encontramos ninguna orden para «${filtros.q}».`
           : hayFiltros(filtros)
             ? "Ninguna orden coincide con los filtros."
-            : "No hay órdenes en esta solapa."}
-      </p>
-      {hayFiltros(filtros) ? (
-        <>
-          <p className="text-caption text-ink-secondary">
-            Probá con menos filtros, o revisá cómo quedó escrito.
-          </p>
-          <Button asChild variant="secondary" size="sm" className="mt-2">
+            : "No hay órdenes en esta solapa."
+      }
+      accion={
+        hayFiltros(filtros) ? (
+          <Button asChild variant="secondary" size="sm">
             <Link href={urlDeFiltros(sinFiltros(filtros))}>Limpiar todo</Link>
           </Button>
-        </>
-      ) : null}
-    </div>
+        ) : null
+      }
+    >
+      {hayFiltros(filtros)
+        ? "Probá con menos filtros, o revisá cómo quedó escrito."
+        : null}
+    </VacioDelPanel>
   );
 }
 
@@ -212,22 +214,23 @@ function SinResultados({ filtros }: { filtros: FiltrosDeOrdenes }) {
  */
 export function SinOrdenes() {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink">Todavía no hay ninguna orden.</p>
-      <p className="max-w-prose text-caption text-ink-secondary">
-        Cuando alguien confirme un pedido en la tienda vas a verlo acá, y te va
-        a llegar un email con el detalle. Las ventas por WhatsApp o en persona
-        se cargan a mano, y también cuentan.
-      </p>
-      {/* La acción sugerida que pide §6.9 para un vacío: sin órdenes web
-          todavía, cargar una a mano es lo único que se puede hacer desde
-          esta pantalla. */}
-      <Button asChild variant="secondary" size="sm" className="mt-1">
-        <Link href="/admin/ordenes/nueva">
-          <Plus aria-hidden />
-          Cargar una venta
-        </Link>
-      </Button>
-    </div>
+    <VacioDelPanel
+      icono={Receipt}
+      titulo="Todavía no hay ninguna orden."
+      accion={
+        /* La acción sugerida que pide §6.9: sin órdenes web todavía, cargar
+           una a mano es lo único que se puede hacer desde esta pantalla. */
+        <Button asChild variant="secondary" size="sm">
+          <Link href="/admin/ordenes/nueva">
+            <Plus aria-hidden />
+            Cargar una venta
+          </Link>
+        </Button>
+      }
+    >
+      Cuando alguien confirme un pedido en la tienda vas a verlo acá, y te va a
+      llegar un email con el detalle. Las ventas por WhatsApp o en persona se
+      cargan a mano, y también cuentan.
+    </VacioDelPanel>
   );
 }

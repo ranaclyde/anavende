@@ -1,8 +1,9 @@
-import { ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { EstadoDeLaOrden } from "@/components/admin/ordenes/estado";
 import { BajaDeLaCuenta } from "@/components/admin/usuarios/baja";
 import { BloqueoDeLaCuenta } from "@/components/admin/usuarios/bloqueo";
@@ -81,51 +82,46 @@ export default async function FichaDeUsuario({ params }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <Button asChild variant="tertiary" size="sm" className="-ml-3">
-          <Link href="/admin/usuarios">
-            <ChevronLeft aria-hidden />
-            Usuarios
-          </Link>
-        </Button>
-      </div>
+      <EncabezadoDePanel
+        titulo={usuario.nombre}
+        volver={{ href: "/admin/usuarios", etiqueta: "Usuarios" }}
+        insignias={
+          <>
+            <RolDelUsuario rol={usuario.rol} />
+            <EstadoDelUsuario
+              bloqueado={usuario.bloqueado}
+              bajaPedida={usuario.bajaPedida}
+              dadoDeBaja={usuario.dadoDeBaja}
+            />
+            {esMiCuenta ? (
+              <span className="text-caption text-ink-tertiary">(sos vos)</span>
+            ) : null}
+          </>
+        }
+        acciones={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="secondary" size="sm">
+              <a
+                href={enlaceDeWhatsApp(
+                  usuario.telefono,
+                  `¡Hola, ${usuario.firstName}! Te escribo de AnaVende.`,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <IconoWhatsApp className="size-4" />
+                Escribirle por WhatsApp
+              </a>
+            </Button>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-title text-ink">{usuario.nombre}</h1>
-          <RolDelUsuario rol={usuario.rol} />
-          <EstadoDelUsuario
-            bloqueado={usuario.bloqueado}
-            bajaPedida={usuario.bajaPedida}
-            dadoDeBaja={usuario.dadoDeBaja}
-          />
-          {esMiCuenta ? (
-            <span className="text-caption text-ink-tertiary">(sos vos)</span>
-          ) : null}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Button asChild variant="secondary" size="sm">
-            <a
-              href={enlaceDeWhatsApp(
-                usuario.telefono,
-                `¡Hola, ${usuario.firstName}! Te escribo de AnaVende.`,
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <IconoWhatsApp className="size-4" />
-              Escribirle por WhatsApp
-            </a>
-          </Button>
-
-          <RestablecerContrasena
-            id={usuario.id}
-            nombre={usuario.firstName}
-            email={usuario.email}
-          />
-        </div>
-      </div>
+            <RestablecerContrasena
+              id={usuario.id}
+              nombre={usuario.firstName}
+              email={usuario.email}
+            />
+          </div>
+        }
+      />
 
       <p className="text-body-sm text-ink-secondary">
         {usuario.email} · cuenta creada el {fechaCorta(usuario.creadoEn)}
@@ -133,15 +129,15 @@ export default async function FichaDeUsuario({ params }: Props) {
 
       <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
         <div className="flex flex-col gap-4">
-          <Tarjeta titulo="Datos">
+          <TarjetaDeSeccion id="datos" titulo="Datos">
             <EditarDatosDelUsuario usuario={usuario} />
-          </Tarjeta>
+          </TarjetaDeSeccion>
 
           <SusOrdenes usuario={usuario} />
         </div>
 
         <div className="flex flex-col gap-4">
-          <Tarjeta titulo="Rol">
+          <TarjetaDeSeccion id="rol" titulo="Rol">
             <RolDelUsuarioEditable
               id={usuario.id}
               rolActual={usuario.rol as RolAsignable}
@@ -151,9 +147,9 @@ export default async function FichaDeUsuario({ params }: Props) {
                 usuario.rol === "admin" && administradoras <= 1
               }
             />
-          </Tarjeta>
+          </TarjetaDeSeccion>
 
-          <Tarjeta titulo="Estado de la cuenta">
+          <TarjetaDeSeccion id="estado" titulo="Estado de la cuenta">
             {usuario.bloqueado ? (
               <div className="flex flex-col gap-1">
                 <p className="text-body-sm text-ink">
@@ -199,7 +195,7 @@ export default async function FichaDeUsuario({ params }: Props) {
             />
 
             <LaBaja usuario={usuario} />
-          </Tarjeta>
+          </TarjetaDeSeccion>
 
           <HistorialDeEstado movimientos={usuario.historialDeEstado} />
         </div>
@@ -303,7 +299,7 @@ function HistorialDeEstado({
   if (movimientos.length === 0) return null;
 
   return (
-    <Tarjeta titulo="Historial de la cuenta">
+    <TarjetaDeSeccion id="historial-cuenta" titulo="Historial de la cuenta">
       <ul className="flex flex-col gap-3">
         {movimientos.map((m) => (
           <li key={m.fecha} className="flex flex-col gap-0.5">
@@ -324,7 +320,7 @@ function HistorialDeEstado({
           </li>
         ))}
       </ul>
-    </Tarjeta>
+    </TarjetaDeSeccion>
   );
 }
 
@@ -340,25 +336,28 @@ function HistorialDeEstado({
 function SusOrdenes({ usuario }: { usuario: UsuarioDelPanel }) {
   if (usuario.ordenes === 0) {
     return (
-      <Tarjeta titulo="Sus órdenes">
+      <TarjetaDeSeccion id="sus-ordenes" titulo="Sus órdenes">
         <p className="text-body-sm text-ink-secondary">
           Todavía no compró nada por la tienda. Si le vendiste por WhatsApp,
           podés cargar esa venta como orden manual y asociársela.
         </p>
-      </Tarjeta>
+      </TarjetaDeSeccion>
     );
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-body-sm font-medium text-ink">
+    <TarjetaDeSeccion
+      id="sus-ordenes"
+      titulo={
+        <>
           Sus órdenes{" "}
           <span className="text-caption text-ink-secondary">
             ({usuario.ordenes})
           </span>
-        </h2>
-        {usuario.ordenes > usuario.ultimasOrdenes.length ? (
+        </>
+      }
+      acciones={
+        usuario.ordenes > usuario.ultimasOrdenes.length ? (
           <Button asChild variant="tertiary" size="sm" className="-mr-2">
             {/* Al listado de órdenes, buscando por su email: es la búsqueda
                 que RF-21 ya tiene, y así se llega con solapas y filtros. */}
@@ -368,9 +367,9 @@ function SusOrdenes({ usuario }: { usuario: UsuarioDelPanel }) {
               Ver todas
             </Link>
           </Button>
-        ) : null}
-      </div>
-
+        ) : null
+      }
+    >
       <ul className="flex flex-col">
         {usuario.ultimasOrdenes.map((orden) => (
           <li
@@ -399,21 +398,6 @@ function SusOrdenes({ usuario }: { usuario: UsuarioDelPanel }) {
           </li>
         ))}
       </ul>
-    </section>
-  );
-}
-
-function Tarjeta({
-  titulo,
-  children,
-}: {
-  titulo: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-4">
-      <h2 className="text-body-sm font-medium text-ink">{titulo}</h2>
-      {children}
-    </section>
+    </TarjetaDeSeccion>
   );
 }

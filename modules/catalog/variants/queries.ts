@@ -137,6 +137,53 @@ export async function variantesDelProducto(
   }));
 }
 
+/** Lo mínimo para el globo de «Reponer» del listado: ni imágenes ni conteos. */
+export type VarianteParaReponer = {
+  id: string;
+  /** `null` = variante única: el producto no se vende por color (RF-16). */
+  colorName: string | null;
+  colorHex: string | null;
+  stockTotal: number;
+  reservedStock: number;
+  /** `stock_total − reserved_stock` (§8.1). Puede ser negativo (RF-24). */
+  disponible: number;
+};
+
+/**
+ * Las variantes de un producto, para reponer desde el listado.
+ *
+ * **Se lee al abrir el globo y no con el listado**: son cuarenta productos por
+ * página y se repone uno o dos. Traerlas todas de entrada sería mandar al
+ * navegador el inventario entero para que se usen dos renglones.
+ *
+ * Deliberadamente **no trae las imágenes ni los conteos de órdenes y
+ * carritos** que sí trae `variantesDelProducto`: acá no se borra ni se
+ * reordena nada, solo se escribe un número.
+ *
+ * **Van también las inactivas.** Una variante desactivada sigue teniendo
+ * stock y sigue contando en el total del listado; esconderla acá haría que
+ * los números del globo no sumaran los de la fila.
+ */
+export async function variantesParaReponer(
+  productId: string,
+): Promise<VarianteParaReponer[]> {
+  const filas = await db.execute<VarianteParaReponer>(sql`
+    SELECT v.id,
+           c.name  AS "colorName",
+           c.hex_code AS "colorHex",
+           v.stock_total    AS "stockTotal",
+           v.reserved_stock AS "reservedStock",
+           (v.stock_total - v.reserved_stock) AS disponible
+      FROM product_variants v
+      LEFT JOIN colors c ON c.id = v.color_id
+     WHERE v.product_id = ${productId}
+     -- El mismo orden que la ficha: por nombre de color, y la variante única
+     -- —sin color— primero, que es la que está sola cuando está.
+     ORDER BY c.name NULLS FIRST, v.id`);
+
+  return [...filas];
+}
+
 export type OpcionDeColor = {
   id: string;
   name: string;

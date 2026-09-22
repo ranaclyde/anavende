@@ -9,6 +9,7 @@ import {
   SelectorDeLogo,
   type AccionDeLogo,
 } from "@/components/admin/logo/selector";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -60,7 +61,10 @@ const HEX_POR_OMISION = "#8a8a8a";
  * Sin progreso: un logo pesa poco y la barra aparecería y desaparecería antes
  * de poder leerse. El de las imágenes de producto sí lo usa (RF-17).
  */
-async function subirLogo(brandId: string, archivo: File): Promise<string | null> {
+async function subirLogo(
+  brandId: string,
+  archivo: File,
+): Promise<string | null> {
   const r = await subirImagen({ destino: "marca", brandId }, archivo);
   return r.ok ? null : r.message;
 }
@@ -172,6 +176,14 @@ export function DialogoDeItem({
         }
       }
 
+      // El diálogo se cierra y la fila nueva queda en algún lugar de un
+      // listado ordenado alfabéticamente, que puede ni estar en esta página:
+      // sin aviso, guardar no contesta nada (§6.15).
+      avisar(
+        item
+          ? `Guardamos ${palabras.articulo} ${palabras.singular} «${nombre.trim()}».`
+          : `Creaste ${palabras.articulo} ${palabras.singular} «${nombre.trim()}».`,
+      );
       alCerrar();
     });
   };

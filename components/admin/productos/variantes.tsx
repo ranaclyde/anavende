@@ -1,11 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useState, useTransition } from "react";
 import { Palette, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { ImagenesDeVariante } from "@/components/admin/productos/imagenes";
+import { avisar, avisarConPero } from "@/components/ui/aviso";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -51,6 +54,11 @@ import type {
 /** El valor del `<select>` para la variante sin color (RF-16). */
 const UNICO = "unico";
 
+/** «1 unidad» y no «1 unidades», que es lo que se lee en los avisos. */
+function unidades(n: number): string {
+  return n === 1 ? "1 unidad" : `${n} unidades`;
+}
+
 /** Cómo se llama una variante en un cartel. */
 function nombreDe(v: { colorName: string | null }): string {
   return v.colorName ?? "Único";
@@ -61,23 +69,35 @@ export function VariantesDelProducto({
   productoActivo,
   variantes,
   colores,
+  abrirAlta = false,
 }: {
   productId: string;
   productoActivo: boolean;
   variantes: VarianteDelPanel[];
   colores: OpcionDeColor[];
+  /** Llegó `?agregar=color`: el alta termina acá y sigue sola. */
+  abrirAlta?: boolean;
 }) {
   const [enEdicion, setEnEdicion] = useState<VarianteDelPanel | null>(null);
-  const [agregando, setAgregando] = useState(false);
+  const [agregando, setAgregando] = useState(abrirAlta);
   const [porBorrar, setPorBorrar] = useState<VarianteDelPanel | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enCurso, iniciar] = useTransition();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // El estado arranca con lo que diga la dirección, y además la sigue. Con
+  // sólo el valor inicial alcanza HOY, porque se llega desde `/nuevo`, que es
+  // otro segmento y monta este componente de cero. Pero el día que algo
+  // enlace a `?agregar=color` desde la ficha misma —el listado, por ejemplo—
+  // React reusaría esta instancia y el diálogo no se abriría: el valor
+  // inicial de un `useState` se lee una sola vez.
+  useEffect(() => {
+    if (abrirAlta) setAgregando(true);
+  }, [abrirAlta]);
 
   const borrar = (v: VarianteDelPanel) => {
     setPorBorrar(null);
-    setAviso(null);
     setError(null);
 
     iniciar(async () => {
@@ -86,11 +106,16 @@ export function VariantesDelProducto({
         setError(r.message);
         return;
       }
-      setAviso(
-        r.data.resultado === "borrado"
-          ? `Sacamos «${nombreDe(v)}».`
-          : `«${nombreDe(v)}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede sacar: la desactivamos y ya no se ofrece en la tienda.`,
-      );
+      // La tarjeta del color desapareció: no queda dónde poner la respuesta
+      // en su lugar (DR §6.15). El error sí se queda acá arriba, que es
+      // donde estuvo la acción.
+      if (r.data.resultado === "borrado") {
+        avisar(`Sacamos «${nombreDe(v)}».`);
+      } else {
+        avisarConPero(
+          `«${nombreDe(v)}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede sacar: la desactivamos y ya no se ofrece en la tienda.`,
+        );
+      }
       router.refresh();
     });
   };
@@ -98,30 +123,26 @@ export function VariantesDelProducto({
   const cerrarDialogo = () => {
     setEnEdicion(null);
     setAgregando(false);
+
+    // Con `?agregar=color` puesto, cerrar navega a la dirección sin él: si se
+    // quedara, recargar la pantalla volvería a abrir el alta sobre un color
+    // que ya se cargó. Es una navegación y no un `refresh`, así que trae los
+    // datos nuevos igual; llamar a los dos sería pedir la misma página dos
+    // veces.
+    if (abrirAlta) {
+      router.replace(pathname, { scroll: false });
+      return;
+    }
     router.refresh();
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-panel-card bg-surface p-4 shadow-sm sm:p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-heading text-ink">Colores y stock</h2>
-          <p className="text-body-sm text-ink-secondary">
-            Cada color lleva su stock y sus fotos. Si el producto no se vende
-            por color, alcanza con uno solo.
-          </p>
-          {/* Las reglas de las fotos, dichas una vez para toda la sección: en
-              cada tarjeta serían dos renglones repetidos por color. */}
-          {variantes.length === 0 ? null : (
-            <p className="text-caption text-ink-secondary">
-              Hasta 5 fotos por color. Arrastralas desde tu computadora a la
-              fila del color, o tocá «Agregar»: JPG, PNG o WEBP de hasta 10 MB,
-              que se guardan optimizadas. La primera es la que se ve en el
-              catálogo, y se cambia arrastrando o desde el menú de cada foto.
-            </p>
-          )}
-        </div>
-        {variantes.length === 0 ? null : (
+    <TarjetaDeSeccion
+      id="colores-y-stock"
+      titulo="Colores y stock"
+      ayuda="Cada color lleva su stock y sus fotos. Si el producto no se vende por color, alcanza con uno solo."
+      acciones={
+        variantes.length === 0 ? null : (
           <Button
             variant="secondary"
             size="sm"
@@ -130,20 +151,26 @@ export function VariantesDelProducto({
             <Plus aria-hidden />
             Agregar color
           </Button>
-        )}
-      </div>
+        )
+      }
+    >
+      {/* Las reglas de las fotos, dichas una vez para toda la sección: en cada
+          tarjeta serían dos renglones repetidos por color. Van de ancho
+          completo y no apretadas contra el botón. */}
+      {variantes.length === 0 ? null : (
+        <p className="text-caption text-ink-secondary">
+          Hasta 5 fotos por color. Arrastralas desde tu computadora a la fila
+          del color, o tocá «Agregar»: JPG, PNG o WEBP de hasta 10 MB, que se
+          guardan optimizadas. La primera es la que se ve en el catálogo, y se
+          cambia arrastrando o desde el menú de cada foto.
+        </p>
+      )}
 
       {error === null ? null : (
         <p role="alert" className="text-body-sm text-danger">
           {error}
         </p>
       )}
-      {aviso === null ? null : (
-        <p role="status" className="text-body-sm text-ink-secondary">
-          {aviso}
-        </p>
-      )}
-
       {variantes.length === 0 ? (
         <Vacio alAgregar={() => setAgregando(true)} />
       ) : (
@@ -153,7 +180,7 @@ export function VariantesDelProducto({
               key={v.id}
               className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface-sunken p-3"
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   <Muestra hex={v.colorHex} />
                   <div className="flex min-w-0 flex-col">
@@ -180,12 +207,11 @@ export function VariantesDelProducto({
                     <span className="sr-only">Editar {nombreDe(v)}</span>
                   </Button>
                   <Button
-                    variant="tertiary"
+                    variant="destructive-ghost"
                     size="icon"
                     onClick={() => setPorBorrar(v)}
                     disabled={enCurso}
                     title="Sacar"
-                    className="text-ink-secondary hover:text-danger"
                   >
                     <Trash2 aria-hidden />
                     <span className="sr-only">Sacar {nombreDe(v)}</span>
@@ -225,7 +251,9 @@ export function VariantesDelProducto({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Sacar «{porBorrar ? nombreDe(porBorrar) : ""}»</DialogTitle>
+            <DialogTitle>
+              Sacar «{porBorrar ? nombreDe(porBorrar) : ""}»
+            </DialogTitle>
             <DialogDescription>
               {porBorrar?.ordenes
                 ? "Este color está en órdenes ya hechas, así que no se borra: lo desactivamos para que dejen de leerse enteras."
@@ -250,7 +278,7 @@ export function VariantesDelProducto({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </TarjetaDeSeccion>
   );
 }
 
@@ -274,9 +302,7 @@ function Stock({ variante }: { variante: VarianteDelPanel }) {
       <span>{reservedStock} reservadas</span>
       <span aria-hidden>·</span>
       <span
-        className={
-          disponible <= 0 ? "font-medium text-warning" : "text-ink"
-        }
+        className={disponible <= 0 ? "font-medium text-warning" : "text-ink"}
       >
         {disponible} disponibles
       </span>
@@ -401,16 +427,28 @@ function Reutilizar({
 
 function Vacio({ alAgregar }: { alAgregar: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-panel-card border border-dashed border-border bg-surface-sunken px-6 py-10 text-center">
-      <p className="text-body-sm text-ink-secondary">
-        Sin colores cargados no hay stock ni fotos, así que el producto no se
-        puede vender.
-      </p>
-      <Button variant="brand" size="sm" onClick={alAgregar}>
-        <Plus aria-hidden />
-        Cargar el primero
-      </Button>
-    </div>
+    <VacioDelPanel
+      dentro
+      icono={Palette}
+      titulo="Todavía no cargaste ningún color."
+      accion={
+        /* Secundario y no de marca: esta tarjeta convive con «Guardar
+           cambios» del formulario de arriba, que es la principal de la
+           pantalla, y §6.3 admite una sola. Los otros vacíos del panel sí
+           usan la de marca porque su pantalla esconde la del encabezado
+           mientras están vacíos; acá no se puede esconder el submit del
+           formulario. Además el «Agregar color» de la cabecera de esta misma
+           sección ya es secundario, así que el vacío pesa igual que su
+           reemplazo. */
+        <Button variant="secondary" size="sm" onClick={alAgregar}>
+          <Plus aria-hidden />
+          Cargar el primero
+        </Button>
+      }
+    >
+      Sin colores cargados no hay stock ni fotos, así que el producto no se
+      puede vender.
+    </VacioDelPanel>
   );
 }
 
@@ -466,7 +504,9 @@ function DialogoDeVariante({
    * Los colores que se pueden elegir de verdad. Se mira lo mismo que filtra
    * el selector: los activos, más el que esta variante ya tenga puesto.
    */
-  const hayColores = colores.some((c) => c.isActive || c.id === variante?.colorId);
+  const hayColores = colores.some(
+    (c) => c.isActive || c.id === variante?.colorId,
+  );
 
   const stockValido = ENTERO.test(stock.trim());
 
@@ -477,7 +517,9 @@ function DialogoDeVariante({
     if (!color) {
       setErrores({
         ...SIN_ERRORES,
-        campos: { colorId: "Elegí un color, o «Único» si no se vende por color." },
+        campos: {
+          colorId: "Elegí un color, o «Único» si no se vende por color.",
+        },
       });
       return;
     }
@@ -485,7 +527,9 @@ function DialogoDeVariante({
     if (!stockValido) {
       setErrores({
         ...SIN_ERRORES,
-        campos: { stockTotal: "Poné cuántas unidades hay, en números enteros." },
+        campos: {
+          stockTotal: "Poné cuántas unidades hay, en números enteros.",
+        },
       });
       return;
     }
@@ -508,6 +552,19 @@ function DialogoDeVariante({
         setErrores(leerErrores<Campo>(r));
         return;
       }
+
+      // Avisa el diálogo y no quien lo cierra: `alCerrar` es también lo que
+      // llama «Cancelar», y cancelar no confirma nada. Acá adentro se sabe
+      // además si fue alta o edición, y con qué color.
+      const comoSeLlama =
+        color === UNICO
+          ? "Único"
+          : (colores.find((c) => c.id === color)?.name ?? "el color");
+      avisar(
+        variante
+          ? `«${comoSeLlama}» quedó con ${unidades(datos.stockTotal)} en total.`
+          : `Agregaste «${comoSeLlama}» con ${unidades(datos.stockTotal)}.`,
+      );
       alCerrar();
     });
   };
@@ -533,7 +590,9 @@ function DialogoDeVariante({
               onChange={(e) => setColor(e.target.value)}
               aria-invalid={!!errores.campos.colorId || undefined}
               aria-describedby={
-                errores.campos.colorId ? `${idBase}-e-color` : `${idBase}-ayuda-color`
+                errores.campos.colorId
+                  ? `${idBase}-e-color`
+                  : `${idBase}-ayuda-color`
               }
             >
               <option value="">Elegí un color</option>
@@ -546,11 +605,7 @@ function DialogoDeVariante({
                 // cambiaría sin que nadie lo hubiera pedido.
                 .filter((c) => c.isActive || c.id === variante?.colorId)
                 .map((c) => (
-                  <option
-                    key={c.id}
-                    value={c.id}
-                    disabled={tomados.has(c.id)}
-                  >
+                  <option key={c.id} value={c.id} disabled={tomados.has(c.id)}>
                     {c.name}
                     {tomados.has(c.id) ? " (ya cargado)" : ""}
                     {c.isActive ? "" : " (color inactivo)"}

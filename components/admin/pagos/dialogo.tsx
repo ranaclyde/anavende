@@ -9,6 +9,7 @@ import {
   SelectorDeLogo,
   type AccionDeLogo,
 } from "@/components/admin/logo/selector";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -130,6 +131,11 @@ export function DialogoDeMedioDePago({
         }
       }
 
+      avisar(
+        medio
+          ? `Guardamos «${nombre.trim()}».`
+          : `Creaste el medio de pago «${nombre.trim()}».`,
+      );
       alCerrar();
     });
   };
@@ -145,8 +151,8 @@ export function DialogoDeMedioDePago({
               evita que alguien espere que agregar «Mercado Pago» habilite un
               pago en la web. */}
           <DialogDescription>
-            Se muestra en la tienda para que el comprador sepa cómo puede
-            pagar. No cobra nada: el pago se coordina por WhatsApp.
+            Se muestra en la tienda para que el comprador sepa cómo puede pagar.
+            No cobra nada: el pago se coordina por WhatsApp.
           </DialogDescription>
         </DialogHeader>
 

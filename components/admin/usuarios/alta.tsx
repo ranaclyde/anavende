@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { Campo, Opcion, Seccion } from "@/components/admin/formulario";
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import { Campo, Opcion } from "@/components/admin/formulario";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { leerErrores, SIN_ERRORES } from "@/lib/form";
 import { darDeAltaUsuario } from "@/modules/users/panel/actions";
@@ -54,6 +56,7 @@ export function AltaDeUsuario() {
 
       // A su ficha: el alta casi siempre sigue con «y ahora quiero ver cómo
       // quedó», y ahí está lo que se le puede hacer a esa cuenta.
+      avisar(`Creaste la cuenta de ${firstName.trim()} ${lastName.trim()}.`);
       router.push(`/admin/usuarios/${r.data.id}`);
     });
   }
@@ -62,7 +65,7 @@ export function AltaDeUsuario() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Seccion titulo="Datos de la persona">
+      <TarjetaDeSeccion id="datos-persona" titulo="Datos de la persona">
         <div className="grid gap-3 sm:grid-cols-2">
           <Campo
             etiqueta="Nombre"
@@ -99,9 +102,10 @@ export function AltaDeUsuario() {
           ayuda="Con característica, por ejemplo 11 5555 5555."
           autoComplete="off"
         />
-      </Seccion>
+      </TarjetaDeSeccion>
 
-      <Seccion
+      <TarjetaDeSeccion
+        id="rol"
         titulo="Rol"
         ayuda="Define a qué puede entrar. Se puede cambiar después desde su ficha."
       >
@@ -117,7 +121,7 @@ export function AltaDeUsuario() {
             />
           ))}
         </div>
-      </Seccion>
+      </TarjetaDeSeccion>
 
       {errores.general === null ? null : (
         <p role="alert" className="text-body-sm text-danger">

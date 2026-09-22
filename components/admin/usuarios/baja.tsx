@@ -3,6 +3,7 @@
 import { DoorOpen, Undo2 } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -71,7 +72,10 @@ export function BajaDeLaCuenta({
         return;
       }
 
-      // La base quedó bien y Supabase Auth no: como en el bloqueo, se dice.
+      // El flotante confirma; la caja de abajo se queda para el caso en que
+      // Auth no respondió, que hay que ir a revisar (§6.15).
+      avisar(`Diste de baja la cuenta de ${nombre}.`);
+
       setAviso(
         r.data.errorDeAuth
           ? "La cuenta quedó dada de baja y no va a poder hacer nada, pero " +
@@ -92,6 +96,8 @@ export function BajaDeLaCuenta({
         setError(r.message);
         return;
       }
+
+      avisar(`Revertiste la baja de la cuenta de ${nombre}.`);
 
       setAviso(
         r.data.errorDeAuth

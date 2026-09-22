@@ -3,6 +3,7 @@
 import { Undo2 } from "lucide-react";
 import { useId, useState, useTransition } from "react";
 
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -189,13 +190,16 @@ function DialogoDeDevolver({
         return;
       }
 
+      avisar(
+        `Registraste la devolución de ${elegidos.length === 1 ? "1 renglón" : `${elegidos.length} renglones`} de la orden #${numero}.`,
+      );
       cerrar();
     });
   }
 
   return (
     <Dialog open={abierto} onOpenChange={(v) => (v ? null : cerrar())}>
-      <DialogContent className="max-h-[85svh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             Registrar una devolución de la orden #{numero}

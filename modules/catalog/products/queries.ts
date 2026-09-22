@@ -3,7 +3,10 @@ import "server-only";
 import { sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db";
-import type { FiltrosDeProductos } from "@/modules/catalog/products/filtros";
+import {
+  POR_PAGINA,
+  type FiltrosDeProductos,
+} from "@/modules/catalog/products/filtros";
 
 /**
  * Lecturas de productos para el panel — RF-15.
@@ -77,10 +80,23 @@ function condicionDeBusqueda(q: string): SQL {
 /** El stock disponible del producto, tal como lo calcula el SELECT. */
 const DISPONIBLE = sql`COALESCE(sum(v.stock_total - v.reserved_stock), 0)`;
 
+/**
+ * El listado, y cuántos coinciden con los filtros.
+ *
+ * **El total es el de los filtros puestos, no el de la página.** Con
+ * paginación `productos.length` es el tamaño de la página, así que ya no sirve
+ * para el contador de la barra («12 de 26 productos»): ese número es éste. El
+ * total SIN filtros es otra cosa y lo da `contarProductos()`, que es lo que
+ * separa «todavía no cargaste ninguno» de «ninguno coincide».
+ *
+ * **El conteo va por subconsulta y no por `count(*)` a secas** porque el
+ * filtro de stock vive en un `HAVING` sobre una suma: hay que contar las
+ * filas YA agrupadas, no las de `products`.
+ */
 export async function listarProductos(
   filtros: FiltrosDeProductos,
   umbralDeStockBajo: number,
-): Promise<ProductoDelListado[]> {
+): Promise<{ productos: ProductoDelListado[]; total: number }> {
   const condiciones: SQL[] = [];
   if (filtros.q) condiciones.push(condicionDeBusqueda(filtros.q));
   if (filtros.categoria) {
@@ -124,7 +140,19 @@ export async function listarProductos(
               // alguien quiera. Por eso ignora la dirección.
               sql`p.is_featured DESC`;
 
-  return db.execute<ProductoDelListado>(sql`
+  // Las mismas junturas que el SELECT: la búsqueda mira `b.name` y el filtro
+  // de stock suma sobre `v`, así que el conteo no puede recortarlas.
+  const deDonde = sql`
+      FROM products p
+      JOIN brands b     ON b.id = p.brand_id
+      JOIN categories c ON c.id = p.category_id
+      LEFT JOIN product_variants v ON v.product_id = p.id
+      ${where}
+     GROUP BY p.id, b.name, c.name
+      ${having}`;
+
+  const [productos, [conteo]] = await Promise.all([
+    db.execute<ProductoDelListado>(sql`
     SELECT p.id, p.name, p.slug,
            b.name AS "brandName",
            c.name AS "categoryName",
@@ -138,18 +166,19 @@ export async function listarProductos(
            count(v.id)::int                        AS variantes,
            count(v.id) FILTER (WHERE v.stock_total < 0)::int
              AS "variantesEnNegativo"
-      FROM products p
-      JOIN brands b     ON b.id = p.brand_id
-      JOIN categories c ON c.id = p.category_id
-      LEFT JOIN product_variants v ON v.product_id = p.id
-      ${where}
-     GROUP BY p.id, b.name, c.name
-      ${having}
+      ${deDonde}
      -- El nombre desempata siempre, y el id detrás: sin un criterio único,
      -- dos productos del mismo precio pueden cambiar de lugar entre dos
-     -- cargas de la misma pantalla.
+     -- cargas de la misma pantalla. Con paginación deja de ser cosmético: sin
+     -- desempate, un producto puede aparecer en dos páginas o en ninguna.
      ORDER BY ${criterio}, ${porNombre} ASC, p.id
-  `);
+     LIMIT ${POR_PAGINA} OFFSET ${(filtros.pagina - 1) * POR_PAGINA}
+  `),
+    db.execute<{ total: number }>(sql`
+      SELECT count(*)::int AS total FROM (SELECT p.id ${deDonde}) AS t`),
+  ]);
+
+  return { productos: [...productos], total: conteo?.total ?? 0 };
 }
 
 /**

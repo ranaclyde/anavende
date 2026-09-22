@@ -8,6 +8,7 @@ import type { Money } from "@/lib/money";
 import type { EstadoOrden } from "@/modules/orders/estados";
 import {
   POR_PAGINA,
+  type FiltroDeEstado,
   type FiltrosDeUsuarios,
 } from "@/modules/users/panel/filtros";
 
@@ -118,6 +119,43 @@ export async function listarUsuarios(
   ]);
 
   return { usuarios: [...filas], total: conteo.total };
+}
+
+/**
+ * Cuántos hay en cada solapa, para el contador de arriba — §6.9.
+ *
+ * **Una sola consulta con `FILTER`** y no cinco: son cinco recuentos sobre la
+ * misma tabla, y cinco viajes para eso serían cinco veces la misma lectura.
+ *
+ * **No recibe los filtros, y es a propósito.** §6.9 pide que el número sea el
+ * del total: si cambiara con la búsqueda o con el rol elegido, la solapa
+ * dejaría de contestar «¿tengo algo que hacer?» para pasar a ser un resultado
+ * más. Es el mismo criterio que `contarPorEstado` de órdenes.
+ *
+ * **Los cinco números no suman el total, y está bien**: no son una partición
+ * sino cinco filtros, y se pisan. Una cuenta bloqueada que además pidió la
+ * baja aparece en las dos. Cada solapa dice cuántas va a mostrar, que es lo
+ * único que promete.
+ *
+ * Las condiciones son **las mismas de `condiciones()`**, palabra por palabra:
+ * si se separaran, la solapa diría un número y el listado mostraría otro.
+ */
+export async function contarPorEstado(): Promise<
+  Record<FiltroDeEstado, number>
+> {
+  const [fila] = await db.execute<Record<FiltroDeEstado, number>>(sql`
+    SELECT count(*)::int AS "todos",
+           count(*) FILTER (
+             WHERE NOT is_banned AND closed_at IS NULL)::int AS "activos",
+           count(*) FILTER (WHERE is_banned)::int AS "bloqueados",
+           count(*) FILTER (
+             WHERE closure_requested_at IS NOT NULL
+               AND closed_at IS NULL)::int          AS "baja-pedida",
+           count(*) FILTER (
+             WHERE closed_at IS NOT NULL)::int      AS "dados-de-baja"
+      FROM user_profiles`);
+
+  return fila;
 }
 
 export type OrdenDelUsuario = {

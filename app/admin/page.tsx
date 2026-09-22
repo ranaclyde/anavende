@@ -2,6 +2,8 @@ import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { Button } from "@/components/ui/button";
 import { mesEnCurso } from "@/lib/fechas";
 import { formatMoney } from "@/lib/money";
@@ -38,13 +40,11 @@ export default async function PanelInicio() {
   ]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-title text-ink">Panel</h1>
-        <p className="text-body-sm text-ink-secondary">
-          Lo que hay para hacer, y cómo viene el mes.
-        </p>
-      </div>
+    <div className="flex w-full max-w-admin-form flex-col gap-4">
+      <EncabezadoDePanel
+        titulo="Panel"
+        bajada="Lo que hay para hacer, y cómo viene el mes."
+      />
 
       <ParaHacer datos={paraHacer} />
       <EsteMes datos={mes} />
@@ -73,14 +73,7 @@ function ParaHacer({
   const hayAlgo = ordenesActivas + paraReponer + bajasPedidas > 0;
 
   return (
-    <section
-      aria-labelledby="para-hacer"
-      className="flex max-w-3xl flex-col gap-3 rounded-panel-card border border-border bg-surface p-5"
-    >
-      <h2 id="para-hacer" className="text-body-lg font-medium text-ink">
-        Para hacer
-      </h2>
-
+    <TarjetaDeSeccion id="para-hacer" titulo="Para hacer">
       {hayAlgo ? (
         <ul className="flex flex-col divide-y divide-border">
           <Pendiente
@@ -144,7 +137,7 @@ function ParaHacer({
           ninguna baja pedida.
         </p>
       )}
-    </section>
+    </TarjetaDeSeccion>
   );
 }
 
@@ -193,17 +186,17 @@ function EsteMes({
   datos: Awaited<ReturnType<typeof comoVieneElMes>>;
 }) {
   return (
-    <section
-      aria-labelledby="este-mes"
-      className="flex max-w-3xl flex-col gap-3 rounded-panel-card border border-border bg-surface p-5"
+    <TarjetaDeSeccion
+      id="este-mes"
+      titulo={
+        <>
+          Este mes{" "}
+          <span className="text-body-sm font-normal text-ink-secondary">
+            ({mesEnCurso()})
+          </span>
+        </>
+      }
     >
-      <h2 id="este-mes" className="text-body-lg font-medium text-ink">
-        Este mes{" "}
-        <span className="text-body-sm font-normal text-ink-secondary">
-          ({mesEnCurso()})
-        </span>
-      </h2>
-
       {/* Una lista y no un `<dl>`: los tres son enlaces, y un `<a>` no puede
           colgar directo de un `<dl>` —sólo `dt`, `dd` y `div`—. */}
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -228,7 +221,7 @@ function EsteMes({
           ayuda="Lo que hoy se puede comprar en la tienda"
         />
       </ul>
-    </section>
+    </TarjetaDeSeccion>
   );
 }
 

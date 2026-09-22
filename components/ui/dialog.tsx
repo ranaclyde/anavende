@@ -57,7 +57,14 @@ function DialogContent({
         data-scale={escala}
         className={cn(
           "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2",
-          "flex-col gap-4 rounded-modal bg-surface p-6 text-ink shadow-lg",
+          // El tope de alto va acá y no en cada diálogo: hasta el 2026-09-21
+          // lo tenía **uno de los veinticinco**, y los otros veinticuatro, si
+          // crecían más que la pantalla, se cortaban arriba y abajo sin
+          // ninguna forma de llegar a lo que quedaba afuera — ni siquiera
+          // scrolleando, porque una caja centrada y fija no scrollea.
+          // `svh` y no `vh`: en el teléfono la barra del navegador se come
+          // parte de `vh` y el diálogo terminaba debajo de ella.
+          "max-h-[85svh] flex-col gap-4 rounded-modal bg-surface p-6 text-ink shadow-lg",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           "duration-200",
@@ -66,7 +73,20 @@ function DialogContent({
         )}
         {...props}
       >
-        {children}
+        {/* Lo que scrollea es el contenido y no la caja, para que la × quede
+            siempre a la vista: dentro de un contenedor con scroll, un
+            `absolute top-4` se va con el contenido y el diálogo se queda sin
+            su salida visible.
+            `min-h-0` porque un hijo de flex no baja del alto de su contenido
+            sin eso, y entonces el tope de arriba no mordería.
+            `flex-1` y `gap-[inherit]` para que este envoltorio sea
+            transparente: hay diálogos que fijan su alto y su separación desde
+            afuera —la galería de la ficha manda `h-[calc(100dvh-2rem)]` y
+            `gap-0`— y sin estas dos, meterles una caja en el medio les rompe
+            las dos cosas. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-[inherit] overflow-y-auto">
+          {children}
+        </div>
         <DialogPrimitive.Close
           className={cn(
             "absolute top-4 right-4 inline-flex size-8 items-center justify-center",

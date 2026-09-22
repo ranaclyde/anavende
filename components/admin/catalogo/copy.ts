@@ -27,6 +27,8 @@ export type PalabrasDeItem = {
   demostrativo: string;
   /** Objeto directo: «borrar**la**» / «borrar**lo**». */
   pronombre: string;
+  /** Artículo: «**la** marca», «**el** color». Lo usan los avisos (§6.15). */
+  articulo: string;
 };
 
 export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
@@ -41,6 +43,7 @@ export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
     inactivo: "Inactiva",
     demostrativo: "esta",
     pronombre: "la",
+    articulo: "la",
   },
   categoria: {
     singular: "categoría",
@@ -53,6 +56,7 @@ export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
     inactivo: "Inactiva",
     demostrativo: "esta",
     pronombre: "la",
+    articulo: "la",
   },
   color: {
     singular: "color",
@@ -64,6 +68,7 @@ export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
     inactivo: "Inactivo",
     demostrativo: "este",
     pronombre: "lo",
+    articulo: "el",
   },
 };
 

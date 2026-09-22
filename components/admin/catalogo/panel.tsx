@@ -9,8 +9,11 @@ import {
   PALABRAS,
   type PalabrasDeItem,
 } from "@/components/admin/catalogo/copy";
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { DialogoDeItem } from "@/components/admin/catalogo/dialogo";
+import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +36,7 @@ import {
   cambiarEstado,
   eliminar,
 } from "@/modules/catalog/actions";
+import { urlDePagina } from "@/modules/catalog/filtros-panel";
 import type { ItemDeCatalogo } from "@/modules/catalog/queries";
 import type { TipoDeItem } from "@/modules/catalog/schemas";
 
@@ -55,9 +59,20 @@ type Confirmacion = { accion: "borrar" | "desactivar"; item: ItemDeCatalogo };
 export function PanelDeCatalogo({
   tipo,
   items,
+  total,
+  pagina,
+  paginas,
+  base,
 }: {
   tipo: TipoDeItem;
+  /** Los de ESTA página. Para contar, el estado vacío y el botón va `total`. */
   items: ItemDeCatalogo[];
+  total: number;
+  pagina: number;
+  paginas: number;
+  /** La ruta de la solapa. El enlace lo arma acá: una función no cruza de
+      servidor a cliente. */
+  base: string;
 }) {
   const palabras = PALABRAS[tipo];
   // `isFeatured` es `null` en los tipos que no se destacan (RF-18): la vista
@@ -84,6 +99,16 @@ export function PanelDeCatalogo({
       if (!resultado.ok) {
         setErrorDelServidor(resultado.message);
         return;
+      }
+
+      // Avisa el borrado y no la desactivación: borrar se lleva la fila y no
+      // queda dónde mirar, mientras que desactivar le cambia la insignia a la
+      // fila que seguís teniendo delante (§6.15). Lo mismo vale para
+      // «Destacar» y «Activar», que por eso no avisan nada.
+      if (c.accion === "borrar") {
+        avisar(
+          `Borramos ${palabras.articulo} ${palabras.singular} «${c.item.name}».`,
+        );
       }
       setConfirmacion(null);
     });
@@ -113,17 +138,17 @@ export function PanelDeCatalogo({
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-body-sm text-ink-secondary">
-          {items.length === 0
+          {total === 0
             ? `Sin ${palabras.plural}`
-            : items.length === 1
+            : total === 1
               ? `1 ${palabras.singular}`
-              : `${items.length} ${palabras.plural}`}
+              : `${total} ${palabras.plural}`}
         </p>
         {/* Con la lista vacía este botón no está: el estado vacío ya ofrece
             el mismo primer paso en el medio de la pantalla, y dos botones de
             marca iguales a 100px uno del otro se leen como un error (§6.3:
             una sola por pantalla). */}
-        {items.length === 0 ? null : (
+        {total === 0 ? null : (
           <Button variant="brand" size="sm" onClick={() => setCreando(true)}>
             <Plus aria-hidden />
             {palabras.nuevo}
@@ -137,7 +162,7 @@ export function PanelDeCatalogo({
         </p>
       )}
 
-      {items.length === 0 ? (
+      {total === 0 ? (
         <Vacio tipo={tipo} alCrear={() => setCreando(true)} />
       ) : (
         <>
@@ -227,12 +252,20 @@ export function PanelDeCatalogo({
                     alDesactivar={() =>
                       abrirConfirmacion({ accion: "desactivar", item })
                     }
-                    alBorrar={() => abrirConfirmacion({ accion: "borrar", item })}
+                    alBorrar={() =>
+                      abrirConfirmacion({ accion: "borrar", item })
+                    }
                   />
                 </div>
               </li>
             ))}
           </ul>
+
+          <PaginacionDelPanel
+            pagina={pagina}
+            paginas={paginas}
+            href={(n) => urlDePagina(base, n)}
+          />
         </>
       )}
 
@@ -398,7 +431,12 @@ function Acciones({
               ? `${DESTACADO.quitar}: ${item.name}`
               : `${DESTACADO.destacar}: ${item.name}`
           }
-          className={item.isFeatured ? "text-brand hover:text-brand" : undefined}
+          className={
+            // Interruptor: el estado lo dice el relleno, no el color. En
+            // burdeos quedaba a siete grados del tacho de al lado (§2.2). La
+            // insignia «Destacada» sí va en burdeos: ahí significa identidad.
+            item.isFeatured ? "text-ink hover:text-ink" : undefined
+          }
         >
           <Star aria-hidden className={item.isFeatured ? "fill-current" : ""} />
           <span className="sr-only">
@@ -425,9 +463,7 @@ function Acciones({
         onClick={item.isActive ? alDesactivar : alActivar}
         disabled={ocupado}
         title={
-          item.isActive
-            ? `Desactivar ${item.name}`
-            : `Activar ${item.name}`
+          item.isActive ? `Desactivar ${item.name}` : `Activar ${item.name}`
         }
       >
         {item.isActive ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
@@ -437,12 +473,11 @@ function Acciones({
       </Button>
 
       <Button
-        variant="tertiary"
+        variant="destructive-ghost"
         size="icon"
         onClick={alBorrar}
         disabled={ocupado}
         title={`Borrar ${palabras.singular} ${item.name}`}
-        className="text-ink-secondary hover:text-danger"
       >
         <Trash2 aria-hidden />
         <span className="sr-only">
@@ -453,34 +488,22 @@ function Acciones({
   );
 }
 
-function Vacio({
-  tipo,
-  alCrear,
-}: {
-  tipo: TipoDeItem;
-  alCrear: () => void;
-}) {
+function Vacio({ tipo, alCrear }: { tipo: TipoDeItem; alCrear: () => void }) {
   const palabras = PALABRAS[tipo];
   return (
-    <div className="flex flex-col items-center gap-3 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <span
-        aria-hidden
-        className="grid size-12 place-items-center rounded-full bg-surface-sunken text-ink-tertiary"
-      >
-        <Tags className="size-5" />
-      </span>
-      <div className="flex flex-col gap-1">
-        <p className="text-body font-medium text-ink">{palabras.vacio}</p>
-        <p className="max-w-sm text-body-sm text-ink-secondary">
-          Se eligen al cargar un producto, así que conviene tener al menos una
-          antes de empezar.
-        </p>
-      </div>
-      <Button variant="brand" size="sm" onClick={alCrear}>
-        <Plus aria-hidden />
-        {palabras.nuevo}
-      </Button>
-    </div>
+    <VacioDelPanel
+      icono={Tags}
+      titulo={palabras.vacio}
+      accion={
+        <Button variant="brand" size="sm" onClick={alCrear}>
+          <Plus aria-hidden />
+          {palabras.nuevo}
+        </Button>
+      }
+    >
+      Se eligen al cargar un producto, así que conviene tener al menos una antes
+      de empezar.
+    </VacioDelPanel>
   );
 }
 
@@ -563,7 +586,9 @@ function DialogoDeConfirmacion({
 
         <DialogFooter>
           <Button variant="secondary" onClick={alCerrar} disabled={ocupado}>
-            {bloqueadoPorUso && !puedeDesactivarEnSuLugar ? "Entendido" : "Cancelar"}
+            {bloqueadoPorUso && !puedeDesactivarEnSuLugar
+              ? "Entendido"
+              : "Cancelar"}
           </Button>
 
           {puedeDesactivarEnSuLugar && (

@@ -3,6 +3,7 @@
 import { Check, X } from "lucide-react";
 import { useId, useState, useTransition } from "react";
 
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -172,6 +173,7 @@ function DialogoDeFinalizar({
       }
       // La orden deja de estar activa y estos botones se van con el refresco,
       // pero cerrar no depende de en qué orden desmonte React (F7.2).
+      avisar(`La orden #${numero} quedó finalizada.`);
       cerrar();
     });
   }
@@ -256,6 +258,11 @@ function DialogoDeCancelar({
         setError(r.message);
         return;
       }
+      // Nombra lo que la pantalla NO muestra: que el stock volvió. La
+      // insignia de arriba ya dice «Cancelada».
+      avisar(
+        `Cancelaste la orden #${numero} y se liberó lo que tenía reservado.`,
+      );
       cerrar();
     });
   }

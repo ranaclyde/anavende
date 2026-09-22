@@ -246,8 +246,8 @@ describe("contra la base y contra Storage", () => {
     });
 
     test("el listado devuelve la URL ya resuelta, en el tamaño chico", async () => {
-      const listado = await listarMediosDePago();
-      expect(listado.find((m) => m.id === a.id)?.logoUrl).toContain(
+      const { items } = await listarMediosDePago();
+      expect(items.find((m) => m.id === a.id)?.logoUrl).toContain(
         subido.logoKey,
       );
     });

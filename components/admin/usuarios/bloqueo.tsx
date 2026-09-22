@@ -3,6 +3,7 @@
 import { Lock, LockOpen } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -105,8 +106,12 @@ export function BloqueoDeLaCuenta({
         return;
       }
 
-      // La base quedó bien y Supabase Auth no: puede seguir iniciando sesión
-      // aunque no pueda hacer nada. Se dice, porque «listo» sería mentira.
+      // Dos canales, y no se pisan. El flotante confirma que se hizo; la
+      // caja de abajo se queda cuando Supabase Auth no respondió, que es
+      // información que tiene que sobrevivir a los cuatro segundos (§6.15:
+      // un aviso que se va no sirve para algo que hay que ir a revisar).
+      avisar(`Bloqueaste la cuenta de ${nombre}.`);
+
       setAviso(
         r.data.errorDeAuth
           ? "Quedó bloqueada en la tienda y no va a poder hacer nada, pero " +
@@ -128,6 +133,8 @@ export function BloqueoDeLaCuenta({
         return;
       }
 
+      avisar(`Desbloqueaste la cuenta de ${nombre}.`);
+
       setAviso(
         r.data.errorDeAuth
           ? "Quedó desbloqueada en la tienda, pero Supabase Auth no " +
@@ -142,8 +149,8 @@ export function BloqueoDeLaCuenta({
   if (esMiCuenta) {
     return (
       <p className="text-body-sm text-ink-secondary">
-        Es tu cuenta, así que no la bloqueás vos: te dejaría afuera del panel
-        en la pantalla siguiente.
+        Es tu cuenta, así que no la bloqueás vos: te dejaría afuera del panel en
+        la pantalla siguiente.
       </p>
     );
   }
@@ -153,8 +160,7 @@ export function BloqueoDeLaCuenta({
   if (dadoDeBaja) {
     return (
       <p className="text-body-sm text-ink-secondary">
-        Está dada de baja, así que no hace falta bloquearla: ya no puede
-        entrar.
+        Está dada de baja, así que no hace falta bloquearla: ya no puede entrar.
       </p>
     );
   }
@@ -163,8 +169,8 @@ export function BloqueoDeLaCuenta({
     return (
       <p className="text-body-sm text-ink-secondary">
         Es la única administradora que queda, así que no se puede bloquear: si
-        lo hacés, nadie va a poder entrar al panel. Nombrá a otra
-        administradora primero.
+        lo hacés, nadie va a poder entrar al panel. Nombrá a otra administradora
+        primero.
       </p>
     );
   }
@@ -211,8 +217,8 @@ export function BloqueoDeLaCuenta({
 
           {preguntando === "desbloquear" ? (
             <p className="text-body-sm text-ink-secondary">
-              El desbloqueo queda registrado con tu nombre y la fecha, igual
-              que el bloqueo.
+              El desbloqueo queda registrado con tu nombre y la fecha, igual que
+              el bloqueo.
             </p>
           ) : (
             <div className="flex flex-col gap-2">

@@ -3,6 +3,7 @@
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -89,10 +90,9 @@ export function EditarElRenglon({
       ) : null}
 
       <Button
-        variant="tertiary"
+        variant="destructive-ghost"
         size="icon"
         title="Quitar de la orden"
-        className="text-ink-secondary hover:text-danger"
         onClick={() => setAbierto("quitar")}
       >
         <Trash2 aria-hidden />
@@ -211,6 +211,7 @@ function DialogoDeSubir({
         setError(r.message);
         return;
       }
+      avisar(`${nombrar(item)} queda en ${cantidad} en la orden #${numero}.`);
       cerrar();
     });
   }
@@ -346,6 +347,7 @@ function DialogoDeCantidad({
       //
       // Va después del `await`: para entonces el refresco ya llegó con la
       // acción, y las dos cosas se pintan juntas.
+      avisar(`${nombrar(item)} queda en ${cantidad} en la orden #${numero}.`);
       cerrar();
     });
   }
@@ -446,6 +448,11 @@ function DialogoDeQuitar({
       // siempre redundante. Casi: si quitar el último canceló la orden, la
       // pantalla se repinta entera y conviene no depender de en qué orden
       // desmonta React.
+      avisar(
+        esElUnico
+          ? `Quitaste ${nombrar(item)}, que era el único renglón: la orden #${numero} quedó cancelada.`
+          : `Quitaste ${nombrar(item)} de la orden #${numero}.`,
+      );
       cerrar();
     });
   }

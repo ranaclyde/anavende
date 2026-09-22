@@ -8,14 +8,18 @@ import {
   ChevronsUpDown,
   Eye,
   EyeOff,
+  Package,
   Pencil,
   Plus,
   Star,
   Trash2,
 } from "lucide-react";
 
+import { ReponerStock } from "@/components/admin/productos/reponer";
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { Badge } from "@/components/ui/badge";
+import { avisar, avisarConPero } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -72,12 +76,13 @@ export function ListadoDeProductos({
 }) {
   const [enCurso, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
   const [porBorrar, setPorBorrar] = useState<ProductoDelListado | null>(null);
 
+  // Destacar y desactivar NO avisan, y es a propósito: la estrella se
+  // rellena y la insignia cambia en la fila que se tocó. Un cartel que
+  // repita lo que ya se ve es ruido (DR §6.15).
   const correr = (fn: () => Promise<{ ok: boolean; message?: string }>) => {
     setError(null);
-    setAviso(null);
     iniciar(async () => {
       const r = await fn();
       if (!r.ok) setError(r.message ?? null);
@@ -101,18 +106,24 @@ export function ListadoDeProductos({
   const borrar = (p: ProductoDelListado) => {
     setPorBorrar(null);
     setError(null);
-    setAviso(null);
     iniciar(async () => {
       const r = await eliminarUnProducto({ id: p.id });
       if (!r.ok) {
         setError(r.message);
         return;
       }
-      setAviso(
-        r.data.resultado === "borrado"
-          ? `Borramos «${p.name}».`
-          : `«${p.name}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede borrar: lo desactivamos y ya no se ve en la tienda.`,
-      );
+      // Acá sí: la fila que se tocó ya no está, así que no queda dónde
+      // poner la respuesta.
+      // Dos finales, dos tonos. Desactivar no es lo que se apretó, y con el
+      // check verde al lado la frase se lee de reojo como «listo, borrado»,
+      // que es justo lo que no pasó.
+      if (r.data.resultado === "borrado") {
+        avisar(`Borramos «${p.name}».`);
+      } else {
+        avisarConPero(
+          `«${p.name}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede borrar: lo desactivamos y ya no se ve en la tienda.`,
+        );
+      }
     });
   };
 
@@ -123,12 +134,6 @@ export function ListadoDeProductos({
           {error}
         </p>
       )}
-      {aviso === null ? null : (
-        <p role="status" className="text-body-sm text-ink-secondary">
-          {aviso}
-        </p>
-      )}
-
       {items.length === 0 ? (
         <SinResultados filtros={filtros} />
       ) : (
@@ -149,11 +154,14 @@ export function ListadoDeProductos({
                   >
                     Precio
                   </Cabecera>
+                  {/* Más ancha desde el 2026-09-21: acá entra también el
+                      botón de reponer, y apretado partía el renglón de 44px
+                      que pide §6.9. */}
                   <Cabecera
                     filtros={filtros}
                     orden="stock"
                     align="right"
-                    className="w-40"
+                    className="w-72"
                   >
                     Disponible
                   </Cabecera>
@@ -176,7 +184,18 @@ export function ListadoDeProductos({
                       <Precio producto={p} />
                     </TableCell>
                     <TableCell data-align="right">
-                      <Stock producto={p} umbral={umbral} />
+                      {/* El botón va ANTES del número y no después: §6.9
+                          pide los números pegados a la derecha, y con el
+                          botón al final la columna terminaba en él y las
+                          cifras dejaban de caer bajo «Disponible». */}
+                      <div className="flex items-center justify-end gap-3">
+                        <ReponerStock
+                          productId={p.id}
+                          nombre={p.name}
+                          variantes={p.variantes}
+                        />
+                        <Stock producto={p} umbral={umbral} />
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Estado producto={p} umbral={umbral} />
@@ -215,7 +234,12 @@ export function ListadoDeProductos({
                   <Precio producto={p} />
                   <Stock producto={p} umbral={umbral} />
                 </div>
-                <div className="flex justify-end">
+                <div className="flex items-center justify-between gap-3">
+                  <ReponerStock
+                    productId={p.id}
+                    nombre={p.name}
+                    variantes={p.variantes}
+                  />
                   <Acciones
                     producto={p}
                     ocupado={enCurso}
@@ -286,9 +310,7 @@ function Cabecera({
       data-align={align}
       // Lo lee el lector de pantalla: por qué columna está ordenada la tabla
       // y hacia dónde, sin depender de ver la flecha (§9).
-      aria-sort={
-        activa ? (ascendente ? "ascending" : "descending") : "none"
-      }
+      aria-sort={activa ? (ascendente ? "ascending" : "descending") : "none"}
       className={cn("p-0", className)}
     >
       <Link
@@ -352,7 +374,11 @@ function Precio({ producto }: { producto: ProductoDelListado }) {
   const hayOferta = producto.finalPrice !== producto.price;
 
   return (
-    <div className="flex flex-col items-end gap-0.5 tabular-nums">
+    // `shrink-0` y `whitespace-nowrap`: al lado del botón de reponer este
+    // bloque se comprimía y «de 15 · 2 reservadas» pasaba a dos renglones,
+    // que subía la fila de 55px a 72 en los productos con reservas y dejaba
+    // la tabla despareja.
+    <div className="flex shrink-0 flex-col items-end gap-0.5 whitespace-nowrap tabular-nums">
       <span className="font-medium text-ink">
         {formatMoney(producto.finalPrice)}
       </span>
@@ -494,7 +520,16 @@ function Acciones({
         aria-pressed={producto.isFeatured}
         title={producto.isFeatured ? "Quitar de destacados" : "Destacar"}
       >
-        <Star aria-hidden className={producto.isFeatured ? "fill-brand text-brand" : ""} />
+        {/* Acá la estrella es un INTERRUPTOR, y lo que tiene que decir es
+            encendido o apagado: eso ya lo dice el relleno. El color sobra, y
+            en burdeos quedaba a siete grados del tacho rojo de al lado (§2.2).
+            La insignia «Destacada» y la estrellita del nombre sí van en
+            burdeos: ahí el burdeos significa identidad, no estado de un
+            control. */}
+        <Star
+          aria-hidden
+          className={producto.isFeatured ? "fill-ink text-ink" : ""}
+        />
         <span className="sr-only">
           {producto.isFeatured ? "Quitar de destacados" : "Destacar"}{" "}
           {producto.name}
@@ -513,12 +548,11 @@ function Acciones({
         </span>
       </Button>
       <Button
-        variant="tertiary"
+        variant="destructive-ghost"
         size="icon"
         disabled={ocupado}
         onClick={alBorrar}
         title="Borrar"
-        className="text-ink-secondary hover:text-danger"
       >
         <Trash2 aria-hidden />
         <span className="sr-only">Borrar {producto.name}</span>
@@ -535,35 +569,40 @@ function Acciones({
  */
 function SinResultados({ filtros }: { filtros: FiltrosDeProductos }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink">
-        {filtros.q
+    <VacioDelPanel
+      titulo={
+        filtros.q
           ? `No encontramos ningún producto para «${filtros.q}».`
-          : "Ningún producto coincide con los filtros."}
-      </p>
-      <p className="text-caption text-ink-secondary">
-        Probá con menos filtros, o revisá cómo quedó escrito.
-      </p>
-      <Button asChild variant="secondary" size="sm" className="mt-2">
-        <Link href={urlDeFiltros(sinFiltros(filtros))}>Limpiar todo</Link>
-      </Button>
-    </div>
+          : "Ningún producto coincide con los filtros."
+      }
+      accion={
+        <Button asChild variant="secondary" size="sm">
+          <Link href={urlDeFiltros(sinFiltros(filtros))}>Limpiar todo</Link>
+        </Button>
+      }
+    >
+      Probá con menos filtros, o revisá cómo quedó escrito.
+    </VacioDelPanel>
   );
 }
 
 /** Estado vacío (§8): dice qué falta y ofrece el primer paso. */
 export function SinProductos() {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink-secondary">
-        Todavía no cargaste ningún producto.
-      </p>
-      <Button asChild variant="brand" size="sm">
-        <Link href="/admin/productos/nuevo">
-          <Plus aria-hidden />
-          Cargar el primero
-        </Link>
-      </Button>
-    </div>
+    <VacioDelPanel
+      icono={Package}
+      titulo="Todavía no cargaste ningún producto."
+      accion={
+        <Button asChild variant="brand" size="sm">
+          <Link href="/admin/productos/nuevo">
+            <Plus aria-hidden />
+            Cargar el primero
+          </Link>
+        </Button>
+      }
+    >
+      Es lo que se ve en la tienda. Cada uno lleva una marca y una categoría,
+      que se cargan desde Catálogo, y después los colores y el stock.
+    </VacioDelPanel>
   );
 }

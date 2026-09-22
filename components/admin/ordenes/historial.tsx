@@ -1,3 +1,4 @@
+import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { nombreDelEstado } from "@/components/admin/ordenes/estado";
 import { fechaConHora } from "@/lib/fechas";
 import type { EntradaDelHistorial } from "@/modules/orders/queries-panel";
@@ -26,14 +27,7 @@ export function HistorialDeLaOrden({
   if (entradas.length === 0) return null;
 
   return (
-    <section
-      aria-labelledby="historial"
-      className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-4"
-    >
-      <h2 id="historial" className="text-body-sm font-medium text-ink">
-        Historial
-      </h2>
-
+    <TarjetaDeSeccion id="historial" titulo="Historial">
       <ol className="flex flex-col gap-3">
         {entradas.map((e, i) => (
           <li
@@ -58,7 +52,7 @@ export function HistorialDeLaOrden({
           </li>
         ))}
       </ol>
-    </section>
+    </TarjetaDeSeccion>
   );
 }
 

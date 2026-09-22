@@ -1,0 +1,23 @@
+import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
+
+import { EsqueletoDeFormularioDeProducto } from "@/components/admin/productos/esqueleto";
+
+/**
+ * Carga del alta de un producto — DR §8. Tarea F2.3.
+ *
+ * `page.tsx` espera a `opcionesDeProducto()`, que trae las marcas y las
+ * categorías activas para los dos desplegables. No es instantáneo y hasta el
+ * 2026-09-21 no había nada mientras tanto.
+ */
+export default function CargandoElAlta() {
+  return (
+    <div className="flex w-full max-w-admin-form flex-col gap-4">
+      <EsqueletoDeEncabezado
+        titulo="w-48"
+        bajada="w-full max-w-xl"
+        volver="w-28"
+      />
+      <EsqueletoDeFormularioDeProducto />
+    </div>
+  );
+}

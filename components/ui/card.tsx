@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils";
 /**
  * Tarjeta — DESIGN-REFERENCE §6.1, §12.2.
  * Radio 24px en la tienda, 12px en el panel (§3.5).
- * Se separa por SOMBRA, nunca por borde: los dos juntos ensucian y aplanan
- * la elevación (§3.6).
+ * **La tienda separa por sombra; el panel, por borde** (§3.6). Nunca los dos
+ * juntos: ensucian y aplanan la elevación. El panel va por borde porque tiene
+ * modo oscuro, y ahí la sombra —teñida con `--ink` y sin redefinir— no se ve.
  */
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -14,7 +15,7 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
       data-slot="card"
       className={cn(
         "rounded-card bg-surface text-ink shadow-md",
-        "admin:rounded-panel-card admin:shadow-sm",
+        "admin:rounded-panel-card admin:border admin:border-border admin:shadow-none",
         className,
       )}
       {...props}

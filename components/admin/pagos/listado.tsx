@@ -13,8 +13,11 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { VacioDelPanel } from "@/components/admin/vacio";
 import { DialogoDeMedioDePago } from "@/components/admin/pagos/dialogo";
+import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
+import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +40,7 @@ import {
   eliminarUnMedioDePago,
   moverMedioDePago,
 } from "@/modules/settings/actions";
+import { urlDePagina } from "@/modules/catalog/filtros-panel";
 import type { MedioDePagoDelPanel } from "@/modules/settings/queries";
 
 /**
@@ -51,9 +55,26 @@ import type { MedioDePagoDelPanel } from "@/modules/settings/queries";
  */
 export function ListadoDeMediosDePago({
   items,
+  total,
+  pagina,
+  paginas,
+  base,
 }: {
+  /** Los de ESTA página. Para contar, el estado vacío y el botón va `total`. */
   items: MedioDePagoDelPanel[];
+  total: number;
+  pagina: number;
+  paginas: number;
+  /** La ruta de la solapa. El enlace lo arma acá: una función no cruza de
+      servidor a cliente. */
+  base: string;
 }) {
+  // «Bajar» se apaga solo en el último de TODOS, no en el último de la página:
+  // el último de la página 1 sí se puede bajar —pasa a la 2—, y apagarlo ahí
+  // sería mentir con un `title` que dice «ya es el último».
+  const esElUltimo = (i: number) =>
+    pagina === paginas && i === items.length - 1;
+
   const [enCurso, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
@@ -76,9 +97,16 @@ export function ListadoDeMediosDePago({
       cambiarEstadoDeMedioDePago({ id: medio.id, activo: !medio.isActive }),
     );
 
+  // Avisa el borrado y nada más. Mover, activar y desactivar le cambian el
+  // lugar o la insignia a la fila que estás mirando; borrar se la lleva, y
+  // ahí no queda dónde poner la respuesta (§6.15).
   const borrar = (medio: MedioDePagoDelPanel) => {
     setPorBorrar(null);
-    correr(() => eliminarUnMedioDePago({ id: medio.id }));
+    correr(async () => {
+      const r = await eliminarUnMedioDePago({ id: medio.id });
+      if (r.ok) avisar(`Borramos «${medio.name}».`);
+      return r;
+    });
   };
 
   const desactivarEnSuLugar = (medio: MedioDePagoDelPanel) => {
@@ -90,17 +118,17 @@ export function ListadoDeMediosDePago({
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-body-sm text-ink-secondary">
-          {items.length === 0
+          {total === 0
             ? "Sin medios de pago"
-            : items.length === 1
+            : total === 1
               ? "1 medio de pago"
-              : `${items.length} medios de pago`}
+              : `${total} medios de pago`}
         </p>
         {/* Con la lista vacía este botón no está: el estado vacío ya ofrece
             el mismo primer paso en el medio de la pantalla, y dos botones de
             marca iguales a 100px uno del otro se leen como un error (§6.3:
             una sola por pantalla). */}
-        {items.length === 0 ? null : (
+        {total === 0 ? null : (
           <Button variant="brand" size="sm" onClick={() => setCreando(true)}>
             <Plus aria-hidden />
             Nuevo medio de pago
@@ -114,7 +142,7 @@ export function ListadoDeMediosDePago({
         </p>
       )}
 
-      {items.length === 0 ? (
+      {total === 0 ? (
         <Vacio alCrear={() => setCreando(true)} />
       ) : (
         <>
@@ -145,7 +173,7 @@ export function ListadoDeMediosDePago({
                       <Acciones
                         medio={medio}
                         primero={i === 0}
-                        ultimo={i === items.length - 1}
+                        ultimo={esElUltimo(i)}
                         ocupado={enCurso}
                         alSubir={() => mover(medio, "arriba")}
                         alBajar={() => mover(medio, "abajo")}
@@ -175,7 +203,7 @@ export function ListadoDeMediosDePago({
                   <Acciones
                     medio={medio}
                     primero={i === 0}
-                    ultimo={i === items.length - 1}
+                    ultimo={esElUltimo(i)}
                     ocupado={enCurso}
                     alSubir={() => mover(medio, "arriba")}
                     alBajar={() => mover(medio, "abajo")}
@@ -187,6 +215,12 @@ export function ListadoDeMediosDePago({
               </li>
             ))}
           </ul>
+
+          <PaginacionDelPanel
+            pagina={pagina}
+            paginas={paginas}
+            href={(n) => urlDePagina(base, n)}
+          />
         </>
       )}
 
@@ -364,12 +398,11 @@ function Acciones({
         </span>
       </Button>
       <Button
-        variant="tertiary"
+        variant="destructive-ghost"
         size="icon"
         disabled={ocupado}
         onClick={alBorrar}
         title="Borrar"
-        className="text-ink-secondary hover:text-danger"
       >
         <Trash2 aria-hidden />
         <span className="sr-only">Borrar {medio.name}</span>
@@ -381,15 +414,17 @@ function Acciones({
 /** Estado vacío (§8): dice qué falta y ofrece la acción. */
 function Vacio({ alCrear }: { alCrear: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-panel-card border border-dashed border-border bg-surface px-6 py-12 text-center">
-      <p className="text-body-sm text-ink-secondary">
-        Todavía no cargaste ningún medio de pago. Son los que ve el comprador
-        para saber cómo puede pagar.
-      </p>
-      <Button variant="brand" size="sm" onClick={alCrear}>
-        <Plus aria-hidden />
-        Cargar el primero
-      </Button>
-    </div>
+    <VacioDelPanel
+      icono={CreditCard}
+      titulo="Todavía no cargaste ningún medio de pago."
+      accion={
+        <Button variant="brand" size="sm" onClick={alCrear}>
+          <Plus aria-hidden />
+          Cargar el primero
+        </Button>
+      }
+    >
+      Son los que ve el comprador para saber cómo puede pagar.
+    </VacioDelPanel>
   );
 }

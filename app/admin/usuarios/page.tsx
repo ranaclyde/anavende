@@ -3,9 +3,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { BarraDeFiltros } from "@/components/admin/usuarios/filtros";
 import { ListadoDeUsuarios } from "@/components/admin/usuarios/listado";
+import { SolapasDeEstadoDeCuenta } from "@/components/admin/usuarios/solapas";
 import { Button } from "@/components/ui/button";
 import {
   POR_PAGINA,
@@ -13,7 +15,7 @@ import {
   urlDeFiltros,
   type ParametrosDeBusqueda,
 } from "@/modules/users/panel/filtros";
-import { listarUsuarios } from "@/modules/users/panel/queries";
+import { contarPorEstado, listarUsuarios } from "@/modules/users/panel/queries";
 
 export const metadata: Metadata = { title: "Usuarios" };
 
@@ -35,7 +37,12 @@ export default async function UsuariosDelPanel({
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
   const filtros = leerFiltros(await searchParams);
-  const { usuarios, total } = await listarUsuarios(filtros);
+  // En paralelo: el conteo de las solapas no depende de los filtros (§6.9),
+  // así que no tiene por qué esperar al listado.
+  const [{ usuarios, total }, conteo] = await Promise.all([
+    listarUsuarios(filtros),
+    contarPorEstado(),
+  ]);
 
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
   if (filtros.pagina > paginas) {
@@ -44,23 +51,20 @@ export default async function UsuariosDelPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-title text-ink">Usuarios</h1>
-          <p className="text-body-sm text-ink-secondary">
-            Quién compra, quién entra al panel, y en qué estado está cada
-            cuenta.
-          </p>
-        </div>
+      <EncabezadoDePanel
+        titulo="Usuarios"
+        bajada="Quién compra, quién entra al panel, y en qué estado está cada cuenta."
+        acciones={
+          <Button asChild variant="brand" size="sm">
+            <Link href="/admin/usuarios/nuevo">
+              <Plus aria-hidden />
+              Nueva cuenta
+            </Link>
+          </Button>
+        }
+      />
 
-        <Button asChild variant="brand" size="sm">
-          <Link href="/admin/usuarios/nuevo">
-            <Plus aria-hidden />
-            Nueva cuenta
-          </Link>
-        </Button>
-      </div>
-
+      <SolapasDeEstadoDeCuenta filtros={filtros} conteo={conteo} />
       <BarraDeFiltros filtros={filtros} total={total} />
       <ListadoDeUsuarios usuarios={usuarios} filtros={filtros} />
       <PaginacionDelPanel

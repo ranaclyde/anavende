@@ -1,13 +1,15 @@
 "use client";
 
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, Search, X } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpNarrowWide } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useRef, useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 
+import {
+  BuscadorDelPanel,
+  ContadorDeResultados,
+} from "@/components/admin/filtros";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import {
   DIRECCION_NATURAL,
   ESTADOS,
@@ -50,23 +52,20 @@ export function BarraDeFiltros({
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
   const [texto, setTexto] = useState(filtros.q);
-  const campo = useRef<HTMLInputElement>(null);
-  const idBusqueda = useId();
+  const idOrden = useId();
 
+  // Cualquier cambio vuelve a la primera página, como en los otros tres
+  // listados: filtrar estando en la 3 puede dejar dos resultados y una página
+  // vacía, y quien filtró no eligió estar ahí.
   const aplicar = (cambios: Partial<FiltrosDeProductos>) => {
-    iniciar(() => router.push(urlDeFiltros({ ...filtros, ...cambios })));
+    iniciar(() =>
+      router.push(urlDeFiltros({ ...filtros, ...cambios, pagina: 1 })),
+    );
   };
 
-  const buscar = (e: React.FormEvent) => {
-    e.preventDefault();
-    aplicar({ q: texto.trim() });
-  };
-
-  const limpiarBusqueda = () => {
-    setTexto("");
-    campo.current?.focus();
-    aplicar({ q: "" });
-  };
+  // Lo llama el buscador con el texto ya recortado, y también con la cadena
+  // vacía cuando se limpia: para la barra son la misma operación.
+  const buscar = (q: string) => aplicar({ q });
 
   const limpiarTodo = () => {
     setTexto("");
@@ -86,61 +85,13 @@ export function BarraDeFiltros({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-        {/* El formulario envuelve la búsqueda y nada más: `role="search"`
-            alrededor de los filtros los anunciaría como parte del buscador,
-            que es justo lo que no son. */}
-        <form
-          role="search"
-          onSubmit={buscar}
-          className="relative min-w-0 flex-1 md:min-w-64"
-        >
-          <label htmlFor={idBusqueda} className="sr-only">
-            Buscar productos por nombre, marca o descripción
-          </label>
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-tertiary"
-          />
-          <Input
-            id={idBusqueda}
-            ref={campo}
-            type="search"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="Buscar por nombre, marca o descripción…"
-            className={cn(
-              // El `admin:` de Input pisa un `pl-*` suelto —misma
-              // especificidad, y las variantes van después—, así que el
-              // hueco del ícono se pide también en la escala del panel. Sin
-              // esto la lupa se apoya sobre la primera letra.
-              "pl-9 admin:pl-9",
-              texto ? "pr-10 admin:pr-10" : "",
-              // El navegador dibuja su propia cruz en type=search: se retira,
-              // porque acá la limpieza es un botón propio y accesible.
-              "[&::-webkit-search-cancel-button]:appearance-none",
-            )}
-          />
-          {texto === "" ? null : (
-            <button
-              type="button"
-              onClick={limpiarBusqueda}
-              className={cn(
-                "absolute top-1/2 right-1 grid size-8 -translate-y-1/2 place-items-center",
-                "rounded-panel-control text-ink-tertiary transition-colors duration-150",
-                "hover:bg-surface-sunken hover:text-ink",
-              )}
-            >
-              <X aria-hidden className="size-4" />
-              <span className="sr-only">Limpiar la búsqueda</span>
-            </button>
-          )}
-
-          {/* Enter alcanza; el botón existe para que el formulario tenga un
-              envío explícito y el lector de pantalla sepa cómo se manda. */}
-          <button type="submit" className="sr-only">
-            Buscar
-          </button>
-        </form>
+        <BuscadorDelPanel
+          etiqueta="Buscar productos por nombre, marca o descripción"
+          marcador="Buscar por nombre, marca o descripción…"
+          texto={texto}
+          alEscribir={setTexto}
+          alBuscar={buscar}
+        />
 
         {/* En el teléfono los cuatro filtros van en dos columnas: uno debajo
             del otro deja la tabla fuera de la pantalla antes de empezar. */}
@@ -177,7 +128,9 @@ export function BarraDeFiltros({
             aria-label="Filtrar por estado"
             value={filtros.estado}
             onChange={(e) =>
-              aplicar({ estado: e.target.value as FiltrosDeProductos["estado"] })
+              aplicar({
+                estado: e.target.value as FiltrosDeProductos["estado"],
+              })
             }
             className="md:w-44"
           >
@@ -209,19 +162,9 @@ export function BarraDeFiltros({
         <div className="flex items-center gap-3">
           {/* El resultado se anuncia: quien no ve la tabla tiene que
               enterarse igual de cuántos quedaron (§9). */}
-          <p
-            aria-live="polite"
-            className={cn(
-              "text-body-sm text-ink-secondary transition-opacity duration-150",
-              pendiente ? "opacity-60" : "",
-            )}
-          >
-            {pendiente
-              ? "Buscando…"
-              : filtrado
-                ? `${mostrados} de ${cuantos(total)}`
-                : cuantos(total)}
-          </p>
+          <ContadorDeResultados pendiente={pendiente}>
+            {filtrado ? `${mostrados} de ${cuantos(total)}` : cuantos(total)}
+          </ContadorDeResultados>
           {filtrado ? (
             <Button variant="tertiary" size="sm" onClick={limpiarTodo}>
               Limpiar todo
@@ -231,13 +174,13 @@ export function BarraDeFiltros({
 
         <div className="flex items-center gap-2">
           <label
-            htmlFor={`${idBusqueda}-orden`}
+            htmlFor={`${idOrden}-orden`}
             className="text-body-sm text-ink-secondary"
           >
             Ordenar por
           </label>
           <Select
-            id={`${idBusqueda}-orden`}
+            id={`${idOrden}-orden`}
             value={filtros.orden}
             onChange={(e) => cambiarOrden(e.target.value as OrdenDeProductos)}
             className="w-48"

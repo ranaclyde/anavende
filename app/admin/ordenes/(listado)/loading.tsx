@@ -1,3 +1,4 @@
+import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -20,10 +21,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CargandoOrdenes() {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-6 w-32" />
-        <Skeleton className="h-4 w-80 max-w-full" />
-      </div>
+      {/* El botón primario va: en esta pantalla está SIEMPRE, y sin él el
+          encabezado se reacomodaba al llegar los datos. */}
+      <EsqueletoDeEncabezado
+        titulo="w-32"
+        bajada="w-80 max-w-full"
+        acciones={["w-32"]}
+      />
 
       <Skeleton className="h-10 w-72 max-w-full rounded-panel-control" />
 

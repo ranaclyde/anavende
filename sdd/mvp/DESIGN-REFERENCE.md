@@ -111,6 +111,23 @@ El burdeos de marca (352,7°) y un rojo destructivo estándar (0°) están a **7
 
 La tercera es segura porque dentro del diálogo **no hay ningún botón de marca al lado** con el cual confundirla. Toda acción destructiva pasa por confirmación de todos modos (RF-15, RF-23).
 
+**El panel queda exento de la separación por forma, y puede distinguir por color** (decisión tuya del 2026-09-21). La regla de arriba se escribió para la tienda, que es donde el color lo tiene que poner la foto del producto y donde un relleno rojo compite con el burdeos de «Agregar al carrito». En el panel no pasa ninguna de las dos cosas, y sí pasan tres que la vuelven contraproducente:
+
+1. **La acción se repite decenas de veces por pantalla.** Un contorno rojo por fila, cuarenta por página, deja una columna de alertas al lado del contenido que hay que leer.
+2. **Muchas acciones son un ícono sin rótulo**, así que «con ícono» no las distingue de nada: sus vecinas también son íconos.
+3. **Ana opera en tablet** (RNF-01) y ahí **no hay hover**. Un destructivo que se pone rojo recién al pasar el puntero es un destructivo que en su pantalla no se ve nunca.
+
+Con dos colores y ninguna otra señal, equivocarse es cuestión de tiempo, y en el panel equivocarse cuesta un producto borrado. Así que **el rojo semántico distingue por sí solo**: el ícono de una acción destructiva va en `--danger` desde el reposo, sin caja y sin depender del hover (variante `destructive-ghost`, §6.3). Da 4,83:1 en claro y 6,01:1 en oscuro, sobre los 3:1 que pide un ícono.
+
+**Lo que la exención NO habilita**, porque si no deja de ser un sistema:
+
+- **No se inventan colores.** El panel distingue con los cuatro semánticos que ya existen —éxito, aviso, peligro, información— y con el burdeos y el pizarra. Ninguno más.
+- **El burdeos sigue sin decorar.** La regla de una sola voz (§2.1) no se toca: marca acción principal e identidad, y nada más.
+- **El relleno rojo sigue siendo solo del diálogo de confirmación.** Lo que se habilita es el ícono y el texto en rojo, no una caja roja suelta al lado de una de marca.
+- **El color nunca va solo cuando comunica un estado.** §9 sigue pidiendo que todo estado tenga texto además de color; esto es sobre qué hace una acción, no sobre en qué estado está algo.
+
+En la tienda la regla original sigue en pie, entera.
+
 ### 2.3 El logo
 
 Una cuadrícula de cuatro celdas —**A**, un joystick, unos auriculares y una **V**— dibujada a trazo burdeos sobre transparente. Dice de qué es el negocio sin escribirlo, y el trazo abierto convive con los radios generosos del sistema.
@@ -361,7 +378,16 @@ Escala de base 4px:
 | `brand` | Solo el botón de envío del buscador y el botón principal del hero |
 | `focus` | Anillo de foco de teclado, en todo elemento interactivo |
 
-**Las tarjetas se separan por sombra, no por borde.** Sombra y borde juntos ensucian y aplanan la elevación.
+**Sombra y borde nunca van juntos.** Ensucian y aplanan la elevación. Cuál de los dos separa depende de la escala, y es una excepción que se anota (2026-09-18):
+
+| Escala | Separa por | Por qué |
+|---|---|---|
+| Tienda | **Sombra** | Es siempre clara. La sombra da volumen y deja la tarjeta sin contorno duro, que es el lenguaje de la referencia |
+| Panel | **Borde** (`--border`) | Tiene modo oscuro, y ahí la sombra no existe |
+
+**El motivo del panel es medible, no de gusto.** Las tres sombras se tiñen con `--ink` —`rgb(17 16 16 / …)`— y **no se redefinen** en `[data-theme="dark"]`. Sobre el canvas oscuro (`#141416`), `--shadow-sm` mueve el píxel **de 20 a 19,82 sobre 255**: no se ve. Y la superficie contra el canvas da **1,11:1**, así que sin borde la tarjeta no tiene filo: se adivina en vez de verse. En claro esa misma sombra lo mueve de 242 a 228,5, y por eso ahí alcanza sola.
+
+Hasta el 2026-09-18 la regla decía «por sombra» para las dos escalas, y el panel la incumplía en 29 de sus 38 tarjetas. Se alineó hacia el borde, que es lo que la mayoría ya hacía y lo único que funciona en los dos temas.
 
 > **Las sombras se tiñen con `--ink`, no con negro.** Al pasar la familia de grises a cálida hubo que mover también el tinte de las tres sombras (`rgba(22,24,26)` → `rgba(17,16,16)`): una sombra azulada debajo de una tarjeta cálida se nota, aunque nadie sepa decir por qué.
 
@@ -380,12 +406,49 @@ El sistema tiene **una paleta y una tipografía**, pero **dos escalas de densida
 | Padding de tarjeta | 16 – 20px | 12 – 16px |
 | Separación entre secciones | 64 – 80px | 24 – 32px |
 | Alto de fila de tabla | — | 44px |
-| Ancho máximo | 1200px | Ancho completo, menos el menú lateral |
+| Ancho máximo | 1200px | Ancho completo menos el menú **en listados y fichas**; **1024px en formularios y en el tablero**, alineados a la izquierda (§4.1) |
 | Modo oscuro | No | Sí |
 
 **Por qué no son idénticas.** El lenguaje de la tienda —radios de 24px, 80px entre secciones, tarjetas flotantes— existe para que se luzcan cinco o seis productos por pantalla. Aplicado a una tabla de cuarenta órdenes produce una pantalla donde entran seis filas y hay que hacer scroll para todo. La vendedora no está descubriendo productos: está buscando la orden 1043 lo más rápido posible.
 
 **Qué se comparte, y no es negociable:** la paleta, Inter, el rol del color de marca, el estilo del foco, la voz de los mensajes y todos los componentes de formulario.
+
+#### 4.1 El ancho del panel
+
+**Hasta el 2026-09-21 esta fila decía «ancho completo» a secas, y ninguna pantalla de formulario la cumplía.** Había cuatro criterios conviviendo —768px centrado, 768px a la izquierda, 672px centrado y sin tope— porque no existía un lugar donde el número estuviera escrito. Se resolvió así (decisión tuya del 2026-09-21, tomada viendo las cuatro opciones aplicadas a «Nuevo producto»):
+
+| | Ancho | Alineación |
+|---|---|---|
+| Listados y fichas | Completo, menos el menú | — |
+| **Formularios y tablero** | **`--container-admin-form`, 1024px** | **A la izquierda**, sin `mx-auto` |
+
+**Por qué los formularios llevan tope.** Son de una sola columna, y a ancho completo el campo «Nombre» mide 1100px en una pantalla de 1440 y 1580px en una de 1920, para escribir «Teclado mecánico K120». La línea original se escribió pensando en tablas, que es donde el ancho completo sí sirve: ahí cada píxel de más es una columna que se lee sin apretar.
+
+**Por qué a la izquierda y no centrado.** Es lo que resuelve el problema que se reportó, que no era cuánto medían sino que **se movían**. Sin `mx-auto`, el borde izquierdo del contenido cae en el mismo lugar en las siete pantallas y en toda resolución —medido: x=264 a 1280, 1440 y 1920—, así que el título de un formulario queda alineado con el del listado del que se viene y nada salta al navegar. Centrado, «Nuevo producto» aparecía 190px a la derecha de «Productos».
+
+**Por qué 1024 y no el 768 que ya se usaba.** Con 1024 los pares de campos —precio y descuento, marca y categoría— respiran, y el texto de ayuda entra en un renglón en vez de dos. Por debajo de 1288px de viewport el tope no llega a morder y formulario y listado miden exactamente lo mismo, que es el caso de la mayoría de las pantallas reales.
+
+**El número vive en `app/globals.css` como `--container-admin-form`**, no como una clase suelta, por el mismo motivo por el que existe `--container-shop`: sin un lugar donde esté escrito, la próxima pantalla inventa el suyo.
+
+##### La edición de un producto lleva el formulario al lado del stock (2026-09-21)
+
+En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y no su hija —cada color se guarda solo, en el momento (F2.4)—. Puestas una debajo de la otra, el título de la tarjeta de stock empezaba **a y=1280 con una ventana de 900**: al abrir un producto no se asomaba. Y el stock es, junto con el precio, lo que más se toca. Van al lado, y el título pasa a **y=134**.
+
+**El formulario conserva el ancho que tiene en el alta: 1024px, `--container-admin-form`.** No es una comodidad, es la regla de esta misma sección. Se viene de «Nuevo producto», que es este mismo formulario, y todo el punto de §4.1 es que el contenido **no se mueva** al navegar. El primer intento le puso un tope propio de `34rem` y produjo exactamente eso: los campos medían 1024 en el alta y 488 en la ficha, y el salto se veía al crear un producto. Lo reportaste con las dos capturas al lado. El ancho del formulario no se negocia por pantalla.
+
+| Columna | Ancho |
+|---|---|
+| Formulario | `--container-admin-form`, el mismo que en el alta y en las otras seis pantallas de formulario |
+| Colores y stock | El resto |
+
+**La consulta es de contenedor y no de ventana** (`@container` / `@min-[1400px]`), y la razón es concreta: **el menú lateral se contrae a pedido y libera 176px**. Con una consulta de ventana, contraerlo —que es justo el gesto de quien quiere más ancho— no cambiaría nada. Medido a 1600px de ventana: con el menú desplegado el stock va abajo, y contrayéndolo se pone al costado. Es la primera consulta de contenedor del proyecto, y entró por este motivo y no por novedad.
+
+**1400px es una suma, no un número redondo**: 1024 del formulario, 16 de separación y 360 del stock, que es lo que necesita una fila de tres fotos. Por debajo van apiladas y **las dos topeadas en 1024**, que es exactamente como se veía la pantalla antes de partirla en dos.
+
+**Lo que esto deja sin resolver, y se anota para no perderlo.** Los textos de ayuda del formulario siguen en **102 caracteres por renglón** en «Publicación», contra el techo de **68** que pone §7; los de la tarjeta de stock, alrededor de 97. Angostar el formulario los arreglaba —bajaban a 51— pero a cambio del salto que se acaba de sacar, así que no es por ahí: se arreglan cortando el texto o topeando el párrafo, que es trabajo aparte y toca `TarjetaDeSeccion`, que usan cinco pantallas.
+
+
+---
 
 **Lo que se pinta en un portal se lleva la escala puesta.** Diálogos, menús y globos de ayuda salen a `document.body` para que ningún `overflow` los recorte, y ahí arriba ya no hay `data-scale`: un diálogo abierto desde el panel se pintaba con la escala de la tienda —16px y campos con forma de píldora— aunque sus clases `admin:` estuvieran escritas. Se resuelve en `components/ui/escala.tsx`, que marca el atributo y además lo pasa por contexto, para que el contenido portaleado lo repita sobre sí mismo. El modo oscuro no tiene el problema: `data-theme` vive en `<html>`, y `body` está adentro.
 
@@ -497,6 +560,28 @@ El componente firmado del sistema, heredado directamente de la referencia.
 - Al enfocar, el borde pasa a `--border-strong` y aparece el anillo de foco.
 - Con texto escrito aparece una «×» para limpiar, antes del botón de envío.
 
+#### 6.2.1 La barra de filtros del panel
+
+**No es el buscador de la tienda.** Aquél es la firma del sistema —píldora de 48px, botón burdeos con `--shadow-brand`— y vive solo sobre fondo de tienda. El del panel es un campo común de 40px con la lupa adentro, porque convive con tres o cuatro controles más en el mismo renglón y un botón de marca ahí sería el segundo de la pantalla (§6.3).
+
+Las tres piezas viven en `components/admin/filtros.tsx`, y desde el 2026-09-21 **una sola vez**: el buscador estaba copiado en las tres barras que lo tienen, el rango de fechas en las dos, y el contador en las cuatro.
+
+| Pieza | Dónde | Qué guarda |
+|---|---|---|
+| `BuscadorDelPanel` | Órdenes, usuarios, productos | El `role="search"` acotado, la lupa y la limpieza |
+| `RangoDeFechas` | Órdenes, devoluciones | «Desde» y «Hasta», apilados en el teléfono |
+| `ContadorDeResultados` | Las cuatro | «N resultados», anunciado |
+
+Tres cosas que cada copia tenía que acordarse de traer, y que ahora están escritas una vez:
+
+- **`admin:pl-9` además de `pl-9`.** `Input` trae su propio `admin:px-3`, que le gana a un `pl-*` suelto —misma especificidad, y las variantes van después—. Sin repetirlo en la escala del panel, **la lupa se apoya sobre la primera letra**.
+- **La cruz nativa de `type="search"` se retira** (`appearance: none`): no se puede enfocar con el teclado ni tiene nombre accesible. La limpieza es un botón propio, y al tocarlo **el foco vuelve al campo** — si no, se cae al `<body>`, porque el botón que se acaba de tocar deja de existir.
+- **`role="search"` envuelve la búsqueda y nada más.** Alrededor de toda la barra anunciaría los filtros como parte del buscador, que es justo lo que no son.
+
+**El rango no tiene botón de limpiar**: el navegador manda `""` al borrar la fecha, que es exactamente el valor de «sin filtro». **Y se apila en el teléfono**, que no es un gusto: un campo de fecha nativo no baja de unos 130px, y dos con sus rótulos en una línea de 390px desbordaban la pantalla 156px hacia la derecha.
+
+**El contador se anuncia** (`aria-live="polite"`): quien no ve la lista tiene que enterarse igual de cuántos quedaron (§9). Mientras la navegación está en curso dice «Buscando…» y se atenúa, porque el número anterior ya no es el de ahora y dejarlo firme sería mentir por un instante.
+
 ### 6.3 Botones
 
 | Variante | Fondo | Texto | Borde | Uso |
@@ -505,8 +590,11 @@ El componente firmado del sistema, heredado directamente de la referencia.
 | **Alterna** | `--accent` | blanco | — | **Par de la principal**, no escalón debajo: la otra forma de hacer lo mismo (§2.5) |
 | **Secundario** | `--surface` | `--ink` | `--border` | Acciones de apoyo entre pares: «Guardar», «Compartir» |
 | **Terciario** | transparente | `--ink-secondary` | — | **Ghost.** «Cancelar», «Volver». Al pasar el puntero aparece el plato de `--canvas` |
-| **Destructivo** | transparente | `--danger` | `--danger` | Eliminar, cancelar orden. **Con ícono** |
+| **Destructivo** | transparente | `--danger` | `--danger` | Eliminar, cancelar orden, **con rótulo**. **Con ícono** |
+| **Destructivo ghost** | transparente | `--danger` | — | **Solo el panel** (§2.2). El destructivo de una columna de acciones: ícono rojo desde el reposo, sin caja; al pasar el puntero aparece el plato `--danger-tint` |
 | **Destructivo confirmado** | `--danger` | blanco | — | **Solo dentro del diálogo de confirmación** |
+
+> **«Blanco» en esa columna quiere decir `--ink-inverse`, no `#ffffff`.** Las tres variantes de relleno —principal, alterna y destructivo confirmado— usan el token, que en claro vale blanco y **en oscuro se da vuelta**. Escribirlo literal cuesta caro justo en el destructivo confirmado: en oscuro `--danger` se aclara a `#f87171`, y el blanco encima da **2,77:1**, por debajo de AA incluso para texto grande; con el token da 6,65:1. Estuvo así hasta el 2026-09-18, en los nueve diálogos destructivos del panel.
 
 | Tamaño | Alto | Texto | Padding |
 |---|---|---|---|
@@ -638,7 +726,7 @@ Si la foto ya entra a 1:1 no hay segundo nivel y el cursor no lo promete — pas
 | Elemento | Especificación |
 |---|---|
 | Alto de fila | 44px |
-| Cabecera | `caption` 12px/500, `--ink-secondary`, versalitas, fondo `--surface-sunken`, fija al scrollear |
+| Cabecera | `caption` 12px/500, `--ink-secondary`, versalitas, fondo `--surface-sunken`, **fija al scrollear la tabla** |
 | Celda | `body-sm` 14px |
 | Separador | 1px `--border` entre filas |
 | Hover de fila | Fondo `--surface-sunken`, cursor de puntero si la fila es clicable |
@@ -647,11 +735,47 @@ Si la foto ya entra a 1:1 no hay segundo nivel y el cursor no lo promete — pas
 | Vacío | Ilustración mínima + explicación + acción sugerida. Nunca una tabla vacía a secas |
 | Carga | Filas fantasma del alto real, no un spinner centrado |
 
+**El vacío son dos situaciones y no una** (escrito el 2026-09-21, al sacarlo a `VacioDelPanel` en `components/admin/vacio.tsx`). Hasta ese día la fila de arriba decía una sola cosa, y de once vacíos **uno solo tenía ícono**: tres eran una línea de texto gris y un botón, sin ninguna explicación. No era descuido de una pantalla, era que no existía el componente.
+
+| | Cuándo | Lleva |
+|---|---|---|
+| **Todavía no hay ninguno** | Se entra por primera vez | Ícono, título, explicación de dónde sale lo que va a aparecer acá, y la acción del primer paso |
+| **Nada coincide con los filtros** | Se llega buscando | Título con lo que se buscó, qué probar, y «Limpiar todo». **Sin ícono** |
+
+**Por qué el segundo no lleva ícono.** Aparece y desaparece con cada tecla mientras se filtra, y un dibujo que parpadea ahí es ruido; además quien filtró ya sabe en qué pantalla está, que es la mitad de lo que el ícono venía a decir. La acción tampoco es la misma: en el primero es el primer paso, en el segundo es la salida.
+
+**Un vacío adentro de una tarjeta hunde el fondo** (`--surface-sunken`) y se acorta, porque ahí no hay una pantalla que llenar y dos tarjetas apoyadas una sobre otra se leen mal. Es el caso de «Colores y stock» en la ficha de producto.
+
+**No todo recuadro punteado es un vacío.** Quedan tres notas —la de la ficha de orden, la de «Todavía no guardaste la configuración» y la del buscador de productos del alta manual— que son un párrafo dentro de un flujo, sin título ni acción. Un ícono y un encabezado ahí gritarían.
+
+**La cabecera se fija, y para eso la que scrollea es la tabla y no la página** (resuelto el 2026-09-21; hasta ese día la línea de arriba decía «fija al scrollear» y **no lo era**). `position: sticky` se fija dentro del ancestro que scrollea, y ese ancestro era el `div` propio de la tabla, que no scrolleaba nunca: la página se deslizaba por debajo y se llevaba la cabecera puesta. Medido en `/admin/productos` con 26 filas: al scrollear 600px la cabecera terminaba en y=−398. En órdenes y usuarios *parecía* andar, pero sólo porque con diez filas la página apenas scrollea 163px.
+
+Ahora ese `div` lleva **`max-h-[calc(100svh-20rem)]`** y es el que scrollea. De paso resuelve algo que no era el problema declarado: con 40 filas por página la tabla mide 1760px, así que el encabezado, los filtros y la paginación se iban de la pantalla apenas se empezaba a bajar. **La página ya no scrollea: scrollea la tabla.**
+
+**Las `20rem` están medidas contra el peor caso** —órdenes o usuarios, que tienen encabezado, solapas, barra de filtros, contador y paginación a la vez— en una ventana de 700px. Con 19 la página quedaba scrolleando 11px, que es justo lo que este tope viene a evitar; con 20 sobran 5. Cuesta una fila: siete en vez de ocho a 700px, doce a 900.
+
+**Una celda puede llevar su propia acción, y el número sigue pegado a la derecha.** En el listado de productos, la columna «Disponible» tiene el botón de reponer **antes** de las cifras: puesto después, la columna terminaba en el botón y los números dejaban de caer bajo su encabezado. El bloque de cifras va `shrink-0 whitespace-nowrap`, porque comprimido parte «de 15 · 2 reservadas» en dos renglones y sube la fila de 55px a 72 sólo en los productos con reservas, dejando la tabla despareja.
+
 **En móvil las tablas se vuelven tarjetas**, no un scroll horizontal. Una tabla de siete columnas en un teléfono es inoperable.
 
 **Paginación:** «Anterior / Página N de M / Siguiente», no un botón por página como la tienda (F7.1). Un listado del panel puede crecer sin techo —las órdenes se acumulan solas—, y una tira de cien números no sirve de nada: a una orden vieja se llega por la búsqueda o el rango de fechas, no acordándose de en qué página estaba. Los pasos que no existen —«anterior» en la primera— **no se dibujan apagados**: un enlace deshabilitado no se puede enfocar ni explica por qué no anda, y el «Página N de M» del medio ya dice dónde está el límite.
 
-**Solapas por estado:** cuando un listado tiene un estado que decide qué se está mirando —órdenes, usuarios—, va **a la vista y con el número de cada una**, no adentro de un desplegable más. Es la pregunta con la que se abre la pantalla, y el número contesta «¿tengo algo que hacer?» sin entrar. Ese número es el del total, no el del filtro puesto: si cambiara con cada búsqueda dejaría de ser un indicador para ser un resultado más.
+**Solapas: son dos, y la diferencia significa algo** (decidido el 2026-09-21, al sacarlas a `SolapasDelPanel` en `components/admin/solapas.tsx`). Hasta ese día existían las dos sin que nadie lo hubiera escrito, así que divergían en todo lo demás —alto, color de la activa, elemento contenedor— y parecían dos gustos en vez de dos trabajos.
+
+| | Cambia | Forma | Número |
+|---|---|---|---|
+| **Segmentado** | Qué se ve del mismo listado | Pastilla blanca sobre fondo hundido: se lee «elegí uno de estos» | **Sí** |
+| **Subrayado** | En qué pantalla se está | Subrayado en color de marca: se lee «esta es la sección» | **No** |
+
+**Las dos miden 40px de alto**, para que el renglón no salte al pasar de una pantalla a otra: el segmentado son 4 + 32 + 4 y el subrayado es un ítem de 40 apoyado sobre el borde.
+
+**El segmentado lleva el número de cada solapa, y no es decoración.** Es la pregunta con la que se abre la pantalla, y contesta «¿tengo algo que hacer?» sin entrar. Ese número es el del total, no el del filtro puesto: si cambiara con cada búsqueda dejaría de ser un indicador para ser un resultado más. Va en `aria-hidden` con una frase completa al lado en `sr-only` —«(11 cuentas)»—, porque «Activas 11» leído en voz alta no dice once qué.
+
+**El subrayado no lleva número a propósito:** cada solapa es otra tabla, así que no hay un total que contestar. Sumarle uno obligaría a cuatro consultas para decir cuántas filas tiene cada pantalla vecina, que es un dato que nadie fue a buscar.
+
+**Las dos pantallas que llevan segmentado son órdenes y usuarios.** Usuarios lo ganó el 2026-09-21: esta regla lo nombraba desde que se escribió y la pantalla tenía un desplegable de cinco opciones sin un solo número, así que la regla estaba vencida. El estado que más importa ahí es «Baja pedida», que es trabajo por hacer (RF-34) y antes no se veía sin abrir el desplegable.
+
+**La solapa no es un filtro que se limpia.** «Limpiar todo» borra la búsqueda y los desplegables y **conserva la solapa**: dice dónde se está parada, y limpiar filtros no tiene por qué mover a nadie de pantalla. Cambiar de solapa, al revés, conserva los filtros y vuelve a la página 1.
 
 ### 6.10 Logo de marca
 
@@ -694,6 +818,113 @@ Dos piezas de la misma decisión (FS RF-15): dónde se escribe la descripción y
 | Negrita | Peso 600, mismo color. Nunca el acento: el burdeos es de la marca y de lo accionable, no del énfasis |
 
 ---
+
+### 6.12 Encabezado de pantalla del panel
+
+**Toda pantalla del panel abre con el mismo encabezado**, y lo pone `EncabezadoDePanel` (`components/admin/encabezado.tsx`). Son cinco piezas, y la única obligatoria es el título:
+
+| Pieza | Cuándo va | Forma |
+|---|---|---|
+| Volver | La pantalla se abrió desde otra | Botón terciario `sm` con `-ml-3`, `ChevronLeft` y el nombre de a dónde vuelve |
+| Título | Siempre | `title`, `--ink` |
+| Insignias | El título es un dato que tiene estado — una orden, una cuenta | Píldoras de §6.4, al lado del título |
+| Bajada | La pantalla necesita decir qué es | `body-sm`, `--ink-secondary`, debajo del título |
+| Acciones | Hay algo para hacer que no es sobre una fila | Arriba a la derecha, §6.3 |
+
+**La alineación la decide la bajada, y no el tipo de pantalla.** Con bajada, la columna izquierda son dos renglones y el bloque va `items-start`, para que el botón de la derecha se alinee con el título en vez de flotar en el medio; sin bajada es un renglón solo y va `items-center`. Hasta el 2026-09-21 los listados hacían lo primero y las fichas lo segundo, y parecían dos criterios: es uno solo mirado en dos formas.
+
+**Por qué es un componente y no una receta escrita acá.** Las trece pantallas lo armaban a mano y habían llegado a cinco formas de la misma cosa. La que más se notaba era el volver: cuatro pantallas usaban el botón terciario y la ficha de producto un `<Link>` pintado a mano en `body-sm`/`--ink-secondary` — 20px contra 32px, otro color y la mitad del área para el dedo, en la misma posición de la misma pantalla.
+
+**El fantasma vive en el mismo archivo** (`EsqueletoDeEncabezado`, §8). Es lo único que evita que se separen con el tiempo: el esqueleto de la ficha de producto dibujaba el volver de 20px porque estaba escrito en otro lado y nadie los había visto juntos.
+
+### 6.13 Tarjeta de sección del panel
+
+**Todo bloque con título dentro de una pantalla del panel es una `TarjetaDeSeccion`** (`components/admin/tarjeta.tsx`). Hasta el 2026-09-21 estaba escrita cinco veces —`Seccion`, `Tarjeta`, `Ficha`, una suelta en el historial y ocho a mano en los formularios— y había **quince tarjetas con tres paddings, tres separaciones y tres tamaños de título**.
+
+| | Valor | Por qué |
+|---|---|---|
+| Padding | `p-4`, 16px | §4 fija 12–16px para el panel, y nueve de quince estaban en 20px sin que la desviación estuviera anotada |
+| Separación interna | `gap-4`, 16px | Con 16px de padding, el mismo número adentro da un solo ritmo |
+| Título | `body` 16px, peso 500 | Decisión tuya del 2026-09-21 |
+| Nombre accesible | `aria-labelledby` al `h2` | Decisión tuya del mismo día |
+
+**Por qué 16px y no los 20 del formulario ni los 14 de la ficha.** Eran el mismo nivel jerárquico dicho de tres maneras. A 14px el título de una sección medía lo mismo que el rótulo de un campo y dejaba de separar; a 20px, en una columna de 352px, pesaba tanto como el dato que anunciaba. Es además el tamaño del título de `VacioDelPanel`, así que el panel tiene **una sola voz para «esto es una sección»**. De yapa, el esqueleto quedó exacto: `text-body` da 24px de alto y `h-6` son 24px, mientras que contra los 20px de antes se quedaba un píxel corto.
+
+**Por qué se anuncia como región.** Antes lo hacían cuatro de quince. Un `<section>` sin nombre accesible **no es una región**: para un lector de pantalla es un contenedor más, así que once de esas tarjetas eran un `div` con pasos de más. Con nombre se salta entre «Comprador», «Envío» e «Historial» sin recorrer el contenido, que es exactamente lo que §6.9 quiere de una pantalla de trabajo. El `id` se pide por parámetro y no se genera: estas tarjetas se pintan en el servidor, donde `useId` no corre.
+
+**La alineación del encabezado la decide la ayuda**, la misma regla que §6.12: con ayuda son dos renglones y va `items-start`; sin ayuda es uno y va `items-center`.
+
+**Dos excepciones, las dos a propósito.** El envoltorio de una tabla no lleva padding —una tabla llena la tarjeta de borde a borde— y su título va en `sr-only`, porque la cabecera de la tabla ya dice qué es cada columna. Y una tarjeta que solo lleva un mensaje, sin título, no es una sección: no se anuncia ni se nombra.
+
+### 6.14 Diálogos
+
+**Tope de alto: `max-h-[85svh]`, en el primitivo y no en cada diálogo.** Hasta el 2026-09-21 lo tenía **uno de los veinticinco** —el de registrar una devolución, que es el que alguien vio romperse—; los otros veinticuatro no tenían ninguno.
+
+Sin tope, un diálogo más alto que la pantalla **no se corta por abajo: se corta por los dos lados**, porque la caja está centrada con `translate(-50%, -50%)`. Y lo que queda afuera es **inalcanzable**: la caja es `position: fixed`, así que no se mueve al scrollear, y además Radix bloquea el scroll del cuerpo mientras el modal está abierto (`data-scroll-locked`). Medido a 320px de alto: «Cancelar la orden» perdía 40px —20 arriba y 20 abajo— y «Nueva marca», 44.
+
+**`svh` y no `vh`:** en el teléfono la barra del navegador se come parte de `vh` y el diálogo terminaba debajo de ella.
+
+**Lo que scrollea es el contenido, no la caja.** La × está posicionada con `absolute top-4 right-4`; dentro de un contenedor con scroll se iría con el contenido y el diálogo se quedaría sin su salida visible. Por eso los hijos van en un envoltorio propio con el scroll, y la × queda fija contra la caja.
+
+**Ese envoltorio es transparente**, y tiene que serlo: hay diálogos que fijan su alto y su separación desde afuera —la galería de la ficha manda `h-[calc(100dvh-2rem)]` y `gap-0`—, así que el envoltorio lleva `flex-1` para no achatar a quien fija su alto y `gap-[inherit]` para no imponer el suyo. **Un diálogo que es la pantalla entera anula el tope con `max-h-none`**, que es el único caso previsto.
+
+#### 6.14.1 Un diálogo que se abre solo se abre desde la dirección (2026-09-21)
+
+Hay un caso en que abrir un diálogo no lo decide quien mira la pantalla: **el alta de un producto termina en su ficha con «Agregar color» ya abierto**. Un producto sin colores no tiene stock ni fotos, así que no se puede vender; crear el producto es media tarea, y la bajada de «Nuevo producto» venía prometiendo «la pantalla que se abre sola al crearlo» sin que eso fuera cierto — se aterrizaba en la ficha con la tarjeta de colores al pie.
+
+**Ese estado viaja en la URL y no en memoria** (`?agregar=color`, §10.2). Tres cosas salen de ahí y ninguna sale de pasarse un dato entre pantallas: el enlace se puede pegar en cualquier lado —«andá a cargarle un color a esto»—, el botón atrás funciona, y dos pantallas no tienen que ponerse de acuerdo sobre algo invisible.
+
+**Y al cerrar, el parámetro se saca.** Si se quedara, recargar volvería a abrir el alta encima de un color que ya se cargó. Se saca navegando (`router.replace` a la dirección sin él) y no refrescando: la navegación ya trae los datos nuevos, y hacer las dos cosas sería pedir la misma página dos veces.
+
+**La regla, para el próximo diálogo que quiera abrirse solo:** si lo abre una acción de quien mira, es estado del cliente; si lo abre de dónde se viene, va en la dirección, y quien lo cierra lo limpia.
+
+### 6.15 Avisos flotantes
+
+**La biblioteca es `sonner`**, la misma que usa shadcn (decisión tuya del 2026-09-21, después de ver una versión propia que no se distinguía lo suficiente). Pone la cola, el apilado, el reloj que se detiene con el puntero encima, arrastrar para descartar, el foco, el `aria-live` y su propia regla de `prefers-reduced-motion`. El proyecto pone el aspecto y las palabras.
+
+**Dos tonos, y cada uno tiene su disco.** Un glifo relleno dentro de un círculo de color, no un trazo suelto: es lo que hace que el aviso se lea de reojo, que es todo lo que un aviso tiene que lograr.
+
+| Tono | Disco | Cuándo |
+|---|---|---|
+| **Éxito** (`avisar`) | Verde con el check | Salió como se pidió |
+| **Pero** (`avisarConPero`) | Ámbar con el triángulo | Salió, **pero no como se pidió**. El caso real es «Borrar»: si el producto está en una orden no se borra, se desactiva (RF-15). Con el check verde al lado, esa frase se lee de reojo como «listo, borrado», que es justo lo que no pasó |
+
+**El disco va en el color semántico y el glifo en su tinte**, no al revés ni en blanco fijo. En claro eso da el disco verde con el check casi blanco, que es lo pedido; en oscuro el par se da vuelta solo —verde claro con el glifo casi negro—. Con blanco fijo, el check sobre el verde del modo oscuro (`#4ade80`) queda en 1,5:1 y §9 pide 3:1 para un objeto gráfico.
+
+**Confirman, no reportan errores.** Un error tiene que decir qué pasó, qué hacer y a veces ofrecer reintentar (§8), y nada de eso entra en algo que se va solo a los cuatro segundos. Los errores se quedan **donde estuvo la acción**: el diálogo que falla no se cierra y lo muestra adentro.
+
+**Cuándo va uno y cuándo no**, que es lo único que hay que decidir:
+
+| | |
+|---|---|
+| **Flotante** | El lugar donde pasó la cosa **desapareció** —un diálogo que se cerró, una fila que se borró, un globo que se fue— o la pantalla **no cambia de forma visible** |
+| **En su lugar** | Lo que pasó **se ve**: subir una foto la hace aparecer, destacar un producto rellena su estrella, desactivarlo le cambia la insignia. Un cartel que repita lo que ya está a la vista es ruido |
+| **Tampoco** | Guardar y quedarse en la misma pantalla, que ya tiene su «Listo, se guardó» en línea (Configuración) |
+
+Tres decisiones de integración, las tres con motivo:
+
+- **Sin `next-themes`.** La receta de shadcn lee el tema con `useTheme` y se lo pasa a `sonner` para que elija su paleta. Acá el tema es `data-theme` en `<html>` y los colores salen de los tokens, que ya se dan vuelta solos: dos fuentes para el mismo color es una de más.
+- **`unstyled`.** Los selectores de `sonner` —`[data-sonner-toast]`— pesan lo mismo que una utilidad de Tailwind, y quién gana depende del orden de las hojas. Apagadas sus reglas de aspecto no hay empate que resolver, y el aviso se dibuja con los tokens del panel. Lo que se conserva son sus reglas de posición y animación, que no dependen de ese interruptor.
+- **Adentro de `MarcoDeEscala` y no al final del `<body>`.** `sonner` **no usa un portal**: se dibuja donde se lo monta y se posiciona con `fixed`. Puesto adentro hereda el `data-scale="admin"` y no hace falta el truco de `escala.tsx`. Verificado: la tipografía del aviso sale a 14px, la del panel.
+
+**El apilado no necesita ayuda.** `sonner` pone su lista en `z-index: 999999999`, y medido, ni ella ni la capa del diálogo tienen un ancestro que cree contexto de apilado: los dos están en el raíz, así que el aviso pinta encima. **Mientras el diálogo está abierto, el aviso se lee pero no se puede tocar**, porque Radix marca el `<body>` con `pointer-events: none`. Eso es lo correcto para un modal y no se corrige: el aviso se va solo a los cuatro segundos.
+
+**Lo único que se le corrige a la biblioteca son los 400ms** de su transición, que pasan el techo de 300 de §8. La regla vive en `globals.css` con el selector repetido —`[data-sonner-toast][data-sonner-toast]`— porque la hoja del paquete queda después y a igual peso ganaría la suya; repetirlo sube la especificidad sin `!important`, que no se usa en ninguna otra parte del proyecto.
+
+**El panel entero está cableado** (2026-09-21). Son **26 avisos en 18 componentes**. Y seis lugares que mutan **no llevan aviso flotante a propósito**, que es la otra mitad de la regla:
+
+| Dónde | Por qué no |
+|---|---|
+| Configuración | Ya tiene su «Listo, se guardó» en línea, y la pantalla no se va |
+| Modo mantenimiento | La insignia pasa de «Abierta» a «Cerrada al público» ahí mismo |
+| Datos de un usuario | Guarda en su lugar, los campos quedan a la vista con lo guardado |
+| Restablecer contraseña | El diálogo **no se cierra**: se da vuelta y muestra «Listo». Un flotante encima sería decir dos veces lo mismo |
+| Fotos de un producto | La foto aparece o desaparece. «Subimos la foto» al lado de la foto es ruido |
+| Destacar, activar, desactivar y reordenar filas | La estrella, la insignia o el lugar de la fila cambian delante tuyo |
+
+**Dos canales que no se pisan.** Bloquear y dar de baja una cuenta tienen las dos cosas: el flotante confirma que se hizo, y la caja de aviso que ya estaba se queda **sólo cuando Supabase Auth no respondió**. Eso último no es un éxito limpio —la persona todavía puede iniciar sesión— y es información que hay que ir a revisar: un cartel que se va a los cuatro segundos no sirve para eso.
+
+**Y un caso que enseña dónde está el límite de la regla.** Subir o bajar la cantidad de un ítem cambia el renglón a la vista, así que por la tabla de arriba no haría falta aviso. Lleva uno igual, y el motivo es que **cada uno escribe en el libro de stock**: agregar reserva unidades y quitar las libera, y eso es justamente lo que no se ve desde la pantalla. La pregunta no es «¿cambió algo en pantalla?» sino «¿alcanza lo que cambió para saber qué pasó?».
 
 ## 7. Composición de pantallas
 
@@ -892,6 +1123,7 @@ Un componente no está terminado hasta que sus cinco estados están definidos.
 | **Sin resultados** | Repetir el término buscado, sugerir quitar filtros, y ofrecer «Limpiar todo» |
 | **Error** | Qué pasó, en castellano, y qué hacer. Con acción de reintentar. Nunca un código ni un *stack trace* |
 | **Deshabilitado** | Siempre acompañado del motivo, visible o en *tooltip* |
+| **Confirmado** | Toda acción que muta dice que salió bien. Flotante o en su lugar según §6.15; nunca en silencio |
 
 **Transiciones:** 150ms para color y opacidad, 200ms para transformaciones, `cubic-bezier(0.4, 0, 0.2, 1)`. Nada por encima de 300ms. Todo se desactiva bajo `prefers-reduced-motion`.
 
