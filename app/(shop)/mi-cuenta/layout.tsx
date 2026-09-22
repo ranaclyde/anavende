@@ -1,6 +1,16 @@
 import { BotonSalir } from "@/components/shop/boton-salir";
 import { MenuDeLaCuenta } from "@/components/shop/menu-de-la-cuenta";
+import type { Metadata } from "next";
+
 import { getSession } from "@/lib/session";
+import { FUERA_DEL_INDICE } from "@/lib/seo";
+
+/**
+ * Ninguna de estas pantallas va al índice de un buscador (F3.9). Va en el
+ * layout y no en cada página: los metadatos se heredan campo por campo, así
+ * que alcanza con declararlo una vez y las páginas siguen poniendo su título.
+ */
+export const metadata: Metadata = { robots: FUERA_DEL_INDICE };
 
 /**
  * «Mi cuenta»: el saludo, «Cerrar sesión» y el menú de secciones, compartidos

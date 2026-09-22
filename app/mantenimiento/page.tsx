@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Isotipo } from "@/components/shop/logo";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
+import { FUERA_DEL_INDICE } from "@/lib/seo";
 import { enlaceDeWhatsApp } from "@/lib/whatsapp";
 import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
 import { numeroDeWhatsApp } from "@/modules/settings/queries";
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
   title: "Volvemos en un rato",
   // El 503 ya le dice a un buscador que no guarde esto; el `noindex` es por si
   // alguien llega a la dirección directa, que responde 200.
-  robots: { index: false, follow: false },
+  robots: FUERA_DEL_INDICE,
 };
 
 /**

@@ -264,3 +264,29 @@ export function contarFiltrosDeTienda(f: FiltrosDeTienda): number {
 export function sinFiltrosDeTienda(f: FiltrosDeTienda): FiltrosDeTienda {
   return { ...FILTROS_DE_TIENDA_VACIOS, orden: f.orden };
 }
+
+/**
+ * Si esta vista del catálogo pide entrar al índice de los buscadores — F3.9,
+ * RNF-04.
+ *
+ * **Solo el catálogo sin tocar**, en cualquiera de sus páginas. Todo lo demás
+ * —una búsqueda, una marca elegida, un rango de precio, otro orden— muestra
+ * los mismos productos recortados o dados vuelta, y son infinitas: cada
+ * combinación de filtros es una dirección distinta con el contenido de las
+ * otras. Indexarlas reparte entre cientos de páginas casi iguales lo que
+ * tendría que ir a una sola, y le gasta a Google el tiempo que le dedica al
+ * sitio en recorrer combinaciones que nadie buscó.
+ *
+ * **No se prohíbe el rastreo, solo el índice.** Esas páginas salen
+ * `noindex, follow`: no entran al índice, pero los enlaces a las fichas que
+ * tienen adentro sí se siguen. Es lo contrario de un `Disallow`, que cerraría
+ * el camino.
+ *
+ * **La paginación sí se indexa**, con su propia dirección. Es lo que Google
+ * recomienda desde que dejó de existir `rel=next`: la página 2 es contenido
+ * distinto de la página 1, y marcarla `noindex` esconde productos que no
+ * aparecen en ninguna otra parte.
+ */
+export function catalogoIndexable(f: FiltrosDeTienda): boolean {
+  return !hayFiltrosDeTienda(f) && f.orden === FILTROS_DE_TIENDA_VACIOS.orden;
+}

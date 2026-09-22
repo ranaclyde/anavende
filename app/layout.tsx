@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { urlDelSitio } from "@/lib/env";
+import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE, ZONA_DE_ENTREGA } from "@/lib/seo";
 
 const siteUrl = urlDelSitio();
 
@@ -16,14 +17,28 @@ const inter = Inter({
   display: "swap",
 });
 
+const DESCRIPCION = `Teclados, mouses, auriculares, cables y memorias. ${ZONA_DE_ENTREGA}`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "AnaVende",
-    template: "%s · AnaVende",
+    default: NOMBRE_DEL_SITIO,
+    template: `%s · ${NOMBRE_DEL_SITIO}`,
   },
-  description:
-    "Teclados, mouses, auriculares, cables y memorias. Entrega en Viedma,\n    Carmen de Patagones y alrededores.",
+  description: DESCRIPCION,
+  /*
+   * El respaldo de la vista previa, para las pantallas que no declaran la
+   * suya (F3.9). **Sin `url`**: cada página es una dirección distinta y un
+   * `og:url` heredado apuntaría a la raíz desde todas.
+   *
+   * La imagen no está acá: la pone `app/opengraph-image.png`, que Next suma
+   * solo a lo que no traiga imagen propia.
+   */
+  openGraph: {
+    ...OPEN_GRAPH_BASE,
+    title: NOMBRE_DEL_SITIO,
+    description: DESCRIPCION,
+  },
 };
 
 export default function RootLayout({
