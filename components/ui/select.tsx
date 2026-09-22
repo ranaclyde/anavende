@@ -30,7 +30,7 @@ function Select({
           "focus:border-border-strong",
           "aria-invalid:border-danger",
           "disabled:cursor-not-allowed disabled:opacity-40",
-          "admin:h-10 admin:rounded-panel-control admin:pl-3 admin:text-body-sm",
+          "admin:h-10 admin:max-md:h-11 admin:rounded-panel-control admin:pl-3 admin:text-body-sm",
           className,
         )}
         {...props}

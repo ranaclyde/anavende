@@ -21,7 +21,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
         "aria-invalid:border-danger",
         "disabled:cursor-not-allowed disabled:opacity-40",
         "file:border-0 file:bg-transparent file:text-body-sm file:font-medium file:text-ink",
-        "admin:h-10 admin:rounded-panel-control admin:px-3 admin:text-body-sm",
+        "admin:h-10 admin:max-md:h-11 admin:rounded-panel-control admin:px-3 admin:text-body-sm",
         className,
       )}
       {...props}

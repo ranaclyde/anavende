@@ -77,13 +77,15 @@ export function SolapasDelPanel({
                 "text-body-sm transition-colors duration-150",
                 segmentado
                   ? cn(
-                      "h-8 rounded-panel-control",
+                      // 32px en escritorio, 44 abajo de `md` (§9): es un
+                      // enlace que se toca, no una etiqueta.
+                      "h-8 max-md:h-11 rounded-panel-control",
                       solapa.activa
                         ? "bg-surface font-medium text-ink shadow-sm"
                         : "text-ink-secondary hover:text-ink",
                     )
                   : cn(
-                      "-mb-px h-10 rounded-t-panel-control border-b-2",
+                      "-mb-px h-10 max-md:h-11 rounded-t-panel-control border-b-2",
                       solapa.activa
                         ? "border-brand font-medium text-brand"
                         : "border-transparent text-ink-secondary hover:text-ink",

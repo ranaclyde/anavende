@@ -3238,8 +3238,16 @@ un `div` oculto hasta que termina de transmitirse, y la medición de una página
 recién cargada se queda con quince elementos en vez de ciento sesenta, así que
 hay que contar cuántos midió antes de creerle—; y **la ventana no se dejó
 achicar** a 1280 ni a 390 desde la herramienta, así que lo de abajo está visto
-a 2560, que es donde el panel ya estaba topeado en 1024. El ancho chico del
-panel sigue sin mirarse.
+a 2560, que es donde el panel ya estaba topeado en 1024.
+
+**El ancho chico se miró el 2026-09-22, y sin achicar la ventana**: un
+`<iframe>` del mismo origen de 390×844 inyectado en la propia pantalla. Las
+media queries miran el viewport del `iframe`, así que adentro el panel se
+comporta como en un teléfono, y desde afuera se lo puede medir con JavaScript
+porque comparten origen. **Es el camino a repetir**, y sirve igual para la
+tienda. Dos advertencias: cualquier edición dispara Fast Refresh en la página
+que lo hospeda y **se lleva la sonda puesta**, así que hay que reinyectarla; y
+conviene contar los elementos medidos antes de creerle a un cero.
 
 Lo bueno: **las tarjetas, las tablas, las solapas, los estados vacíos y los
 botones se ven como dicen las últimas correcciones**, y el único hallazgo de
@@ -3333,6 +3341,65 @@ salvo «Reportes», que está desactivada y WCAG exime.
 grises quedó en dos niveles de texto más uno decorativo, así que un metadato
 pesa lo mismo que una etiqueta. Lo que ordena la jerarquía de ahora en más es
 el tamaño y el peso.
+
+### El panel a 390, y las áreas táctiles que nunca llegaban — hecho el 2026-09-22
+
+Lo que se miró: tablero, los seis listados, las cuatro pantallas de
+formulario, el detalle de una orden, el menú de teléfono abierto, un diálogo
+(«Nueva marca») y un popover («Reponer stock»).
+
+**Lo estructural está bien, y conviene decirlo porque era lo que se temía**:
+**cero desborde horizontal** en las diez pantallas —ni la página scrollea al
+costado ni hay un solo elemento que se pase del ancho—, la tabla se convierte
+en tarjetas donde tiene que hacerlo, el menú entra como cajón desde la
+izquierda, y el diálogo y el popover entran enteros sin salirse.
+
+**Lo que falló es el tamaño de lo que se toca.** §9 pide **44×44px como mínimo
+en móvil** y no lo cumplía nada del panel, a ningún ancho:
+
+| Qué | Medía | Cuántos |
+|---|---|---|
+| Botones de ícono de cada fila (editar, destacar, desactivar, borrar) | 36×36 | 109 en Productos, 13 en Catálogo |
+| Solapas segmentadas | 32 de alto | 3 a 5 por pantalla |
+| Botones `sm` («Reponer», «Limpiar todo», el «Ver» del tablero) | 32 | 31 en Productos |
+| Campos y desplegables del panel | 40 | ~10 por pantalla |
+| Menú: ítems del pie, cerrar, logo | 36 y 32 | 4 |
+
+**La regla ya estaba aplicada a medias, y ese es el detalle que lo explica**:
+`components/ui/button.tsx` tenía `max-md:h-11` en el tamaño por omisión, con un
+comentario que dice exactamente por qué —«los 40px quedan cuatro por debajo del
+mínimo de §9»—, y el tamaño `icon` decía en su comentario «44px de área táctil
+en móvil (§9)» mientras el panel se quedaba en `admin:size-9`, o sea 36, en
+todos los anchos. La regla estaba escrita, entendida y aplicada en una sola
+variante.
+
+Se completó con el mismo mecanismo, **sólo por debajo de `md` y sólo en el
+panel**: `admin:max-md:h-11` en `sm`, `admin:max-md:size-11` en `icon`,
+`max-md:h-11` en las dos familias de solapas, en los renglones del menú, en el
+interruptor de tema y en el logo, y `admin:max-md:h-11` en `Input` y `Select`.
+**En escritorio no cambia nada**: verificado a 1600px —desplegable 40, buscador
+40, solapa 32, como antes—.
+
+Después del cambio, medido otra vez en las diez pantallas a 390: **ningún
+control por debajo de 44×44**. Quedan afuera de la cuenta, a propósito, dos
+cosas: los radios y checkboxes de 16px, que viven **adentro de un `<label>` de
+305×71** y por eso el área que se toca es la tarjeta entera; y los enlaces de
+texto —el nombre del producto en su tarjeta, 27 de ellos, y el número de orden
+en Devoluciones—, que son texto dentro de un párrafo y no controles. Si algún
+día la tarjeta entera se vuelve clicable, ese punto se cierra solo.
+
+**Dos cosas más que sólo se ven a 390:**
+
+- **En Catálogo, la tarjeta mostraba un número sin decir de qué.** La tabla
+  tiene la columna «Productos» encima; abajo de `md` la columna desaparece y
+  queda un «6» suelto. Ahora la tarjeta —y sólo la tarjeta— escribe la palabra:
+  «6 productos», «4 productos · 1 inactivo», «Sin productos».
+- **Los filtros de Productos quedaron tres en una grilla de dos columnas**
+  cuando el estado pasó a solapa, y el tercero solo en su fila se leía como si
+  faltara algo al lado. Ocupa las dos columnas en el teléfono. De paso apareció
+  algo para tener presente: `Select` envuelve al `<select>` en un `div` propio
+  —ahí adentro va el chevron—, así que **una clase de grilla pasada por
+  `className` cae en el control y no en el ítem de la grilla**.
 
 ### Productos era el único listado sin solapas — hecho el 2026-09-22
 

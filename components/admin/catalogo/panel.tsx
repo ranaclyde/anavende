@@ -240,7 +240,7 @@ export function PanelDeCatalogo({
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-body-sm text-ink-secondary">
-                    <Uso item={item} />
+                    <Uso item={item} conEtiqueta />
                   </span>
                   <Acciones
                     item={item}
@@ -369,16 +369,39 @@ function EstadoDelItem({
   );
 }
 
-function Uso({ item }: { item: ItemDeCatalogo }) {
+/**
+ * Cuántos productos usan esta marca, categoría o color.
+ *
+ * **En tarjeta lleva la palabra y en tabla no**, y no es un descuido: la
+ * columna se llama «Productos» y ahí el número está debajo de su encabezado.
+ * Abajo de `md` la tabla se convierte en tarjetas, el encabezado desaparece y
+ * queda un «6» suelto que no dice de qué (visto a 390 el 2026-09-22).
+ */
+function Uso({
+  item,
+  conEtiqueta = false,
+}: {
+  item: ItemDeCatalogo;
+  conEtiqueta?: boolean;
+}) {
   const total = item.activos + item.inactivos;
 
   if (total === 0) {
-    return <span className="text-ink-secondary">Sin uso</span>;
+    return (
+      <span className="text-ink-secondary">
+        {conEtiqueta ? "Sin productos" : "Sin uso"}
+      </span>
+    );
   }
 
   return (
     <span className="tabular-nums">
-      {item.activos > 0 && <span className="text-ink">{item.activos}</span>}
+      {item.activos > 0 && (
+        <span className="text-ink">
+          {item.activos}
+          {conEtiqueta ? (item.activos === 1 ? " producto" : " productos") : ""}
+        </span>
+      )}
       {item.activos > 0 && item.inactivos > 0 && (
         <span className="text-ink-secondary"> · </span>
       )}
