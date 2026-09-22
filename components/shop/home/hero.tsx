@@ -111,7 +111,11 @@ export function BloquesDelHero({
       */}
       <ul
         key={indice}
-        className="flex items-center justify-center gap-2.5 py-6 sm:gap-4"
+        // El relleno de abajo no es simétrico, y por eso no es `py-`: el arco
+        // baja hasta 44px con `translate`, que no ocupa lugar en el layout. Sin
+        // esa reserva, el bloque más bajo se le montaba a la palabra de la
+        // marca —se veía, y ninguna medida del código lo decía—.
+        className="flex items-center justify-center gap-2.5 pt-6 pb-10 sm:gap-4 sm:pt-10 sm:pb-16"
       >
         {actual.productos.map((producto, i) => (
           <li

@@ -356,6 +356,7 @@ La firma del sistema es el **tracking negativo**: el texto grande se comprime, e
 
 | Rol | Tamaño | Interlínea | Tracking | Peso | Uso |
 |---|---|---|---|---|---|
+| `marca` | 56px | 1.00 | −0.035em | 600 | **La palabra de la marca en el hero de la home, y nada más** (§7.1, 2026-09-22). Debajo de `sm` cae a `display` |
 | `display` | 36px | 1.10 | −0.035em | 600 | Título del hero. Solo en la home |
 | `title` | 24px | 1.20 | −0.03em | 600 | Nombre del producto en la ficha, títulos de página |
 | `heading` | 20px | 1.25 | −0.025em | 600 | Encabezados de sección |
@@ -371,6 +372,7 @@ La firma del sistema es el **tracking negativo**: el texto grande se comprime, e
 3. **Una sola familia.** No hay tipografía secundaria.
 4. **El peso 500 es para etiquetas**, el 600 para títulos. El 400 es todo lo demás.
 5. **El castellano ocupa entre 15% y 25% más que el inglés.** Todo componente con texto debe probarse con la cadena más larga que va a recibir, no con la más corta.
+6. **Un tamaño nuevo entra como escalón, nunca como número suelto en una clase.** `marca` nació el 2026-09-22 escrito a mano en la home (`text-[3.5rem]`), y así es como después conviven cuatro criterios distintos de «grande»: si un tamaño vale la pena, vale la pena nombrarlo.
 
 ### 3.4 Espaciado
 
@@ -434,6 +436,37 @@ Escala de base 4px:
 Hasta el 2026-09-18 la regla decía «por sombra» para las dos escalas, y el panel la incumplía en 29 de sus 38 tarjetas. Se alineó hacia el borde, que es lo que la mayoría ya hacía y lo único que funciona en los dos temas.
 
 > **Las sombras se tiñen con `--ink`, no con negro.** Al pasar la familia de grises a cálida hubo que mover también el tinte de las tres sombras (`rgba(22,24,26)` → `rgba(17,16,16)`): una sombra azulada debajo de una tarjeta cálida se nota, aunque nadie sepa decir por qué.
+
+---
+
+### 3.7 Lo que dibuja el navegador
+
+> **Agregado el 2026-09-22, en la pasada de `impeccable` sobre la home.** Hay
+> una parte de la pantalla que no dibuja nadie del equipo y se ve igual: la
+> **selección de texto**. Venía en el azul de fábrica de Chrome, que es el
+> único azul de toda la tienda y aparece cada vez que alguien arrastra sobre
+> un precio o copia un nombre de producto para pegarlo en WhatsApp —que en
+> esta tienda **es** un gesto frecuente, porque la venta se cierra ahí—.
+
+```css
+::selection {
+  background-color: var(--brand-tint);
+  color: var(--ink);
+}
+```
+
+**Tinte y no burdeos pleno**: la selección marca, no grita, y el tinte sirve a
+los dos temas —en el panel oscuro `--brand-tint` es `#2a1a1d` y la tinta clara
+encima sigue leyéndose—. Con burdeos pleno, seleccionar un párrafo pintaría
+media pantalla del color de la acción principal, que es justo lo que §3.1
+prohíbe.
+
+**El cursor de texto (`caret-color`) no se declara**: hereda `color`, que ya es
+`--ink`. Declararlo sería repetir el token sin cambiar un píxel.
+
+**La barra de desplazamiento tampoco se pinta.** La del sistema operativo es la
+que la gente reconoce y la que sabe achicarse sola; una propia se gana un bug
+de accesibilidad por cada píxel de estilo.
 
 ---
 

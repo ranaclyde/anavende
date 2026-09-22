@@ -195,6 +195,16 @@
 
   /* Escala tipográfica: tamaño / interlínea / tracking / peso.
      La firma del sistema es el tracking negativo: lo grande se comprime. */
+  /* 56px — la palabra de la marca en el hero de la home, y nada más (§3.3,
+     §7.1). Existe como escalón y no como número suelto en la clase porque la
+     escala tipográfica es un contrato: un tamaño escrito a mano en una pantalla
+     es el primero de los cuatro criterios que después conviven. Debajo de `sm`
+     la palabra cae a `display`, que es el tope de la escala. */
+  --text-marca: 3.5rem;
+  --text-marca--line-height: 1;
+  --text-marca--letter-spacing: -0.035em;
+  --text-marca--font-weight: 600;
+
   --text-display: 2.25rem; /* 36px — hero de la home, solo ahí */
   --text-display--line-height: 1.1;
   --text-display--letter-spacing: -0.035em;
@@ -324,6 +334,16 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+  }
+
+  /* La seleccion de texto (§3.7). Venia en el azul de fabrica de Chrome, que
+     es el unico azul de toda la tienda, y aparece cada vez que alguien copia
+     un nombre de producto para pegarlo en WhatsApp —que aca es un gesto
+     habitual, porque la venta se cierra ahi—. En tinte y no en burdeos pleno:
+     la seleccion marca, no grita, y el tinte sirve a los dos temas. */
+  ::selection {
+    background-color: var(--brand-tint);
+    color: var(--ink);
   }
 
   body {

@@ -94,7 +94,7 @@ export default async function Home() {
           CSS—, que es lo que lee un lector de pantalla y lo que se copia al
           portapapeles.
         */}
-        <h1 className="text-display lowercase text-brand sm:text-[3.5rem] sm:leading-none">
+        <h1 className="text-display lowercase text-brand sm:text-marca">
           AnaVende
         </h1>
 
@@ -116,16 +116,25 @@ export default async function Home() {
                 <li key={categoria.id}>
                   <Link
                     href={urlDeTienda({ categoria: [categoria.id] })}
-                    className="flex h-11 items-center gap-2 rounded-pill border border-border bg-surface pl-2 pr-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand"
+                    className="flex h-11 items-center gap-2 rounded-pill border border-border bg-surface px-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand sm:pl-2 sm:pr-4"
                   >
                     {/*
                       La inicial es del boceto y es decoración: el nombre está
                       al lado, así que un lector de pantalla no tiene por qué
                       escuchar «T, Teclados».
+
+                      Y va en gris, no en burdeos: siete discos de marca en
+                      fila son siete cosas en burdeos que no son la acción de
+                      la pantalla, y ésa es la regla de una sola voz (§3.1).
+                      El burdeos del hero es el botón del buscador, y uno solo.
                     */}
                     <span
                       aria-hidden
-                      className="grid size-7 place-items-center rounded-full bg-brand-tint text-caption text-brand"
+                      // Desde `sm`: a 390px los siete chips con disco pasan
+                      // de dos renglones a cuatro, y cuatro renglones de
+                      // atajos ya no son un atajo. Sin el disco entran tres
+                      // por renglón.
+                      className="hidden size-7 place-items-center rounded-full bg-canvas text-caption text-ink-secondary sm:grid"
                     >
                       {categoria.nombre.slice(0, 1)}
                     </span>
@@ -146,7 +155,10 @@ export default async function Home() {
           de entrega, la sigue diciendo el pie—.
         */}
         <p className="flex w-full items-center justify-center gap-2.5 rounded-card bg-surface p-4 text-left text-body-sm text-ink-secondary shadow-sm">
-          <Truck aria-hidden className="size-5 shrink-0 text-brand" />
+          {/* El ícono va en gris por la misma regla: es un ícono general, no
+              una acción (§3.1). Lo que pesa en este renglón es la zona, y ésa
+              está en tinta plena. */}
+          <Truck aria-hidden className="size-5 shrink-0 text-ink-secondary" />
           <span>
             <span className="font-medium text-ink">
               Envíos a Viedma, Carmen de Patagones y alrededores
