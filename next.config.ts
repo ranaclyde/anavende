@@ -8,7 +8,9 @@ import type { NextConfig } from "next";
  * una lista fija obligaría a acordarse de editarla el día del despliegue —el
  * día en que las imágenes dejarían de verse sin decir por qué—.
  */
-function origenesDeImagen(): NonNullable<NextConfig["images"]>["remotePatterns"] {
+function origenesDeImagen(): NonNullable<
+  NextConfig["images"]
+>["remotePatterns"] {
   const crudo = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!crudo) return [];
 
@@ -32,6 +34,33 @@ function origenesDeImagen(): NonNullable<NextConfig["images"]>["remotePatterns"]
 const nextConfig: NextConfig = {
   // Sin `cacheComponents` en el MVP: TECHNICAL-SPEC §2.3 y §12.
   // Se activa después, con medición previa, no antes.
+
+  /**
+   * Los metadatos van SIEMPRE dentro del `<head>` — F3.9, RNF-04.
+   *
+   * Por omisión, Next no espera a `generateMetadata`: manda el `<head>` vacío,
+   * sigue con la página y pega los `<meta>` al final del `<body>`. Solo hace la
+   * excepción de esperar si reconoce el User-Agent como bot, y su lista incluye
+   * `WhatsApp`.
+   *
+   * **El problema es que esa lista no alcanza.** WhatsApp Escritorio no se
+   * anuncia como `WhatsApp/…` sino como un navegador, así que cae del lado
+   * equivocado, lee un `<head>` sin nada y dibuja el enlace pelado: ni foto, ni
+   * nombre, ni precio. Verificado en producción el 2026-09-22, la misma URL
+   * cambiando solo el User-Agent: con `WhatsApp/…` el `<title>` sale en el byte
+   * 6.934 y el `</head>` cierra en el 10.672; con uno de navegador, el
+   * `<title>` cae en el 47.547 y el `</head>` ya cerró en el 4.486.
+   *
+   * De toda la tienda la única afectada era la ficha, que es justo la que se
+   * comparte: es la única cuyos metadatos leen la base. La home y el catálogo
+   * los resuelven sin consultar nada y por eso nunca se rompieron.
+   *
+   * `/.*​/` es la forma que documenta Next para apagarlo del todo. **Acá no
+   * cuesta un viaje más a la base**: `leerFicha` está envuelta en `cache()` de
+   * React y la página la necesita igual antes de dibujar nada, así que lo único
+   * que cambia es que el HTML sale después de esa consulta y no antes.
+   */
+  htmlLimitedBots: /.*/,
 
   /**
    * El contenedor de producción — TECHNICAL-SPEC §18.1.

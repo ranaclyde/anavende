@@ -638,7 +638,7 @@ rotulación — **la tarjeta, el catálogo y el precio siguen sin esa pasada**.
 | F3.6 | Enlaces de WhatsApp | 🟡 | `lib/whatsapp.ts`, que es donde §4 lo tenía previsto, y **se hizo junto con F3.5 por decisión tuya**: la ficha no tiene ninguna otra acción, así que sin esto salía una pantalla que no se podía terminar de probar. **Son dos mensajes y no uno**: el de compra —producto, color, cantidad, precio y enlace— y el de **consulta de disponibilidad**, que lleva producto, color y enlace y **no** lleva precio ni cantidad: no se está comprando, y un precio sobre algo que todavía no existe es un precio que después hay que desdecir. El criterio de RF-04 —acentos, saltos de línea y el `$` bien codificados— está probado, y el número se limpia a dígitos venga como venga. Sin número configurado **no se dibuja ningún botón**: `wa.me/` sin destino abre WhatsApp en la nada. **Falta abrir uno en un teléfono con WhatsApp de verdad**: lo verificado es la dirección, no la entrega |
 | F3.7 | Home | ✅ | **Construida y corregida el 2026-09-22**, sobre el lineamiento de F3.8 y con el contenido que definiste: **hero con bloques flotantes** que rotan de categoría destacada —y se frenan al pasarles el mouse o el foco—, la marca, el buscador, **hasta siete chips** de categoría destacada, **una sección por cada una** con una fila de productos, «Destacados», «En oferta», la **hilera de medios de pago** —sólo los que tienen logo— y «Más categorías» con el «Ver todas» apagado. El aviso de zona (RN-10) va arriba, pegado a los chips. Cada bloque **desaparece solo si no tiene qué mostrar**, que es lo que la protege del riesgo P1. **«Más categorías» quedó en píldoras**: las tarjetas con foto esperan a que se decida de dónde sale la imagen de una categoría, postergado a pedido tuyo. Las dos pasadas de §12.4 están hechas: `impeccable` corrigió cinco cosas y `ui-ux-pro-max` encontró que al hero le faltaba el botón de pausa que pide WCAG 2.2.2. El umbral de F3.3 sigue esperando el catálogo real |
 | F3.8 | Rediseño de la tienda desde el canvas aprobado | 🟡 | **Tarea nueva, agregada al plan el 2026-09-08**; abajo está entera. Cuatro pasadas —tokens, estructura del catálogo, ajustes de panel y tarjeta, y encabezado— aplicadas a la capa de tokens, al catálogo y al navbar. **Falta bajarlo a la home, a la sección de categorías, al pie, al carrito y a la ficha**, y eso no se hace de una: cada pantalla lo adopta cuando se construye. **El panel de administración queda afuera**: el rediseño es de la tienda, lo que ve el comprador |
-| F3.9 | SEO: URLs, metadatos, datos estructurados, sitemap | 🟡 | **Hecha el 2026-09-22.** Era F3.8 hasta el 2026-09-08. Están las cuatro partes: **metadatos por ficha** —título, descripción de la descripción real, `canonical` sin `?color=` y vista previa de Open Graph con el precio adelante—, **datos estructurados** —`Product` con su `Offer`, el rastro de migas, y `Organization` y `WebSite` con su buscador en la home—, **`sitemap.xml`** con la home, el catálogo y cada ficha activa, y **`robots.txt`**. Más una **imagen de vista previa de la marca** para lo que no es una ficha, el **`noindex` de todo lo privado** y el `noindex, follow` del catálogo filtrado. **26 tests nuevos**, y uno encontró un error que no se veía: abajo están los cinco hallazgos. Lo que falta para el ✅ es **ver la tarjeta de verdad en WhatsApp**, que necesita el sitio desplegado: lo verificado es que las tres cosas —imagen, nombre y precio— salen en el `<head>` que WhatsApp lee, no la tarjeta dibujada. Es el mismo límite que F3.6 |
+| F3.9 | SEO: URLs, metadatos, datos estructurados, sitemap | 🟡 | **Hecha el 2026-09-22.** Era F3.8 hasta el 2026-09-08. Están las cuatro partes: **metadatos por ficha** —título, descripción de la descripción real, `canonical` sin `?color=` y vista previa de Open Graph con el precio adelante—, **datos estructurados** —`Product` con su `Offer`, el rastro de migas, y `Organization` y `WebSite` con su buscador en la home—, **`sitemap.xml`** con la home, el catálogo y cada ficha activa, y **`robots.txt`**. Más una **imagen de vista previa de la marca** para lo que no es una ficha, el **`noindex` de todo lo privado** y el `noindex, follow` del catálogo filtrado. **26 tests nuevos**, y uno encontró un error que no se veía: abajo están los cinco hallazgos. **Se probó en WhatsApp el 2026-09-22, y no funcionaba: salía el enlace pelado.** Eran dos defectos apilados —los metadatos fuera del `<head>` para cualquier cliente que no se anuncie como bot, y WhatsApp sin dibujar WEBP—, los dos arreglados ese mismo día; el detalle entero está en «Pendiente detectado». Esa prueba es también la que mostró que lo verificado hasta entonces —que las tres cosas salen en el `<head>`— no alcanzaba: salían para el User-Agent que probé con `curl`, y no para el que manda WhatsApp Escritorio. **Sigue sin el ✅**, y ahora lo que falta es de producción: `image/jpeg` en el bucket, la corrida de `npm run og:productos` y volver a mandar el enlace |
 
 > **Compuerta F3:** «una persona ajena al proyecto encuentra un producto
 > concreto usando solo el buscador y los filtros, sin ayuda.» **No se puede
@@ -2067,6 +2067,74 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 ---
 
 ## Pendiente detectado, sin tarea propia
+
+**La vista previa al compartir una ficha estaba rota por DOS motivos, y el
+segundo no se veía hasta arreglar el primero** (2026-09-22, probándolo con vos
+por WhatsApp). Lo que se compartía era el enlace pelado: ni foto, ni nombre, ni
+precio. Las dos causas están arregladas en el código; lo que falta es de
+producción y está abajo.
+
+**Primero: los metadatos no estaban en el `<head>`.** Next no espera a
+`generateMetadata`: manda el `<head>` vacío, sigue con la página y pega los
+`<meta>` al final del `<body>`. Solo espera si reconoce el User-Agent como bot,
+y su lista trae `WhatsApp`— pero **WhatsApp Escritorio no manda ese
+User-Agent**, manda uno de navegador. Medido en producción, la misma URL
+cambiando solo el UA: con `WhatsApp/…` el `<title>` sale en el byte 6.934 y el
+`</head>` cierra en el 10.672; con uno de navegador, el `<title>` cae en el
+47.547 y el `</head>` ya cerró en el 4.486. **De toda la tienda la única rota
+era la ficha**, que es justo la que se comparte: es la única cuyos metadatos
+leen la base —la home y el catálogo los resuelven sin consultar nada—. Se apagó
+el streaming de metadatos con `htmlLimitedBots: /.*/` en `next.config.ts`, que
+es lo que documenta Next para esto. **No cuesta un viaje más a la base**:
+`leerFicha` está en `cache()` de React y la página la necesita igual.
+
+**Segundo: WhatsApp no dibuja vistas previas en WEBP.** Con los metadatos ya
+llegando enteros, desde el teléfono salían el título y el precio y la foto no.
+La canalización de F2.2 generaba **solo WEBP** y la única imagen que WhatsApp
+llegó a mostrar en toda la prueba fue la de marca, que es PNG. Se descartaron
+antes, con mediciones: el host de Storage (certificado válido, 200, sin
+redirecciones, alcanzable desde dos redes), el caché de WhatsApp, Cloudflare
+(200 para todos los UAs, incluido un fetch desde datacenter) y el `robots.txt`.
+**La tabla de tamaños suma una cuarta versión, `-og.jpg`**: 1200×630 en JPEG,
+la foto entera y centrada sobre el burdeos de `--brand`, el mismo fondo que la
+tarjeta de marca de `scripts/derivar-og.mts`, para que las dos se lean como del
+mismo lugar cuando caen juntas en un chat. La ficha manda **una sola**
+`og:image` —Open Graph usa la primera y las otras cuatro no las miraba nadie— y
+ahora declara `width` y `height`. **Los datos estructurados siguen con las
+WEBP, y todas**: Google lee WEBP y `Product` acepta varias imágenes. Dos
+consumidores distintos, dos respuestas distintas.
+
+**Tres cosas que aparecieron haciéndolo, y ninguna se veía de afuera:**
+
+  · **El bucket no aceptaba `image/jpeg`** y devolvía un 415 `InvalidMimeType`.
+    Lo destapó un test, no el navegador. `supabase/config.toml` ya dice los dos
+    formatos; en producción **hay que tocarlo a mano en Studio**, porque el
+    bucket lo creó F0.7 a mano y la declaración no se aplica sobre un stack que
+    ya existe.
+  · **`TAMANOS_LOGO` excluía por nombre** (`!== "detail"`), así que se llevaba
+    puesta cualquier versión nueva: cada marca y cada medio de pago habrían
+    tenido una vista previa de 1200×630 que no se muestra en ninguna pantalla.
+    Ahora nombra las dos que sí.
+  · **La versión `og` iba a pasar por «la más grande»** y `variant_images`
+    habría guardado 1200×630 como medidas de una foto de 300×200 —su lienzo es
+    fijo—, con la galería reservando un lugar que la foto no ocupa. Las de
+    lienzo fijo quedaron fuera de esa cuenta.
+
+**Lo que falta, y es tuyo:** en Studio, agregarle `image/jpeg` a los formatos
+permitidos del bucket `productos`; después correr `npm run og:productos
+--confirmar` contra producción para generar el `-og.jpg` de las fotos que ya
+estaban subidas —sin eso, una ficha vieja comparte un `og:image` que devuelve
+404—; y volver a probar el enlace desde Escritorio y desde el teléfono. **El
+script pide la confirmación a mano** porque la regla del repositorio es que los
+scripts que escriben no corren contra producción (`scripts/solo-local.mts`):
+esta es una excepción de una sola vez, solo crea objetos nuevos, no borra ni
+modifica nada y no toca la base. Probado contra el stack local: 63 imágenes,
+las 63 generadas, y la segunda pasada no reescribe ninguna.
+
+**Y el momento importa**: esto cambia la canalización de imágenes, así que
+conviene que quede cerrado **antes de F2.8**. Hoy son 63 fotos de prueba; con
+el catálogo real cargado, la misma corrección es la misma corrida pero sobre
+todo lo que Ana subió.
 
 **Segundo color: bordó + azul pizarra, aplicado a medias** (decisión tuya del
 2026-09-14; primera mitad hecha el 2026-09-17). **El bordó `#832833` y el logo

@@ -43,7 +43,9 @@ describe("validación (RF-16)", () => {
   const base = { productId: crypto.randomUUID(), colorId: null };
 
   test("una variante sin color y con stock cero es válida (la variante «Único»)", () => {
-    expect(crearVariante.safeParse({ ...base, stockTotal: 0 }).success).toBe(true);
+    expect(crearVariante.safeParse({ ...base, stockTotal: 0 }).success).toBe(
+      true,
+    );
   });
 
   /**
@@ -52,15 +54,21 @@ describe("validación (RF-16)", () => {
    * venta que descontó de más, no por alguien tipeando −3 en un formulario.
    */
   test("un stock negativo escrito a mano se rechaza, aunque la columna lo admita", () => {
-    expect(crearVariante.safeParse({ ...base, stockTotal: -3 }).success).toBe(false);
+    expect(crearVariante.safeParse({ ...base, stockTotal: -3 }).success).toBe(
+      false,
+    );
   });
 
   test("media unidad no existe", () => {
-    expect(crearVariante.safeParse({ ...base, stockTotal: 2.5 }).success).toBe(false);
+    expect(crearVariante.safeParse({ ...base, stockTotal: 2.5 }).success).toBe(
+      false,
+    );
   });
 
   test("el stock llega como número, no como texto", () => {
-    expect(crearVariante.safeParse({ ...base, stockTotal: "5" }).success).toBe(false);
+    expect(crearVariante.safeParse({ ...base, stockTotal: "5" }).success).toBe(
+      false,
+    );
   });
 
   test("un orden de seis imágenes se rechaza: entran cinco (RF-17)", () => {
@@ -303,12 +311,18 @@ describe("contra la base y contra Storage", () => {
     test("borrar la principal renumera las que quedan a 0 y 1, y se lleva sus archivos", async () => {
       const antes = await posiciones();
       const borrada = subidas.find((s) => s.id === antes[0].id)!;
-      const claves = TAMANOS.map(({ sufijo }) => clave(borrada.storageKey, sufijo));
+      const claves = TAMANOS.map(({ sufijo }) =>
+        clave(borrada.storageKey, sufijo),
+      );
 
       await borrarImagenDeVariante(antes[0].id);
 
       expect((await posiciones()).map((x) => x.n)).toEqual([0, 1]);
-      expect(await Promise.all(claves.map(existe))).toEqual([false, false, false]);
+      // De la tabla, no tres `false` a mano: con la versión `og` de F3.9 son
+      // cuatro, y una lista fija habría dejado pasar un archivo sin borrar.
+      expect(await Promise.all(claves.map(existe))).toEqual(
+        TAMANOS.map(() => false),
+      );
     });
 
     test("la siguiente subida entra en la 2 sin repetir número, y va al final", async () => {

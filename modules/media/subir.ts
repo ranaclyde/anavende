@@ -15,6 +15,7 @@ import {
   MAXIMO_POR_VARIANTE,
   TAMANOS,
   TAMANOS_LOGO,
+  tipoDe,
   type DestinoDeLogo,
   type Tamano,
 } from "@/modules/media/tamanos";
@@ -34,7 +35,10 @@ async function subirVersiones(
   try {
     for (const v of versiones) {
       const key = clave(base, v.sufijo);
-      await store.put(key, v.cuerpo, "image/webp");
+      // El tipo sale de la tabla y no está escrito acá: desde F3.9 no todas
+      // las versiones son WEBP, y un JPEG servido como `image/webp` es
+      // exactamente el archivo que WhatsApp se niega a dibujar.
+      await store.put(key, v.cuerpo, tipoDe(v.sufijo));
       subidas.push(key);
     }
     return subidas;

@@ -141,13 +141,20 @@ file_size_limit = "10MiB"
 # Público en LECTURA —el navegador baja las imágenes directo, sin pasar por el
 # servidor APP—, y la escritura solo con la clave de servicio.
 #
-# `allowed_mime_types` es webp y nada más: de este bucket sale únicamente lo
-# que produjo sharp (§9.0). Es la última barrera si algún día alguien escribe
-# una subida que se saltea la canalización.
+# `allowed_mime_types` son los DOS formatos que produce sharp (§9.0), y
+# ninguno más: es la última barrera si algún día alguien escribe una subida
+# que se saltea la canalización.
+#
+# **El JPEG entró el 2026-09-22, con F3.9.** Hasta ese día era solo webp, y la
+# lista decía «webp y nada más». La versión `-og.jpg` —la que se ve al
+# compartir una ficha por WhatsApp, que no dibuja vistas previas en webp—
+# chocaba contra esta línea con un 415 `InvalidMimeType`. No alcanza con
+# cambiarlo acá: en producción el bucket lo creó F0.7 A MANO desde Studio, y
+# esta declaración no se aplica sobre un stack que ya existe.
 [storage.buckets.productos]
 public = true
 file_size_limit = "10MiB"
-allowed_mime_types = ["image/webp"]
+allowed_mime_types = ["image/webp", "image/jpeg"]
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
