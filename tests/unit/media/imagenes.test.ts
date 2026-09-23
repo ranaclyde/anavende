@@ -45,25 +45,38 @@ describe("conversión (§9.2)", () => {
     expect(grande.byteLength).toBeGreaterThan(5 * 1024 * 1024);
   });
 
-  test("salen exactamente tres versiones", () => {
-    expect(procesada.versiones).toHaveLength(3);
+  test("salen exactamente cuatro versiones", () => {
+    expect(procesada.versiones).toHaveLength(4);
   });
 
-  test.each(TAMANOS.map((t) => [t.sufijo, t.ancho] as const))(
-    "%s: es WEBP y mide %ipx de ancho",
-    (sufijo, ancho) => {
-      const v = procesada.versiones.find((x) => x.sufijo === sufijo)!;
-      // «RIFF» son los cuatro primeros bytes de un WEBP. Mirar la extensión
-      // no probaría nada: la pone quien guarda.
-      expect(v.cuerpo.subarray(0, 4).toString("ascii")).toBe("RIFF");
-      expect(v.ancho).toBe(ancho);
-    },
-  );
+  test.each(
+    TAMANOS.filter((t) => t.sufijo !== "og").map(
+      (t) => [t.sufijo, t.ancho] as const,
+    ),
+  )("%s: es WEBP y mide %ipx de ancho", (sufijo, ancho) => {
+    const v = procesada.versiones.find((x) => x.sufijo === sufijo)!;
+    // «RIFF» son los cuatro primeros bytes de un WEBP. Mirar la extensión
+    // no probaría nada: la pone quien guarda.
+    expect(v.cuerpo.subarray(0, 4).toString("ascii")).toBe("RIFF");
+    expect(v.ancho).toBe(ancho);
+  });
 
-  test("las tres pesan menos que el original", () => {
-    expect(
-      procesada.versiones.every((v) => v.bytes < grande.byteLength),
-    ).toBe(true);
+  // F3.9: la única que NO es WEBP, y por eso se prueba aparte. Si esta
+  // afirmación se cae, la ficha vuelve a compartirse sin foto.
+  test("og: es JPEG y mide exactamente 1200×630", () => {
+    const og = procesada.versiones.find((x) => x.sufijo === "og")!;
+    // FF D8 FF: los tres primeros bytes de todo JPEG.
+    expect([...og.cuerpo.subarray(0, 3)]).toEqual([0xff, 0xd8, 0xff]);
+    expect({ ancho: og.ancho, alto: og.alto }).toEqual({
+      ancho: 1200,
+      alto: 630,
+    });
+  });
+
+  test("las cuatro pesan menos que el original", () => {
+    expect(procesada.versiones.every((v) => v.bytes < grande.byteLength)).toBe(
+      true,
+    );
   });
 });
 
@@ -89,7 +102,15 @@ describe("`withoutEnlargement` (§9.2)", () => {
     expect(anchoDe("detail")).toBe(300);
   });
 
+  // La `og` es la excepción y tiene que serlo: su lienzo es fijo, así que una
+  // foto de 300px sale centrada sobre el burdeos y no estirada.
+  test("la og igual sale de 1200×630, con la foto chica centrada", () => {
+    expect(anchoDe("og")).toBe(1200);
+  });
+
   test("las medidas registradas son las reales, no las nominales", () => {
+    // Y NO las del lienzo de la `og`: es de 1200×630 y no cuenta como «la
+    // más grande», porque no es una versión de la galería.
     expect(medidas).toEqual({ ancho: 300, alto: 200 });
   });
 });
@@ -251,7 +272,9 @@ describe("publicación y limpieza (§9.1, §9.4)", () => {
       });
 
       const presentes = await Promise.all(
-        TAMANOS.map(({ sufijo }) => existe(clave(publicada.storageKey, sufijo))),
+        TAMANOS.map(({ sufijo }) =>
+          existe(clave(publicada.storageKey, sufijo)),
+        ),
       );
       expect(presentes).toEqual(TAMANOS.map(() => true));
     });
@@ -422,11 +445,12 @@ describe("publicación y limpieza (§9.1, §9.4)", () => {
 
       await borrarImagenDeVariante(publicada.id);
 
-      expect(await Promise.all(claves.map(existe))).toEqual([
-        false,
-        false,
-        false,
-      ]);
+      // Se deriva de la tabla y no se escriben tres `false`: el día que
+      // F3.9 sumó la cuarta versión, una lista a mano habría dejado pasar un
+      // `-og.jpg` huérfano en Storage sin que nadie se enterara.
+      expect(await Promise.all(claves.map(existe))).toEqual(
+        TAMANOS.map(() => false),
+      );
 
       const quedan = await db.execute(
         sql`SELECT id FROM variant_images WHERE id = ${publicada.id}`,

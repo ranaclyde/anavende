@@ -15,6 +15,7 @@
     "db:drizzle": "tsx scripts/verificar-drizzle.mts",
     "seed": "NODE_OPTIONS=--conditions=react-server tsx scripts/sembrar-catalogo.mts",
     "seed:limpiar": "NODE_OPTIONS=--conditions=react-server tsx scripts/sembrar-catalogo.mts --limpiar",
+    "og:productos": "NODE_OPTIONS=--conditions=react-server tsx scripts/derivar-og-productos.mts",
     "db:reset": "supabase db reset && drizzle-kit migrate && tsx scripts/verificar-esquema.mts",
     "dev:stack": "supabase start",
     "dev:stack:stop": "supabase stop",

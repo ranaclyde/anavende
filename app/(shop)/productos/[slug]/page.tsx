@@ -65,26 +65,60 @@ function unColor(valor: string | string[] | undefined): string | undefined {
 }
 
 /**
- * Las fotos que representan al producto — F3.9.
+ * La foto que representa al producto — F3.9.
  *
- * **Las de la primera variante que tenga alguna**, y no las del color que
- * pidió la dirección: el `canonical` de esta página es la ficha sin `?color=`,
- * así que la vista previa que se comparte tiene que ser siempre la misma. Si
- * cambiara con el color, la misma página tendría dos caras según el enlace por
- * el que se llegó, y el que quede primero en la caché de WhatsApp gana.
+ * **La primera de la primera variante que tenga alguna**, y no la del color
+ * que pidió la dirección: el `canonical` de esta página es la ficha sin
+ * `?color=`, así que la vista previa que se comparte tiene que ser siempre la
+ * misma. Si cambiara con el color, la misma página tendría dos caras según el
+ * enlace por el que se llegó, y el que quede primero en la caché de WhatsApp
+ * gana.
  *
- * Puede venir vacío, y es un estado real: F2.4 da de alta el producto y las
+ * **UNA y no las cinco, desde el 2026-09-22.** Open Graph admite varias y el
+ * primero es el que se usa, así que las otras cuatro no las miraba nadie y
+ * sumaban cuatro `og:image` al `<head>` de cada ficha.
+ *
+ * **Y es la versión `-og.jpg`, no la de la galería**: WhatsApp no dibuja
+ * vistas previas en WEBP, que es lo que destapó la prueba en producción de ese
+ * día. El detalle está en `modules/media/tamanos.ts`.
+ *
+ * Puede venir vacía, y es un estado real: F2.4 da de alta el producto y las
  * fotos en dos pasos.
  */
-function fotosDelProducto(ficha: Ficha): { url: string; alt: string }[] {
+/**
+ * Las fotos para schema.org — F3.9.
+ *
+ * **Todas, y en WEBP**, que es justo lo contrario de lo que necesita Open
+ * Graph. No es una inconsistencia: Google lee WEBP sin problema y `Product`
+ * acepta varias imágenes —cuantas más ángulos, mejor entiende qué se vende—,
+ * mientras que la vista previa de un chat muestra UNA y no decodifica WEBP.
+ * Dos consumidores distintos, dos respuestas distintas.
+ */
+function fotosEstructuradas(ficha: Ficha): string[] {
   const conFotos = ficha.variantes.find((v) => v.imagenes.length > 0);
+  return (conFotos?.imagenes ?? []).map((i) => i.grande);
+}
 
-  return (conFotos?.imagenes ?? []).map((i) => ({
-    url: i.grande,
-    // El texto alternativo lo escribe la vendedora y puede no estar (F2.4).
-    // El respaldo dice lo mismo que diría alguien mirando la foto.
-    alt: i.alt ?? `${ficha.nombre} — ${ficha.marca}`,
-  }));
+function fotoDelProducto(
+  ficha: Ficha,
+): { url: string; alt: string; width: number; height: number }[] {
+  const foto = ficha.variantes.find((v) => v.imagenes.length > 0)?.imagenes[0];
+
+  if (!foto) return [];
+
+  return [
+    {
+      url: foto.og,
+      // El texto alternativo lo escribe la vendedora y puede no estar (F2.4).
+      // El respaldo dice lo mismo que diría alguien mirando la foto.
+      alt: foto.alt ?? `${ficha.nombre} — ${ficha.marca}`,
+      // Van declarados porque el lienzo es fijo (TAMANOS.og): sin ellos, quien
+      // arma la tarjeta tiene que bajar la imagen para saber qué forma tiene, y
+      // algunos clientes se caen a la miniatura chica antes que averiguarlo.
+      width: 1200,
+      height: 630,
+    },
+  ];
 }
 
 /**
@@ -127,7 +161,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     resumenDeMetadatos(ficha.descripcionTexto) ||
     `${ficha.nombre} de ${ficha.marca}. ${ZONA_DE_ENTREGA}`;
   const conPrecio = `${formatMoney(ficha.precioFinal)} · ${descripcion}`;
-  const fotos = fotosDelProducto(ficha);
+  const fotos = fotoDelProducto(ficha);
 
   return {
     title: titulo,
@@ -220,10 +254,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
       */}
       <DatosEstructurados
         datos={[
-          productoEstructurado(
-            ficha,
-            fotosDelProducto(ficha).map((f) => f.url),
-          ),
+          productoEstructurado(ficha, fotosEstructuradas(ficha)),
           migas(ficha),
         ]}
       />

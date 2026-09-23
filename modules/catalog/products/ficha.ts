@@ -28,6 +28,9 @@ export type ImagenDeFicha = {
   grande: string;
   /** 200px — la tira de miniaturas de §6.8. */
   miniatura: string;
+  /** 1200×630 en JPEG — la vista previa al compartir (F3.9). No se muestra
+   *  en ninguna pantalla: existe solo para `og:image`. */
+  og: string;
   /** Lo que escribió la vendedora, o `null`: lo completa quien lo muestra. */
   alt: string | null;
 };
@@ -176,6 +179,7 @@ export const leerFicha = cache(async function leerFicha(
       imagenes: v.imagenes.map((i) => ({
         grande: urlDeImagen(i.key, "detail"),
         miniatura: urlDeImagen(i.key, "thumb"),
+        og: urlDeImagen(i.key, "og"),
         alt: i.alt,
       })),
     })),
