@@ -638,7 +638,7 @@ rotulación — **la tarjeta, el catálogo y el precio siguen sin esa pasada**.
 | F3.6 | Enlaces de WhatsApp | 🟡 | `lib/whatsapp.ts`, que es donde §4 lo tenía previsto, y **se hizo junto con F3.5 por decisión tuya**: la ficha no tiene ninguna otra acción, así que sin esto salía una pantalla que no se podía terminar de probar. **Son dos mensajes y no uno**: el de compra —producto, color, cantidad, precio y enlace— y el de **consulta de disponibilidad**, que lleva producto, color y enlace y **no** lleva precio ni cantidad: no se está comprando, y un precio sobre algo que todavía no existe es un precio que después hay que desdecir. El criterio de RF-04 —acentos, saltos de línea y el `$` bien codificados— está probado, y el número se limpia a dígitos venga como venga. Sin número configurado **no se dibuja ningún botón**: `wa.me/` sin destino abre WhatsApp en la nada. **Falta abrir uno en un teléfono con WhatsApp de verdad**: lo verificado es la dirección, no la entrega |
 | F3.7 | Home | ✅ | **Construida y corregida el 2026-09-22**, sobre el lineamiento de F3.8 y con el contenido que definiste: **hero con bloques flotantes** que rotan de categoría destacada —y se frenan al pasarles el mouse o el foco—, la marca, el buscador, **hasta siete chips** de categoría destacada, **una sección por cada una** con una fila de productos, «Destacados», «En oferta», la **hilera de medios de pago** —sólo los que tienen logo— y «Más categorías» con el «Ver todas» apagado. El aviso de zona (RN-10) va arriba, pegado a los chips. Cada bloque **desaparece solo si no tiene qué mostrar**, que es lo que la protege del riesgo P1. **«Más categorías» quedó en píldoras**: las tarjetas con foto esperan a que se decida de dónde sale la imagen de una categoría, postergado a pedido tuyo. Las dos pasadas de §12.4 están hechas: `impeccable` corrigió cinco cosas y `ui-ux-pro-max` encontró que al hero le faltaba el botón de pausa que pide WCAG 2.2.2. El umbral de F3.3 sigue esperando el catálogo real |
 | F3.8 | Rediseño de la tienda desde el canvas aprobado | 🟡 | **Tarea nueva, agregada al plan el 2026-09-08**; abajo está entera. Cuatro pasadas —tokens, estructura del catálogo, ajustes de panel y tarjeta, y encabezado— aplicadas a la capa de tokens, al catálogo y al navbar. **Falta bajarlo a la home, a la sección de categorías, al pie, al carrito y a la ficha**, y eso no se hace de una: cada pantalla lo adopta cuando se construye. **El panel de administración queda afuera**: el rediseño es de la tienda, lo que ve el comprador |
-| F3.9 | SEO: URLs, metadatos, datos estructurados, sitemap | ⬜ | Era F3.8 hasta el 2026-09-08 |
+| F3.9 | SEO: URLs, metadatos, datos estructurados, sitemap | 🟡 | **Hecha el 2026-09-22.** Era F3.8 hasta el 2026-09-08. Están las cuatro partes: **metadatos por ficha** —título, descripción de la descripción real, `canonical` sin `?color=` y vista previa de Open Graph con el precio adelante—, **datos estructurados** —`Product` con su `Offer`, el rastro de migas, y `Organization` y `WebSite` con su buscador en la home—, **`sitemap.xml`** con la home, el catálogo y cada ficha activa, y **`robots.txt`**. Más una **imagen de vista previa de la marca** para lo que no es una ficha, el **`noindex` de todo lo privado** y el `noindex, follow` del catálogo filtrado. **26 tests nuevos**, y uno encontró un error que no se veía: abajo están los cinco hallazgos. Lo que falta para el ✅ es **ver la tarjeta de verdad en WhatsApp**, que necesita el sitio desplegado: lo verificado es que las tres cosas —imagen, nombre y precio— salen en el `<head>` que WhatsApp lee, no la tarjeta dibujada. Es el mismo límite que F3.6 |
 
 > **Compuerta F3:** «una persona ajena al proyecto encuentra un producto
 > concreto usando solo el buscador y los filtros, sin ayuda.» **No se puede
@@ -646,6 +646,132 @@ rotulación — **la tarjeta, el catálogo y el precio siguen sin esa pasada**.
 > productos que elegimos nosotros se aprueba sola. Espera a F2.8.
 
 ---
+
+### El SEO (F3.9), y las cinco cosas que sólo aparecieron probándolo — 2026-09-22
+
+La tarea que faltaba de F3, y la única de la fase que **no agrega un pixel**:
+todo lo que hace se lee en el HTML, no en la pantalla. Por eso no pasa por
+`impeccable` ni por `ui-ux-pro-max` —§12.4 pide esas dos pasadas para cerrar
+una pantalla, y acá no hay ninguna nueva— y por eso lleva tests: un `canonical`
+de más, un `noindex` donde no va o un JSON-LD mal armado no rompen nada, no
+aparecen en la consola y no se ven mirando el sitio. Se enteraría Google, meses
+después.
+
+**Qué quedó.**
+
+| Dónde | Qué dice ahora |
+|---|---|
+| Ficha | Título con producto y marca, descripción sacada de la que escribió la vendedora, `canonical` **sin `?color=`**, Open Graph con la foto y el **precio adelante**, y `Product` + `BreadcrumbList` en JSON-LD |
+| Catálogo | `canonical` normalizado; **`noindex, follow`** apenas hay un filtro, una búsqueda u otro orden |
+| Home | `canonical`, vista previa de la marca, y `Organization` + `WebSite` con el buscador del sitio |
+| Todo el sitio | `robots.txt`, `sitemap.xml` y una imagen de vista previa de 1200×630 |
+| Lo privado | Carrito, checkout, orden, «Mi cuenta», las pantallas de sesión y mantenimiento salen `noindex, nofollow` |
+
+**1. El `<lastmod>` salía con el formato de Postgres, y ningún buscador lo
+acepta.** Una consulta cruda devuelve los `timestamptz` como los escribe
+Postgres —`2026-09-22 23:16:33.078552+00`, con un espacio en el medio y sin la
+`T`— y Next escribe en el mapa **lo que reciba** salvo que sea un `Date`
+(`resolve-route-data.js`). El tipo decía `Date` y TypeScript no podía
+desmentirlo: `db.execute<T>` es un molde, no una comprobación. Lo encontró el
+test, que es el único lugar donde eso se mira. Ahora la fecha la formatea
+Postgres con `to_char(… AT TIME ZONE 'UTC')` y el tipo dice `string`, que es lo
+que de verdad viaja.
+
+**2. La imagen de vista previa no llegaba a las páginas que importan.** Puesta
+como `app/opengraph-image.png` —la vía que Next ofrece sola— aparecía en
+`/ingresar` y **no** en la home, el catálogo ni la ficha. El motivo está en la
+documentación de Next y es fácil de leer al revés: los metadatos se mezclan
+**campo por campo**, así que una pantalla que declara su propio `openGraph`
+reemplaza el del layout **entero**, con la imagen que Next había inyectado
+adentro. Se mudó a `public/marca/og.png` y se nombra una sola vez en
+`OPEN_GRAPH_BASE`, que todas esparcen. Se vio en el navegador, que es donde se
+podía ver.
+
+**3. WhatsApp lee el `<head>`, y Next manda los metadatos DESPUÉS del cuerpo.**
+En una página que se arma en cada pedido, Next transmite los metadatos aparte y
+los inyecta cuando resuelven, para que el contenido llegue antes. Medido acá:
+con un navegador común el `</head>` termina en el byte 4.486 y el `og:title`
+aparece en el 43.256 —**fuera del head**—. Un lector de vistas previas que sólo
+parsea el encabezado no vería nada, y el «Hecho cuando» de esta tarea se caería
+sin que nadie lo notara. **No pasa, y conviene saber por qué**: Next desactiva
+esa transmisión para los rastreadores que reconoce por *user agent*, y
+`WhatsApp` está en su lista junto con `facebookexternalhit`, `Twitterbot` y
+`Slackbot` (`html-bots.js`). Comprobado con las dos: con `WhatsApp/2.23` el
+`og:title` sale en el byte 4.686, adentro del head. **Si algún día se toca
+`htmlLimitedBots` en la configuración, esto se rompe en silencio.**
+
+**4. El mapa del sitio consulta la base, así que va `force-dynamic`.** Es la
+trampa exacta de F2.7b con `/mantenimiento`: sin esa línea Next lo
+prerrenderiza al compilar, la consulta corre donde no hay `DATABASE_URL`
+(§18.2), y la construcción se cae en Coolify sin haberse caído en `next dev`.
+Verificado con `DATABASE_URL= npx next build`, que es la regla de la casa.
+
+**5. El precio de la vista previa envejece, y por eso está en un solo lado.**
+WhatsApp guarda la tarjeta la primera vez que alguien manda el enlace y no
+vuelve a pedirla: un mensaje viejo puede mostrar un precio viejo. Por eso el
+precio va en `og:description` —donde es la única forma de que se vea— y **no**
+en la descripción de Google, donde lo pone el dato estructurado, que además
+dice la moneda y si hay stock, y no depende de la caché de nadie.
+
+**Las decisiones, y por qué.**
+
+- **Los filtros no se indexan, pero se rastrean.** Cada combinación es una
+  dirección distinta con el contenido de las otras, y son infinitas: indexarlas
+  reparte entre cientos de páginas casi iguales lo que tendría que ir a una.
+  Salen `noindex, follow`, que es lo contrario de prohibirlas en `robots.txt`:
+  los enlaces a las fichas de adentro se siguen igual.
+- **Lo privado NO está en `robots.txt`, y es al revés de lo que parece.** Un
+  `Disallow` impide entrar, no indexar: la dirección puede quedar en el índice
+  si alguien la enlaza, y el buscador nunca va a leer que no la queremos porque
+  nunca va a entrar a leerla. El `noindex` de la propia pantalla es el que sí
+  saca, y para eso el rastreo tiene que estar permitido. En `robots.txt` quedan
+  sólo `/admin`, `/api` y `/emails`, que no son páginas de nadie.
+- **La paginación sí se indexa.** La página 2 es contenido que no está en
+  ninguna otra parte; marcarla `noindex` esconde productos.
+- **El rastro de migas es el que se ve**, «Catálogo › Categoría › Producto», sin
+  un «Inicio» que la pantalla no tiene. La categoría apunta a la misma
+  dirección que el enlace de la miga, armada con la misma función.
+- **Sin `sku`.** El catálogo no tiene código de artículo, y usar el `slug`
+  sería declarar como identificador de comercio algo que cambia al corregir un
+  nombre.
+- **`Organization` y no `Store` ni `LocalBusiness`**: los dos piden dirección
+  postal y horario, y acá no hay local. Declarar un tipo y no cumplir sus
+  campos es peor que declarar el general y cumplirlo entero.
+- **La imagen de vista previa no lleva texto adentro.** El nombre ya viaja en
+  `og:title` y se muestra al lado de la miniatura; repetirlo obligaría a
+  incrustar una fuente para que el dibujo salga igual en cualquier máquina. Es
+  el isotipo blanco sobre el burdeos, derivada del logo con
+  `scripts/derivar-og.mts` para que no se separe de la marca.
+- **Con la tienda cerrada, `robots.txt` y `sitemap.xml` devuelven 503**, como
+  todo lo demás (F2.7b): el proxy no los exceptúa. Es lo correcto —un buscador
+  lee 503 como «volvé más tarde» y no toca lo que tiene indexado— y es otro
+  motivo para que el modo mantenimiento no quede puesto semanas.
+
+**Lo que esto necesita de afuera ya está puesto, y conviene no desarmarlo.** La
+regla de Cloudflare que cierra la tienda al tráfico de fuera de Argentina
+exceptúa a los **bots verificados** —arriba, en F1.16—, y ahí adentro están
+Googlebot y el robot de Meta que arma la vista previa de WhatsApp. Sin esa
+excepción, todo lo de esta tarea existiría y no lo vería nadie.
+
+**Probado**: `DATABASE_URL= npx next build`, `tsc --noEmit`, `eslint`, los 745
+tests —26 nuevos— y el sitio servido con `next start`: `robots.txt` y
+`sitemap.xml` enteros, el `canonical` de una ficha con y sin `?color=`, el
+`noindex` del catálogo filtrado y su ausencia en el limpio y en la página 2, el
+JSON-LD de la home y de la ficha, y la descripción larga probada con una
+descripción puesta a mano en un producto sembrado **y borrada después**. Los
+productos que creó el test se borraron: la base quedó como estaba.
+
+**Lo que falta para el ✅**: ver la tarjeta dibujada en WhatsApp, con el sitio
+desplegado. Lo verificado es que las tres cosas que pide el «Hecho cuando»
+—imagen, nombre y precio— están donde WhatsApp las busca.
+
+**Pendiente detectado: las categorías no tienen dirección propia.** El filtro
+ES la dirección (§10.2) y lleva el UUID adentro —`/productos?categoria=f9e2…`—,
+así que la página de «Teclados» no existe como tal y, con la regla de arriba,
+tampoco se indexa. Para vender por buscador eso es lo que más se nota: «teclados
+en Viedma» no tiene a dónde llegar. Cambiarlo es de otra tarea —tocaría la
+lectura de filtros, la consulta, la barra y la home— y **no se hace por mi
+cuenta**. Queda anotado para decidirlo.
 
 ### El rediseño de la tienda (F3.8)
 

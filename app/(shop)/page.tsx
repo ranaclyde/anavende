@@ -2,6 +2,7 @@ import { Truck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DatosEstructurados } from "@/components/seo/datos-estructurados";
 import { BotonFavorito } from "@/components/shop/favorito";
 import { BloquesDelHero } from "@/components/shop/home/hero";
 import { HileraDePagos } from "@/components/shop/home/pagos";
@@ -12,17 +13,31 @@ import {
 import { SearchBox } from "@/components/shop/search-box";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
 import { Button } from "@/components/ui/button";
+import { organizacion, sitio } from "@/lib/datos-estructurados";
+import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE } from "@/lib/seo";
 import { getIdentity } from "@/lib/session";
 import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
 import { leerHome } from "@/modules/catalog/products/home";
 import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
 
+const DESCRIPCION =
+  "Insumos informáticos nuevos, en caja: teclados, mouses, auriculares, cables y accesorios. Entrega en Viedma, Carmen de Patagones y alrededores.";
+
 export const metadata: Metadata = {
   // Sin `title`: el layout pone «AnaVende» de base y le agrega « · AnaVende»
   // a todo lo demás (`app/layout.tsx`). Con uno propio acá la pestaña decía
   // «AnaVende · AnaVende».
-  description:
-    "Insumos informáticos nuevos, en caja: teclados, mouses, auriculares, cables y accesorios. Entrega en Viedma, Carmen de Patagones y alrededores.",
+  description: DESCRIPCION,
+  // F3.9: la home es la única página del sitio que puede ser «/» y también
+  // «/?algo», porque es a donde llega cualquier enlace con parámetros de
+  // campaña pegados. El canónico las junta a todas en una.
+  alternates: { canonical: "/" },
+  openGraph: {
+    ...OPEN_GRAPH_BASE,
+    url: "/",
+    title: NOMBRE_DEL_SITIO,
+    description: DESCRIPCION,
+  },
 };
 
 /**
@@ -83,6 +98,13 @@ export default async function Home() {
 
   return (
     <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8">
+      {/*
+        F3.9 — quién vende y dónde se busca. Van en la home y no en el layout
+        a propósito: son la declaración del sitio, y repetirla en cada pantalla
+        sería decir trescientas veces lo mismo.
+      */}
+      <DatosEstructurados datos={[organizacion(), sitio()]} />
+
       {/* ── El hero: el catálogo, la marca y el buscador (§7.1) ────── */}
       <section className="flex flex-col items-center gap-5 pb-10 text-center">
         <BloquesDelHero conjuntos={datos.hero} />

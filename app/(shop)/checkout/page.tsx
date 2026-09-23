@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { Avisos } from "@/components/shop/carrito/avisos";
 import { Checkout } from "@/components/shop/checkout/checkout";
 import { formatMoney, type Money } from "@/lib/money";
+import { FUERA_DEL_INDICE } from "@/lib/seo";
 import { getIdentity, getSession } from "@/lib/session";
 import { leerCarrito, type ItemDelCarrito } from "@/modules/cart/queries";
 import { revisarCarrito } from "@/modules/cart/revision";
@@ -15,7 +16,11 @@ import { mediosDePagoDeLaTienda } from "@/modules/settings/queries";
 import { MAXIMO_DE_DIRECCIONES } from "@/modules/users/direcciones/constantes";
 import { listarDirecciones } from "@/modules/users/direcciones/operaciones";
 
-export const metadata: Metadata = { title: "Confirmá tu pedido" };
+export const metadata: Metadata = {
+  title: "Confirmá tu pedido",
+  // F3.9: es de una persona y de un momento, no del sitio.
+  robots: FUERA_DEL_INDICE,
+};
 
 /**
  * El checkout — FS RF-11 · TS §8.4, §8.5. Tarea F6.1.

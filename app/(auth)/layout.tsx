@@ -1,6 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Isotipo } from "@/components/shop/logo";
+import { FUERA_DEL_INDICE } from "@/lib/seo";
+
+/**
+ * Ninguna de estas pantallas va al índice de un buscador (F3.9). Va en el
+ * layout y no en cada página: los metadatos se heredan campo por campo, así
+ * que alcanza con declararlo una vez y las páginas siguen poniendo su título.
+ */
+export const metadata: Metadata = { robots: FUERA_DEL_INDICE };
 
 /**
  * Layout de identidad — pantallas de ingreso, registro y recuperación.

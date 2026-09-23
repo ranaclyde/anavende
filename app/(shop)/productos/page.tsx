@@ -12,6 +12,7 @@ import { SelectorDeOrden } from "@/components/shop/selector-de-orden";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
 import { Button } from "@/components/ui/button";
 import {
+  catalogoIndexable,
   hayFiltrosDeTienda,
   leerFiltrosDeTienda,
   POR_PAGINA,
@@ -24,12 +25,52 @@ import {
   leerPaginaDelCatalogo,
 } from "@/modules/catalog/products/tienda";
 import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
+import { OPEN_GRAPH_BASE, ZONA_DE_ENTREGA } from "@/lib/seo";
 import { getIdentity } from "@/lib/session";
 
-export const metadata: Metadata = {
-  title: "Catálogo",
-  description: "Teclados, mouses, auriculares y cables. Entrega en Viedma, Carmen de Patagones y alrededores.",
-};
+const TITULO = "Catálogo";
+const DESCRIPCION = `Teclados, mouses, auriculares y cables. ${ZONA_DE_ENTREGA}`;
+
+/**
+ * Metadatos del catálogo — F3.9, RNF-04.
+ *
+ * **Dependen de los filtros**, y por eso son una función y no un objeto: la
+ * misma pantalla es la portada del catálogo o el resultado de una búsqueda
+ * según lo que traiga la dirección, y las dos cosas no se anuncian igual.
+ *
+ * Dos instrucciones, y las dos salen de `catalogoIndexable`:
+ *
+ *   · **El `canonical` es la dirección NORMALIZADA**, no la que llegó.
+ *     `urlDeTienda` reescribe los filtros en su orden, sin repetidos y sin lo
+ *     que vale lo de siempre, así que `?marca=a&marca=a&orden=relevancia` y
+ *     `?marca=a` declaran la misma página. Sin eso, cada forma de escribir el
+ *     mismo filtro es una página distinta.
+ *   · **`noindex, follow` en todo lo filtrado.** El motivo entero está en
+ *     `catalogoIndexable`; acá solo se aplica.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<ParametrosDeBusqueda>;
+}): Promise<Metadata> {
+  const filtros = leerFiltrosDeTienda(await searchParams);
+  const ruta = urlDeTienda(filtros);
+
+  return {
+    title: TITULO,
+    description: DESCRIPCION,
+    alternates: { canonical: ruta },
+    ...(catalogoIndexable(filtros)
+      ? {}
+      : { robots: { index: false, follow: true } }),
+    openGraph: {
+      ...OPEN_GRAPH_BASE,
+      url: ruta,
+      title: TITULO,
+      description: DESCRIPCION,
+    },
+  };
+}
 
 /**
  * Catálogo — F3.8, RF-02, §7.2, §10.2.
@@ -267,4 +308,3 @@ function Vacio({
     </div>
   );
 }
-

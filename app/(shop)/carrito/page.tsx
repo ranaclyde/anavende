@@ -13,13 +13,18 @@ import { Precio } from "@/components/shop/precio";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney, type Money } from "@/lib/money";
+import { FUERA_DEL_INDICE } from "@/lib/seo";
 import { getIdentity, getSession } from "@/lib/session";
 import { leerCarrito, type ItemDelCarrito } from "@/modules/cart/queries";
 import { revisarCarrito } from "@/modules/cart/revision";
 import { TOPE_POR_ITEM } from "@/modules/cart/schemas";
 import { urlDeImagen } from "@/modules/media/subir";
 
-export const metadata: Metadata = { title: "Tu carrito" };
+export const metadata: Metadata = {
+  title: "Tu carrito",
+  // F3.9: es de una persona y de un momento, no del sitio.
+  robots: FUERA_DEL_INDICE,
+};
 
 /**
  * El carrito — F5.5, F5.6, RF-08, DESIGN-REFERENCE §7.4.

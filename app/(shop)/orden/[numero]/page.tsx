@@ -7,13 +7,18 @@ import { RenglonDelPedido } from "@/components/shop/compras/renglon";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { formatMoney } from "@/lib/money";
+import { FUERA_DEL_INDICE } from "@/lib/seo";
 import { getIdentity, getSession } from "@/lib/session";
 import { enlaceDeWhatsApp, mensajeDeOrden } from "@/lib/whatsapp";
 import { formaDeEntrega } from "@/modules/orders/entrega";
 import { leerOrdenDelComprador } from "@/modules/orders/queries";
 import { emailDeAvisos, numeroDeWhatsApp } from "@/modules/settings/queries";
 
-export const metadata: Metadata = { title: "Pedido registrado" };
+export const metadata: Metadata = {
+  title: "Pedido registrado",
+  // F3.9: es de una persona y de un momento, no del sitio.
+  robots: FUERA_DEL_INDICE,
+};
 
 type Props = { params: Promise<{ numero: string }> };
 

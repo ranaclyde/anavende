@@ -3,17 +3,31 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, RotateCcw } from "lucide-react";
 
+import { DatosEstructurados } from "@/components/seo/datos-estructurados";
 import { Compra } from "@/components/shop/ficha/compra";
 import { Descripcion } from "@/components/shop/ficha/descripcion";
 import { Precio } from "@/components/shop/precio";
 import { Button } from "@/components/ui/button";
-import { urlDelSitio } from "@/lib/env";
+import {
+  migas,
+  producto as productoEstructurado,
+} from "@/lib/datos-estructurados";
 import { formatMoney } from "@/lib/money";
+import {
+  OPEN_GRAPH_BASE,
+  resumenDeMetadatos,
+  urlAbsoluta,
+  ZONA_DE_ENTREGA,
+} from "@/lib/seo";
 import { getIdentity } from "@/lib/session";
 import { AREA_TACTIL, cn } from "@/lib/utils";
 import { mirar } from "@/modules/cart/pendiente";
 import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
-import { leerFicha, varianteInicial } from "@/modules/catalog/products/ficha";
+import {
+  leerFicha,
+  varianteInicial,
+  type Ficha,
+} from "@/modules/catalog/products/ficha";
 import { esFavorito } from "@/modules/users/favoritos/queries";
 import {
   mediosDePagoDeLaTienda,
@@ -51,11 +65,51 @@ function unColor(valor: string | string[] | undefined): string | undefined {
 }
 
 /**
- * Metadatos — lo mínimo para que el título del navegador y una pestaña
- * guardada digan qué producto es. **Los datos estructurados, la imagen de
- * Open Graph y el `canonical` son F3.9**, que es la tarea de SEO: meterlos
- * acá a medias daría una vista previa de WhatsApp incompleta, que es peor que
- * ninguna.
+ * Las fotos que representan al producto — F3.9.
+ *
+ * **Las de la primera variante que tenga alguna**, y no las del color que
+ * pidió la dirección: el `canonical` de esta página es la ficha sin `?color=`,
+ * así que la vista previa que se comparte tiene que ser siempre la misma. Si
+ * cambiara con el color, la misma página tendría dos caras según el enlace por
+ * el que se llegó, y el que quede primero en la caché de WhatsApp gana.
+ *
+ * Puede venir vacío, y es un estado real: F2.4 da de alta el producto y las
+ * fotos en dos pasos.
+ */
+function fotosDelProducto(ficha: Ficha): { url: string; alt: string }[] {
+  const conFotos = ficha.variantes.find((v) => v.imagenes.length > 0);
+
+  return (conFotos?.imagenes ?? []).map((i) => ({
+    url: i.grande,
+    // El texto alternativo lo escribe la vendedora y puede no estar (F2.4).
+    // El respaldo dice lo mismo que diría alguien mirando la foto.
+    alt: i.alt ?? `${ficha.nombre} — ${ficha.marca}`,
+  }));
+}
+
+/**
+ * Metadatos de la ficha — F3.5 y **F3.9**, RNF-04.
+ *
+ * Lo que F3.5 dejó anotado como pendiente está acá: el `canonical`, la vista
+ * previa de Open Graph y, en la pantalla, los datos estructurados.
+ *
+ * **El `canonical` no lleva `?color=`.** Cada color es una vista del mismo
+ * producto —cambia la foto y el stock, no el producto—, así que las cinco
+ * direcciones de un producto de cinco colores son una sola página. Sin esta
+ * línea, un buscador las trata como cinco páginas casi idénticas y reparte
+ * entre ellas lo que tendría que ir a una.
+ *
+ * **El precio va adelante de la descripción de Open Graph, y solo ahí.** Es lo
+ * que pide el «Hecho cuando» de F3.9: quien recibe el enlace por WhatsApp
+ * tiene que ver imagen, nombre y precio sin abrirlo, y WhatsApp solo muestra
+ * el título, la descripción y la foto. En la descripción de Google no va: ahí
+ * el precio lo pone el dato estructurado, que además dice la moneda y si hay
+ * stock, y se actualiza sin depender de ninguna caché.
+ *
+ * **Y por eso mismo el precio de la vista previa envejece**: WhatsApp guarda
+ * la tarjeta la primera vez que alguien manda el enlace y no vuelve a
+ * pedirla. Un mensaje viejo puede mostrar un precio viejo. Lo que manda es
+ * siempre la página, que se abre a un toque de distancia.
  *
  * `leerFicha` está envuelta en `cache()`, así que esta consulta y la de la
  * página son la misma.
@@ -64,15 +118,38 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const ficha = await leerFicha(slug);
 
+  // Un 404 no se indexa por definición, pero el título se ve en la pestaña.
   if (!ficha) return { title: "Producto no encontrado" };
 
-  const resumen = ficha.descripcionTexto.trim().replace(/\s+/g, " ");
+  const ruta = `/productos/${ficha.slug}`;
+  const titulo = `${ficha.nombre} — ${ficha.marca}`;
+  const descripcion =
+    resumenDeMetadatos(ficha.descripcionTexto) ||
+    `${ficha.nombre} de ${ficha.marca}. ${ZONA_DE_ENTREGA}`;
+  const conPrecio = `${formatMoney(ficha.precioFinal)} · ${descripcion}`;
+  const fotos = fotosDelProducto(ficha);
 
   return {
-    title: `${ficha.nombre} — ${ficha.marca}`,
-    description: resumen
-      ? resumen.slice(0, 155)
-      : `${ficha.nombre} de ${ficha.marca}. Entrega en Viedma, Carmen de Patagones y alrededores.`,
+    title: titulo,
+    description: descripcion,
+    alternates: { canonical: ruta },
+    openGraph: {
+      ...OPEN_GRAPH_BASE,
+      url: ruta,
+      title: titulo,
+      description: conPrecio,
+      // Sin fotos queda la tarjeta de la marca, que es el respaldo de
+      // `OPEN_GRAPH_BASE`: un producto recién creado todavía no tiene
+      // ninguna (F2.4 da de alta en dos pasos) y mandar el enlace pelado es
+      // peor que mandar el logo.
+      ...(fotos.length > 0 ? { images: fotos } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: titulo,
+      description: conPrecio,
+      ...(fotos.length > 0 ? { images: fotos } : {}),
+    },
   };
 }
 
@@ -136,6 +213,21 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
 
   return (
     <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+      {/*
+        F3.9 — el producto y su rastro de migas, para quien lee el HTML sin
+        ojos. No se ve ni ocupa lugar: es el mismo contenido de la pantalla,
+        dicho en el vocabulario de schema.org.
+      */}
+      <DatosEstructurados
+        datos={[
+          productoEstructurado(
+            ficha,
+            fotosDelProducto(ficha).map((f) => f.url),
+          ),
+          migas(ficha),
+        ]}
+      />
+
       <Migas categoria={ficha.categoria} categoriaId={ficha.categoriaId} />
 
       <Compra
@@ -144,7 +236,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
           marca: ficha.marca,
           // ABSOLUTA: viaja adentro de un mensaje de WhatsApp, donde una
           // dirección relativa no lleva a ninguna parte.
-          url: `${urlDelSitio()}/productos/${ficha.slug}`,
+          url: urlAbsoluta(`/productos/${ficha.slug}`),
           ruta: `/productos/${ficha.slug}`,
           // Ya formateado: ver el comentario de arriba sobre `decimal.js`.
           precioFinalFormateado: formatMoney(ficha.precioFinal),
