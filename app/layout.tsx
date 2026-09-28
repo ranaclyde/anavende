@@ -1,21 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { urlDelSitio } from "@/lib/env";
+import { inter } from "@/lib/fuente";
 import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE, ZONA_DE_ENTREGA } from "@/lib/seo";
 
 const siteUrl = urlDelSitio();
-
-// DESIGN-REFERENCE §3.3 y §12.3: una sola familia, pesos 400, 500 y 600.
-// No se carga 700 ni superior.
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-});
 
 const DESCRIPCION = `Teclados, mouses, auriculares, cables y memorias. ${ZONA_DE_ENTREGA}`;
 
