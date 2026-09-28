@@ -32,6 +32,17 @@ RUN npm ci
 FROM ${NODE_IMAGE} AS builder
 WORKDIR /app
 
+# Los certificados raíz del sistema, SOLO en esta etapa. La imagen slim no los
+# trae, y a Node no le hacen falta porque viene con los suyos; pero
+# `sentry-cli`, que sube los *source maps* al final del build (F1.15), es un
+# binario aparte que usa los del sistema. Sin ellos falla con «unable to get
+# local issuer certificate» y el build termina igual, sin mapas: pasó en el
+# primer despliegue con Sentry (2026-09-28). En la Mac nunca se ve, porque
+# macOS sí los trae. Va antes de los COPY para que Docker reutilice la capa.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
