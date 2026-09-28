@@ -149,7 +149,14 @@ export default withSentryConfig(nextConfig, {
   // de Next—: el build tarda más, pero la pila se lee entera.
   widenClientFileUpload: true,
 
-  silent: !process.env.CI,
+  /*
+   * Siempre con log, no solo en CI como trae la guía. El build que importa es
+   * el de Coolify, que no define `CI`: con `!process.env.CI` el plugin callaba
+   * ahí todo —la subida y también el motivo cuando no sube—, y el primer
+   * despliegue no subió ningún mapa sin dejar una sola línea que dijera por
+   * qué (2026-09-28).
+   */
+  silent: false,
   // Sin datos de uso del propio plugin hacia Sentry.
   telemetry: false,
 });

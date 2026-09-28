@@ -62,6 +62,12 @@ ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL} \
 ARG SENTRY_ORG
 ARG SENTRY_PROJECT
 ARG SENTRY_AUTH_TOKEN
+# El commit que se despliega, para que cada error en Sentry diga de qué
+# versión viene. El `.dockerignore` deja `.git` afuera, así que el plugin no
+# lo puede averiguar solo; Sentry reconoce esta variable de Coolify por su
+# nombre. Coolify la pasa si está prendido «Include Source Commit in Build»;
+# si no, llega vacía y los errores quedan sin versión, nada más.
+ARG SOURCE_COMMIT
 
 RUN npm run build
 
