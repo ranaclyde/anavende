@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 /**
@@ -114,4 +115,41 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1", "192.168.68.107"],
 };
 
-export default nextConfig;
+/**
+ * Sentry al construir — F1.15, TECHNICAL-SPEC §19.
+ *
+ * Lo que agrega es la subida de los *source maps*: sin ellos, un error de
+ * producción llega con el código minificado —`a.b is not a function` en la
+ * línea 1 de un archivo con nombre de hash— y no hay forma de saber dónde
+ * pasó. Después de subirlos los BORRA del build (`deleteSourcemapsAfterUpload`
+ * viene prendido), así que el código fuente no queda servido al público.
+ *
+ * **Sin `SENTRY_AUTH_TOKEN` no sube nada y el build termina igual**, con un
+ * aviso. Es lo que pasa en desarrollo y en `DATABASE_URL= npx next build`, y
+ * es lo que tiene que pasar: la clave solo existe en Coolify. Organización,
+ * proyecto y clave llegan por variables de entorno y no escritos acá porque el
+ * repositorio es público —los dos primeros no son secretos, pero así viven
+ * juntos con el tercero, en un solo lugar—.
+ */
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  /*
+   * Los eventos del navegador salen hacia la propia tienda y de ahí a Sentry.
+   * Directo a `sentry.io` los frenan los bloqueadores de publicidad, y un
+   * error que no llega es uno que no existe. `proxy.ts` excluye esta ruta:
+   * pasar por la sesión de Supabase en cada evento no sirve de nada, y en modo
+   * mantenimiento recibiría un 503 justo cuando más interesa enterarse.
+   */
+  tunnelRoute: "/monitoring",
+
+  // Sube también los mapas de lo que no es nuestro —dependencias, internos
+  // de Next—: el build tarda más, pero la pila se lee entera.
+  widenClientFileUpload: true,
+
+  silent: !process.env.CI,
+  // Sin datos de uso del propio plugin hacia Sentry.
+  telemetry: false,
+});

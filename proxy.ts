@@ -12,7 +12,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Todo menos los estáticos de Next, el favicon y las imágenes.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Todo menos los estáticos de Next, el favicon, las imágenes y el túnel
+    // de Sentry (`tunnelRoute` en `next.config.ts`).
+    "/((?!_next/static|_next/image|favicon.ico|monitoring|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

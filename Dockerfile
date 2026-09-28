@@ -54,6 +54,15 @@ ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL} \
     NEXT_TELEMETRY_DISABLED=1 \
     NODE_ENV=production
 
+# Sentry sube los *source maps* al construir (F1.15, `next.config.ts`). Van
+# como ARG y NO como ENV a propósito: un ARG llega a los RUN de esta etapa
+# como variable de entorno y no queda escrito en la imagen, y esta etapa
+# encima no viaja al servidor. La clave no tiene nada que hacer en ejecución.
+# Sin ellas el build termina igual, con los mapas sin subir.
+ARG SENTRY_ORG
+ARG SENTRY_PROJECT
+ARG SENTRY_AUTH_TOKEN
+
 RUN npm run build
 
 
