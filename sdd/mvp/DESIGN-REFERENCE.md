@@ -955,6 +955,14 @@ Hay un caso en que abrir un diálogo no lo decide quien mira la pantalla: **el a
 
 **La regla, para el próximo diálogo que quiera abrirse solo:** si lo abre una acción de quien mira, es estado del cliente; si lo abre de dónde se viene, va en la dirección, y quien lo cierra lo limpia.
 
+#### 6.14.2 Buscar se hace en un diálogo de alto fijo (2026-09-30)
+
+**Una búsqueda con lista de resultados no se pinta en la página.** Los buscadores de la orden —productos en la orden manual y en una orden activa, y la cuenta del comprador— dibujaban la lista debajo del campo, y cada búsqueda empujaba el resto del formulario o de la orden hacia abajo. Ahora un botón abre un diálogo con el campo arriba y los resultados abajo (`components/admin/ordenes/nueva/busqueda.tsx`).
+
+- **Alto fijo**, `min(40rem, 85svh)`: el diálogo no crece ni se achica mientras se escribe. Lo único que scrollea es la lista, y cuando no hay lista, la misma caja dice qué escribir o que no hubo coincidencias.
+- **Si elegir lleva a un segundo paso, el paso va adentro del mismo diálogo**, con «Volver» que encuentra la búsqueda como estaba. Nunca un diálogo encima de otro.
+- **Elegir varios deja el diálogo abierto** y marca lo ya elegido; elegir uno solo lo cierra.
+
 ### 6.15 Avisos flotantes
 
 **La biblioteca es `sonner`**, la misma que usa shadcn (decisión tuya del 2026-09-21, después de ver una versión propia que no se distinguía lo suficiente). Pone la cola, el apilado, el reloj que se detiene con el puntero encima, arrastrar para descartar, el foco, el `aria-live` y su propia regla de `prefers-reduced-motion`. El proyecto pone el aspecto y las palabras.
