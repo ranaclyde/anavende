@@ -99,13 +99,21 @@ export function EditarElRenglon({
         <span className="sr-only">Quitar {item.nombre} de la orden</span>
       </Button>
 
+      {/* `key` con la cantidad: los dos diálogos arrancan su selector desde
+          `item.cantidad`, y ese estado se calcula una sola vez, al montar.
+          Sin la clave, después de sumar o bajar la tabla mostraba el número
+          nuevo y el diálogo seguía con el viejo — el teclado agregado con 1
+          y subido a 2 abría «bajar» con un 0 escondido detrás del «1» del
+          selector, y el servidor lo rechazaba (2026-09-30). */}
       <DialogoDeSubir
+        key={`subir-${item.cantidad}`}
         abierto={abierto === "subir"}
         cerrar={() => setAbierto(null)}
         numero={numero}
         item={item}
       />
       <DialogoDeCantidad
+        key={`bajar-${item.cantidad}`}
         abierto={abierto === "cantidad"}
         cerrar={() => setAbierto(null)}
         numero={numero}

@@ -1831,6 +1831,18 @@ solo título por paso; sin scroll horizontal y sin errores de consola. A 390
 los nombres ya no se truncan, porque se comían el color. Sin confirmar nada:
 ni órdenes cargadas ni renglones agregados.
 
+**Y un bug que ya estaba, y que encontraste probando esto**: en la orden
+activa, subir o bajar la cantidad de un renglón dos veces seguidas mandaba el
+número viejo. Los diálogos de subir y bajar se montan con la página y calculan
+su selector una sola vez, desde la cantidad de ese momento; después de un
+cambio, la tabla mostraba lo nuevo y el diálogo seguía con lo anterior. El
+teclado agregado con 1 y subido a 2 abría «bajar» con un 0 escondido detrás
+del «1» del selector, y el servidor lo rechazaba. **El caso sin error era
+peor**: con 2, subido a 3, «bajar» decía «Bajar a 1» y sacaba dos unidades en
+vez de una. Arreglado con una `key` por cantidad en `editar-item.tsx`, que
+rearma los dos diálogos cuando cambia el renglón. Reproducido con Playwright
+sin el arreglo y verificado con él (2 → 3 → «Bajar a 2» → 2).
+
 ### El `UPDATE` de stock le pegaba a variantes ajenas (F7.4, 2026-09-16)
 
 **Lo encontró el repaso en el navegador**, cargando la primera orden manual de
