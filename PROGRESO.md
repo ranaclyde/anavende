@@ -1803,6 +1803,34 @@ el patrón que usa la mayoría y quién se aparta.
 
 ---
 
+### Los buscadores de la orden pasan a un diálogo (2026-09-30)
+
+**Pedido tuyo, con las dos capturas delante**: en la orden manual y al agregar
+a una orden activa, la lista de productos se pintaba debajo del campo y cada
+búsqueda corría todo para abajo. En la orden activa, además, elegir abría un
+diálogo encima del buscador que seguía en la página. **Los tres buscadores
+—productos en las dos pantallas y la cuenta del comprador— se abren ahora con
+un botón, en un diálogo de alto fijo** donde lo único que scrollea es la lista.
+La regla quedó en DR §6.14.2.
+
+- **Orden manual, productos:** «Agregar productos», debajo de los renglones.
+  **El diálogo queda abierto después de elegir** (decisión tuya): una venta a
+  mano suele ser de varios. Elegir no vacía la búsqueda, lo elegido queda
+  marcado «Ya en la orden» y el pie dice qué se agregó.
+- **Orden activa:** un solo diálogo con dos pasos —buscar, y después cantidad y
+  efecto en el stock—; «Volver» encuentra la búsqueda como estaba.
+- **Comprador:** «Asociar una cuenta»; elegir cierra el diálogo, porque una
+  orden tiene una sola cuenta.
+
+La búsqueda en sí no cambió: la pausa al escribir y el descarte de respuestas
+viejas, que estaban escritos dos veces, quedaron en `useBusqueda`.
+**Verificado con Playwright** contra el stack local, a 1280 y a 390: el alto
+del diálogo no cambia entre vacío, con resultados y sin coincidencias; el foco
+arranca en el campo, pasa a la cantidad y vuelve al campo con «Volver»; un
+solo título por paso; sin scroll horizontal y sin errores de consola. A 390
+los nombres ya no se truncan, porque se comían el color. Sin confirmar nada:
+ni órdenes cargadas ni renglones agregados.
+
 ### El `UPDATE` de stock le pegaba a variantes ajenas (F7.4, 2026-09-16)
 
 **Lo encontró el repaso en el navegador**, cargando la primera orden manual de

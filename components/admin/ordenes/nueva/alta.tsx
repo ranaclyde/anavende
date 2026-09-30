@@ -11,7 +11,7 @@ import {
   CamposDeDireccion,
 } from "@/components/admin/ordenes/nueva/direccion";
 import { BuscadorDeComprador } from "@/components/admin/ordenes/nueva/buscador-comprador";
-import { BuscadorDeVariantes } from "@/components/admin/ordenes/nueva/buscador-variantes";
+import { AgregarProductos } from "@/components/admin/ordenes/nueva/buscador-variantes";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Campo, Opcion } from "@/components/admin/formulario";
@@ -104,6 +104,15 @@ export function AltaDeOrdenManual() {
   // recibirlo: quien escribe «150000,50» tiene que ver su total enseguida, no
   // después de averiguar que acá el separador es el punto.
   const total = sum(renglones.map(subtotalDelRenglon));
+
+  // Para que el buscador marque lo que ya se eligió. El mismo color puede
+  // estar en dos renglones —a precios distintos, por ejemplo—, así que se
+  // cuentan en vez de marcarse sí o no.
+  const enLaOrden = new Map<string, number>();
+  for (const r of renglones) {
+    const id = r.variante.variantId;
+    enLaOrden.set(id, (enLaOrden.get(id) ?? 0) + 1);
+  }
 
   function agregar(variante: VarianteParaLaOrden) {
     setRenglones((previos) => [
@@ -213,12 +222,10 @@ export function AltaDeOrdenManual() {
   return (
     <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
       <TarjetaDeSeccion id="productos" titulo="Productos">
-        <BuscadorDeVariantes id={`${idBase}-items`} alElegir={agregar} />
-
         {renglones.length === 0 ? (
           <p className="rounded-panel-card border border-dashed border-border px-3 py-6 text-center text-body-sm text-ink-secondary">
-            Buscá un producto arriba para agregarlo. Podés cambiarle el precio:
-            lo que se guarda es lo que se cobró.
+            Agregá los productos de la venta. Podés cambiarles el precio: lo que
+            se guarda es lo que se cobró.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -243,6 +250,15 @@ export function AltaDeOrdenManual() {
             ))}
           </ul>
         )}
+
+        {/* Debajo de la lista y no arriba: los renglones son lo que se
+            revisa, y el botón queda donde termina lo que ya se cargó. */}
+        <AgregarProductos
+          id={`${idBase}-items`}
+          renglones={renglones.length}
+          enLaOrden={enLaOrden}
+          alElegir={agregar}
+        />
 
         <FieldError id={`${idBase}-items-error`}>{e.items}</FieldError>
 
