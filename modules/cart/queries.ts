@@ -104,7 +104,7 @@ export async function leerCarrito(userId: string): Promise<Carrito> {
         JOIN product_variants v ON v.id = ci.variant_id
         JOIN products p         ON p.id = v.product_id
         JOIN brands b           ON b.id = p.brand_id
-        LEFT JOIN colors co     ON co.id = v.color_id
+        LEFT JOIN variant_colors co ON co.variant_id = v.id
         LEFT JOIN LATERAL (
           SELECT i.storage_key
             FROM variant_images i

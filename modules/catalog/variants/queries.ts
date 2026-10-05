@@ -29,9 +29,16 @@ export type VarianteDelPanel = {
   id: string;
   /** `null` = variante única: el producto no se vende por color (RF-16). */
   colorId: string | null;
+  /** El segundo de una variante de dos colores; `null` = de un solo color. */
+  secondaryColorId: string | null;
+  /** «Negro/Rojo» si es de dos (la vista `variant_colors`). */
   colorName: string | null;
   colorHex: string | null;
-  /** RN-11b: un color inactivo no puede estar en una variante activa. */
+  colorHex2: string | null;
+  /**
+   * RN-11b: un color inactivo no puede estar en una variante activa. Con dos
+   * colores, es el de los dos.
+   */
   colorIsActive: boolean | null;
   stockTotal: number;
   reservedStock: number;
@@ -72,8 +79,10 @@ export async function variantesDelProducto(
     db.execute<FilaDeVariante>(sql`
       SELECT v.id,
              v.color_id          AS "colorId",
+             v.secondary_color_id AS "secondaryColorId",
              c.name              AS "colorName",
              c.hex_code          AS "colorHex",
+             c.hex_code_2        AS "colorHex2",
              c.is_active         AS "colorIsActive",
              v.stock_total       AS "stockTotal",
              v.reserved_stock    AS "reservedStock",
@@ -90,9 +99,9 @@ export async function variantesDelProducto(
              (SELECT count(*) FROM cart_items ci
                WHERE ci.variant_id = v.id)::int             AS carritos
         FROM product_variants v
-        LEFT JOIN colors c           ON c.id = v.color_id
+        LEFT JOIN variant_colors c   ON c.variant_id = v.id
         LEFT JOIN product_variants f ON f.id = v.images_source_id
-        LEFT JOIN colors cf          ON cf.id = f.color_id
+        LEFT JOIN variant_colors cf  ON cf.variant_id = f.id
        WHERE v.product_id = ${productId}
        -- La variante única (sin color) va primero: en un producto de un solo
        -- color es la única fila, y en uno de varios no debería existir.
@@ -143,6 +152,7 @@ export type VarianteParaReponer = {
   /** `null` = variante única: el producto no se vende por color (RF-16). */
   colorName: string | null;
   colorHex: string | null;
+  colorHex2: string | null;
   stockTotal: number;
   reservedStock: number;
   /** `stock_total − reserved_stock` (§8.1). Puede ser negativo (RF-24). */
@@ -171,11 +181,12 @@ export async function variantesParaReponer(
     SELECT v.id,
            c.name  AS "colorName",
            c.hex_code AS "colorHex",
+           c.hex_code_2 AS "colorHex2",
            v.stock_total    AS "stockTotal",
            v.reserved_stock AS "reservedStock",
            (v.stock_total - v.reserved_stock) AS disponible
       FROM product_variants v
-      LEFT JOIN colors c ON c.id = v.color_id
+      LEFT JOIN variant_colors c ON c.variant_id = v.id
      WHERE v.product_id = ${productId}
      -- El mismo orden que la ficha: por nombre de color, y la variante única
      -- —sin color— primero, que es la que está sola cuando está.

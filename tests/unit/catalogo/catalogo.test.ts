@@ -214,3 +214,43 @@ describe("oferta", () => {
     expect(await buscar({ oferta: true })).toEqual(["dos"]);
   });
 });
+
+/**
+ * Variantes de dos colores (2026-10-05). Va al final y arma su propio
+ * producto: agregarlo arriba cambiaría los conteos de todo lo anterior.
+ */
+describe("una variante de dos colores", () => {
+  let azul: string, amarillo: string;
+
+  beforeAll(async () => {
+    [azul, amarillo] = [await unColor("Azul"), await unColor("Amarillo")];
+    const id = await unProducto({
+      slug: "cinco",
+      marca: marcaX,
+      categoria: catA,
+      precio: "3000.00",
+    });
+    await db.execute(sql`
+      INSERT INTO product_variants (product_id, color_id, secondary_color_id, stock_total)
+      VALUES (${id}, ${azul}, ${amarillo}, 5)`);
+  });
+
+  test("el filtro la encuentra por el primer color", async () => {
+    expect(await buscar({ color: [azul] })).toEqual(["cinco"]);
+  });
+
+  test("y también por el segundo", async () => {
+    expect(await buscar({ color: [amarillo] })).toEqual(["cinco"]);
+  });
+
+  test("la tarjeta recibe un solo punto, con las dos tintas y el nombre compuesto", async () => {
+    const pagina = await leerPaginaDelCatalogo({
+      ...FILTROS_DE_TIENDA_VACIOS,
+      q: T,
+      color: [azul],
+    });
+    expect(pagina.productos[0].colores).toEqual([
+      { nombre: `Azul ${T}/Amarillo ${T}`, hex: "#1c1e21", hex2: "#1c1e21" },
+    ]);
+  });
+});

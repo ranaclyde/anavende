@@ -73,10 +73,13 @@ async function contarUso(tipo: TipoDeItem, id: string) {
           // Contarlo sin mirar `v.is_active` bloquearía desactivar un color
           // que ya nadie muestra —su variante está apagada— sin ninguna
           // forma de saber por qué desde la pantalla.
+          //
+          // Cuenta también como SEGUNDO color (2026-10-05): el rojo de una
+          // variante «Negro/Rojo» está tan en uso como el de una «Rojo».
           sql`SELECT bool_or(v.is_active AND p.is_active) AS is_active
                 FROM product_variants v
                 JOIN products p ON p.id = v.product_id
-               WHERE v.color_id = ${id}
+               WHERE ${id} IN (v.color_id, v.secondary_color_id)
                GROUP BY p.id`;
 
   const [fila] = await db.execute<{ activos: number; total: number }>(sql`

@@ -38,10 +38,16 @@ export type ImagenDeFicha = {
 export type VarianteDeFicha = {
   /** Lo que agrega al carrito (F5.5): el renglón del carrito es la variante. */
   id: string;
-  /** Lo que va en `?color=`. `null` si el producto no viene en colores. */
+  /**
+   * Lo que va en `?color=`. `null` si el producto no viene en colores. En una
+   * variante de dos colores es `negro-rojo` y el nombre es «Negro/Rojo»: los
+   * arma la vista `variant_colors`.
+   */
   colorSlug: string | null;
   colorNombre: string | null;
   colorHex: string | null;
+  /** El segundo color, para partir la esfera. `null` = de un solo color. */
+  colorHex2: string | null;
   /** `stock_total − reserved_stock` (§8.1). Puede ser NEGATIVO — ver RF-24. */
   disponible: number;
   /**
@@ -81,6 +87,7 @@ type FilaDeVariante = {
   colorSlug: string | null;
   colorNombre: string | null;
   colorHex: string | null;
+  colorHex2: string | null;
   disponible: number;
   imagenes: { key: string; alt: string | null }[];
 };
@@ -136,6 +143,7 @@ export const leerFicha = cache(async function leerFicha(
                      'colorSlug',   co.slug,
                      'colorNombre', co.name,
                      'colorHex',    co.hex_code,
+                     'colorHex2',   co.hex_code_2,
                      'disponible',  v.stock_total - v.reserved_stock,
                      -- §9.5: una variante puede mostrar las fotos de otra.
                      -- Sin el coalesce, la que reutiliza sale sin ninguna.
@@ -155,7 +163,7 @@ export const leerFicha = cache(async function leerFicha(
                      )
                    ) AS fila
               FROM product_variants v
-              LEFT JOIN colors co ON co.id = v.color_id
+              LEFT JOIN variant_colors co ON co.variant_id = v.id
              WHERE v.product_id = p.id AND v.is_active
           ) x
       ) vs ON true
@@ -172,6 +180,7 @@ export const leerFicha = cache(async function leerFicha(
       colorSlug: v.colorSlug,
       colorNombre: v.colorNombre,
       colorHex: v.colorHex,
+      colorHex2: v.colorHex2,
       disponible: v.disponible,
       // Las URLs se arman ACÁ y no en el componente: `urlDeImagen` necesita
       // el adaptador de almacenamiento, que es código de servidor, y la

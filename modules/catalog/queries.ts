@@ -117,7 +117,8 @@ export async function listarCategorias(
 export async function listarColores(
   pagina = 1,
 ): Promise<{ items: ItemDeCatalogo[]; total: number }> {
-  // Un color se usa a través de las VARIANTES, no de los productos. Se cuenta
+  // Un color se usa a través de las VARIANTES, no de los productos —como
+  // primer color o como segundo de una variante de dos (2026-10-05)—. Se cuenta
   // el producto una sola vez aunque tenga dos variantes de ese color —no
   // puede, por `variant_product_color_key`, pero el DISTINCT deja la consulta
   // correcta si esa restricción cambiara.
@@ -143,7 +144,8 @@ export async function listarColores(
            count(DISTINCT p.id) FILTER (WHERE NOT (p.is_active AND v.is_active))
              ::int AS inactivos
       FROM ${colors} c
-      LEFT JOIN product_variants v ON v.color_id = c.id
+      LEFT JOIN product_variants v
+        ON c.id IN (v.color_id, v.secondary_color_id)
       LEFT JOIN products p ON p.id = v.product_id
      GROUP BY c.id
      ORDER BY immutable_unaccent(lower(c.name)), c.id

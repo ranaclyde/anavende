@@ -68,15 +68,15 @@ function esDuplicado(e: unknown): boolean {
 }
 
 /**
- * El índice único es `(product_id, COALESCE(color_id, …))`: un color por
- * producto, y la variante única también. El mensaje habla de lo que la
- * vendedora ve —un color repetido— y no del índice.
+ * El índice único es la combinación de colores SIN ORDEN: un color —o una
+ * combinación de dos— por producto, y la variante única también. El mensaje
+ * habla de lo que la vendedora ve —un color repetido— y no del índice.
  */
 function siEsDuplicado(e: unknown): never {
   if (esDuplicado(e)) {
     throw domainError("VALIDATION", {
       message:
-        "Ese color ya está cargado en este producto. Editá la variante que ya existe en vez de agregar otra.",
+        "Ese color, o esa combinación de colores, ya está cargado en este producto. Editá la variante que ya existe en vez de agregar otra.",
     });
   }
   throw e;
@@ -92,18 +92,24 @@ function siEsDuplicado(e: unknown): never {
 async function verificarColor(
   productId: string,
   colorId: string | null,
+  secondaryColorId: string | null,
   varianteActiva: boolean,
 ) {
   // Sin color no hay nada que comprobar: la variante única no depende del
   // catálogo de colores.
   if (!colorId || !varianteActiva) return;
 
+  // Con dos colores se miran los dos: una variante «Negro/Rojo» con el rojo
+  // inactivo cae en RN-11b igual que una variante «Rojo».
   const [fila] = await db.execute<{
     productoActivo: boolean;
     colorActivo: boolean | null;
+    segundoActivo: boolean | null;
   }>(sql`
     SELECT p.is_active AS "productoActivo",
-           (SELECT is_active FROM colors WHERE id = ${colorId}) AS "colorActivo"
+           (SELECT is_active FROM colors WHERE id = ${colorId}) AS "colorActivo",
+           (SELECT is_active FROM colors
+             WHERE id = ${secondaryColorId}) AS "segundoActivo"
       FROM products p
      WHERE p.id = ${productId}`);
 
@@ -111,13 +117,19 @@ async function verificarColor(
 
   // `null` = el color no existe. La clave foránea lo rechazaría igual, pero
   // con un error de integridad en vez de una frase.
-  if (fila.colorActivo === null) {
+  if (
+    fila.colorActivo === null ||
+    (secondaryColorId && fila.segundoActivo === null)
+  ) {
     throw domainError("NOT_FOUND", {
       message: "El color que elegiste ya no existe. Actualizá la página.",
     });
   }
 
-  if (fila.productoActivo && !fila.colorActivo) {
+  if (
+    fila.productoActivo &&
+    (!fila.colorActivo || (secondaryColorId && !fila.segundoActivo))
+  ) {
     throw domainError("ENTITY_IN_USE", {
       message:
         "Ese color está inactivo, así que no puede tener una variante activa en un producto activo. Activá el color, o guardá la variante como inactiva.",
@@ -131,7 +143,12 @@ export const agregarUnaVariante = action
   .input(crearVariante)
   .auth("admin")
   .handler(async ({ input, ctx }) => {
-    await verificarColor(input.productId, input.colorId, input.isActive);
+    await verificarColor(
+      input.productId,
+      input.colorId,
+      input.secondaryColorId,
+      input.isActive,
+    );
 
     try {
       const id = await db.transaction(async (tx) => {
@@ -144,6 +161,7 @@ export const agregarUnaVariante = action
           .values({
             productId: input.productId,
             colorId: input.colorId,
+            secondaryColorId: input.secondaryColorId,
             // Nace en cero: el número que escribió la vendedora entra abajo,
             // como movimiento.
             isActive: input.isActive,
@@ -185,7 +203,12 @@ export const editarUnaVariante = action
 
     if (!actual) throw domainError("NOT_FOUND");
 
-    await verificarColor(actual.productId, input.colorId, input.isActive);
+    await verificarColor(
+      actual.productId,
+      input.colorId,
+      input.secondaryColorId,
+      input.isActive,
+    );
 
     try {
       await db.transaction(async (tx) => {
@@ -193,6 +216,7 @@ export const editarUnaVariante = action
           .update(productVariants)
           .set({
             colorId: input.colorId,
+            secondaryColorId: input.secondaryColorId,
             isActive: input.isActive,
             updatedAt: new Date(),
           })

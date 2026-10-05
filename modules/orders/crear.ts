@@ -157,7 +157,7 @@ export async function crearOrdenDesdeCarrito(
             JOIN product_variants v ON v.id = ci.variant_id
             JOIN products p         ON p.id = v.product_id
             JOIN brands b           ON b.id = p.brand_id
-            LEFT JOIN colors c      ON c.id = v.color_id
+            LEFT JOIN variant_colors c ON c.variant_id = v.id
            WHERE ci.cart_id = ${carrito.id}
            ORDER BY ci.variant_id
              FOR UPDATE OF ci`)),

@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EsferaDeColor } from "@/components/ui/esfera-de-color";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
@@ -53,6 +54,19 @@ import type {
 
 /** El valor del `<select>` para la variante sin color (RF-16). */
 const UNICO = "unico";
+
+/** El valor del segundo `<select>` cuando la variante es de un solo color. */
+const SIN_SEGUNDO = "";
+
+/**
+ * La combinación de colores, sin orden: «Negro/Rojo» y «Rojo/Negro» son la
+ * misma variante (es lo que dice `variant_product_color_key`). Sirve para
+ * saber qué combinaciones ya se llevó otra variante del producto.
+ */
+function combinacion(primero: string | null, segundo: string | null): string {
+  if (!primero) return UNICO;
+  return segundo ? [primero, segundo].sort().join("+") : primero;
+}
 
 /** «1 unidad» y no «1 unidades», que es lo que se lee en los avisos. */
 function unidades(n: number): string {
@@ -182,7 +196,7 @@ export function VariantesDelProducto({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
-                  <Muestra hex={v.colorHex} />
+                  <Muestra hex={v.colorHex} hex2={v.colorHex2} />
                   <div className="flex min-w-0 flex-col">
                     <span className="truncate font-medium text-ink">
                       {nombreDe(v)}
@@ -311,7 +325,7 @@ function Stock({ variante }: { variante: VarianteDelPanel }) {
 }
 
 /** La muestra de color de §6.5, en chico. Sin color, un ícono. */
-function Muestra({ hex }: { hex: string | null }) {
+function Muestra({ hex, hex2 }: { hex: string | null; hex2: string | null }) {
   if (!hex) {
     return (
       <span className="grid size-8 shrink-0 place-items-center rounded-pill border border-border-strong bg-surface text-ink-secondary">
@@ -321,14 +335,14 @@ function Muestra({ hex }: { hex: string | null }) {
   }
 
   return (
-    <span
-      aria-hidden
-      // El borde no es decorativo, y va en `border-strong` por los DOS lados
-      // del problema: un color claro desaparece sobre la superficie clara del
-      // panel (§6.5), y uno oscuro —que es la mitad del catálogo de
-      // periféricos— desaparece sobre la del modo oscuro.
-      className="size-8 shrink-0 rounded-pill border border-border-strong"
-      style={{ backgroundColor: hex }}
+    // El borde no es decorativo, y va en `border-strong` por los DOS lados
+    // del problema: un color claro desaparece sobre la superficie clara del
+    // panel (§6.5), y uno oscuro —que es la mitad del catálogo de
+    // periféricos— desaparece sobre la del modo oscuro.
+    <EsferaDeColor
+      hex={hex}
+      hex2={hex2}
+      className="size-8 border-border-strong"
     />
   );
 }
@@ -454,7 +468,7 @@ function Vacio({ alAgregar }: { alAgregar: () => void }) {
 
 // ── Alta y edición ──────────────────────────────────────────────────────
 
-type Campo = "colorId" | "stockTotal";
+type Campo = "colorId" | "secondaryColorId" | "stockTotal";
 
 /** Enteros y nada más: no se venden dos unidades y media de un teclado. */
 const ENTERO = /^\d{1,7}$/;
@@ -482,6 +496,7 @@ function DialogoDeVariante({
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
   const [color, setColor] = useState("");
+  const [color2, setColor2] = useState(SIN_SEGUNDO);
   const [stock, setStock] = useState("0");
   const [activa, setActiva] = useState(true);
 
@@ -489,15 +504,30 @@ function DialogoDeVariante({
     if (!abierto) return;
     setErrores(SIN_ERRORES);
     setColor(variante ? (variante.colorId ?? UNICO) : "");
+    setColor2(variante?.secondaryColorId ?? SIN_SEGUNDO);
     setStock(String(variante?.stockTotal ?? 0));
     setActiva(variante?.isActive ?? true);
   }, [abierto, variante]);
 
-  /** Los colores que otra variante de este producto ya se llevó. */
-  const tomados = new Set(
+  /**
+   * Las combinaciones que otra variante de este producto ya se llevó. Un
+   * color suelto está tomado si ya hay una variante de ESE color solo:
+   * «Negro» y «Negro/Rojo» conviven, son dos variantes distintas.
+   */
+  const tomadas = new Set(
     variantes
       .filter((v) => v.id !== variante?.id)
-      .map((v) => v.colorId ?? UNICO),
+      .map((v) => combinacion(v.colorId, v.secondaryColorId)),
+  );
+  const segundo = color2 || null;
+  const conColor = !!color && color !== UNICO;
+
+  /** Los que se ofrecen: los activos, más los que esta variante ya tiene. */
+  const ofrecidos = colores.filter(
+    (c) =>
+      c.isActive ||
+      c.id === variante?.colorId ||
+      c.id === variante?.secondaryColorId,
   );
 
   /**
@@ -536,6 +566,9 @@ function DialogoDeVariante({
 
     const datos = {
       colorId: color === UNICO ? null : color,
+      // Sin primer color no hay segundo, aunque haya quedado elegido de antes
+      // de pasar a «Único».
+      secondaryColorId: conColor ? segundo : null,
       // `Number.parseInt` explícito, que es lo que pide la regla de lint de
       // §7.1: acá no hay un monto sino un conteo de unidades, y el patrón que
       // la regla persigue —convertir `numeric(12,2)` a flotante— no aplica.
@@ -556,10 +589,14 @@ function DialogoDeVariante({
       // Avisa el diálogo y no quien lo cierra: `alCerrar` es también lo que
       // llama «Cancelar», y cancelar no confirma nada. Acá adentro se sabe
       // además si fue alta o edición, y con qué color.
+      const nombre = (id: string | null) =>
+        colores.find((c) => c.id === id)?.name ?? "el color";
       const comoSeLlama =
         color === UNICO
           ? "Único"
-          : (colores.find((c) => c.id === color)?.name ?? "el color");
+          : datos.secondaryColorId
+            ? `${nombre(color)}/${nombre(datos.secondaryColorId)}`
+            : nombre(color);
       avisar(
         variante
           ? `«${comoSeLlama}» quedó con ${unidades(datos.stockTotal)} en total.`
@@ -587,7 +624,11 @@ function DialogoDeVariante({
             <Select
               id={`${idBase}-color`}
               value={color}
-              onChange={(e) => setColor(e.target.value)}
+              onChange={(e) => {
+                setColor(e.target.value);
+                // El segundo no puede repetir al primero.
+                if (e.target.value === color2) setColor2(SIN_SEGUNDO);
+              }}
               aria-invalid={!!errores.campos.colorId || undefined}
               aria-describedby={
                 errores.campos.colorId
@@ -596,21 +637,22 @@ function DialogoDeVariante({
               }
             >
               <option value="">Elegí un color</option>
-              <option value={UNICO} disabled={tomados.has(UNICO)}>
+              <option value={UNICO} disabled={tomadas.has(UNICO)}>
                 Único — no se vende por color
               </option>
-              {colores
-                // Los inactivos no se ofrecen, salvo el que la variante ya
-                // tiene puesto: si desapareciera del selector, guardar se lo
-                // cambiaría sin que nadie lo hubiera pedido.
-                .filter((c) => c.isActive || c.id === variante?.colorId)
-                .map((c) => (
-                  <option key={c.id} value={c.id} disabled={tomados.has(c.id)}>
+              {/* Los inactivos no se ofrecen, salvo el que la variante ya
+                  tiene puesto: si desapareciera del selector, guardar se lo
+                  cambiaría sin que nadie lo hubiera pedido. */}
+              {ofrecidos.map((c) => {
+                const tomado = tomadas.has(combinacion(c.id, segundo));
+                return (
+                  <option key={c.id} value={c.id} disabled={tomado}>
                     {c.name}
-                    {tomados.has(c.id) ? " (ya cargado)" : ""}
+                    {tomado ? " (ya cargado)" : ""}
                     {c.isActive ? "" : " (color inactivo)"}
                   </option>
-                ))}
+                );
+              })}
             </Select>
             {errores.campos.colorId ? (
               <FieldError id={`${idBase}-e-color`}>
@@ -625,11 +667,62 @@ function DialogoDeVariante({
                     (RF-16: una variante sin color es un producto que no se
                     vende por color). */}
                 {hayColores
-                  ? "Los colores se cargan en Catálogo. Un color por producto."
+                  ? "Los colores se cargan en Catálogo. Cada color, o cada combinación, una sola vez por producto."
                   : "Todavía no cargaste ningún color. Podés vender este producto sin colores, o cargarlos en Catálogo → Colores y volver."}
               </FieldHint>
             )}
           </div>
+
+          {conColor && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`${idBase}-color2`}>
+                Segundo color{" "}
+                <span className="font-normal text-ink-secondary">
+                  (opcional)
+                </span>
+              </Label>
+              <Select
+                id={`${idBase}-color2`}
+                value={color2}
+                onChange={(e) => setColor2(e.target.value)}
+                aria-invalid={!!errores.campos.secondaryColorId || undefined}
+                aria-describedby={
+                  errores.campos.secondaryColorId
+                    ? `${idBase}-e-color2`
+                    : `${idBase}-ayuda-color2`
+                }
+              >
+                <option
+                  value={SIN_SEGUNDO}
+                  disabled={tomadas.has(combinacion(color, null))}
+                >
+                  Ninguno — es de un solo color
+                </option>
+                {ofrecidos
+                  .filter((c) => c.id !== color)
+                  .map((c) => {
+                    const tomado = tomadas.has(combinacion(color, c.id));
+                    return (
+                      <option key={c.id} value={c.id} disabled={tomado}>
+                        {c.name}
+                        {tomado ? " (ya cargado)" : ""}
+                        {c.isActive ? "" : " (color inactivo)"}
+                      </option>
+                    );
+                  })}
+              </Select>
+              {errores.campos.secondaryColorId ? (
+                <FieldError id={`${idBase}-e-color2`}>
+                  {errores.campos.secondaryColorId}
+                </FieldError>
+              ) : (
+                <FieldHint id={`${idBase}-ayuda-color2`}>
+                  Para los productos de dos colores, como negro con rojo. En la
+                  tienda se ve la esfera partida en dos.
+                </FieldHint>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${idBase}-stock`}>Stock</Label>

@@ -726,6 +726,7 @@ Color:  Negro
 
 - Muestras circulares de 32px con el hexadecimal del color, y **44px de área táctil** (§9): el relleno alrededor de la muestra es lo que concilia las dos medidas.
 - Los colores claros llevan un borde `--border` de 1px para no desaparecer sobre el blanco.
+- **Una variante de dos colores** («Negro/Rojo», 2026-10-05) lleva la muestra **partida en diagonal**, con corte neto y sin degradé: el primer color arriba a la izquierda y el segundo abajo a la derecha. El corte va de abajo a la izquierda a arriba a la derecha, la diagonal **opuesta** a la barra de «sin stock», así que las dos se cruzan en X y no se confunden. Es una sola pieza, `EsferaDeColor`, la misma en la ficha, la tarjeta y el panel.
 - **El nombre del color se muestra siempre** junto al selector: no se depende del color para identificar la opción.
 - **Un color sin stock SÍ se puede elegir**, con la barra diagonal y el 40% puestos. Decía lo contrario hasta el 2026-09-08, y el cambio tiene un motivo concreto: elegir el color agotado es lo que arma el mensaje de «Preguntá si va a haber» (§7.3, RF-03). Con el color bloqueado, ese estado no se alcanzaba desde ninguna parte de la pantalla. Lo que queda deshabilitado son las acciones de **compra**, no la elección.
 - El 40% va sobre el **relleno del color**, no sobre la muestra entera: con la opacidad afuera, el anillo burdeos del color elegido se destiñe con ella y un producto agotado en su único color se ve sin marcar.

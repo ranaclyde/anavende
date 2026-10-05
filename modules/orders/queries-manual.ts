@@ -74,7 +74,7 @@ export async function buscarVariantesParaLaOrden(
         FROM product_variants v
         JOIN products p    ON p.id = v.product_id
         JOIN brands b      ON b.id = p.brand_id
-        LEFT JOIN colors c ON c.id = v.color_id
+        LEFT JOIN variant_colors c ON c.variant_id = v.id
        WHERE immutable_unaccent(lower(p.name)) ILIKE '%' || ${patron} || '%'
           OR immutable_unaccent(lower(b.name)) ILIKE '%' || ${patron} || '%'
        -- Lo vendible primero, y después por nombre: buscando «teclado», lo

@@ -456,6 +456,7 @@ CREATE TABLE product_variants (
   id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id         uuid NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   color_id           uuid REFERENCES colors(id) ON DELETE RESTRICT,  -- NULL = variante única
+  secondary_color_id uuid REFERENCES colors(id) ON DELETE RESTRICT,  -- «Negro/Rojo»; NULL = un color
   stock_total        integer NOT NULL DEFAULT 0,
   reserved_stock     integer NOT NULL DEFAULT 0,
   images_source_id   uuid REFERENCES product_variants(id) ON DELETE SET NULL, -- RF-16: reutilizar imágenes
@@ -466,10 +467,29 @@ CREATE TABLE product_variants (
 
   CONSTRAINT reserved_not_negative CHECK (reserved_stock >= 0),
   CONSTRAINT reserved_within_total CHECK (stock_total < 0 OR reserved_stock <= stock_total),
-  CONSTRAINT images_source_not_self CHECK (images_source_id <> id)
+  CONSTRAINT images_source_not_self CHECK (images_source_id <> id),
+  CONSTRAINT secondary_color_valid CHECK (
+    secondary_color_id IS NULL OR (color_id IS NOT NULL AND secondary_color_id <> color_id))
 );
+-- La combinación SIN ORDEN: «Negro/Rojo» y «Rojo/Negro» son la misma variante.
 CREATE UNIQUE INDEX variant_product_color_key
-  ON product_variants (product_id, COALESCE(color_id, '00000000-0000-0000-0000-000000000000'::uuid));
+  ON product_variants (product_id,
+    LEAST(COALESCE(color_id, '00000000-0000-0000-0000-000000000000'::uuid),
+          COALESCE(secondary_color_id, '00000000-0000-0000-0000-000000000000'::uuid)),
+    GREATEST(COALESCE(color_id, '00000000-0000-0000-0000-000000000000'::uuid),
+             COALESCE(secondary_color_id, '00000000-0000-0000-0000-000000000000'::uuid)));
+
+-- Lo que leen las pantallas en vez de `colors`: nombre compuesto («Negro/Rojo»),
+-- dirección (`negro-rojo`) y las dos tintas. `is_active` es el de los dos.
+CREATE VIEW variant_colors AS
+SELECT v.id AS variant_id, c1.id AS color_id, c2.id AS secondary_color_id,
+       c1.name || COALESCE('/' || c2.name, '') AS name,
+       c1.slug || COALESCE('-' || c2.slug, '') AS slug,
+       c1.hex_code, c2.hex_code AS hex_code_2,
+       c1.is_active AND COALESCE(c2.is_active, true) AS is_active
+  FROM product_variants v
+  JOIN colors c1 ON c1.id = v.color_id
+  LEFT JOIN colors c2 ON c2.id = v.secondary_color_id;
 
 CREATE TABLE variant_images (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),

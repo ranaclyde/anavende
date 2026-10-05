@@ -379,6 +379,110 @@ describe("contra la base y contra Storage", () => {
     });
   });
 
+  /**
+   * Variantes de dos colores (2026-10-05): «Negro/Blanco». Lo que se prueba es
+   * lo que sostiene la base —el orden no cuenta, el segundo necesita primero
+   * y no lo repite— y lo que arma la vista `variant_colors`.
+   */
+  describe("dos colores", () => {
+    let vMixta = "";
+    let p3 = "";
+
+    // Producto propio: el de arriba ya lo borró «borrar se lleva los
+    // archivos».
+    beforeAll(async () => {
+      p3 = await unaFila(sql`
+        INSERT INTO products (name, slug, brand_id, category_id, price)
+        VALUES ('Producto bicolor', ${`producto-bicolor-${marca}`},
+                ${marcaId}, ${categoriaId}, 1000) RETURNING id`);
+      creados.push(p3);
+      await db.execute(sql`
+        INSERT INTO product_variants (product_id, color_id)
+        VALUES (${p3}, ${negro}), (${p3}, ${blanco})`);
+    });
+
+    test("una variante Negro/Blanco convive con la Negro y la Blanco", async () => {
+      vMixta = await unaFila(sql`
+        INSERT INTO product_variants (product_id, color_id, secondary_color_id)
+        VALUES (${p3}, ${negro}, ${blanco}) RETURNING id`);
+      expect(vMixta).toBeTruthy();
+    });
+
+    test("Blanco/Negro es la misma combinación y se rechaza", async () => {
+      await rechazaLlamada(
+        () =>
+          db.execute(sql`
+            INSERT INTO product_variants (product_id, color_id, secondary_color_id)
+            VALUES (${p3}, ${blanco}, ${negro})`),
+        /variant_product_color_key|duplicate key/i,
+      );
+    });
+
+    test("el segundo color no puede repetir al primero", async () => {
+      await rechazaLlamada(
+        () =>
+          db.execute(sql`
+            INSERT INTO product_variants (product_id, color_id, secondary_color_id)
+            VALUES (${p3}, ${blanco}, ${blanco})`),
+        /secondary_color_valid/i,
+      );
+    });
+
+    test("sin primer color no hay segundo", async () => {
+      await rechazaLlamada(
+        () =>
+          db.execute(sql`
+            INSERT INTO product_variants (product_id, secondary_color_id)
+            VALUES (${p3}, ${blanco})`),
+        /secondary_color_valid/i,
+      );
+    });
+
+    test("la vista arma el nombre, la dirección y las dos tintas", async () => {
+      const [f] = await db.execute<{
+        name: string;
+        slug: string;
+        hex: string;
+        hex2: string;
+      }>(sql`
+        SELECT name, slug, hex_code AS hex, hex_code_2 AS hex2
+          FROM variant_colors WHERE variant_id = ${vMixta}`);
+      expect(f).toEqual({
+        name: `Negro ${marca}/Blanco ${marca}`,
+        slug: `negro-${marca}-blanco-${marca}`,
+        hex: "#111111",
+        hex2: "#eeeeee",
+      });
+    });
+
+    test("la validación dice lo mismo antes de llegar a la base", () => {
+      const base = {
+        productId: crypto.randomUUID(),
+        colorId: negro,
+        stockTotal: 0,
+      };
+      expect(
+        crearVariante.safeParse({ ...base, secondaryColorId: blanco }).success,
+      ).toBe(true);
+      expect(
+        crearVariante.safeParse({ ...base, secondaryColorId: negro }).success,
+      ).toBe(false);
+      expect(
+        crearVariante.safeParse({
+          ...base,
+          colorId: null,
+          secondaryColorId: blanco,
+        }).success,
+      ).toBe(false);
+      // Quien no conoce el campo sigue mandando lo de siempre.
+      expect(crearVariante.parse(base).secondaryColorId).toBeNull();
+    });
+
+    test("se va, para no molestar a los bloques que siguen", async () => {
+      await db.execute(sql`DELETE FROM products WHERE id = ${p3}`);
+    });
+  });
+
   describe("RN-11b sobre colores", () => {
     let p2 = "";
     let vActiva = "";

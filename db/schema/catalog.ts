@@ -216,6 +216,18 @@ export const productVariants = pgTable(
       onDelete: "restrict",
     }),
     /**
+     * El segundo color de una variante de dos: «Negro/Rojo». `NULL` = es de un
+     * solo color. Nunca más de dos (decidido el 2026-10-05).
+     *
+     * Columna y no tabla: con un tope de dos, una tabla aparte sería una
+     * consulta más en cada pantalla para guardar un dato que entra en una
+     * celda. Las pantallas no leen las dos columnas: leen la vista
+     * `variant_colors`, que arma el nombre compuesto y los dos códigos.
+     */
+    secondaryColorId: uuid("secondary_color_id").references(() => colors.id, {
+      onDelete: "restrict",
+    }),
+    /**
      * SIN check de no-negatividad, a propósito (§5.4). RF-24 exige que la
      * vendedora pueda registrar una venta ya ocurrida aunque el sistema crea
      * que no hay stock: bloquearla la obligaría a mentirle al sistema. Un
@@ -250,12 +262,25 @@ export const productVariants = pgTable(
       sql`${t.stockTotal} < 0 OR ${t.reservedStock} <= ${t.stockTotal}`,
     ),
     check("images_source_not_self", sql`${t.imagesSourceId} <> ${t.id}`),
-    // Un color por producto. El COALESCE hace que la variante única
-    // (color_id NULL) también quede sujeta a la unicidad.
+    // El segundo color sólo existe si hay primero, y no lo repite: «Negro/
+    // Negro» es Negro.
+    check(
+      "secondary_color_valid",
+      sql`${t.secondaryColorId} IS NULL OR (${t.colorId} IS NOT NULL AND ${t.secondaryColorId} <> ${t.colorId})`,
+    ),
+    // Una combinación por producto, SIN IMPORTAR EL ORDEN: «Negro/Rojo» y
+    // «Rojo/Negro» son la misma variante. El orden de carga sólo decide qué
+    // mitad de la esfera ocupa cada uno. Los COALESCE hacen que la variante
+    // única (sin color) y la de un color también queden sujetas a esto.
     uniqueIndex("variant_product_color_key").on(
       t.productId,
-      sql`COALESCE(${t.colorId}, '00000000-0000-0000-0000-000000000000'::uuid)`,
+      sql`LEAST(COALESCE(${t.colorId}, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(${t.secondaryColorId}, '00000000-0000-0000-0000-000000000000'::uuid))`,
+      sql`GREATEST(COALESCE(${t.colorId}, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(${t.secondaryColorId}, '00000000-0000-0000-0000-000000000000'::uuid))`,
     ),
+    // El filtro de la tienda busca por cualquiera de los dos colores.
+    index("variant_secondary_color_idx")
+      .on(t.secondaryColorId)
+      .where(sql`${t.secondaryColorId} IS NOT NULL`),
   ],
 );
 
