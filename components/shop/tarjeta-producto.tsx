@@ -77,6 +77,15 @@ type Props = {
    * el navegador tendría que estar pidiendo primero.
    */
   prioridad?: boolean;
+  /**
+   * Sin carga diferida, pero SIN pedir prioridad: el navegador la trae en su
+   * turno y no espera a que se acerque al pliegue. Es para la primera fila de
+   * la home, que en tableta y escritorio es el LCP —sus tarjetas miden más que
+   * los bloques del hero— y que, diferida, llegaba tarde. Prioridad no: esa ya
+   * la tienen los bloques del hero, y pedirla para las dos cosas es no
+   * pedirla para ninguna.
+   */
+  inmediata?: boolean;
 };
 
 export function TarjetaProducto({
@@ -84,6 +93,7 @@ export function TarjetaProducto({
   accionFavorito,
   noDisponible = false,
   prioridad,
+  inmediata,
 }: Props) {
   const { slug, nombre, marca, imagenKey, color, disponible } = producto;
   const colores = producto.colores ?? [];
@@ -135,6 +145,7 @@ export function TarjetaProducto({
               // Son las tres columnas de §7.2: 2 / 3 / 4.
               sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
               priority={prioridad}
+              loading={inmediata ? "eager" : undefined}
               className={cn(
                 "object-cover",
                 "motion-safe:transition-transform motion-safe:duration-200",
