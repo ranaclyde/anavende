@@ -183,6 +183,7 @@ F10 Endurecimiento y lanzamiento
 | **F2.7** | Configuración del sitio | S | FS RF-20 | Número de WhatsApp, email de avisos y umbral de stock bajo, editables sin desplegar |
 | **F2.7b** | **Modo mantenimiento**, desde la configuración del sitio | S | FS RF-20 · TS §5.7, §6.1 · DR §6.3 | Un interruptor en `/admin/configuracion` deja la tienda fuera de servicio para el público. **La administradora la sigue viendo normal**: mientras carga necesita mirar cada ficha como la va a ver un comprador, que es el motivo entero de la tarea. La página de mantenimiento devuelve **HTTP 503** con `Retry-After`, nunca 200: un 200 le dice a Google que ése es el contenido de todas las páginas y desindexa el sitio. **`(auth)` no se bloquea**: si la administradora está deslogueada y no puede entrar, la única salida es un UPDATE a mano en la base. **Salvo `/registro`, que sí se cierra** (decisión del 2026-09-11): con la tienda cerrada nadie tiene para qué crear una cuenta, y lo que hace falta abierto es entrar y recuperar la contraseña. Va **antes** de F2.8, que es para lo que se pide |
 | **F2.8** | **Cargar el catálogo real** | M | — | Los productos reales de AnaVende, con sus fotos, están cargados |
+| **F2.9** | **Imagen de categoría** (2026-10-05) | S | FS FA-21 · TS §5.4, §9.2 | Se sube, se cambia y se quita desde el diálogo de la categoría, por el mismo camino que el logo de marca, y los archivos viejos se borran de Storage. «Más categorías» de la home pasa a tarjetas con imagen y nombre, prolijas aunque haya categorías sin imagen |
 
 > **F2.7b va antes que F2.8, y no es un orden decorativo.** Sin mantenimiento, la única forma de cargar sin que se vea es dejar todo desactivado — y entonces la vendedora no puede previsualizar ninguna ficha, porque un producto inactivo devuelve 404, y al terminar le esperan doscientos clics de activación uno por uno.
 
@@ -321,6 +322,7 @@ F10 Endurecimiento y lanzamiento
 | **F10.3** | Repaso de accesibilidad | M | FS RNF-02 · DR §9 | Contraste, teclado, foco, textos alternativos, áreas táctiles, zoom al 200%. Ningún estado comunicado solo por color |
 | **F10.4** | Rendimiento | M | FS RNF-03 · TS §20 | LCP bajo 2,5 s en móvil; catálogo con filtros bajo 300 ms. **Revisadas las cascadas de consultas secuenciales**, que ahora cruzan la red |
 | **F10.5** | Repaso de seguridad | M | TS §16 | Cabeceras, rate limiting, verificación de tipo por *magic bytes*, secretos sin `NEXT_PUBLIC_`, Postgres cerrado (revalidar V9) |
+| **F10.5b** | **Frenar las altas falsas** (2026-09-30) | M | TS §16 | **Turnstile de Cloudflare** en el alta, el reenvío del enlace y la recuperación de contraseña, con el captcha nativo de Supabase Auth (`GOTRUE_SECURITY_CAPTCHA_*`). **Un tope de emails por hora** en Auth (`GOTRUE_RATE_LIMIT_EMAIL_SENT`), para que un ataque no se coma el cupo de Resend, y el límite por IP tomando la IP real de Cloudflare y no la del servidor de Next. **Una limpieza periódica** que borra las cuentas sin verificar pasadas 48 horas, y así libera el email si alguien registró una dirección ajena. Verificado: un alta sin token de Turnstile se rechaza, y una cuenta vieja sin verificar desaparece después de la corrida. Los nombres de las variables se confirman contra el compose antes de tocarlo |
 | **F10.6** | Ajustar sharp para el servidor | S | TS §9, R3 | `sharp.concurrency(1)` y `MALLOC_ARENA_MAX=2`. Verificado que subir cinco imágenes seguidas no tumba el contenedor |
 | **F10.7** | Repaso de textos y estados vacíos | M | DR §8, §10 | Todo error, estado vacío y mensaje revisado: voseo, sin jerga, con acción |
 | **F10.8** | Verificar backups y restauración, otra vez | S | TS §19 | Restauración de prueba con datos reales, ya cargados |
@@ -373,13 +375,14 @@ Ordenado por relación entre valor y esfuerzo, no por entusiasmo. Nada de esto e
 | 3 | Expiración automática de reservas de stock | FA-05 |
 | 4 | Caché del catálogo con `cacheComponents`, **con medición previa** | TS §12 |
 | 5 | **Etiquetas de producto (*tags*) y filtro por etiqueta** | FA-20 |
-| 6 | **Imagen chica de categoría**, como referencia en el listado | FA-21 |
-| 7 | Relacionados curados producto a producto | FA-18 |
-| 8 | Recomendados por co-compra, cuando haya volumen de órdenes | FA-17 |
-| 9 | Cupones y promociones | FA-09 |
-| 10 | Pago en línea | FA-01 |
-| 11 | Más atributos de variante además de color | FA-16 |
-| 12 | Entorno de staging | TS §18.2 |
+| 6 | Relacionados curados producto a producto | FA-18 |
+| 7 | Recomendados por co-compra, cuando haya volumen de órdenes | FA-17 |
+| 8 | Cupones y promociones | FA-09 |
+| 9 | Pago en línea | FA-01 |
+| 10 | Más atributos de variante además de color | FA-16 |
+| 11 | Entorno de staging | TS §18.2 |
+
+> **La imagen de categoría (FA-21) salió de esta lista el 2026-10-05**: entró al MVP como F2.9, a pedido tuyo, antes de F8.
 
 > **Por qué las etiquetas están quintas y no últimas.** Son la respuesta a un problema que llega solo: una categoría que crece más que la página. Hoy «Cables» se subdivide por el nombre del producto y la búsqueda tolerante alcanza; el día que «Cables» pase los 24 productos, deja de alcanzar. Es la única de esta lista cuyo momento **lo fija el catálogo y no nosotros**, así que conviene tenerla pensada antes de necesitarla.
 

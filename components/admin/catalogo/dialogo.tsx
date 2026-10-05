@@ -3,7 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
 
-import { DESTACADO, LOGO, PALABRAS } from "@/components/admin/catalogo/copy";
+import {
+  DESTACADO,
+  IMAGEN_DE_CATEGORIA,
+  LOGO,
+  PALABRAS,
+} from "@/components/admin/catalogo/copy";
 import {
   LOGO_SIN_TOCAR,
   SelectorDeLogo,
@@ -34,7 +39,10 @@ import {
   editarUnaMarca,
   editarUnColor,
 } from "@/modules/catalog/actions";
-import { quitarElLogo } from "@/modules/catalog/actions";
+import {
+  quitarElLogo,
+  quitarLaImagenDeCategoria,
+} from "@/modules/catalog/actions";
 import { subirImagen } from "@/modules/media/cliente";
 import type { TipoDeItem } from "@/modules/catalog/schemas";
 
@@ -55,19 +63,31 @@ const EDITAR = {
 const HEX_POR_OMISION = "#8a8a8a";
 
 /**
- * Sube el logo por el Route Handler (§9.1). Devuelve el motivo del fallo, o
- * `null` si salió bien.
+ * Sube el logo de la marca, o la imagen de la categoría (FA-21), por el
+ * Route Handler (§9.1). Devuelve el motivo del fallo, o `null` si salió bien.
  *
  * Sin progreso: un logo pesa poco y la barra aparecería y desaparecería antes
  * de poder leerse. El de las imágenes de producto sí lo usa (RF-17).
  */
 async function subirLogo(
-  brandId: string,
+  tipo: "marca" | "categoria",
+  id: string,
   archivo: File,
 ): Promise<string | null> {
-  const r = await subirImagen({ destino: "marca", brandId }, archivo);
+  const r = await subirImagen(
+    tipo === "marca"
+      ? { destino: "marca", brandId: id }
+      : { destino: "categoria", categoryId: id },
+    archivo,
+  );
   return r.ok ? null : r.message;
 }
+
+/** Quitarlo es un booleano y va por una Server Action, no por el Route Handler. */
+const QUITAR = {
+  marca: quitarElLogo,
+  categoria: quitarLaImagenDeCategoria,
+};
 
 /**
  * Alta y edición de un ítem del catálogo — RF-18.
@@ -144,11 +164,11 @@ export function DialogoDeItem({
       // El logo va después de guardar el nombre, y por dos caminos distintos:
       // subirlo necesita mandar un archivo, así que va por el Route Handler
       // (§9.1); quitarlo es un booleano y va por una Server Action.
-      if (tipo === "marca" && logo.tipo !== "mantener") {
+      if (tipo !== "color" && logo.tipo !== "mantener") {
         const id = item?.id ?? resultado.data.id;
 
         if (logo.tipo === "reemplazar") {
-          const fallo = await subirLogo(id, logo.archivo);
+          const fallo = await subirLogo(tipo, id, logo.archivo);
           if (!fallo) {
             // El Route Handler invalida la caché del servidor, pero un
             // `fetch` —a diferencia de una Server Action— no trae la vista
@@ -163,12 +183,16 @@ export function DialogoDeItem({
             setErrorDelLogo(
               item
                 ? fallo
-                : `${LOGO.falloTrasCrear("La marca", "Editala")} (${fallo})`,
+                : `${
+                    tipo === "marca"
+                      ? LOGO.falloTrasCrear("La marca", "Editala")
+                      : IMAGEN_DE_CATEGORIA.falloTrasCrear
+                  } (${fallo})`,
             );
             return;
           }
         } else {
-          const r = await quitarElLogo({ id });
+          const r = await QUITAR[tipo]({ id });
           if (!r.ok) {
             setErrorDelLogo(r.message);
             return;
@@ -265,9 +289,10 @@ export function DialogoDeItem({
             </div>
           )}
 
-          {tipo === "marca" && (
+          {tipo !== "color" && (
             <SelectorDeLogo
               id={`${idBase}-logo`}
+              palabras={tipo === "categoria" ? IMAGEN_DE_CATEGORIA : LOGO}
               guardado={item?.logoUrl ?? null}
               logo={logo}
               alCambiar={setLogo}
@@ -310,7 +335,11 @@ export function DialogoDeItem({
               variant="brand"
               loading={enviando}
               loadingLabel={
-                logo.tipo === "reemplazar" ? LOGO.subiendo : "Guardando"
+                logo.tipo !== "reemplazar"
+                  ? "Guardando"
+                  : tipo === "categoria"
+                    ? IMAGEN_DE_CATEGORIA.subiendo
+                    : LOGO.subiendo
               }
             >
               {item ? "Guardar" : "Crear"}

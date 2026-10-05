@@ -1,5 +1,6 @@
 import { Truck } from "lucide-react";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 import { DatosEstructurados } from "@/components/seo/datos-estructurados";
@@ -230,12 +231,10 @@ export default async function Home() {
 
         {/* ── Más categorías, con la salida apagada ────────────────── */}
         {/*
-          El boceto las pide como TARJETAS con foto y nombre. Para eso hace
-          falta una imagen de categoría, y `categories` no tiene ninguna: de
-          dónde sale —la foto de uno de sus productos o un campo propio, con
-          su migración y su subida en el panel— quedó postergado a pedido tuyo
-          el 2026-09-22 y está anotado en PROGRESO.md. Hasta entonces, las
-          píldoras que ya funcionaban.
+          TARJETAS con imagen y nombre, como pide el boceto. La imagen es un
+          campo propio de la categoría (FA-21), cargado en el panel, y es
+          opcional: las que no tienen muestran su inicial en el mismo recuadro,
+          así que la fila no se desarma con categorías sin imagen mezcladas.
         */}
         {datos.masCategorias.length > 0 ? (
           <section
@@ -264,14 +263,38 @@ export default async function Home() {
               </Button>
             </div>
 
-            <ul className="flex flex-wrap gap-2">
+            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-8">
               {datos.masCategorias.map((categoria) => (
                 <li key={categoria.id}>
                   <Link
                     href={urlDeTienda({ categoria: [categoria.id] })}
-                    className="flex h-11 items-center rounded-pill border border-border bg-surface px-4 text-body-sm text-ink-secondary transition-colors duration-150 hover:border-brand hover:text-brand"
+                    className="group flex h-full flex-col gap-2 rounded-card bg-surface p-2 shadow-md transition-shadow duration-200 hover:shadow-lg focus-visible:shadow-focus focus-visible:outline-none"
                   >
-                    {categoria.nombre}
+                    {/* Cuadrada siempre, con imagen o sin ella: el aspecto lo
+                        reserva el CSS y la fila no salta cuando cargan (CLS). */}
+                    <span className="relative grid aspect-square place-items-center overflow-hidden rounded-image bg-surface-sunken">
+                      {categoria.imagenUrl ? (
+                        // Decorativa: el nombre va debajo, en texto, y
+                        // repetirlo en el `alt` lo haría leer dos veces (§9).
+                        <Image
+                          src={categoria.imagenUrl}
+                          alt=""
+                          fill
+                          sizes="(min-width: 1024px) 12vw, (min-width: 640px) 25vw, 33vw"
+                          className="object-cover motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-[1.03]"
+                        />
+                      ) : (
+                        <span
+                          aria-hidden
+                          className="text-heading text-ink-tertiary"
+                        >
+                          {categoria.nombre.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </span>
+                    <span className="px-1 pb-1 text-body-sm font-medium break-words hyphens-auto text-ink transition-colors duration-150 group-hover:text-brand">
+                      {categoria.nombre}
+                    </span>
                   </Link>
                 </li>
               ))}

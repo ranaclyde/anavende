@@ -101,6 +101,16 @@ export type MedioDePagoDeLaHome = {
   logoUrl: string;
 };
 
+/**
+ * «Más categorías» (FA-21). `imagenUrl` ya resuelta, o `null`: la imagen es
+ * opcional y la tarjeta tiene que verse prolija sin ella.
+ */
+export type CategoriaEnTarjeta = {
+  id: string;
+  nombre: string;
+  imagenUrl: string | null;
+};
+
 export type DatosDeLaHome = {
   /** Las destacadas, hasta siete: son los chips Y las secciones. */
   destacadas: CategoriaDeLaHome[];
@@ -109,7 +119,7 @@ export type DatosDeLaHome = {
   destacados: ProductoEnTarjeta[];
   ofertas: ProductoEnTarjeta[];
   /** Las demás activas, para la sección del pie. */
-  masCategorias: { id: string; nombre: string }[];
+  masCategorias: CategoriaEnTarjeta[];
   mediosDePago: MedioDePagoDeLaHome[];
 };
 
@@ -154,8 +164,8 @@ export async function leerHome(): Promise<DatosDeLaHome> {
 
       // Las que no están arriba, **y sólo si tienen algo que mostrar**: una
       // categoría vacía nombrada en la home es un enlace a un «no hay nada».
-      db.execute<{ id: string; nombre: string }>(sql`
-        SELECT c.id, c.name AS nombre
+      db.execute<{ id: string; nombre: string; imageKey: string | null }>(sql`
+        SELECT c.id, c.name AS nombre, c.image_key AS "imageKey"
           FROM categories c
          WHERE c.is_active
            ${ids.length ? sql`AND NOT ${enLaLista(sql`c.id`, ids)}` : sql``}
@@ -206,7 +216,10 @@ export async function leerHome(): Promise<DatosDeLaHome> {
 
     destacados: destacados.map(aTarjeta),
     ofertas: ofertas.map(aTarjeta),
-    masCategorias: [...masCategorias],
+    masCategorias: masCategorias.map(({ imageKey, ...categoria }) => ({
+      ...categoria,
+      imagenUrl: urlDeLogo(imageKey, "card"),
+    })),
     mediosDePago: mediosDePago.flatMap(({ logoKey, ...medio }) => {
       const logoUrl = urlDeLogo(logoKey, "thumb");
       return logoUrl ? [{ ...medio, logoUrl }] : [];
