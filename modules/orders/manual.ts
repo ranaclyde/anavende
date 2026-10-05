@@ -91,7 +91,7 @@ async function snapshotDeLasVariantes(
       FROM product_variants v
       JOIN products p    ON p.id = v.product_id
       JOIN brands b      ON b.id = p.brand_id
-      LEFT JOIN colors c ON c.id = v.color_id
+      LEFT JOIN variant_colors c ON c.variant_id = v.id
      WHERE v.id IN (${sql.join(
        ids.map((id) => sql`${id}::uuid`),
        sql`, `,

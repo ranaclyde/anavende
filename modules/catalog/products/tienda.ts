@@ -77,11 +77,16 @@ function condiciones(f: FiltrosDeTienda): SQL {
   // Por eso es un EXISTS y no un JOIN: con el join, un producto que tiene el
   // color en tres variantes aparecería tres veces en la grilla y contaría tres
   // veces en el total.
+  //
+  // **Por cualquiera de los dos colores** (2026-10-05): una variante
+  // «Negro/Rojo» aparece buscando negro y buscando rojo, que es como la
+  // describiría quien la tiene en la mano.
   if (f.color.length) {
     partes.push(sql`EXISTS (
       SELECT 1 FROM product_variants v
        WHERE v.product_id = p.id AND v.is_active
-         AND ${enLaLista(sql`v.color_id`, f.color)}
+         AND (${enLaLista(sql`v.color_id`, f.color)}
+              OR ${enLaLista(sql`v.secondary_color_id`, f.color)})
     )`);
   }
 
@@ -152,7 +157,7 @@ export const UNIONES_DE_TARJETA = sql`
   LEFT JOIN LATERAL (
     SELECT i.storage_key, co.name AS color
       FROM product_variants v
-      LEFT JOIN colors co ON co.id = v.color_id
+      LEFT JOIN variant_colors co ON co.variant_id = v.id
       JOIN variant_images i
         ON i.variant_id = coalesce(v.images_source_id, v.id)
      WHERE v.product_id = p.id AND v.is_active
@@ -166,15 +171,17 @@ export const UNIONES_DE_TARJETA = sql`
   LEFT JOIN LATERAL (
     SELECT coalesce(
              json_agg(
-               json_build_object('nombre', c.nombre, 'hex', c.hex)
+               json_build_object('nombre', c.nombre, 'hex', c.hex,
+                                 'hex2', c.hex2)
                ORDER BY c.nombre
              ),
              '[]'::json
            ) AS lista
       FROM (
-        SELECT DISTINCT co.name AS nombre, co.hex_code AS hex
+        SELECT DISTINCT co.name AS nombre, co.hex_code AS hex,
+               co.hex_code_2 AS hex2
           FROM product_variants v
-          JOIN colors co ON co.id = v.color_id
+          JOIN variant_colors co ON co.variant_id = v.id
          WHERE v.product_id = p.id AND v.is_active
       ) c
   ) cols ON true`;
@@ -189,7 +196,7 @@ export type FilaDeTarjeta = {
   precioFinal: string;
   imagenKey: string | null;
   color: string | null;
-  colores: { nombre: string; hex: string }[] | null;
+  colores: { nombre: string; hex: string; hex2: string | null }[] | null;
   disponible: number;
 };
 
@@ -299,13 +306,18 @@ export async function leerOpcionesDeFiltro(): Promise<{
 
     // `count(DISTINCT p.id)`, no `count(p.id)`: un producto con dos variantes
     // negras se contaría dos veces y el número al lado del color mentiría.
+    //
+    // El filtro ofrece los colores SUELTOS, nunca «Negro/Rojo»: una variante
+    // de dos colores suma en los dos, igual que el filtro la encuentra por
+    // cualquiera (arriba, en `condiciones`).
     db.execute<OpcionDeColor>(sql`
       SELECT co.id,
              co.name              AS nombre,
              co.hex_code          AS hex,
              count(DISTINCT p.id)::int AS cuantos
         FROM colors co
-        JOIN product_variants v ON v.color_id = co.id AND v.is_active
+        JOIN product_variants v
+          ON co.id IN (v.color_id, v.secondary_color_id) AND v.is_active
         JOIN products p ON p.id = v.product_id AND p.is_active
        GROUP BY co.id
        ORDER BY immutable_unaccent(lower(co.name))`),

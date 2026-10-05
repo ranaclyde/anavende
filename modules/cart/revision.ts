@@ -81,7 +81,7 @@ export async function revisarCarrito(userId: string): Promise<Aviso[]> {
           FROM cart_items ci
           JOIN product_variants v ON v.id = ci.variant_id
           JOIN products p         ON p.id = v.product_id
-          LEFT JOIN colors co     ON co.id = v.color_id
+          LEFT JOIN variant_colors co ON co.variant_id = v.id
          WHERE ci.cart_id = ${carrito.id}
            AND v.is_active AND p.is_active
          ORDER BY ci.added_at, ci.id`)),

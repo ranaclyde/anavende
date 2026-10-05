@@ -47,6 +47,7 @@ function unaFicha(cambios: Partial<Ficha> = {}): Ficha {
         colorSlug: "negro",
         colorNombre: "Negro",
         colorHex: "#000000",
+        colorHex2: null,
         disponible: 3,
         imagenes: [],
       },

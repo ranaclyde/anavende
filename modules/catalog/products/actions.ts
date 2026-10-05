@@ -133,7 +133,7 @@ async function verificarColoresDeVariantes(productId: string, activo: boolean) {
   const [fila] = await db.execute<{ n: number }>(sql`
     SELECT count(*)::int AS n
       FROM product_variants v
-      JOIN colors c ON c.id = v.color_id
+      JOIN variant_colors c ON c.variant_id = v.id
      WHERE v.product_id = ${productId} AND v.is_active AND NOT c.is_active`);
 
   if ((fila?.n ?? 0) > 0) {

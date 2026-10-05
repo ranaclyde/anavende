@@ -5,6 +5,7 @@ import { useId, useState, useTransition } from "react";
 
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
+import { EsferaDeColor } from "@/components/ui/esfera-de-color";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -164,10 +165,10 @@ export function ReponerStock({
                       className="flex min-w-0 flex-1 items-center gap-2 text-body-sm text-ink"
                     >
                       {v.colorHex ? (
-                        <span
-                          aria-hidden
-                          style={{ backgroundColor: v.colorHex }}
-                          className="size-4 shrink-0 rounded-pill border border-border"
+                        <EsferaDeColor
+                          hex={v.colorHex}
+                          hex2={v.colorHex2}
+                          className="size-4"
                         />
                       ) : null}
                       <span className="truncate">

@@ -19,6 +19,7 @@ import { BotonFavorito } from "@/components/shop/favorito";
 import { Galeria, comoDesplazar } from "@/components/shop/ficha/galeria";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EsferaDeColor } from "@/components/ui/esfera-de-color";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { cn } from "@/lib/utils";
 import {
@@ -464,15 +465,15 @@ function SelectorDeColor({
                   "peer-focus-visible:shadow-focus",
                 )}
               >
-                <span
-                  className={cn(
-                    // El borde importa en los claros: un punto blanco sobre
-                    // superficie blanca, sin contorno, no existe.
-                    "block size-8 rounded-full border border-border",
-                    agotado ? "opacity-40" : "",
-                  )}
-                  style={{ backgroundColor: v.colorHex ?? "transparent" }}
-                />
+                {v.colorHex ? (
+                  <EsferaDeColor
+                    hex={v.colorHex}
+                    hex2={v.colorHex2}
+                    className={cn("size-8", agotado ? "opacity-40" : "")}
+                  />
+                ) : (
+                  <span className="block size-8 rounded-full border border-border" />
+                )}
               </span>
               {/*
                 La barra diagonal de §6.5. Va sobre la muestra y no la

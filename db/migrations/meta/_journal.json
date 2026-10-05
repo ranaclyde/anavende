@@ -134,6 +134,13 @@
       "when": 1791218618534,
       "tag": "0018_imagen_de_categoria",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791231658610,
+      "tag": "0019_variante_doble_color",
+      "breakpoints": true
     }
   ]
 }

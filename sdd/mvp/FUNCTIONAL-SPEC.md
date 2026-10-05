@@ -140,7 +140,7 @@ Ver detalle en §12 (Fuera de alcance).
 |---|---|---|
 | Categoría | Multiselección | Muestra sólo categorías activas y con al menos un producto, con las **destacadas primero** |
 | Marca | Multiselección | Ídem |
-| Color | Multiselección | Muestra el producto si **alguna** de sus variantes tiene ese color |
+| Color | Multiselección | Muestra el producto si **alguna** de sus variantes tiene ese color, **como primero o como segundo** (una variante «Negro/Rojo» aparece buscando negro y buscando rojo). El filtro ofrece los colores sueltos, nunca las combinaciones |
 | Rango de precio | Mín/Máx | Sobre el precio final (`precio − descuento`) |
 
 **Ordenamiento:**
@@ -508,6 +508,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 
 **Criterios de aceptación:**
 - [ ] Se pueden agregar, editar y quitar variantes de color; el color se elige del catálogo de colores (RF-18).
+- [ ] **Una variante puede ser de dos colores** («Negro/Rojo»), nunca de más (2026-10-05). El segundo se elige al cargar la variante, del mismo catálogo, sin tener que crear la combinación antes. «Negro/Rojo» y «Rojo/Negro» son la misma variante: un producto no puede tener las dos. El orden de carga decide cómo se escribe el nombre y qué mitad de la muestra ocupa cada color, que en la tienda y en el panel se ve **partida en diagonal**.
 - [ ] Cada variante tiene su propio **stock total** editable.
 - [ ] Cada variante admite **hasta 5 imágenes**, con orden definible y una marcada como principal.
 - [ ] Una variante puede configurarse para **reutilizar las imágenes de otra variante** del mismo producto, en lugar de tener las propias. Se ofrecen las variantes que tienen imágenes de verdad —no las que a su vez están reutilizando— y hay que borrar las propias antes: si no, quedarían guardadas sin verse en ninguna parte.

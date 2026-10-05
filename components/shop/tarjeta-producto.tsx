@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Precio } from "@/components/shop/precio";
+import { EsferaDeColor } from "@/components/ui/esfera-de-color";
 import type { Money } from "@/lib/money";
 import { urlDeImagen } from "@/modules/media/subir";
 import { cn } from "@/lib/utils";
@@ -45,7 +46,7 @@ export type ProductoEnTarjeta = {
    * Todos los colores en que existe el producto, para los puntos de §6.1.
    * Distinto de `color`, que es el de la foto que se está mostrando.
    */
-  colores?: { nombre: string; hex: string }[];
+  colores?: { nombre: string; hex: string; hex2?: string | null }[];
   /** `stock_total − reserved_stock` sumado sobre las variantes (§8.1). */
   disponible: number;
 };
@@ -240,7 +241,11 @@ export function TarjetaProducto({
  * Se exporta para el renglón de «Favoritos» (F5.4): la lista dice lo mismo
  * que la tarjeta, con los mismos puntos.
  */
-export function PuntosDeColor({ colores }: { colores: { nombre: string; hex: string }[] }) {
+export function PuntosDeColor({
+  colores,
+}: {
+  colores: { nombre: string; hex: string; hex2?: string | null }[];
+}) {
   if (colores.length === 0) return null;
 
   const MAXIMO = 4;
@@ -255,13 +260,11 @@ export function PuntosDeColor({ colores }: { colores: { nombre: string; hex: str
         «negro, blanco, rojo» sin decir nunca de qué está hablando.
       */}
       {visibles.map((c) => (
-        <span
+        <EsferaDeColor
           key={c.hex + c.nombre}
-          // El borde importa en los claros: un punto blanco sobre superficie
-          // blanca, sin contorno, no existe.
-          className="size-3 rounded-full border border-border"
-          style={{ backgroundColor: c.hex }}
-          aria-hidden="true"
+          hex={c.hex}
+          hex2={c.hex2}
+          className="size-3"
         />
       ))}
       {resto > 0 ? (

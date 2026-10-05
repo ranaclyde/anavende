@@ -34,19 +34,58 @@ const stock = z
 /** `null` = variante única: el producto no se vende por color (RF-16). */
 const colorId = z.uuid("Elegí un color.").nullable();
 
-export const crearVariante = z.object({
-  productId: z.uuid(),
-  colorId,
-  stockTotal: stock,
-  isActive: z.boolean().default(true),
-});
+/**
+ * El segundo color de una variante de dos («Negro/Rojo»). `null` = de un solo
+ * color. Opcional en la entrada para que quien no lo conoce —el alta manual
+ * de una orden, los tests viejos— siga mandando lo mismo de siempre.
+ */
+const secondaryColorId = z
+  .uuid("Elegí el segundo color.")
+  .nullable()
+  .default(null);
 
-export const editarVariante = z.object({
-  id: z.uuid(),
-  colorId,
-  stockTotal: stock,
-  isActive: z.boolean().default(true),
-});
+/**
+ * Lo mismo que el CHECK `secondary_color_valid`, dicho antes de llegar a la
+ * base y con una frase: sin primer color no hay segundo, y no se repite.
+ */
+function segundoValido<
+  T extends { colorId: string | null; secondaryColorId: string | null },
+>(v: T, ctx: z.RefinementCtx) {
+  if (!v.secondaryColorId) return;
+  if (!v.colorId) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["secondaryColorId"],
+      message: "Elegí primero un color. «Único» no lleva segundo color.",
+    });
+  } else if (v.secondaryColorId === v.colorId) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["secondaryColorId"],
+      message: "El segundo color tiene que ser distinto del primero.",
+    });
+  }
+}
+
+export const crearVariante = z
+  .object({
+    productId: z.uuid(),
+    colorId,
+    secondaryColorId,
+    stockTotal: stock,
+    isActive: z.boolean().default(true),
+  })
+  .superRefine(segundoValido);
+
+export const editarVariante = z
+  .object({
+    id: z.uuid(),
+    colorId,
+    secondaryColorId,
+    stockTotal: stock,
+    isActive: z.boolean().default(true),
+  })
+  .superRefine(segundoValido);
 
 export const soloVariante = z.object({ id: z.uuid() });
 
