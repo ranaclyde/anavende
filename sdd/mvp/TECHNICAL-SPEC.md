@@ -1419,6 +1419,7 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 | **Datos personales** | Filtrados del contexto que se envía a Sentry (email, teléfono, dirección) |
 | **Secretos** | Solo en variables de entorno de Coolify. **La clave de servicio de Supabase nunca lleva prefijo `NEXT_PUBLIC_`**: es la única credencial que puede administrar usuarios |
 | **Rate limiting** | En autenticación (Supabase Auth) y en la subida de imágenes |
+| **Altas falsas** | Turnstile de Cloudflare en el alta, el reenvío del enlace y la recuperación, validado por Supabase Auth; un tope de emails por hora para no vaciar el cupo de Resend; y las cuentas sin verificar se borran a las 48 horas (decidido el 2026-09-30, F10.5b) |
 | **Cabeceras** | CSP, `X-Frame-Options`, `Referrer-Policy` y `Strict-Transport-Security` definidas en `next.config.ts` |
 | **Enumeración** | Los mensajes de login y de recuperación no revelan si un email existe (RF-06) |
 | **Red entre servidores** | Postgres escucha solo en la interfaz privada; `pg_hba.conf` restringido a la IP del servidor APP; firewall local en ambos servidores, porque el firewall virtual de DonWeb no cubre la interfaz privada |
