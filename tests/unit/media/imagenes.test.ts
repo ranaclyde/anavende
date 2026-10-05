@@ -437,6 +437,66 @@ describe("publicación y limpieza (§9.1, §9.4)", () => {
     });
   });
 
+  /**
+   * FA-21. Es un destino más de la misma tabla que el logo, así que lo que se
+   * prueba es que esté bien conectado: su columna, su carpeta, y que reemplazar
+   * y quitar limpien igual.
+   */
+  describe("la imagen de categoría (FA-21)", () => {
+    let primera = "";
+    let segunda = "";
+
+    test("se guarda en `categories.image_key`, bajo `categorias/`", async () => {
+      ({ logoKey: primera } = await publicarLogo({
+        destino: "categoria",
+        id: categoriaId,
+        archivo: await jpeg(800, 800, 100),
+      }));
+
+      expect(primera.startsWith(`categorias/${categoriaId}/`)).toBe(true);
+      expect(
+        await Promise.all(
+          TAMANOS_LOGO.map((t) => existe(clave(primera, t.sufijo))),
+        ),
+      ).toEqual([true, true]);
+
+      const [f] = await db.execute<{ imageKey: string }>(
+        sql`SELECT image_key AS "imageKey" FROM categories WHERE id = ${categoriaId}`,
+      );
+      expect(f.imageKey).toBe(primera);
+    });
+
+    test("reemplazarla borra los archivos de la anterior", async () => {
+      ({ logoKey: segunda } = await publicarLogo({
+        destino: "categoria",
+        id: categoriaId,
+        archivo: await jpeg(600, 600, 100),
+      }));
+
+      expect(
+        await Promise.all(
+          TAMANOS_LOGO.map((t) => existe(clave(primera, t.sufijo))),
+        ),
+      ).toEqual([false, false]);
+      expect(await clavesDelLogo("categoria", categoriaId)).toHaveLength(2);
+    });
+
+    test("quitarla borra los archivos y deja la columna en NULL", async () => {
+      await quitarLogo("categoria", categoriaId);
+
+      expect(
+        await Promise.all(
+          TAMANOS_LOGO.map((t) => existe(clave(segunda, t.sufijo))),
+        ),
+      ).toEqual([false, false]);
+
+      const [f] = await db.execute<{ imageKey: string | null }>(
+        sql`SELECT image_key AS "imageKey" FROM categories WHERE id = ${categoriaId}`,
+      );
+      expect(f.imageKey).toBeNull();
+    });
+  });
+
   describe("borrar quita los archivos, no solo la fila (RF-17)", () => {
     test("borrar la imagen la saca también de Storage, y saca la fila", async () => {
       const claves = TAMANOS.map(({ sufijo }) =>

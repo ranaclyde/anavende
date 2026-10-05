@@ -3,7 +3,12 @@ import "server-only";
 import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { brands, productVariants, variantImages } from "@/db/schema/catalog";
+import {
+  brands,
+  categories,
+  productVariants,
+  variantImages,
+} from "@/db/schema/catalog";
 import { paymentMethods } from "@/db/schema/settings";
 import { domainError } from "@/lib/errors";
 import { almacenamiento } from "@/lib/storage";
@@ -330,7 +335,12 @@ export function urlDeImagen(storageKey: string, sufijo: string): string {
   return almacenamiento().publicUrl(clave(storageKey, sufijo));
 }
 
-// ── Logos: marca (RF-18) y medio de pago (RF-19) ────────────────────────
+// ── Logos: marca (RF-18), medio de pago (RF-19) e imagen de categoría ───
+//
+// La imagen de categoría (FA-21) entró después y por la misma puerta: no es
+// un logo, pero tiene exactamente su forma —una por fila, en una columna, y
+// la nueva borra a la anterior—, así que es un destino más de la tabla y no
+// una tercera copia de la secuencia.
 //
 // Se parecen a la imagen de variante y no son iguales, por dos motivos que se
 // notan en el código:
@@ -390,6 +400,23 @@ const LOGOS: Record<
           .set({ logoKey })
           .where(eq(paymentMethods.id, id))
           .returning({ id: paymentMethods.id })
+      ).length > 0,
+  },
+  categoria: {
+    leer: async (id) =>
+      (
+        await db
+          .select({ imageKey: categories.imageKey })
+          .from(categories)
+          .where(eq(categories.id, id))
+      )[0]?.imageKey,
+    escribir: async (id, imageKey) =>
+      (
+        await db
+          .update(categories)
+          .set({ imageKey, updatedAt: new Date() })
+          .where(eq(categories.id, id))
+          .returning({ id: categories.id })
       ).length > 0,
   },
 };

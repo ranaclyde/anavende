@@ -36,8 +36,9 @@ export type ItemDeCatalogo = {
    */
   isFeatured: boolean | null;
   /**
-   * La URL del logo, ya resuelta. `null` = la marca no tiene, o el tipo no
-   * lleva logo. La vista recibe una URL y no una clave a propósito: armarla
+   * La URL del logo, ya resuelta: el de la marca o la imagen de la
+   * categoría (FA-21), que se sube igual. `null` = no tiene, o el tipo no
+   * lleva imagen. La vista recibe una URL y no una clave a propósito: armarla
    * necesita el adaptador de almacenamiento (§9.4), que es código de
    * servidor, y el panel es un componente de cliente.
    */
@@ -88,10 +89,12 @@ export async function listarMarcas(
 export async function listarCategorias(
   pagina = 1,
 ): Promise<{ items: ItemDeCatalogo[]; total: number }> {
-  const filas = await db.execute<ItemDeCatalogo>(sql`
+  const filas = await db.execute<
+    ItemDeCatalogo & { imageKey: string | null }
+  >(sql`
     SELECT c.id, c.name, c.slug, NULL::text AS "hexCode",
            c.is_featured AS "isFeatured",
-           NULL::text AS "logoUrl",
+           c.image_key AS "imageKey",
            c.is_active AS "isActive",
            count(p.id) FILTER (WHERE p.is_active)     ::int AS activos,
            count(p.id) FILTER (WHERE NOT p.is_active) ::int AS inactivos
@@ -102,7 +105,13 @@ export async function listarCategorias(
      LIMIT ${POR_PAGINA} OFFSET ${(pagina - 1) * POR_PAGINA}
   `);
 
-  return { items: [...filas], total: await contar(sql`${categories}`) };
+  return {
+    items: filas.map(({ imageKey, ...fila }) => ({
+      ...fila,
+      logoUrl: urlDeLogo(imageKey, "thumb"),
+    })),
+    total: await contar(sql`${categories}`),
+  };
 }
 
 export async function listarColores(

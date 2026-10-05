@@ -1057,7 +1057,7 @@ Tres decisiones de integración, las tres con motivo:
 │  ←  [logo] [logo] [logo] [logo] [logo] [logo]  →   │  hilera que gira
 ├──────────────────────── 80px ──────────────────────┤
 │  Más categorías                    (Ver todas)     │  el botón, apagado
-│  [Cables] [Sillas] [Monitores] [Adaptadores]       │
+│  [img] [img] [ C ] [img] [ S ] …                   │  tarjetas, hasta 8
 └────────────────────────────────────────────────────┘
 ```
 
@@ -1142,13 +1142,15 @@ mañana con el de Ana, que va a tener otra forma—.
 en una fila de logos se lee como una imagen que no cargó. Los que no tienen
 logo siguen estando donde importan —§7.3, la ficha, donde se nombran—.
 
-**«Más categorías» va en píldoras, y es provisorio.** El boceto las pide como
-**tarjetas con foto y nombre**, parecidas a las de producto, y para eso hace
-falta una imagen de categoría que la base no tiene: `categories` es nombre,
-slug y dos banderas. Elegir de dónde sale esa foto —la de uno de sus productos
-o un campo propio con su migración y su subida en el panel— quedó **postergado
-a pedido tuyo el 2026-09-22**, así que la sección se dibuja como está y se
-rehace cuando esa decisión exista.
+**«Más categorías» va en tarjetas con imagen y nombre** (F2.9, 2026-10-05),
+como pedía el boceto. La imagen es un **campo propio** de la categoría (FA-21),
+que la vendedora sube desde el panel: no se toma prestada de un producto,
+porque esa la elegiría una consulta y no ella. Es la tarjeta de producto en
+chico —mismo radio, misma sombra, recuadro cuadrado— y sin nada más que el
+nombre. **La imagen es opcional**, y la que no tiene muestra **su inicial** en
+el mismo recuadro hundido: la fila conserva su forma con categorías sin imagen
+mezcladas, que es lo que FA-21 pedía. Tres por fila en el teléfono, cuatro en
+tableta y ocho en escritorio, que es el tope de la sección.
 
 **«Ver todas» nace apagado, con el motivo al lado** (RNF-08): la pantalla de
 categorías no existe todavía y no tiene tarea en ninguna fase. La sección se

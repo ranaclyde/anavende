@@ -327,6 +327,16 @@ export const quitarElLogo = action
     return { id: input.id };
   });
 
+/** Lo mismo para la imagen de categoría (FA-21), que sube por el mismo camino. */
+export const quitarLaImagenDeCategoria = action
+  .input(soloId)
+  .auth("admin")
+  .handler(async ({ input }) => {
+    await quitarLogo("categoria", input.id);
+    refrescar();
+    return { id: input.id };
+  });
+
 // ── Baja (RN-11) ────────────────────────────────────────────────────────
 
 export const eliminar = action
@@ -352,8 +362,9 @@ export const eliminar = action
 
     // Las claves del logo se leen ANTES del DELETE: después la fila ya no
     // está y se perdieron con ella. Es la única forma de que borrar una marca
-    // no deje sus archivos dando vueltas en Storage (RF-18).
-    const archivos = tipo === "marca" ? await clavesDelLogo("marca", id) : [];
+    // —o una categoría con imagen (FA-21)— no deje sus archivos dando
+    // vueltas en Storage (RF-18).
+    const archivos = tipo === "color" ? [] : await clavesDelLogo(tipo, id);
 
     const tabla = TABLAS[tipo];
     const filas = await db

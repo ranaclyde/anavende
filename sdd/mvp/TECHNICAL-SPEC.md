@@ -393,6 +393,7 @@ CREATE TABLE categories (
   name        text NOT NULL,
   slug        text NOT NULL UNIQUE,
   is_featured boolean NOT NULL DEFAULT false,   -- RF-18: se muestra primero
+  image_key   text,                                -- FA-21: CLAVE en Storage, opcional
   is_active   boolean NOT NULL DEFAULT true,
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now()
@@ -1015,7 +1016,12 @@ marcas/{brandId}/{imageId}-thumb.webp
 
 medios-de-pago/{paymentMethodId}/{imageId}-thumb.webp
                                  {imageId}-card.webp
+
+categorias/{categoryId}/{imageId}-thumb.webp
+                        {imageId}-card.webp
 ```
+
+**La imagen de categoría (FA-21, F2.9) va por el mismo camino que un logo**: una por fila, en `categories.image_key`, con los mismos dos tamaños, y la nueva reemplaza y borra a la anterior. `-card` es el que usa la tarjeta de «Más categorías» en la home.
 
 Dos tamaños y no tres: un logo se muestra chico —hoy solo en el listado del panel (RF-18, RF-19)— y `-detail`, pensado para la galería de una ficha a 1400px, no tiene dónde usarse. Se reutilizan los anchos de `-thumb` y `-card` en vez de inventar dos números nuevos: 200px cubre el listado en cualquier densidad de pantalla, y 600px queda para las franjas de la tienda —la de marcas y la de medios de pago (RF-01)—. `brands.logo_key` y `payment_methods.logo_key` guardan la base, igual que `variant_images.storage_key`.
 

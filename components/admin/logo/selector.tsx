@@ -47,6 +47,7 @@ export function logoVisible(
 
 export function SelectorDeLogo({
   id,
+  palabras = LOGO,
   guardado,
   logo,
   alCambiar,
@@ -55,6 +56,11 @@ export function SelectorDeLogo({
   deshabilitado,
 }: {
   id: string;
+  /**
+   * Cómo se llama lo que se sube. La categoría (FA-21) usa este mismo
+   * selector, y lo suyo no es un logo: es una imagen.
+   */
+  palabras?: { etiqueta: string; sinLogo: string };
   /** La URL del logo que ya está guardado, o `null`. */
   guardado: string | null;
   logo: AccionDeLogo;
@@ -96,7 +102,7 @@ export function SelectorDeLogo({
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>
-        {LOGO.etiqueta}{" "}
+        {palabras.etiqueta}{" "}
         <span className="font-normal text-ink-secondary">{LOGO.opcional}</span>
       </Label>
 
@@ -156,7 +162,7 @@ export function SelectorDeLogo({
               ? logo.archivo.name
               : visible
                 ? LOGO.ayuda
-                : `${LOGO.sinLogo}. ${LOGO.ayuda}`}
+                : `${palabras.sinLogo}. ${LOGO.ayuda}`}
           </FieldHint>
         </div>
       </div>

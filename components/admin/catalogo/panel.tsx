@@ -312,8 +312,9 @@ function Nombre({ item, tipo }: { item: ItemDeCatalogo; tipo: TipoDeItem }) {
       {/* El logo es decorativo acá: el nombre está al lado, en texto, y
           repetirlo en el `alt` se lo haría leer dos veces a un lector de
           pantalla (§9). Las marcas sin logo no dejan un hueco: la fila no
-          reserva lugar para algo que la mayoría no va a tener. */}
-      {tipo === "marca" && item.logoUrl && (
+          reserva lugar para algo que la mayoría no va a tener. La imagen de
+          categoría (FA-21) se dibuja igual. */}
+      {tipo !== "color" && item.logoUrl && (
         // Chip CLARO en los dos modos (§6.10). Un logo de marca es trazo
         // sobre transparente, casi siempre oscuro: sobre el panel en modo
         // oscuro desaparece. Y a diferencia del logo de AnaVende, el de una

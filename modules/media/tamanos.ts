@@ -112,8 +112,8 @@ export function claveBase(
 }
 
 /**
- * Dónde vive cada logo. `marcas/{id}/{imageId}`, `medios-de-pago/{id}/…`
- * (§9.2).
+ * Dónde vive cada logo. `marcas/{id}/{imageId}`, `medios-de-pago/{id}/…`,
+ * `categorias/{id}/…` (§9.2).
  *
  * La carpeta se decide acá y no en quien sube: es lo que hay que saber para
  * BORRAR, y el borrado ocurre lejos de la subida —al reemplazar el logo y al
@@ -123,6 +123,9 @@ export function claveBase(
 export const CARPETAS_DE_LOGO = {
   marca: "marcas",
   "medio-de-pago": "medios-de-pago",
+  // FA-21. No es un logo, pero se comporta como uno: una por fila, dos
+  // tamaños, y la nueva reemplaza y borra a la anterior.
+  categoria: "categorias",
 } as const;
 
 export type DestinoDeLogo = keyof typeof CARPETAS_DE_LOGO;

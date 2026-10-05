@@ -111,3 +111,15 @@ export const LOGO = {
   falloTrasCrear: (sujeto: string, editar: string) =>
     `${sujeto} se creó, pero el logo no se pudo subir. ${editar} para intentar de nuevo.`,
 } as const;
+
+/**
+ * La imagen de categoría — FA-21. Usa el selector del logo y sus botones; lo
+ * único que cambia es cómo se llama, y qué decir si no se pudo subir.
+ */
+export const IMAGEN_DE_CATEGORIA = {
+  etiqueta: "Imagen",
+  sinLogo: "Sin imagen",
+  subiendo: "Subiendo la imagen",
+  falloTrasCrear:
+    "La categoría se creó, pero la imagen no se pudo subir. Editala para intentar de nuevo.",
+} as const;

@@ -60,6 +60,13 @@ export const categories = pgTable(
      * siendo la única verdad sobre la visibilidad.
      */
     isFeatured: boolean("is_featured").notNull().default(false),
+    /**
+     * FA-21: UNA imagen chica por categoría, y por eso una columna y no una
+     * tabla. Guarda la clave en Storage, igual que `brands.logo_key` (§9.4),
+     * y se sube por el mismo camino que el logo. Es opcional: el listado
+     * tiene que quedar prolijo con categorías sin imagen mezcladas.
+     */
+    imageKey: text("image_key"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

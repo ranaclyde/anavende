@@ -50,6 +50,10 @@ const entrada = z.discriminatedUnion("destino", [
     destino: z.literal("medio-de-pago"),
     paymentMethodId: z.uuid(),
   }),
+  z.object({
+    destino: z.literal("categoria"),
+    categoryId: z.uuid(),
+  }),
 ]);
 
 export async function POST(request: NextRequest) {
@@ -77,6 +81,7 @@ export async function POST(request: NextRequest) {
     variantId: form.get("variantId") ?? undefined,
     brandId: form.get("brandId") ?? undefined,
     paymentMethodId: form.get("paymentMethodId") ?? undefined,
+    categoryId: form.get("categoryId") ?? undefined,
     altText: form.get("altText") ?? undefined,
   });
 
@@ -124,12 +129,18 @@ export async function POST(request: NextRequest) {
               id: campos.data.paymentMethodId,
               archivo: bytes,
             })
-          : await publicarImagenDeVariante({
-              productId: campos.data.productId,
-              variantId: campos.data.variantId,
-              archivo: bytes,
-              altText: campos.data.altText,
-            });
+          : campos.data.destino === "categoria"
+            ? await publicarLogo({
+                destino: "categoria",
+                id: campos.data.categoryId,
+                archivo: bytes,
+              })
+            : await publicarImagenDeVariante({
+                productId: campos.data.productId,
+                variantId: campos.data.variantId,
+                archivo: bytes,
+                altText: campos.data.altText,
+              });
 
     // Invalidar acá es la mitad del trabajo: una Server Action refresca al
     // cliente con su respuesta, pero un `fetch` a un Route Handler no. La
