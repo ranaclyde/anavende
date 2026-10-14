@@ -307,7 +307,7 @@ F10 Endurecimiento y lanzamiento
 |---|---|---|---|---|
 | **F9.1** | Reportes de ventas | **L** | FS RF-28 · TS §15 | Totales, más vendidos, por categoría y marca, web contra manual. Las sumas se calculan **en SQL**. Activas y canceladas no cuentan; las devoluciones restan |
 | **F9.2** | Exportación a Excel | M | FS RF-28 · TS §15 | Respeta los filtros en pantalla; moneda y fechas con formato |
-| **F9.3** | Páginas legales editables | M | FS RF-29 · RF-34 | Garantías, términos, privacidad y cómo comprar, editables sin desplegar. Markdown sanitizado. **«Garantías y devoluciones» dice cómo arrepentirse**: cancelar desde «Mis compras» (RF-23) o pedir la devolución (RF-25). Es donde el sitio deja por escrito cómo se ejerce ese derecho |
+| **F9.3** | Páginas legales editables | M | FS RF-29 · RF-34 | Garantías, términos, privacidad y cómo comprar, editables sin desplegar. Markdown sanitizado. **«Garantías y devoluciones» dice cómo arrepentirse**: cancelar desde «Mis compras» (RF-23) o pedir la devolución (RF-25). Es donde el sitio deja por escrito cómo se ejerce ese derecho. **«Privacidad» nombra lo que se guarda en el navegador**: la cookie de sesión, la de la compra pendiente (F5.7) y la de «Vistos recientemente» (F8.4) —qué guarda cada una, para qué y cómo se borra— |
 | **F9.4** | Email E3 de cuenta nueva | S | FS RF-30 | El usuario creado por la administradora recibe el enlace para definir contraseña |
 
 ---

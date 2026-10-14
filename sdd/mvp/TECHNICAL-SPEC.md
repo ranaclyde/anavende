@@ -1207,7 +1207,9 @@ El orden es **determinístico** (nada de `RANDOM()`): así los resultados son ca
 
 ### 11.3 Vistos recientemente (RF-33)
 
-Los IDs de los últimos 10 productos vistos se guardan en `localStorage` del navegador. El componente es de cliente, lee la lista y pide al servidor los datos vigentes de esos productos, descartando los inactivos. **No se persiste nada en la base ni se requiere sesión**, y los precios que se muestran son siempre los actuales.
+Los IDs de los últimos 10 productos vistos se guardan en una **cookie** del navegador (`vistos`, 90 días, `SameSite=Lax`), del más reciente al más viejo. La escribe el navegador al abrir una ficha; el servidor la lee, consulta los datos vigentes de esos productos descartando los inactivos, y dibuja el bloque con la página. **No se persiste nada en la base ni se requiere sesión**, y los precios que se muestran son siempre los actuales: la cookie guarda solo ids.
+
+> **Cookie y no `localStorage`, decidido el 2026-10-14.** Este párrafo decía `localStorage`. La tarjeta de producto solo se arma en el servidor, así que con `localStorage` el bloque tendría que esperar a que cargue la página, leer la lista y pedir las tarjetas en un segundo viaje. Con la cookie el servidor la lee en el mismo pedido. Para el consentimiento son equivalentes —las dos guardan en el dispositivo—, y la Política de privacidad (F9.3) la nombra.
 
 ---
 

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { sql } from "drizzle-orm";
+import { cache } from "react";
 
 import { db } from "@/db";
 import type { ProductoEnTarjeta } from "@/components/shop/tarjeta-producto";
@@ -25,12 +26,18 @@ import {
  * persona fue guardando a mano, así que la lista es corta, y filtrarla por
  * los ids de la página obligaría a esperar esa consulta para lanzar esta.
  * Así corren en paralelo.
+ *
+ * Con `cache()` (F8.4): la ficha la pide para los recomendados y para
+ * «Vistos recientemente», que son dos componentes distintos, y es la misma
+ * consulta del mismo pedido.
  */
-export async function idsDeFavoritos(userId: string): Promise<string[]> {
+export const idsDeFavoritos = cache(async function idsDeFavoritos(
+  userId: string,
+): Promise<string[]> {
   const filas = await db.execute<{ productId: string }>(sql`
     SELECT product_id AS "productId" FROM favorites WHERE user_id = ${userId}`);
   return filas.map((f) => f.productId);
-}
+});
 
 export async function esFavorito(
   userId: string,
@@ -68,7 +75,10 @@ export type Favorito = ProductoEnTarjeta & {
  */
 export async function leerFavoritos(
   userId: string,
-  { pagina = 1, porPagina = POR_PAGINA }: { pagina?: number; porPagina?: number } = {},
+  {
+    pagina = 1,
+    porPagina = POR_PAGINA,
+  }: { pagina?: number; porPagina?: number } = {},
 ): Promise<{ favoritos: Favorito[]; total: number }> {
   const [filas, [conteo]] = await Promise.all([
     db.execute<FilaDeTarjeta & { activo: boolean }>(sql`
