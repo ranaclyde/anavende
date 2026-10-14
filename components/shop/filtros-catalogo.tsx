@@ -3,7 +3,11 @@ import { Check, SlidersHorizontal, X } from "lucide-react";
 
 import { BotonCerrarFiltros } from "@/components/shop/boton-cerrar-filtros";
 import { BotonVerResultados } from "@/components/shop/boton-ver-resultados";
-import { Button } from "@/components/ui/button";
+import {
+  CierreDelPanel,
+  LimpiarFiltros,
+  RangoDePrecio,
+} from "@/components/shop/filtros-cliente";
 
 import {
   alternar,
@@ -34,6 +38,10 @@ import { AREA_TACTIL, cn } from "@/lib/utils";
  * estar. No lleva `open` a propósito — así el navegador conserva el estado
  * entre navegaciones y el panel no se cierra solo cada vez que se toca un
  * chip, que es lo que pasaría si React se lo reescribiera en cada render.
+ *
+ * **Lo que el `<details>` no hace solo lo agregan tres islas chicas**
+ * (`filtros-cliente.tsx`, 2026-10-14): cerrarse al tocar afuera y con Escape,
+ * cerrarse con «Limpiar filtros», y el precio que se aplica sin «Aplicar».
  */
 
 type Props = {
@@ -92,6 +100,9 @@ export function PanelDeFiltros({
               : `${puestos} filtros aplicados`}
         </span>
       </summary>
+
+      {/* Tocar afuera o Escape lo cierran: ver filtros-cliente.tsx. */}
+      <CierreDelPanel />
 
       {/*
         **Dos formas para la misma pantalla, y no es capricho responsivo.**
@@ -231,7 +242,7 @@ export function PanelDeFiltros({
             derecha al centro según haya filtros o no.
           */}
           {hayFiltrosDeTienda(filtros) ? (
-            <Link
+            <LimpiarFiltros
               href={urlDeTienda({ orden: filtros.orden })}
               className={cn(
                 "relative rounded-pill px-1 py-1.5 text-body-sm text-ink-secondary underline underline-offset-2",
@@ -239,9 +250,7 @@ export function PanelDeFiltros({
                 "focus-visible:shadow-focus focus-visible:outline-none",
                 AREA_TACTIL,
               )}
-            >
-              Limpiar filtros
-            </Link>
+            />
           ) : (
             <span />
           )}
@@ -359,146 +368,6 @@ function GrupoDeChips({
         })}
       </ul>
     </div>
-  );
-}
-
-/**
- * El rango de precio (RF-02) — el único control de verdad de todo el panel.
- *
- * **Es un formulario GET y no un enlace**, porque el valor no sale de una lista
- * cerrada: hasta que no se escribe no existe la dirección a la que ir. Sigue
- * sin JavaScript, sigue dejando el atrás funcionando y sigue siendo
- * compartible — que es todo lo que los enlaces daban.
- *
- * **Los demás filtros viajan como campos ocultos.** Sin eso, poner un precio
- * borraría la marca elegida, que es la trampa clásica del formulario dentro de
- * un panel de filtros. `pagina` es la excepción y se omite a propósito: cambiar
- * el precio vuelve a la página 1, igual que cualquier otro filtro.
- *
- * **Una fea a propósito:** un campo vacío se envía igual —así funcionan los
- * formularios—, así que poner solo el mínimo deja `&precioMax=` colgando en la
- * dirección. No filtra de más ni de menos, y el próximo clic en cualquier chip
- * reescribe la URL limpia. Sacarlo pedía JavaScript, y no vale una isla de
- * cliente.
- */
-function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
-  return (
-    <div className="flex flex-col gap-2.5">
-      <h3
-        id="filtro-precio"
-        className="text-caption font-medium tracking-wide text-ink-secondary uppercase"
-      >
-        Precio
-      </h3>
-
-      {/*
-        `aria-labelledby` y no un `<fieldset>` con `<legend>`: el legend sería
-        el marcado más correcto para agrupar dos campos, pero dejaría a este
-        grupo fuera del recorrido por encabezados mientras los otros tres son
-        `h3`. Así se queda con las dos cosas — el encabezado navegable y el
-        formulario con nombre.
-      */}
-      <form
-        method="get"
-        action="/productos"
-        aria-labelledby="filtro-precio"
-        className="flex flex-wrap items-center gap-2"
-      >
-        <Conservados filtros={filtros} />
-        <CampoDePrecio
-          nombre="precioMin"
-          etiqueta="Desde"
-          valor={filtros.precioMin}
-        />
-        <CampoDePrecio
-          nombre="precioMax"
-          etiqueta="Hasta"
-          valor={filtros.precioMax}
-        />
-        <Button type="submit" variant="secondary" size="md" className="h-11">
-          Aplicar
-        </Button>
-      </form>
-    </div>
-  );
-}
-
-/**
- * Los filtros vigentes como campos ocultos, para que el formulario del precio
- * no se los lleve puestos. Los multivalor van repetidos, que es exactamente la
- * forma que `leerFiltrosDeTienda` sabe leer.
- */
-function Conservados({ filtros }: { filtros: FiltrosDeTienda }) {
-  return (
-    <>
-      {filtros.q ? <input type="hidden" name="q" value={filtros.q} /> : null}
-      {filtros.categoria.map((slug) => (
-        <input key={slug} type="hidden" name="categoria" value={slug} />
-      ))}
-      {filtros.marca.map((slug) => (
-        <input key={slug} type="hidden" name="marca" value={slug} />
-      ))}
-      {filtros.color.map((slug) => (
-        <input key={slug} type="hidden" name="color" value={slug} />
-      ))}
-      {filtros.oferta ? <input type="hidden" name="oferta" value="1" /> : null}
-      {filtros.orden !== "relevancia" ? (
-        <input type="hidden" name="orden" value={filtros.orden} />
-      ) : null}
-    </>
-  );
-}
-
-/**
- * Etiqueta VISIBLE y no un marcador de posición (§8): «Desde» y «Hasta» son la
- * única diferencia entre los dos campos, y un marcador desaparece justo cuando
- * se está escribiendo, que es cuando hace falta saber en cuál se está.
- *
- * `defaultValue` y no `value`: es un campo no controlado a propósito. Con
- * `value` y sin `onChange` React lo deja de solo lectura, y este archivo es
- * servidor entero.
- */
-function CampoDePrecio({
-  nombre,
-  etiqueta,
-  valor,
-}: {
-  nombre: string;
-  etiqueta: string;
-  valor: number | null;
-}) {
-  return (
-    <label className="flex items-center gap-2 text-body-sm text-ink-secondary">
-      {etiqueta}
-      <span className="relative">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-body-sm text-ink-secondary"
-        >
-          $
-        </span>
-        <input
-          type="number"
-          name={nombre}
-          min={0}
-          step={1}
-          inputMode="numeric"
-          defaultValue={valor ?? ""}
-          className={cn(
-            // 44px, que es el mínimo táctil de §9. Con los 40 que trae
-            // `h-10` los dos campos y el botón quedaban justo por debajo.
-            "h-11 w-28 rounded-pill border border-border bg-surface",
-            // 16px en teléfono: con menos, iOS Safari amplía la página al
-            // enfocar el campo y no vuelve. Ver `search-box.tsx`.
-            "pr-3 pl-7 text-body-sm max-md:text-body text-ink tabular-nums",
-            "focus-visible:shadow-focus focus-visible:outline-none",
-            // Las flechitas nativas de `number` no entran en el sistema y
-            // encima empujan el texto contra el borde.
-            "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
-          )}
-        />
-      </span>
-    </label>
   );
 }
 
