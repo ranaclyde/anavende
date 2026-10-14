@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { VacioDelPanel } from "@/components/admin/vacio";
-import { DialogoDeMedioDePago } from "@/components/admin/pagos/dialogo";
+import { EdicionDeMedioDePago } from "@/components/admin/pagos/edicion";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
 import { avisar } from "@/components/ui/aviso";
@@ -224,18 +224,18 @@ export function ListadoDeMediosDePago({
         </>
       )}
 
-      {/* El diálogo NO existe mientras está cerrado, y eso no es un ahorro:
+      {/* El drawer NO existe mientras está cerrado, y eso no es un ahorro:
           es lo que garantiza que abra en blanco. Ver el comentario de
-          `DialogoDeMedioDePago`. */}
+          `EdicionDeMedioDePago`. */}
       {creando ? (
-        <DialogoDeMedioDePago
+        <EdicionDeMedioDePago
           medio={null}
           abierto
           alCerrar={() => setCreando(false)}
         />
       ) : null}
       {editando ? (
-        <DialogoDeMedioDePago
+        <EdicionDeMedioDePago
           medio={editando}
           abierto
           alCerrar={() => setEditando(null)}

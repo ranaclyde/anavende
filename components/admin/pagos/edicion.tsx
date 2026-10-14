@@ -9,16 +9,19 @@ import {
   SelectorDeLogo,
   type AccionDeLogo,
 } from "@/components/admin/logo/selector";
+import { Seccion, Secciones } from "@/components/admin/formulario";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetForm,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
@@ -45,6 +48,9 @@ async function subirLogo(id: string, archivo: File): Promise<string | null> {
 /**
  * Alta y edición de un medio de pago — RF-19.
  *
+ * Un drawer, como el resto de las solapas del catálogo (DR §6.14.3): son la
+ * misma pantalla y se tienen que comportar igual aunque este sea corto.
+ *
  * No hay campo de orden: al crear se agrega al final y se mueve desde el
  * listado, que es donde se ve contra qué se lo está ordenando. Un número de
  * posición dentro del diálogo obligaría a recordar el de los demás.
@@ -59,7 +65,7 @@ async function subirLogo(id: string, archivo: File): Promise<string | null> {
  * arranca con lo que se escribió la vez anterior. Pasó: un medio de pago se
  * guardó con la descripción del anterior.
  */
-export function DialogoDeMedioDePago({
+export function EdicionDeMedioDePago({
   medio,
   abierto,
   alCerrar,
@@ -141,87 +147,95 @@ export function DialogoDeMedioDePago({
   };
 
   return (
-    <Dialog open={abierto} onOpenChange={(v) => !v && alCerrar()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={abierto} onOpenChange={(v) => !v && alCerrar()}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>
             {medio ? "Editar medio de pago" : "Nuevo medio de pago"}
-          </DialogTitle>
+          </SheetTitle>
           {/* RN-01 dicho en la primera línea: nada de esto cobra. Es lo que
               evita que alguien espere que agregar «Mercado Pago» habilite un
               pago en la web. */}
-          <DialogDescription>
+          <SheetDescription>
             Se muestra en la tienda para que el comprador sepa cómo puede pagar.
             No cobra nada: el pago se coordina por WhatsApp.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
-        <form onSubmit={enviar} className="flex flex-col gap-4" noValidate>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${idBase}-name`}>Nombre</Label>
-            <Input
-              id={`${idBase}-name`}
-              name="name"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              autoFocus
-              required
-              maxLength={60}
-              placeholder="Transferencia bancaria"
-              aria-invalid={!!errores.campos.name || undefined}
-              aria-describedby={
-                errores.campos.name ? `${idBase}-e-name` : undefined
-              }
-            />
-            <FieldError id={`${idBase}-e-name`}>
-              {errores.campos.name}
-            </FieldError>
-          </div>
+        <SheetForm onSubmit={enviar} noValidate>
+          <SheetBody>
+            <Secciones>
+              <Seccion>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`${idBase}-name`}>Nombre</Label>
+                  <Input
+                    id={`${idBase}-name`}
+                    name="name"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    autoFocus
+                    required
+                    maxLength={60}
+                    placeholder="Transferencia bancaria"
+                    aria-invalid={!!errores.campos.name || undefined}
+                    aria-describedby={
+                      errores.campos.name ? `${idBase}-e-name` : undefined
+                    }
+                  />
+                  <FieldError id={`${idBase}-e-name`}>
+                    {errores.campos.name}
+                  </FieldError>
+                </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${idBase}-desc`}>
-              Descripción{" "}
-              <span className="font-normal text-ink-secondary">(opcional)</span>
-            </Label>
-            <Input
-              id={`${idBase}-desc`}
-              name="description"
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              maxLength={120}
-              placeholder="10% off transfiriendo"
-              aria-invalid={!!errores.campos.description || undefined}
-              aria-describedby={
-                errores.campos.description
-                  ? `${idBase}-e-desc`
-                  : `${idBase}-ayuda-desc`
-              }
-            />
-            {errores.campos.description ? (
-              <FieldError id={`${idBase}-e-desc`}>
-                {errores.campos.description}
-              </FieldError>
-            ) : (
-              <FieldHint id={`${idBase}-ayuda-desc`}>
-                Una línea corta, del estilo «10% off transfiriendo» o «hasta 6
-                cuotas».
-              </FieldHint>
-            )}
-          </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`${idBase}-desc`}>
+                    Descripción{" "}
+                    <span className="font-normal text-ink-secondary">
+                      (opcional)
+                    </span>
+                  </Label>
+                  <Input
+                    id={`${idBase}-desc`}
+                    name="description"
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                    maxLength={120}
+                    placeholder="10% off transfiriendo"
+                    aria-invalid={!!errores.campos.description || undefined}
+                    aria-describedby={
+                      errores.campos.description
+                        ? `${idBase}-e-desc`
+                        : `${idBase}-ayuda-desc`
+                    }
+                  />
+                  {errores.campos.description ? (
+                    <FieldError id={`${idBase}-e-desc`}>
+                      {errores.campos.description}
+                    </FieldError>
+                  ) : (
+                    <FieldHint id={`${idBase}-ayuda-desc`}>
+                      Una línea corta, del estilo «10% off transfiriendo» o
+                      «hasta 6 cuotas».
+                    </FieldHint>
+                  )}
+                </div>
 
-          <SelectorDeLogo
-            id={`${idBase}-logo`}
-            guardado={medio?.logoUrl ?? null}
-            logo={logo}
-            alCambiar={setLogo}
-            error={errorDelLogo}
-            alError={setErrorDelLogo}
-            deshabilitado={enviando}
-          />
+                <SelectorDeLogo
+                  id={`${idBase}-logo`}
+                  guardado={medio?.logoUrl ?? null}
+                  logo={logo}
+                  alCambiar={setLogo}
+                  error={errorDelLogo}
+                  alError={setErrorDelLogo}
+                  deshabilitado={enviando}
+                />
+              </Seccion>
+            </Secciones>
 
-          <FieldError>{errores.general}</FieldError>
+            <FieldError className="mt-5">{errores.general}</FieldError>
+          </SheetBody>
 
-          <DialogFooter>
+          <SheetFooter>
             <Button type="button" variant="secondary" onClick={alCerrar}>
               Cancelar
             </Button>
@@ -235,9 +249,9 @@ export function DialogoDeMedioDePago({
             >
               {medio ? "Guardar" : "Crear"}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </SheetFooter>
+        </SheetForm>
+      </SheetContent>
+    </Sheet>
   );
 }

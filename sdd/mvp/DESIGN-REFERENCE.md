@@ -390,6 +390,36 @@ Escala de base 4px:
 | Entre elementos de un formulario | 20px |
 | Márgenes laterales de página | 16px móvil · 24px tablet · 32px escritorio |
 
+#### 3.4.1 El aire de un formulario del panel (2026-10-14)
+
+**El aire hace el agrupamiento, no las cajas.** Un formulario con un solo valor
+de separación para todo —el de categoría usaba 16px entre cualquier par de
+cosas— pone a «Nombre», «Destacada» y «Categorías relacionadas» al mismo peso, y
+se lee como una lista de cosas sueltas. Son tres intervalos, cada uno con su
+trabajo:
+
+| Entre | Valor | Para qué |
+|---|---|---|
+| Etiqueta, control y ayuda **de un mismo campo** | **6px** | Que la ayuda se lea como de ese campo y no del siguiente |
+| Campos **de una misma sección** | **20px** | El «entre elementos de un formulario» de la tabla de arriba |
+| **Secciones** | **Línea fina con 24px de cada lado** | Que se vea dónde termina un tema y empieza otro sin encerrarlos en tarjetas |
+
+- **Un título de sección tiene más aire arriba que abajo**: 24 desde la línea,
+  16 hasta lo suyo. Pegado a lo que nombra, no flotando en el medio.
+- **La acción de una sección** —«Elegir categorías»— va en el renglón del
+  título, y la bajada abajo, a lo ancho. Al lado de las dos, en el teléfono, la
+  bajada quedaba en una columna de 180px y cinco renglones.
+- **La ayuda de una casilla se alinea con el texto de la etiqueta**, no con la
+  casilla (24px de sangría: 16 de casilla y 8 de separación).
+- **No hay estado vacío que repita lo que dice el botón de al lado.** «Sin
+  categorías relacionadas» sobre un «Agregar una categoría relacionada» eran
+  tres grises seguidos diciendo lo mismo.
+- **Un formulario corto es una sola sección sin título**: el de marca, color o
+  medio de pago no se parte en grupos de un campo.
+
+Está hecho una vez, en `Secciones` y `Seccion` de `components/admin/formulario.tsx`.
+Un formulario nuevo del panel los usa en vez de repetir los valores a mano.
+
 ### 3.5 Radios
 
 | Elemento | Tienda | Panel | Motivo de la diferencia |
@@ -963,6 +993,40 @@ Hay un caso en que abrir un diálogo no lo decide quien mira la pantalla: **el a
 - **Alto fijo**, `min(40rem, 85svh)`: el diálogo no crece ni se achica mientras se escribe. Lo único que scrollea es la lista, y cuando no hay lista, la misma caja dice qué escribir o que no hubo coincidencias.
 - **Si elegir lleva a un segundo paso, el paso va adentro del mismo diálogo**, con «Volver» que encuentra la búsqueda como estaba. Nunca un diálogo encima de otro.
 - **Elegir varios deja el diálogo abierto** y marca lo ya elegido; elegir uno solo lo cierra.
+
+#### 6.14.3 Alta y edición del catálogo en un drawer (2026-10-14)
+
+**Las cuatro solapas del catálogo —marcas, categorías, colores y medios de pago—
+dan de alta y editan en un drawer a la derecha**, no en un diálogo centrado
+(`components/ui/sheet.tsx`). Nació con las categorías relacionadas (F8.1): con
+imagen, «Destacada» y una lista que crece, la categoría tenía tres secciones, y
+el diálogo con tope de alto la cortaba con el nombre fuera de vista. Las otras
+tres solapas van igual aunque sean cortas: son la misma pantalla y se tienen que
+comportar igual.
+
+- **A la derecha, nunca a la izquierda.** La izquierda del panel es la
+  navegación —el menú de §5.2, que en el teléfono ya se abre como drawer desde
+  ese lado—. A la derecha deja a la vista la columna de nombres del listado, que
+  es la que dice qué se está editando.
+- **Alto entero, 512px de ancho** en escritorio; pantalla completa en el
+  teléfono.
+- **Título y pie fijos, el medio scrollea.** «Guardar» se ve siempre, con once
+  relacionadas o con ninguna. En el teléfono, los dos botones del pie se
+  reparten el ancho.
+- **Es un modal**: fondo oscurecido, foco atrapado, Escape cierra. Es el mismo
+  primitivo de Radix que el diálogo, con otra caja.
+- **Un paso dentro del drawer reemplaza al formulario, no se le apila** (la
+  regla de §6.14.2): elegir relacionadas cambia el cuerpo por un buscador con
+  casillas, y **Escape ahí vuelve al formulario** en vez de cerrar todo y perder
+  lo escrito. El formulario se esconde sin desmontarse, así el nombre y la
+  imagen elegida siguen al volver.
+- **Lo que sigue en diálogo:** las confirmaciones —borrar, desactivar— y las
+  decisiones cortas. Interrumpen a propósito, y un drawer para una pregunta de
+  sí o no es una pantalla entera para dos botones.
+
+**Para la próxima pantalla:** si es dar de alta o editar algo que tiene más de
+una sección o una lista que crece, es un drawer; si es confirmar o decidir, es
+un diálogo.
 
 ### 6.15 Avisos flotantes
 
@@ -1545,3 +1609,5 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | **El fallo de «Compartir» se dice en pantalla** | El portapapeles necesita contexto seguro, y la tienda se abre a propósito por IP de la LAN para probarla desde el teléfono: ahí no existe. Un botón que se aprieta y no hace nada parece un sitio colgado |
 | **El visor usa `<img>` y no `next/image`, única excepción del proyecto** | El zoom es «el tamaño real del archivo», y el optimizador devuelve el ancho que él elige. Sin ese ancho conocido no hay con qué calcular la escala |
 | **La ficha sin stock aclara que nadie va a avisar** | «Preguntá si va a haber» suena a que el sitio agenda un aviso, y no hay ninguno: la respuesta la da la vendedora por WhatsApp. Prometer de menos y por escrito cuesta un renglón; alguien esperando un mail que no existe cuesta la venta |
+| **El catálogo da de alta y edita en un drawer a la derecha (§6.14.3)** | Pedido tuyo del 2026-10-14. La categoría pasó a tener tres secciones y una lista que crece, y el diálogo centrado con tope de alto la cortaba. A la derecha porque la izquierda es la navegación. Las cuatro solapas van igual para que la misma pantalla no se comporte de dos maneras |
+| **Tres intervalos en los formularios del panel: 6, 20 y línea con 24 (§3.4.1)** | Pedido tuyo del 2026-10-14, mirando el diálogo de categoría. Con 16px entre todo, ningún grupo se distinguía de otro. `impeccable` y `ui-ux-pro-max` piden lo mismo: lo relacionado junto y apretado, lo distinto separado, sin cajas que compensen la falta de aire |

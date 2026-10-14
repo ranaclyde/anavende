@@ -132,9 +132,9 @@ export const IMAGEN_DE_CATEGORIA = {
 export const RELACIONADAS = {
   etiqueta: "Categorías relacionadas",
   ayuda:
-    "En las fichas de esta categoría se recomiendan productos de estas, en este orden.",
-  vacio: "Sin categorías relacionadas.",
-  agregar: "Agregar una categoría relacionada",
+    "En las fichas de esta categoría se recomiendan productos de estas, en este orden. Una recíproca recomienda también en el otro sentido.",
+  elegir: "Elegir categorías",
+  noHayOtras: "Todavía no hay otras categorías activas para relacionar.",
   inactiva: "Inactiva",
   aporta: (n: number) =>
     n === 0
@@ -142,6 +142,10 @@ export const RELACIONADAS = {
       : n === 1
         ? "1 producto activo"
         : `${n} productos activos`,
+  /** La versión corta, para el renglón del paso de elegir. */
+  productos: (n: number) =>
+    n === 0 ? "Sin productos" : n === 1 ? "1 producto" : `${n} productos`,
+  reciprocaCorta: "Recíproca",
   reciproca: (otra: string, esta: string) =>
     `Recíproca: ${otra} también recomienda ${esta}`,
   dejaDeRecomendar: (otra: string, esta: string) =>
@@ -150,4 +154,12 @@ export const RELACIONADAS = {
     otras.length === 1
       ? `Al guardar, ${otras[0]} también deja de recomendar ${esta}.`
       : `Al guardar, ${otras.slice(0, -1).join(", ")} y ${otras.at(-1)} también dejan de recomendar ${esta}.`,
+  // El paso de elegir.
+  tituloDeEleccion: "Elegir categorías relacionadas",
+  bajadaDeEleccion: (esta: string) =>
+    `Marcá las que complementan a ${esta}. Las nuevas se suman al final y las ordenás después.`,
+  buscar: "Buscar una categoría",
+  sinCoincidencias: (t: string) =>
+    `Ninguna categoría activa coincide con «${t}». Probá con menos letras.`,
+  listo: (n: number) => (n === 0 ? "Listo" : `Listo (${n})`),
 } as const;
