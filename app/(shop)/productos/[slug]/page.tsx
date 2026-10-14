@@ -10,7 +10,7 @@ import { Descripcion } from "@/components/shop/ficha/descripcion";
 import {
   EsqueletoDeRecomendados,
   Recomendados,
-} from "@/components/shop/ficha/recomendados";
+} from "@/components/shop/recomendados";
 import { Precio } from "@/components/shop/precio";
 import { Button } from "@/components/ui/button";
 import {
