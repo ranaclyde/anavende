@@ -8,7 +8,8 @@ import { useId } from "react";
  * **Son todas la misma pieza**: las de categoría, «Destacados», «En oferta» y
  * la de «Más categorías» de abajo. Cinco encabezados escritos a mano eran
  * cinco tamaños de `h2` esperando a divergir, que es exactamente lo que el
- * repaso del panel encontró del otro lado (§6.9, 2026-09-21).
+ * repaso del panel encontró del otro lado (§6.9, 2026-09-21). Desde F8.2 la
+ * usan también los recomendados de la ficha.
  *
  * **El enlace de la derecha dice a dónde va, no «ver más».** «Ver todos los
  * teclados» se entiende leído solo, que es como lo lee un lector de pantalla
