@@ -110,3 +110,72 @@ export function Campo({
     </div>
   );
 }
+
+/**
+ * Las secciones de un formulario del panel — DESIGN-REFERENCE §3.4.1.
+ *
+ * El aire hace el agrupamiento, no las cajas: **6px dentro de un campo**
+ * (etiqueta, control, ayuda), **20px entre campos de una misma sección** y
+ * **una línea fina con 24px de cada lado entre secciones**. Con un solo valor
+ * para todo, «Nombre», «Destacada» y «Relacionadas» pesaban igual y el
+ * formulario se leía como una lista de cosas sueltas.
+ *
+ * `Secciones` pone la línea y el aire entre una y otra; cada `Seccion` lleva
+ * su título —más aire arriba que abajo, para que se pegue a lo suyo— y sus
+ * campos. La primera puede ir sin título: la cubre el del drawer.
+ */
+export function Secciones({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col divide-y divide-border *:py-6 *:first:pt-0 *:last:pb-0",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export function Seccion({
+  titulo,
+  descripcion,
+  accion,
+  children,
+  ...props
+}: {
+  titulo?: string;
+  descripcion?: React.ReactNode;
+  /** Un botón a la derecha del título, como «Elegir». */
+  accion?: React.ReactNode;
+} & React.ComponentProps<"section">) {
+  const idTitulo = useId();
+
+  return (
+    <section
+      aria-labelledby={titulo ? idTitulo : undefined}
+      className="flex flex-col gap-5"
+      {...props}
+    >
+      {titulo ? (
+        // La acción comparte renglón con el título y no con la bajada: al
+        // lado de las dos, en el teléfono, la bajada quedaba en una columna
+        // de 180px y cinco renglones.
+        <div className="-mb-1 flex flex-col gap-1">
+          <div className="flex min-h-8 items-center justify-between gap-3">
+            <h3 id={idTitulo} className="text-body-sm font-semibold text-ink">
+              {titulo}
+            </h3>
+            {accion}
+          </div>
+          {descripcion ? (
+            <p className="text-caption text-ink-secondary">{descripcion}</p>
+          ) : null}
+        </div>
+      ) : null}
+      {children}
+    </section>
+  );
+}

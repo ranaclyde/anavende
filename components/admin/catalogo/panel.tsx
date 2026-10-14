@@ -10,7 +10,7 @@ import {
   type PalabrasDeItem,
 } from "@/components/admin/catalogo/copy";
 import { VacioDelPanel } from "@/components/admin/vacio";
-import { DialogoDeItem } from "@/components/admin/catalogo/dialogo";
+import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
 import { avisar } from "@/components/ui/aviso";
@@ -277,11 +277,11 @@ export function PanelDeCatalogo({
         </>
       )}
 
-      {/* El diálogo NO existe mientras está cerrado, y eso no es un ahorro:
+      {/* El drawer NO existe mientras está cerrado, y eso no es un ahorro:
           es lo que garantiza que abra en blanco. Ver el comentario de
-          `DialogoDeItem`. */}
+          `EdicionDeItem`. */}
       {creando ? (
-        <DialogoDeItem
+        <EdicionDeItem
           tipo={tipo}
           item={null}
           abierto
@@ -290,7 +290,7 @@ export function PanelDeCatalogo({
         />
       ) : null}
       {editando ? (
-        <DialogoDeItem
+        <EdicionDeItem
           tipo={tipo}
           item={editando}
           abierto

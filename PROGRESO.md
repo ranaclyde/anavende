@@ -1886,6 +1886,51 @@ que vale para las cinco operaciones y para cualquiera que se agregue después.
 |---|---|---|---|
 | F8.1 | Categorías relacionadas, recíprocas por defecto | ✅ | **El diálogo de la categoría, al crearla o editarla, tiene «Categorías relacionadas»** (RF-31): se agregan desde un selector que solo ofrece las activas —ni la propia ni las ya puestas—, se ordenan con subir y bajar —el orden es la prioridad para los recomendados de F8.2— y cada una dice **cuántos productos activos aporta**, en naranja si no aporta ninguno. **«Recíproca» viene marcada** y lo que hace lo dice con los dos nombres: «Pads también recomienda Teclados». **La tabla ya estaba desde la migración `0001`** (`category_relations`, una fila por sentido, §5.4); lo nuevo es `modules/catalog/relaciones.ts`, que reemplaza la lista entera **en la misma transacción que el nombre**: una recíproca crea la inversa **al final** de la lista de la otra —no le pasa adelante a lo que allá se ordenó a mano— o marca recíproca la dirigida que ya volvía; destildarla borra la inversa; quitar una recíproca la quita de los dos lados, y una dirigida solo del suyo. **Los efectos sobre la otra categoría se avisan antes de guardar**, al lado de lo que los provoca: «Al guardar, Pads deja de recomendar Teclados». **Una decisión que la especificación no cubría:** dos dirigidas en sentidos opuestos, cargadas cada una desde su categoría, son independientes —quitar una no se lleva la otra—; solo la inversa de una recíproca es «de» la relación. **Una inactiva no se puede agregar, pero la que ya estaba se conserva** cuando la otra se desactiva: deja de aportar sin romper la ficha, y vuelve sola al reactivarla. Borrar una categoría se lleva sus filas por `ON DELETE CASCADE`. **Verificado:** diez tests en `tests/unit/catalogo/relacionadas.test.ts` contra Postgres; un recorrido de Playwright a 390 y 1280 —alta de una recíproca y una dirigida, reordenar, guardar, abrir la otra punta, destildar y quitar, con lo que queda en la base mirado después de cada guardado—, 14 pasos en verde y sin errores de consola; `DATABASE_URL= npx next build` sin errores |
 
+### El catálogo pasa a un drawer, con aire entre secciones (2026-10-14)
+
+**Pedido tuyo, mirando el diálogo de categoría que dejó F8.1**: no te gustaba
+cómo quedaba, preguntaste qué pasaba con más de 10 relacionadas o con 100
+categorías, y que elegir de a una era raro. Tres cambios:
+
+- **Alta y edición en un drawer a la derecha, en las cuatro solapas**
+  —marcas, categorías, colores y medios de pago— (`components/ui/sheet.tsx`,
+  DR §6.14.3). Alto entero, 512px en escritorio y pantalla completa en el
+  teléfono, con el título y «Guardar» fijos. A la derecha porque la izquierda
+  es la navegación. Las confirmaciones siguen en diálogo. Los dos formularios
+  se renombraron a `edicion.tsx` (`EdicionDeItem`, `EdicionDeMedioDePago`).
+- **Elegir relacionadas es un paso dentro del drawer**: «Elegir categorías»
+  cambia el cuerpo por un buscador —sin tildes ni mayúsculas, en el
+  navegador, porque las categorías ya vienen todas en la página— y casillas
+  para marcar varias. «Listo (N)» vuelve con las nuevas al final, en el orden
+  en que se marcaron, y lo que ya estaba conserva su lugar y su «Recíproca».
+  Escape en ese paso vuelve al formulario sin cerrar nada. Los renglones de la
+  lista pasaron a una línea en escritorio —«Recíproca» corta, con la frase
+  entera en el nombre accesible—, así que 11 relacionadas entran sin perder
+  «Guardar» de vista.
+- **El aire, con regla escrita** (DR §3.4.1 y la «regla del aire» de
+  `DESIGN.md`, que es lo que `impeccable` carga en cada sesión): 6px dentro de
+  un campo, 20px entre campos y una línea con 24px de cada lado entre
+  secciones, en `Secciones` y `Seccion` de `components/admin/formulario.tsx`.
+
+**Lo que se hizo mal antes, y por qué pasó esto:** DR §12.4 pide pasar todo
+componente visual por `impeccable` y `ui-ux-pro-max`, y F8.1 se escribió sin
+ellas. Esta vez se consultaron antes de proponer.
+
+**El sidecar de `impeccable` (`.impeccable/design.json`) no se tocó.** La regla
+de la skill es no reparar desfasajes como efecto lateral: si `impeccable doctor`
+marca que quedó atrás de `DESIGN.md`, se regenera aparte.
+
+**Verificado:** un recorrido de Playwright de 24 pasos a 1280 y 390, en claro y
+en oscuro: el drawer sale por la derecha y ocupa el alto en las cuatro solapas;
+el buscador enfoca al abrir, encuentra «Periféricos» escribiendo
+«perifericos» y dice cuando no hay coincidencias; Escape vuelve con el foco en
+«Elegir categorías» y sin aplicar lo marcado; 11 relacionadas se guardan en
+el orden elegido, con una dirigida y diez inversas, mirado en la base; con 11
+renglones «Guardar» sigue a la vista; desmarcar una en el paso de elegir avisa
+lo que pasa del otro lado; sin desborde a 390 y sin errores de consola. Los 10
+tests de `relacionadas.test.ts` siguen en verde y `DATABASE_URL= npx next build`
+compila.
+
 ---
 
 ## Decisiones que cambiaron las especificaciones

@@ -421,6 +421,15 @@ lado, el atrás funciona, y dos pantallas no tienen que ponerse de acuerdo sobre
 algo invisible. Si el parámetro no se sacara al cerrar, recargar volvería a
 abrir el alta sobre un color ya cargado.
 
+**La regla del aire.** Un formulario del panel separa con tres intervalos y no
+con uno: **6px dentro de un campo** (etiqueta, control, ayuda), **20px entre
+campos de una sección** y **una línea fina con 24px de cada lado entre
+secciones**. El título de una sección tiene más aire arriba que abajo, su acción
+va en el renglón del título, y la ayuda de una casilla se alinea con el texto de
+la etiqueta. No hay estado vacío que repita lo que dice el botón de al lado. Está
+hecho en `Secciones` y `Seccion` (`components/admin/formulario.tsx`): un
+formulario nuevo los usa en vez de repetir los valores. DR §3.4.1.
+
 **La regla del buscador único.** El buscador del encabezado se esconde por CSS
 cuando la página ya trae el suyo a la vista, y vuelve cuando ese se va de pantalla.
 Es CSS y no estado de React a propósito: con estado, el encabezado se pinta con su
@@ -541,6 +550,18 @@ contenido y no la caja, para que la × no se vaya con él. El envoltorio del
 scroll lleva `flex-1` y `gap-[inherit]` para no pisar a los diálogos que fijan
 su alto desde afuera; uno que ocupa la pantalla entera anula el tope con
 `max-h-none`. DR §6.14.
+
+### Drawers
+
+**Dar de alta y editar en el catálogo es un drawer a la derecha**
+(`components/ui/sheet.tsx`): marcas, categorías, colores y medios de pago. Alto
+entero, 512px en escritorio, pantalla completa en el teléfono; título y pie
+fijos y el medio scrollea, así «Guardar» se ve siempre. A la derecha porque la
+izquierda es la navegación. Un paso adentro —elegir relacionadas— reemplaza al
+formulario y no se le apila, y Escape en ese paso vuelve al formulario. Las
+confirmaciones siguen en diálogo. La regla para lo que venga: **alta o edición
+con secciones o con una lista que crece → drawer; confirmar o decidir →
+diálogo.** DR §6.14.3.
 
 ### Solapas del panel
 

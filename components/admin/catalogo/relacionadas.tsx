@@ -1,13 +1,16 @@
 "use client";
 
-import { ArrowDown, ArrowUp, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Search, X } from "lucide-react";
+import { useDeferredValue, useState } from "react";
 
+import { Seccion } from "@/components/admin/formulario";
 import { RELACIONADAS } from "@/components/admin/catalogo/copy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FieldHint, Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { SheetBody, SheetFooter } from "@/components/ui/sheet";
 import type {
   CategoriaRelacionable,
   CategoriaRelacionada,
@@ -16,63 +19,52 @@ import type {
 /**
  * Las categorías relacionadas de una categoría — RF-31.
  *
- * Es controlado: la lista vive en el diálogo, que la manda junto con el
- * nombre al guardar. Nada se escribe hasta entonces, y por eso los efectos
- * sobre la OTRA categoría —quitar una recíproca, o destildarla— se anuncian
- * acá, al lado de lo que los provoca, antes de apretar «Guardar» (RF-31:
- * «informándolo antes»).
+ * Son dos piezas del mismo drawer, que nunca se ven a la vez (§6.14.2: si
+ * elegir lleva a un segundo paso, el paso va adentro, nunca un diálogo encima
+ * de otro):
  *
- * Elegir es un `<select>` que agrega, no un multiselect con casillas: la
- * lista tiene orden y cada renglón lleva su «Recíproca», así que lo elegido
- * se tiene que ver como renglones de todas maneras. El selector solo ofrece
- * lo que se puede agregar —activas, ni la propia ni las ya puestas—.
+ *   · `ListaDeRelacionadas`, la sección del formulario: lo elegido, en orden,
+ *     con su «Recíproca», subir, bajar y quitar.
+ *   · `EleccionDeRelacionadas`, el paso de elegir: un buscador y todas las
+ *     activas con casillas, para marcar varias de una vez. Las nuevas entran
+ *     al final de la lista y se ordenan después, en el formulario.
+ *
+ * Las dos son controladas: la lista vive en el formulario, que la manda junto
+ * con el nombre al guardar. Nada se escribe antes, y por eso lo que le pasa a
+ * la OTRA categoría se avisa al lado de lo que lo provoca (RF-31: «informándolo
+ * antes»).
  */
-export function RelacionadasDeCategoria({
+
+export function ListaDeRelacionadas({
   id,
-  propia,
   nombre,
   lista,
   originales,
-  relacionables,
+  hayParaElegir,
   alCambiar,
+  alElegir,
   deshabilitado,
+  refDelBoton,
 }: {
   id: string;
-  /** La categoría que se edita; `null` en el alta. */
-  propia: string | null;
   /** El nombre como está escrito ahora, para los avisos. */
   nombre: string;
   lista: CategoriaRelacionada[];
   /** Cómo estaba guardada: de acá salen los avisos sobre el otro lado. */
   originales: CategoriaRelacionada[];
-  relacionables: CategoriaRelacionable[];
+  hayParaElegir: boolean;
   alCambiar: (lista: CategoriaRelacionada[]) => void;
+  alElegir: () => void;
   deshabilitado: boolean;
+  /** Para devolverle el foco a «Elegir» al volver del paso de elegir. */
+  refDelBoton: React.Ref<HTMLButtonElement>;
 }) {
   const esta = nombre.trim() || "esta categoría";
   const elegidas = new Set(lista.map((r) => r.id));
-  const disponibles = relacionables.filter(
-    (c) => c.id !== propia && !elegidas.has(c.id),
-  );
   const eraReciproca = new Map(originales.map((r) => [r.id, r.reciproca]));
   // Las recíprocas que se sacaron de la lista: al guardar se van también del
   // otro lado, y ese renglón ya no está para avisarlo.
   const quitadas = originales.filter((r) => r.reciproca && !elegidas.has(r.id));
-
-  const agregar = (idElegida: string) => {
-    const c = relacionables.find((r) => r.id === idElegida);
-    if (!c) return;
-    alCambiar([
-      ...lista,
-      {
-        id: c.id,
-        name: c.name,
-        isActive: true,
-        activos: c.activos,
-        reciproca: true,
-      },
-    ]);
-  };
 
   const mover = (desde: number, hacia: number) => {
     const nueva = [...lista];
@@ -81,95 +73,124 @@ export function RelacionadasDeCategoria({
     alCambiar(nueva);
   };
 
-  const cambiar = (idRelacion: string, reciproca: boolean) =>
-    alCambiar(
-      lista.map((r) => (r.id === idRelacion ? { ...r, reciproca } : r)),
-    );
-
-  const quitar = (idRelacion: string) =>
-    alCambiar(lista.filter((r) => r.id !== idRelacion));
-
   return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="mb-2 text-body-sm font-medium text-ink">
-        {RELACIONADAS.etiqueta}
-      </legend>
-      <FieldHint id={`${id}-ayuda`} className="-mt-1">
-        {RELACIONADAS.ayuda}
-      </FieldHint>
+    <Seccion
+      titulo={RELACIONADAS.etiqueta}
+      descripcion={RELACIONADAS.ayuda}
+      accion={
+        hayParaElegir ? (
+          <Button
+            ref={refDelBoton}
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={alElegir}
+            disabled={deshabilitado}
+          >
+            {RELACIONADAS.elegir}
+          </Button>
+        ) : null
+      }
+    >
+      {!hayParaElegir && lista.length === 0 ? (
+        <p className="text-body-sm text-ink-secondary">
+          {RELACIONADAS.noHayOtras}
+        </p>
+      ) : null}
 
       {lista.length > 0 ? (
-        <ol className="flex flex-col divide-y divide-border rounded-panel-control border border-border">
+        <ol className="flex flex-col divide-y divide-border rounded-panel-control border border-border px-3">
           {lista.map((r, i) => (
-            <li key={r.id} className="flex flex-col gap-1 px-3 py-2">
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="font-medium text-ink">{r.name}</span>
-                    {!r.isActive ? (
-                      <Badge tone="neutral">{RELACIONADAS.inactiva}</Badge>
-                    ) : null}
-                  </span>
-                  <span
-                    className={
-                      r.activos === 0
-                        ? "block text-caption text-warning"
-                        : "block text-caption text-ink-secondary"
-                    }
+            <li key={r.id} className="flex flex-col gap-1 py-2">
+              <div className="flex items-center gap-3">
+                {/* En el teléfono «Recíproca» baja debajo del nombre: en una
+                    sola línea, con tres botones de 44px, el nombre se quedaba
+                    con 90px. */}
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-body-sm font-medium text-ink">
+                        {r.name}
+                      </span>
+                      {!r.isActive ? (
+                        <Badge tone="neutral">{RELACIONADAS.inactiva}</Badge>
+                      ) : null}
+                    </span>
+                    <span
+                      className={
+                        r.activos === 0
+                          ? "text-caption text-warning"
+                          : "text-caption text-ink-secondary"
+                      }
+                    >
+                      {RELACIONADAS.aporta(r.activos)}
+                    </span>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Checkbox
+                      id={`${id}-${r.id}`}
+                      checked={r.reciproca}
+                      onCheckedChange={(v) =>
+                        alCambiar(
+                          lista.map((x) =>
+                            x.id === r.id ? { ...x, reciproca: v === true } : x,
+                          ),
+                        )
+                      }
+                      disabled={deshabilitado}
+                      // La etiqueta visible es corta; lo que hace, con los
+                      // dos nombres, va en el nombre accesible.
+                      aria-label={RELACIONADAS.reciproca(r.name, esta)}
+                    />
+                    <Label
+                      htmlFor={`${id}-${r.id}`}
+                      className="text-body-sm font-normal text-ink-secondary"
+                    >
+                      {RELACIONADAS.reciprocaCorta}
+                    </Label>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center">
+                  <Button
+                    type="button"
+                    variant="tertiary"
+                    size="icon"
+                    onClick={() => mover(i, i - 1)}
+                    disabled={deshabilitado || i === 0}
+                    title={`Subir ${r.name}`}
                   >
-                    {RELACIONADAS.aporta(r.activos)}
-                  </span>
-                </span>
-
-                <Button
-                  type="button"
-                  variant="tertiary"
-                  size="icon"
-                  onClick={() => mover(i, i - 1)}
-                  disabled={deshabilitado || i === 0}
-                  title={`Subir ${r.name}`}
-                >
-                  <ArrowUp aria-hidden />
-                  <span className="sr-only">Subir {r.name}</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="tertiary"
-                  size="icon"
-                  onClick={() => mover(i, i + 1)}
-                  disabled={deshabilitado || i === lista.length - 1}
-                  title={`Bajar ${r.name}`}
-                >
-                  <ArrowDown aria-hidden />
-                  <span className="sr-only">Bajar {r.name}</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive-ghost"
-                  size="icon"
-                  onClick={() => quitar(r.id)}
-                  disabled={deshabilitado}
-                  title={`Quitar ${r.name}`}
-                >
-                  <X aria-hidden />
-                  <span className="sr-only">Quitar {r.name}</span>
-                </Button>
+                    <ArrowUp aria-hidden />
+                    <span className="sr-only">Subir {r.name}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="tertiary"
+                    size="icon"
+                    onClick={() => mover(i, i + 1)}
+                    disabled={deshabilitado || i === lista.length - 1}
+                    title={`Bajar ${r.name}`}
+                  >
+                    <ArrowDown aria-hidden />
+                    <span className="sr-only">Bajar {r.name}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive-ghost"
+                    size="icon"
+                    onClick={() =>
+                      alCambiar(lista.filter((x) => x.id !== r.id))
+                    }
+                    disabled={deshabilitado}
+                    title={`Quitar ${r.name}`}
+                  >
+                    <X aria-hidden />
+                    <span className="sr-only">Quitar {r.name}</span>
+                  </Button>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id={`${id}-${r.id}`}
-                  checked={r.reciproca}
-                  onCheckedChange={(v) => cambiar(r.id, v === true)}
-                  disabled={deshabilitado}
-                />
-                <Label
-                  htmlFor={`${id}-${r.id}`}
-                  className="text-body-sm font-normal"
-                >
-                  {RELACIONADAS.reciproca(r.name, esta)}
-                </Label>
-              </div>
               {eraReciproca.get(r.id) === true && !r.reciproca ? (
                 <p className="text-caption text-warning">
                   {RELACIONADAS.dejaDeRecomendar(r.name, esta)}
@@ -178,9 +199,7 @@ export function RelacionadasDeCategoria({
             </li>
           ))}
         </ol>
-      ) : (
-        <p className="text-body-sm text-ink-secondary">{RELACIONADAS.vacio}</p>
-      )}
+      ) : null}
 
       {quitadas.length > 0 ? (
         <p className="text-caption text-warning">
@@ -190,25 +209,121 @@ export function RelacionadasDeCategoria({
           )}
         </p>
       ) : null}
+    </Seccion>
+  );
+}
 
-      {disponibles.length > 0 ? (
-        <Select
-          aria-label={RELACIONADAS.agregar}
-          aria-describedby={`${id}-ayuda`}
-          value=""
-          onChange={(e) => agregar(e.target.value)}
-          disabled={deshabilitado}
-        >
-          <option value="" disabled>
-            {RELACIONADAS.agregar}
-          </option>
-          {disponibles.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} · {RELACIONADAS.aporta(c.activos)}
-            </option>
-          ))}
-        </Select>
-      ) : null}
-    </fieldset>
+/** Sin tildes ni mayúsculas: «periféricos» se encuentra con «perifericos». */
+function normalizar(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
+}
+
+export function EleccionDeRelacionadas({
+  id,
+  disponibles,
+  elegidas,
+  alListo,
+  alVolver,
+}: {
+  id: string;
+  /** Las activas, sin la propia. */
+  disponibles: CategoriaRelacionable[];
+  /** Las que ya están en la lista, para arrancar con su casilla marcada. */
+  elegidas: string[];
+  /** Los ids marcados, en el orden en que se marcaron. */
+  alListo: (marcadas: string[]) => void;
+  alVolver: () => void;
+}) {
+  const [termino, setTermino] = useState("");
+  const [marcadas, setMarcadas] = useState(() => {
+    const posibles = new Set(disponibles.map((c) => c.id));
+    return elegidas.filter((e) => posibles.has(e));
+  });
+  // Son pocas y están todas en memoria: filtrar es instantáneo, pero con 100
+  // renglones el diferido deja que el campo responda primero.
+  const busqueda = normalizar(useDeferredValue(termino));
+  const visibles = busqueda
+    ? disponibles.filter((c) => normalizar(c.name).includes(busqueda))
+    : disponibles;
+  const marcada = new Set(marcadas);
+
+  const alternar = (idCategoria: string, v: boolean) =>
+    setMarcadas((m) =>
+      v ? [...m, idCategoria] : m.filter((x) => x !== idCategoria),
+    );
+
+  return (
+    <>
+      <div className="flex shrink-0 flex-col gap-1.5 border-b border-border px-6 py-4">
+        <Label htmlFor={`${id}-buscar`}>{RELACIONADAS.buscar}</Label>
+        <div className="relative">
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-secondary"
+          />
+          <Input
+            id={`${id}-buscar`}
+            type="search"
+            value={termino}
+            onChange={(e) => setTermino(e.target.value)}
+            autoFocus
+            autoComplete="off"
+            // `admin:pl-9` y no `pl-9`: el campo trae `admin:px-3`, que con
+            // la variante gana y dejaba la lupa encima del texto.
+            className="admin:pl-9"
+          />
+        </div>
+      </div>
+
+      <SheetBody className="px-3 py-2">
+        {visibles.length > 0 ? (
+          <ul aria-label={RELACIONADAS.etiqueta} className="flex flex-col">
+            {visibles.map((c) => (
+              <li key={c.id}>
+                <label
+                  htmlFor={`${id}-${c.id}`}
+                  className="flex min-h-11 cursor-pointer items-center gap-3 rounded-panel-control px-3 py-2 transition-colors duration-150 hover:bg-surface-sunken"
+                >
+                  <Checkbox
+                    id={`${id}-${c.id}`}
+                    checked={marcada.has(c.id)}
+                    onCheckedChange={(v) => alternar(c.id, v === true)}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-body-sm text-ink">
+                    {c.name}
+                  </span>
+                  <span
+                    className={
+                      c.activos === 0
+                        ? "shrink-0 text-caption text-warning"
+                        : "shrink-0 text-caption text-ink-secondary tabular-nums"
+                    }
+                  >
+                    {RELACIONADAS.productos(c.activos)}
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-3 py-4 text-body-sm text-ink-secondary">
+            {RELACIONADAS.sinCoincidencias(termino.trim())}
+          </p>
+        )}
+      </SheetBody>
+
+      <SheetFooter>
+        <Button type="button" variant="secondary" onClick={alVolver}>
+          Volver
+        </Button>
+        <Button type="button" variant="brand" onClick={() => alListo(marcadas)}>
+          {RELACIONADAS.listo(marcadas.length)}
+        </Button>
+      </SheetFooter>
+    </>
   );
 }
