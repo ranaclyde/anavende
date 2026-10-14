@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ChevronRight, RotateCcw } from "lucide-react";
 
 import { DatosEstructurados } from "@/components/seo/datos-estructurados";
 import { Compra } from "@/components/shop/ficha/compra";
 import { Descripcion } from "@/components/shop/ficha/descripcion";
+import {
+  EsqueletoDeRecomendados,
+  Recomendados,
+} from "@/components/shop/ficha/recomendados";
 import { Precio } from "@/components/shop/precio";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,10 +52,9 @@ import {
  * solo: formatearlo en el navegador significaría mandarle `decimal.js` entero
  * para poner un punto de miles.
  *
- * **Nada de recomendados todavía.** RF-03 los pide y son F8.2 y F8.4: un
- * bloque «También te puede interesar» exige la cascada de §11.2, que sin
- * catálogo real no se puede ni calibrar ni ver. La pantalla queda con lugar
- * para los dos.
+ * **Los recomendados (F8.2) llegan después del resto**, por `<Suspense>`:
+ * están debajo del pliegue y su consulta no tiene por qué demorar la foto y
+ * el botón de compra. «Vistos recientemente» es F8.4 y todavía no está.
  */
 
 type Props = {
@@ -305,6 +309,15 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
           />
         }
       />
+
+      <Suspense fallback={<EsqueletoDeRecomendados />}>
+        <Recomendados
+          productoId={ficha.id}
+          ruta={`/productos/${ficha.slug}`}
+          categoria={{ id: ficha.categoriaId, nombre: ficha.categoria }}
+          userId={identidad?.userId ?? null}
+        />
+      </Suspense>
     </div>
   );
 }
