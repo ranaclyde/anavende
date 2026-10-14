@@ -1137,6 +1137,7 @@ El umbral de similitud se fija con `pg_trgm.similarity_threshold` (arranca en `0
 ### 10.2 Filtros, orden y paginación
 
 - El estado del catálogo (búsqueda, filtros, orden, página) vive **en la URL** (`searchParams`), no en estado de cliente: así es compartible y funciona con el botón atrás (RF-02).
+- **Categoría, marca y color van por slug**, repetidos cuando son varios: `/productos?categoria=teclados&categoria=mouses&marca=logitech`. Es la dirección pública del ítem (RF-18: no cambia al renombrar) y se lee y se comparte; un UUID no. Se validan con la forma de `slugificar` antes de la consulta y se cruzan por slug, que es único en las tres tablas. Un enlace viejo con UUID no se reconoce y muestra el catálogo sin ese filtro (decidido el 2026-10-14, sin catálogo real todavía).
 - **En Next 16, `searchParams` y `params` son asíncronos**: hay que hacerles `await`. El acceso sincrónico fue removido.
 - Los filtros se traducen a una sola consulta con `WHERE` compuesto; los conteos de facetas se resuelven en una segunda consulta agregada.
 - Las **categorías que se ofrecen** —chips del encabezado (`DESIGN-REFERENCE.md` §5.1), accesos rápidos de la home (RF-01) y filtro del listado (RF-02)— se leen con un solo orden: `WHERE is_active ORDER BY is_featured DESC, immutable_unaccent(lower(name))`. Una sola consulta compartida, para que las tres superficies no puedan discrepar sobre qué va primero.

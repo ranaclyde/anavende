@@ -50,7 +50,7 @@ export async function Recomendados({
   productoId: string;
   /** A dónde vuelve quien toca un corazón sin sesión. */
   ruta: string;
-  categoria: { id: string; nombre: string };
+  categoria: { slug: string; nombre: string };
   userId: string | null;
 }) {
   // Independientes: los favoritos son de quien mira y los recomendados no.
@@ -80,7 +80,7 @@ export async function Recomendados({
         <SeccionDeLaHome
           titulo="Productos similares"
           enlace={{
-            href: urlDeTienda({ categoria: [categoria.id] }),
+            href: urlDeTienda({ categoria: [categoria.slug] }),
             etiqueta: `Ver todo en ${categoria.nombre}`,
           }}
         >
@@ -178,7 +178,7 @@ function BloqueDeComplementos({
       enlace={
         categorias.length > 0
           ? {
-              href: urlDeTienda({ categoria: categorias.map((c) => c.id) }),
+              href: urlDeTienda({ categoria: categorias.map((c) => c.slug) }),
               etiqueta: `Ver todo en ${enumerar(categorias.map((c) => c.nombre))}`,
             }
           : undefined

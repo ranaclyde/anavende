@@ -101,7 +101,7 @@ export function migas(ficha: Ficha): Jsonld {
       // formas de escribir la misma dirección es cómo se separan.
       {
         nombre: ficha.categoria,
-        ruta: urlDeTienda({ categoria: [ficha.categoriaId] }),
+        ruta: urlDeTienda({ categoria: [ficha.categoriaSlug] }),
       },
       { nombre: ficha.nombre, ruta: `/productos/${ficha.slug}` },
     ].map((paso, i) => ({

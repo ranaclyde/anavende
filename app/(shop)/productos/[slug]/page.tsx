@@ -266,7 +266,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         ]}
       />
 
-      <Migas categoria={ficha.categoria} categoriaId={ficha.categoriaId} />
+      <Migas categoria={ficha.categoria} categoriaSlug={ficha.categoriaSlug} />
 
       {/*
         `encabezado` e `informacion` se arman acá y `Compra` los pone junto a
@@ -326,7 +326,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         <Recomendados
           productoId={ficha.id}
           ruta={`/productos/${ficha.slug}`}
-          categoria={{ id: ficha.categoriaId, nombre: ficha.categoria }}
+          categoria={{ slug: ficha.categoriaSlug, nombre: ficha.categoria }}
           userId={identidad?.userId ?? null}
         />
       </Suspense>
@@ -353,10 +353,10 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
  */
 function Migas({
   categoria,
-  categoriaId,
+  categoriaSlug,
 }: {
   categoria: string;
-  categoriaId: string;
+  categoriaSlug: string;
 }) {
   return (
     <nav aria-label="Miga de pan" className="pb-6">
@@ -379,7 +379,7 @@ function Migas({
         </li>
         <li>
           <Link
-            href={urlDeTienda({ categoria: [categoriaId] })}
+            href={urlDeTienda({ categoria: [categoriaSlug] })}
             className={cn("relative rounded-pill hover:text-ink", AREA_TACTIL)}
           >
             {categoria}

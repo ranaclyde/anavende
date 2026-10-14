@@ -36,7 +36,6 @@ import { AREA_TACTIL, cn } from "@/lib/utils";
  * chip, que es lo que pasaría si React se lo reescribiera en cada render.
  */
 
-
 type Props = {
   filtros: FiltrosDeTienda;
   categorias: OpcionDeFiltro[];
@@ -166,50 +165,49 @@ export function PanelDeFiltros({
             "max-md:overscroll-contain max-md:p-5",
           )}
         >
-        {/*
+          {/*
           Los tres grupos en columnas, no apilados. Apilados, el panel medía
           más de 500px de alto y «Color» quedaba abajo de todo: se elegía
           categoría, se elegía marca y nadie llegaba a ver que había colores.
           En un teléfono vuelven a una sola columna, que ahí es lo correcto.
         */}
-        <div className="grid gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-          <GrupoDeChips
-            titulo="Categoría"
-            opciones={categorias}
-            seleccionados={filtros.categoria}
-            urlDe={(id) =>
-              urlCambiando(filtros, {
-                categoria: alternar(filtros.categoria, id),
-              })
-            }
-          />
-          <GrupoDeChips
-            titulo="Marca"
-            opciones={marcas}
-            seleccionados={filtros.marca}
-            urlDe={(id) =>
-              urlCambiando(filtros, { marca: alternar(filtros.marca, id) })
-            }
-          />
-          <GrupoDeChips
-            titulo="Color"
-            opciones={colores}
-            seleccionados={filtros.color}
-            urlDe={(id) =>
-              urlCambiando(filtros, { color: alternar(filtros.color, id) })
-            }
-          />
-        </div>
+          <div className="grid gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+            <GrupoDeChips
+              titulo="Categoría"
+              opciones={categorias}
+              seleccionados={filtros.categoria}
+              urlDe={(slug) =>
+                urlCambiando(filtros, {
+                  categoria: alternar(filtros.categoria, slug),
+                })
+              }
+            />
+            <GrupoDeChips
+              titulo="Marca"
+              opciones={marcas}
+              seleccionados={filtros.marca}
+              urlDe={(slug) =>
+                urlCambiando(filtros, { marca: alternar(filtros.marca, slug) })
+              }
+            />
+            <GrupoDeChips
+              titulo="Color"
+              opciones={colores}
+              seleccionados={filtros.color}
+              urlDe={(slug) =>
+                urlCambiando(filtros, { color: alternar(filtros.color, slug) })
+              }
+            />
+          </div>
 
-        <div className="flex flex-wrap items-end gap-x-8 gap-y-5">
-          <RangoDePrecio filtros={filtros} />
-          <Casilla
-            href={urlCambiando(filtros, { oferta: !filtros.oferta })}
-            activa={filtros.oferta}
-            etiqueta="Solo con descuento"
-          />
-        </div>
-
+          <div className="flex flex-wrap items-end gap-x-8 gap-y-5">
+            <RangoDePrecio filtros={filtros} />
+            <Casilla
+              href={urlCambiando(filtros, { oferta: !filtros.oferta })}
+              activa={filtros.oferta}
+              etiqueta="Solo con descuento"
+            />
+          </div>
         </div>
 
         {/*
@@ -279,7 +277,7 @@ function GrupoDeChips({
   titulo: string;
   opciones: (OpcionDeFiltro | OpcionDeColor)[];
   seleccionados: readonly string[];
-  urlDe: (id: string) => string;
+  urlDe: (slug: string) => string;
 }) {
   // Sin opciones no se dibuja el título: un encabezado con nada debajo parece
   // que la pantalla falló al cargar (§8).
@@ -297,15 +295,15 @@ function GrupoDeChips({
       */}
       <ul className="flex flex-wrap gap-2">
         {opciones.map((o) => {
-          const activo = seleccionados.includes(o.id);
+          const activo = seleccionados.includes(o.slug);
           const hex = "hex" in o ? o.hex : null;
 
           return (
-            <li key={o.id}>
+            <li key={o.slug}>
               <Link
                 // Volver a tocar el chip encendido lo apaga: lo resuelve
                 // `alternar`, y es el gesto que la gente prueba primero.
-                href={urlDe(o.id)}
+                href={urlDe(o.slug)}
                 // §9: el color nunca es el único portador del estado. Un
                 // lector de pantalla no ve el relleno burdeos.
                 aria-current={activo ? "true" : undefined}
@@ -407,8 +405,16 @@ function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
         className="flex flex-wrap items-center gap-2"
       >
         <Conservados filtros={filtros} />
-        <CampoDePrecio nombre="precioMin" etiqueta="Desde" valor={filtros.precioMin} />
-        <CampoDePrecio nombre="precioMax" etiqueta="Hasta" valor={filtros.precioMax} />
+        <CampoDePrecio
+          nombre="precioMin"
+          etiqueta="Desde"
+          valor={filtros.precioMin}
+        />
+        <CampoDePrecio
+          nombre="precioMax"
+          etiqueta="Hasta"
+          valor={filtros.precioMax}
+        />
         <Button type="submit" variant="secondary" size="md" className="h-11">
           Aplicar
         </Button>
@@ -426,18 +432,16 @@ function Conservados({ filtros }: { filtros: FiltrosDeTienda }) {
   return (
     <>
       {filtros.q ? <input type="hidden" name="q" value={filtros.q} /> : null}
-      {filtros.categoria.map((id) => (
-        <input key={id} type="hidden" name="categoria" value={id} />
+      {filtros.categoria.map((slug) => (
+        <input key={slug} type="hidden" name="categoria" value={slug} />
       ))}
-      {filtros.marca.map((id) => (
-        <input key={id} type="hidden" name="marca" value={id} />
+      {filtros.marca.map((slug) => (
+        <input key={slug} type="hidden" name="marca" value={slug} />
       ))}
-      {filtros.color.map((id) => (
-        <input key={id} type="hidden" name="color" value={id} />
+      {filtros.color.map((slug) => (
+        <input key={slug} type="hidden" name="color" value={slug} />
       ))}
-      {filtros.oferta ? (
-        <input type="hidden" name="oferta" value="1" />
-      ) : null}
+      {filtros.oferta ? <input type="hidden" name="oferta" value="1" /> : null}
       {filtros.orden !== "relevancia" ? (
         <input type="hidden" name="orden" value={filtros.orden} />
       ) : null}
@@ -525,9 +529,7 @@ function Casilla({
         "text-body-sm transition-colors duration-150",
         "focus-visible:shadow-focus focus-visible:outline-none",
         AREA_TACTIL,
-        activa
-          ? "font-medium text-brand"
-          : "text-ink-secondary hover:text-ink",
+        activa ? "font-medium text-brand" : "text-ink-secondary hover:text-ink",
       )}
     >
       <span
@@ -580,27 +582,27 @@ export function ChipsDeFiltros({
    * abrir el panel para saber cuáles, que es justo lo que los chips existen
    * para evitar.
    *
-   * Si un identificador no está en las opciones no se dibuja chip, y eso pasa
+   * Si un slug no está en las opciones no se dibuja chip, y eso pasa
    * de verdad: una categoría cuyo último producto se desactivó desaparece de
    * la lista. La salida no se pierde —«Limpiar todo» está siempre al final de
    * esta misma fila—, pero el filtro invisible es el motivo por el que ese
    * enlace no es opcional.
    */
   const grupos = [
-    { clave: "categoria", ids: filtros.categoria, opciones: categorias },
-    { clave: "marca", ids: filtros.marca, opciones: marcas },
-    { clave: "color", ids: filtros.color, opciones: colores },
+    { clave: "categoria", slugs: filtros.categoria, opciones: categorias },
+    { clave: "marca", slugs: filtros.marca, opciones: marcas },
+    { clave: "color", slugs: filtros.color, opciones: colores },
   ] as const;
 
   for (const grupo of grupos) {
-    for (const id of grupo.ids) {
-      const opcion = grupo.opciones.find((o) => o.id === id);
+    for (const slug of grupo.slugs) {
+      const opcion = grupo.opciones.find((o) => o.slug === slug);
       if (!opcion) continue;
       puestos.push({
-        clave: `${grupo.clave}-${id}`,
+        clave: `${grupo.clave}-${slug}`,
         etiqueta: opcion.nombre,
         href: urlCambiando(filtros, {
-          [grupo.clave]: alternar(grupo.ids, id),
+          [grupo.clave]: alternar(grupo.slugs, slug),
         }),
       });
     }

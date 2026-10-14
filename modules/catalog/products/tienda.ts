@@ -60,6 +60,14 @@ export function enLaLista(columna: SQL, ids: readonly string[]): SQL {
   )})`;
 }
 
+/** `columna IN ('a', 'b')` con los slugs como parámetros, como `enLaLista`. */
+function losSlugs(columna: SQL, slugs: readonly string[]): SQL {
+  return sql`${columna} IN (${sql.join(
+    slugs.map((slug) => sql`${slug}`),
+    sql`, `,
+  )})`;
+}
+
 function condiciones(f: FiltrosDeTienda): SQL {
   const partes: SQL[] = [sql`p.is_active`];
 
@@ -70,8 +78,14 @@ function condiciones(f: FiltrosDeTienda): SQL {
   // Es lo que espera cualquiera que haya usado un filtro de tienda, y lo
   // contrario —cruzar dentro del grupo— daría cero resultados siempre: ningún
   // producto es de dos categorías a la vez.
-  if (f.categoria.length) partes.push(enLaLista(sql`p.category_id`, f.categoria));
-  if (f.marca.length) partes.push(enLaLista(sql`p.brand_id`, f.marca));
+  // Los filtros llegan como slugs (`filtros-tienda.ts`) y se cruzan por
+  // slug, que es único en las tres tablas. Una subconsulta y no un JOIN: el
+  // de categoría y el de color no agregan columnas, solo recortan.
+  if (f.categoria.length) {
+    partes.push(sql`p.category_id IN (
+      SELECT id FROM categories WHERE ${losSlugs(sql`slug`, f.categoria)})`);
+  }
+  if (f.marca.length) partes.push(losSlugs(sql`b.slug`, f.marca));
 
   // RF-02: «muestra el producto si ALGUNA de sus variantes tiene ese color».
   // Por eso es un EXISTS y no un JOIN: con el join, un producto que tiene el
@@ -85,8 +99,10 @@ function condiciones(f: FiltrosDeTienda): SQL {
     partes.push(sql`EXISTS (
       SELECT 1 FROM product_variants v
        WHERE v.product_id = p.id AND v.is_active
-         AND (${enLaLista(sql`v.color_id`, f.color)}
-              OR ${enLaLista(sql`v.secondary_color_id`, f.color)})
+         AND EXISTS (
+           SELECT 1 FROM colors co
+            WHERE co.id IN (v.color_id, v.secondary_color_id)
+              AND ${losSlugs(sql`co.slug`, f.color)})
     )`);
   }
 
@@ -271,7 +287,11 @@ export async function leerPaginaDelCatalogo(
   };
 }
 
-export type OpcionDeFiltro = { id: string; nombre: string; cuantos: number };
+/**
+ * Una opción del filtro. Viaja con su `slug` y no con su id: es lo que va en
+ * la dirección (`?categoria=teclados`) y lo único que el filtro necesita.
+ */
+export type OpcionDeFiltro = { slug: string; nombre: string; cuantos: number };
 
 /** Un color además se dibuja, así que viaja con su hexadecimal (§6.5). */
 export type OpcionDeColor = OpcionDeFiltro & { hex: string };
@@ -291,14 +311,14 @@ export async function leerOpcionesDeFiltro(): Promise<{
 }> {
   const [categorias, marcas, colores] = await Promise.all([
     db.execute<OpcionDeFiltro>(sql`
-      SELECT c.id, c.name AS nombre, count(p.id)::int AS cuantos
+      SELECT c.slug, c.name AS nombre, count(p.id)::int AS cuantos
         FROM categories c
         JOIN products p ON p.category_id = c.id AND p.is_active
        GROUP BY c.id
        ORDER BY c.is_featured DESC, immutable_unaccent(lower(c.name))`),
 
     db.execute<OpcionDeFiltro>(sql`
-      SELECT b.id, b.name AS nombre, count(p.id)::int AS cuantos
+      SELECT b.slug, b.name AS nombre, count(p.id)::int AS cuantos
         FROM brands b
         JOIN products p ON p.brand_id = b.id AND p.is_active
        GROUP BY b.id
@@ -311,7 +331,7 @@ export async function leerOpcionesDeFiltro(): Promise<{
     // de dos colores suma en los dos, igual que el filtro la encuentra por
     // cualquiera (arriba, en `condiciones`).
     db.execute<OpcionDeColor>(sql`
-      SELECT co.id,
+      SELECT co.slug,
              co.name              AS nombre,
              co.hex_code          AS hex,
              count(DISTINCT p.id)::int AS cuantos

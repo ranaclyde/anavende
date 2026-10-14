@@ -7,7 +7,7 @@ import { productosDelMapa } from "@/modules/catalog/products/mapa-del-sitio";
  * `sitemap.xml` — F3.9, RNF-04.
  *
  * **Solo las direcciones que se indexan**: la home, el catálogo sin filtrar y
- * cada ficha activa. Los filtros no entran —son `?categoria=<uuid>` y salen
+ * cada ficha activa. Los filtros no entran —son `?categoria=<slug>` y salen
  * marcados `noindex` (ver `productos/page.tsx`)—, y las páginas de sesión
  * tampoco. Un mapa del sitio no es el índice de todo lo que responde 200: es
  * la lista de lo que pedimos que se indexe, y meter ahí algo que la misma

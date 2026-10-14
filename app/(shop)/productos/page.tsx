@@ -123,7 +123,7 @@ export default async function Catalogo({
   // para eso están los chips, que los muestran todos.
   const unicaCategoria =
     filtros.categoria.length === 1
-      ? opciones.categorias.find((c) => c.id === filtros.categoria[0])
+      ? opciones.categorias.find((c) => c.slug === filtros.categoria[0])
       : undefined;
   const titulo = filtros.q
     ? `Resultados para «${filtros.q}»`
@@ -167,11 +167,7 @@ export default async function Catalogo({
           cuántos quedan con los filtros que se están tocando, antes de
           cerrarlo.
         */}
-        <PanelDeFiltros
-          filtros={filtros}
-          {...opciones}
-          total={pagina.total}
-        />
+        <PanelDeFiltros filtros={filtros} {...opciones} total={pagina.total} />
         <SelectorDeOrden filtros={filtros} />
       </div>
 

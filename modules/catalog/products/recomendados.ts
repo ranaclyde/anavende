@@ -67,7 +67,7 @@ export const POR_BLOQUE = 4;
 export const MAXIMO_POR_BLOQUE = 8;
 
 /** Una categoría relacionada, para el «Ver todo» del bloque. */
-export type CategoriaRelacionada = { id: string; nombre: string };
+export type CategoriaRelacionada = { id: string; slug: string; nombre: string };
 
 /** Un bloque de complementos: lo que se muestra y de dónde sale. */
 export type Complementos = {
@@ -173,7 +173,7 @@ async function complementos(
     ),
     ejecutor.execute<CategoriaRelacionada>(sql`
       WITH ${base}
-      SELECT c.id, c.name AS nombre
+      SELECT c.id, c.slug, c.name AS nombre
         FROM relacionadas r
         JOIN categories c ON c.id = r.category_id
        WHERE c.is_active
