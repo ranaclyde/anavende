@@ -1,3 +1,4 @@
+import { ANCHO_EN_CARRUSEL, Carrusel } from "@/components/shop/carrusel";
 import { BotonFavorito } from "@/components/shop/favorito";
 import {
   GrillaDeLaHome,
@@ -13,6 +14,7 @@ import {
   leerCompletaTuSetup,
   leerRecomendados,
   POR_BLOQUE,
+  type Complementos,
 } from "@/modules/catalog/products/recomendados";
 import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
 
@@ -33,11 +35,11 @@ import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
  * **La pieza es la de la home**: título, «Ver todo» y la grilla de cuatro. Una
  * sección de tarjetas es la misma en toda la tienda (§6.1).
  *
- * **Los dos bloques se distinguen por lo que dicen y por a dónde llevan.**
- * «Productos similares» tiene salida al catálogo de la categoría —es la
- * pregunta que sigue a «¿hay algo parecido?»: «mostrame todos»—; «También te
- * puede interesar» no, porque mezcla categorías y no hay un listado que lo
- * continúe. Un bloque sin candidatos no se dibuja (RF-32).
+ * **Cada bloque lleva a su listado.** «Productos similares», al catálogo de
+ * la categoría —la pregunta que sigue a «¿hay algo parecido?» es «mostrame
+ * todos»—; «También te puede interesar», al catálogo con TODAS las
+ * relacionadas filtradas a la vez, que el filtro suma (RF-02). Un bloque sin
+ * candidatos no se dibuja (RF-32).
  */
 export async function Recomendados({
   productoId,
@@ -57,7 +59,9 @@ export async function Recomendados({
     userId ? idsDeFavoritos(userId) : null,
   ]);
 
-  if (complementos.length === 0 && similares.length === 0) return null;
+  if (complementos.productos.length === 0 && similares.length === 0) {
+    return null;
+  }
 
   const tarjetas = (productos: ProductoEnTarjeta[]) => (
     <Tarjetas productos={productos} favoritos={favoritos} ruta={ruta} />
@@ -65,11 +69,12 @@ export async function Recomendados({
 
   return (
     <Bloques>
-      {complementos.length > 0 ? (
-        <SeccionDeLaHome titulo="También te puede interesar">
-          <GrillaDeLaHome>{tarjetas(complementos)}</GrillaDeLaHome>
-        </SeccionDeLaHome>
-      ) : null}
+      <BloqueDeComplementos
+        titulo="También te puede interesar"
+        complementos={complementos}
+        favoritos={favoritos}
+        ruta={ruta}
+      />
 
       {similares.length > 0 ? (
         <SeccionDeLaHome
@@ -97,7 +102,9 @@ export async function Recomendados({
  * misma decisión que la ficha: los recomendados son otra pantalla dentro de la
  * página.
  *
- * Sin «Ver todo»: mezcla categorías, como «También te puede interesar».
+ * Es un bloque de complementos, como «También te puede interesar»: uno de
+ * cada relacionada, deslizable si son más de cuatro, y «Ver todo» con las
+ * relacionadas filtradas.
  */
 export async function CompletaTuSetup({
   variantes,
@@ -107,25 +114,82 @@ export async function CompletaTuSetup({
   variantes: string[];
   userId: string;
 }) {
-  const [productos, favoritos] = await Promise.all([
+  const [complementos, favoritos] = await Promise.all([
     leerCompletaTuSetup(variantes),
     idsDeFavoritos(userId),
   ]);
 
-  if (productos.length === 0) return null;
+  if (complementos.productos.length === 0) return null;
 
   return (
     <Bloques>
-      <SeccionDeLaHome titulo="Completá tu setup">
-        <GrillaDeLaHome>
-          <Tarjetas
-            productos={productos}
-            favoritos={favoritos}
-            ruta="/carrito"
-          />
-        </GrillaDeLaHome>
-      </SeccionDeLaHome>
+      <BloqueDeComplementos
+        titulo="Completá tu setup"
+        complementos={complementos}
+        favoritos={favoritos}
+        ruta="/carrito"
+      />
     </Bloques>
+  );
+}
+
+/** «Mouses, Micrófonos y Teclados». */
+function enumerar(nombres: string[]): string {
+  return nombres.length > 1
+    ? `${nombres.slice(0, -1).join(", ")} y ${nombres.at(-1)}`
+    : (nombres[0] ?? "");
+}
+
+/**
+ * Un bloque de complementos, en la ficha o en el carrito.
+ *
+ * **Hasta cuatro, la grilla de siempre; con más, la fila se desliza.** Más de
+ * cuatro solo pasa cuando hay más de cuatro relacionadas —una tarjeta por
+ * cada una, hasta ocho—, y dos filas de grilla empujarían «Productos
+ * similares» y el pie de página una pantalla más abajo por algo que es una
+ * sugerencia.
+ */
+function BloqueDeComplementos({
+  titulo,
+  complementos: { productos, categorias },
+  favoritos,
+  ruta,
+}: {
+  titulo: string;
+  complementos: Complementos;
+  favoritos: string[] | null;
+  ruta: string;
+}) {
+  if (productos.length === 0) return null;
+
+  const enCarrusel = productos.length > POR_BLOQUE;
+  const tarjetas = (
+    <Tarjetas
+      productos={productos}
+      favoritos={favoritos}
+      ruta={ruta}
+      enCarrusel={enCarrusel}
+    />
+  );
+
+  return (
+    <SeccionDeLaHome
+      titulo={titulo}
+      enlace={
+        categorias.length > 0
+          ? {
+              href: urlDeTienda({ categoria: categorias.map((c) => c.id) }),
+              etiqueta: `Ver todo en ${enumerar(categorias.map((c) => c.nombre))}`,
+            }
+          : undefined
+      }
+    >
+      {enCarrusel ? (
+        <Carrusel>{tarjetas}</Carrusel>
+      ) : (
+        <GrillaDeLaHome>{tarjetas}</GrillaDeLaHome>
+      )}
+    </SeccionDeLaHome>
   );
 }
 
@@ -137,15 +201,20 @@ function Tarjetas({
   productos,
   favoritos,
   ruta,
+  enCarrusel = false,
 }: {
   productos: ProductoEnTarjeta[];
   favoritos: string[] | null;
   ruta: string;
+  enCarrusel?: boolean;
 }) {
   const guardados = new Set(favoritos ?? []);
 
   return productos.map((producto) => (
-    <li key={producto.id}>
+    <li
+      key={producto.id}
+      className={enCarrusel ? ANCHO_EN_CARRUSEL : undefined}
+    >
       <TarjetaProducto
         producto={producto}
         accionFavorito={

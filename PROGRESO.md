@@ -1888,6 +1888,43 @@ que vale para las cinco operaciones y para cualquiera que se agregue después.
 | F8.2 | Recomendados en cascada | ✅ | **La ficha tiene «También te puede interesar» y «Productos similares»** (RF-32), a lo ancho debajo de las dos columnas, con la misma sección y la misma tarjeta que la home. **Cada bloque es UNA consulta** (`modules/catalog/products/recomendados.ts`) que le pone a cada candidato su nivel de la cascada y ordena por él, en vez de un viaje a la base por nivel; los dos bloques salen en paralelo. **Llegan después del resto de la ficha, por `<Suspense>`** con un esqueleto de su forma: la foto y el botón de compra nunca esperan a lo que está debajo del pliegue, que es el «no degradan el tiempo de carga» de RF-32. Cuatro por bloque, la fila de §7.3; un bloque sin candidatos no se dibuja. «Productos similares» lleva «Ver todo» al catálogo de la categoría; el de complementos no, porque mezcla categorías. **Tres decisiones que la especificación no cerraba:** (1) **el stock manda sobre el nivel**: un agotado sólo entra si no alcanza el cupo (RF-32), así que un similar de la misma marca con stock le gana a uno de la misma categoría agotado — el SQL de TS §11.2 ordenaba el stock adentro de cada nivel y contradecía esa regla; (2) **el respaldo de los complementos son los destacados con stock de OTRA categoría**: en la ficha de un teclado, otro teclado es una alternativa y va a similares; (3) **si un producto califica para los dos bloques se queda en el de arriba**, que solo pasa con uno de una categoría relacionada y de la misma marca. **Verificado:** siete tests en `tests/unit/catalogo/recomendados.test.ts` contra Postgres, en una transacción que apaga los destacados del seed y se revierte —y que fallan si se saca la prioridad del stock, probado—; un recorrido de Playwright a 1280 y 390 sobre una ficha con relacionadas y otra sin ellas: los dos bloques, entre uno y cuatro, sin el producto actual ni repetidos, «Ver todo» sólo en similares, sin desborde y sin errores de consola, 18 pasos en verde; `DATABASE_URL= npx next build` sin errores |
 | F8.3 | «Completá tu setup» en el carrito | ✅ | **Debajo del carrito, cuatro tarjetas que completan lo que hay adentro** (RF-32): los productos de las categorías relacionadas con CUALQUIERA de las del carrito —una relacionada con dos toma la mejor de sus dos posiciones— y, si no alcanza, los destacados con stock. Es la cascada de F8.2 con otro punto de partida: `recomendar` en `modules/catalog/products/recomendados.ts` ahora recibe la base (un producto o un carrito) y `leerCompletaTuSetup` arma la del carrito a partir de sus variantes, que es lo que el carrito tiene. Llega por `<Suspense>`, sin demorar el carrito, y con el carrito vacío no se pide ni se dibuja. **Dos decisiones:** (1) **nada de las categorías que ya están en el carrito**, en ningún nivel — RF-32 pide excluir los productos; con un mouse adentro, otro mouse no completa nada; las variantes que ya no se venden también cuentan, para no recomendar abajo lo que arriba dice «Ya no disponible»; (2) **va a lo ancho debajo de todo y no en la columna del resumen**: DR §7.4 dice «debajo del resumen», que en el teléfono es literal, pero en escritorio la columna mide 352px y es `sticky` — cuatro tarjetas serían dos de 160px, escondiéndose detrás del resumen al desplazar. El componente de los bloques pasó a `components/shop/recomendados.tsx`, compartido por ficha y carrito. **Verificado:** tres tests más en `tests/unit/catalogo/recomendados.test.ts` (diez en verde); un recorrido de Playwright con un comprador de prueba y un auricular en el carrito, a 1280 y 390: el bloque aparece debajo del resumen con mouses —la relacionada— y ningún auricular, sin desborde ni errores de consola, y con el carrito vacío no aparece; 9 pasos en verde, y el usuario de prueba se borró al terminar; `DATABASE_URL= npx next build` sin errores |
 
+### Los complementos, uno de cada relacionada (2026-10-14)
+
+**Pedido tuyo, mirando F8.2 y F8.3**: Auriculares tiene Mouses, Micrófonos y
+Teclados como relacionadas, y los dos bloques mostraban cuatro mouses. El
+orden era «todos los de la primera relacionada, después los de la segunda», y
+con seis mouses las otras dos no llegaban nunca. Tres cambios, en «También te
+puede interesar» y en «Completá tu setup»:
+
+- **Por vueltas**: el mejor de cada relacionada en su orden, después el
+  segundo de cada una. Con tres relacionadas, la cuarta tarjeta es el segundo
+  de la primera.
+- **El cupo crece con las relacionadas**: una por cada una, entre cuatro y
+  ocho —el tope de RF-32—. Con más de cuatro, **la fila se desliza**
+  (`components/shop/carrusel.tsx`, las reglas de la galería de §6.8: el dedo
+  en el teléfono con la siguiente asomada, flechas desde `md` que se apagan
+  en las puntas). Con diez relacionadas se ven ocho; las diez están en
+  «Ver todo».
+- **«Ver todo» con todas las relacionadas filtradas**: el catálogo suma las
+  categorías de un mismo filtro (RF-02), así que es un solo enlace. Sin
+  relacionadas —un bloque hecho solo de destacados— no hay enlace.
+
+Las vueltas son un `row_number()` por categoría dentro del `ORDER BY` de la
+misma consulta: sigue siendo una por bloque. El stock sigue mandando: un
+agotado va después de todos los que tienen stock, de cualquier relacionada.
+
+**Verificado:** 13 tests en `tests/unit/catalogo/recomendados.test.ts` (tres
+nuevos: las vueltas con tres relacionadas, seis y diez, y las vueltas del
+carrito). Un recorrido de Playwright sobre la ficha del Pandora H350 y un
+carrito con él, a 1280 y 390: con las tres relacionadas reales sale Mouses,
+Micrófonos, Teclados, Mouses en grilla; con tres más agregadas para la prueba
+—y borradas al terminar— salen las seis, deslizables, con la flecha anterior
+apagada al empezar y la siguiente apagada en la punta, sin flechas en el
+teléfono, sin desborde y sin errores de consola. 36 pasos en verde; uno falló
+por cómo estaba escrito y no por la pantalla: esperaba ver las seis
+categorías en la primera página de «Ver todo», y son 29 productos para 24 por
+página —las webcams quedan en la segunda, por orden alfabético—.
+
 ### El catálogo pasa a un drawer, con aire entre secciones (2026-10-14)
 
 **Pedido tuyo, mirando el diálogo de categoría que dejó F8.1**: no te gustaba

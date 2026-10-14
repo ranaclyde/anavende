@@ -121,7 +121,11 @@ describe("«También te puede interesar»", () => {
       const { complementos } = await leerRecomendados(k120, tx);
 
       // Pads va antes que Mouses porque así se ordenó la relación (RF-31).
-      expect(nombres(complementos)).toEqual(["Pad", "Mouse", "Cable"]);
+      expect(nombres(complementos.productos)).toEqual([
+        "Pad",
+        "Mouse",
+        "Cable",
+      ]);
     }));
 
   test("un agotado de una relacionada sólo entra si no alcanza el cupo", () =>
@@ -139,7 +143,7 @@ describe("«También te puede interesar»", () => {
 
       const { complementos } = await leerRecomendados(k120, tx);
 
-      expect(nombres(complementos)).toEqual(["Cable", "Pad agotado"]);
+      expect(nombres(complementos.productos)).toEqual(["Cable", "Pad agotado"]);
     }));
 
   test("nunca el producto actual, un inactivo ni uno de la misma categoría", () =>
@@ -170,7 +174,7 @@ describe("«También te puede interesar»", () => {
 
       const { complementos, similares } = await leerRecomendados(k120, tx);
 
-      expect(nombres(complementos)).toEqual(["Pad"]);
+      expect(nombres(complementos.productos)).toEqual(["Pad"]);
       expect(nombres(similares)).toContain("K380");
     }));
 
@@ -192,11 +196,80 @@ describe("«También te puede interesar»", () => {
         marca: await marca("Otra"),
       });
 
-      expect((await leerRecomendados(k120, tx)).complementos).toHaveLength(4);
+      expect(
+        (await leerRecomendados(k120, tx)).complementos.productos,
+      ).toHaveLength(4);
       expect(await leerRecomendados(suelto, tx)).toEqual({
-        complementos: [],
+        complementos: { productos: [], categorias: [] },
         similares: [],
       });
+    }));
+});
+
+describe("«También te puede interesar», uno de cada relacionada", () => {
+  test("por vueltas: el mejor de cada una, y la cuarta de la primera", () =>
+    enTransaccionRevertida(async (tx) => {
+      const { marca, categoria, producto, relacionar } = await preparar(tx);
+      const m = await marca("Marca");
+      const auris = await categoria("Auris");
+      const mouses = await categoria("Mouses");
+      const micros = await categoria("Micros");
+      const teclados = await categoria("Teclados");
+      await relacionar(auris, [mouses, micros, teclados]);
+
+      const h350 = await producto("H350", { categoria: auris, marca: m });
+      for (const n of ["A", "B", "C"]) {
+        await producto(`Mouse ${n}`, { categoria: mouses, marca: m });
+      }
+      await producto("Micro", { categoria: micros, marca: m });
+      await producto("Teclado A", { categoria: teclados, marca: m });
+      await producto("Teclado B", { categoria: teclados, marca: m });
+
+      const { complementos } = await leerRecomendados(h350, tx);
+
+      // Antes eran los cuatro primeros mouses: Micros y Teclados no salían.
+      expect(nombres(complementos.productos)).toEqual([
+        "Mouse C",
+        "Micro",
+        "Teclado B",
+        "Mouse B",
+      ]);
+      // «Ver todo» lleva a las tres, en el orden de la relación.
+      expect(complementos.categorias.map((c) => c.id)).toEqual([
+        mouses,
+        micros,
+        teclados,
+      ]);
+    }));
+
+  test("con más de cuatro, una por relacionada, hasta ocho", () =>
+    enTransaccionRevertida(async (tx) => {
+      const { marca, categoria, producto, relacionar } = await preparar(tx);
+      const m = await marca("Marca");
+      const base = await categoria("Base");
+      const otras: string[] = [];
+      for (let i = 1; i <= 10; i++) otras.push(await categoria(`Rel ${i}`));
+
+      const seis = await producto("Con seis", { categoria: base, marca: m });
+      for (const [i, c] of otras.entries()) {
+        await producto(`P${i + 1} uno`, { categoria: c, marca: m });
+        await producto(`P${i + 1} dos`, { categoria: c, marca: m });
+      }
+
+      await relacionar(base, otras.slice(0, 6));
+      const conSeis = (await leerRecomendados(seis, tx)).complementos;
+      expect(nombres(conSeis.productos)).toEqual(
+        [1, 2, 3, 4, 5, 6].map((i) => `P${i} dos`),
+      );
+
+      // Diez relacionadas: el tope de RF-32 son ocho.
+      await tx.execute(
+        sql`DELETE FROM category_relations WHERE category_id = ${base}`,
+      );
+      await relacionar(base, otras);
+      const conDiez = (await leerRecomendados(seis, tx)).complementos;
+      expect(conDiez.productos).toHaveLength(8);
+      expect(conDiez.categorias).toHaveLength(10);
     }));
 });
 
@@ -277,7 +350,7 @@ describe("«Productos similares»", () => {
 
       const { complementos, similares } = await leerRecomendados(k120, tx);
 
-      expect(nombres(complementos)).toEqual(["Mouse Logi"]);
+      expect(nombres(complementos.productos)).toEqual(["Mouse Logi"]);
       expect(similares).toEqual([]);
     }));
 });
@@ -308,7 +381,7 @@ describe("«Completá tu setup»", () => {
 
       // Pad y Soporte están las dos primeras en su relación: empatan en
       // prioridad y desempata el más nuevo.
-      expect(nombres(setup)).toEqual(["Pad", "Soporte", "Cable"]);
+      expect(nombres(setup.productos)).toEqual(["Pad", "Soporte", "Cable"]);
     }));
 
   test("nada de lo que está en el carrito, ni de sus categorías", () =>
@@ -335,10 +408,39 @@ describe("«Completá tu setup»", () => {
         tx,
       );
 
-      expect(nombres(setup)).toEqual(["Pad"]);
+      expect(nombres(setup.productos)).toEqual(["Pad"]);
+    }));
+
+  test("las relacionadas se reparten por vueltas, como en la ficha", () =>
+    enTransaccionRevertida(async (tx) => {
+      const { marca, categoria, producto, relacionar } = await preparar(tx);
+      const m = await marca("Marca");
+      const teclados = await categoria("Teclados");
+      const mouses = await categoria("Mouses");
+      const pads = await categoria("Pads");
+      await relacionar(teclados, [mouses, pads]);
+
+      const k120 = await producto("K120", { categoria: teclados, marca: m });
+      for (const n of ["A", "B", "C"]) {
+        await producto(`Mouse ${n}`, { categoria: mouses, marca: m });
+      }
+      await producto("Pad", { categoria: pads, marca: m });
+
+      const setup = await leerCompletaTuSetup([await varianteDe(tx, k120)], tx);
+
+      expect(nombres(setup.productos)).toEqual([
+        "Mouse C",
+        "Pad",
+        "Mouse B",
+        "Mouse A",
+      ]);
+      expect(setup.categorias.map((c) => c.id)).toEqual([mouses, pads]);
     }));
 
   test("con el carrito vacío no hay bloque", async () => {
-    expect(await leerCompletaTuSetup([])).toEqual([]);
+    expect(await leerCompletaTuSetup([])).toEqual({
+      productos: [],
+      categorias: [],
+    });
   });
 });

@@ -44,6 +44,15 @@ import {
  * mirarla: RN-11b no deja productos activos en una categoría inactiva
  * (`tienda.ts` explica por qué no se repite la condición).
  *
+ * **Uno de cada relacionada, por vueltas** (pedido del 2026-10-14). Los
+ * complementos no se ordenan «todos los de la primera relacionada, después
+ * los de la segunda»: con Mouses primera y seis mouses, el bloque era cuatro
+ * mouses y Micrófonos y Teclados no aparecían nunca. Se reparten por vueltas
+ * —el mejor de cada relacionada en su orden, después el segundo de cada una—,
+ * y el cupo crece con las relacionadas: cuatro como mínimo, que con tres
+ * relacionadas es un segundo producto de la primera, y una por relacionada
+ * hasta ocho, el tope de RF-32. Con más de cuatro, el bloque se desliza.
+ *
  * El orden no tiene nada al azar (§11.2): la misma ficha muestra lo mismo en
  * cada recarga, y los tests pueden afirmar qué sale.
  */
@@ -52,40 +61,66 @@ import {
 export const POR_BLOQUE = 4;
 
 /**
- * Cuántos candidatos se traen por bloque: el doble del cupo, para que los
- * similares sigan llenando su fila después de sacarles los que ya salieron
- * arriba. Con cuatro arriba, en el peor caso se pierden cuatro y quedan
- * cuatro.
+ * El tope de RF-32 («entre 4 y 8 por bloque»). Los complementos llegan acá
+ * cuando hay ocho relacionadas o más: una por relacionada.
  */
-const CANDIDATOS = POR_BLOQUE * 2;
+export const MAXIMO_POR_BLOQUE = 8;
+
+/** Una categoría relacionada, para el «Ver todo» del bloque. */
+export type CategoriaRelacionada = { id: string; nombre: string };
+
+/** Un bloque de complementos: lo que se muestra y de dónde sale. */
+export type Complementos = {
+  productos: ProductoEnTarjeta[];
+  /**
+   * Las relacionadas activas, en su orden, para «Ver todo»: el catálogo con
+   * todas filtradas. Vacío si no hay ninguna —entonces el bloque es de
+   * destacados y no hay un listado que lo continúe—.
+   */
+  categorias: CategoriaRelacionada[];
+};
 
 export type Recomendados = {
-  complementos: ProductoEnTarjeta[];
+  complementos: Complementos;
   similares: ProductoEnTarjeta[];
 };
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Ejecutor = Tx | typeof db;
+
+type FilaRecomendada = FilaDeTarjeta & {
+  nivel: number;
+  grupo: string | null;
+};
 
 /**
  * Lo común a todos los bloques: excluir lo que ya se está mirando y los
- * inactivos, y el orden de RF-32 —con stock, nivel, prioridad, destacados,
- * más nuevos—.
+ * inactivos, y el orden de RF-32 —con stock, nivel, vuelta, prioridad,
+ * destacados, más nuevos—.
  *
  * `base` son las tablas de partida del `WITH`, y tiene que definir `fuera`
  * (los productos que no se recomiendan): en la ficha, `a` con el producto que
  * se está viendo; en el carrito, `carrito` con lo que ya está adentro.
- * `candidatos` es una subconsulta con `id`, `nivel`, `prioridad` y
+ * `candidatos` es una subconsulta con `id`, `nivel`, `grupo`, `prioridad` y
  * `solo_con_stock` que lee de esa base.
+ *
+ * **La vuelta** es el puesto de cada candidato dentro de su `grupo`: el
+ * primero de cada relacionada es la vuelta 1, el segundo la 2. Ordenar por
+ * vuelta antes que por prioridad es lo que reparte el bloque entre las
+ * relacionadas. Sin grupo —similares, destacados— todo el nivel es un solo
+ * grupo y la vuelta no cambia nada.
  */
 function recomendar(
-  ejecutor: Tx | typeof db,
+  ejecutor: Ejecutor,
   base: SQL,
   candidatos: SQL,
   cupo: number,
 ) {
-  return ejecutor.execute<FilaDeTarjeta>(sql`
+  return ejecutor.execute<FilaRecomendada>(sql`
     WITH ${base}
-    SELECT ${COLUMNAS_DE_TARJETA}
+    SELECT ${COLUMNAS_DE_TARJETA},
+           x.nivel,
+           x.grupo
       FROM (${candidatos}) x
       JOIN products p ON p.id = x.id
       JOIN brands b   ON b.id = p.brand_id
@@ -94,12 +129,71 @@ function recomendar(
        AND p.id NOT IN (SELECT id FROM fuera)
        AND (NOT x.solo_con_stock OR st.disponible > 0)
      ORDER BY st.disponible > 0 DESC,
-              x.nivel, x.prioridad,
+              x.nivel,
+              row_number() OVER (
+                PARTITION BY x.nivel, x.grupo
+                ORDER BY st.disponible > 0 DESC, p.is_featured DESC,
+                         p.created_at DESC, p.id
+              ),
+              x.prioridad,
               p.is_featured DESC, p.created_at DESC, p.id
      LIMIT ${cupo}`);
 }
 
-/** La base de la ficha: el producto que se está viendo. */
+/**
+ * Los complementos, para la ficha y el carrito: la base tiene que definir
+ * además `relacionadas` (`category_id`, `prioridad`) y `propias` (`id`, las
+ * categorías que no se completan con destacados).
+ *
+ * Nivel 1, los productos de las relacionadas, agrupados por categoría. Nivel
+ * 2, los destacados con stock **de otra categoría**: en la ficha de un
+ * teclado, otro teclado es una alternativa y no un complemento —va a
+ * similares—, y en el carrito, con un mouse adentro, otro mouse no completa
+ * nada.
+ */
+async function complementos(
+  ejecutor: Ejecutor,
+  base: SQL,
+): Promise<Complementos> {
+  const [filas, categorias] = await Promise.all([
+    recomendar(
+      ejecutor,
+      base,
+      sql`
+        SELECT p.id,
+               CASE WHEN r.category_id IS NOT NULL THEN 1 ELSE 2 END AS nivel,
+               r.category_id AS grupo,
+               coalesce(r.prioridad, 0) AS prioridad,
+               r.category_id IS NULL AS solo_con_stock
+          FROM products p
+          LEFT JOIN relacionadas r ON r.category_id = p.category_id
+         WHERE r.category_id IS NOT NULL
+            OR (p.is_featured AND p.category_id NOT IN (SELECT id FROM propias))`,
+      MAXIMO_POR_BLOQUE,
+    ),
+    ejecutor.execute<CategoriaRelacionada>(sql`
+      WITH ${base}
+      SELECT c.id, c.name AS nombre
+        FROM relacionadas r
+        JOIN categories c ON c.id = r.category_id
+       WHERE c.is_active
+       ORDER BY r.prioridad, immutable_unaccent(lower(c.name))`),
+  ]);
+
+  // Una por relacionada que aportó algo, entre cuatro y ocho. Con tres, la
+  // cuarta es la vuelta 2 de la primera, que es lo que sigue en el orden.
+  const aportan = new Set(
+    filas.flatMap((f) => (f.nivel === 1 && f.grupo ? [f.grupo] : [])),
+  ).size;
+  const cupo = Math.min(MAXIMO_POR_BLOQUE, Math.max(POR_BLOQUE, aportan));
+
+  return {
+    productos: filas.slice(0, cupo).map(aTarjeta),
+    categorias: [...categorias],
+  };
+}
+
+/** La base de la ficha: el producto que se está viendo y sus relacionadas. */
 function delProducto(productoId: string): SQL {
   return sql`
     a AS (
@@ -107,31 +201,15 @@ function delProducto(productoId: string): SQL {
         FROM products
        WHERE id = ${productoId}
     ),
-    fuera AS (SELECT id FROM a)`;
+    fuera AS (SELECT id FROM a),
+    propias AS (SELECT category_id AS id FROM a),
+    relacionadas AS (
+      SELECT cr.related_category_id AS category_id,
+             cr.sort_order AS prioridad
+        FROM category_relations cr
+        JOIN a ON a.category_id = cr.category_id
+    )`;
 }
-
-/**
- * Nivel 1, las relacionadas, con el `sort_order` de la relación como
- * prioridad. Nivel 2, los destacados con stock **de otra categoría**.
- *
- * «De otra categoría» no está en RF-32 y es a propósito: un destacado de la
- * misma categoría es un similar, no un complemento —en la ficha de un teclado,
- * otro teclado no es «algo que necesito junto con esto»—. Sin esta condición,
- * como el bloque de arriba se llena primero, se lo quitaría al de similares,
- * que es donde va.
- */
-const COMPLEMENTOS = sql`
-  SELECT p.id,
-         CASE WHEN cr.category_id IS NOT NULL THEN 1 ELSE 2 END AS nivel,
-         coalesce(cr.sort_order, 0) AS prioridad,
-         cr.category_id IS NULL AS solo_con_stock
-    FROM a
-    JOIN products p ON true
-    LEFT JOIN category_relations cr
-      ON cr.category_id = a.category_id
-     AND cr.related_category_id = p.category_id
-   WHERE cr.category_id IS NOT NULL
-      OR (p.is_featured AND p.category_id <> a.category_id)`;
 
 /**
  * Nivel 1, misma categoría y precio final dentro de ±30%; nivel 2, misma
@@ -147,6 +225,7 @@ const SIMILARES = sql`
            WHEN p.category_id = a.category_id               THEN 2
            ELSE 3
          END AS nivel,
+         NULL::uuid AS grupo,
          0 AS prioridad,
          false AS solo_con_stock
     FROM a
@@ -156,22 +235,24 @@ const SIMILARES = sql`
 
 export async function leerRecomendados(
   productoId: string,
-  ejecutor: Tx | typeof db = db,
+  ejecutor: Ejecutor = db,
 ): Promise<Recomendados> {
-  const [complementos, similares] = await Promise.all([
-    recomendar(ejecutor, delProducto(productoId), COMPLEMENTOS, CANDIDATOS),
-    recomendar(ejecutor, delProducto(productoId), SIMILARES, CANDIDATOS),
+  const base = delProducto(productoId);
+  const [arriba, similares] = await Promise.all([
+    complementos(ejecutor, base),
+    // Los que pueden salir arriba, más una fila: después de sacar los
+    // repetidos, siempre quedan cuatro si los hay.
+    recomendar(ejecutor, base, SIMILARES, MAXIMO_POR_BLOQUE + POR_BLOQUE),
   ]);
 
   // Un producto no sale dos veces en la misma pantalla (RF-32). El de arriba
   // se queda con el suyo: para que un complemento se repita abajo tiene que
   // ser de la misma marca y de una categoría relacionada, y ahí es más
   // complemento que alternativa.
-  const arriba = complementos.slice(0, POR_BLOQUE);
-  const yaSalieron = new Set(arriba.map((p) => p.id));
+  const yaSalieron = new Set(arriba.productos.map((p) => p.id));
 
   return {
-    complementos: arriba.map(aTarjeta),
+    complementos: arriba,
     similares: similares
       .filter((p) => !yaSalieron.has(p.id))
       .slice(0, POR_BLOQUE)
@@ -183,10 +264,10 @@ export async function leerRecomendados(
  * «Completá tu setup», el bloque del carrito — F8.3, RF-32, DR §7.4.
  *
  * Es la intención de «También te puede interesar» —¿qué más necesito junto
- * con esto?— con el carrito entero como punto de partida: los productos de
- * las categorías relacionadas con CUALQUIERA de las de adentro y, si no
- * alcanza, los destacados con stock. Una categoría relacionada con dos de las
- * del carrito toma la mejor de sus dos posiciones.
+ * con esto?— con el carrito entero como punto de partida, y con las mismas
+ * vueltas: las relacionadas con CUALQUIERA de las categorías de adentro —una
+ * relacionada con dos toma la mejor de sus dos posiciones— y, si no alcanza,
+ * los destacados con stock.
  *
  * **Nada de las categorías que ya están en el carrito**, en ningún nivel. RF-32
  * pide excluir los productos, y esto va un paso más: «completar» es sumar lo
@@ -201,34 +282,28 @@ export async function leerRecomendados(
  */
 export async function leerCompletaTuSetup(
   variantes: readonly string[],
-  ejecutor: Tx | typeof db = db,
-): Promise<ProductoEnTarjeta[]> {
-  if (variantes.length === 0) return [];
+  ejecutor: Ejecutor = db,
+): Promise<Complementos> {
+  if (variantes.length === 0) return { productos: [], categorias: [] };
 
-  const base = sql`
-    carrito AS (
-      SELECT DISTINCT p.id, p.category_id
-        FROM product_variants v
-        JOIN products p ON p.id = v.product_id
-       WHERE ${enLaLista(sql`v.id`, variantes)}
-    ),
-    fuera AS (SELECT id FROM carrito)`;
-
-  const candidatos = sql`
-    SELECT p.id,
-           CASE WHEN r.prioridad IS NOT NULL THEN 1 ELSE 2 END AS nivel,
-           coalesce(r.prioridad, 0) AS prioridad,
-           r.prioridad IS NULL AS solo_con_stock
-      FROM products p
-      LEFT JOIN (
-        SELECT cr.related_category_id, min(cr.sort_order) AS prioridad
+  return complementos(
+    ejecutor,
+    sql`
+      carrito AS (
+        SELECT DISTINCT p.id, p.category_id
+          FROM product_variants v
+          JOIN products p ON p.id = v.product_id
+         WHERE ${enLaLista(sql`v.id`, variantes)}
+      ),
+      fuera AS (SELECT id FROM carrito),
+      propias AS (SELECT DISTINCT category_id AS id FROM carrito),
+      relacionadas AS (
+        SELECT cr.related_category_id AS category_id,
+               min(cr.sort_order) AS prioridad
           FROM category_relations cr
-         WHERE cr.category_id IN (SELECT category_id FROM carrito)
+         WHERE cr.category_id IN (SELECT id FROM propias)
+           AND cr.related_category_id NOT IN (SELECT id FROM propias)
          GROUP BY cr.related_category_id
-      ) r ON r.related_category_id = p.category_id
-     WHERE (r.prioridad IS NOT NULL OR p.is_featured)
-       AND p.category_id NOT IN (SELECT category_id FROM carrito)`;
-
-  const filas = await recomendar(ejecutor, base, candidatos, POR_BLOQUE);
-  return filas.map(aTarjeta);
+      )`,
+  );
 }
