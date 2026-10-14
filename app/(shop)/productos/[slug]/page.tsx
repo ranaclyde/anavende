@@ -11,6 +11,8 @@ import {
   EsqueletoDeRecomendados,
   Recomendados,
 } from "@/components/shop/recomendados";
+import { VistosRecientemente } from "@/components/shop/vistos";
+import { RegistrarVista } from "@/components/shop/vistos-cliente";
 import { Precio } from "@/components/shop/precio";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,7 +56,8 @@ import {
  *
  * **Los recomendados (F8.2) llegan después del resto**, por `<Suspense>`:
  * están debajo del pliegue y su consulta no tiene por qué demorar la foto y
- * el botón de compra. «Vistos recientemente» es F8.4 y todavía no está.
+ * el botón de compra. Debajo, «Vistos recientemente» (F8.4), y esta ficha se
+ * anota en ese historial al abrirse.
  */
 
 type Props = {
@@ -316,6 +319,16 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
           ruta={`/productos/${ficha.slug}`}
           categoria={{ id: ficha.categoriaId, nombre: ficha.categoria }}
           userId={identidad?.userId ?? null}
+        />
+      </Suspense>
+
+      {/* F8.4: la ficha se anota en el historial y muestra el resto. */}
+      <RegistrarVista productoId={ficha.id} />
+      <Suspense fallback={null}>
+        <VistosRecientemente
+          excluir={ficha.id}
+          ruta={`/productos/${ficha.slug}`}
+          className="mt-16"
         />
       </Suspense>
     </div>

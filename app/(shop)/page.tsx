@@ -2,6 +2,7 @@ import { Truck } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { DatosEstructurados } from "@/components/seo/datos-estructurados";
 import { BotonFavorito } from "@/components/shop/favorito";
@@ -13,6 +14,7 @@ import {
 } from "@/components/shop/home/seccion";
 import { SearchBox } from "@/components/shop/search-box";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
+import { VistosRecientemente } from "@/components/shop/vistos";
 import { Button } from "@/components/ui/button";
 import { organizacion, sitio } from "@/lib/datos-estructurados";
 import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE } from "@/lib/seo";
@@ -58,8 +60,9 @@ export const metadata: Metadata = {
  * Una home que se cae a pedazos cuando cambia el catálogo habría que
  * rehacerla; ésta se acomoda.
  *
- * **No hay «Vistos recientemente»**: es RF-33 y se construye en F8.4. Su lugar
- * está previsto en §7.1 y hasta entonces no se dibuja.
+ * **«Vistos recientemente»** (F8.4, RF-33) va entre «En oferta» y los medios
+ * de pago, donde lo prevé §7.1. Llega por `<Suspense>`: es del visitante y no
+ * del catálogo, y la home no lo espera.
  */
 export default async function Home() {
   // Independientes: los favoritos son del visitante y el catálogo no es de
@@ -249,6 +252,10 @@ export default async function Home() {
             </GrillaDeLaHome>
           </SeccionDeLaHome>
         ) : null}
+
+        <Suspense fallback={null}>
+          <VistosRecientemente ruta="/" />
+        </Suspense>
 
         <HileraDePagos medios={datos.mediosDePago} />
 

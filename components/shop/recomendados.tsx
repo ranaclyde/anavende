@@ -197,7 +197,7 @@ function BloqueDeComplementos({
  * Las tarjetas de un bloque, con su corazón. `favoritos` es `null` sin
  * sesión, y entonces el corazón manda a ingresar y vuelve a `ruta`.
  */
-function Tarjetas({
+export function Tarjetas({
   productos,
   favoritos,
   ruta,
@@ -233,7 +233,7 @@ function Tarjetas({
 }
 
 /** 64px entre lo de arriba y el primer bloque, y entre bloque y bloque (§7.3). */
-function Bloques({ children }: { children: React.ReactNode }) {
+export function Bloques({ children }: { children: React.ReactNode }) {
   return <div className="mt-16 flex flex-col gap-16">{children}</div>;
 }
 

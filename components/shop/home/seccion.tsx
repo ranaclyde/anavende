@@ -18,11 +18,18 @@ import { useId } from "react";
 export function SeccionDeLaHome({
   titulo,
   enlace,
+  accion,
   children,
 }: {
   titulo: string;
   /** A dónde lleva el «→». Sin esto la sección no ofrece salida. */
   enlace?: { href: string; etiqueta: string };
+  /**
+   * Un control en el lugar del enlace, para la sección que no lleva a un
+   * listado sino que hace algo: «Borrar historial» de «Vistos
+   * recientemente» (F8.4).
+   */
+  accion?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const id = useId();
@@ -44,6 +51,8 @@ export function SeccionDeLaHome({
             <ArrowRight aria-hidden className="size-4" />
           </Link>
         ) : null}
+
+        {accion}
       </div>
 
       {children}
