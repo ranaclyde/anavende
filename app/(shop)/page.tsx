@@ -72,9 +72,19 @@ export default async function Home() {
 
   const guardados = new Set(favoritos ?? []);
 
+  /**
+   * La primera sección que se dibuja: «Destacados» si tiene algo, si no la
+   * primera categoría con productos, y si tampoco, las ofertas. Su primera
+   * fila es la única que se carga sin diferir (abajo).
+   */
+  const primeraSeccion =
+    datos.destacados.length > 0
+      ? "destacados"
+      : (datos.destacadas.find((c) => c.productos.length > 0)?.id ?? "ofertas");
+
   /** La tarjeta es la misma de todas las pantallas (§6.1), con su corazón. */
-  const tarjetas = (productos: (typeof datos)["destacados"]) =>
-    productos.map((producto) => (
+  const tarjetas = (productos: (typeof datos)["destacados"], seccion: string) =>
+    productos.map((producto, i) => (
       <li key={producto.slug}>
         <TarjetaProducto
           producto={producto}
@@ -83,6 +93,13 @@ export default async function Home() {
           // piden. Marcar además la primera fila de tarjetas sería pedirle al
           // navegador nueve imágenes urgentes, que es lo mismo que no pedirle
           // ninguna.
+          //
+          // Pero la primera fila tampoco puede ir DIFERIDA (2026-10-05): en
+          // tableta y escritorio sus tarjetas miden 205–248px contra los
+          // 136px de un bloque del hero, así que el LCP es una de ellas, y
+          // diferida llegaba tarde. Va sin diferir y sin prioridad. Cuatro es
+          // el ancho de la grilla.
+          inmediata={seccion === primeraSeccion && i < 4}
           accionFavorito={
             <BotonFavorito
               forma="corazon"
@@ -195,7 +212,9 @@ export default async function Home() {
         {/* ── Destacados: lo que la vendedora quiere empujar hoy ───── */}
         {datos.destacados.length > 0 ? (
           <SeccionDeLaHome titulo="Destacados">
-            <GrillaDeLaHome>{tarjetas(datos.destacados)}</GrillaDeLaHome>
+            <GrillaDeLaHome>
+              {tarjetas(datos.destacados, "destacados")}
+            </GrillaDeLaHome>
           </SeccionDeLaHome>
         ) : null}
 
@@ -210,7 +229,9 @@ export default async function Home() {
                 etiqueta: `Ver todo en ${categoria.nombre}`,
               }}
             >
-              <GrillaDeLaHome>{tarjetas(categoria.productos)}</GrillaDeLaHome>
+              <GrillaDeLaHome>
+                {tarjetas(categoria.productos, categoria.id)}
+              </GrillaDeLaHome>
             </SeccionDeLaHome>
           ),
         )}
@@ -223,7 +244,9 @@ export default async function Home() {
               etiqueta: "Ver todo lo que está en oferta",
             }}
           >
-            <GrillaDeLaHome>{tarjetas(datos.ofertas)}</GrillaDeLaHome>
+            <GrillaDeLaHome>
+              {tarjetas(datos.ofertas, "ofertas")}
+            </GrillaDeLaHome>
           </SeccionDeLaHome>
         ) : null}
 
