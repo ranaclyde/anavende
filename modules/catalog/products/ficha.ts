@@ -75,7 +75,8 @@ export type Ficha = {
   descripcionTexto: string;
   marca: string;
   categoria: string;
-  categoriaId: string;
+  /** Para la miga y el «Ver todo»: `?categoria=` va por slug. */
+  categoriaSlug: string;
   precio: Money;
   descuento: Money;
   precioFinal: Money;
@@ -119,7 +120,7 @@ export const leerFicha = cache(async function leerFicha(
            p.final_price      AS "precioFinal",
            b.name             AS marca,
            c.name             AS categoria,
-           c.id               AS "categoriaId",
+           c.slug             AS "categoriaSlug",
            vs.lista           AS variantes
       FROM products p
       JOIN brands b     ON b.id = p.brand_id

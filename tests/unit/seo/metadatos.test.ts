@@ -37,7 +37,7 @@ function unaFicha(cambios: Partial<Ficha> = {}): Ficha {
     descripcionTexto: "Un teclado mecánico.",
     marca: "Logitech",
     categoria: "Teclados",
-    categoriaId: "22222222-2222-4222-8222-222222222222",
+    categoriaSlug: "teclados",
     precio: "50000.00",
     descuento: "5000.00",
     precioFinal: "45000.00",
@@ -217,7 +217,7 @@ describe("migas", () => {
     const datos = migas(ficha) as { itemListElement: { item: string }[] };
 
     expect(datos.itemListElement[1].item).toBe(
-      urlAbsoluta(urlDeTienda({ categoria: [ficha.categoriaId] })),
+      urlAbsoluta(urlDeTienda({ categoria: [ficha.categoriaSlug] })),
     );
   });
 });

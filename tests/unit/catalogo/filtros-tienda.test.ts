@@ -29,9 +29,10 @@ import {
  * volver por la URL no pierda ni invente nada.
  */
 
-const A = "11111111-1111-4111-8111-111111111111";
-const B = "22222222-2222-4222-8222-222222222222";
-const C = "33333333-3333-4333-8333-333333333333";
+// Slugs, como desde el 2026-10-14: `?marca=logitech`.
+const A = "logitech";
+const B = "hyperx";
+const C = "cooler-master";
 
 /** Los parámetros de una URL, tal como los entrega Next. */
 function params(url: string): Record<string, string | string[]> {
@@ -58,16 +59,25 @@ describe("multiselección", () => {
     expect(leerFiltrosDeTienda({ marca: [A, B, A] }).marca).toEqual([A, B]);
   });
 
-  test("los identificadores se normalizan a minúsculas", () => {
-    // Postgres los devuelve en minúscula, y el chip compara por igualdad: en
+  test("los slugs se normalizan a minúsculas", () => {
+    // Los slugs se guardan en minúscula, y el chip compara por igualdad: en
     // mayúsculas el filtro quedaría aplicado y sin chip que lo saque.
     expect(leerFiltrosDeTienda({ color: A.toUpperCase() }).color).toEqual([A]);
   });
 
-  test("lo que no es un UUID se descarta y no llega a la consulta", () => {
-    // Sin esto no filtraría de menos: haría fallar a Postgres.
+  test("lo que no tiene forma de slug se descarta y no llega a la consulta", () => {
+    // La forma de `slugificar`: minúsculas, números y guiones simples, hasta
+    // 60. Lo demás no puede ser una marca, y no hace falta preguntárselo a la
+    // base.
     const f = leerFiltrosDeTienda({
-      marca: ["hola", A, "'; DROP TABLE products; --"],
+      marca: [
+        "cooler master",
+        A,
+        "'; DROP TABLE products; --",
+        "-logitech",
+        "logi--tech",
+        "x".repeat(61),
+      ],
     });
     expect(f.marca).toEqual([A]);
   });
@@ -111,7 +121,9 @@ describe("rango de precio", () => {
   });
 
   test("lo que no es un número se descarta", () => {
-    expect(leerFiltrosDeTienda({ precioMin: "cinco mil" }).precioMin).toBeNull();
+    expect(
+      leerFiltrosDeTienda({ precioMin: "cinco mil" }).precioMin,
+    ).toBeNull();
     expect(leerFiltrosDeTienda({ precioMin: "" }).precioMin).toBeNull();
     expect(leerFiltrosDeTienda({ precioMin: "-100" }).precioMin).toBeNull();
   });
@@ -123,7 +135,9 @@ describe("rango de precio", () => {
     expect(leerFiltrosDeTienda({ precioMax: "9999999999" }).precioMax).toBe(
       9_999_999_999,
     );
-    expect(leerFiltrosDeTienda({ precioMax: "99999999999" }).precioMax).toBeNull();
+    expect(
+      leerFiltrosDeTienda({ precioMax: "99999999999" }).precioMax,
+    ).toBeNull();
   });
 });
 
@@ -149,7 +163,9 @@ describe("la dirección", () => {
       orden: "precio-desc",
       pagina: 3,
     };
-    expect(leerFiltrosDeTienda(params(urlDeTienda(original)))).toEqual(original);
+    expect(leerFiltrosDeTienda(params(urlDeTienda(original)))).toEqual(
+      original,
+    );
   });
 
   test("cambiar un filtro vuelve a la página 1", () => {

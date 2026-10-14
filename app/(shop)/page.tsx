@@ -158,7 +158,7 @@ export default async function Home() {
               {datos.destacadas.map((categoria) => (
                 <li key={categoria.id}>
                   <Link
-                    href={urlDeTienda({ categoria: [categoria.id] })}
+                    href={urlDeTienda({ categoria: [categoria.slug] })}
                     className="flex h-11 items-center gap-2 rounded-pill border border-border bg-surface px-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand sm:pl-2 sm:pr-4"
                   >
                     {/*
@@ -228,7 +228,7 @@ export default async function Home() {
               key={categoria.id}
               titulo={categoria.nombre}
               enlace={{
-                href: urlDeTienda({ categoria: [categoria.id] }),
+                href: urlDeTienda({ categoria: [categoria.slug] }),
                 etiqueta: `Ver todo en ${categoria.nombre}`,
               }}
             >
@@ -297,7 +297,7 @@ export default async function Home() {
               {datos.masCategorias.map((categoria) => (
                 <li key={categoria.id}>
                   <Link
-                    href={urlDeTienda({ categoria: [categoria.id] })}
+                    href={urlDeTienda({ categoria: [categoria.slug] })}
                     className="group flex h-full flex-col gap-2 rounded-card bg-surface p-2 shadow-md transition-shadow duration-200 hover:shadow-lg focus-visible:shadow-focus focus-visible:outline-none"
                   >
                     {/* Cuadrada siempre, con imagen o sin ella: el aspecto lo

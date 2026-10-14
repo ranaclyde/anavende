@@ -9,6 +9,7 @@ import {
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
 import { leerPaginaDelCatalogo } from "@/modules/catalog/products/tienda";
+import { slugificar } from "@/lib/slug";
 
 /**
  * F3.4 — RF-02, §10.1, §10.2.
@@ -27,6 +28,14 @@ import { leerPaginaDelCatalogo } from "@/modules/catalog/products/tienda";
 
 const T = `zzt${randomUUID().slice(0, 8)}`;
 
+/**
+ * El slug de cada marca, categoría y color creados, por id. Los productos se
+ * insertan con ids, pero el filtro de la tienda va por slug desde el
+ * 2026-10-14 (`?categoria=teclados`): `buscar` traduce, como lo haría la URL.
+ */
+const slugDe = new Map<string, string>();
+const slug = (nombre: string) => slugificar(`${nombre}-${T}`);
+
 const creados = {
   productos: [] as string[],
   marcas: [] as string[],
@@ -37,18 +46,20 @@ const creados = {
 async function unaMarca(nombre: string): Promise<string> {
   const [fila] = await db.execute<{ id: string }>(sql`
     INSERT INTO brands (name, slug)
-    VALUES (${`${nombre} ${T}`}, ${`${nombre}-${T}`.toLowerCase()})
+    VALUES (${`${nombre} ${T}`}, ${slug(nombre)})
     RETURNING id`);
   creados.marcas.push(fila.id);
+  slugDe.set(fila.id, slug(nombre));
   return fila.id;
 }
 
 async function unaCategoria(nombre: string): Promise<string> {
   const [fila] = await db.execute<{ id: string }>(sql`
     INSERT INTO categories (name, slug)
-    VALUES (${`${nombre} ${T}`}, ${`${nombre}-${T}`.toLowerCase()})
+    VALUES (${`${nombre} ${T}`}, ${slug(nombre)})
     RETURNING id`);
   creados.categorias.push(fila.id);
+  slugDe.set(fila.id, slug(nombre));
   return fila.id;
 }
 
@@ -56,9 +67,10 @@ async function unaCategoria(nombre: string): Promise<string> {
 async function unColor(nombre: string): Promise<string> {
   const [fila] = await db.execute<{ id: string }>(sql`
     INSERT INTO colors (name, slug, hex_code)
-    VALUES (${`${nombre} ${T}`}, ${`${nombre}-${T}`.toLowerCase()}, '#1c1e21')
+    VALUES (${`${nombre} ${T}`}, ${slug(nombre)}, '#1c1e21')
     RETURNING id`);
   creados.colores.push(fila.id);
+  slugDe.set(fila.id, slug(nombre));
   return fila.id;
 }
 
@@ -97,10 +109,34 @@ beforeAll(async () => {
 
   // Precio FINAL: 1000, 4000, 20000 y 50000. El segundo es el que separa
   // «precio» de «precio final»: sale 5000 y se vende a 4000.
-  await unProducto({ slug: "uno", marca: marcaX, categoria: catA, precio: "1000.00", colores: [rojo] });
-  await unProducto({ slug: "dos", marca: marcaY, categoria: catA, precio: "5000.00", descuento: "1000.00", colores: [verde] });
-  await unProducto({ slug: "tres", marca: marcaX, categoria: catB, precio: "20000.00", colores: [rojo, verde] });
-  await unProducto({ slug: "cuatro", marca: marcaY, categoria: catB, precio: "50000.00" });
+  await unProducto({
+    slug: "uno",
+    marca: marcaX,
+    categoria: catA,
+    precio: "1000.00",
+    colores: [rojo],
+  });
+  await unProducto({
+    slug: "dos",
+    marca: marcaY,
+    categoria: catA,
+    precio: "5000.00",
+    descuento: "1000.00",
+    colores: [verde],
+  });
+  await unProducto({
+    slug: "tres",
+    marca: marcaX,
+    categoria: catB,
+    precio: "20000.00",
+    colores: [rojo, verde],
+  });
+  await unProducto({
+    slug: "cuatro",
+    marca: marcaY,
+    categoria: catB,
+    precio: "50000.00",
+  });
 });
 
 afterAll(async () => {
@@ -120,10 +156,17 @@ afterAll(async () => {
 
 /** Los slugs cortos que devuelve el catálogo con estos filtros. */
 async function buscar(cambio: Partial<FiltrosDeTienda>): Promise<string[]> {
+  // Lo que no es un id creado acá pasa tal cual: así se prueba un slug que
+  // no existe.
+  const aSlugs = (ids: readonly string[] = []) =>
+    ids.map((id) => slugDe.get(id) ?? id);
   const filtros: FiltrosDeTienda = {
     ...FILTROS_DE_TIENDA_VACIOS,
     q: T,
     ...cambio,
+    categoria: aSlugs(cambio.categoria),
+    marca: aSlugs(cambio.marca),
+    color: aSlugs(cambio.color),
   };
   const pagina = await leerPaginaDelCatalogo(filtros);
   // El total y la lista tienen que decir lo mismo: son dos consultas
@@ -153,13 +196,16 @@ describe("multiselección", () => {
   test("entre grupos SE CRUZAN", async () => {
     // «(Rubro A) y (Marca Y)» = uno solo. Si se sumaran entre grupos serían
     // tres, y el filtro no filtraría nada.
-    expect(await buscar({ categoria: [catA], marca: [marcaY] })).toEqual(["dos"]);
+    expect(await buscar({ categoria: [catA], marca: [marcaY] })).toEqual([
+      "dos",
+    ]);
   });
 
   test("dos categorías y una marca", async () => {
-    expect(
-      await buscar({ categoria: [catA, catB], marca: [marcaX] }),
-    ).toEqual(["tres", "uno"]);
+    expect(await buscar({ categoria: [catA, catB], marca: [marcaX] })).toEqual([
+      "tres",
+      "uno",
+    ]);
   });
 
   test("el color mira las variantes, y no repite el producto", async () => {
@@ -174,8 +220,8 @@ describe("multiselección", () => {
     expect(await buscar({ color: [verde] })).toEqual(["dos", "tres"]);
   });
 
-  test("un identificador que no existe no rompe: filtra a cero", async () => {
-    expect(await buscar({ marca: [randomUUID()] })).toEqual([]);
+  test("un slug que no existe no rompe: filtra a cero", async () => {
+    expect(await buscar({ marca: [`no-existe-${T}`] })).toEqual([]);
   });
 });
 
@@ -199,9 +245,9 @@ describe("rango de precio", () => {
   });
 
   test("se combina con los demás filtros", async () => {
-    expect(
-      await buscar({ marca: [marcaX], precioMin: 5000 }),
-    ).toEqual(["tres"]);
+    expect(await buscar({ marca: [marcaX], precioMin: 5000 })).toEqual([
+      "tres",
+    ]);
   });
 
   test("un rango sin productos da vacío, no todos", async () => {
@@ -247,7 +293,7 @@ describe("una variante de dos colores", () => {
     const pagina = await leerPaginaDelCatalogo({
       ...FILTROS_DE_TIENDA_VACIOS,
       q: T,
-      color: [azul],
+      color: [slugDe.get(azul)!],
     });
     expect(pagina.productos[0].colores).toEqual([
       { nombre: `Azul ${T}/Amarillo ${T}`, hex: "#1c1e21", hex2: "#1c1e21" },

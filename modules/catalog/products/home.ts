@@ -65,6 +65,8 @@ export const MAS_CATEGORIAS = 8;
 
 export type CategoriaDeLaHome = {
   id: string;
+  /** Para los enlaces: `?categoria=` va por slug. */
+  slug: string;
   nombre: string;
   productos: ProductoEnTarjeta[];
 };
@@ -107,6 +109,7 @@ export type MedioDePagoDeLaHome = {
  */
 export type CategoriaEnTarjeta = {
   id: string;
+  slug: string;
   nombre: string;
   imagenUrl: string | null;
 };
@@ -126,8 +129,12 @@ export type DatosDeLaHome = {
 export async function leerHome(): Promise<DatosDeLaHome> {
   // Las destacadas primero: de sus ids dependen las otras dos consultas de
   // categorías. Entre destacadas desempata el nombre (§5.4).
-  const destacadas = await db.execute<{ id: string; nombre: string }>(sql`
-    SELECT id, name AS nombre
+  const destacadas = await db.execute<{
+    id: string;
+    slug: string;
+    nombre: string;
+  }>(sql`
+    SELECT id, slug, name AS nombre
       FROM categories
      WHERE is_active AND is_featured
      ORDER BY immutable_unaccent(lower(name))
@@ -164,8 +171,13 @@ export async function leerHome(): Promise<DatosDeLaHome> {
 
       // Las que no están arriba, **y sólo si tienen algo que mostrar**: una
       // categoría vacía nombrada en la home es un enlace a un «no hay nada».
-      db.execute<{ id: string; nombre: string; imageKey: string | null }>(sql`
-        SELECT c.id, c.name AS nombre, c.image_key AS "imageKey"
+      db.execute<{
+        id: string;
+        slug: string;
+        nombre: string;
+        imageKey: string | null;
+      }>(sql`
+        SELECT c.id, c.slug, c.name AS nombre, c.image_key AS "imageKey"
           FROM categories c
          WHERE c.is_active
            ${ids.length ? sql`AND NOT ${enLaLista(sql`c.id`, ids)}` : sql``}

@@ -30,12 +30,12 @@ export type OrdenDeTienda = (typeof ORDENES_DE_TIENDA)[number]["valor"];
 
 export type FiltrosDeTienda = {
   q: string;
-  /** UUID de categorías. Vacío = todas. */
+  /** Slugs de categorías (`?categoria=teclados`). Vacío = todas. */
   categoria: readonly string[];
-  /** UUID de marcas. Vacío = todas. */
+  /** Slugs de marcas. Vacío = todas. */
   marca: readonly string[];
   /**
-   * UUID de colores. RF-02: el producto entra si **alguna** de sus variantes
+   * Slugs de colores. RF-02: el producto entra si **alguna** de sus variantes
    * tiene **alguno** de estos colores.
    */
   color: readonly string[];
@@ -82,8 +82,12 @@ export type ParametrosDeBusqueda = Record<
   string | string[] | undefined
 >;
 
-const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/**
+ * La forma de un slug, la que produce `slugificar` (`lib/slug.ts`):
+ * minúsculas, números y guiones simples, hasta 60.
+ */
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const LARGO_DE_SLUG = 60;
 
 function texto(valor: string | string[] | undefined): string {
   // `?q=a&q=b` llega como arreglo. Se toma el primero en vez de fallar.
@@ -91,11 +95,16 @@ function texto(valor: string | string[] | undefined): string {
 }
 
 /**
- * Los UUID válidos de un parámetro repetido, sin repetidos y con tope.
+ * Los slugs válidos de un parámetro repetido, sin repetidos y con tope.
  *
- * Se pasan a minúsculas porque es como los devuelve Postgres, y así
- * `?marca=ABC…` sigue coincidiendo con la opción de la lista en vez de quedar
- * aplicado pero sin chip que lo saque.
+ * **Slugs y no ids desde el 2026-10-14**: `?categoria=teclados` se lee y se
+ * comparte; un UUID no. Es la dirección pública que RF-18 ya les daba —no
+ * cambia al renombrar—, y la ficha ya los usaba para `?color=`. Un enlace
+ * viejo con UUID no se reconoce y muestra el catálogo sin ese filtro: no hay
+ * catálogo real todavía, así que no hay enlaces que cuidar.
+ *
+ * Se pasan a minúsculas para que `?marca=Logitech` siga coincidiendo con la
+ * opción de la lista en vez de quedar aplicado pero sin chip que lo saque.
  */
 function lista(valor: string | string[] | undefined): string[] {
   const crudos =
@@ -103,10 +112,10 @@ function lista(valor: string | string[] | undefined): string[] {
   const vistos = new Set<string>();
 
   for (const crudo of crudos) {
-    const id = crudo.trim().toLowerCase();
-    // Se validan ANTES de la consulta: sin esto `?marca=hola` no filtraría de
-    // menos, haría fallar a Postgres.
-    if (UUID.test(id)) vistos.add(id);
+    const slug = crudo.trim().toLowerCase();
+    // Se validan antes de la consulta: lo que no tiene forma de slug no puede
+    // ser una categoría, y no hace falta preguntárselo a la base.
+    if (slug.length <= LARGO_DE_SLUG && SLUG.test(slug)) vistos.add(slug);
     if (vistos.size >= MAXIMO_POR_FILTRO) break;
   }
 
@@ -189,9 +198,9 @@ export function urlDeTienda(
   const params = new URLSearchParams();
 
   if (f.q) params.set("q", f.q);
-  for (const id of f.categoria) params.append("categoria", id);
-  for (const id of f.marca) params.append("marca", id);
-  for (const id of f.color) params.append("color", id);
+  for (const slug of f.categoria) params.append("categoria", slug);
+  for (const slug of f.marca) params.append("marca", slug);
+  for (const slug of f.color) params.append("color", slug);
   if (f.precioMin !== null) params.set("precioMin", String(f.precioMin));
   if (f.precioMax !== null) params.set("precioMax", String(f.precioMax));
   if (f.oferta) params.set("oferta", "1");
@@ -211,10 +220,7 @@ export function urlCambiando(
 }
 
 /** Ir a otra página conserva todo lo demás. */
-export function urlDePagina(
-  filtros: FiltrosDeTienda,
-  pagina: number,
-): string {
+export function urlDePagina(filtros: FiltrosDeTienda, pagina: number): string {
   return urlDeTienda({ ...filtros, pagina });
 }
 
