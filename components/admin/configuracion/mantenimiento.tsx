@@ -1,6 +1,13 @@
 "use client";
 
-import { Lock, LockOpen } from "lucide-react";
+import {
+  ArrowRight,
+  DoorClosedLocked,
+  Lock,
+  LockOpen,
+  Store,
+} from "lucide-react";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
@@ -35,19 +42,6 @@ export function ModoMantenimiento({
   /** `null` = la configuración nunca se guardó y no hay fila donde anotarlo. */
   activo: boolean | null;
 }) {
-  const [enCurso, iniciar] = useTransition();
-  const [confirmando, setConfirmando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const cambiar = (siguiente: boolean) => {
-    setConfirmando(false);
-    setError(null);
-    iniciar(async () => {
-      const r = await cambiarElModoMantenimiento({ activo: siguiente });
-      if (!r.ok) setError(r.message);
-    });
-  };
-
   const cerrada = activo === true;
 
   return (
@@ -76,50 +70,144 @@ export function ModoMantenimiento({
           : "Cerrala mientras cargás productos: los compradores ven un aviso de que volvemos en un rato, y vos la seguís viendo normal para revisar cada ficha."
       }
     >
+      <InterruptorDeLaTienda activo={activo} />
+    </TarjetaDeSeccion>
+  );
+}
+
+/**
+ * La tienda en el inicio del panel: el mismo interruptor que en
+ * Configuración, en un renglón.
+ *
+ * **Está en el inicio porque es lo primero que hay que saber al entrar**: con
+ * la tienda cerrada, nada de lo de abajo importa tanto como que los
+ * compradores no la pueden ver. La franja de la tienda avisa sólo a quien
+ * mira la tienda; acá se ve abriendo el panel.
+ *
+ * **El ícono cambia de forma y no sólo de color** (§9): un local abierto en
+ * verde, una puerta con llave en ámbar. Y el estado va escrito al lado,
+ * porque un ícono solo no se lee igual para todos.
+ */
+export function TiendaEnElInicio({ activo }: { activo: boolean | null }) {
+  const cerrada = activo === true;
+  const Icono = cerrada ? DoorClosedLocked : Store;
+
+  return (
+    <section
+      aria-labelledby="tienda-estado"
+      className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden
+          className={`flex size-10 shrink-0 items-center justify-center rounded-pill ${
+            cerrada
+              ? "bg-warning-tint text-warning"
+              : "bg-success-tint text-success"
+          }`}
+        >
+          <Icono className="size-5" />
+        </span>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h2 id="tienda-estado" className="text-body font-medium text-ink">
+            {cerrada
+              ? "La tienda está cerrada al público"
+              : "La tienda está abierta"}
+          </h2>
+          <p className="text-body-sm text-ink-secondary">
+            {cerrada
+              ? "Los compradores ven «Volvemos en un rato». Vos la seguís viendo normal."
+              : "Los compradores la pueden ver y comprar."}
+          </p>
+        </div>
+      </div>
+
+      {/* Sin fila de configuración no hay dónde anotar el cierre: en vez de
+          un botón apagado con una frase que habla de «la configuración de
+          arriba», se manda a donde se resuelve. */}
+      {activo === null ? (
+        <Button
+          asChild
+          variant="tertiary"
+          size="sm"
+          className="self-start sm:self-auto"
+        >
+          <Link href="/admin/configuracion">
+            Guardá la configuración para poder cerrarla
+            <ArrowRight aria-hidden />
+          </Link>
+        </Button>
+      ) : (
+        <InterruptorDeLaTienda activo={activo} />
+      )}
+    </section>
+  );
+}
+
+/**
+ * El botón, su confirmación y su error: lo que comparten Configuración y el
+ * inicio del panel. Lo que cambia entre los dos es cómo se cuenta el estado.
+ */
+function InterruptorDeLaTienda({ activo }: { activo: boolean | null }) {
+  const [enCurso, iniciar] = useTransition();
+  const [confirmando, setConfirmando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const cambiar = (siguiente: boolean) => {
+    setConfirmando(false);
+    setError(null);
+    iniciar(async () => {
+      const r = await cambiarElModoMantenimiento({ activo: siguiente });
+      if (!r.ok) setError(r.message);
+    });
+  };
+
+  const cerrada = activo === true;
+
+  return (
+    <div className="flex flex-col items-start gap-2">
       {error === null ? null : (
         <p role="alert" className="text-body-sm text-danger">
           {error}
         </p>
       )}
 
-      <div className="flex flex-col items-start gap-2">
-        {cerrada ? (
-          <Button
-            variant="secondary"
-            loading={enCurso}
-            loadingLabel="Abriendo la tienda"
-            onClick={() => cambiar(false)}
-          >
-            <LockOpen aria-hidden />
-            Volver a abrir la tienda
-          </Button>
-        ) : (
-          <Button
-            variant="secondary"
-            loading={enCurso}
-            loadingLabel="Cerrando la tienda"
-            disabled={activo === null}
-            aria-describedby={
-              activo === null ? "mantenimiento-sin-configurar" : undefined
-            }
-            onClick={() => setConfirmando(true)}
-          >
-            <Lock aria-hidden />
-            Cerrar la tienda al público
-          </Button>
-        )}
+      {cerrada ? (
+        <Button
+          variant="secondary"
+          loading={enCurso}
+          loadingLabel="Abriendo la tienda"
+          onClick={() => cambiar(false)}
+        >
+          <LockOpen aria-hidden />
+          Volver a abrir la tienda
+        </Button>
+      ) : (
+        <Button
+          variant="secondary"
+          loading={enCurso}
+          loadingLabel="Cerrando la tienda"
+          disabled={activo === null}
+          aria-describedby={
+            activo === null ? "mantenimiento-sin-configurar" : undefined
+          }
+          onClick={() => setConfirmando(true)}
+        >
+          <Lock aria-hidden />
+          Cerrar la tienda al público
+        </Button>
+      )}
 
-        {/* §8: lo deshabilitado dice por qué, escrito y no en un `title`. */}
-        {activo === null ? (
-          <p
-            id="mantenimiento-sin-configurar"
-            className="text-caption text-ink-secondary"
-          >
-            Guardá primero la configuración de arriba: hasta que exista, no hay
-            dónde anotar que la tienda está cerrada.
-          </p>
-        ) : null}
-      </div>
+      {/* §8: lo deshabilitado dice por qué, escrito y no en un `title`. */}
+      {activo === null ? (
+        <p
+          id="mantenimiento-sin-configurar"
+          className="text-caption text-ink-secondary"
+        >
+          Guardá primero la configuración de arriba: hasta que exista, no hay
+          dónde anotar que la tienda está cerrada.
+        </p>
+      ) : null}
 
       <Dialog open={confirmando} onOpenChange={setConfirmando}>
         <DialogContent>
@@ -146,6 +234,6 @@ export function ModoMantenimiento({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </TarjetaDeSeccion>
+    </div>
   );
 }

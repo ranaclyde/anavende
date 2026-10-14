@@ -2,13 +2,17 @@ import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { TiendaEnElInicio } from "@/components/admin/configuracion/mantenimiento";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { Button } from "@/components/ui/button";
 import { mesEnCurso } from "@/lib/fechas";
 import { formatMoney } from "@/lib/money";
 import { comoVieneElMes, loQueHayParaHacer } from "@/modules/panel/tablero";
-import { umbralDeStockBajo } from "@/modules/settings/queries";
+import {
+  elModoMantenimiento,
+  umbralDeStockBajo,
+} from "@/modules/settings/queries";
 
 export const metadata: Metadata = { title: "Panel" };
 
@@ -23,6 +27,10 @@ export const metadata: Metadata = { title: "Panel" };
  * dos cosas. Así, arriba va lo que pide acción —con verbo y enlace— y abajo lo
  * que solo se mira.
  *
+ * **Arriba de todo, la tienda abierta o cerrada** (pedido tuyo del
+ * 2026-10-14): es el mismo interruptor de Configuración, y va primero porque
+ * con la tienda cerrada nada de lo de abajo importa tanto.
+ *
  * **Sin notificaciones**, como RF-14 pide: esto se ve al abrir el panel y no
  * persigue a nadie.
  *
@@ -32,11 +40,16 @@ export const metadata: Metadata = { title: "Panel" };
  */
 export default async function PanelInicio() {
   // El umbral hace falta ANTES de contar el stock, así que ése es el único
-  // encadenado. Los dos bloques son independientes entre sí.
+  // encadenado. Los dos bloques son independientes entre sí, y el estado de
+  // la tienda no espera a nadie: arranca junto con el umbral. Se lee de la
+  // base y no de la memoria del proxy, como en Configuración: recién
+  // cambiado, tiene que decir lo que quedó.
+  const tiendaCerrada = elModoMantenimiento();
   const umbral = await umbralDeStockBajo();
-  const [paraHacer, mes] = await Promise.all([
+  const [paraHacer, mes, mantenimiento] = await Promise.all([
     loQueHayParaHacer(umbral),
     comoVieneElMes(),
+    tiendaCerrada,
   ]);
 
   return (
@@ -46,6 +59,7 @@ export default async function PanelInicio() {
         bajada="Lo que hay para hacer, y cómo viene el mes."
       />
 
+      <TiendaEnElInicio activo={mantenimiento} />
       <ParaHacer datos={paraHacer} />
       <EsteMes datos={mes} />
     </div>

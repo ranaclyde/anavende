@@ -19,6 +19,18 @@ export default function CargandoElPanel() {
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EsqueletoDeEncabezado titulo="w-24" bajada="w-72 max-w-full" />
 
+      {/* La tienda: ícono, dos renglones y el botón */}
+      <section className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Skeleton className="size-10 shrink-0 rounded-pill" />
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-4 w-64 max-w-full" />
+          </div>
+        </div>
+        <Skeleton className="h-10 w-52 rounded-panel-control" />
+      </section>
+
       {/* Para hacer */}
       <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
         <Skeleton className="h-6 w-28" />
