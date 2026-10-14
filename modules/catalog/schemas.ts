@@ -49,10 +49,26 @@ export type TipoDeItem = (typeof TIPOS)[number];
  */
 const destacada = z.boolean();
 
+/**
+ * RF-31: las relacionadas, EN ORDEN —el índice es la prioridad al armar los
+ * recomendados—. Recíproca por omisión, como pide la especificación.
+ *
+ * Es opcional: sin el campo, las relaciones no se tocan. Con una lista vacía,
+ * se quitan todas.
+ */
+const relacionadas = z
+  .array(z.object({ id: z.uuid(), reciproca: z.boolean().default(true) }))
+  .max(50, "Son demasiadas categorías relacionadas.")
+  .refine((l) => new Set(l.map((r) => r.id)).size === l.length, {
+    message: "Una categoría está repetida entre las relacionadas.",
+  })
+  .optional();
+
 export const crearMarca = z.object({ name: nombre });
 export const crearCategoria = z.object({
   name: nombre,
   isFeatured: destacada.default(false),
+  relacionadas,
 });
 export const crearColor = z.object({ name: nombre, hexCode: hex });
 
@@ -61,6 +77,7 @@ export const editarCategoria = z.object({
   id: z.uuid(),
   name: nombre,
   isFeatured: destacada,
+  relacionadas,
 });
 export const editarColor = z.object({
   id: z.uuid(),

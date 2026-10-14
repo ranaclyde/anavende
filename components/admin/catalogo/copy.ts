@@ -123,3 +123,31 @@ export const IMAGEN_DE_CATEGORIA = {
   falloTrasCrear:
     "La categoría se creó, pero la imagen no se pudo subir. Editala para intentar de nuevo.",
 } as const;
+
+/**
+ * Las categorías relacionadas — RF-31. Los avisos sobre la OTRA categoría
+ * nombran a las dos: «Pads deja de recomendar Teclados» se entiende sin saber
+ * cómo se guarda una relación; «se borra el sentido inverso», no.
+ */
+export const RELACIONADAS = {
+  etiqueta: "Categorías relacionadas",
+  ayuda:
+    "En las fichas de esta categoría se recomiendan productos de estas, en este orden.",
+  vacio: "Sin categorías relacionadas.",
+  agregar: "Agregar una categoría relacionada",
+  inactiva: "Inactiva",
+  aporta: (n: number) =>
+    n === 0
+      ? "No aporta productos activos"
+      : n === 1
+        ? "1 producto activo"
+        : `${n} productos activos`,
+  reciproca: (otra: string, esta: string) =>
+    `Recíproca: ${otra} también recomienda ${esta}`,
+  dejaDeRecomendar: (otra: string, esta: string) =>
+    `Al guardar, ${otra} deja de recomendar ${esta}.`,
+  seQuitaDelOtroLado: (otras: string[], esta: string) =>
+    otras.length === 1
+      ? `Al guardar, ${otras[0]} también deja de recomendar ${esta}.`
+      : `Al guardar, ${otras.slice(0, -1).join(", ")} y ${otras.at(-1)} también dejan de recomendar ${esta}.`,
+} as const;

@@ -48,14 +48,42 @@ export type ItemDeCatalogo = {
   activos: number;
   /** Productos inactivos que lo usan. */
   inactivos: number;
+  /**
+   * Las categorías relacionadas (RF-31), en su orden. `null` en marcas y
+   * colores, que no tienen la noción —el mismo criterio que `isFeatured`—.
+   */
+  relacionadas: CategoriaRelacionada[] | null;
+};
+
+/**
+ * Una relación vista desde su categoría. Trae el nombre, el estado y lo que
+ * APORTA —sus productos activos—: RF-31 pide verlo por relación, para
+ * encontrar las que no recomiendan nada.
+ */
+export type CategoriaRelacionada = {
+  id: string;
+  name: string;
+  isActive: boolean;
+  activos: number;
+  reciproca: boolean;
+};
+
+/** Una categoría que se puede elegir como relacionada, con lo que aportaría. */
+export type CategoriaRelacionable = {
+  id: string;
+  name: string;
+  activos: number;
 };
 
 export async function listarMarcas(
   pagina = 1,
 ): Promise<{ items: ItemDeCatalogo[]; total: number }> {
-  const filas = await db.execute<ItemDeCatalogo & { logoKey: string | null }>(sql`
+  const filas = await db.execute<
+    ItemDeCatalogo & { logoKey: string | null }
+  >(sql`
     SELECT b.id, b.name, b.slug, NULL::text AS "hexCode",
            NULL::boolean AS "isFeatured",
+           NULL::json AS relacionadas,
            b.logo_key AS "logoKey",
            b.is_active AS "isActive",
            count(p.id) FILTER (WHERE p.is_active)     ::int AS activos,
@@ -94,6 +122,18 @@ export async function listarCategorias(
   >(sql`
     SELECT c.id, c.name, c.slug, NULL::text AS "hexCode",
            c.is_featured AS "isFeatured",
+           -- RF-31. Subconsulta y no JOIN: con el JOIN de productos de abajo,
+           -- cada relación se multiplicaría por los productos de la fila.
+           (SELECT COALESCE(json_agg(json_build_object(
+                     'id', r.id, 'name', r.name, 'isActive', r.is_active,
+                     'activos', (SELECT count(*) FROM products rp
+                                  WHERE rp.category_id = r.id
+                                    AND rp.is_active),
+                     'reciproca', cr.is_reciprocal)
+                   ORDER BY cr.sort_order, r.id), '[]'::json)
+              FROM category_relations cr
+              JOIN ${categories} r ON r.id = cr.related_category_id
+             WHERE cr.category_id = c.id) AS relacionadas,
            c.image_key AS "imageKey",
            c.is_active AS "isActive",
            count(p.id) FILTER (WHERE p.is_active)     ::int AS activos,
@@ -112,6 +152,25 @@ export async function listarCategorias(
     })),
     total: await contar(sql`${categories}`),
   };
+}
+
+/**
+ * Las categorías que se pueden elegir como relacionadas (RF-31): todas las
+ * ACTIVAS, con cuántos productos activos aportarían. Sin paginar: son pocas,
+ * y el selector las necesita todas. La propia y las ya elegidas las saca el
+ * diálogo, que es el que sabe cuál está editando.
+ */
+export async function listarRelacionables(): Promise<CategoriaRelacionable[]> {
+  const filas = await db.execute<CategoriaRelacionable>(sql`
+    SELECT c.id, c.name,
+           count(p.id) FILTER (WHERE p.is_active)::int AS activos
+      FROM ${categories} c
+      LEFT JOIN products p ON p.category_id = c.id
+     WHERE c.is_active
+     GROUP BY c.id
+     ORDER BY immutable_unaccent(lower(c.name)), c.id
+  `);
+  return [...filas];
 }
 
 export async function listarColores(
@@ -137,6 +196,7 @@ export async function listarColores(
   const filas = await db.execute<ItemDeCatalogo>(sql`
     SELECT c.id, c.name, c.slug, c.hex_code AS "hexCode",
            NULL::boolean AS "isFeatured",
+           NULL::json AS relacionadas,
            NULL::text AS "logoUrl",
            c.is_active AS "isActive",
            count(DISTINCT p.id) FILTER (WHERE p.is_active AND v.is_active)

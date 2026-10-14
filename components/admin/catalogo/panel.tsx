@@ -37,8 +37,13 @@ import {
   eliminar,
 } from "@/modules/catalog/actions";
 import { urlDePagina } from "@/modules/catalog/filtros-panel";
-import type { ItemDeCatalogo } from "@/modules/catalog/queries";
+import type {
+  CategoriaRelacionable,
+  ItemDeCatalogo,
+} from "@/modules/catalog/queries";
 import type { TipoDeItem } from "@/modules/catalog/schemas";
+
+const SIN_RELACIONABLES: CategoriaRelacionable[] = [];
 
 type Confirmacion = { accion: "borrar" | "desactivar"; item: ItemDeCatalogo };
 
@@ -63,6 +68,7 @@ export function PanelDeCatalogo({
   pagina,
   paginas,
   base,
+  relacionables = SIN_RELACIONABLES,
 }: {
   tipo: TipoDeItem;
   /** Los de ESTA página. Para contar, el estado vacío y el botón va `total`. */
@@ -73,6 +79,8 @@ export function PanelDeCatalogo({
   /** La ruta de la solapa. El enlace lo arma acá: una función no cruza de
       servidor a cliente. */
   base: string;
+  /** Las categorías que se pueden elegir como relacionadas (RF-31). */
+  relacionables?: CategoriaRelacionable[];
 }) {
   const palabras = PALABRAS[tipo];
   // `isFeatured` es `null` en los tipos que no se destacan (RF-18): la vista
@@ -278,6 +286,7 @@ export function PanelDeCatalogo({
           item={null}
           abierto
           alCerrar={() => setCreando(false)}
+          relacionables={relacionables}
         />
       ) : null}
       {editando ? (
@@ -286,6 +295,7 @@ export function PanelDeCatalogo({
           item={editando}
           abierto
           alCerrar={() => setEditando(null)}
+          relacionables={relacionables}
         />
       ) : null}
 
