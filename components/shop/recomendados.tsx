@@ -10,13 +10,18 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
 import {
+  leerCompletaTuSetup,
   leerRecomendados,
   POR_BLOQUE,
 } from "@/modules/catalog/products/recomendados";
 import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
 
 /**
- * Los recomendados de la ficha — F8.2, RF-32, DR §7.3.
+ * Los bloques de recomendados — RF-32: los dos de la ficha (F8.2, DR §7.3) y
+ * «Completá tu setup» del carrito (F8.3, DR §7.4). Las dos pantallas los
+ * envuelven en `<Suspense>` con `EsqueletoDeRecomendados`.
+ *
+ * Los de la ficha:
  *
  * Van a lo ancho, debajo de las dos columnas, y **llegan después**: la página
  * los envuelve en `<Suspense>`, así que la ficha se dibuja sin esperarlos y
@@ -54,26 +59,9 @@ export async function Recomendados({
 
   if (complementos.length === 0 && similares.length === 0) return null;
 
-  const guardados = new Set(favoritos ?? []);
-
-  const tarjetas = (productos: ProductoEnTarjeta[]) =>
-    productos.map((producto) => (
-      <li key={producto.id}>
-        <TarjetaProducto
-          producto={producto}
-          accionFavorito={
-            <BotonFavorito
-              forma="corazon"
-              productId={producto.id}
-              nombre={producto.nombre}
-              marcado={guardados.has(producto.id)}
-              conSesion={favoritos !== null}
-              volver={ruta}
-            />
-          }
-        />
-      </li>
-    ));
+  const tarjetas = (productos: ProductoEnTarjeta[]) => (
+    <Tarjetas productos={productos} favoritos={favoritos} ruta={ruta} />
+  );
 
   return (
     <Bloques>
@@ -98,21 +86,97 @@ export async function Recomendados({
   );
 }
 
-/** 64px entre las columnas y el primer bloque, y entre bloque y bloque (§7.3). */
+/**
+ * «Completá tu setup» — F8.3, RF-32, DR §7.4.
+ *
+ * **Va a lo ancho debajo del carrito, no en la columna del resumen.** §7.4 lo
+ * pone «debajo del resumen», y en el teléfono es literal: el resumen es lo
+ * último de la lista y el bloque sigue. En escritorio la columna mide 352px y
+ * es `sticky`: cuatro tarjetas ahí serían dos columnas de 160px, y algo
+ * debajo de una columna pegada se esconde detrás de ella al desplazar. Es la
+ * misma decisión que la ficha: los recomendados son otra pantalla dentro de la
+ * página.
+ *
+ * Sin «Ver todo»: mezcla categorías, como «También te puede interesar».
+ */
+export async function CompletaTuSetup({
+  variantes,
+  userId,
+}: {
+  /** Todas las del carrito, también las que ya no se venden. */
+  variantes: string[];
+  userId: string;
+}) {
+  const [productos, favoritos] = await Promise.all([
+    leerCompletaTuSetup(variantes),
+    idsDeFavoritos(userId),
+  ]);
+
+  if (productos.length === 0) return null;
+
+  return (
+    <Bloques>
+      <SeccionDeLaHome titulo="Completá tu setup">
+        <GrillaDeLaHome>
+          <Tarjetas
+            productos={productos}
+            favoritos={favoritos}
+            ruta="/carrito"
+          />
+        </GrillaDeLaHome>
+      </SeccionDeLaHome>
+    </Bloques>
+  );
+}
+
+/**
+ * Las tarjetas de un bloque, con su corazón. `favoritos` es `null` sin
+ * sesión, y entonces el corazón manda a ingresar y vuelve a `ruta`.
+ */
+function Tarjetas({
+  productos,
+  favoritos,
+  ruta,
+}: {
+  productos: ProductoEnTarjeta[];
+  favoritos: string[] | null;
+  ruta: string;
+}) {
+  const guardados = new Set(favoritos ?? []);
+
+  return productos.map((producto) => (
+    <li key={producto.id}>
+      <TarjetaProducto
+        producto={producto}
+        accionFavorito={
+          <BotonFavorito
+            forma="corazon"
+            productId={producto.id}
+            nombre={producto.nombre}
+            marcado={guardados.has(producto.id)}
+            conSesion={favoritos !== null}
+            volver={ruta}
+          />
+        }
+      />
+    </li>
+  ));
+}
+
+/** 64px entre lo de arriba y el primer bloque, y entre bloque y bloque (§7.3). */
 function Bloques({ children }: { children: React.ReactNode }) {
   return <div className="mt-16 flex flex-col gap-16">{children}</div>;
 }
 
 /**
- * Mientras llegan: los dos bloques con la forma real (§8), para que lo que
- * entra no empuje el pie de página de golpe. Si al final uno no tiene
- * candidatos, se cierra ese hueco; está debajo del pliegue, donde no se ve
- * moverse nada.
+ * Mientras llegan: los bloques con la forma real (§8), para que lo que entra
+ * no empuje el pie de página de golpe. Si al final uno no tiene candidatos,
+ * se cierra ese hueco; está debajo del pliegue, donde no se ve moverse nada.
  */
-export function EsqueletoDeRecomendados() {
+export function EsqueletoDeRecomendados({ bloques = 2 }: { bloques?: number }) {
   return (
     <Bloques>
-      {[0, 1].map((bloque) => (
+      {Array.from({ length: bloques }, (_, bloque) => (
         <div key={bloque} className="flex flex-col gap-5">
           <Skeleton className="h-6 w-56 max-w-full" />
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

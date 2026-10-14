@@ -3,11 +3,15 @@ import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 
-import { leerRecomendados } from "@/modules/catalog/products/recomendados";
+import {
+  leerCompletaTuSetup,
+  leerRecomendados,
+} from "@/modules/catalog/products/recomendados";
 import { enTransaccionRevertida, type Tx } from "@/tests/apoyo/transaccion";
 
 /**
- * F8.2 — RF-32, TS §11.2: los dos bloques de recomendados de la ficha.
+ * F8.2 y F8.3 — RF-32, TS §11.2: los dos bloques de recomendados de la ficha
+ * y «Completá tu setup» del carrito.
  *
  * Lo que se prueba es el ORDEN, porque es lo único que puede salir mal en
  * silencio: un bloque con los productos correctos en el orden equivocado no
@@ -19,6 +23,13 @@ import { enTransaccionRevertida, type Tx } from "@/tests/apoyo/transaccion";
  * base de desarrollo tiene los del seed: sin esto, el resultado dependería de
  * con qué se sembró la última vez. Se revierte con el resto.
  */
+
+/** La variante de un producto de prueba: el carrito guarda variantes. */
+async function varianteDe(tx: Tx, productoId: string): Promise<string> {
+  const [f] = await tx.execute<{ id: string }>(sql`
+    SELECT id FROM product_variants WHERE product_id = ${productoId}`);
+  return f.id;
+}
 
 /** Los nombres que se crearon, para leer el resultado sin mirar ids. */
 const nombres = (lista: { nombre: string }[]) => lista.map((p) => p.nombre);
@@ -269,4 +280,65 @@ describe("«Productos similares»", () => {
       expect(nombres(complementos)).toEqual(["Mouse Logi"]);
       expect(similares).toEqual([]);
     }));
+});
+
+describe("«Completá tu setup»", () => {
+  test("las relacionadas de todo el carrito, y después los destacados", () =>
+    enTransaccionRevertida(async (tx) => {
+      const { marca, categoria, producto, relacionar } = await preparar(tx);
+      const m = await marca("Marca");
+      const teclados = await categoria("Teclados");
+      const auris = await categoria("Auris");
+      const pads = await categoria("Pads");
+      const soportes = await categoria("Soportes");
+      const cables = await categoria("Cables");
+      await relacionar(teclados, [pads]);
+      await relacionar(auris, [soportes]);
+
+      const k120 = await producto("K120", { categoria: teclados, marca: m });
+      const h350 = await producto("H350", { categoria: auris, marca: m });
+      await producto("Soporte", { categoria: soportes, marca: m });
+      await producto("Pad", { categoria: pads, marca: m });
+      await producto("Cable", { categoria: cables, marca: m, destacado: true });
+
+      const setup = await leerCompletaTuSetup(
+        [await varianteDe(tx, k120), await varianteDe(tx, h350)],
+        tx,
+      );
+
+      // Pad y Soporte están las dos primeras en su relación: empatan en
+      // prioridad y desempata el más nuevo.
+      expect(nombres(setup)).toEqual(["Pad", "Soporte", "Cable"]);
+    }));
+
+  test("nada de lo que está en el carrito, ni de sus categorías", () =>
+    enTransaccionRevertida(async (tx) => {
+      const { marca, categoria, producto, relacionar } = await preparar(tx);
+      const m = await marca("Marca");
+      const teclados = await categoria("Teclados");
+      const mouses = await categoria("Mouses");
+      const pads = await categoria("Pads");
+      await relacionar(teclados, [mouses, pads]);
+
+      const k120 = await producto("K120", { categoria: teclados, marca: m });
+      const g203 = await producto("G203", { categoria: mouses, marca: m });
+      await producto("G502", { categoria: mouses, marca: m });
+      await producto("K380", {
+        categoria: teclados,
+        marca: m,
+        destacado: true,
+      });
+      await producto("Pad", { categoria: pads, marca: m });
+
+      const setup = await leerCompletaTuSetup(
+        [await varianteDe(tx, k120), await varianteDe(tx, g203)],
+        tx,
+      );
+
+      expect(nombres(setup)).toEqual(["Pad"]);
+    }));
+
+  test("con el carrito vacío no hay bloque", async () => {
+    expect(await leerCompletaTuSetup([])).toEqual([]);
+  });
 });

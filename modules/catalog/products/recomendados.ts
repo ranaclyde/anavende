@@ -7,12 +7,14 @@ import type { ProductoEnTarjeta } from "@/components/shop/tarjeta-producto";
 import {
   aTarjeta,
   COLUMNAS_DE_TARJETA,
+  enLaLista,
   UNIONES_DE_TARJETA,
   type FilaDeTarjeta,
 } from "@/modules/catalog/products/tienda";
 
 /**
- * Los recomendados de la ficha — F8.2, RF-32, TS §11.2.
+ * Los recomendados de la ficha — F8.2, RF-32, TS §11.2. Al final del archivo,
+ * «Completá tu setup» del carrito (F8.3), con la misma cascada.
  *
  * Dos bloques que no se mezclan, porque responden dos preguntas distintas:
  *
@@ -65,35 +67,47 @@ export type Recomendados = {
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
- * Lo común a los dos bloques: excluir el producto actual y los inactivos, y
- * el orden de RF-32 —con stock, nivel, prioridad, destacados, más nuevos—.
+ * Lo común a todos los bloques: excluir lo que ya se está mirando y los
+ * inactivos, y el orden de RF-32 —con stock, nivel, prioridad, destacados,
+ * más nuevos—.
  *
+ * `base` son las tablas de partida del `WITH`, y tiene que definir `fuera`
+ * (los productos que no se recomiendan): en la ficha, `a` con el producto que
+ * se está viendo; en el carrito, `carrito` con lo que ya está adentro.
  * `candidatos` es una subconsulta con `id`, `nivel`, `prioridad` y
- * `solo_con_stock`, y puede usar `a`: el producto que se está viendo.
+ * `solo_con_stock` que lee de esa base.
  */
 function recomendar(
   ejecutor: Tx | typeof db,
-  productoId: string,
+  base: SQL,
   candidatos: SQL,
+  cupo: number,
 ) {
   return ejecutor.execute<FilaDeTarjeta>(sql`
-    WITH a AS (
-      SELECT id, category_id, brand_id, final_price
-        FROM products
-       WHERE id = ${productoId}
-    )
+    WITH ${base}
     SELECT ${COLUMNAS_DE_TARJETA}
       FROM (${candidatos}) x
       JOIN products p ON p.id = x.id
       JOIN brands b   ON b.id = p.brand_id
       ${UNIONES_DE_TARJETA}
      WHERE p.is_active
-       AND p.id <> ${productoId}
+       AND p.id NOT IN (SELECT id FROM fuera)
        AND (NOT x.solo_con_stock OR st.disponible > 0)
      ORDER BY st.disponible > 0 DESC,
               x.nivel, x.prioridad,
               p.is_featured DESC, p.created_at DESC, p.id
-     LIMIT ${CANDIDATOS}`);
+     LIMIT ${cupo}`);
+}
+
+/** La base de la ficha: el producto que se está viendo. */
+function delProducto(productoId: string): SQL {
+  return sql`
+    a AS (
+      SELECT id, category_id, brand_id, final_price
+        FROM products
+       WHERE id = ${productoId}
+    ),
+    fuera AS (SELECT id FROM a)`;
 }
 
 /**
@@ -145,8 +159,8 @@ export async function leerRecomendados(
   ejecutor: Tx | typeof db = db,
 ): Promise<Recomendados> {
   const [complementos, similares] = await Promise.all([
-    recomendar(ejecutor, productoId, COMPLEMENTOS),
-    recomendar(ejecutor, productoId, SIMILARES),
+    recomendar(ejecutor, delProducto(productoId), COMPLEMENTOS, CANDIDATOS),
+    recomendar(ejecutor, delProducto(productoId), SIMILARES, CANDIDATOS),
   ]);
 
   // Un producto no sale dos veces en la misma pantalla (RF-32). El de arriba
@@ -163,4 +177,58 @@ export async function leerRecomendados(
       .slice(0, POR_BLOQUE)
       .map(aTarjeta),
   };
+}
+
+/**
+ * «Completá tu setup», el bloque del carrito — F8.3, RF-32, DR §7.4.
+ *
+ * Es la intención de «También te puede interesar» —¿qué más necesito junto
+ * con esto?— con el carrito entero como punto de partida: los productos de
+ * las categorías relacionadas con CUALQUIERA de las de adentro y, si no
+ * alcanza, los destacados con stock. Una categoría relacionada con dos de las
+ * del carrito toma la mejor de sus dos posiciones.
+ *
+ * **Nada de las categorías que ya están en el carrito**, en ningún nivel. RF-32
+ * pide excluir los productos, y esto va un paso más: «completar» es sumar lo
+ * que falta, y con un mouse adentro, otro mouse no completa nada —aunque
+ * Mouses sea relacionada de Teclados y haya un teclado al lado—.
+ *
+ * Recibe las variantes y no los productos porque es lo que tiene el carrito;
+ * se le pasan **todas**, también las que ya no se venden: siguen a la vista
+ * en «Ya no disponible», y recomendar el mismo producto ahí abajo sería
+ * ofrecer lo que la pantalla acaba de decir que no hay. Sin variantes no hay
+ * bloque (RF-32: con el carrito vacío no se muestra).
+ */
+export async function leerCompletaTuSetup(
+  variantes: readonly string[],
+  ejecutor: Tx | typeof db = db,
+): Promise<ProductoEnTarjeta[]> {
+  if (variantes.length === 0) return [];
+
+  const base = sql`
+    carrito AS (
+      SELECT DISTINCT p.id, p.category_id
+        FROM product_variants v
+        JOIN products p ON p.id = v.product_id
+       WHERE ${enLaLista(sql`v.id`, variantes)}
+    ),
+    fuera AS (SELECT id FROM carrito)`;
+
+  const candidatos = sql`
+    SELECT p.id,
+           CASE WHEN r.prioridad IS NOT NULL THEN 1 ELSE 2 END AS nivel,
+           coalesce(r.prioridad, 0) AS prioridad,
+           r.prioridad IS NULL AS solo_con_stock
+      FROM products p
+      LEFT JOIN (
+        SELECT cr.related_category_id, min(cr.sort_order) AS prioridad
+          FROM category_relations cr
+         WHERE cr.category_id IN (SELECT category_id FROM carrito)
+         GROUP BY cr.related_category_id
+      ) r ON r.related_category_id = p.category_id
+     WHERE (r.prioridad IS NOT NULL OR p.is_featured)
+       AND p.category_id NOT IN (SELECT category_id FROM carrito)`;
+
+  const filas = await recomendar(ejecutor, base, candidatos, POR_BLOQUE);
+  return filas.map(aTarjeta);
 }

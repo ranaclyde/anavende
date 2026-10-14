@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import {
   ControlesDelItem,
@@ -10,6 +11,10 @@ import {
 import { Avisos } from "@/components/shop/carrito/avisos";
 import { ID_AVISO_DE_PAUSA } from "@/components/shop/cuenta-en-pausa-id";
 import { Precio } from "@/components/shop/precio";
+import {
+  CompletaTuSetup,
+  EsqueletoDeRecomendados,
+} from "@/components/shop/recomendados";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney, type Money } from "@/lib/money";
@@ -38,8 +43,8 @@ export const metadata: Metadata = {
  * lo que se dejó de vender queda apartado en «Ya no disponible» hasta que el
  * comprador lo quite.
  *
- * «Continuar con el pedido» lleva al checkout (F6.1). **Lo que todavía no
- * hace, y es de otra tarea:** «Completá tu setup» es RF-32, de F8.
+ * «Continuar con el pedido» lleva al checkout (F6.1). Abajo, «Completá tu
+ * setup» (F8.3, RF-32), que llega por `<Suspense>` y no demora el carrito.
  */
 export default async function PaginaDelCarrito() {
   // El proxy ya manda a ingresar a quien no tiene cookie; esto es la
@@ -116,6 +121,16 @@ export default async function PaginaDelCarrito() {
           />
         </div>
       )}
+
+      {/* Con el carrito vacío no hay nada que completar (RF-32). */}
+      {carrito.items.length > 0 ? (
+        <Suspense fallback={<EsqueletoDeRecomendados bloques={1} />}>
+          <CompletaTuSetup
+            variantes={carrito.items.map((i) => i.variantId)}
+            userId={sesion.profile.id}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }
@@ -161,7 +176,9 @@ function Renglon({ item }: { item: ItemDelCarrito }) {
             alt={alt}
             fill
             sizes="80px"
-            className={seVende ? "object-cover" : "object-cover opacity-50 grayscale"}
+            className={
+              seVende ? "object-cover" : "object-cover opacity-50 grayscale"
+            }
           />
         ) : null}
       </div>
@@ -234,9 +251,15 @@ function Renglon({ item }: { item: ItemDelCarrito }) {
  */
 function YaNoDisponible({ items }: { items: ItemDelCarrito[] }) {
   return (
-    <section aria-labelledby="no-disponible-titulo" className="flex flex-col gap-3">
+    <section
+      aria-labelledby="no-disponible-titulo"
+      className="flex flex-col gap-3"
+    >
       <div className="flex flex-col gap-1">
-        <h2 id="no-disponible-titulo" className="text-body-lg font-medium text-ink">
+        <h2
+          id="no-disponible-titulo"
+          className="text-body-lg font-medium text-ink"
+        >
           Ya no disponible
         </h2>
         <p className="text-body-sm text-ink-secondary">
@@ -325,7 +348,10 @@ function Resumen({
               Continuar con el pedido
             </Button>
             {continuar === "quitar" ? (
-              <p id="continuar-motivo" className="text-body-sm text-ink-secondary">
+              <p
+                id="continuar-motivo"
+                className="text-body-sm text-ink-secondary"
+              >
                 Para continuar, quitá lo que no tiene stock o ya no está a la
                 venta.
               </p>
