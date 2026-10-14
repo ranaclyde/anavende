@@ -268,6 +268,14 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
 
       <Migas categoria={ficha.categoria} categoriaId={ficha.categoriaId} />
 
+      {/*
+        `encabezado` e `informacion` se arman acá y `Compra` los pone junto a
+        sus propios hijos, en la misma lista. Llevan `key` por eso: sin ella,
+        React avisaba «Each child in a list should have a unique "key"» desde
+        `Compra` (arreglado el 2026-10-14). Saltaba en dos fichas —Mouse G203
+        y Teclado K120— y en ninguna de las otras 47; qué tienen en común
+        esas dos no quedó aislado, pero con las dos keys no sale en ninguna.
+      */}
       <Compra
         producto={{
           nombre: ficha.nombre,
@@ -286,7 +294,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         pendiente={iPendiente !== -1}
         favorito={{ productId: ficha.id, marcado: guardado }}
         encabezado={
-          <header className="flex flex-col gap-2">
+          <header key="encabezado" className="flex flex-col gap-2">
             <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
               {ficha.marca}
             </p>
@@ -307,6 +315,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         }
         informacion={
           <Informacion
+            key="informacion"
             mediosDePago={mediosDePago}
             descripcion={ficha.descripcion}
           />
