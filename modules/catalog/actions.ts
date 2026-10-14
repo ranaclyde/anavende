@@ -26,6 +26,7 @@ import {
   referencia,
   type TipoDeItem,
 } from "@/modules/catalog/schemas";
+import { guardarRelaciones } from "@/modules/catalog/relaciones";
 
 /**
  * ABM de marcas, categorías y colores — RF-18, RN-11, RN-11b.
@@ -119,7 +120,9 @@ function siEsDuplicado(e: unknown, tipo: TipoDeItem): never {
       // El envoltorio cuelga los mensajes de cada campo desde `fields`
       // (§6.2, paso 3); acá se arma la misma forma a mano para que el error
       // aparezca debajo del campo y no como un cartel suelto.
-      fields: { properties: { name: { errors: ["Ese nombre ya está usado."] } } },
+      fields: {
+        properties: { name: { errors: ["Ese nombre ya está usado."] } },
+      },
     });
   }
   throw e;
@@ -152,16 +155,25 @@ export const crearUnaCategoria = action
   .auth("admin")
   .handler(async ({ input }) => {
     try {
-      const [fila] = await db
-        .insert(categories)
-        .values({
-          name: input.name,
-          slug: slugificar(input.name),
-          isFeatured: input.isFeatured,
-        })
-        .returning({ id: categories.id });
+      // El nombre y las relacionadas (RF-31) van juntos o no va ninguno: una
+      // categoría creada a medias, sin las relaciones que se eligieron en el
+      // mismo diálogo, se ve guardada y no lo está.
+      const id = await db.transaction(async (tx) => {
+        const [fila] = await tx
+          .insert(categories)
+          .values({
+            name: input.name,
+            slug: slugificar(input.name),
+            isFeatured: input.isFeatured,
+          })
+          .returning({ id: categories.id });
+        if (input.relacionadas) {
+          await guardarRelaciones(tx, fila.id, input.relacionadas);
+        }
+        return fila.id;
+      });
       refrescar();
-      return { id: fila.id };
+      return { id };
     } catch (e) {
       siEsDuplicado(e, "categoria");
     }
@@ -216,16 +228,21 @@ export const editarUnaCategoria = action
   .auth("admin")
   .handler(async ({ input }) => {
     try {
-      const filas = await db
-        .update(categories)
-        .set({
-          name: input.name,
-          isFeatured: input.isFeatured,
-          updatedAt: new Date(),
-        })
-        .where(eq(categories.id, input.id))
-        .returning({ id: categories.id });
-      if (!filas.length) throw domainError("NOT_FOUND");
+      await db.transaction(async (tx) => {
+        const filas = await tx
+          .update(categories)
+          .set({
+            name: input.name,
+            isFeatured: input.isFeatured,
+            updatedAt: new Date(),
+          })
+          .where(eq(categories.id, input.id))
+          .returning({ id: categories.id });
+        if (!filas.length) throw domainError("NOT_FOUND");
+        if (input.relacionadas) {
+          await guardarRelaciones(tx, input.id, input.relacionadas);
+        }
+      });
       refrescar();
       return { id: input.id };
     } catch (e) {

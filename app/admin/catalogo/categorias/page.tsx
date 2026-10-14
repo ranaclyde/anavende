@@ -8,7 +8,10 @@ import {
   urlDePagina,
   type ParametrosDeBusqueda,
 } from "@/modules/catalog/filtros-panel";
-import { listarCategorias } from "@/modules/catalog/queries";
+import {
+  listarCategorias,
+  listarRelacionables,
+} from "@/modules/catalog/queries";
 
 export const metadata: Metadata = { title: "Categorías" };
 
@@ -21,7 +24,11 @@ export default async function CategoriasDelCatalogo({
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
   const pagina = leerPaginaDeCatalogo(await searchParams);
-  const { items, total } = await listarCategorias(pagina);
+  // Las dos en paralelo: las relacionables no dependen de la página.
+  const [{ items, total }, relacionables] = await Promise.all([
+    listarCategorias(pagina),
+    listarRelacionables(),
+  ]);
 
   // Pedir una página que ya no existe —un enlace viejo, o borrar el último de
   // la última— lleva a la última que sí existe, como en los otros listados.
@@ -36,6 +43,7 @@ export default async function CategoriasDelCatalogo({
       pagina={pagina}
       paginas={paginas}
       base={BASE}
+      relacionables={relacionables}
     />
   );
 }

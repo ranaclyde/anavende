@@ -9,6 +9,7 @@ import {
   LOGO,
   PALABRAS,
 } from "@/components/admin/catalogo/copy";
+import { RelacionadasDeCategoria } from "@/components/admin/catalogo/relacionadas";
 import {
   LOGO_SIN_TOCAR,
   SelectorDeLogo,
@@ -30,7 +31,11 @@ import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { slugificar } from "@/lib/slug";
-import type { ItemDeCatalogo } from "@/modules/catalog/queries";
+import type {
+  CategoriaRelacionable,
+  CategoriaRelacionada,
+  ItemDeCatalogo,
+} from "@/modules/catalog/queries";
 import {
   crearUnaCategoria,
   crearUnaMarca,
@@ -61,6 +66,8 @@ const EDITAR = {
 };
 
 const HEX_POR_OMISION = "#8a8a8a";
+
+const SIN_RELACIONADAS: CategoriaRelacionada[] = [];
 
 /**
  * Sube el logo de la marca, o la imagen de la categoría (FA-21), por el
@@ -112,12 +119,15 @@ export function DialogoDeItem({
   item,
   abierto,
   alCerrar,
+  relacionables,
 }: {
   tipo: TipoDeItem;
   /** `null` = alta. */
   item: ItemDeCatalogo | null;
   abierto: boolean;
   alCerrar: () => void;
+  /** Solo las categorías las usan (RF-31). */
+  relacionables: CategoriaRelacionable[];
 }) {
   const palabras = PALABRAS[tipo];
   const router = useRouter();
@@ -130,6 +140,8 @@ export function DialogoDeItem({
   // Una categoría nueva no nace destacada: destacar es elegir un puñado, y un
   // valor por omisión que destaca todo vacía la distinción.
   const [destacada, setDestacada] = useState(item?.isFeatured ?? false);
+  const originales = item?.relacionadas ?? SIN_RELACIONADAS;
+  const [relacionadas, setRelacionadas] = useState(originales);
   const [logo, setLogo] = useState<AccionDeLogo>(LOGO_SIN_TOCAR);
   const [errorDelLogo, setErrorDelLogo] = useState<string | null>(null);
 
@@ -138,6 +150,12 @@ export function DialogoDeItem({
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrores(SIN_ERRORES);
+
+    // Solo lo que el servidor necesita: el orden lo da la posición.
+    const pedidas = relacionadas.map(({ id, reciproca }) => ({
+      id,
+      reciproca,
+    }));
 
     iniciar(async () => {
       const resultado = item
@@ -148,12 +166,17 @@ export function DialogoDeItem({
                 id: item.id,
                 name: nombre,
                 isFeatured: destacada,
+                relacionadas: pedidas,
               })
             : await EDITAR.marca({ id: item.id, name: nombre })
         : tipo === "color"
           ? await CREAR.color({ name: nombre, hexCode: hex })
           : tipo === "categoria"
-            ? await CREAR.categoria({ name: nombre, isFeatured: destacada })
+            ? await CREAR.categoria({
+                name: nombre,
+                isFeatured: destacada,
+                relacionadas: pedidas,
+              })
             : await CREAR.marca({ name: nombre });
 
       if (!resultado.ok) {
@@ -323,6 +346,19 @@ export function DialogoDeItem({
               </FieldHint>
             </div>
           )}
+
+          {tipo === "categoria" ? (
+            <RelacionadasDeCategoria
+              id={`${idBase}-relacionadas`}
+              propia={item?.id ?? null}
+              nombre={nombre}
+              lista={relacionadas}
+              originales={originales}
+              relacionables={relacionables}
+              alCambiar={setRelacionadas}
+              deshabilitado={enviando}
+            />
+          ) : null}
 
           <FieldError>{errores.general}</FieldError>
 

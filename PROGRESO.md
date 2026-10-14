@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-10-05.
+Última actualización: 2026-10-14.
 
 **Qué significa cada estado**
 
@@ -1877,6 +1877,14 @@ testigo, que en rojo reproduce exactamente lo que se vio en pantalla.
 
 **El arreglo** son los paréntesis alrededor de la condición, en `mover()`, así
 que vale para las cinco operaciones y para cualquiera que se agregue después.
+
+---
+
+## F8 — Descubrimiento avanzado
+
+| ID | Tarea | Estado | Nota |
+|---|---|---|---|
+| F8.1 | Categorías relacionadas, recíprocas por defecto | ✅ | **El diálogo de la categoría, al crearla o editarla, tiene «Categorías relacionadas»** (RF-31): se agregan desde un selector que solo ofrece las activas —ni la propia ni las ya puestas—, se ordenan con subir y bajar —el orden es la prioridad para los recomendados de F8.2— y cada una dice **cuántos productos activos aporta**, en naranja si no aporta ninguno. **«Recíproca» viene marcada** y lo que hace lo dice con los dos nombres: «Pads también recomienda Teclados». **La tabla ya estaba desde la migración `0001`** (`category_relations`, una fila por sentido, §5.4); lo nuevo es `modules/catalog/relaciones.ts`, que reemplaza la lista entera **en la misma transacción que el nombre**: una recíproca crea la inversa **al final** de la lista de la otra —no le pasa adelante a lo que allá se ordenó a mano— o marca recíproca la dirigida que ya volvía; destildarla borra la inversa; quitar una recíproca la quita de los dos lados, y una dirigida solo del suyo. **Los efectos sobre la otra categoría se avisan antes de guardar**, al lado de lo que los provoca: «Al guardar, Pads deja de recomendar Teclados». **Una decisión que la especificación no cubría:** dos dirigidas en sentidos opuestos, cargadas cada una desde su categoría, son independientes —quitar una no se lleva la otra—; solo la inversa de una recíproca es «de» la relación. **Una inactiva no se puede agregar, pero la que ya estaba se conserva** cuando la otra se desactiva: deja de aportar sin romper la ficha, y vuelve sola al reactivarla. Borrar una categoría se lleva sus filas por `ON DELETE CASCADE`. **Verificado:** diez tests en `tests/unit/catalogo/relacionadas.test.ts` contra Postgres; un recorrido de Playwright a 390 y 1280 —alta de una recíproca y una dirigida, reordenar, guardar, abrir la otra punta, destildar y quitar, con lo que queda en la base mirado después de cada guardado—, 14 pasos en verde y sin errores de consola; `DATABASE_URL= npx next build` sin errores |
 
 ---
 
