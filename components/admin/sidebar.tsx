@@ -16,10 +16,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { ThemeToggle } from "@/components/admin/theme";
 import { IsotipoSegunTema } from "@/components/shop/logo";
+import { crearPreferencia } from "@/lib/preferencia-local";
 import { cn } from "@/lib/utils";
 
 /**
@@ -45,7 +46,11 @@ const SECCIONES: Seccion[] = [
   { href: "/admin", etiqueta: "Inicio", Icono: LayoutDashboard, exacto: true },
   { href: "/admin/productos", etiqueta: "Productos", Icono: Package },
   { href: "/admin/ordenes", etiqueta: "Órdenes", Icono: ShoppingBag },
-  { href: "/admin/devoluciones", etiqueta: "Devoluciones", Icono: ArrowLeftRight },
+  {
+    href: "/admin/devoluciones",
+    etiqueta: "Devoluciones",
+    Icono: ArrowLeftRight,
+  },
   { href: "/admin/catalogo", etiqueta: "Catálogo", Icono: PanelsTopLeft },
   { href: "/admin/usuarios", etiqueta: "Usuarios", Icono: Users },
   // Apagado hasta F9.1, que es la tarea que construye la pantalla (decisión
@@ -61,30 +66,32 @@ const SECCIONES: Seccion[] = [
   { href: "/admin/configuracion", etiqueta: "Configuración", Icono: Settings },
 ];
 
-const CLAVE_COLAPSO = "anavende:admin-menu";
+const preferenciaDeColapso = crearPreferencia("anavende:admin-menu");
 
 export function AdminSidebar({ nombre }: { nombre: string }) {
   const pathname = usePathname();
-  const [colapsado, setColapsado] = useState(false);
+  const colapsado = useSyncExternalStore(
+    preferenciaDeColapso.suscribir,
+    () => {
+      const guardado = preferenciaDeColapso.leer();
+      // Sin nada guardado, en tablet arranca colapsado (§5.2).
+      return guardado !== null
+        ? guardado === "1"
+        : window.matchMedia("(max-width: 1279px)").matches;
+    },
+    () => false,
+  );
   const [abiertoEnMovil, setAbiertoEnMovil] = useState(false);
 
-  useEffect(() => {
-    let guardado: string | null = null;
-    try {
-      guardado = localStorage.getItem(CLAVE_COLAPSO);
-    } catch {
-      // Sin almacenamiento: arranca según el ancho de pantalla.
-    }
-    // En tablet arranca colapsado (§5.2).
-    setColapsado(
-      guardado !== null
-        ? guardado === "1"
-        : window.matchMedia("(max-width: 1279px)").matches,
-    );
-  }, []);
-
-  // Al navegar se cierra el panel de móvil: si no, tapa lo que se acaba de abrir.
-  useEffect(() => setAbiertoEnMovil(false), [pathname]);
+  // Al navegar se cierra el panel de móvil: si no, tapa lo que se acaba de
+  // abrir. Se ajusta durante el render, cuando cambia la ruta, y no en un
+  // efecto: así no se pinta un cuadro con el panel abierto sobre la página
+  // nueva.
+  const [rutaVista, setRutaVista] = useState(pathname);
+  if (rutaVista !== pathname) {
+    setRutaVista(pathname);
+    setAbiertoEnMovil(false);
+  }
 
   // Escape cierra el panel de móvil, como cualquier capa superpuesta.
   useEffect(() => {
@@ -97,13 +104,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
   }, [abiertoEnMovil]);
 
   const alternarColapso = () => {
-    const nuevo = !colapsado;
-    setColapsado(nuevo);
-    try {
-      localStorage.setItem(CLAVE_COLAPSO, nuevo ? "1" : "0");
-    } catch {
-      // Vale para esta sesión.
-    }
+    preferenciaDeColapso.escribir(colapsado ? "0" : "1");
   };
 
   return (
@@ -187,7 +188,9 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
                   <li key={href}>
                     <span
                       aria-disabled
-                      title={soloIcono ? `${etiqueta} — ${pendiente}` : pendiente}
+                      title={
+                        soloIcono ? `${etiqueta} — ${pendiente}` : pendiente
+                      }
                       className={cn(
                         "flex h-10 max-md:h-11 items-center gap-3 rounded-panel-control px-2.5",
                         "text-body-sm text-ink-tertiary",

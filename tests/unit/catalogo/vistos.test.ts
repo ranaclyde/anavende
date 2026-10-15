@@ -94,7 +94,7 @@ describe("tarjetasDeVistos", () => {
       await tx.execute(sql`UPDATE products SET price = 24500 WHERE id = ${a}`);
 
       const [tarjeta] = await tarjetasDeVistos([a, b], null, tx);
-      expect(Number(tarjeta.precioFinal)).toBe(24500);
+      expect(tarjeta.precioFinal).toBe("24500.00");
     }));
 
   test("con menos de dos para mostrar, no hay bloque", () =>
