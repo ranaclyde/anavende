@@ -24,32 +24,41 @@ export function useBusqueda<T>(
   termino: string,
   buscar: (q: string) => Promise<T[]>,
 ) {
-  const [resultados, setResultados] = useState<T[]>([]);
-  const [buscando, setBuscando] = useState(false);
+  const q = termino.trim();
+  const corto = q.length < MINIMO;
+
+  // La última respuesta, con el término que la pidió: «buscando» se deduce
+  // de que ese término no sea el de ahora, sin un estado aparte que mantener.
+  const [respuesta, setRespuesta] = useState<{ q: string; resultados: T[] }>({
+    q: "",
+    resultados: [],
+  });
   const ultima = useRef(0);
 
-  useEffect(() => {
-    const q = termino.trim();
-    if (q.length < MINIMO) {
-      ultima.current++;
-      setResultados([]);
-      setBuscando(false);
-      return;
-    }
+  // Un término corto vacía la lista. Se ajusta durante el render y no en el
+  // efecto: un efecto pintaría primero la lista vieja debajo del campo.
+  if (corto && (respuesta.q !== "" || respuesta.resultados.length > 0)) {
+    setRespuesta({ q: "", resultados: [] });
+  }
 
-    setBuscando(true);
+  useEffect(() => {
+    // Lo que estuviera en vuelo ya no corresponde a lo que dice el campo.
     const mia = ++ultima.current;
+    if (corto) return;
+
     const temporizador = setTimeout(async () => {
       const r = await buscar(q);
       if (mia !== ultima.current) return;
-      setResultados(r);
-      setBuscando(false);
+      setRespuesta({ q, resultados: r });
     }, 300);
 
     return () => clearTimeout(temporizador);
-  }, [termino, buscar]);
+  }, [q, corto, buscar]);
 
-  return { resultados, buscando };
+  return {
+    resultados: respuesta.resultados,
+    buscando: !corto && respuesta.q !== q,
+  };
 }
 
 /**

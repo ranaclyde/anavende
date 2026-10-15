@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useId, useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { Palette, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
@@ -78,6 +78,11 @@ function nombreDe(v: { colorName: string | null }): string {
   return v.colorName ?? "Único";
 }
 
+/** El color con que arranca el diálogo: el de la variante, o nada en un alta. */
+function colorInicial(v: VarianteDelPanel | null): string {
+  return v ? (v.colorId ?? UNICO) : "";
+}
+
 export function VariantesDelProducto({
   productId,
   productoActivo,
@@ -105,10 +110,14 @@ export function VariantesDelProducto({
   // otro segmento y monta este componente de cero. Pero el día que algo
   // enlace a `?agregar=color` desde la ficha misma —el listado, por ejemplo—
   // React reusaría esta instancia y el diálogo no se abriría: el valor
-  // inicial de un `useState` se lee una sola vez.
-  useEffect(() => {
+  // inicial de un `useState` se lee una sola vez. Se sigue durante el render,
+  // cuando cambia, y no en un efecto: un efecto pintaría primero la ficha
+  // sin el diálogo.
+  const [abrirAltaVisto, setAbrirAltaVisto] = useState(abrirAlta);
+  if (abrirAltaVisto !== abrirAlta) {
+    setAbrirAltaVisto(abrirAlta);
     if (abrirAlta) setAgregando(true);
-  }, [abrirAlta]);
+  }
 
   const borrar = (v: VarianteDelPanel) => {
     setPorBorrar(null);
@@ -495,19 +504,28 @@ function DialogoDeVariante({
   const [enviando, iniciar] = useTransition();
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
-  const [color, setColor] = useState("");
-  const [color2, setColor2] = useState(SIN_SEGUNDO);
-  const [stock, setStock] = useState("0");
-  const [activa, setActiva] = useState(true);
+  const [color, setColor] = useState(() => colorInicial(variante));
+  const [color2, setColor2] = useState(
+    variante?.secondaryColorId ?? SIN_SEGUNDO,
+  );
+  const [stock, setStock] = useState(String(variante?.stockTotal ?? 0));
+  const [activa, setActiva] = useState(variante?.isActive ?? true);
 
-  useEffect(() => {
-    if (!abierto) return;
-    setErrores(SIN_ERRORES);
-    setColor(variante ? (variante.colorId ?? UNICO) : "");
-    setColor2(variante?.secondaryColorId ?? SIN_SEGUNDO);
-    setStock(String(variante?.stockTotal ?? 0));
-    setActiva(variante?.isActive ?? true);
-  }, [abierto, variante]);
+  // Cada vez que se abre —o cambia la variante con el diálogo abierto—, el
+  // formulario arranca de nuevo con lo que hay guardado. Se ajusta durante el
+  // render y no en un efecto: un efecto pintaría primero el diálogo con los
+  // valores de la vez anterior.
+  const [visto, setVisto] = useState({ abierto, variante });
+  if (visto.abierto !== abierto || visto.variante !== variante) {
+    setVisto({ abierto, variante });
+    if (abierto) {
+      setErrores(SIN_ERRORES);
+      setColor(colorInicial(variante));
+      setColor2(variante?.secondaryColorId ?? SIN_SEGUNDO);
+      setStock(String(variante?.stockTotal ?? 0));
+      setActiva(variante?.isActive ?? true);
+    }
+  }
 
   /**
    * Las combinaciones que otra variante de este producto ya se llevó. Un

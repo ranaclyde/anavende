@@ -41,7 +41,13 @@ export function SiteHeader({
   }, []);
 
   // El buscador abierto se cierra al navegar: si no, tapa la página que llega.
-  useEffect(() => setBuscadorAbierto(false), [pathname]);
+  // Se ajusta durante el render, cuando cambia la ruta, y no en un efecto:
+  // así no se pinta un cuadro con el buscador abierto sobre la página nueva.
+  const [rutaVista, setRutaVista] = useState(pathname);
+  if (rutaVista !== pathname) {
+    setRutaVista(pathname);
+    setBuscadorAbierto(false);
+  }
 
   return (
     <header

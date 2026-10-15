@@ -1,8 +1,9 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
+import { crearPreferencia } from "@/lib/preferencia-local";
 import { cn } from "@/lib/utils";
 
 /**
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
  */
 
 const CLAVE = "anavende:admin-theme";
+const preferencia = crearPreferencia(CLAVE);
 
 export type Tema = "light" | "dark";
 
@@ -48,39 +50,32 @@ export function ThemeToggle({
   /** Menú colapsado: la etiqueta se retira entera, no se recorta. */
   soloIcono?: boolean;
 }) {
-  const [tema, setTema] = useState<Tema | null>(null);
+  // `null` en el servidor y en la hidratación: todavía no se sabe qué eligió
+  // la persona. Con el almacenamiento bloqueado se queda en claro.
+  const tema = useSyncExternalStore<Tema | null>(
+    preferencia.suscribir,
+    () => (preferencia.leer() === "dark" ? "dark" : "light"),
+    () => null,
+  );
 
+  // Se APLICA, no solo se recuerda. El script de bloqueo de arriba corre
+  // una vez, en la primera carga del documento; volver al panel desde la
+  // tienda es una navegación de cliente, sin recarga, y ahí el script no
+  // vuelve a correr. Sin esto la preferencia queda guardada y desatendida:
+  // el panel aparece claro con `dark` en el almacenamiento.
   useEffect(() => {
-    let guardado: string | null = null;
-    try {
-      guardado = localStorage.getItem(CLAVE);
-    } catch {
-      // Navegador con el almacenamiento bloqueado: se queda en claro.
-    }
-    const elegido: Tema = guardado === "dark" ? "dark" : "light";
-    setTema(elegido);
+    if (tema !== null) aplicar(tema);
+  }, [tema]);
 
-    // Se APLICA, no solo se recuerda. El script de bloqueo de arriba corre
-    // una vez, en la primera carga del documento; volver al panel desde la
-    // tienda es una navegación de cliente, sin recarga, y ahí el script no
-    // vuelve a correr. Sin esta línea la preferencia queda guardada y
-    // desatendida: el panel aparece claro con `dark` en el almacenamiento.
-    aplicar(elegido);
-
-    // Al salir del panel el atributo se retira: la tienda no hereda el
-    // modo oscuro cuando se navega desde acá sin recargar.
-    return () => document.documentElement.removeAttribute("data-theme");
-  }, []);
+  // Al salir del panel el atributo se retira: la tienda no hereda el modo
+  // oscuro cuando se navega desde acá sin recargar.
+  useEffect(
+    () => () => document.documentElement.removeAttribute("data-theme"),
+    [],
+  );
 
   const cambiar = () => {
-    const nuevo: Tema = tema === "dark" ? "light" : "dark";
-    setTema(nuevo);
-    aplicar(nuevo);
-    try {
-      localStorage.setItem(CLAVE, nuevo);
-    } catch {
-      // Sin persistencia, el cambio vale para esta sesión.
-    }
+    preferencia.escribir(tema === "dark" ? "light" : "dark");
   };
 
   // Hasta saber qué eligió la persona no se dibuja el estado, para no
