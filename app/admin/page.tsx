@@ -40,16 +40,19 @@ export const metadata: Metadata = { title: "Panel" };
  */
 export default async function PanelInicio() {
   // El umbral hace falta ANTES de contar el stock, así que ése es el único
-  // encadenado. Los dos bloques son independientes entre sí, y el estado de
-  // la tienda no espera a nadie: arranca junto con el umbral. Se lee de la
-  // base y no de la memoria del proxy, como en Configuración: recién
+  // encadenado, y se encadena adentro: las tres lecturas arrancan juntas y
+  // ninguna espera a otra que no necesita. El estado de la tienda se lee de
+  // la base y no de la memoria del proxy, como en Configuración: recién
   // cambiado, tiene que decir lo que quedó.
-  const tiendaCerrada = elModoMantenimiento();
-  const umbral = await umbralDeStockBajo();
+  //
+  // **Nada queda suelto antes del `await`.** Una promesa que arranca afuera
+  // del `Promise.all` y espera detrás de otro `await` no tiene quién la
+  // atienda si ese otro falla primero: su rechazo sale como no manejado. Pasó
+  // en el build, que intenta pintar esta página sin base.
   const [paraHacer, mes, mantenimiento] = await Promise.all([
-    loQueHayParaHacer(umbral),
+    umbralDeStockBajo().then(loQueHayParaHacer),
     comoVieneElMes(),
-    tiendaCerrada,
+    elModoMantenimiento(),
   ]);
 
   return (
