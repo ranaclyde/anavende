@@ -91,13 +91,13 @@ export default async function Reportes({
     // debajo de 1100px de contenido, una columna topeada en 1024 como el
     // tablero; por encima, la pantalla entera en una grilla de dos columnas
     // (pedido tuyo del 2026-10-15). Lo que se lee a lo ancho —los totales y
-    // las ventas en el tiempo— va a lo ancho; lo demás se reparte en dos, así
-    // ninguna tabla se estira hasta separar el nombre de su monto. **El tope
-    // de 1680px** es por lo mismo: en un monitor de 2560 cada columna seguiría
-    // creciendo. **La consulta es de contenedor**, para que contraer el menú
+    // las ventas en el tiempo— va a lo ancho; lo demás se reparte en dos.
+    // **Sin tope arriba**, como la edición de producto: un primer intento lo
+    // topeó en 1680px y en un monitor ancho dejaba media columna vacía a la
+    // derecha. **La consulta es de contenedor**, para que contraer el menú
     // también cuente.
     <div className="@container">
-      <div className="flex max-w-admin-form flex-col gap-4 @min-[1100px]:max-w-[1680px]">
+      <div className="flex max-w-admin-form flex-col gap-4 @min-[1100px]:max-w-none">
         <EncabezadoDePanel
           titulo="Reportes"
           bajada="Lo vendido en el período: órdenes finalizadas, menos lo devuelto."

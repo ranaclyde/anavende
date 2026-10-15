@@ -10,9 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CargandoReportes() {
   return (
     // El mismo marco que la página: una columna de 1024 o, desde 1100px de
-    // contenido, hasta 1680. Así nada cambia de ancho al llegar los datos.
+    // contenido, todo el ancho. Así nada cambia de ancho al llegar los datos.
     <div className="@container">
-      <div className="flex max-w-admin-form flex-col gap-4 @min-[1100px]:max-w-[1680px]">
+      <div className="flex max-w-admin-form flex-col gap-4 @min-[1100px]:max-w-none">
         <EsqueletoDeEncabezado titulo="w-28" bajada="w-80 max-w-full" />
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

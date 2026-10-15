@@ -1998,8 +1998,9 @@ especificaciones:
 - **La pantalla usa todo el ancho en dos columnas** (pedido tuyo del
   2026-10-15, después del primer repaso): desde 1100px de contenido, los
   totales y las ventas en el tiempo van a lo ancho, «Más vendidos» a la
-  izquierda y categoría, marca y web a la derecha, con un tope de 1680px para
-  que ninguna tabla se estire. Por debajo, una columna de 1024 como el
+  izquierda y categoría, marca y web a la derecha, sin tope arriba, como la
+  edición de producto: un primer intento lo topeó en 1680px y en un monitor
+  ancho dejaba la derecha vacía. Por debajo, una columna de 1024 como el
   tablero. Es una consulta de contenedor, como la edición de producto: contraer
   el menú también cuenta.
 
