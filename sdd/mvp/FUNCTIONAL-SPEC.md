@@ -461,6 +461,10 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] **Dice qué hay pendiente de hacer al entrar** (2026-09-14): bajas de
       cuenta pedidas (RF-34), órdenes por atender, productos con stock bajo.
       No dispara notificaciones: se ve al abrir el panel.
+- [ ] **Las ventas del mes se ven también día por día** (2026-10-15), en un
+      gráfico de columnas con el mes entero: los días que todavía no llegaron
+      van sin columna. Sale de la misma definición que RF-28, así que las
+      columnas suman exactamente las ventas del mes, y enlaza a Reportes.
 
 ---
 
@@ -761,6 +765,9 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] Las devoluciones restan del período en que se registraron.
 - [ ] Cada reporte puede **exportarse a Excel** (`.xlsx`), respetando los filtros aplicados.
 - [ ] Las compras de visitantes (WhatsApp sin orden) no figuran, salvo que se hayan cargado como orden manual.
+- [ ] **Cada reporte tiene su gráfico** (2026-10-15): columnas para las ventas en el tiempo —por día hasta 62 días, por mes más allá—, barras horizontales para más vendidos, categoría y marca, y una barra partida para web contra manual. **Debajo de cada gráfico va la tabla con los números exactos**, que es además lo que lee un lector de pantalla.
+- [ ] **El período anterior equivalente** es el mismo tramo de meses si el período arranca el día 1 —«este mes» al 15 contra el 1 al 15 del mes pasado; un mes entero contra el mes entero anterior—, y si no, los mismos días inmediatamente antes.
+- [ ] **El ticket promedio** es lo facturado sobre las órdenes del período, **antes** de devoluciones: una devolución suele ser de una orden de otro período y no tiene que bajar el ticket de las de éste.
 
 ---
 

@@ -3,12 +3,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { TiendaEnElInicio } from "@/components/admin/configuracion/mantenimiento";
+import { GraficoDeVentas } from "@/components/admin/reportes/graficos";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { Button } from "@/components/ui/button";
 import { mesEnCurso } from "@/lib/fechas";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, isZero } from "@/lib/money";
 import { comoVieneElMes, loQueHayParaHacer } from "@/modules/panel/tablero";
+import { elMesEntero, hoyEnLaZona } from "@/modules/reports/periodo";
+import {
+  ventasEnElTiempo,
+  type PuntoDeVentas,
+} from "@/modules/reports/queries";
 import {
   elModoMantenimiento,
   umbralDeStockBajo,
@@ -37,6 +43,10 @@ export const metadata: Metadata = { title: "Panel" };
  * **Cada número abre el listado que lo produjo.** El mes se recorta en la
  * consulta y el enlace viaja con esa misma fecha (`modules/panel/tablero.ts`),
  * así no puede pasar que el tablero diga 5 y el listado muestre 7.
+ *
+ * **Debajo de los números del mes, lo vendido día por día** (pedido tuyo del
+ * 2026-10-15, con F9.1). Sale de la misma consulta que Reportes, y las
+ * columnas suman exactamente el «Vendido» de arriba: es la misma definición.
  */
 export default async function PanelInicio() {
   // El umbral hace falta ANTES de contar el stock, así que ése es el único
@@ -49,10 +59,12 @@ export default async function PanelInicio() {
   // del `Promise.all` y espera detrás de otro `await` no tiene quién la
   // atienda si ese otro falla primero: su rechazo sale como no manejado. Pasó
   // en el build, que intenta pintar esta página sin base.
-  const [paraHacer, mes, mantenimiento] = await Promise.all([
+  const hoy = hoyEnLaZona();
+  const [paraHacer, mes, mantenimiento, porDia] = await Promise.all([
     umbralDeStockBajo().then(loQueHayParaHacer),
     comoVieneElMes(),
     elModoMantenimiento(),
+    ventasEnElTiempo(elMesEntero(hoy), "dia"),
   ]);
 
   return (
@@ -64,7 +76,7 @@ export default async function PanelInicio() {
 
       <TiendaEnElInicio activo={mantenimiento} />
       <ParaHacer datos={paraHacer} />
-      <EsteMes datos={mes} />
+      <EsteMes datos={mes} porDia={porDia} hoy={hoy} />
     </div>
   );
 }
@@ -199,12 +211,26 @@ function Pendiente({
  */
 function EsteMes({
   datos,
+  porDia,
+  hoy,
 }: {
   datos: Awaited<ReturnType<typeof comoVieneElMes>>;
+  porDia: PuntoDeVentas[];
+  hoy: string;
 }) {
+  const huboVentas = porDia.some((p) => !isZero(p.vendido));
+
   return (
     <TarjetaDeSeccion
       id="este-mes"
+      acciones={
+        <Button asChild variant="tertiary" size="sm" className="-mr-2">
+          <Link href="/admin/reportes">
+            Ver reportes
+            <ArrowRight aria-hidden />
+          </Link>
+        </Button>
+      }
       titulo={
         <>
           Este mes{" "}
@@ -238,6 +264,26 @@ function EsteMes({
           ayuda="Lo que hoy se puede comprar en la tienda"
         />
       </ul>
+
+      {/* Sin una sola venta, treinta columnas en cero no dicen nada que esta
+          frase no diga mejor. */}
+      {huboVentas ? (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-body-sm font-medium text-ink">Vendido por día</h3>
+          <GraficoDeVentas
+            puntos={porDia}
+            agrupado="dia"
+            hasta={hoy}
+            etiqueta={`Lo vendido cada día de ${mesEnCurso()}`}
+            className="aspect-auto h-40 w-full"
+          />
+        </div>
+      ) : (
+        <p className="text-body-sm text-ink-secondary">
+          Todavía no hubo ventas este mes: el gráfico por día aparece con la
+          primera orden finalizada.
+        </p>
+      )}
     </TarjetaDeSeccion>
   );
 }

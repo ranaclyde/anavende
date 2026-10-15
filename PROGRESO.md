@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-10-14.
+Última actualización: 2026-10-15.
 
 **Qué significa cada estado**
 
@@ -1971,6 +1971,68 @@ lo que pasa del otro lado; sin desborde a 390 y sin errores de consola. Los 10
 tests de `relacionadas.test.ts` siguen en verde y `DATABASE_URL= npx next build`
 compila.
 
+
+---
+
+## F9 — Reportes y contenido
+
+| ID | Tarea | Estado | Nota |
+|---|---|---|---|
+| F9.1 | Reportes de ventas | ✅ | **`/admin/reportes` tiene los cinco reportes de RF-28, cada uno con su gráfico y su tabla debajo**, y **el inicio del panel suma lo vendido por día** debajo de «Este mes» (pedido tuyo del 2026-10-15, que la especificación no traía: RF-28 y RF-14 se escribieron antes, abajo en las decisiones). **El período** son los cuatro atajos de RF-28 —hoy, últimos 7 días, este mes, mes anterior— más las dos fechas siempre a la vista: tocarlas es el «personalizado», sin un botón aparte. Abre en «este mes», que es lo que cuenta el inicio, y todo vive en la URL (§10.2). **Los totales** —vendido, órdenes, unidades y ticket promedio— van contra el período anterior equivalente, con flecha y signo, y el cambio en verde si sube, en rojo si baja y en gris si no se movió (pedido tuyo del 2026-10-15; la primera versión iba toda en gris). **Más vendidos** ordena por ingresos o por unidades (solapas, también en la URL), con el desglose por color en la tabla; **categoría y marca** en barras horizontales con el monto escrito al final; **web y carga manual** en una sola barra partida. **Las sumas son todas de SQL** (`modules/reports/queries.ts`): lo que es de la orden suma `orders.total`, como el tablero del inicio, y lo que es del producto suma los renglones con signo; **por eso «Vendido» da exactamente lo mismo en el inicio y en Reportes**, y las columnas por día suman ese número. **Gráficos** con el `chart` de shadcn sobre Recharts 3 (dependencia nueva, solo en el panel), adaptado en dos cosas: sin el `<style dangerouslySetInnerHTML>` del original —los tokens ya cambian solos con el tema— y con los nombres de color de DESIGN.md. **Acromáticos**: el burdeos es acción e identidad y una barra no es ninguna de las dos (DR §6.16, nueva). El menú enciende «Reportes», apagado desde F7.8. **29 tests nuevos**: 18 del período (`periodo.test.ts`, sin base: atajos, rango a mano, período anterior —meses de 30 contra 31, cruce de año—, la URL de ida y vuelta) y 11 de las consultas (`ventas.test.ts`, todo en marzo de 2001 para medir exacto: solo finalizadas, devoluciones el día en que se registran y las anuladas no, el corte del día en la zona de acá, los días sin ventas en cero, que los puntos sumen el total, el ranking neto y sin productos solo devueltos, web contra manual siempre con las dos filas). `DATABASE_URL= npx next build` compila. **Repasado con Playwright** —abajo— a 1280 y 390, en claro y en oscuro. **La exportación a Excel es F9.2** |
+
+### Los reportes, y lo que el repaso encontró (2026-10-15)
+
+**Tres decisiones que RF-28 dejaba abiertas**, escritas primero en las
+especificaciones:
+
+- **El período anterior equivalente.** Si el período arranca el día 1 se
+  compara mes contra mes: «este mes» al 15 contra el 1 al 15 del mes pasado, y
+  septiembre entero contra agosto entero aunque tengan distinta cantidad de
+  días. Cualquier otro rango, contra los mismos días justo antes. Contar 30
+  días para atrás compararía septiembre con un pedazo de agosto y un día de
+  julio.
+- **El ticket promedio es antes de devoluciones.** Una devolución de hoy suele
+  ser de una orden de otro mes; restarla bajaría el ticket de órdenes que no
+  la tuvieron.
+- **Hasta 62 días el gráfico va por día; más, por mes.**
+- **La pantalla usa todo el ancho, en un bento de dos columnas** (pedido tuyo
+  del 2026-10-15, en tres vueltas después del primer repaso). Desde 1100px de
+  contenido, los totales van a lo ancho y las demás secciones —ventas en el
+  tiempo, más vendidos, categoría, marca, web y manual— se reparten en dos
+  columnas **según su alto real**: son columnas de CSS (`columns-2`) y no una
+  grilla, así que con pocas categorías o muchas marcas el reparto cambia solo.
+  Sin tope arriba, como la edición de producto; por debajo, una columna de
+  1024 como el tablero. Es una consulta de contenedor, como la edición de
+  producto: contraer el menú también cuenta. **Dos intentos que no quedaron:**
+  un tope de 1680px, que en un monitor ancho dejaba la derecha vacía, y una
+  grilla fija con las ventas a lo ancho y tres secciones apiladas a la derecha,
+  que no se acomodaba al contenido. «Web y carga manual» va justo debajo de
+  las ventas en el tiempo: es chica, y al final de la segunda columna se
+  perdía.
+
+**Lo que encontró Playwright, y se arregló antes de abrir el PR:**
+
+- **La tabla de «Más vendidos» se cortaba en la fila nueve**, con un scroll
+  propio adentro de una página que ya scrollea: la tabla del panel trae un
+  tope de alto pensado para los listados (§6.9). `Table` suma `conTope`, que
+  los reportes apagan.
+- **Los nombres largos del ranking se partían en dos renglones** apretados
+  contra la barra de abajo: Recharts parte el texto del eje cuando no entra.
+  Ahora van en un renglón, recortados con «…», y enteros en la tabla.
+- **A 390 la columna «Vendido» no entraba**, y en categoría y marca sobraban
+  unos píxeles. En el teléfono el número de puesto se esconde, las columnas de
+  números se angostan y las celdas de estas tablas pierden relleno lateral.
+
+**Verificado:** con 24 órdenes finalizadas cargadas en el mes, una devolución y
+una administradora de prueba —todo borrado al final—, el inicio y Reportes a
+1280 y 390, en claro y en oscuro: 200 en todas las rutas, sin desborde, las
+tablas enteras, el globo dice «Sábado, 3 de octubre · $ 179.800,00 · 1 orden
+finalizada», el atajo y la fecha a mano escriben la URL, con fechas a mano
+ningún atajo queda marcado, y **«Vendido» dice $ 2.856.700,00 en los dos
+lados**. El único aviso de consola es el que ya estaba: React avisa por el
+`<script>` del tema en `app/admin/layout.tsx`, en todo el panel y desde antes
+de esta tarea.
+
 ---
 
 ## Decisiones que cambiaron las especificaciones
@@ -1980,6 +2042,9 @@ Cada una se escribió primero en la especificación y después en el código
 
 | Qué | Dónde quedó | Por qué |
 |---|---|---|
+| **Los reportes y el inicio del panel tienen gráficos** (F9.1) | `FUNCTIONAL-SPEC.md` RF-14 y RF-28; `TECHNICAL-SPEC.md` §2 y §15; `DESIGN-REFERENCE.md` §6.16 | Pedido tuyo del 2026-10-15: que los datos se lean más fácil, en Reportes y en el inicio. RF-28 pedía solo números. La librería la elegiste vos: el `chart` de shadcn, que ya es la familia de componentes del proyecto, y por eso entra Recharts. Los colores no: salen de la regla de una sola voz de DESIGN.md, y por eso son grises |
+| **El período anterior, el ticket y el agrupado de RF-28** (F9.1) | `FUNCTIONAL-SPEC.md` RF-28 | RF-28 pedía «comparación con el período anterior equivalente» y «ticket promedio» sin decir cómo se calculan. Mes contra mes cuando el período arranca el 1°; ticket antes de devoluciones; por día hasta 62 días. El detalle, en la nota de F9.1 |
+| **«Reportes» vuelve al menú** (F9.1) | `components/admin/sidebar.tsx` | Se apagó en F7.8 hasta que existiera la pantalla. Ya existe |
 | **El inicio del panel parte RF-14 en dos bloques, sin repetir números** (F7.8) | `FUNCTIONAL-SPEC.md` RF-14; `app/admin/page.tsx` | Decisión tuya del 2026-09-17. RF-14 pide cuatro indicadores y además «qué hay pendiente al entrar», y dos de los tres pendientes son dos de los cuatro indicadores: puestos como siete tarjetas, la pantalla dice el mismo número dos veces y no contesta ninguna de las dos preguntas. Se parte por lo que contesta cada uno —«¿qué tengo que hacer?» y «¿cómo viene?»— y cada número aparece una sola vez |
 | **El rango de fechas de las órdenes recorta por la fecha del estado de cada solapa** (F7.8) | `FUNCTIONAL-SPEC.md` RF-21; `TECHNICAL-SPEC.md` §15; `modules/orders/queries-panel.ts` | Decisión tuya del 2026-09-17, y el motivo vino de afuera: el tablero cuenta las ventas del mes por `finalized_at` —RF-28: la venta ocurre cuando se entrega— y enlaza al listado, que recortaba por `created_at`. Una orden cargada en agosto y entregada en septiembre entraba en el número y no aparecía en el listado que ese número abre. Además es la lectura natural: en la solapa «Finalizadas», «desde el 1°» quiere decir «¿qué vendí este mes?». «Activas» y «Todas» se quedan con la fecha de carga, que es la única que tienen en común |
 | **«Reportes» queda apagado en el menú hasta F9.1** (F7.8) | `components/admin/sidebar.tsx` | Decisión tuya del 2026-09-17. La entrada estaba desde que se armó el menú y la pantalla llega con F9.1: era un 404 a un clic del inicio, y un 404 adentro del panel se lee como que algo se rompió. Se ve apagada y dice por qué, como estuvo el botón de bajas hasta F7.9. Para encenderlo: sacarle `pendiente` |

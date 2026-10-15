@@ -139,3 +139,64 @@ export function formatMoney(monto: Money): string {
   // en este archivo (eslint.config.mjs).
   return FORMATEADOR.format(Number(money(monto)));
 }
+
+/**
+ * «$ 1,2 M», «$ 350 mil» — las marcas del eje de un gráfico. Tarea F9.1.
+ *
+ * Al lado de una barra, «$ 1.234.567,89» ocupa más que la barra; el eje sólo
+ * tiene que decir la escala. El monto exacto lo dice el globo y la tabla.
+ */
+const COMPACTO = new Intl.NumberFormat("es-AR", {
+  style: "currency",
+  currency: "ARS",
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+export function formatMoneyCorto(monto: Money | number): string {
+  return COMPACTO.format(
+    typeof monto === "number" ? monto : Number(money(monto)),
+  );
+}
+
+/**
+ * El alto de una barra — F9.1. **Para dibujar, nunca para sumar.**
+ *
+ * Recharts necesita números, y la regla de §7.1 sigue en pie: lo que sale de
+ * acá no vuelve a la aritmética. Las sumas del reporte ya vienen hechas en SQL.
+ */
+export function paraDibujar(monto: Money): number {
+  return Number(money(monto));
+}
+
+/**
+ * Cuánto cambió un monto contra el período anterior, en porcentaje entero —
+ * RF-28. `null` cuando no hay contra qué comparar: un período anterior en cero
+ * o negativo no tiene «un 300 % más», tiene «antes no hubo ventas».
+ */
+export function variacion(actual: Money, anterior: Money): number | null {
+  const base = aDecimal(anterior);
+  if (base.lessThanOrEqualTo(0)) return null;
+  return aDecimal(actual)
+    .minus(base)
+    .dividedBy(base)
+    .times(100)
+    .toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
+    .toNumber();
+}
+
+/**
+ * Qué parte de `total` es `parte`, en porcentaje entero — F9.1, web contra
+ * manual. `null` si no hay un total positivo del que ser parte, o si la parte
+ * es negativa: «−20 % de lo vendido» no es una proporción.
+ */
+export function porcentaje(parte: Money, total: Money): number | null {
+  const t = aDecimal(total);
+  const p = aDecimal(parte);
+  if (t.lessThanOrEqualTo(0) || p.lessThan(0)) return null;
+  return p
+    .dividedBy(t)
+    .times(100)
+    .toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
+    .toNumber();
+}
