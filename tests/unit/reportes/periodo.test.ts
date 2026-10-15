@@ -5,6 +5,7 @@ import {
   leerPeriodo,
   periodoAnterior,
   urlConRanking,
+  urlDeExportacion,
   urlDePeriodo,
 } from "@/modules/reports/periodo";
 
@@ -162,6 +163,25 @@ describe("la URL", () => {
     );
     expect(urlConRanking(leerPeriodo({}, HOY), "unidades")).toBe(
       "/admin/reportes?ranking=unidades",
+    );
+  });
+
+  test("la exportación lleva el mismo período y ranking que la pantalla (F9.2)", () => {
+    expect(urlDeExportacion(leerPeriodo({}, HOY))).toBe(
+      "/admin/reportes/export",
+    );
+    expect(
+      urlDeExportacion(
+        leerPeriodo(
+          { desde: "2026-08-03", hasta: "2026-08-20", ranking: "unidades" },
+          HOY,
+        ),
+      ),
+    ).toBe(
+      "/admin/reportes/export?desde=2026-08-03&hasta=2026-08-20&ranking=unidades",
+    );
+    expect(urlDeExportacion(leerPeriodo({ periodo: "hoy" }, HOY))).toBe(
+      "/admin/reportes/export?periodo=hoy",
     );
   });
 

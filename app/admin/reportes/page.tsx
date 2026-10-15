@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChartColumn, Minus } from "lucide-react";
+import { ArrowDown, ArrowUp, ChartColumn, Download, Minus } from "lucide-react";
 import type { Metadata } from "next";
 
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
@@ -12,6 +12,7 @@ import {
 import { SolapasDelPanel } from "@/components/admin/solapas";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { VacioDelPanel } from "@/components/admin/vacio";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -33,6 +34,7 @@ import {
   RANKINGS,
   leerPeriodo,
   urlConRanking,
+  urlDeExportacion,
   type ParametrosDeBusqueda,
   type Periodo,
   type Rango,
@@ -102,6 +104,17 @@ export default async function Reportes({
         <EncabezadoDePanel
           titulo="Reportes"
           bajada="Lo vendido en el período: órdenes finalizadas, menos lo devuelto."
+          acciones={
+            // Un `<a>` y no un `Link`: es un archivo, no una pantalla, y el
+            // enrutador del cliente intentaría pintarlo. La URL lleva el
+            // mismo período y el mismo ranking que se están mirando (F9.2).
+            <Button asChild variant="secondary">
+              <a href={urlDeExportacion(periodo)} download>
+                <Download aria-hidden />
+                Exportar a Excel
+              </a>
+            </Button>
+          }
         />
 
         <BarraDePeriodo periodo={periodo} />

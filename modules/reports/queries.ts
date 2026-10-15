@@ -246,6 +246,11 @@ export const TOPE_DEL_RANKING = 10;
 export async function masVendidos(
   rango: Rango,
   ranking: Ranking,
+  /**
+   * Cuántos. La pantalla muestra diez; la exportación a Excel (F9.2) los
+   * pide todos con `null`, que en Postgres es `LIMIT NULL`: sin tope.
+   */
+  tope: number | null = TOPE_DEL_RANKING,
 ): Promise<ProductoVendido[]> {
   const orden =
     ranking === "unidades"
@@ -273,7 +278,7 @@ export async function masVendidos(
        GROUP BY producto_id, producto, marca
       HAVING sum(unidades) > 0
        ORDER BY ${orden}, producto
-       LIMIT ${TOPE_DEL_RANKING}`)),
+       LIMIT ${tope}`)),
   ];
 }
 

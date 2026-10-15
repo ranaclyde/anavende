@@ -287,6 +287,21 @@ describe("por producto, categoría y marca", () => {
     ]);
   });
 
+  test("sin tope trae todos, para la exportación (F9.2)", async () => {
+    const uno = await unaVariante({ total: 50 });
+    const otro = await unaVariante({ total: 50 });
+    await unaOrden(
+      [
+        { variantId: uno.variantId, cantidad: 1, precio: "100.00" },
+        { variantId: otro.variantId, cantidad: 1, precio: "200.00" },
+      ],
+      { cuando: en(8) },
+    );
+
+    expect(await masVendidos(MARZO, "ingresos", 1)).toHaveLength(1);
+    expect(await masVendidos(MARZO, "ingresos", null)).toHaveLength(2);
+  });
+
   test("un producto solo devuelto no entra en el ranking", async () => {
     const { variantId } = await unaVariante({ total: 50 });
     const deFebrero = await unaOrden(
