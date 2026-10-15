@@ -53,16 +53,7 @@ const SECCIONES: Seccion[] = [
   },
   { href: "/admin/catalogo", etiqueta: "Catálogo", Icono: PanelsTopLeft },
   { href: "/admin/usuarios", etiqueta: "Usuarios", Icono: Users },
-  // Apagado hasta F9.1, que es la tarea que construye la pantalla (decisión
-  // tuya del 2026-09-17). La entrada estaba y la ruta no existe: era un 404 a
-  // un clic del inicio, y un 404 adentro del panel se lee como que algo se
-  // rompió. Para encenderlo: sacar `pendiente`. Nada más.
-  {
-    href: "/admin/reportes",
-    etiqueta: "Reportes",
-    Icono: FileText,
-    pendiente: "Llega con los reportes de ventas",
-  },
+  { href: "/admin/reportes", etiqueta: "Reportes", Icono: FileText },
   { href: "/admin/configuracion", etiqueta: "Configuración", Icono: Settings },
 ];
 

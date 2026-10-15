@@ -47,6 +47,7 @@
 | **mdast** | `mdast-util-from-markdown` 2.x, `mdast-util-to-markdown` 2.x, `mdast-util-gfm` 3.x, `micromark-extension-gfm` 3.x | El sanitizador del servidor (§16): parsea el Markdown, filtra contra la lista blanca y lo vuelve a serializar |
 | **Resend** + **React Email** | `resend` 6.x | Emails transaccionales |
 | **ExcelJS** | 4.x | Exportación de reportes a `.xlsx` |
+| **Recharts** | 3.x, a través del componente `chart` de shadcn/ui (`components/ui/chart.tsx`) | Los gráficos de los reportes (RF-28) y del inicio del panel (RF-14). Corre solo en el panel |
 | **Sentry** | `@sentry/nextjs` | Captura de errores |
 | **Vitest** + **Playwright** | — | Tests unitarios y E2E |
 
@@ -1432,6 +1433,8 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 - Las sumas de dinero se calculan **en SQL** (`SUM` sobre `numeric`), nunca acumulando en JavaScript (P4). Se suma `orders.total`, que todos los caminos de escritura dejan igual a `SUM(order_items.subtotal)`, y lo devuelto sale de los precios de esos mismos renglones: las dos mitades de la resta miden lo mismo.
 - La exportación es un **Route Handler** que devuelve un `.xlsx` generado con ExcelJS, respetando exactamente los filtros aplicados en pantalla, con las columnas formateadas como moneda y fecha.
 - La comparativa web/manual sale de `orders.origin`, que se fija en la creación y no se edita.
+- **Dos fuentes, cada una para lo suyo** (F9.1): lo que es de la orden —totales, ventas en el tiempo, web contra manual— suma `orders.total`, igual que el tablero del inicio; lo que es del producto —más vendidos, categoría, marca— suma los renglones con signo (lo vendido suma, lo devuelto resta). La categoría no está en el snapshot del renglón, así que se agrupa por el producto de hoy, y nombre y marca también van al día para que un producto renombrado no aparezca partido en dos.
+- **Los gráficos reciben montos ya sumados**, como texto; se convierten a número solo para dibujar (`paraDibujar` en `lib/money.ts`, la única capa donde la regla de §7.1 lo permite). El número que se lee —el globo y la tabla— sale siempre de `formatMoney`.
 
 ---
 

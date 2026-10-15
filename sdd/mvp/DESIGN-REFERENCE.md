@@ -1076,6 +1076,37 @@ Tres decisiones de integración, las tres con motivo:
 
 **Y un caso que enseña dónde está el límite de la regla.** Subir o bajar la cantidad de un ítem cambia el renglón a la vista, así que por la tabla de arriba no haría falta aviso. Lleva uno igual, y el motivo es que **cada uno escribe en el libro de stock**: agregar reserva unidades y quitar las libera, y eso es justamente lo que no se ve desde la pantalla. La pregunta no es «¿cambió algo en pantalla?» sino «¿alcanza lo que cambió para saber qué pasó?».
 
+### 6.16 Gráficos del panel (2026-10-15)
+
+Los reportes (RF-28) y el inicio del panel (RF-14) dibujan con el componente
+`chart` de shadcn/ui, sobre Recharts (`components/ui/chart.tsx`,
+`components/admin/reportes/graficos.tsx`).
+
+- **Acromáticos.** Una barra no es una acción ni la identidad, así que no va
+  en burdeos (la regla de una sola voz, §3.1). Las barras van en
+  `--ink-secondary` —4,9:1 sobre blanco, 7:1 en oscuro, por encima del 3:1 de
+  §9— y la señalada sube a `--ink`. Los dos tokens ya cambian con el tema: el
+  gráfico no tiene colores propios para el modo oscuro.
+- **Dos series se separan por luminosidad, no por matiz**: `--ink` y
+  `--ink-tertiary` (web contra manual). Las dos pasan 3:1 contra la tarjeta, y
+  **cada parte lleva su nombre escrito** al lado: el color nunca es lo único
+  que dice cuál es cuál.
+- **Un solo eje, recesivo**: líneas de grilla horizontales en `--border`,
+  montos del eje abreviados («$ 250 k») y el exacto en el globo.
+- **Rankings en barras horizontales**, con el monto escrito al final de cada
+  barra: en un ranking la pregunta es «¿cuánto?», y no hay que pasar el dedo
+  para saberlo. El nombre largo se recorta en un renglón y está entero en la
+  tabla.
+- **Debajo de cada gráfico, su tabla** con los números exactos. El gráfico va
+  `aria-hidden` y la tabla es lo que lee un lector de pantalla; el de ventas
+  en el tiempo, que no lleva tabla a la vista, la trae oculta.
+- **Lo que todavía no pasó no se dibuja en cero**: el inicio muestra el mes
+  entero, y los días que faltan van sin columna.
+- **Sin `dangerouslySetInnerHTML`**: el `chart` original lo usa para escribir
+  los colores por tema; acá viajan como variables en el `style` del
+  contenedor, y el único HTML crudo del panel sigue siendo el script de tema
+  del layout (TS §16).
+
 ## 7. Composición de pantallas
 
 ### 7.1 Home

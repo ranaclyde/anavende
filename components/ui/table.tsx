@@ -12,7 +12,19 @@ import { cn } from "@/lib/utils";
  * pantalla (F7.1), no este componente; acá solo se define la variante de
  * escritorio.
  */
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+function Table({
+  className,
+  conTope = true,
+  ...props
+}: React.ComponentProps<"table"> & {
+  /**
+   * `false` en una tabla corta adentro de una tarjeta, que no es el listado de
+   * la pantalla: los reportes (F9.1) ponen varias una debajo de otra, y con
+   * el tope la de «Más vendidos» se cortaba en la fila nueve con una barra de
+   * scroll propia adentro de una página que ya scrollea.
+   */
+  conTope?: boolean;
+}) {
   return (
     // **Este div es el que scrollea, y por eso existe el tope de alto.**
     // `sticky` se fija dentro del ancestro que scrollea, y hasta el
@@ -31,7 +43,12 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
     // a la vez— en una ventana de 700px. Ahí 19rem dejaban la página
     // scrolleando 11px, que es justo lo que este tope viene a evitar; con 20
     // sobran 5. Cuesta una fila: siete en vez de ocho a 700px, doce a 900.
-    <div className="relative max-h-[calc(100svh-20rem)] w-full overflow-auto">
+    <div
+      className={cn(
+        "relative w-full overflow-auto",
+        conTope && "max-h-[calc(100svh-20rem)]",
+      )}
+    >
       <table
         data-slot="table"
         className={cn("w-full caption-bottom border-collapse", className)}
