@@ -1995,6 +1995,13 @@ especificaciones:
   ser de una orden de otro mes; restarla bajaría el ticket de órdenes que no
   la tuvieron.
 - **Hasta 62 días el gráfico va por día; más, por mes.**
+- **La pantalla usa todo el ancho en dos columnas** (pedido tuyo del
+  2026-10-15, después del primer repaso): desde 1100px de contenido, los
+  totales y las ventas en el tiempo van a lo ancho, «Más vendidos» a la
+  izquierda y categoría, marca y web a la derecha, con un tope de 1680px para
+  que ninguna tabla se estire. Por debajo, una columna de 1024 como el
+  tablero. Es una consulta de contenedor, como la edición de producto: contraer
+  el menú también cuenta.
 
 **Lo que encontró Playwright, y se arregló antes de abrir el PR:**
 

@@ -87,67 +87,86 @@ export default async function Reportes({
   const huboAlgo = totales.ordenes > 0 || !isZero(totales.devuelto);
 
   return (
-    <div className="flex w-full max-w-admin-form flex-col gap-4">
-      <EncabezadoDePanel
-        titulo="Reportes"
-        bajada="Lo vendido en el período: órdenes finalizadas, menos lo devuelto."
-      />
+    // **Dos anchos, como la edición de producto** (DESIGN.md, «Layout»): por
+    // debajo de 1100px de contenido, una columna topeada en 1024 como el
+    // tablero; por encima, la pantalla entera en una grilla de dos columnas
+    // (pedido tuyo del 2026-10-15). Lo que se lee a lo ancho —los totales y
+    // las ventas en el tiempo— va a lo ancho; lo demás se reparte en dos, así
+    // ninguna tabla se estira hasta separar el nombre de su monto. **El tope
+    // de 1680px** es por lo mismo: en un monitor de 2560 cada columna seguiría
+    // creciendo. **La consulta es de contenedor**, para que contraer el menú
+    // también cuente.
+    <div className="@container">
+      <div className="flex max-w-admin-form flex-col gap-4 @min-[1100px]:max-w-[1680px]">
+        <EncabezadoDePanel
+          titulo="Reportes"
+          bajada="Lo vendido en el período: órdenes finalizadas, menos lo devuelto."
+        />
 
-      <BarraDePeriodo periodo={periodo} />
+        <BarraDePeriodo periodo={periodo} />
 
-      <TotalesDelPeriodo
-        periodo={periodo}
-        totales={totales}
-        anteriores={anteriores}
-      />
+        <TotalesDelPeriodo
+          periodo={periodo}
+          totales={totales}
+          anteriores={anteriores}
+        />
 
-      {huboAlgo ? (
-        <>
-          <TarjetaDeSeccion
-            id="en-el-tiempo"
-            titulo={
-              periodo.agrupado === "dia" ? "Ventas por día" : "Ventas por mes"
-            }
-          >
-            <GraficoDeVentas
-              puntos={serie}
-              agrupado={periodo.agrupado}
-              etiqueta={
-                periodo.agrupado === "dia"
-                  ? "Lo vendido cada día del período"
-                  : "Lo vendido cada mes del período"
+        {huboAlgo ? (
+          <>
+            <TarjetaDeSeccion
+              id="en-el-tiempo"
+              titulo={
+                periodo.agrupado === "dia" ? "Ventas por día" : "Ventas por mes"
               }
-            />
-          </TarjetaDeSeccion>
+            >
+              <GraficoDeVentas
+                puntos={serie}
+                agrupado={periodo.agrupado}
+                etiqueta={
+                  periodo.agrupado === "dia"
+                    ? "Lo vendido cada día del período"
+                    : "Lo vendido cada mes del período"
+                }
+              />
+            </TarjetaDeSeccion>
 
-          <MasVendidos periodo={periodo} productos={productos} />
+            {/* A la izquierda lo más alto, «Más vendidos»; a la derecha, las
+              tres que juntas le empatan. Cada columna crece por su cuenta
+              (`items-start`): estirar las tarjetas para emparejarlas dejaría
+              un hueco blanco adentro de la más corta. */}
+            <div className="grid grid-cols-1 gap-4 @min-[1100px]:grid-cols-2 @min-[1100px]:items-start">
+              <MasVendidos periodo={periodo} productos={productos} />
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Agrupadas
-              id="por-categoria"
-              titulo="Por categoría"
-              columna="Categoría"
-              filas={categorias}
-            />
-            <Agrupadas
-              id="por-marca"
-              titulo="Por marca"
-              columna="Marca"
-              filas={marcas}
-            />
-          </div>
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 gap-4 @min-[700px]:grid-cols-2 @min-[1100px]:grid-cols-1">
+                  <Agrupadas
+                    id="por-categoria"
+                    titulo="Por categoría"
+                    columna="Categoría"
+                    filas={categorias}
+                  />
+                  <Agrupadas
+                    id="por-marca"
+                    titulo="Por marca"
+                    columna="Marca"
+                    filas={marcas}
+                  />
+                </div>
 
-          <WebYManual origenes={origenes} />
-        </>
-      ) : (
-        <VacioDelPanel
-          icono={ChartColumn}
-          titulo="No hubo ventas en este período"
-        >
-          Una orden cuenta como venta el día en que se finaliza. Probá con otro
-          período, o mirá las órdenes activas que todavía falta entregar.
-        </VacioDelPanel>
-      )}
+                <WebYManual origenes={origenes} />
+              </div>
+            </div>
+          </>
+        ) : (
+          <VacioDelPanel
+            icono={ChartColumn}
+            titulo="No hubo ventas en este período"
+          >
+            Una orden cuenta como venta el día en que se finaliza. Probá con
+            otro período, o mirá las órdenes activas que todavía falta entregar.
+          </VacioDelPanel>
+        )}
+      </div>
     </div>
   );
 }
