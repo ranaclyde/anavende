@@ -1995,14 +1995,18 @@ especificaciones:
   ser de una orden de otro mes; restarla bajaría el ticket de órdenes que no
   la tuvieron.
 - **Hasta 62 días el gráfico va por día; más, por mes.**
-- **La pantalla usa todo el ancho en dos columnas** (pedido tuyo del
-  2026-10-15, después del primer repaso): desde 1100px de contenido, los
-  totales y las ventas en el tiempo van a lo ancho, «Más vendidos» a la
-  izquierda y categoría, marca y web a la derecha, sin tope arriba, como la
-  edición de producto: un primer intento lo topeó en 1680px y en un monitor
-  ancho dejaba la derecha vacía. Por debajo, una columna de 1024 como el
-  tablero. Es una consulta de contenedor, como la edición de producto: contraer
-  el menú también cuenta.
+- **La pantalla usa todo el ancho, en un bento de dos columnas** (pedido tuyo
+  del 2026-10-15, en tres vueltas después del primer repaso). Desde 1100px de
+  contenido, los totales van a lo ancho y las demás secciones —ventas en el
+  tiempo, más vendidos, categoría, marca, web y manual— se reparten en dos
+  columnas **según su alto real**: son columnas de CSS (`columns-2`) y no una
+  grilla, así que con pocas categorías o muchas marcas el reparto cambia solo.
+  Sin tope arriba, como la edición de producto; por debajo, una columna de
+  1024 como el tablero. Es una consulta de contenedor, como la edición de
+  producto: contraer el menú también cuenta. **Dos intentos que no quedaron:**
+  un tope de 1680px, que en un monitor ancho dejaba la derecha vacía, y una
+  grilla fija con las ventas a lo ancho y tres secciones apiladas a la derecha,
+  que no se acomodaba al contenido.
 
 **Lo que encontró Playwright, y se arregló antes de abrir el PR:**
 

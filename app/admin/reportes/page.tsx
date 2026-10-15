@@ -90,8 +90,8 @@ export default async function Reportes({
     // **Dos anchos, como la edición de producto** (DESIGN.md, «Layout»): por
     // debajo de 1100px de contenido, una columna topeada en 1024 como el
     // tablero; por encima, la pantalla entera en una grilla de dos columnas
-    // (pedido tuyo del 2026-10-15). Lo que se lee a lo ancho —los totales y
-    // las ventas en el tiempo— va a lo ancho; lo demás se reparte en dos.
+    // (pedido tuyo del 2026-10-15). Los totales van a lo ancho; las demás
+    // secciones, en un bento de dos columnas (abajo).
     // **Sin tope arriba**, como la edición de producto: un primer intento lo
     // topeó en 1680px y en un monitor ancho dejaba media columna vacía a la
     // derecha. **La consulta es de contenedor**, para que contraer el menú
@@ -112,7 +112,15 @@ export default async function Reportes({
         />
 
         {huboAlgo ? (
-          <>
+          // **Un bento que se acomoda solo** (pedido tuyo del 2026-10-15):
+          // columnas de CSS y no una grilla, para que cada sección caiga en
+          // la columna que tenga lugar según su alto real. Con una grilla
+          // fija el reparto se decide de antemano, y con pocas categorías o
+          // muchas marcas una columna terminaba mucho más larga que la otra.
+          // El orden de lectura es el del DOM —columna izquierda, después la
+          // derecha—, así que el teclado no se despega de lo que se ve.
+          // `break-inside-avoid` impide que una tarjeta se parta entre dos.
+          <div className="@min-[1100px]:columns-2 @min-[1100px]:gap-4 [&>*]:mb-4 [&>*]:break-inside-avoid [&>*:last-child]:mb-0">
             <TarjetaDeSeccion
               id="en-el-tiempo"
               titulo={
@@ -130,33 +138,23 @@ export default async function Reportes({
               />
             </TarjetaDeSeccion>
 
-            {/* A la izquierda lo más alto, «Más vendidos»; a la derecha, las
-              tres que juntas le empatan. Cada columna crece por su cuenta
-              (`items-start`): estirar las tarjetas para emparejarlas dejaría
-              un hueco blanco adentro de la más corta. */}
-            <div className="grid grid-cols-1 gap-4 @min-[1100px]:grid-cols-2 @min-[1100px]:items-start">
-              <MasVendidos periodo={periodo} productos={productos} />
+            <MasVendidos periodo={periodo} productos={productos} />
 
-              <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-1 gap-4 @min-[700px]:grid-cols-2 @min-[1100px]:grid-cols-1">
-                  <Agrupadas
-                    id="por-categoria"
-                    titulo="Por categoría"
-                    columna="Categoría"
-                    filas={categorias}
-                  />
-                  <Agrupadas
-                    id="por-marca"
-                    titulo="Por marca"
-                    columna="Marca"
-                    filas={marcas}
-                  />
-                </div>
+            <Agrupadas
+              id="por-categoria"
+              titulo="Por categoría"
+              columna="Categoría"
+              filas={categorias}
+            />
+            <Agrupadas
+              id="por-marca"
+              titulo="Por marca"
+              columna="Marca"
+              filas={marcas}
+            />
 
-                <WebYManual origenes={origenes} />
-              </div>
-            </div>
-          </>
+            <WebYManual origenes={origenes} />
+          </div>
         ) : (
           <VacioDelPanel
             icono={ChartColumn}

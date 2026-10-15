@@ -39,10 +39,18 @@ export default function CargandoReportes() {
           </div>
         </section>
 
-        <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-56 w-full" />
-        </section>
+        {/* El arranque del bento: ventas por día y más vendidos, que en
+            pantalla ancha quedan lado a lado. */}
+        <div className="grid grid-cols-1 gap-4 @min-[1100px]:grid-cols-2 @min-[1100px]:items-start">
+          <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-56 w-full" />
+          </section>
+          <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4 @max-[1099px]:hidden">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-56 w-full" />
+          </section>
+        </div>
       </div>
     </div>
   );

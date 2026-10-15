@@ -294,7 +294,7 @@ export function GraficoDeRanking({
       <BarChart
         data={datos}
         layout="vertical"
-        margin={{ top: 0, right: 96, left: 0, bottom: 0 }}
+        margin={{ top: 0, right: 112, left: 0, bottom: 0 }}
         barCategoryGap={6}
       >
         <XAxis type="number" dataKey="alto" hide />
