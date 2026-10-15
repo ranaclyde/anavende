@@ -2006,7 +2006,9 @@ especificaciones:
   producto: contraer el menú también cuenta. **Dos intentos que no quedaron:**
   un tope de 1680px, que en un monitor ancho dejaba la derecha vacía, y una
   grilla fija con las ventas a lo ancho y tres secciones apiladas a la derecha,
-  que no se acomodaba al contenido.
+  que no se acomodaba al contenido. «Web y carga manual» va justo debajo de
+  las ventas en el tiempo: es chica, y al final de la segunda columna se
+  perdía.
 
 **Lo que encontró Playwright, y se arregló antes de abrir el PR:**
 

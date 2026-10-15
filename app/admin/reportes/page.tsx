@@ -138,6 +138,11 @@ export default async function Reportes({
               />
             </TarjetaDeSeccion>
 
+            {/* Debajo de las ventas en el tiempo, y no al final: es chica, y
+                al fondo de la segunda columna se perdía (pedido tuyo del
+                2026-10-15). */}
+            <WebYManual origenes={origenes} />
+
             <MasVendidos periodo={periodo} productos={productos} />
 
             <Agrupadas
@@ -152,8 +157,6 @@ export default async function Reportes({
               columna="Marca"
               filas={marcas}
             />
-
-            <WebYManual origenes={origenes} />
           </div>
         ) : (
           <VacioDelPanel
