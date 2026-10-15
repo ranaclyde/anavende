@@ -28,6 +28,7 @@ import {
   variacion,
   type Money,
 } from "@/lib/money";
+import { cn } from "@/lib/utils";
 import {
   RANKINGS,
   leerPeriodo,
@@ -191,10 +192,11 @@ function nombreDelRango({ desde, hasta }: Rango): string {
 /**
  * Los cuatro totales de RF-28, cada uno con el período anterior al lado.
  *
- * **La comparación va en gris, con flecha y con el número de antes**, y no en
- * verde y rojo: «−8 %» un martes contra un lunes de cobro no es una alarma, y
- * pintarlo de rojo lo convertiría en una. La flecha y el signo ya dicen para
- * dónde fue; el monto anterior dice contra qué.
+ * **La comparación lleva flecha, signo y el número de antes**, y el cambio
+ * va en verde si sube y en rojo si baja; sin cambio queda en gris (pedido tuyo
+ * del 2026-10-15). Son los semánticos de DESIGN.md, «la regla del estado», y
+ * el color nunca dice solo para dónde fue: la flecha y el signo también lo
+ * dicen. **«contra $ X» queda en gris**: es la referencia, no el resultado.
  */
 function TotalesDelPeriodo({
   periodo,
@@ -300,11 +302,18 @@ function Total({
           <>Antes: {antes}</>
         ) : (
           <>
-            <Flecha aria-hidden className="size-3.5 shrink-0" />
-            <span>
+            <span
+              className={cn(
+                "flex items-center gap-1 font-medium",
+                cambio > 0 && "text-success",
+                cambio < 0 && "text-danger",
+              )}
+            >
+              <Flecha aria-hidden className="size-3.5 shrink-0" />
               {cambio > 0 ? "+" : ""}
-              {cambio} % contra {antes}
+              {cambio} %
             </span>
+            <span>contra {antes}</span>
           </>
         )}
       </dd>
