@@ -227,6 +227,7 @@ export function urlDePeriodo(
   cambios:
     | { atajo: Exclude<Atajo, "personalizado">; ranking?: Ranking }
     | { desde: string; hasta: string; ranking?: Ranking },
+  base = "/admin/reportes",
 ): string {
   const params = new URLSearchParams();
   if ("atajo" in cambios) {
@@ -241,12 +242,29 @@ export function urlDePeriodo(
   }
 
   const cadena = params.toString();
-  return cadena ? `/admin/reportes?${cadena}` : "/admin/reportes";
+  return cadena ? `${base}?${cadena}` : base;
 }
 
 /** La URL del mismo período, con otro ranking. */
-export function urlConRanking(periodo: Periodo, ranking: Ranking): string {
+export function urlConRanking(
+  periodo: Periodo,
+  ranking: Ranking,
+  base?: string,
+): string {
   return periodo.atajo === "personalizado"
-    ? urlDePeriodo({ desde: periodo.desde, hasta: periodo.hasta, ranking })
-    : urlDePeriodo({ atajo: periodo.atajo, ranking });
+    ? urlDePeriodo(
+        { desde: periodo.desde, hasta: periodo.hasta, ranking },
+        base,
+      )
+    : urlDePeriodo({ atajo: periodo.atajo, ranking }, base);
+}
+
+/**
+ * La exportación a Excel de lo que está en pantalla — F9.2. **Los mismos
+ * parámetros que la página**, escritos por la misma función: así el archivo
+ * no puede traer otro período que el que se está mirando (RF-28, «respetando
+ * los filtros aplicados»).
+ */
+export function urlDeExportacion(periodo: Periodo): string {
+  return urlConRanking(periodo, periodo.ranking, "/admin/reportes/export");
 }

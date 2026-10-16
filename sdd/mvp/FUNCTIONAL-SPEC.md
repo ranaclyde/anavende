@@ -763,7 +763,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] El rango de fechas tiene atajos: hoy, últimos 7 días, este mes, mes anterior, personalizado.
 - [ ] Las órdenes `activas` y `canceladas` **no** se computan como ventas.
 - [ ] Las devoluciones restan del período en que se registraron.
-- [ ] Cada reporte puede **exportarse a Excel** (`.xlsx`), respetando los filtros aplicados.
+- [ ] Cada reporte puede **exportarse a Excel** (`.xlsx`), respetando los filtros aplicados. **Es un solo archivo con una hoja por reporte** (2026-10-15): un clic baja todo lo que se está mirando. En la planilla, **«Más vendidos» trae todos los productos del período** y no solo los diez de la pantalla, y el desglose por color va en su propia hoja.
 - [ ] Las compras de visitantes (WhatsApp sin orden) no figuran, salvo que se hayan cargado como orden manual.
 - [ ] **Cada reporte tiene su gráfico** (2026-10-15): columnas para las ventas en el tiempo —por día hasta 62 días, por mes más allá—, barras horizontales para más vendidos, categoría y marca, y una barra partida para web contra manual. **Debajo de cada gráfico va la tabla con los números exactos**, que es además lo que lee un lector de pantalla.
 - [ ] **El período anterior equivalente** es el mismo tramo de meses si el período arranca el día 1 —«este mes» al 15 contra el 1 al 15 del mes pasado; un mes entero contra el mes entero anterior—, y si no, los mismos días inmediatamente antes.

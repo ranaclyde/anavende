@@ -200,3 +200,13 @@ export function porcentaje(parte: Money, total: Money): number | null {
     .toDecimalPlaces(0, Decimal.ROUND_HALF_UP)
     .toNumber();
 }
+
+/**
+ * El monto como número, para una celda de Excel — F9.2. Una celda numérica
+ * es un `double`, y sin número Excel no la puede sumar ni filtrar. Como
+ * `paraDibujar`, **nunca vuelve a la aritmética**: lo que se escribe ya viene
+ * sumado de SQL.
+ */
+export function paraPlanilla(monto: Money): number {
+  return Number(money(monto));
+}
