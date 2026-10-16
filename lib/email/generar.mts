@@ -40,9 +40,10 @@ const desdeElDestino = (tipo: string) =>
 /**
  * El enlace de E3, armado desde `{{ .SiteURL }}` en vez del destino.
  *
- * Quien invita es una pantalla del panel que todavía no existe (RF-26). Si el
- * día que se escriba nadie pasa `redirectTo`, `{{ .RedirectTo }}` sale vacío y
- * el enlace queda roto. Armarlo acá lo hace imposible de olvidar.
+ * Quien invita es el alta del panel (RF-26, F7.6). Esta plantilla se escribió
+ * antes que esa pantalla: si la pantalla no pasaba `redirectTo`,
+ * `{{ .RedirectTo }}` salía vacío y el enlace quedaba roto. Armarlo acá lo
+ * hace imposible de olvidar, y `invitarUsuario` lo pasa igual.
  */
 const desdeElSitio = (tipo: string, destino: string) =>
   `{{ .SiteURL }}${RUTA}?next=${encodeURIComponent(destino)}` +
@@ -57,8 +58,8 @@ const desdeElSitio = (tipo: string, destino: string) =>
  * no sale es una cuenta que no se puede crear. El de afuera comprueba que haya
  * metadatos; el de adentro, que haya nombre.
  *
- * Las altas por invitación (E3, RF-26) todavía no cargan `first_name`: van a
- * caer en «¡Hola!», que es exactamente para lo que está la condición.
+ * Las altas por invitación (E3, RF-26) lo cargan desde F7.6
+ * (`invitarUsuario`); la condición queda para una identidad sin nombre.
  */
 const SALUDO =
   "{{ if .Data }}{{ if .Data.first_name }}, {{ .Data.first_name }}{{ end }}{{ end }}";
