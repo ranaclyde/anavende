@@ -781,6 +781,9 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] Explica también **cómo arrepentirse de una compra**: cancelar la orden desde «Mis compras» si todavía está activa (RF-23), o pedir la devolución si ya se finalizó (RF-25). Es donde el sitio deja por escrito cómo se ejerce ese derecho.
 - [ ] El aviso de **zona de entrega y retiro** está presente en: pie de página, ficha de producto, carrito y checkout (RN-10). Ninguno de los cuatro nombra a la empresa de mensajería.
 - [ ] El texto legal es editable desde el panel sin necesidad de un deploy.
+- [ ] **El plazo para arrepentirse es de 10 días corridos desde el pedido, mientras la orden siga activa** (decisión de negocio del 2026-10-16). Casi todas las ventas se entregan en el día, así que en la práctica el plazo lo corta la entrega; después rigen los cambios y devoluciones, que se aceptan solo por falla de fábrica.
+- [ ] **Hay un «Botón de arrepentimiento»** en el pie de todas las páginas, y una tarjeta arriba de «Garantías y devoluciones», que llevan a «Mis compras»: ahí el comprador decide qué pedido cancelar (RF-23). Sin sesión, el ingreso vuelve ahí.
+- [ ] **El contacto de cada página no está en su texto**: sale de la configuración (RF-20), con el email al que llegan los pedidos y el WhatsApp, para que cambiar de casilla sea cambiarla en un solo lugar.
 
 ---
 

@@ -2,6 +2,7 @@ import { Truck } from "lucide-react";
 import Link from "next/link";
 
 import { Isotipo } from "@/components/shop/logo";
+import { PAGINAS_LEGALES } from "@/modules/content/paginas";
 
 /**
  * Pie de la tienda — DESIGN-REFERENCE §5.1.
@@ -15,10 +16,16 @@ import { Isotipo } from "@/components/shop/logo";
 export type MedioDePago = { id: string; name: string };
 
 const LEGALES = [
-  { href: "/legales/como-comprar", titulo: "Cómo comprar" },
-  { href: "/legales/garantias", titulo: "Garantías y devoluciones" },
-  { href: "/legales/terminos", titulo: "Términos y condiciones" },
-  { href: "/legales/privacidad", titulo: "Privacidad" },
+  ...PAGINAS_LEGALES.map((p) => ({
+    href: `/legales/${p.slug}`,
+    titulo: p.titulo,
+  })),
+  /*
+   * El «botón de arrepentimiento» (F9.3, pedido del 2026-10-16), con ese
+   * nombre porque es el que la gente busca. Lleva a «Mis compras», donde un
+   * pedido activo se cancela (RF-23); sin sesión, el ingreso vuelve ahí.
+   */
+  { href: "/mi-cuenta/compras", titulo: "Botón de arrepentimiento" },
   /*
    * RF-34 pide el acceso a la baja «a la vista», y es un requisito legal: el
    * pie está en todas las páginas. Lleva a la tarjeta de «Mis datos» donde se

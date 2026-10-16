@@ -141,6 +141,13 @@
       "when": 1791231658610,
       "tag": "0019_variante_doble_color",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792179144656,
+      "tag": "0020_paginas_legales",
+      "breakpoints": true
     }
   ]
 }

@@ -1980,6 +1980,7 @@ compila.
 |---|---|---|---|
 | F9.1 | Reportes de ventas | ✅ | **`/admin/reportes` tiene los cinco reportes de RF-28, cada uno con su gráfico y su tabla debajo**, y **el inicio del panel suma lo vendido por día** debajo de «Este mes» (pedido tuyo del 2026-10-15, que la especificación no traía: RF-28 y RF-14 se escribieron antes, abajo en las decisiones). **El período** son los cuatro atajos de RF-28 —hoy, últimos 7 días, este mes, mes anterior— más las dos fechas siempre a la vista: tocarlas es el «personalizado», sin un botón aparte. Abre en «este mes», que es lo que cuenta el inicio, y todo vive en la URL (§10.2). **Los totales** —vendido, órdenes, unidades y ticket promedio— van contra el período anterior equivalente, con flecha y signo, y el cambio en verde si sube, en rojo si baja y en gris si no se movió (pedido tuyo del 2026-10-15; la primera versión iba toda en gris). **Más vendidos** ordena por ingresos o por unidades (solapas, también en la URL), con el desglose por color en la tabla; **categoría y marca** en barras horizontales con el monto escrito al final; **web y carga manual** en una sola barra partida. **Las sumas son todas de SQL** (`modules/reports/queries.ts`): lo que es de la orden suma `orders.total`, como el tablero del inicio, y lo que es del producto suma los renglones con signo; **por eso «Vendido» da exactamente lo mismo en el inicio y en Reportes**, y las columnas por día suman ese número. **Gráficos** con el `chart` de shadcn sobre Recharts 3 (dependencia nueva, solo en el panel), adaptado en dos cosas: sin el `<style dangerouslySetInnerHTML>` del original —los tokens ya cambian solos con el tema— y con los nombres de color de DESIGN.md. **Acromáticos**: el burdeos es acción e identidad y una barra no es ninguna de las dos (DR §6.16, nueva). El menú enciende «Reportes», apagado desde F7.8. **29 tests nuevos**: 18 del período (`periodo.test.ts`, sin base: atajos, rango a mano, período anterior —meses de 30 contra 31, cruce de año—, la URL de ida y vuelta) y 11 de las consultas (`ventas.test.ts`, todo en marzo de 2001 para medir exacto: solo finalizadas, devoluciones el día en que se registran y las anuladas no, el corte del día en la zona de acá, los días sin ventas en cero, que los puntos sumen el total, el ranking neto y sin productos solo devueltos, web contra manual siempre con las dos filas). `DATABASE_URL= npx next build` compila. **Repasado con Playwright** —abajo— a 1280 y 390, en claro y en oscuro. **La exportación a Excel es F9.2** |
 | F9.2 | Exportación a Excel | ✅ | **«Exportar a Excel» arriba de Reportes baja un `.xlsx` con una hoja por reporte** —totales, ventas en el tiempo, más vendidos, por color, por categoría, por marca, y web y carga manual— **con el mismo período y el mismo ranking que se están mirando**: la URL la escribe la misma función que la de la pantalla (`urlDeExportacion`) y el handler la lee con la misma (`leerPeriodo`). **Los números van como números**: montos con formato de moneda, fechas como fechas y la variación como porcentaje, para que la planilla se sume y se filtre; los montos llegan ya sumados de SQL y se convierten una sola vez (`paraPlanilla`). **«Más vendidos» trae todos los productos**, no los diez de la pantalla, y el desglose por color va en su hoja. La primera hoja dice el período, contra qué se compara y cuándo se generó: quien abre el archivo dentro de un mes no tiene la URL. **El rol se verifica en el handler** (`app/admin/reportes/export/route.ts`, la ruta de TS §4): sin sesión el proxy manda a ingresar, como todo `/admin`, y con sesión de comprador es 404. ExcelJS 4.4.0 entra con `uuid` forzado a 11.x: traía un aviso moderado en v3/v5/v6 que no usa, y el «arreglo» de npm era bajar a la 3.4.0. **9 tests nuevos**: 7 de la planilla (`excel.test.ts`, sin base: las hojas en orden, el encabezado con el período y la hora de acá, montos y fechas como números con su formato, el desglose por color, web y manual con su parte, encabezado fijo con filtro, el nombre del archivo), 1 de la URL y 1 del ranking sin tope. `DATABASE_URL= npx next build` compila. **Repasado con Playwright**: un comprador con sesión recibe 404; la administradora aprieta el botón en «este mes» y en «mes anterior, por unidades», el archivo se llama con el período, trae las siete hojas, y **el «Vendido» del Excel es el de la pantalla** en los dos ($ 7.204.700,00 y $ 11.011.600,00) |
+| F9.3 | Páginas legales editables | ✅ | **Las cuatro páginas del pie existen y se editan desde `/admin/legales`**, con el mismo editor y el mismo sanitizador que la descripción de producto, y **el pie suma un «Botón de arrepentimiento»** que lleva a «Mis compras». Los textos salen de las condiciones que ya publicabas, con lo que agregaste el 2026-10-16. **Los datos de quién vende** —nombre o razón social, CUIT y domicilio— están marcados «Completar» en «Términos» y en «Privacidad», y los completás vos desde el panel: no son parte de la tarea (decisión tuya del 2026-10-16). Tampoco el QR de datos fiscales del pie. El detalle, abajo |
 
 ### Los reportes, y lo que el repaso encontró (2026-10-15)
 
@@ -2034,6 +2035,59 @@ lados**. El único aviso de consola es el que ya estaba: React avisa por el
 `<script>` del tema en `app/admin/layout.tsx`, en todo el panel y desde antes
 de esta tarea.
 
+
+### Las páginas legales (2026-10-16)
+
+**Qué hay:**
+
+- **`/legales/[slug]`**: cómo comprar, garantías y devoluciones, términos y
+  condiciones, y política de privacidad. El texto se vuelve a sanitizar al
+  pintarse (§16) y se dibuja como elementos de React, igual que la
+  descripción de producto; los dos comparten ahora
+  `components/shop/texto-con-formato.tsx`. Abajo de cada página, «¿Te quedó
+  una duda?» con el WhatsApp y el email de la configuración. A la derecha en
+  escritorio, y al final en el teléfono, las otras tres páginas.
+- **`/admin/legales`**, una sección propia en el menú, con una solapa por
+  página. Es el editor de la descripción con otro rótulo, 15.000 caracteres
+  en vez de 5.000 —la política de privacidad ya pasa los 5.000— y un área que
+  crece hasta el 70% de la pantalla. No deja guardar una página vacía.
+- **Los textos los siembra la migración `0020_paginas_legales`**, con
+  `ON CONFLICT DO NOTHING`: el pie enlaza a las cuatro desde F1.13, y sin
+  filas habrían dado 404 hasta que alguien entrara al panel. Una vez editadas,
+  ninguna migración las vuelve a tocar.
+
+**Lo que decidiste el 2026-10-16:**
+
+- **La garantía es de la marca**; AnaVende responde si el producto no anda o
+  tiene falla de fábrica.
+- **Devoluciones solo por falla de fábrica**, en el punto de entrega. Si el
+  comprador quiere que se lo busquen o se lo lleven, el envío lo paga él.
+- **Arrepentimiento: 10 días corridos mientras la orden siga activa.** Casi
+  todo se entrega en el día, así que en la práctica el plazo lo corta la
+  entrega. Quedó en RF-29.
+- **Un «Botón de arrepentimiento» que lleve a «Mis compras»**, y que el
+  comprador decida ahí. Está en el pie y como tarjeta arriba de «Garantías y
+  devoluciones».
+- **El contacto es el email al que llegan los pedidos.** No está escrito en
+  los textos: la página lo lee de la configuración, así que cuando cambie la
+  casilla se cambia en un solo lugar. En producción tiene que ser
+  `ana_vende@outlook.com.ar`, y eso se carga en Configuración, no acá.
+- **Quién vende lo completás vos** desde el panel, junto con el QR del pie.
+
+**Verificado:** 11 tests nuevos en `tests/unit/content/legales.test.ts`
+—las cuatro filas existen y su texto ya es Markdown de la lista blanca, la
+validación sanitiza, rechaza la página vacía, una página que no existe y más
+de 15.000 caracteres, y escribir pisa el texto y la fecha sin tocar el
+título—, más los de `descripcion.test.ts` y `markdown.test.ts`, que siguen
+en verde con el renderizador compartido. Un recorrido de Playwright contra la
+compilación de producción, a 390 y a 1280: las cuatro páginas en 200 y sin
+desborde, `/legales/otra` en 404, el botón del pie y el de la tarjeta llevan
+a `/ingresar?volver=/mi-cuenta/compras` sin sesión, el panel redirige a la
+primera solapa, guardar muestra el aviso y la tienda cambia sin desplegar, el
+formato sobrevive a la ida y vuelta por el editor, y vaciar avisa «La página
+no puede quedar vacía.». Sin errores de consola. `DATABASE_URL= npx next
+build` compila.
+
 ---
 
 ## Decisiones que cambiaron las especificaciones
@@ -2043,6 +2097,9 @@ Cada una se escribió primero en la especificación y después en el código
 
 | Qué | Dónde quedó | Por qué |
 |---|---|---|
+| **Arrepentimiento en 10 días mientras la orden siga activa, con un botón que lleva a «Mis compras»** (F9.3) | `FUNCTIONAL-SPEC.md` RF-29 | Decisión tuya del 2026-10-16. RF-29 pedía explicar cómo arrepentirse y no decía el plazo ni dónde se ejerce. Las ventas se entregan casi siempre en el día, así que el plazo lo corta la entrega |
+| **El contacto de las páginas legales sale de la configuración** (F9.3) | `FUNCTIONAL-SPEC.md` RF-29 | Pediste que fuera el mismo email al que llegan los pedidos, y que más adelante va a cambiar. Escrito en cuatro textos, cambiarlo obligaría a acordarse de editar las cuatro |
+| **Las páginas legales tienen su sección en el menú del panel** (F9.3) | `TECHNICAL-SPEC.md` §4 | RF-20 ya las había sacado de Configuración. Son cuatro textos largos con su editor, no valores sueltos |
 | **La exportación es un libro con una hoja por reporte, y «Más vendidos» va completo** (F9.2) | `FUNCTIONAL-SPEC.md` RF-28; `TECHNICAL-SPEC.md` §2 y §15 | RF-28 dice «cada reporte puede exportarse» sin decir si es un archivo por reporte. Uno solo con todas las hojas lo cumple con un clic. En la planilla el corte de diez no hace falta, y es justo donde se busca el producto que no aparece arriba |
 | **Los reportes y el inicio del panel tienen gráficos** (F9.1) | `FUNCTIONAL-SPEC.md` RF-14 y RF-28; `TECHNICAL-SPEC.md` §2 y §15; `DESIGN-REFERENCE.md` §6.16 | Pedido tuyo del 2026-10-15: que los datos se lean más fácil, en Reportes y en el inicio. RF-28 pedía solo números. La librería la elegiste vos: el `chart` de shadcn, que ya es la familia de componentes del proyecto, y por eso entra Recharts. Los colores no: salen de la regla de una sola voz de DESIGN.md, y por eso son grises |
 | **El período anterior, el ticket y el agrupado de RF-28** (F9.1) | `FUNCTIONAL-SPEC.md` RF-28 | RF-28 pedía «comparación con el período anterior equivalente» y «ticket promedio» sin decir cómo se calculan. Mes contra mes cuando el período arranca el 1°; ticket antes de devoluciones; por día hasta 62 días. El detalle, en la nota de F9.1 |

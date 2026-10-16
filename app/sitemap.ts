@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { urlAbsoluta } from "@/lib/seo";
 import { productosDelMapa } from "@/modules/catalog/products/mapa-del-sitio";
+import { PAGINAS_LEGALES } from "@/modules/content/paginas";
 
 /**
  * `sitemap.xml` — F3.9, RNF-04.
@@ -42,6 +43,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...productos.map((p) => ({
       url: urlAbsoluta(`/productos/${p.slug}`),
       lastModified: p.actualizado,
+    })),
+    // Las legales (F9.3) sin fecha: cambian poco, y leerlas sería una
+    // consulta más en cada pedido del mapa para un dato que nadie usa.
+    ...PAGINAS_LEGALES.map((p) => ({
+      url: urlAbsoluta(`/legales/${p.slug}`),
     })),
   ];
 }
