@@ -8,6 +8,7 @@ import {
   Menu,
   Package,
   PanelsTopLeft,
+  Scale,
   Settings,
   ShoppingBag,
   Store,
@@ -54,6 +55,7 @@ const SECCIONES: Seccion[] = [
   { href: "/admin/catalogo", etiqueta: "Catálogo", Icono: PanelsTopLeft },
   { href: "/admin/usuarios", etiqueta: "Usuarios", Icono: Users },
   { href: "/admin/reportes", etiqueta: "Reportes", Icono: FileText },
+  { href: "/admin/legales", etiqueta: "Legales", Icono: Scale },
   { href: "/admin/configuracion", etiqueta: "Configuración", Icono: Settings },
 ];
 

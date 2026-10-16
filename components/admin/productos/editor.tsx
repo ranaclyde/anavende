@@ -291,20 +291,20 @@ function Barra() {
  * mientras se escribe, así que teniéndolo en su propio componente cada tecla
  * repinta doce caracteres de texto y no el formulario entero.
  */
-function Contador() {
+function Contador({ limite }: { limite: number }) {
   const [editor] = useLexicalComposerContext();
   const [restantes, setRestantes] = useState<number | null>(null);
 
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
-        const quedan = LIMITE_DE_TEXTO - $getRoot().getTextContent().length;
+        const quedan = limite - $getRoot().getTextContent().length;
         // Fuera de la zona de aviso el estado es `null` y se queda en `null`:
         // escribir el mismo valor no repinta.
         setRestantes(quedan <= AVISO_DE_LIMITE ? quedan : null);
       });
     });
-  }, [editor]);
+  }, [editor, limite]);
 
   if (restantes === null) return null;
 
@@ -353,18 +353,32 @@ export function leerMarkdown(editor: LexicalEditor | null): string {
     .read(() => $convertToMarkdownString(TRANSFORMADORES));
 }
 
+/**
+ * Sirve también para las páginas legales (RF-29, F9.3): mismo formato, mismo
+ * sanitizador y mismo editor. Lo que cambia es el rótulo, el marcador, el
+ * límite y el alto: una política de privacidad no entra en 480px.
+ */
 export function EditorDeDescripcion({
   id,
   valorInicial,
   refEditor,
   invalido,
   describedBy,
+  etiqueta = "Descripción del producto",
+  marcador = MARCADOR,
+  limite = LIMITE_DE_TEXTO,
+  largo = false,
 }: {
   id: string;
   valorInicial: string;
   refEditor: React.RefObject<LexicalEditor | null>;
   invalido: boolean;
   describedBy?: string;
+  etiqueta?: string;
+  marcador?: string;
+  limite?: number;
+  /** Para textos largos: el área crece hasta el 70% de la pantalla. */
+  largo?: boolean;
 }) {
   return (
     <div
@@ -406,21 +420,22 @@ export function EditorDeDescripcion({
                 id={id}
                 aria-invalid={invalido || undefined}
                 aria-describedby={describedBy}
-                aria-label="Descripción del producto"
+                aria-label={etiqueta}
                 // El marcador de posición va acá y no en `RichTextPlugin`:
                 // desde 0.4x es `ContentEditable` quien lo monta y lo esconde
                 // en cuanto hay contenido. En el plugin se acepta sin quejarse
                 // y no se dibuja nunca.
-                aria-placeholder={MARCADOR}
+                aria-placeholder={marcador}
                 placeholder={
                   <p className="pointer-events-none absolute left-3 top-2.5 text-body-sm text-ink-tertiary">
-                    {MARCADOR}
+                    {marcador}
                   </p>
                 }
                 className={cn(
                   // 200px de alto mínimo, crece con el contenido hasta 480 y
                   // ahí scrollea (§6.11).
-                  "min-h-50 max-h-120 overflow-y-auto px-3 py-2.5",
+                  "min-h-50 overflow-y-auto px-3 py-2.5",
+                  largo ? "max-h-[70vh]" : "max-h-120",
                   "text-body-sm leading-relaxed text-ink outline-none",
                   // El anillo lo pone el contenedor, que es el campo entero.
                   "focus-visible:shadow-none",
@@ -435,7 +450,7 @@ export function EditorDeDescripcion({
         {/* ⌘Z y ⌘⇧Z. Sin esto, un formato mal puesto se deshace a mano. */}
         <HistoryPlugin />
         <CargaInicial markdown={valorInicial} />
-        <Contador />
+        <Contador limite={limite} />
         <EditorRefPlugin editorRef={refEditor} />
       </LexicalComposer>
     </div>

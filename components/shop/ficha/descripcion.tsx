@@ -1,11 +1,4 @@
-import type {
-  BlockContent,
-  DefinitionContent,
-  List,
-  PhrasingContent,
-} from "mdast";
-import { Fragment } from "react";
-
+import { BloquesDeTexto } from "@/components/shop/texto-con-formato";
 import { nodosDeMarkdown } from "@/modules/content/markdown";
 
 /**
@@ -53,109 +46,16 @@ export function Descripcion({ markdown }: { markdown: string }) {
         volver al margen izquierdo.
       */}
       <div className="mt-3 flex max-w-prose flex-col gap-4 text-body-sm text-ink-secondary">
-        {nodos.map((nodo, i) => (
-          <Bloque key={i} nodo={nodo} />
-        ))}
+        <BloquesDeTexto
+          nodos={nodos}
+          // `h3` (RF-15, DR §6.11): el nombre del producto es el `h1` y
+          // «Sobre el producto» el `h2`.
+          subtitulo={{
+            nivel: "h3",
+            className: "text-body font-medium text-ink",
+          }}
+        />
       </div>
     </section>
-  );
-}
-
-/**
- * Los cuatro bloques que sobreviven al filtro de §16: párrafo, subtítulo,
- * lista con viñetas y lista numerada. El `default` no es defensivo de más —
- * es lo que hace que agregar un tipo al filtro mañana no pinte nada raro
- * mientras nadie escriba su caso acá.
- */
-function Bloque({ nodo }: { nodo: BlockContent | DefinitionContent }) {
-  switch (nodo.type) {
-    case "paragraph":
-      return (
-        <p>
-          <EnLinea nodos={nodo.children} />
-        </p>
-      );
-
-    case "heading":
-      // Siempre `h3` (RF-15, DR §6.11): el nombre del producto es el `h1` de
-      // la página y «Descripción» el `h2`, así que un subtítulo acá adentro
-      // es el escalón siguiente. El filtro ya normalizó la profundidad.
-      return (
-        <h3 className="text-body font-medium text-ink">
-          <EnLinea nodos={nodo.children} />
-        </h3>
-      );
-
-    case "list":
-      return nodo.ordered ? (
-        <ol className="flex list-decimal flex-col gap-1.5 pl-5 marker:text-ink-tertiary">
-          <Items nodo={nodo} />
-        </ol>
-      ) : (
-        <ul className="flex list-disc flex-col gap-1.5 pl-5 marker:text-ink-tertiary">
-          <Items nodo={nodo} />
-        </ul>
-      );
-
-    default:
-      return null;
-  }
-}
-
-function Items({ nodo }: { nodo: List }) {
-  return (
-    <>
-      {nodo.children.map((item, i) => (
-        <li key={i}>
-          {/*
-            Un ítem contiene BLOQUES, no texto: el filtro deja adentro
-            párrafos y hasta otra lista. Se recorre igual que el nivel de
-            arriba, y el párrafo suelto no lleva `<p>` propio para que la
-            viñeta no quede separada de su renglón.
-          */}
-          {item.children.map((hijo, j) =>
-            hijo.type === "paragraph" ? (
-              <EnLinea key={j} nodos={hijo.children} />
-            ) : (
-              <Bloque key={j} nodo={hijo} />
-            ),
-          )}
-        </li>
-      ))}
-    </>
-  );
-}
-
-/** Lo que vive dentro de un renglón: texto, salto, negrita y cursiva. */
-function EnLinea({ nodos }: { nodos: readonly PhrasingContent[] }) {
-  return (
-    <>
-      {nodos.map((nodo, i) => {
-        switch (nodo.type) {
-          case "text":
-            return <Fragment key={i}>{nodo.value}</Fragment>;
-
-          case "break":
-            return <br key={i} />;
-
-          case "strong":
-            return (
-              <strong key={i} className="font-medium text-ink">
-                <EnLinea nodos={nodo.children} />
-              </strong>
-            );
-
-          case "emphasis":
-            return (
-              <em key={i}>
-                <EnLinea nodos={nodo.children} />
-              </em>
-            );
-
-          default:
-            return null;
-        }
-      })}
-    </>
   );
 }

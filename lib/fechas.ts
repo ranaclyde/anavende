@@ -50,6 +50,21 @@ export function fechaConHora(iso: string): string {
 }
 
 /**
+ * «16 de octubre de 2026» — para leer y no para comparar: la fecha de
+ * actualización de una página legal (F9.3).
+ */
+const LARGA = new Intl.DateTimeFormat("es-AR", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: ZONA_HORARIA,
+});
+
+export function fechaLarga(fecha: Date): string {
+  return LARGA.format(fecha);
+}
+
+/**
  * «septiembre» — el mes en curso, en la zona del negocio. Tarea F7.8.
  *
  * Lo usa el inicio del panel para que «Este mes» diga cuál es: en el primer
