@@ -318,7 +318,7 @@ F10 Endurecimiento y lanzamiento
 
 | ID | Tarea | Tam. | Referencias | Hecho cuando |
 |---|---|---|---|---|
-| **F10.1** | **Test E2E de aislamiento entre compradores** | M | TS §13.4, §17.2 caso 6, R13 | Un comprador intentando llegar por ID directo a la orden, el carrito, la dirección y el favorito de otro recibe **404 en los cuatro**. Sin RLS, esta es la única barrera |
+| **F10.1** | **Test E2E de aislamiento entre compradores** | M | TS §13.4, §17.2 caso 6, R13 | Un comprador intentando llegar por ID directo a la orden y a la dirección de otro recibe **404**, y las acciones sobre la orden, la dirección, el carrito y los favoritos, **repetidas con lo de otro**, no le cambian nada: el carrito y el favorito no tienen pantalla con ID, y sus acciones se direccionan por producto. Sin RLS, esta es la única barrera |
 | **F10.2** | Resto de los tests E2E | **L** | TS §17.2 | Los cinco recorridos: buscar y WhatsApp, comprar completo, cargar producto, finalizar orden, bloquear usuario |
 | **F10.3** | Repaso de accesibilidad | M | FS RNF-02 · DR §9 | Contraste, teclado, foco, textos alternativos, áreas táctiles, zoom al 200%. Ningún estado comunicado solo por color |
 | **F10.4** | Rendimiento | M | FS RNF-03 · TS §20 | LCP bajo 2,5 s en móvil; catálogo con filtros bajo 300 ms. **Revisadas las cascadas de consultas secuenciales**, que ahora cruzan la red |

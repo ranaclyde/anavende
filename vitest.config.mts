@@ -38,7 +38,7 @@ export default defineConfig({
   },
 
   test: {
-    // `tests/e2e/` es de Playwright (F10.2) y no lo levanta Vitest.
+    // `tests/e2e/` es de Playwright (desde F10.1) y no lo levanta Vitest.
     include: ["tests/unit/**/*.test.ts"],
     environment: "node",
     setupFiles: ["tests/setup/entorno.ts"],

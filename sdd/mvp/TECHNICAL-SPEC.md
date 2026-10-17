@@ -1483,7 +1483,7 @@ Las pruebas de stock y órdenes corren contra una **Postgres real en Docker**, n
 3. Administradora crea un producto con dos colores e imágenes, y aparece publicado en el catálogo.
 4. Administradora finaliza una orden; el stock se descuenta correctamente.
 5. Administradora bloquea a un usuario; ese usuario ve la razón al intentar entrar.
-6. **Aislamiento entre compradores:** un comprador autenticado intenta acceder por ID directo a la orden, el carrito, una dirección y un favorito de otro comprador, y recibe 404 en los cuatro casos. Este test es obligatorio porque, sin RLS, el filtrado en la aplicación es la única barrera (§13.8).
+6. **Aislamiento entre compradores:** un comprador autenticado intenta acceder por ID directo a la orden y a una dirección de otro comprador, y recibe 404; y repite las acciones sobre la orden, las direcciones, el carrito y los favoritos con los datos del otro, y lo del otro queda igual en la base. El carrito y el favorito no tienen una pantalla con ID: sus acciones se direccionan por variante y por producto, y el comprador sale siempre de la sesión. Este test es obligatorio porque, sin RLS, el filtrado en la aplicación es la única barrera (§13.8).
 
 ---
 

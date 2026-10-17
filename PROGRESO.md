@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-10-15.
+Última actualización: 2026-10-16.
 
 **Qué significa cada estado**
 
@@ -2091,6 +2091,12 @@ build` compila.
 
 ---
 
+## F10 — Endurecimiento y lanzamiento
+
+| ID | Tarea | Estado | Nota |
+|---|---|---|---|
+| F10.1 | Test E2E de aislamiento entre compradores | ✅ | **`npm run e2e` corre `tests/e2e/aislamiento.spec.ts`**: dos compradoras de verdad, con cuenta en GoTrue y contraseña, cada una con dos direcciones, un pedido activo, y el mismo producto en el carrito y en favoritos; B además tiene un producto que A no tiene en ningún lado. **A entra por `/ingresar`** e intenta llegar a lo de B por las dos puertas que existen. **Por la dirección**: `/orden/N`, `/mi-cuenta/compras/N` y `/mi-cuenta/direcciones/<id>` de B dan **404**, y las de A, **200** (sin ese control, un 404 para todos también pasaría). Su carrito, sus favoritos y su listado de compras no muestran nada de B. **Por las acciones**: se captura una llamada verdadera de A sobre lo suyo —guardar, predeterminar y eliminar una dirección, cancelar su pedido, quitar del carrito y de favoritos— y **se repite con el mismo pedido y la misma sesión, cambiando el ID por el de B**, que es lo que haría alguien mirando la red. Lo que se verifica es la base: lo de B quedó igual. **El criterio del plan cambió**, abajo en las decisiones: el carrito y el favorito no tienen pantalla con ID, y «404 en los cuatro» no se podía cumplir al pie de la letra. **Es la primera suite de Playwright**: `playwright.config.mts` toma el entorno de `.env.local` —el mismo que lee `next dev`, así el test escribe en la base que la aplicación lee— con la misma guarda de stack local que `tests/setup/entorno.ts`, y usa el `next dev` que ya esté levantado. Los datos se crean y se borran en el mismo archivo; después de correr no queda ninguna cuenta ni producto de prueba. **Se comprobó que el test puede fallar**: sacándole a mano el filtro por comprador a `leerDireccion`, la dirección de B pasa a dar 200 y el test lo marca; sacándoselo a `eliminarDireccion`, la repetición borra la dirección de B y también lo marca. Las dos roturas se revirtieron. **La Compuerta F10 queda en verde** |
+
 ## Decisiones que cambiaron las especificaciones
 
 Cada una se escribió primero en la especificación y después en el código
@@ -2201,6 +2207,7 @@ Cada una se escribió primero en la especificación y después en el código
 | **Desde «Favoritos» no se agrega al carrito**, y el favorito sigue siendo del producto | `FUNCTIONAL-SPEC.md` RF-10; `DESIGN-REFERENCE.md` §7.3 | Decisión tuya del 2026-09-14. RF-10 pedía agregar desde la lista, pero la tarjeta no tiene color elegido y la mayoría de los productos vienen en varios. Se evaluó guardar el favorito por color, que lo resolvía, y se descartó: el corazón de la tarjeta es de un producto, y con favoritos por color no quedaba claro qué marca ni qué quita. La tarjeta lleva a la ficha, donde se elige color y cantidad. De paso se borró de §7.3 un párrafo que seguía poniendo el corazón sobre la foto de la ficha, contradiciendo el que lo saca de ahí desde el 2026-09-08 |
 | **La baja pedida no manda email, deja la cuenta en solo lectura y se puede retirar** | `FUNCTIONAL-SPEC.md` RF-34, RF-30, RF-14; `TECHNICAL-SPEC.md` §13.5b, §14; `DEVELOPMENT-PLAN.md` F5.8, F7.8 | Decisiones tuyas del 2026-09-14. RF-34 pedía avisarle a la administradora con E5; en su lugar, el panel dice qué hay pendiente al entrar —bajas pedidas, órdenes por atender, stock bajo—, sin notificaciones que se disparen. Eso se sumó a F7.8, que ya era el dashboard; F5.8 dejó el bloque de bajas con el enlace apagado. RF-34 tampoco decía qué podía hacer el comprador mientras esperaba: ahora mira y no opera, y puede retirar el pedido hasta que se ejecute |
 | **Lo que el comprador vio incluye la cantidad**, no solo el precio | `TECHNICAL-SPEC.md` §8.4 | F6.2. §8.4 comparaba los precios finales, y un cambio de cantidad desde otra pestaña pasaba la comparación: la orden se creaba con otro total que el del resumen, justo lo que RF-11 pide no hacer en silencio. Una cantidad distinta da el mismo aviso que un producto agregado o quitado |
+| **El aislamiento del carrito y los favoritos se prueba por sus acciones, no con un 404** (F10.1, 2026-10-16) | `DEVELOPMENT-PLAN.md` F10.1; `TECHNICAL-SPEC.md` §17.2 caso 6 | Decidido con vos. El criterio pedía 404 al pedir por ID directo la orden, el carrito, la dirección y el favorito de otro, pero **solo la orden y la dirección tienen una pantalla con ID**. El carrito es uno por persona y sale de la sesión, y sus acciones y las de favoritos reciben una variante o un producto, nunca un ID de carrito o de favorito: «el carrito de otro» no se puede nombrar. Lo que sí se puede intentar es quitar algo que tiene otro, y eso se prueba: la llamada de A repetida con lo de B, y B igual en la base. Se sumaron las acciones de dirección y de cancelar, que también reciben un ID: cancelar va por el número de pedido, que es correlativo y se adivina |
 ---
 
 ## La baja de cuenta ya es un requisito: RF-34
