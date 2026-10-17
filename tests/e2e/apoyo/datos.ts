@@ -20,11 +20,15 @@ import postgres from "postgres";
  * `server-only`, y este archivo corre en el proceso de Playwright.
  */
 
-export const auth = createClient(
+const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { persistSession: false, autoRefreshToken: false } },
-).auth.admin;
+);
+
+export const auth = supabase.auth.admin;
+
+const bucket = supabase.storage.from(process.env.SUPABASE_STORAGE_BUCKET!);
 
 export type Color = { id: string; nombre: string; slug: string };
 
@@ -37,6 +41,15 @@ export type ProductoDePrueba = {
   marca: string;
   variantes: Variante[];
 };
+
+export type Cuenta = {
+  id: string;
+  email: string;
+  password: string;
+  nombre: string;
+};
+
+export type Orden = { id: string; numero: number };
 
 /** Una palabra que no está en ningún otro producto: se busca por ella. */
 export function sufijo(): string {
@@ -119,11 +132,115 @@ export function datosDePrueba() {
   }
 
   /**
+   * Una cuenta con contraseña y el email ya verificado, para entrar por
+   * `/ingresar` como en el test de aislamiento. El rol es el del perfil: es
+   * lo único que separa a la administradora de una compradora (§5.3).
+   */
+  async function unaCuenta(
+    nombre: string,
+    rol: "admin" | "customer" = "customer",
+  ): Promise<Cuenta> {
+    const email = `e2e-${nombre.toLowerCase()}-${sufijo()}@ejemplo.test`;
+    const password = `Prueba-${randomUUID()}`;
+
+    const { data, error } = await auth.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (error) throw error;
+    creados.usuarios.push(data.user.id);
+
+    await sql`
+      INSERT INTO user_profiles (id, first_name, last_name, email, phone, role)
+      VALUES (${data.user.id}, ${nombre}, 'De Prueba', ${email},
+              '+5492920555555', ${rol})`;
+
+    return { id: data.user.id, email, password, nombre };
+  }
+
+  /**
+   * Una orden web activa con sus renglones, **y el stock reservado**, que es
+   * lo que habría dejado el checkout (§8.4): sin la reserva, finalizarla no
+   * tendría qué descontar.
+   */
+  async function unaOrden(
+    cuenta: Cuenta,
+    renglones: {
+      variante: Variante;
+      producto: ProductoDePrueba;
+      cantidad: number;
+      precio: string;
+    }[],
+  ): Promise<Orden> {
+    const [orden] = await sql<Orden[]>`
+      INSERT INTO orders
+        (user_id, origin, status, customer_name, customer_email,
+         customer_phone, total)
+      VALUES
+        (${cuenta.id}, 'web', 'activa', ${cuenta.nombre}, ${cuenta.email},
+         '+5492920555555', '0.00')
+      RETURNING id, order_number AS numero`;
+
+    for (const r of renglones) {
+      await sql`
+        INSERT INTO order_items
+          (order_id, variant_id, product_name, brand_name, color_name,
+           unit_price, quantity)
+        VALUES
+          (${orden.id}, ${r.variante.id}, ${r.producto.nombre},
+           ${r.producto.marca}, ${r.variante.color.nombre}, ${r.precio},
+           ${r.cantidad})`;
+      await sql`
+        UPDATE product_variants
+           SET reserved_stock = reserved_stock + ${r.cantidad}
+         WHERE id = ${r.variante.id}`;
+    }
+    await sql`
+      UPDATE orders SET total = (
+        SELECT sum(subtotal) FROM order_items WHERE order_id = ${orden.id})
+       WHERE id = ${orden.id}`;
+    await sql`
+      INSERT INTO order_status_history (order_id, from_status, to_status)
+      VALUES (${orden.id}, NULL, 'activa')`;
+
+    return orden;
+  }
+
+  /**
    * Para borrar al final una cuenta que el test no creó por la API sino por
    * la pantalla de alta.
    */
   function anotarUsuario(id: string): void {
     creados.usuarios.push(id);
+  }
+
+  /** Lo mismo, para un producto creado desde el panel. */
+  function anotarProducto(id: string): void {
+    creados.productos.push(id);
+  }
+
+  /**
+   * Las fotos de un producto, en los cuatro tamaños (`modules/media`). El
+   * storage no tiene carpetas de verdad: se listan las de cada variante y se
+   * borra lo que hay adentro.
+   */
+  async function borrarFotos(productId: string): Promise<void> {
+    const raiz = `productos/${productId}`;
+    const { data: variantes, error } = await bucket.list(raiz);
+    if (error) throw error;
+
+    for (const variante of variantes) {
+      const carpeta = `${raiz}/${variante.name}`;
+      const { data: archivos, error: alListar } = await bucket.list(carpeta);
+      if (alListar) throw alListar;
+      if (archivos.length === 0) continue;
+
+      const { error: alBorrar } = await bucket.remove(
+        archivos.map((a) => `${carpeta}/${a.name}`),
+      );
+      if (alBorrar) throw alBorrar;
+    }
   }
 
   /**
@@ -176,6 +293,7 @@ export function datosDePrueba() {
             JOIN product_variants v ON v.id = i.variant_id
            WHERE v.product_id = ${id})`;
       await sql`DELETE FROM products WHERE id = ${id}`;
+      await borrarFotos(id);
     }
     for (const id of creados.marcas.splice(0)) {
       await sql`DELETE FROM brands WHERE id = ${id}`;
@@ -195,7 +313,10 @@ export function datosDePrueba() {
     unaCategoria,
     unColor,
     unProducto,
+    unaCuenta,
+    unaOrden,
     anotarUsuario,
+    anotarProducto,
     casillaDeAvisosDePrueba,
     numeroDeWhatsApp,
     desarmar,
