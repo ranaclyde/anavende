@@ -80,7 +80,9 @@ export const getIdentity = cache(async (): Promise<Identity | null> => {
     userId: claims.sub,
     email: typeof claims.email === "string" ? claims.email : null,
     // GoTrue lo publica como email_verified suelto o dentro de user_metadata,
-    // según la versión; se acepta cualquiera de las dos formas.
+    // según la versión; se acepta cualquiera de las dos formas. **Sirve para
+    // mostrar, no para decidir**: `user_metadata` lo escribe el propio
+    // usuario. Lo que exige RF-11 se mira con `emailConfirmado` (F10.5).
     emailVerified:
       claims.email_verified === true || metadata?.email_verified === true,
     nombreSugerido: metadata?.full_name ?? metadata?.name ?? null,

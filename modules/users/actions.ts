@@ -11,6 +11,7 @@ import { userProfiles } from "@/db/schema";
 import { action } from "@/lib/action";
 import { urlDelSitio } from "@/lib/env";
 import { domainError } from "@/lib/errors";
+import { frenarSiInsiste } from "@/lib/limite";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { actualizarDatos } from "@/modules/users/perfil";
@@ -20,6 +21,7 @@ import {
   ingresoSchema,
   misDatosSchema,
   registroSchema,
+  recuperacionSchema,
   reenvioSchema,
 } from "@/modules/users/schemas";
 
@@ -42,6 +44,20 @@ import {
  * destinos que no son internos; `/api/auth/confirmar` lo vuelve a mirar, que
  * es donde de verdad se decide.
  */
+/**
+ * Los cupos por persona de lo que se puede pedir sin sesión (§16, F10.5).
+ * Holgados para una persona que se equivoca —diez contraseñas en cinco
+ * minutos es mucho errar— y cortos para un programa probando. El de GoTrue,
+ * que frena a quien le pega directo, va aparte: PROGRESO.md, F10.5.
+ */
+const MINUTO = 60_000;
+const CUPOS = {
+  ingreso: { tope: 10, ventanaMs: 5 * MINUTO },
+  alta: { tope: 5, ventanaMs: 60 * MINUTO },
+  reenvio: { tope: 5, ventanaMs: 15 * MINUTO },
+  recuperacion: { tope: 5, ventanaMs: 15 * MINUTO },
+};
+
 function urlDeConfirmacion(volver?: string) {
   const base = urlDelSitio();
   const destino = volver ?? "/mi-cuenta";
@@ -54,6 +70,7 @@ export const registrar = action
   .input(registroSchema)
   .auth("public")
   .handler(async ({ input }) => {
+    await frenarSiInsiste("alta", CUPOS.alta);
     const supabase = await createClient();
 
     // 1. Identidad y email E1, en una sola llamada.
@@ -167,28 +184,56 @@ export const enviarVerificacion = action
   .input(reenvioSchema)
   .auth("public")
   .handler(async ({ input }) => {
-    const { error } = await mandarVerificacion(input.email, input.volver);
+    await frenarSiInsiste("reenvio", CUPOS.reenvio);
+    // Todo se responde igual haya o no cuenta: distinguir «no existe» de
+    // «ya está verificada» convertiría esta pantalla en un detector de
+    // cuentas (RF-06). **También el freno por email** (F10.5, 2026-10-17):
+    // antes se avisaba «esperá un momento», pero GoTrue solo frena a una
+    // cuenta que existe, así que pedir dos veces seguidas decía si el email
+    // estaba registrado. Quien pidió dos veces ya tiene el primero en camino.
+    await mandarVerificacion(input.email, input.volver);
+    return { enviado: true };
+  });
 
-    // El límite de frecuencia SÍ se informa: la persona necesita saber que
-    // tiene que esperar, no quedarse mirando un «listo» que no pasó.
-    if (error?.code === "over_email_send_rate_limit") {
+/**
+ * El enlace para cambiar la contraseña (RF-05), por el servidor y con Zod
+ * (§16) — hasta F10.5 lo pedía el navegador directo a GoTrue.
+ *
+ * Contesta «enviado» haya o no cuenta, y **también ante el freno por email**,
+ * por lo mismo que `enviarVerificacion`: para un email que no existe GoTrue
+ * contesta bien y no manda nada, y el freno solo existe para uno que sí
+ * (RF-06, pedido del 2026-10-17: «solo que se mandó, aunque no sea verdad»).
+ * Lo único que se informa es lo que le pasa a cualquiera: GoTrue caído o el
+ * tope por cliente.
+ */
+export const pedirRecuperacion = action
+  .input(recuperacionSchema)
+  .auth("public")
+  .handler(async ({ input }) => {
+    await frenarSiInsiste("recuperacion", CUPOS.recuperacion);
+    const supabase = await createClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(input.email, {
+      redirectTo: urlDeConfirmacion("/recuperar/nueva-contrasena"),
+    });
+
+    if (error && error.code !== "over_email_send_rate_limit") {
       throw domainError("VALIDATION", {
-        message: "Recién te mandamos uno. Esperá un momento y probá de nuevo.",
+        message: "No pudimos mandar el email. Probá de nuevo en un momento.",
       });
     }
-
-    // El resto se responde igual haya o no cuenta: distinguir «no existe» de
-    // «ya está verificada» convertiría esta pantalla en un detector de
-    // cuentas (RF-06).
     return { enviado: true };
   });
 
 // ── Ingreso (RF-06) ────────────────────────────────────────────────────
 
+/** El único mensaje de un ingreso fallido: no dice si el email existe. */
+const NO_COINCIDEN = "Ese email y esa contraseña no coinciden. Probá de nuevo.";
+
 export const ingresar = action
   .input(ingresoSchema)
   .auth("public")
   .handler(async ({ input }) => {
+    await frenarSiInsiste("ingreso", CUPOS.ingreso);
     const supabase = await createClient();
     const { error } = await supabase.auth.signInWithPassword({
       email: input.email,
@@ -206,24 +251,43 @@ export const ingresar = action
     // lo único que esa capa entiende—, así que quién es cada una se decide acá,
     // mirando el perfil. Sin esto, a quien se fue por su cuenta le diríamos
     // que lo bloquearon.
+    //
+    // **Y el motivo solo con la contraseña correcta** (F10.5, 2026-10-17).
+    // Como GoTrue corta antes de mirarla, cualquiera que escribiera un email
+    // bloqueado leía lo que escribió Ana —y de una baja, la fecha—. La
+    // contraseña se compara acá contra el hash de GoTrue: si no coincide, es
+    // el mismo mensaje que una contraseña mal escrita.
     if (error.code === "user_banned") {
-      const [perfil] = await db
-        .select({
-          motivo: userProfiles.banReason,
-          closedAt: userProfiles.closedAt,
-        })
-        .from(userProfiles)
-        .where(eq(sql`lower(${userProfiles.email})`, input.email))
-        .limit(1);
+      const [perfil] = await db.execute<{
+        motivo: string | null;
+        closedAt: string | null;
+        coincide: boolean;
+      }>(sql`
+        SELECT p.ban_reason AS motivo,
+               p.closed_at AS "closedAt",
+               (u.encrypted_password <> ''
+                AND u.encrypted_password =
+                    extensions.crypt(${input.password}, u.encrypted_password))
+                 AS coincide
+          FROM user_profiles p
+          JOIN auth.users u ON u.id = p.id
+         WHERE lower(p.email) = ${input.email}
+         LIMIT 1`);
 
-      if (perfil?.closedAt) {
+      if (!perfil?.coincide) {
+        throw domainError("VALIDATION", {
+          message: NO_COINCIDEN,
+        });
+      }
+
+      if (perfil.closedAt) {
         throw domainError("ACCOUNT_CLOSED", {
-          dadaDeBajaEl: perfil.closedAt.toISOString(),
+          dadaDeBajaEl: new Date(perfil.closedAt).toISOString(),
         });
       }
 
       throw domainError("USER_BANNED", {
-        motivo: perfil?.motivo ?? null,
+        motivo: perfil.motivo,
       });
     }
 
@@ -234,7 +298,7 @@ export const ingresar = action
 
     // Para todo lo demás, un mensaje que no revela si el email existe (RF-06).
     throw domainError("VALIDATION", {
-      message: "Ese email y esa contraseña no coinciden. Probá de nuevo.",
+      message: NO_COINCIDEN,
     });
   });
 

@@ -265,6 +265,37 @@ describe("idempotencia (§8.5)", () => {
 
     expect((await laOrden(orderId)).idempotencyKey).toBe(clave);
   });
+
+  test("la clave de otro comprador no devuelve su orden (F10.5)", async () => {
+    const ana = await unComprador();
+    const otro = await unComprador();
+    const { variantId } = await unaVariante({ total: 10 });
+    await agregarAlCarrito(ana.cartId, variantId, 1);
+    await agregarAlCarrito(otro.cartId, variantId, 1);
+
+    const clave = randomUUID();
+    const deAna = await crearOrdenDesdeCarrito(
+      compra(ana, [{ variantId, unitPrice: "1000.00", quantity: 1 }], clave),
+    );
+
+    // Con la misma clave, el otro no recibe el número de la orden de Ana:
+    // no la encuentra entre las suyas y el índice único frena la suya.
+    const intento = crearOrdenDesdeCarrito(
+      compra(otro, [{ variantId, unitPrice: "1000.00", quantity: 1 }], clave),
+    );
+    await expect(intento).rejects.toThrow();
+    await intento.catch((e: unknown) => {
+      expect(JSON.stringify(e, Object.getOwnPropertyNames(e))).not.toContain(
+        String(deAna.orderNumber),
+      );
+    });
+
+    // Y lo suyo quedó como estaba: el carrito lleno y nada reservado de más.
+    expect(await contadores(variantId)).toEqual({
+      stockTotal: 10,
+      reservedStock: 1,
+    });
+  });
 });
 
 describe("reconfirmación: lo que cambió mientras miraba (§8.4 paso 3)", () => {

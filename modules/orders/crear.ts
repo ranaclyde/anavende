@@ -104,10 +104,19 @@ function esDuplicado(e: unknown): boolean {
   return false;
 }
 
-async function buscarPorClave(clave: string): Promise<OrdenCreada | null> {
+/**
+ * Solo entre las órdenes de quien pide (F10.5): con la clave de otro, sin el
+ * filtro, devolvía el número de una orden ajena. Si alguien la manda igual,
+ * el índice único frena el INSERT y no encuentra nada suyo: un error, sin
+ * nada de la otra orden.
+ */
+async function buscarPorClave(
+  clave: string,
+  userId: string,
+): Promise<OrdenCreada | null> {
   const [fila] = await db.execute<{ id: string; orderNumber: number }>(sql`
     SELECT id, order_number AS "orderNumber"
-      FROM orders WHERE idempotency_key = ${clave}`);
+      FROM orders WHERE idempotency_key = ${clave} AND user_id = ${userId}`);
 
   return fila
     ? { orderId: fila.id, orderNumber: fila.orderNumber, yaExistia: true }
@@ -121,7 +130,7 @@ export async function crearOrdenDesdeCarrito(
   // devuelve y no se abre nada. No alcanza por sí solo —dos peticiones a la
   // vez pasan las dos por acá sin encontrar nada—, y para eso está el índice
   // único más abajo.
-  const yaCreada = await buscarPorClave(datos.idempotencyKey);
+  const yaCreada = await buscarPorClave(datos.idempotencyKey, datos.userId);
   if (yaCreada) return yaCreada;
 
   try {
@@ -259,7 +268,7 @@ export async function crearOrdenDesdeCarrito(
     // El otro camino de la idempotencia: otra petición con la misma clave
     // ganó la carrera mientras esta armaba su orden. La suya es la buena.
     if (esDuplicado(e)) {
-      const ganadora = await buscarPorClave(datos.idempotencyKey);
+      const ganadora = await buscarPorClave(datos.idempotencyKey, datos.userId);
       if (ganadora) return ganadora;
     }
     throw e;

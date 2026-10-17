@@ -2101,11 +2101,11 @@ build` compila.
 
 ### F10.5, segunda parte — lo que se habló el 2026-10-17
 
-Salió de mirar con vos los hallazgos del primer PR (#59). Los cuatro primeros
-son de la aplicación y van en un PR; el quinto depende del servidor DATA y se
-ve junto.
+Salió de mirar con vos los hallazgos del primer PR (#59). **Los cuatro
+primeros están hechos** (rama `fix/f10-5-ingreso-y-recuperacion`); el quinto
+depende de los servidores y se ve junto.
 
-1. **El motivo de bloqueo, solo con la contraseña correcta** (pedido tuyo).
+1. ✅ **El motivo de bloqueo, solo con la contraseña correcta** (pedido tuyo).
    Hoy cualquiera que escriba un email bloqueado, con cualquier contraseña,
    lee el motivo que escribió Ana —y en una cuenta dada de baja, la fecha—:
    GoTrue contesta `user_banned` **antes** de mirar la contraseña (§13.5 lo
@@ -2116,8 +2116,10 @@ ve junto.
    diciendo «bloqueada» con cualquier contraseña, que es suyo; lo que deja de
    filtrarse es el motivo. **A confirmar en producción:** que el usuario de
    `DATABASE_URL` pueda leer `auth.users` (en el stack local es `postgres` y
-   puede).
-2. **Recuperar contraseña y reenviar la verificación no revelan si el email
+   puede). **Hecho**: `ingresar`, en `modules/users/actions.ts`; los tests de
+   bloqueo y de baja suman el caso de la contraseña ajena. Y §13.5 dejó de
+   aceptarlo.
+2. ✅ **Recuperar contraseña y reenviar la verificación no revelan si el email
    existe** (RF-06, pedido tuyo: «solo que se mandó el enlace, aunque no sea
    verdad»). Ya pasaba casi siempre —para un email que no existe, GoTrue
    contesta bien y no manda nada—; el hueco era el freno por email
@@ -2127,18 +2129,35 @@ ve junto.
    navegador directo a GoTrue: era el pendiente de F1.7, y la deja bajo el
    límite del punto 4. **El alta sigue diciendo «Ya hay una cuenta con ese
    email»**, porque lo pide RF-05; cerrarlo es cambiar el requisito.
-3. **Dos arreglos chicos, hoy no aprovechables.** **(a)** `emailVerified` de
+   **Hecho**: `pedirRecuperacion`, y `tests/e2e/recuperar.spec.ts` recorre
+   el pedido, el enlace del buzón, la contraseña nueva y el ingreso con ella,
+   y pide para un email que no existe y dos veces seguidas para uno que sí.
+   Que el freno es solo de cuentas reales se comprobó contra GoTrue: el
+   segundo pedido seguido de una cuenta real da `over_email_send_rate_limit`
+   y el de un email inventado, nada.
+3. ✅ **Dos arreglos chicos, hoy no aprovechables.** **(a)** `emailVerified` de
    la sesión sale de `user_metadata`, que el propio usuario puede escribir
    con `updateUser` —comprobado en el stack local—; hoy no se entra sin
    verificar, pero con Google o Facebook una cuenta sin verificar podría
    marcarse verificada y confirmar pedidos (RF-11). Pasa a leerse
    `email_confirmed_at` de la base. **(b)** La clave anti-duplicado de
    `confirmarPedido` se busca entre todas las órdenes; pasa a buscarse solo
-   entre las del comprador.
-4. **Un tope por persona en el ingreso, el alta y los reenvíos, en la
+   entre las del comprador. **Hecho**: (a) `modules/users/verificacion.ts`,
+   con su test —el metadata dice «verificado» y la base no: gana la base—;
+   (b) `buscarPorClave` filtra por comprador, y el test nuevo de
+   `crear.test.ts` falla sin el filtro.
+4. ✅ **Un tope por persona en el ingreso, el alta y los reenvíos, en la
    aplicación**, con la IP que manda Cloudflare y `lib/limite.ts`. Es la
    mitad que le toca a la aplicación del punto 5, y **solo, no alcanza**:
    frena a quien pasa por la tienda, no a quien le pega directo a GoTrue.
+   **Hecho**: `frenarSiInsiste` en `lib/limite.ts` —ingreso 10 cada 5
+   minutos, alta 5 por hora, reenvío y recuperación 5 cada 15 minutos, por
+   IP— y un código nuevo, `TOO_MANY_ATTEMPTS`. **Solo en producción**: la
+   suite E2E entra decenas de veces seguidas desde la misma máquina. **Y
+   todavía se puede esquivar**: el servidor APP contesta por HTTPS directo a
+   su IP, sin Cloudflare (comprobado desde afuera: `/api/salud` da 200 en
+   `149.34.225.107`), y ahí cualquiera manda `CF-Connecting-IP` con el valor
+   que quiera. Se cierra en el servidor: punto 5.
 5. **Los límites de GoTrue — se ve junto, con el dato del servidor.** En
    «Qué está esperando algo tuyo», punto 5.
 
@@ -2341,7 +2360,10 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
    bueno para comprobarlo desde afuera con unos 40 ingresos fallidos con un
    email inventado: si aparece un 429, está activa—; (2) qué cabecera trae la
    IP real después de Traefik y Kong. Con eso se elige el valor y cómo le
-   habla el APP. **Aparte, opcional:** con
+   habla el APP. (3) **Que el 443 del servidor APP solo acepte a
+   Cloudflare**: hoy contesta directo a su IP, y eso deja inventar la IP con
+   la que la aplicación cuenta los intentos (segunda parte de F10.5, punto
+   4). **Aparte, opcional:** con
    `GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION` apagada —en el
    stack local lo está; en producción no se sabe desde afuera— una sesión
    robada cambia la contraseña sin saber la actual. Prenderla no es solo la

@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { consumir, reiniciarLimites } from "@/lib/limite";
+import { consumir, frenarSiInsiste, reiniciarLimites } from "@/lib/limite";
 
 /**
  * F10.5 — El tope de pedidos por ventana. TS §16; `lib/limite.ts`.
@@ -51,5 +51,60 @@ describe("consumir", () => {
       permitido: false,
       reintentarEnSegundos: 1,
     });
+  });
+});
+
+// ── El tope de las acciones sin sesión (F10.5) ─────────────────────────
+
+const pedido = vi.hoisted(() => ({ cabeceras: new Headers() }));
+vi.mock("next/headers", () => ({ headers: async () => pedido.cabeceras }));
+
+describe("frenarSiInsiste", () => {
+  const CUPO = { tope: 2, ventanaMs: 5 * 60_000 };
+
+  beforeEach(() => {
+    vi.stubEnv("NODE_ENV", "production");
+    pedido.cabeceras = new Headers({ "cf-connecting-ip": "203.0.113.7" });
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  test("corta al pasar el cupo, con cuánto esperar y sin hablar del email", async () => {
+    await frenarSiInsiste("ingreso", CUPO);
+    await frenarSiInsiste("ingreso", CUPO);
+
+    const corte = frenarSiInsiste("ingreso", CUPO);
+    await expect(corte).rejects.toMatchObject({
+      code: "TOO_MANY_ATTEMPTS",
+      message:
+        "Probaste muchas veces seguidas. Esperá 5 minutos y probá de nuevo.",
+    });
+  });
+
+  test("cuenta por persona y por acción", async () => {
+    await frenarSiInsiste("ingreso", CUPO);
+    await frenarSiInsiste("ingreso", CUPO);
+
+    // Otra acción de la misma persona, y la misma acción de otra persona.
+    await expect(frenarSiInsiste("alta", CUPO)).resolves.toBeUndefined();
+    pedido.cabeceras = new Headers({ "cf-connecting-ip": "198.51.100.9" });
+    await expect(frenarSiInsiste("ingreso", CUPO)).resolves.toBeUndefined();
+  });
+
+  test("sin Cloudflare, la primera IP de X-Forwarded-For", async () => {
+    pedido.cabeceras = new Headers({
+      "x-forwarded-for": "192.0.2.1, 10.0.0.2",
+    });
+    await frenarSiInsiste("ingreso", CUPO);
+    await frenarSiInsiste("ingreso", CUPO);
+    await expect(frenarSiInsiste("ingreso", CUPO)).rejects.toMatchObject({
+      code: "TOO_MANY_ATTEMPTS",
+    });
+  });
+
+  test("fuera de producción no limita", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    for (let i = 0; i < 5; i++) {
+      await expect(frenarSiInsiste("ingreso", CUPO)).resolves.toBeUndefined();
+    }
   });
 });

@@ -391,6 +391,15 @@ describe("las dos capas quedan sincronizadas (§13.5)", () => {
     // por qué. El texto sale de `ban_reason`, que GoTrue no guarda.
     expect(r.ok === false && r.details?.motivo).toBe("Pagos rebotados");
 
+    // Con otra contraseña, nada: ni que está bloqueada ni el motivo. GoTrue
+    // contesta `user_banned` igual, así que esto es la aplicación (F10.5).
+    const ajena = await ingresar({
+      email: cuenta.email,
+      password: "otra-cosa",
+    });
+    expect(ajena).toMatchObject({ ok: false, code: "VALIDATION" });
+    expect(JSON.stringify(ajena)).not.toContain("Pagos rebotados");
+
     // Y después de desbloquear, vuelve a entrar con la misma contraseña.
     await desbloquearCuenta({ id: cuenta.id });
     expect(

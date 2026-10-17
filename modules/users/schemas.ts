@@ -90,6 +90,9 @@ export const ingresoSchema = z.object({
 
 export const reenvioSchema = z.object({ email, volver: rutaDeRegreso });
 
+/** RF-05: el pedido del enlace para cambiar la contraseña. */
+export const recuperacionSchema = z.object({ email });
+
 /** Se completa tras el primer ingreso por Google o Facebook (RF-06). */
 export const completarPerfilSchema = z.object({
   firstName: nombre,
