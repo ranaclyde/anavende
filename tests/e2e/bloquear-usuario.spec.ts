@@ -1,4 +1,4 @@
-import { expect, test, type Browser } from "@playwright/test";
+import { expect, test, type Browser } from "./apoyo/test";
 
 import { datosDePrueba, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";

@@ -7,10 +7,13 @@ import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { Button } from "@/components/ui/button";
 import { FormularioDeProducto } from "@/components/admin/productos/formulario";
 import { opcionesDeProducto } from "@/modules/catalog/products/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Nuevo producto" };
 
 export default async function NuevoProducto() {
+  await exigirAdmin();
+
   const { marcas, categorias } = await opcionesDeProducto();
 
   // Se mira `isActive` y no la existencia: el selector solo ofrece las

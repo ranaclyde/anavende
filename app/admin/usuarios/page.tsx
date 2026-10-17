@@ -16,6 +16,7 @@ import {
   type ParametrosDeBusqueda,
 } from "@/modules/users/panel/filtros";
 import { contarPorEstado, listarUsuarios } from "@/modules/users/panel/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Usuarios" };
 
@@ -36,6 +37,8 @@ export default async function UsuariosDelPanel({
   // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
+  await exigirAdmin();
+
   const filtros = leerFiltros(await searchParams);
   // En paralelo: el conteo de las solapas no depende de los filtros (§6.9),
   // así que no tiene por qué esperar al listado.

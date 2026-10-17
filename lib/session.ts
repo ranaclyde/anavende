@@ -1,6 +1,7 @@
 import "server-only";
 
 import { eq } from "drizzle-orm";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
 import { db } from "@/db";
@@ -70,11 +71,9 @@ export const getIdentity = cache(async (): Promise<Identity | null> => {
   if (!claims?.sub) return null;
 
   const metadata = claims.user_metadata as
-    | { email_verified?: boolean; full_name?: string; name?: string }
-    | undefined;
+    { email_verified?: boolean; full_name?: string; name?: string } | undefined;
   const app = claims.app_metadata as
-    | { providers?: string[]; contrasena_definida?: boolean }
-    | undefined;
+    { providers?: string[]; contrasena_definida?: boolean } | undefined;
   const proveedores = app?.providers;
 
   return {
@@ -130,4 +129,33 @@ export async function needsProfile(): Promise<boolean> {
     .limit(1);
 
   return !profile;
+}
+
+/**
+ * El control de rol del panel — TECHNICAL-SPEC §13.3 y §16. F10.5.
+ *
+ * **Va en el layout de `/admin` y además al principio de cada página**, y la
+ * página tiene que llamarlo antes de leer nada. El layout solo no alcanza, y
+ * se comprobó con un comprador de prueba el 2026-10-17: Next renderiza el
+ * layout y la página **en paralelo**, así que el `notFound()` del layout
+ * cambia la respuesta a 404 pero los datos de la página ya viajaron adentro
+ * —el HTML del 404 traía el email de otra cuenta—. Y una petición RSC que
+ * dice tener el layout ya montado (`Next-Router-State-Tree`, que es lo que
+ * manda cualquier navegación dentro del panel) ni siquiera lo ejecuta:
+ * recibía un 200 con la página entera. La guía de Next lo advierte en
+ * «Layouts and auth checks».
+ *
+ * Que ninguna página se lo olvide lo controla
+ * `tests/unit/panel/control-de-rol.test.ts`.
+ */
+export async function exigirAdmin(): Promise<Session> {
+  const session = await getSession();
+
+  if (!session) redirect("/ingresar?volver=/admin");
+
+  // 404 y no 403: un comprador que sondea el panel no recibe la confirmación
+  // de que la ruta existe (§13.3, RF-14).
+  if (session.role !== "admin" || session.profile.isBanned) notFound();
+
+  return session;
 }

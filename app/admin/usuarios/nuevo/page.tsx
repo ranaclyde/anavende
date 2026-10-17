@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { AltaDeUsuario } from "@/components/admin/usuarios/alta";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Nueva cuenta" };
 
@@ -12,7 +13,9 @@ export const metadata: Metadata = { title: "Nueva cuenta" };
  * `UPDATE` a mano en la base (está contado en PROGRESO). También sirve para
  * cargar a un comprador que compró por WhatsApp y quiere su cuenta.
  */
-export default function NuevaCuenta() {
+export default async function NuevaCuenta() {
+  await exigirAdmin();
+
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EncabezadoDePanel

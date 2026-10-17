@@ -32,6 +32,93 @@ function origenesDeImagen(): NonNullable<
   }
 }
 
+const enProduccion = process.env.NODE_ENV === "production";
+
+/**
+ * El origen de Supabase, para la CSP: Storage sirve las fotos y el navegador
+ * le habla a Auth en las pantallas de contraseña (`lib/supabase/client.ts`).
+ * Sale de la misma variable que `origenesDeImagen`, por el mismo motivo.
+ */
+function origenDeSupabase(): string {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * La política de contenido — TECHNICAL-SPEC §16, F10.5.
+ *
+ * **Fija y no con *nonce*** (decisión tuya del 2026-10-17, como pide §16):
+ * Next escribe scripts dentro del HTML para hidratar, y sin un *nonce* por
+ * pedido la única forma de dejarlos pasar es `'unsafe-inline'`. Eso no frena
+ * un script inyectado, pero hoy no hay por dónde inyectarlo —React escapa
+ * todo y el texto con formato pasa por el sanitizador de
+ * `modules/content/markdown.ts`—, y el *nonce* obligaba a generar cada página
+ * en cada pedido. Lo que sí hace esta política:
+ *
+ * - **Nadie mete la tienda en un iframe** (`frame-ancestors`): sin eso, otro
+ *   sitio podría tapar el checkout con su botón y hacer que el clic caiga en
+ *   «Confirmar pedido».
+ * - **Ningún formulario manda datos afuera** (`form-action`), y un `<base>`
+ *   inyectado no puede redirigir las rutas relativas (`base-uri`).
+ * - **Scripts, imágenes y conexiones solo de los orígenes que se usan**: el
+ *   propio, y Supabase para Auth. Las fotos llegan por `/_next/image`, que
+ *   es el propio sitio; Supabase queda en `img-src` para una que se pida
+ *   directo al Storage. Sentry entra por `/monitoring`, también el propio
+ *   sitio (`tunnelRoute`, abajo).
+ *
+ * `blob:` en `img-src` es la vista previa de una foto antes de subirla
+ * (`URL.createObjectURL`). `'unsafe-eval'` va solo en `next dev`: React lo
+ * usa para reconstruir las pilas de error, y en producción no lo usa nadie.
+ * `upgrade-insecure-requests` va solo en producción: en local el Storage es
+ * `http://127.0.0.1:54321` y forzarlo a HTTPS rompería todas las fotos.
+ *
+ * **Cuando entre Turnstile (F10.5b)** hay que sumar
+ * `https://challenges.cloudflare.com` a `script-src` y a `frame-src`.
+ */
+function politicaDeContenido(): string {
+  const supabase = origenDeSupabase();
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline'${enProduccion ? "" : " 'unsafe-eval'"}`,
+    "style-src 'self' 'unsafe-inline'",
+    `img-src 'self' data: blob: ${supabase}`,
+    "font-src 'self'",
+    `connect-src 'self' ${supabase}`,
+    "frame-src 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    ...(enProduccion ? ["upgrade-insecure-requests"] : []),
+  ].join("; ");
+}
+
+/**
+ * Las cabeceras de seguridad — TECHNICAL-SPEC §16, F10.5.
+ *
+ * `X-Frame-Options` repite lo que ya dice `frame-ancestors`, para los
+ * navegadores que no leen CSP. HSTS dura un año y **sin `preload`**: entrar a
+ * la lista de los navegadores es fácil y salir lleva meses, y no hace falta
+ * para que funcione. Tampoco lleva `includeSubDomains`: el dominio tiene
+ * subdominios de Resend que no son sitios, y no hay por qué atarlos.
+ */
+const cabecerasDeSeguridad = [
+  { key: "Content-Security-Policy", value: politicaDeContenido() },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=()",
+  },
+  ...(enProduccion
+    ? [{ key: "Strict-Transport-Security", value: "max-age=31536000" }]
+    : []),
+];
+
 const nextConfig: NextConfig = {
   // Sin `cacheComponents` en el MVP: TECHNICAL-SPEC §2.3 y §12.
   // Se activa después, con medición previa, no antes.
@@ -79,6 +166,14 @@ const nextConfig: NextConfig = {
    * falta.
    */
   output: "standalone",
+
+  // `x-powered-by: Next.js` le dice a cualquiera con qué está hecho el sitio,
+  // que es lo primero que se busca para saber qué vulnerabilidad probar.
+  poweredByHeader: false,
+
+  async headers() {
+    return [{ source: "/:path*", headers: cabecerasDeSeguridad }];
+  },
 
   images: {
     remotePatterns: origenesDeImagen(),

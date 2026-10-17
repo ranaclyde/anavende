@@ -22,6 +22,7 @@ import {
   contarPorEstado,
   listarOrdenesDelPanel,
 } from "@/modules/orders/queries-panel";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Órdenes" };
 
@@ -42,6 +43,8 @@ export default async function OrdenesDelPanel({
   // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
+  await exigirAdmin();
+
   const filtros = leerFiltros(await searchParams);
 
   // Las dos consultas son independientes: encadenarlas agregaría una ida a la

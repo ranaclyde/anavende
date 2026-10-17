@@ -36,6 +36,7 @@ import {
   devueltasPorRenglon,
   type Devolucion,
 } from "@/modules/returns/queries";
+import { exigirAdmin } from "@/lib/session";
 
 type Props = { params: Promise<{ numero: string }> };
 
@@ -65,6 +66,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * hay controles apagados: simplemente no están.
  */
 export default async function DetalleDeLaOrden({ params }: Props) {
+  await exigirAdmin();
+
   const { numero: crudo } = await params;
 
   // Sólo dígitos: `parseInt` aceptaría «1043abc» como 1043.
