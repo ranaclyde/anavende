@@ -18,6 +18,7 @@ import {
   hayAlgunaDevolucion,
   listarDevoluciones,
 } from "@/modules/returns/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Devoluciones" };
 
@@ -38,6 +39,8 @@ export default async function DevolucionesDelPanel({
   // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
+  await exigirAdmin();
+
   const filtros = leerFiltros(await searchParams);
 
   // Independientes: encadenarlas agregaría una ida a la base por carga.

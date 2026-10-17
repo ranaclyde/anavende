@@ -12,6 +12,7 @@ import {
   listarCategorias,
   listarRelacionables,
 } from "@/modules/catalog/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Categorías" };
 
@@ -23,6 +24,8 @@ export default async function CategoriasDelCatalogo({
   // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
+  await exigirAdmin();
+
   const pagina = leerPaginaDeCatalogo(await searchParams);
   // Las dos en paralelo: las relacionables no dependen de la página.
   const [{ items, total }, relacionables] = await Promise.all([

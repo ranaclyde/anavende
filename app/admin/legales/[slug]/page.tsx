@@ -7,6 +7,7 @@ import { SolapasDeLegales } from "@/components/admin/legales/solapas";
 import { fechaConHora } from "@/lib/fechas";
 import { leerTextoLegal } from "@/modules/content/legales";
 import { paginaLegal } from "@/modules/content/paginas";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Legales" };
 
@@ -20,6 +21,8 @@ type Props = { params: Promise<{ slug: string }> };
  * tres valores sueltos, y esto son cuatro textos largos con su editor.
  */
 export default async function EditarTextoLegal({ params }: Props) {
+  await exigirAdmin();
+
   const { slug } = await params;
   const pagina = paginaLegal(slug);
   if (!pagina) notFound();

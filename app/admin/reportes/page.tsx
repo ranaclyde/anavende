@@ -50,6 +50,7 @@ import {
   type ProductoVendido,
   type Totales,
 } from "@/modules/reports/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Reportes" };
 
@@ -73,6 +74,8 @@ export default async function Reportes({
 }: {
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
+  await exigirAdmin();
+
   const periodo = leerPeriodo(await searchParams);
 
   // Siete lecturas independientes, y ninguna espera a otra.

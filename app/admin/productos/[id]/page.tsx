@@ -12,6 +12,7 @@ import {
   opcionesDeColor,
   variantesDelProducto,
 } from "@/modules/catalog/variants/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Editar producto" };
 
@@ -49,6 +50,8 @@ const ES_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function EditarProducto({ params, searchParams }: Props) {
+  await exigirAdmin();
+
   const [{ id }, consulta] = await Promise.all([params, searchParams]);
 
   if (!ES_UUID.test(id)) notFound();

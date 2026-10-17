@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./apoyo/test";
 import sharp from "sharp";
 
 import { datosDePrueba, sufijo, type Color, type Cuenta } from "./apoyo/datos";

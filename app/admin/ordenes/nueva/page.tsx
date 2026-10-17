@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { AltaDeOrdenManual } from "@/components/admin/ordenes/nueva/alta";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Nueva orden" };
 
@@ -17,7 +18,9 @@ export const metadata: Metadata = { title: "Nueva orden" };
  * en cada petición; las acciones que este formulario llama la repiten con
  * `.auth("admin")`, porque una Server Action es una puerta propia (§6.2).
  */
-export default function NuevaOrden() {
+export default async function NuevaOrden() {
+  await exigirAdmin();
+
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EncabezadoDePanel

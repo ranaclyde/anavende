@@ -19,6 +19,7 @@ import {
   elModoMantenimiento,
   umbralDeStockBajo,
 } from "@/modules/settings/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Panel" };
 
@@ -49,6 +50,8 @@ export const metadata: Metadata = { title: "Panel" };
  * columnas suman exactamente el «Vendido» de arriba: es la misma definición.
  */
 export default async function PanelInicio() {
+  await exigirAdmin();
+
   // El umbral hace falta ANTES de contar el stock, así que ése es el único
   // encadenado, y se encadena adentro: las tres lecturas arrancan juntas y
   // ninguna espera a otra que no necesita. El estado de la tienda se lee de

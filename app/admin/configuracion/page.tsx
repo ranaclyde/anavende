@@ -8,6 +8,7 @@ import {
   leerLaConfiguracion,
   UMBRAL_DE_STOCK_BAJO_POR_DEFECTO,
 } from "@/modules/settings/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Configuración" };
 
@@ -21,6 +22,8 @@ export const metadata: Metadata = { title: "Configuración" };
  * código.
  */
 export default async function ConfiguracionDelSitio() {
+  await exigirAdmin();
+
   // En paralelo: son dos lecturas de la misma fila que no se esperan una a
   // la otra. El interruptor se lee de la base y no de la memoria del proxy
   // (`elModoMantenimiento`): recién cambiado, tiene que decir lo que quedó.

@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { fechaConHora, fechaCorta } from "@/lib/fechas";
 import { formatMoney } from "@/lib/money";
-import { getSession } from "@/lib/session";
+import { getSession, exigirAdmin } from "@/lib/session";
 import { enlaceDeWhatsApp } from "@/lib/whatsapp";
 import {
   contarAdministradoras,
@@ -33,6 +33,7 @@ type Props = { params: Promise<{ id: string }> };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  await exigirAdmin();
   const { id } = await params;
   if (!UUID.test(id)) return { title: "Usuario" };
 
@@ -61,6 +62,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * se borra ni se puede borrar (§5.6, F4.5b).
  */
 export default async function FichaDeUsuario({ params }: Props) {
+  await exigirAdmin();
+
   const { id } = await params;
 
   // Un `id` con otra forma no llega a la base: el driver lo rechazaría con un
