@@ -9,6 +9,7 @@ import {
   type ParametrosDeBusqueda,
 } from "@/modules/catalog/filtros-panel";
 import { listarMediosDePago } from "@/modules/settings/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Medios de pago" };
 
@@ -20,6 +21,8 @@ export default async function MediosDePagoDelCatalogo({
   // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
+  await exigirAdmin();
+
   const pagina = leerPaginaDeCatalogo(await searchParams);
   const { items, total } = await listarMediosDePago(pagina);
 

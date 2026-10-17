@@ -4,11 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { isDomainError } from "@/lib/errors";
+import { consumir } from "@/lib/limite";
 import { getSession } from "@/lib/session";
-import {
-  publicarImagenDeVariante,
-  publicarLogo,
-} from "@/modules/media/subir";
+import { publicarImagenDeVariante, publicarLogo } from "@/modules/media/subir";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
 
 /**
@@ -26,6 +24,9 @@ import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
  * Corre en Node, no en Edge: sharp es un binario nativo.
  */
 export const runtime = "nodejs";
+
+/** 30 subidas por minuto y por administradora (§16). */
+const SUBIDAS = { tope: 30, ventanaMs: 60_000 };
 
 /**
  * Un solo punto de entrada para toda imagen, con el destino discriminado.
@@ -61,8 +62,28 @@ export async function POST(request: NextRequest) {
 
   // 404 y no 403: un `customer` que sondea el panel no recibe la confirmación
   // de que la ruta existe (§13.3, RF-14).
-  if (session?.role !== "admin") {
-    return NextResponse.json({ ok: false, message: "No encontrado." }, { status: 404 });
+  if (session?.role !== "admin" || session.profile.isBanned) {
+    return NextResponse.json(
+      { ok: false, message: "No encontrado." },
+      { status: 404 },
+    );
+  }
+
+  // Antes de leer el cuerpo: una subida rechazada no llega a cargarse en
+  // memoria. El tope cubre de sobra cargar un producto entero de un tirón
+  // —cinco fotos por color— y frena un bucle (`lib/limite.ts`).
+  const limite = consumir(`subida:${session.profile.id}`, SUBIDAS);
+  if (!limite.permitido) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: `Subiste muchas imágenes seguidas. Esperá ${limite.reintentarEnSegundos} segundos y probá de nuevo.`,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(limite.reintentarEnSegundos) },
+      },
+    );
   }
 
   let form: FormData;
@@ -146,7 +167,9 @@ export async function POST(request: NextRequest) {
     // cliente con su respuesta, pero un `fetch` a un Route Handler no. La
     // otra mitad es el `router.refresh()` de quien llama.
     revalidatePath(
-      campos.data.destino === "variante" ? "/admin/productos" : "/admin/catalogo",
+      campos.data.destino === "variante"
+        ? "/admin/productos"
+        : "/admin/catalogo",
       "layout",
     );
 

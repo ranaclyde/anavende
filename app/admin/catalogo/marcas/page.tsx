@@ -9,6 +9,7 @@ import {
   type ParametrosDeBusqueda,
 } from "@/modules/catalog/filtros-panel";
 import { listarMarcas } from "@/modules/catalog/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Marcas" };
 
@@ -20,6 +21,8 @@ export default async function MarcasDelCatalogo({
   // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
+  await exigirAdmin();
+
   const pagina = leerPaginaDeCatalogo(await searchParams);
   const { items, total } = await listarMarcas(pagina);
 

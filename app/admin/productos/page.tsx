@@ -24,6 +24,7 @@ import {
   opcionesDeProducto,
 } from "@/modules/catalog/products/queries";
 import { umbralDeStockBajo } from "@/modules/settings/queries";
+import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Productos" };
 
@@ -41,6 +42,8 @@ export default async function ProductosDelPanel({
   // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
+  await exigirAdmin();
+
   const filtros = leerFiltros(await searchParams);
 
   // El umbral se pide primero porque el listado lo necesita: el filtro «para

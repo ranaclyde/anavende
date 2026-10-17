@@ -1,10 +1,8 @@
-import { notFound, redirect } from "next/navigation";
-
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { scriptDeTema } from "@/components/admin/theme";
 import { MarcoDeEscala } from "@/components/ui/escala";
 import { Toaster } from "@/components/ui/sonner";
-import { getSession } from "@/lib/session";
+import { exigirAdmin } from "@/lib/session";
 
 /**
  * Layout del panel — DESIGN-REFERENCE §4, §5.2 · TECHNICAL-SPEC §13.7.
@@ -25,15 +23,9 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
-
-  if (!session) {
-    redirect("/ingresar?volver=/admin");
-  }
-
-  if (session.role !== "admin" || session.profile.isBanned) {
-    notFound();
-  }
+  // El mismo control que cada página repite (`exigirAdmin`, F10.5): acá
+  // solo no alcanza, porque Next renderiza la página en paralelo.
+  const session = await exigirAdmin();
 
   return (
     <>
