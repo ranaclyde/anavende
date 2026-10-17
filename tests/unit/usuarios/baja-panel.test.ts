@@ -366,6 +366,10 @@ describe("las dos capas quedan sincronizadas (§13.5b)", () => {
     const r = await ingresar({ email: cuenta.email, password: CONTRASENA });
     expect(r).toMatchObject({ ok: false, code: "ACCOUNT_CLOSED" });
     expect(r.ok === false && r.code).not.toBe("USER_BANNED");
+    // La fecha de la baja, solo con la contraseña correcta (F10.5).
+    expect(
+      await ingresar({ email: cuenta.email, password: "otra-cosa" }),
+    ).toMatchObject({ ok: false, code: "VALIDATION" });
 
     // Y revertida, vuelve a entrar con la misma contraseña de siempre.
     await revertirBajaDeCuenta({ id: cuenta.id });

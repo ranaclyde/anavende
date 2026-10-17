@@ -1,5 +1,9 @@
 import "server-only";
 
+import { headers } from "next/headers";
+
+import { domainError } from "@/lib/errors";
+
 /**
  * Un tope de pedidos por ventana de tiempo — TECHNICAL-SPEC §16, F10.5.
  *
@@ -52,4 +56,64 @@ export function consumir(
 /** Solo para los tests: cada uno arranca sin pedidos anteriores. */
 export function reiniciarLimites(): void {
   pedidos.clear();
+}
+
+/**
+ * Quién pide, para el tope por persona del ingreso, el alta y los reenvíos
+ * (F10.5). Es la IP que pone Cloudflare; sin ella, la primera de
+ * `X-Forwarded-For`, que es lo que deja Traefik.
+ *
+ * **Hoy alcanza para quien entra por el dominio, no para quien no.** El
+ * servidor APP también contesta por HTTPS directo a su IP, sin pasar por
+ * Cloudflare (comprobado desde afuera el 2026-10-17), y ahí cualquiera puede
+ * mandar la cabecera con el valor que quiera. Se cierra en el servidor,
+ * dejando entrar al 443 solo desde Cloudflare: está en PROGRESO.md, F10.5.
+ *
+ * `null` fuera de un pedido —los tests que llaman a una acción directo—: no
+ * hay a quién limitar. Y `null` fuera de producción: la suite E2E entra
+ * decenas de veces seguidas desde la misma máquina, y con el tope prendido
+ * en `next dev` se cortaría sola. Lo prueba `tests/unit/seguridad/limite.test.ts`
+ * con el entorno de producción simulado.
+ */
+async function quienPide(): Promise<string | null> {
+  if (process.env.NODE_ENV !== "production") return null;
+
+  let h: Headers;
+  try {
+    h = await headers();
+  } catch {
+    return null;
+  }
+  return (
+    h.get("cf-connecting-ip") ??
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "desconocida"
+  );
+}
+
+function espera(segundos: number): string {
+  if (segundos < 60) return `${segundos} segundos`;
+  const minutos = Math.ceil(segundos / 60);
+  return minutos === 1 ? "un minuto" : `${minutos} minutos`;
+}
+
+/**
+ * Corta con `TOO_MANY_ATTEMPTS` si quien pide ya usó su cupo para `accion`.
+ * El mensaje no dice nada del email: el tope es por persona, no por cuenta,
+ * así que no sirve para saber si una existe (RF-06).
+ */
+export async function frenarSiInsiste(
+  accion: string,
+  cupo: { tope: number; ventanaMs: number },
+): Promise<void> {
+  const quien = await quienPide();
+  if (quien === null) return;
+
+  const r = consumir(`${accion}:${quien}`, cupo);
+  if (!r.permitido) {
+    throw domainError("TOO_MANY_ATTEMPTS", {
+      message: `Probaste muchas veces seguidas. Esperá ${espera(r.reintentarEnSegundos)} y probá de nuevo.`,
+      details: { reintentarEnSegundos: r.reintentarEnSegundos },
+    });
+  }
 }

@@ -19,6 +19,14 @@ const sesion = vi.hoisted(() => ({ actual: null as unknown }));
 const crear = vi.hoisted(() => ({ fn: vi.fn() }));
 
 vi.mock("@/lib/session", () => ({ getSession: async () => sesion.actual }));
+// RF-11 se mira en `auth.users` desde F10.5; acá sale de la misma sesión
+// simulada. Que la base y no la sesión es lo que manda lo prueba
+// `tests/unit/usuarios/verificacion.test.ts`.
+vi.mock("@/modules/users/verificacion", () => ({
+  emailConfirmado: async () =>
+    (sesion.actual as { identity: { emailVerified: boolean } }).identity
+      .emailVerified,
+}));
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
 vi.mock("@/modules/orders/crear", () => ({
   crearOrdenDesdeCarrito: crear.fn,

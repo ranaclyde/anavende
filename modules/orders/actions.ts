@@ -14,6 +14,7 @@ import {
   confirmacionSchema,
   type Confirmacion,
 } from "@/modules/orders/schemas";
+import { emailConfirmado } from "@/modules/users/verificacion";
 
 /**
  * Confirmar el pedido — FS RF-11, RF-12 · TS §8.4, §8.5. Tarea F6.1.
@@ -44,8 +45,11 @@ export const confirmarPedido = action
 
     // RF-11. En la práctica casi no se ve —sin verificar no se puede entrar
     // (RF-05)—, pero una sesión abierta antes de ese cambio, o una cuenta de
-    // proveedor social, llegaría hasta acá.
-    if (!identity.emailVerified) throw domainError("EMAIL_NOT_VERIFIED");
+    // proveedor social, llegaría hasta acá. Se mira en la base y no en la
+    // sesión, que el usuario puede escribir (`emailConfirmado`, F10.5).
+    if (!(await emailConfirmado(profile.id))) {
+      throw domainError("EMAIL_NOT_VERIFIED");
+    }
 
     const orden = await crearOrdenDesdeCarrito({
       userId: profile.id,

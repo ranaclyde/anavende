@@ -14,13 +14,13 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { pedirRecuperacion } from "@/modules/users/actions";
 
 /**
  * Pedido de recuperación de contraseña (RF-05).
  *
- * PENDIENTE F1.7 / F5.1: paso por Server Action con Zod. Depende de F0.11:
- * sin Resend como SMTP, el email no llega.
+ * Pasa por `pedirRecuperacion`, en el servidor (F10.5): la respuesta es la
+ * misma haya o no una cuenta con ese email (RF-06).
  */
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -33,13 +33,10 @@ export function ForgotPasswordForm() {
     setEnviando(true);
     setError(null);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/api/auth/confirmar?next=/recuperar/nueva-contrasena`,
-    });
+    const r = await pedirRecuperacion({ email });
 
-    if (error) {
-      setError("No pudimos mandar el email. Probá de nuevo en un momento.");
+    if (!r.ok) {
+      setError(r.message);
       setEnviando(false);
       return;
     }

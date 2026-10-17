@@ -24,6 +24,7 @@ export type DomainErrorCode =
   | "ACCOUNT_CLOSURE_PENDING" // RF-34: pidió la baja, la cuenta es de solo lectura
   | "ACCOUNT_CLOSED" // RF-34, RN-13: la baja ya se ejecutó. NO es USER_BANNED
   | "ACCOUNT_HAS_ACTIVE_ORDERS" // RF-34: con órdenes activas la baja no procede
+  | "TOO_MANY_ATTEMPTS" // §16, F10.5: el tope por persona de ingreso, alta y reenvíos
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "VALIDATION"
@@ -58,6 +59,8 @@ const MENSAJES: Record<DomainErrorCode, string> = {
     "Tu cuenta está dada de baja. Si querés volver, escribinos y la reactivamos.",
   ACCOUNT_HAS_ACTIVE_ORDERS:
     "Tenés órdenes activas. Cancelalas o esperá a que se finalicen, y después pedí la baja.",
+  TOO_MANY_ATTEMPTS:
+    "Probaste muchas veces seguidas. Esperá un rato y probá de nuevo.",
   FORBIDDEN: "No tenés permiso para hacer eso.",
   NOT_FOUND: "No encontramos eso que buscabas.",
   VALIDATION: "Revisá los datos: hay algo que no está bien.",
