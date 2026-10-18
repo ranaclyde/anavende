@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { hasSupabaseEnvVars } from "@/lib/env";
+import { cabecerasParaGoTrue } from "@/lib/supabase/cliente-ip";
 import {
   estaEnMantenimiento,
   pasaSiempre,
@@ -44,6 +45,9 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      // La renovación de la sesión de cada comprador, contada a él y no a la
+      // IP de la tienda (`cliente-ip.ts`, F10.5).
+      global: { headers: cabecerasParaGoTrue(request.headers) },
       cookies: {
         getAll() {
           return request.cookies.getAll();

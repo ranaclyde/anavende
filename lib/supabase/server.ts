@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+
+import { cabecerasParaGoTrue } from "@/lib/supabase/cliente-ip";
 
 /**
  * Especially important if using Fluid compute: Don't put this client in a
@@ -13,6 +15,9 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      // Para que GoTrue cuente los intentos por comprador y no por tienda
+      // (`cliente-ip.ts`, F10.5).
+      global: { headers: cabecerasParaGoTrue(await headers()) },
       cookies: {
         getAll() {
           return cookieStore.getAll();

@@ -2360,7 +2360,87 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
    bueno para comprobarlo desde afuera con unos 40 ingresos fallidos con un
    email inventado: si aparece un 429, está activa—; (2) qué cabecera trae la
    IP real después de Traefik y Kong. Con eso se elige el valor y cómo le
-   habla el APP. (3) **Que el 443 del servidor APP solo acepte a
+   habla el APP.
+   **Relevado con vos en el servidor DATA (2026-10-17), para no volver a
+   preguntarlo:**
+   - **GoTrue no tiene ninguna variable de límites ni de reautenticación.**
+     `docker compose exec auth env | grep -E
+     'GOTRUE_(RATE_LIMIT|SMTP_MAX_FREQUENCY|SECURITY_UPDATE_PASSWORD)'`, en
+     `~/app`, salió vacío: rige todo por omisión —sin límite por persona, 30
+     emails por hora para toda la instancia, un minuto entre emails a la
+     misma dirección, reautenticación apagada—.
+   - **Kong publica `0.0.0.0:8000` (HTTP) y `0.0.0.0:8443` (HTTPS)**, y
+     adentro también el 8001 y el 8444 (`supabase-kong`, imagen `kong:2.8.1`).
+     **Ningún contenedor publica el 443: lo atiende nginx 1.24, instalado en
+     el servidor (Ubuntu), fuera de Docker**, y le pasa a Kong —comprobado
+     desde afuera: `Server: nginx/1.24.0 (Ubuntu)` con
+     `X-Kong-Response-Latency` en la misma respuesta—. El camino es
+     **visitante → nginx (443) → Kong (8000/8443) → GoTrue**. Los cuatro
+     puertos de Kong no responden desde internet.
+   - **Los archivos de nginx**: el `server` del 80 y del 443 vive en
+     `/etc/nginx/sites-enabled/app.conf` —acceso directo a
+     `/etc/nginx/sites-available/app.conf`, que es el que se edita; la copia de
+     antes del cambio es `/etc/nginx/app.conf.antes-de-cliente-ip`—, y
+     `/etc/nginx/nginx.conf` incluye
+     en su bloque `http` `/etc/nginx/conf.d/*.conf` y
+     `/etc/nginx/sites-enabled/*`.
+   - **Lo que nginx le pasa a Kong** (`sudo nginx -T`, un solo `server` en
+     el 443 para `vps-6346459-x.dattaweb.com`, `location /` hacia
+     `proxy_pass http://app_upstream`): `Host $host`, `X-Real-IP $remote_addr`,
+     `X-Forwarded-For $proxy_add_x_forwarded_for`, `X-Forwarded-Proto $scheme`
+     y los dos de WebSocket. **`X-Real-IP` no se puede falsificar** —nginx la
+     pisa con la IP de la conexión—; **`X-Forwarded-For` sí**: nginx *agrega*
+     la IP real a lo que mandó el visitante, y GoTrue usa la cabecera entera
+     como llave, así que cambiando lo de adelante cada intento es alguien
+     nuevo. No hay `real_ip`. El 80 solo sirve el desafío de Let's Encrypt.
+   - **Kong no tiene IPs confiables**: `docker compose exec kong env | grep
+     -i -E 'trusted|real_ip'`, en `~/app`, salió vacío —ni
+     `KONG_TRUSTED_IPS` ni `KONG_REAL_IP_*`—.
+   - **Y por eso Kong pisa `X-Real-IP`**: su `/usr/local/kong/nginx-kong.conf`
+     tiene `real_ip_header X-Real-IP` pero ninguna IP confiable, y en cada
+     `location` hacia los servicios pone `proxy_set_header X-Real-IP
+     $remote_addr` —que es nginx— y `X-Forwarded-For
+     $upstream_x_forwarded_for`. **GoTrue recibe la misma `X-Real-IP` para
+     todos**, y `X-Forwarded-For` falsificable: ninguna de las dos sirve para
+     `GOTRUE_RATE_LIMIT_HEADER`. **Decidido por vos el 2026-10-17:** una cabecera propia,
+     `X-Cliente-Ip`, que pone nginx y Kong deja pasar sin tocar —y no
+     `KONG_TRUSTED_IPS`, que depende de la IP interna de Docker—. **Y para lo
+     que pide la tienda desde el servidor**, que nginx ve llegar todo desde la
+     IP del APP: la tienda manda la IP del comprador y una **clave secreta**
+     que solo conocen ella y nginx; nginx usa esa IP solo si la clave
+     coincide, y borra la clave antes de pasarle la petición a Kong. **Orden**:
+     nginx → la tienda (PR y clave en Coolify) → el 443 del APP solo para
+     Cloudflare → `GOTRUE_RATE_LIMIT_HEADER=X-Cliente-Ip` → comprobarlo desde
+     afuera. Lo único que hace efecto es el cuarto paso.
+   - ✅ **Paso 1, nginx — hecho (2026-10-17).** Está
+     `/etc/nginx/conf.d/anavende-cliente-ip.conf`, `chmod 600`: un `map` de
+     `$http_x_anavende_clave` a `$anavende_cliente_ip` —con la clave,
+     `$http_x_anavende_cliente_ip`; sin ella, `$remote_addr`— y
+     `map_hash_bucket_size 128`, porque la clave mide 64 caracteres y con el
+     casillero de 64 de omisión `nginx -t` falla con *could not build
+     map_hash*. **La clave** son 64 caracteres hexadecimales generados en el
+     servidor con `openssl rand -hex 32`; vive solo en ese archivo y en
+     Coolify, nunca en el repositorio. Y en `sites-available/app.conf`, en
+     `location /` del 443, debajo de `X-Forwarded-Proto`: `proxy_set_header
+     X-Cliente-Ip $anavende_cliente_ip`, y `X-Anavende-Clave ""` y
+     `X-Anavende-Cliente-Ip ""` —vacío borra la cabecera: la clave no sigue
+     hacia Kong ni queda en sus logs—. `nginx -t` pasó y se recargó con
+     `systemctl reload nginx`. Comprobado desde afuera: Studio y Kong siguen
+     dando 401, también con una clave inventada. **GoTrue todavía no la
+     usa.**
+   - **Paso 2, la tienda — el código está** (rama
+     `feat/f10-5-ip-del-comprador-a-gotrue`). `lib/supabase/cliente-ip.ts`
+     arma `X-Anavende-Clave` y `X-Anavende-Cliente-Ip` con la IP de
+     `CF-Connecting-IP`, y las usan los dos clientes de Supabase del servidor:
+     `server.ts` —ingreso, alta, reenvíos, recuperación— y `proxy.ts` —la
+     renovación de la sesión de cada comprador en cada visita, que sin esto
+     también caería en el cupo de la tienda—. Sin la clave, o sin
+     `CF-Connecting-IP`, no manda nada: en desarrollo, en los tests y si algo
+     llega sin Cloudflare. `tests/unit/seguridad/cliente-ip.test.ts` prueba la
+     función y que `@supabase/ssr` de verdad manda las cabeceras en el
+     ingreso y en la renovación. **Falta** la clave en Coolify,
+     `SUPABASE_CLAVE_CLIENTE_IP`, la misma del archivo de nginx.
+   (3) **Que el 443 del servidor APP solo acepte a
    Cloudflare**: hoy contesta directo a su IP, y eso deja inventar la IP con
    la que la aplicación cuenta los intentos (segunda parte de F10.5, punto
    4). **Aparte, opcional:** con
