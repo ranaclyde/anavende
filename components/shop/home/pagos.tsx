@@ -1,5 +1,10 @@
-import Image from "next/image";
+"use client";
 
+import { Pause, Play } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
+
+import { cn } from "@/lib/utils";
 import type { MedioDePagoDeLaHome } from "@/modules/catalog/products/home";
 
 /**
@@ -9,6 +14,13 @@ import type { MedioDePagoDeLaHome } from "@/modules/catalog/products/home";
  * pedirlo acá: la regla global de `globals.css` deja las animaciones en
  * 0,01ms con una sola vuelta, así que el que pidió menos movimiento ve la
  * hilera detenida en vez de detenida a los tirones.
+ *
+ * **Y tiene freno, como el carrusel de arriba** (`hero.tsx`): WCAG 2.2.2 pide
+ * poder parar lo que se mueve solo más de cinco segundos, y la preferencia
+ * del sistema no alcanza, porque no todos saben que existe. El botón está
+ * siempre a la vista —sin hover, en el teléfono, no habría cómo llegar— y
+ * con `prefers-reduced-motion` no se dibuja: ahí ya está quieta. El mouse
+ * encima también la detiene, para poder leer un logo.
  *
  * **La lista va duplicada**, y la segunda copia es `aria-hidden`: sin ella el
  * bucle muestra un hueco del ancho de la pantalla cada vez que reinicia. Lo
@@ -24,23 +36,49 @@ import type { MedioDePagoDeLaHome } from "@/modules/catalog/products/home";
  * no tienen siguen estando donde importan, que es la ficha (§7.3).
  */
 export function HileraDePagos({ medios }: { medios: MedioDePagoDeLaHome[] }) {
+  const [detenido, setDetenido] = useState(false);
+
   if (medios.length === 0) return null;
 
   const vuelta = [...medios, ...medios];
 
   return (
     <section aria-labelledby="medios-de-pago" className="flex flex-col gap-4">
-      <h2
-        id="medios-de-pago"
-        className="text-caption font-medium tracking-wide text-ink-secondary uppercase"
-      >
-        Medios de pago
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2
+          id="medios-de-pago"
+          className="text-caption font-medium tracking-wide text-ink-secondary uppercase"
+        >
+          Medios de pago
+        </h2>
+        <button
+          type="button"
+          onClick={() => setDetenido((v) => !v)}
+          title={detenido ? "Reanudar el movimiento" : "Pausar el movimiento"}
+          className="-my-3 grid size-11 place-items-center rounded-pill text-ink-secondary transition-colors duration-150 hover:bg-surface hover:text-ink motion-reduce:hidden"
+        >
+          {detenido ? (
+            <Play aria-hidden className="size-4" />
+          ) : (
+            <Pause aria-hidden className="size-4" />
+          )}
+          <span className="sr-only">
+            {detenido
+              ? "Reanudar el movimiento de los medios de pago"
+              : "Pausar el movimiento de los medios de pago"}
+          </span>
+        </button>
+      </div>
 
       {/* El degradado de los bordes evita que los logos aparezcan y
           desaparezcan de golpe contra el borde de la pantalla. */}
       <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_3rem,black_calc(100%-3rem),transparent)]">
-        <ul className="flex w-max animate-hilera items-center gap-3">
+        <ul
+          className={cn(
+            "flex w-max animate-hilera items-center gap-3 hover:[animation-play-state:paused]",
+            detenido && "[animation-play-state:paused]",
+          )}
+        >
           {vuelta.map((medio, i) => {
             const repetido = i >= medios.length;
             return (

@@ -4,7 +4,7 @@ import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
-import { DialogOverlay } from "@/components/ui/dialog";
+import { DialogOverlay, useFocoQueVuelve } from "@/components/ui/dialog";
 import { useDataScale } from "@/components/ui/escala";
 import { cn } from "@/lib/utils";
 
@@ -32,10 +32,13 @@ function SheetContent({
   className,
   children,
   closeLabel = "Cerrar",
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   closeLabel?: string;
 }) {
+  const foco = useFocoQueVuelve({ onOpenAutoFocus, onCloseAutoFocus });
   // La misma razón que en `DialogContent`: el portal saca la caja de
   // `[data-scale]` y sin esto se pinta con la escala de la tienda.
   const escala = useDataScale();
@@ -46,6 +49,7 @@ function SheetContent({
       <DialogPrimitive.Content
         data-slot="sheet-content"
         data-scale={escala}
+        {...foco}
         className={cn(
           // `dvh`: el alto entero que se ve, también con la barra del
           // navegador del teléfono a la vista. 32rem alcanzan para que un

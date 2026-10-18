@@ -115,6 +115,10 @@ export function SiteHeader({
             <span className="hidden max-w-28 truncate lg:inline">
               {userName ?? "Ingresar"}
             </span>
+            {/* Sin el texto a la vista, el ícono solo no tiene nombre. */}
+            <span className="sr-only lg:hidden">
+              {userName ? "Mi cuenta" : "Ingresar"}
+            </span>
           </Link>
         </nav>
       </div>

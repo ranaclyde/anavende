@@ -427,7 +427,7 @@ export function EditorDeDescripcion({
                 // y no se dibuja nunca.
                 aria-placeholder={marcador}
                 placeholder={
-                  <p className="pointer-events-none absolute left-3 top-2.5 text-body-sm text-ink-tertiary">
+                  <p className="pointer-events-none absolute left-3 top-2.5 text-body-sm text-ink-secondary">
                     {marcador}
                   </p>
                 }

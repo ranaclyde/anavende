@@ -20,6 +20,9 @@ lineamientos.
   descripción en español sin tildes + ID de tarea si hay (`feat/f3-7-home`).
 - **Antes de commitear algo que lea la base:** `DATABASE_URL= npx next build`.
   Coolify compila sin base y `next dev` no lo muestra.
+- **Accesibilidad:** lo que toque una pantalla pasa, antes del PR, la lista
+  de `DESIGN.md` («Accesibilidad: lo que se revisa en cada tarea») y
+  `tests/e2e/accesibilidad.spec.ts`; una página nueva se suma a `PANTALLAS`.
 - **Tests:** `npm test` corre contra el Postgres del stack local, nunca contra
   producción, y un archivo por vez.
 - **Servidores:** no hay acceso. Lo de adentro lo ejecuta el usuario; se

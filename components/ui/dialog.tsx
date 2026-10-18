@@ -36,14 +36,71 @@ function DialogOverlay({
   );
 }
 
+type AutoFoco = Pick<
+  React.ComponentProps<typeof DialogPrimitive.Content>,
+  "onOpenAutoFocus" | "onCloseAutoFocus"
+>;
+
+/**
+ * **Al cerrarse, el foco vuelve a lo que lo tenía al abrirse** (F10.3).
+ *
+ * Radix lo devuelve a su `DialogTrigger`, y acá ningún diálogo ni drawer lo
+ * usa: se abren con un botón propio y estado, así que el foco caía en
+ * `<body>` y quien usa teclado volvía al principio de la página. Si quien lo
+ * llama tiene otro manejo —un `preventDefault`—, se respeta.
+ *
+ * Lo usan `DialogContent` y `SheetContent`.
+ *
+ * **Con un campo con `autoFocus` adentro, Radix no avisa la apertura**: el
+ * campo toma el foco cuando React lo monta, y con el foco ya adentro
+ * `onOpenAutoFocus` no se dispara. Para ese caso, un solo `focusin` en el
+ * documento anota el último elemento enfocado fuera de un diálogo o un
+ * drawer, y se usa ése. Cuando sí avisa, gana lo que tenía el foco en ese
+ * momento, que sirve también para un diálogo abierto desde otro.
+ */
+const CAPA = '[data-slot="dialog-content"], [data-slot="sheet-content"]';
+let fueraDeLasCapas: HTMLElement | null = null;
+if (typeof document !== "undefined") {
+  document.addEventListener("focusin", (e) => {
+    if (e.target instanceof HTMLElement && !e.target.closest(CAPA)) {
+      fueraDeLasCapas = e.target;
+    }
+  });
+}
+
+export function useFocoQueVuelve({
+  onOpenAutoFocus,
+  onCloseAutoFocus,
+}: AutoFoco): Required<AutoFoco> {
+  const previo = React.useRef<HTMLElement | null>(null);
+  return {
+    onOpenAutoFocus: (e) => {
+      previo.current = document.activeElement as HTMLElement | null;
+      onOpenAutoFocus?.(e);
+    },
+    onCloseAutoFocus: (e) => {
+      onCloseAutoFocus?.(e);
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      const destino = previo.current ?? fueraDeLasCapas;
+      previo.current = null;
+      if (destino?.isConnected) destino.focus();
+    },
+  };
+}
+
 function DialogContent({
   className,
   children,
   closeLabel = "Cerrar",
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   closeLabel?: string;
 }) {
+  const foco = useFocoQueVuelve({ onOpenAutoFocus, onCloseAutoFocus });
+
   // El portal lo saca de `[data-scale]`, así que se lo lleva puesto: sin
   // esto, un diálogo del panel se pinta con la escala de la tienda y sus
   // propias clases `admin:` de más abajo no valen nada (ver `escala.tsx`).
@@ -55,6 +112,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         data-scale={escala}
+        {...foco}
         className={cn(
           "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2",
           // El tope de alto va acá y no en cada diálogo: hasta el 2026-09-21

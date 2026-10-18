@@ -132,7 +132,7 @@ export function SearchBox({
         className={cn(
           "peer w-full rounded-pill border border-border bg-surface",
           "text-ink transition-colors duration-150",
-          "placeholder:text-ink-tertiary focus:border-border-strong",
+          "placeholder:text-ink-secondary focus:border-border-strong",
           // `max-md:text-body` no es una decisión de tipografía: iOS Safari
           // **hace zoom sobre la página** al enfocar un campo con menos de
           // 16px, y no lo deshace al salir. El comprador queda con la tienda

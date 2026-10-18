@@ -112,7 +112,11 @@ export function GraficoDeVentas({
         className={className ?? "aspect-auto h-56 w-full"}
         aria-hidden
       >
+        {/* Sin la capa de teclado de Recharts: el gráfico está fuera del
+            árbol de accesibilidad, y su lugar en el orden del foco no
+            llevaba a nada. Lo que dice está en la tabla. */}
         <BarChart
+          accessibilityLayer={false}
           data={datos}
           margin={{ top: 8, right: 0, left: 0, bottom: 0 }}
         >
@@ -292,6 +296,7 @@ export function GraficoDeRanking({
       aria-hidden
     >
       <BarChart
+        accessibilityLayer={false}
         data={datos}
         layout="vertical"
         margin={{ top: 0, right: 112, left: 0, bottom: 0 }}
@@ -388,6 +393,7 @@ export function BarraWebYManual({
       aria-hidden
     >
       <BarChart
+        accessibilityLayer={false}
         data={datos}
         layout="vertical"
         margin={{ top: 0, right: 0, left: 0, bottom: 0 }}

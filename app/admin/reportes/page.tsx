@@ -402,6 +402,7 @@ function MasVendidos({
           <div className="overflow-hidden rounded-panel-card border border-border">
             <Table
               conTope={false}
+              deslizable="Tabla de los más vendidos"
               className="max-sm:[&_td]:px-2 max-sm:[&_th]:px-2"
             >
               <TableHeader>
@@ -495,6 +496,7 @@ function Agrupadas({
       <div className="overflow-hidden rounded-panel-card border border-border">
         <Table
           conTope={false}
+          deslizable={`Tabla de ventas ${titulo.toLowerCase()}`}
           className="max-sm:[&_td]:px-2 max-sm:[&_th]:px-2"
         >
           <TableHeader>

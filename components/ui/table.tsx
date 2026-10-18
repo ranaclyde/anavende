@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 function Table({
   className,
   conTope = true,
+  deslizable,
   ...props
 }: React.ComponentProps<"table"> & {
   /**
@@ -24,6 +25,13 @@ function Table({
    * scroll propia adentro de una página que ya scrollea.
    */
   conTope?: boolean;
+  /**
+   * El nombre de la tabla, en una que puede quedar más ancha que la pantalla
+   * y no tiene nada adentro que tome el foco —los reportes a 320px, o con el
+   * zoom al 200%—. Sin esto, con el teclado no hay forma de deslizarla
+   * (WCAG 2.1.1): la caja pasa a ser una región con nombre que toma el foco.
+   */
+  deslizable?: string;
 }) {
   return (
     // **Este div es el que scrollea, y por eso existe el tope de alto.**
@@ -48,6 +56,9 @@ function Table({
         "relative w-full overflow-auto",
         conTope && "max-h-[calc(100svh-20rem)]",
       )}
+      {...(deslizable
+        ? { role: "region", "aria-label": deslizable, tabIndex: 0 }
+        : {})}
     >
       <table
         data-slot="table"
