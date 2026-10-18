@@ -193,6 +193,7 @@ export function SignUpForm({ volver }: { volver?: string }) {
           <FieldError>{errores.general}</FieldError>
 
           <Turnstile
+            accion="alta"
             ref={turnstile}
             onToken={setCaptcha}
             idDelAviso={idDelAviso}

@@ -88,6 +88,7 @@ export function AvisoDeVerificacion({
               <>
                 <div className="self-stretch">
                   <Turnstile
+                    accion="reenvio"
                     ref={turnstile}
                     onToken={setCaptcha}
                     idDelAviso={idDelAviso}

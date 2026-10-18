@@ -272,6 +272,7 @@ export function LoginForm({
           )}
 
           <Turnstile
+            accion="ingreso"
             ref={turnstile}
             onToken={setCaptcha}
             idDelAviso={idDelAviso}

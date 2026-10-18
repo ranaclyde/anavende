@@ -106,6 +106,7 @@ export function ForgotPasswordForm() {
           <FieldError>{error}</FieldError>
 
           <Turnstile
+            accion="recuperacion"
             ref={turnstile}
             onToken={setCaptcha}
             idDelAviso={idDelAviso}

@@ -26,12 +26,20 @@ import {
  * no tiene por qué viajar en el resto del sitio. Cada token sirve para un
  * solo pedido, así que la pantalla llama a `reiniciar()` después de cada
  * envío, haya salido bien o mal.
+ *
+ * **Cada pantalla dice cuál es** (`accion`): Cloudflare lo devuelve al
+ * validar y el panel de Turnstile cuenta las verificaciones por pantalla.
+ * GoTrue no lo compara —acepta el token de cualquier pantalla—, así que sirve
+ * para mirar de dónde vienen los intentos, no para frenar nada.
  */
 
 const CLAVE_DEL_SITIO = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
 /** ¿Hay verificación? Sin ella la pantalla no espera ningún token. */
 export const TURNSTILE_ACTIVO = CLAVE_DEL_SITIO !== "";
+
+/** Letras, números, `-` y `_`, hasta 32: lo que acepta Cloudflare. */
+export type AccionDeTurnstile = "ingreso" | "alta" | "recuperacion" | "reenvio";
 
 const SCRIPT =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -41,6 +49,7 @@ type ApiDeTurnstile = {
     elemento: HTMLElement,
     opciones: {
       sitekey: string;
+      action: AccionDeTurnstile;
       language: string;
       theme: "light" | "dark" | "auto";
       size: "normal" | "flexible" | "compact";
@@ -90,10 +99,13 @@ export type ControlDeTurnstile = {
 };
 
 export function Turnstile({
+  accion,
   onToken,
   idDelAviso,
   ref,
 }: {
+  /** Qué pantalla es, para el panel de Cloudflare. */
+  accion: AccionDeTurnstile;
   /** El token listo, o `null` cuando vence, falla o se reinicia. */
   onToken: (token: string | null) => void;
   /** Para el `aria-describedby` del botón, que espera al token. */
@@ -127,6 +139,7 @@ export function Turnstile({
         if (!montado || !contenedor.current) return;
         widget.current = turnstile.render(contenedor.current, {
           sitekey: CLAVE_DEL_SITIO,
+          action: accion,
           language: "es",
           theme: "light",
           size: "flexible",
@@ -144,6 +157,8 @@ export function Turnstile({
       if (widget.current) window.turnstile?.remove(widget.current);
       widget.current = null;
     };
+    // `accion` no cambia en la vida de una pantalla.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!TURNSTILE_ACTIVO) return null;
