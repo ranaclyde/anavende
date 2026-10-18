@@ -212,6 +212,15 @@ const nextConfig: NextConfig = {
   // recargado en caliente entre orígenes, la página llega SIN JavaScript y
   // los formularios parecen rotos por un motivo que no se ve.
   allowedDevOrigins: ["127.0.0.1", "192.168.68.107"],
+
+  // El optimizador de `/_next/image` usa el mismo sharp que la subida de
+  // fotos, y al cargarse fija sus valores para TODO el proceso: sin esto
+  // pisaría los de `modules/media/procesar.ts` (F10.6). Un hilo de libvips y
+  // sin su caché de operaciones; lo ya optimizado lo guarda Next en disco.
+  experimental: {
+    imgOptConcurrency: 1,
+    imgOptOperationCache: false,
+  },
 };
 
 /**

@@ -26,6 +26,24 @@ import { validarArchivo } from "@/modules/media/validar";
  */
 const FONDO_OG = { r: 0x83, g: 0x28, b: 0x33, alpha: 1 };
 
+/**
+ * La memoria del servidor APP — F10.6, TECHNICAL-SPEC §2.4, R3. Los dos
+ * ajustes valen para todo el proceso, no solo para esta subida: el
+ * optimizador de `/_next/image` usa el mismo sharp, y por eso `next.config.ts`
+ * le pide lo mismo (`imgOptConcurrency`, `imgOptOperationCache`) — si no, al
+ * cargarse pisaría estos valores con los suyos.
+ *
+ * - **Un hilo de libvips por imagen.** En Linux con glibc, que es la imagen
+ *   Debian de producción, sharp ya arranca en 1; en la Mac arranca en la
+ *   cantidad de núcleos. Fijarlo deja a los dos iguales.
+ * - **Sin la caché de operaciones de libvips** (50 MB por omisión): cada foto
+ *   se procesa una sola vez, así que lo cacheado nunca se vuelve a usar.
+ *
+ * La otra mitad es `MALLOC_ARENA_MAX=2` en el `Dockerfile`.
+ */
+sharp.concurrency(1);
+sharp.cache(false);
+
 export type Version = {
   sufijo: string;
   cuerpo: Buffer;
@@ -70,54 +88,54 @@ export async function procesarImagen(
     });
   }
 
-  const versiones = await Promise.all(
-    tamanos.map(async ({ sufijo, ancho, alto, calidad, formato }) => {
-      // `autoOrient` aplica la orientación del EXIF ANTES de redimensionar:
-      // una foto sacada con el teléfono de costado se guarda derecha. Es el
-      // único dato del EXIF que sobrevive — al no llamar a `keepMetadata`,
-      // sharp descarta el resto, y ahí viven la marca del teléfono y las
-      // coordenadas de dónde se sacó la foto (§9.2, §16).
-      const recortada = sharp(entrada)
-        .autoOrient()
-        .resize(
-          alto
-            ? // La versión de Open Graph va a un lienzo FIJO de 1200×630: es
-              // la proporción que todos recortan igual, y una foto cuadrada
-              // metida ahí sin relleno saldría cortada de arriba y de abajo.
-              // `contain` la deja entera y centrada sobre el burdeos, igual
-              // que la tarjeta de marca de `scripts/derivar-og.mts`.
-              {
-                width: ancho,
-                height: alto,
-                fit: "contain",
-                background: FONDO_OG,
-                withoutEnlargement: true,
-              }
-            : { width: ancho, fit: "inside", withoutEnlargement: true },
-        );
+  // **Una versión después de la otra, no en paralelo** (F10.6): cada una lee
+  // el original entero, así que en paralelo el pico de memoria se multiplica
+  // por la cantidad de versiones y lo que se gana en tiempo es poco.
+  const versiones: Version[] = [];
+  for (const { sufijo, ancho, alto, calidad, formato } of tamanos) {
+    // `autoOrient` aplica la orientación del EXIF ANTES de redimensionar:
+    // una foto sacada con el teléfono de costado se guarda derecha. Es el
+    // único dato del EXIF que sobrevive — al no llamar a `keepMetadata`,
+    // sharp descarta el resto, y ahí viven la marca del teléfono y las
+    // coordenadas de dónde se sacó la foto (§9.2, §16).
+    const recortada = sharp(entrada)
+      .autoOrient()
+      .resize(
+        alto
+          ? // La versión de Open Graph va a un lienzo FIJO de 1200×630: es
+            // la proporción que todos recortan igual, y una foto cuadrada
+            // metida ahí sin relleno saldría cortada de arriba y de abajo.
+            // `contain` la deja entera y centrada sobre el burdeos, igual
+            // que la tarjeta de marca de `scripts/derivar-og.mts`.
+            {
+              width: ancho,
+              height: alto,
+              fit: "contain",
+              background: FONDO_OG,
+              withoutEnlargement: true,
+            }
+          : { width: ancho, fit: "inside", withoutEnlargement: true },
+      );
 
-      const { data, info } = await (
-        formato === "jpeg"
-          ? // Sin canal alfa: un PNG con fondo transparente sale sobre el
-            // burdeos y no sobre negro, que es a lo que cae JPEG solo.
-            recortada
-              .flatten({ background: FONDO_OG })
-              .jpeg({ quality: calidad })
-          : recortada.webp({ quality: calidad })
-      ).toBuffer({ resolveWithObject: true });
+    const { data, info } = await (
+      formato === "jpeg"
+        ? // Sin canal alfa: un PNG con fondo transparente sale sobre el
+          // burdeos y no sobre negro, que es a lo que cae JPEG solo.
+          recortada.flatten({ background: FONDO_OG }).jpeg({ quality: calidad })
+        : recortada.webp({ quality: calidad })
+    ).toBuffer({ resolveWithObject: true });
 
-      return {
-        sufijo,
-        cuerpo: data,
-        // Del resultado, no del cálculo: con `withoutEnlargement` una imagen
-        // de 300px de ancho sale de 300px en los tres tamaños, y suponer 1400
-        // dejaría la base mintiendo sobre lo que hay en Storage.
-        ancho: info.width,
-        alto: info.height,
-        bytes: info.size,
-      };
-    }),
-  );
+    versiones.push({
+      sufijo,
+      cuerpo: data,
+      // Del resultado, no del cálculo: con `withoutEnlargement` una imagen
+      // de 300px de ancho sale de 300px en los tres tamaños, y suponer 1400
+      // dejaría la base mintiendo sobre lo que hay en Storage.
+      ancho: info.width,
+      alto: info.height,
+      bytes: info.size,
+    });
+  }
 
   // El mayor se busca por ancho y no por un sufijo fijo: con dos tablas de
   // tamaños distintas, «el más grande» no siempre se llama igual.

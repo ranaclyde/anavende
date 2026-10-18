@@ -92,6 +92,12 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
+# Dos zonas de memoria de glibc y no una por hilo (F10.6, R3). Por omisión
+# glibc abre hasta 8 por núcleo, y la memoria que libvips suelta en una no la
+# reusa otra: el contenedor crece con cada foto y no vuelve a bajar. Es de
+# glibc, así que sirve porque la base es Debian (ver arriba).
+ENV MALLOC_ARENA_MAX=2
+
 # Usuario sin privilegios (§18.1). Si algún día alguien se escapa del proceso
 # de Node, se escapa a una cuenta que no puede escribir nada.
 RUN groupadd --system --gid 1001 nodejs \
