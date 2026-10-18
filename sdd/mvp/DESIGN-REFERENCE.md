@@ -56,7 +56,7 @@ En F3.8 se aprobó un canvas de Claude Design (`Rediseño UI AnaVende`, siete pa
 | Archivo como tipografía | **Inter** | Archivo entró por herencia del sistema Modernist que el canvas importó, no por decisión de diseño |
 | Textos de 10–11px | **Piso de 12px** | RNF-02. Es el mismo motivo por el que §1.2 ya había descartado los 9px de la referencia |
 | Hover de marca que oscurece (`#6d2029`) | **Hover que aclara** (`#9d3040`) | §2.1: el color base ya es oscuro, y oscurecerlo lo acerca al negro y anula la señal |
-| `#787574` como gris secundario | **`#716e6d`** | 4,14:1 sobre el canvas, por debajo del AA que pide RNF-02. Bajarle un 6% de luminosidad conserva la temperatura y llega a 4,58 |
+| `#787574` como gris secundario | **`#6b6867`** | 4,14:1 sobre el canvas, por debajo del AA que pide RNF-02. Bajarle un 6% de luminosidad conserva la temperatura y llega a 4,58 (`#716e6d`); el repaso de F10.3 lo bajó otro poco, a `#6b6867`, porque sobre la tarjeta elegida (`--brand-tint`) daba 4,41 |
 | Panel de órdenes con el lenguaje aéreo de la tienda | **La escala densa de §4** | El motivo original no cambió: una tabla de órdenes en lenguaje de tienda es ilegible |
 | «Admin» como enlace en la barra superior | **Nada** | En el canvas es una comodidad para saltar entre pantallas; el panel está detrás de autenticación |
 
@@ -117,7 +117,7 @@ La tercera es segura porque dentro del diálogo **no hay ningún botón de marca
 2. **Muchas acciones son un ícono sin rótulo**, así que «con ícono» no las distingue de nada: sus vecinas también son íconos.
 3. **Ana opera en tablet** (RNF-01) y ahí **no hay hover**. Un destructivo que se pone rojo recién al pasar el puntero es un destructivo que en su pantalla no se ve nunca.
 
-Con dos colores y ninguna otra señal, equivocarse es cuestión de tiempo, y en el panel equivocarse cuesta un producto borrado. Así que **el rojo semántico distingue por sí solo**: el ícono de una acción destructiva va en `--danger` desde el reposo, sin caja y sin depender del hover (variante `destructive-ghost`, §6.3). Da 4,83:1 en claro y 6,01:1 en oscuro, sobre los 3:1 que pide un ícono.
+Con dos colores y ninguna otra señal, equivocarse es cuestión de tiempo, y en el panel equivocarse cuesta un producto borrado. Así que **el rojo semántico distingue por sí solo**: el ícono de una acción destructiva va en `--danger` desde el reposo, sin caja y sin depender del hover (variante `destructive-ghost`, §6.3). Da 5,74:1 en claro y 6,01:1 en oscuro, sobre los 3:1 que pide un ícono.
 
 **Lo que la exención NO habilita**, porque si no deja de ser un sistema:
 
@@ -235,7 +235,7 @@ fondo de sección.
 
   /* ── Texto ─────────────────────────────────────────── */
   --ink:              #111010;   /* primario */
-  --ink-secondary:    #716e6d;   /* secundario, etiquetas */
+  --ink-secondary:    #6b6867;   /* secundario, etiquetas */
   --ink-tertiary:     #8f8b8a;   /* decorativo, NUNCA texto — ver abajo */
   --ink-inverse:      #ffffff;
 
@@ -246,7 +246,7 @@ fondo de sección.
   /* ── Semánticos ────────────────────────────────────── */
   --success:          #15803d;   --success-tint: #f0fdf4;
   --warning:          #b45309;   --warning-tint: #fffbeb;
-  --danger:           #dc2626;   --danger-tint:  #fef2f2;
+  --danger:           #c81e1e;   --danger-tint:  #fef2f2;
   --info:             #0369a1;   --info-tint:    #f0f9ff;
 }
 ```
@@ -260,14 +260,16 @@ fondo de sección.
 | Combinación | Ratio | Nivel |
 |---|---|---|
 | `--ink` sobre `--surface` | 19,0:1 | AAA |
-| `--ink-secondary` sobre `--surface` | 5,06:1 | AA |
-| `--ink-secondary` sobre `--canvas` | **4,58:1** | AA — es el caso que manda (ver abajo) |
+| `--ink-secondary` sobre `--surface` | 5,52:1 | AA |
+| `--ink-secondary` sobre `--canvas` | 5,01:1 | AA |
+| `--ink-secondary` sobre `--brand-tint` | **4,82:1** | AA — es el caso que manda: la tarjeta elegida de un grupo de opciones (F10.3) |
 | `--ink-tertiary` sobre `--surface` | 3,37:1 | **No es un color de texto**: ver abajo |
 | `--brand` sobre `--surface` | **9,07:1** | AAA |
 | `--accent` sobre `--surface` | **9,05:1** | AAA. A 0,02 del burdeos: pesan igual |
 | `--success` sobre `--surface` | 5,02:1 | AA. Tilde blanco en el círculo de orden confirmada |
 | `--ink-inverse` sobre `--brand` | **9,07:1** | AAA |
-| `--danger` sobre `--surface` | 4,83:1 | AA |
+| `--danger` sobre `--surface` | 5,74:1 | AA |
+| `--danger` sobre `--canvas` y `--danger-tint` | **5,20:1** y 5,24:1 | AA. Con el `#dc2626` de antes daban 4,38 y 4,41: los avisos y las etiquetas rojas no llegaban (F10.3) |
 | `--success` sobre `--surface` | 5,02:1 | AA |
 
 **`--ink-tertiary` no se usa para texto, y desde el 2026-09-22 está dicho
@@ -280,13 +282,13 @@ usos es cerrada:
 
 | Vale | No vale |
 |---|---|
-| Marcadores de posición (`placeholder:`) | Metadatos, ayudas y leyendas |
-| Viñetas y numeración de listas (`marker:`) | Precios tachados |
-| Íconos decorativos —lupas, chevrones, el ícono del estado vacío— | Cualquier texto de 12 o 14px |
-| Separadores `aria-hidden` («·», «/») | Etiquetas y valores de una ficha |
-| Controles desactivados, que WCAG exime | |
+| Viñetas y numeración de listas (`marker:`) | Metadatos, ayudas y leyendas |
+| Íconos decorativos —lupas, chevrones, el ícono del estado vacío— | Precios tachados |
+| Separadores `aria-hidden` («·», «/») | Cualquier texto de 12 o 14px |
+| Controles desactivados, que WCAG exime | Etiquetas y valores de una ficha |
+| | Marcadores de posición (`placeholder:`), desde F10.3 |
 
-**Lo que era terciario y es texto pasa a `--ink-secondary`** (5,06:1 en claro,
+**Lo que era terciario y es texto pasa a `--ink-secondary`** (5,52:1 en claro,
 6,46:1 en oscuro). La consecuencia se asume: la escala de tres grises queda en
 **dos niveles de texto más uno decorativo**, y un metadato pesa lo mismo que
 una etiqueta. Lo que ordena la jerarquía es el tamaño y el peso, que siguen
@@ -1613,7 +1615,7 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | Uso obligatorio de `impeccable` y `ui-ux-pro-max` al programar el frontend | Una referencia escrita fija el marco, pero no garantiza el acabado; las skills cierran esa brecha sin abrir la puerta a un segundo criterio visual |
 | Sin hero fotográfico en la home | Una foto genérica de banco de imágenes le resta credibilidad a una tienda de reventa |
 | Familia de grises cálida en vez de fría | Es lo que trajo el canvas aprobado en F3.8, y es de donde sale el aire de la referencia: grises cálidos sobre un canvas frío repiten la tensión de temperatura que §2.1 le pide al burdeos |
-| `#716e6d` en vez del `#787574` del canvas | El del canvas da 4,14:1 sobre `--canvas`, bajo el AA de RNF-02. Un 6% menos de luminosidad conserva la temperatura y llega a 4,58:1 |
+| `#716e6d` en vez del `#787574` del canvas, y `#6b6867` desde F10.3 | El del canvas da 4,14:1 sobre `--canvas`, bajo el AA de RNF-02. Un 6% menos de luminosidad conserva la temperatura y llega a 4,58:1; sobre `--brand-tint` daba 4,41, y F10.3 lo bajó a `#6b6867` (4,82) |
 | Radios 28 / 20px en vez de 24 / 16px | Los del canvas aprobado. La diferencia de 8px que pide la regla del marco blanco (§3.5) se mantiene intacta |
 | Las sombras se tiñen con `--ink` y no con negro | Al calentar los grises, una sombra azulada bajo una tarjeta cálida se nota aunque no se sepa nombrar |
 | Inter se conserva pese a que el canvas usa Archivo | Archivo llegó por herencia del sistema Modernist que el canvas importó; no fue una decisión de diseño |

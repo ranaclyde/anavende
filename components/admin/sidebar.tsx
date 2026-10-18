@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { ThemeToggle } from "@/components/admin/theme";
 import { IsotipoSegunTema } from "@/components/shop/logo";
@@ -86,11 +86,24 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
     setAbiertoEnMovil(false);
   }
 
+  // El foco entra al abrirlo y vuelve a «Abrir el menú» al cerrarlo, como
+  // en un diálogo (F10.3): si no, quien usa teclado sigue parado detrás de
+  // la capa, en lo que acaba de quedar tapado.
+  const botonAbrir = useRef<HTMLButtonElement>(null);
+  const botonCerrar = useRef<HTMLButtonElement>(null);
+  const cerrarMenu = () => {
+    setAbiertoEnMovil(false);
+    botonAbrir.current?.focus();
+  };
+
   // Escape cierra el panel de móvil, como cualquier capa superpuesta.
   useEffect(() => {
     if (!abiertoEnMovil) return;
+    botonCerrar.current?.focus();
     const alTeclear = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setAbiertoEnMovil(false);
+      if (e.key !== "Escape") return;
+      setAbiertoEnMovil(false);
+      botonAbrir.current?.focus();
     };
     document.addEventListener("keydown", alTeclear);
     return () => document.removeEventListener("keydown", alTeclear);
@@ -105,6 +118,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
       {/* Barra de móvil: el menú se abre desde acá. */}
       <div className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-surface px-4 lg:hidden">
         <button
+          ref={botonAbrir}
           type="button"
           onClick={() => setAbiertoEnMovil(true)}
           className="grid size-11 place-items-center rounded-panel-control text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink"
@@ -119,7 +133,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
         <button
           type="button"
           aria-label="Cerrar el menú"
-          onClick={() => setAbiertoEnMovil(false)}
+          onClick={cerrarMenu}
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
         />
       )}
@@ -131,7 +145,16 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
           "transition-[width,transform] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
           colapsado ? "w-16" : "w-60",
           // Móvil: entra deslizándose y siempre con las etiquetas visibles.
-          abiertoEnMovil ? "w-60 translate-x-0" : "-translate-x-full",
+          // Cerrado, además de correrse queda invisible: fuera de la pantalla
+          // sus enlaces seguían tomando el foco, y el Tab pasaba por quince
+          // paradas que no se ven antes de llegar a la página (F10.3).
+          abiertoEnMovil
+            ? "w-60 translate-x-0"
+            : // La visibilidad solo se anima al cerrar, para que se oculte
+              // al terminar de salir. Al abrir cambia de golpe: en el primer
+              // cuadro de una transición todavía está oculto, y ahí el foco
+              // no entra.
+              "-translate-x-full max-lg:invisible max-lg:transition-[width,transform,visibility]",
           "lg:translate-x-0",
         )}
       >
@@ -155,8 +178,9 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
           </Link>
 
           <button
+            ref={botonCerrar}
             type="button"
-            onClick={() => setAbiertoEnMovil(false)}
+            onClick={cerrarMenu}
             className="ml-auto grid size-9 max-md:size-11 place-items-center rounded-panel-control text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink lg:hidden"
           >
             <X aria-hidden className="size-5" />
@@ -279,10 +303,13 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
                 colapsado && "rotate-180",
               )}
             />
-            {!colapsado && <span className="truncate">Contraer el menú</span>}
-            <span className="sr-only">
-              {colapsado ? "Expandir el menú" : "Contraer el menú"}
-            </span>
+            {/* Una sola etiqueta a la vez: con las dos, el lector de
+                pantalla decía «Contraer el menú» dos veces. */}
+            {colapsado ? (
+              <span className="sr-only">Expandir el menú</span>
+            ) : (
+              <span className="truncate">Contraer el menú</span>
+            )}
           </button>
         </div>
       </aside>

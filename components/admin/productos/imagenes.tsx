@@ -3,7 +3,14 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ImagePlus, MoreVertical, Star, Trash2, MoveLeft, MoveRight } from "lucide-react";
+import {
+  ImagePlus,
+  MoreVertical,
+  Star,
+  Trash2,
+  MoveLeft,
+  MoveRight,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,7 +27,11 @@ import {
   ordenarImagenes,
 } from "@/modules/catalog/variants/actions";
 import type { ImagenDeVariante } from "@/modules/catalog/variants/queries";
-import { motivoDeRechazo, subirImagen, type Progreso } from "@/modules/media/cliente";
+import {
+  motivoDeRechazo,
+  subirImagen,
+  type Progreso,
+} from "@/modules/media/cliente";
 import { MAXIMO_POR_VARIANTE, TIPOS_ACEPTADOS } from "@/modules/media/tamanos";
 
 /**
@@ -203,7 +214,9 @@ export function ImagenesDeVariante({
         item.archivo,
         (avance) =>
           setSubiendo((previo) =>
-            previo.map((s) => (s.clave === item.clave ? { ...s, ...avance } : s)),
+            previo.map((s) =>
+              s.clave === item.clave ? { ...s, ...avance } : s,
+            ),
           ),
       );
 
@@ -509,6 +522,9 @@ export function ImagenesDeVariante({
         type="file"
         multiple
         accept={TIPOS_ACEPTADOS.join(",")}
+        aria-label={`Imágenes para ${etiqueta}`}
+        // Se llega por el botón «Agregar»; dos paradas para lo mismo, no.
+        tabIndex={-1}
         className="sr-only"
         onChange={(e) => {
           agregar(Array.from(e.target.files ?? []));

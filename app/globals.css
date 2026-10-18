@@ -82,7 +82,7 @@
 
   /* Texto */
   --ink: #111010; /* primario — casi negro, no negro puro (§3.1) */
-  --ink-secondary: #716e6d; /* secundario, etiquetas */
+  --ink-secondary: #6b6867; /* secundario, etiquetas */
   --ink-tertiary: #8f8b8a; /* decorativo, NUNCA texto (§3.1) */
   --ink-inverse: #ffffff;
 
@@ -95,7 +95,7 @@
   --success-tint: #f0fdf4;
   --warning: #b45309;
   --warning-tint: #fffbeb;
-  --danger: #dc2626;
+  --danger: #c81e1e;
   --danger-tint: #fef2f2;
   --info: #0369a1;
   --info-tint: #f0f9ff;

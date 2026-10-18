@@ -16,7 +16,7 @@ colors:
   logo-chip: "#f2f4f5"
   logo-chip-ink: "#716e6d"
   ink: "#111010"
-  ink-secondary: "#716e6d"
+  ink-secondary: "#6b6867"
   ink-tertiary: "#8f8b8a"
   ink-inverse: "#ffffff"
   border: "#ebebeb"
@@ -25,7 +25,7 @@ colors:
   success-tint: "#f0fdf4"
   warning: "#b45309"
   warning-tint: "#fffbeb"
-  danger: "#dc2626"
+  danger: "#c81e1e"
   danger-tint: "#fef2f2"
   info: "#0369a1"
   info-tint: "#f0f9ff"
@@ -250,10 +250,10 @@ cuatro semánticos que sólo hablan cuando hay algo que decir.
 - **Tinta** (`ink`): texto primario. Casi negro y **cálido**, no negro puro.
 - **Tinta Secundaria** (`ink-secondary`): texto secundario y etiquetas.
 - **Tinta Terciaria** (`ink-tertiary`): **no es un color de texto**. Da 3,37:1
-  en claro y 3,28:1 en oscuro, y AA pide 4,5. Vale para marcadores de
-  posición, viñetas, íconos decorativos y separadores `aria-hidden`; un
-  metadato o una ayuda van en `ink-secondary`
-  (`DESIGN-REFERENCE.md` §3.1, 2026-09-22).
+  en claro y 3,28:1 en oscuro, y AA pide 4,5. Vale para viñetas, íconos
+  decorativos y separadores `aria-hidden`; un metadato, una ayuda o un
+  marcador de posición van en `ink-secondary`
+  (`DESIGN-REFERENCE.md` §3.1, 2026-09-22; los marcadores, desde F10.3).
 - **Canvas** (`canvas`): fondo de página. Gris frío, y esa frialdad es lo que hace
   resaltar al Malbec.
 - **Superficie** (`surface`): tarjetas, campos, encabezado.
@@ -630,6 +630,43 @@ los puntos de color de las variantes abajo a la derecha.
 Píldora de 48px con el botón de envío circular en Malbec dentro del campo, llevando
 `shadow-brand`: es el único lugar de la tienda donde la elevación tiene color. Trae
 botón de limpiar cuando hay texto, y su etiqueta vive en `sr-only`.
+
+## Accesibilidad: lo que se revisa en cada tarea
+
+`DESIGN-REFERENCE.md` §9 dice qué se pide; esto es cómo se comprueba antes de
+abrir un PR que toque una pantalla (F10.3).
+
+**Lo automático.** `npm run e2e` corre `tests/e2e/accesibilidad.spec.ts`:
+axe con WCAG 2.2 AA sobre todas las páginas de `app/` —la tienda a 320px y a
+1280, el panel también en oscuro—, sin scroll horizontal a 320px, y una muestra
+de diálogos con el foco que entra y vuelve. `tests/e2e/teclado.spec.ts` hace una
+compra entera solo con teclado y falla si alguna parada del Tab no muestra el
+foco. **Una página nueva hace fallar el primer test hasta que se suma a
+`PANTALLAS`**, con los datos que la llenan. Un diálogo nuevo se suma a
+`DIALOGOS` si no se parece a ninguno de los que están.
+
+**Lo que se mira a mano**, porque axe no lo ve:
+
+1. **El teclado.** Lo nuevo se usa entero con Tab, Shift+Tab, Enter, espacio,
+   flechas y Escape, en el orden en que se lee. Nada queda atrapado y nada se
+   salta.
+2. **El foco.** Se ve en cada parada. Un diálogo lo recibe al abrirse y lo
+   devuelve al botón al cerrarse. Después de una acción que hace desaparecer
+   el elemento con foco, el foco cae en un lugar con sentido, no en `<body>`.
+3. **El color.** Ningún estado, error ni selección se distingue solo por el
+   color: lleva texto, ícono o forma. Se prueba mirando la pantalla en
+   escala de grises.
+4. **El zoom.** Al 200% —o a 320px— no hay scroll horizontal, nada se tapa y
+   ningún texto queda cortado sin forma de leerlo entero.
+5. **El nombre.** Un botón de solo ícono tiene nombre (`sr-only` o
+   `aria-label`) y tooltip. El nombre no repite el texto visible ni se pega a
+   él: «Reponer el stock de…», no «Reponerel» ni «Reponer Reponer».
+6. **Lo que se mueve.** Si se mueve solo más de cinco segundos, tiene un
+   botón para pararlo a la vista y se queda quieto con
+   `prefers-reduced-motion`.
+7. **Lo que se anuncia.** Un error de campo usa `FieldError` (con ícono y
+   `role="alert"`); un resultado que no cambia de pantalla se anuncia en una
+   región viva o en un toast.
 
 ## Do's and Don'ts
 

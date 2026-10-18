@@ -16,7 +16,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       className={cn(
         "h-12 w-full rounded-pill border border-border bg-surface px-4 text-body text-ink",
         "transition-colors duration-150",
-        "placeholder:text-ink-tertiary",
+        "placeholder:text-ink-secondary",
         "focus:border-border-strong",
         "aria-invalid:border-danger",
         "disabled:cursor-not-allowed disabled:opacity-40",
@@ -40,7 +40,7 @@ function Textarea({
       className={cn(
         "min-h-24 w-full rounded-image border border-border bg-surface px-4 py-3 text-body text-ink",
         "transition-colors duration-150 field-sizing-content",
-        "placeholder:text-ink-tertiary",
+        "placeholder:text-ink-secondary",
         "focus:border-border-strong",
         "aria-invalid:border-danger",
         "disabled:cursor-not-allowed disabled:opacity-40",

@@ -226,7 +226,11 @@ export default async function DetalleDeLaOrden({ params }: Props) {
             />
           </Ficha>
 
-          <Ficha id="entrega" titulo={envio ? "Envío" : "Entrega"}>
+          <Ficha
+            id="entrega"
+            titulo={envio ? "Envío" : "Entrega"}
+            texto={!envio}
+          >
             {envio ? (
               <>
                 <Dato titulo="Recibe" valor={direccion.recipientName} />
@@ -253,7 +257,7 @@ export default async function DetalleDeLaOrden({ params }: Props) {
           </Ficha>
 
           {orden.notas ? (
-            <Ficha id="notas" titulo="Notas">
+            <Ficha id="notas" titulo="Notas" texto>
               <p className="text-body-sm whitespace-pre-line text-ink">
                 {orden.notas}
               </p>
@@ -446,17 +450,20 @@ function Devoluciones({ devoluciones }: { devoluciones: Devolucion[] }) {
 function Ficha({
   id,
   titulo,
+  texto = false,
   children,
 }: {
   id: string;
   titulo: string;
+  /** Un párrafo y no rótulos con su dato: va sin `<dl>`, que solo admite esos. */
+  texto?: boolean;
   children: React.ReactNode;
 }) {
-  // Lo único propio es el `<dl>`: estas tres tarjetas son listas de
-  // definiciones —rótulo y dato—, y la caja ya la pone la compartida.
+  // Lo único propio es el `<dl>`: estas tarjetas son listas de definiciones
+  // —rótulo y dato—, y la caja ya la pone la compartida.
   return (
     <TarjetaDeSeccion id={id} titulo={titulo}>
-      <dl className="flex flex-col gap-2.5">{children}</dl>
+      {texto ? children : <dl className="flex flex-col gap-2.5">{children}</dl>}
     </TarjetaDeSeccion>
   );
 }

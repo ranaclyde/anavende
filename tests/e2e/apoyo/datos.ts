@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
+import sharp from "sharp";
 
 /**
  * Los datos de los recorridos de F10.2 — TS §17.2, casos 1 a 5.
@@ -65,6 +66,7 @@ export function datosDePrueba() {
     marcas: [] as string[],
     categorias: [] as string[],
     colores: [] as string[],
+    mediosDePago: [] as { id: string; archivo: string }[],
   };
   let casillaOriginal: string | null = null;
 
@@ -208,6 +210,30 @@ export function datosDePrueba() {
   }
 
   /**
+   * Un medio de pago con logo, que es lo que hace aparecer la hilera de la
+   * portada (`components/shop/home/pagos.tsx`): sin logo no entra. Se sube
+   * solo la miniatura, que es la única que la hilera pide.
+   */
+  async function unMedioDePagoConLogo(nombre: string): Promise<void> {
+    const base = `e2e/logo-${sufijo()}`;
+    const archivo = `${base}-thumb.webp`;
+    const logo = await sharp({
+      create: { width: 96, height: 48, channels: 3, background: "#2f4a6d" },
+    })
+      .webp()
+      .toBuffer();
+    const { error } = await bucket.upload(archivo, logo, {
+      contentType: "image/webp",
+    });
+    if (error) throw error;
+
+    const [fila] = await sql<{ id: string }[]>`
+      INSERT INTO payment_methods (name, logo_key)
+      VALUES (${nombre}, ${base}) RETURNING id`;
+    creados.mediosDePago.push({ id: fila.id, archivo });
+  }
+
+  /**
    * Para borrar al final una cuenta que el test no creó por la API sino por
    * la pantalla de alta.
    */
@@ -304,6 +330,11 @@ export function datosDePrueba() {
     for (const id of creados.colores.splice(0)) {
       await sql`DELETE FROM colors WHERE id = ${id}`;
     }
+    for (const { id, archivo } of creados.mediosDePago.splice(0)) {
+      await sql`DELETE FROM payment_methods WHERE id = ${id}`;
+      const { error } = await bucket.remove([archivo]);
+      if (error) throw error;
+    }
     await sql.end();
   }
 
@@ -315,6 +346,7 @@ export function datosDePrueba() {
     unProducto,
     unaCuenta,
     unaOrden,
+    unMedioDePagoConLogo,
     anotarUsuario,
     anotarProducto,
     casillaDeAvisosDePrueba,
