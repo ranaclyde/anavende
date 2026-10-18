@@ -10,7 +10,10 @@ import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
 import { Button } from "@/components/ui/button";
 import { getIdentity, getSession } from "@/lib/session";
 import { POR_PAGINA } from "@/modules/catalog/products/filtros-tienda";
-import { leerFavoritos, type Favorito } from "@/modules/users/favoritos/queries";
+import {
+  leerFavoritos,
+  type Favorito,
+} from "@/modules/users/favoritos/queries";
 import { leerVista } from "@/modules/users/favoritos/vista";
 
 export const metadata: Metadata = { title: "Favoritos" };
@@ -47,7 +50,10 @@ function urlDePagina(n: number): string {
 
 /** Lo que no es un entero positivo vale 1: un `?pagina=x` no es un error. */
 function leerPagina(valor: string | string[] | undefined): number {
-  const n = Number.parseInt(Array.isArray(valor) ? (valor[0] ?? "") : (valor ?? ""), 10);
+  const n = Number.parseInt(
+    Array.isArray(valor) ? (valor[0] ?? "") : (valor ?? ""),
+    10,
+  );
   return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
@@ -65,7 +71,9 @@ export default async function Favoritos({ searchParams }: Props) {
   }
 
   const pagina = leerPagina(consulta.pagina);
-  const { favoritos, total } = await leerFavoritos(sesion.profile.id, { pagina });
+  const { favoritos, total } = await leerFavoritos(sesion.profile.id, {
+    pagina,
+  });
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   // Una página que ya no existe —se quitaron favoritos, o un enlace viejo—
@@ -117,7 +125,7 @@ export default async function Favoritos({ searchParams }: Props) {
               <TarjetaProducto
                 producto={f}
                 noDisponible={!f.activo}
-                prioridad={i < 3}
+                inmediata={i < 3}
                 accionFavorito={corazon(f)}
               />
             </li>

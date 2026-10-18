@@ -91,17 +91,11 @@ export default async function Home() {
       <li key={producto.slug}>
         <TarjetaProducto
           producto={producto}
-          // NINGUNA va con prioridad, y eso cambió el 2026-09-22: arriba del
-          // pliegue ahora están los bloques del hero, que son los que la
-          // piden. Marcar además la primera fila de tarjetas sería pedirle al
-          // navegador nueve imágenes urgentes, que es lo mismo que no pedirle
-          // ninguna.
-          //
-          // Pero la primera fila tampoco puede ir DIFERIDA (2026-10-05): en
-          // tableta y escritorio sus tarjetas miden 205–248px contra los
-          // 136px de un bloque del hero, así que el LCP es una de ellas, y
-          // diferida llegaba tarde. Va sin diferir y sin prioridad. Cuatro es
-          // el ancho de la grilla.
+          // La primera fila no puede ir DIFERIDA (2026-10-05): en tableta y
+          // escritorio sus tarjetas miden 205–248px contra los 136px de un
+          // bloque del hero, así que el LCP es una de ellas, y diferida
+          // llegaba tarde. Va sin diferir y sin prioridad alta (F10.4: ver
+          // `inmediata`). Cuatro es el ancho de la grilla.
           inmediata={seccion === primeraSeccion && i < 4}
           accionFavorito={
             <BotonFavorito

@@ -136,8 +136,13 @@ export function Galeria({
                   fill
                   sizes="(min-width: 1024px) 55vw, 100vw"
                   // La primera es el LCP de esta pantalla: es lo más grande
-                  // que hay arriba del pliegue.
-                  priority={i === 0}
+                  // que hay arriba del pliegue, en cualquier ancho. Es la
+                  // única imagen de la tienda que pide prioridad alta (TS
+                  // §20). `fetchPriority` y no `preload` (F10.4): React ya
+                  // precarga toda imagen no diferida, y con esto copia la
+                  // prioridad alta a esa precarga, que es lo que la adelanta.
+                  loading={i === 0 ? "eager" : undefined}
+                  fetchPriority={i === 0 ? "high" : undefined}
                   className="object-contain"
                 />
               </div>

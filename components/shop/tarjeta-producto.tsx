@@ -73,18 +73,15 @@ type Props = {
    */
   noDisponible?: boolean;
   /**
-   * `true` en las primeras imágenes de la grilla. `next/image` difiere por
-   * omisión, y diferir la que está arriba de todo penaliza el LCP: es la que
-   * el navegador tendría que estar pidiendo primero.
-   */
-  prioridad?: boolean;
-  /**
-   * Sin carga diferida, pero SIN pedir prioridad: el navegador la trae en su
-   * turno y no espera a que se acerque al pliegue. Es para la primera fila de
-   * la home, que en tableta y escritorio es el LCP —sus tarjetas miden más que
-   * los bloques del hero— y que, diferida, llegaba tarde. Prioridad no: esa ya
-   * la tienen los bloques del hero, y pedirla para las dos cosas es no
-   * pedirla para ninguna.
+   * Sin carga diferida: el navegador la trae en su turno y no espera a que se
+   * acerque al pliegue. Es para la primera fila de una grilla, que está arriba
+   * del pliegue y en tableta y escritorio suele ser el LCP; diferida, llegaba
+   * tarde.
+   *
+   * **Sin prioridad alta** (F10.4): esa es solo para la foto principal de la
+   * ficha (TS §20). Hasta F10.4 el catálogo usaba `priority`; no hace falta,
+   * porque React ya precarga en el servidor toda imagen que no sea diferida
+   * —hasta diez por página—, con prioridad normal.
    */
   inmediata?: boolean;
 };
@@ -93,17 +90,21 @@ export function TarjetaProducto({
   producto,
   accionFavorito,
   noDisponible = false,
-  prioridad,
   inmediata,
 }: Props) {
   const { slug, nombre, marca, imagenKey, color, disponible } = producto;
   const colores = producto.colores ?? [];
   const sinStock = !noDisponible && disponible <= 0;
-  const pildora = noDisponible ? "No disponible" : sinStock ? "Sin stock" : null;
+  const pildora = noDisponible
+    ? "No disponible"
+    : sinStock
+      ? "Sin stock"
+      : null;
 
   // §9: «producto, marca y color». Sin el color, dos tarjetas de la misma
   // ficha se anuncian idénticas.
-  const alt = [nombre, marca].join(" ") + (color ? `, ${color.toLowerCase()}` : "");
+  const alt =
+    [nombre, marca].join(" ") + (color ? `, ${color.toLowerCase()}` : "");
 
   return (
     <article
@@ -145,7 +146,6 @@ export function TarjetaProducto({
               // layout, así elige el archivo correcto en la primera pasada.
               // Son las tres columnas de §7.2: 2 / 3 / 4.
               sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-              priority={prioridad}
               loading={inmediata ? "eager" : undefined}
               className={cn(
                 "object-cover",
