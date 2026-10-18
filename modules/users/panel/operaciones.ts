@@ -1,6 +1,5 @@
 import "server-only";
 
-import { createClient as crearClienteSuelto } from "@supabase/supabase-js";
 import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
@@ -233,6 +232,11 @@ export async function cambiarRolDeUsuario(datos: {
  * —la administradora— y no contra el navegador de la persona que va a abrir el
  * enlace. E2 viaja con `token_hash`, que `/api/auth/confirmar` canjea sin
  * depender de ninguna cookie.
+ *
+ * **Y con la clave de servicio** (F10.5b): con el captcha prendido, GoTrue
+ * pide un token de Turnstile para `/recover`, salvo a quien llama con la clave
+ * de servicio (`verifyCaptcha`, en `internal/api/middleware.go`). Esto lo
+ * dispara la administradora desde el panel, no una persona desde la tienda.
  */
 export async function mandarRecuperacion(id: string): Promise<{
   email: string;
@@ -263,15 +267,12 @@ export async function mandarRecuperacion(id: string): Promise<{
     });
   }
 
-  const cliente = crearClienteSuelto(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
+  const { error } = await createServiceClient().auth.resetPasswordForEmail(
+    usuario.email,
+    {
+      redirectTo: urlDeContrasenaNueva(),
+    },
   );
-
-  const { error } = await cliente.auth.resetPasswordForEmail(usuario.email, {
-    redirectTo: urlDeContrasenaNueva(),
-  });
 
   if (error) throw new Error(`resetPasswordForEmail falló: ${error.message}`);
 

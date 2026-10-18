@@ -8,6 +8,7 @@ import { leerErrores } from "@/lib/form";
 import { createServiceClient } from "@/lib/supabase/service";
 import { limpiar, unaVariante } from "@/tests/apoyo/catalogo";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
+import { CAPTCHA_DE_PRUEBA } from "@/tests/apoyo/captcha";
 import { limpiarOrdenes, unaOrdenActiva } from "@/tests/apoyo/ordenes";
 
 /**
@@ -380,12 +381,20 @@ describe("las dos capas quedan sincronizadas (§13.5)", () => {
     // Antes del bloqueo entra sin problema: si no, lo de abajo no probaría
     // nada sobre el bloqueo.
     expect(
-      await ingresar({ email: cuenta.email, password: CONTRASENA }),
+      await ingresar({
+        email: cuenta.email,
+        password: CONTRASENA,
+        captcha: CAPTCHA_DE_PRUEBA,
+      }),
     ).toMatchObject({ ok: true });
 
     await bloquearCuenta({ id: cuenta.id, motivo: "Pagos rebotados" });
 
-    const r = await ingresar({ email: cuenta.email, password: CONTRASENA });
+    const r = await ingresar({
+      email: cuenta.email,
+      password: CONTRASENA,
+      captcha: CAPTCHA_DE_PRUEBA,
+    });
     expect(r).toMatchObject({ ok: false, code: "USER_BANNED" });
     // Es el criterio de RF-27: no alcanza con negar el acceso, hay que decir
     // por qué. El texto sale de `ban_reason`, que GoTrue no guarda.
@@ -396,6 +405,7 @@ describe("las dos capas quedan sincronizadas (§13.5)", () => {
     const ajena = await ingresar({
       email: cuenta.email,
       password: "otra-cosa",
+      captcha: CAPTCHA_DE_PRUEBA,
     });
     expect(ajena).toMatchObject({ ok: false, code: "VALIDATION" });
     expect(JSON.stringify(ajena)).not.toContain("Pagos rebotados");
@@ -403,7 +413,11 @@ describe("las dos capas quedan sincronizadas (§13.5)", () => {
     // Y después de desbloquear, vuelve a entrar con la misma contraseña.
     await desbloquearCuenta({ id: cuenta.id });
     expect(
-      await ingresar({ email: cuenta.email, password: CONTRASENA }),
+      await ingresar({
+        email: cuenta.email,
+        password: CONTRASENA,
+        captcha: CAPTCHA_DE_PRUEBA,
+      }),
     ).toMatchObject({ ok: true });
   });
 });

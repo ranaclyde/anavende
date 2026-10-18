@@ -6,6 +6,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { db } from "@/db";
 import { createServiceClient } from "@/lib/supabase/service";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
+import { CAPTCHA_DE_PRUEBA } from "@/tests/apoyo/captcha";
 
 /**
  * F7.9 — Ejecutar y revertir bajas de cuenta. RF-34, RF-26, RN-13 · TS §13.5b.
@@ -354,7 +355,11 @@ describe("las dos capas quedan sincronizadas (§13.5b)", () => {
     comoSesion(ana.userId, "admin");
 
     expect(
-      await ingresar({ email: cuenta.email, password: CONTRASENA }),
+      await ingresar({
+        email: cuenta.email,
+        password: CONTRASENA,
+        captcha: CAPTCHA_DE_PRUEBA,
+      }),
     ).toMatchObject({ ok: true });
 
     await pedirBaja(cuenta.id, "Ya no compro por acá");
@@ -363,18 +368,30 @@ describe("las dos capas quedan sincronizadas (§13.5b)", () => {
     // Para GoTrue esto es `user_banned`, el MISMO código que un bloqueo: quién
     // es cada uno lo decide nuestra capa mirando el perfil. Sin eso, a quien
     // se fue por su cuenta le diríamos que lo bloquearon.
-    const r = await ingresar({ email: cuenta.email, password: CONTRASENA });
+    const r = await ingresar({
+      email: cuenta.email,
+      password: CONTRASENA,
+      captcha: CAPTCHA_DE_PRUEBA,
+    });
     expect(r).toMatchObject({ ok: false, code: "ACCOUNT_CLOSED" });
     expect(r.ok === false && r.code).not.toBe("USER_BANNED");
     // La fecha de la baja, solo con la contraseña correcta (F10.5).
     expect(
-      await ingresar({ email: cuenta.email, password: "otra-cosa" }),
+      await ingresar({
+        email: cuenta.email,
+        password: "otra-cosa",
+        captcha: CAPTCHA_DE_PRUEBA,
+      }),
     ).toMatchObject({ ok: false, code: "VALIDATION" });
 
     // Y revertida, vuelve a entrar con la misma contraseña de siempre.
     await revertirBajaDeCuenta({ id: cuenta.id });
     expect(
-      await ingresar({ email: cuenta.email, password: CONTRASENA }),
+      await ingresar({
+        email: cuenta.email,
+        password: CONTRASENA,
+        captcha: CAPTCHA_DE_PRUEBA,
+      }),
     ).toMatchObject({ ok: true });
   });
 

@@ -75,19 +75,23 @@ function origenDeSupabase(): string {
  * `upgrade-insecure-requests` va solo en producción: en local el Storage es
  * `http://127.0.0.1:54321` y forzarlo a HTTPS rompería todas las fotos.
  *
- * **Cuando entre Turnstile (F10.5b)** hay que sumar
- * `https://challenges.cloudflare.com` a `script-src` y a `frame-src`.
+ * **Turnstile (F10.5b)** carga su script y dibuja su iframe desde
+ * `https://challenges.cloudflare.com`: es el único origen de afuera en
+ * `script-src` y en `frame-src`, y solo se usa en las pantallas de cuenta
+ * (`components/shop/turnstile.tsx`).
  */
+const TURNSTILE = "https://challenges.cloudflare.com";
+
 function politicaDeContenido(): string {
   const supabase = origenDeSupabase();
   return [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${enProduccion ? "" : " 'unsafe-eval'"}`,
+    `script-src 'self' 'unsafe-inline' ${TURNSTILE}${enProduccion ? "" : " 'unsafe-eval'"}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob: ${supabase}`,
     "font-src 'self'",
     `connect-src 'self' ${supabase}`,
-    "frame-src 'none'",
+    `frame-src ${TURNSTILE}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

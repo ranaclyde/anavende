@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 
+import {
+  Turnstile,
+  TURNSTILE_ACTIVO,
+  type ControlDeTurnstile,
+} from "@/components/shop/turnstile";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,12 +33,22 @@ export function ForgotPasswordForm() {
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
+  // F10.5b: el token de Turnstile, uno por envío.
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const turnstile = useRef<ControlDeTurnstile>(null);
+  const idDelAviso = useId();
+  const faltaCaptcha = TURNSTILE_ACTIVO && !captcha;
+
   const pedirEnlace = async (e: React.FormEvent) => {
     e.preventDefault();
     setEnviando(true);
     setError(null);
 
-    const r = await pedirRecuperacion({ email });
+    const r = await pedirRecuperacion({
+      email,
+      captcha: captcha ?? undefined,
+    });
+    turnstile.current?.reiniciar();
 
     if (!r.ok) {
       setError(r.message);
@@ -90,6 +105,13 @@ export function ForgotPasswordForm() {
 
           <FieldError>{error}</FieldError>
 
+          <Turnstile
+            accion="recuperacion"
+            ref={turnstile}
+            onToken={setCaptcha}
+            idDelAviso={idDelAviso}
+          />
+
           <Button
             type="submit"
             variant="brand"
@@ -97,6 +119,8 @@ export function ForgotPasswordForm() {
             className="w-full"
             loading={enviando}
             loadingLabel="Mandando el email"
+            disabled={faltaCaptcha}
+            aria-describedby={faltaCaptcha ? idDelAviso : undefined}
           >
             Mandame el enlace
           </Button>
