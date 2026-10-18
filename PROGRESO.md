@@ -2097,7 +2097,7 @@ build` compila.
 |---|---|---|---|
 | F10.1 | Test E2E de aislamiento entre compradores | ✅ | **`npm run e2e` corre `tests/e2e/aislamiento.spec.ts`**: dos compradoras de verdad, con cuenta en GoTrue y contraseña, cada una con dos direcciones, un pedido activo, y el mismo producto en el carrito y en favoritos; B además tiene un producto que A no tiene en ningún lado. **A entra por `/ingresar`** e intenta llegar a lo de B por las dos puertas que existen. **Por la dirección**: `/orden/N`, `/mi-cuenta/compras/N` y `/mi-cuenta/direcciones/<id>` de B dan **404**, y las de A, **200** (sin ese control, un 404 para todos también pasaría). Su carrito, sus favoritos y su listado de compras no muestran nada de B. **Por las acciones**: se captura una llamada verdadera de A sobre lo suyo —guardar, predeterminar y eliminar una dirección, cancelar su pedido, quitar del carrito y de favoritos— y **se repite con el mismo pedido y la misma sesión, cambiando el ID por el de B**, que es lo que haría alguien mirando la red. Lo que se verifica es la base: lo de B quedó igual. **El criterio del plan cambió**, abajo en las decisiones: el carrito y el favorito no tienen pantalla con ID, y «404 en los cuatro» no se podía cumplir al pie de la letra. **Es la primera suite de Playwright**: `playwright.config.mts` toma el entorno de `.env.local` —el mismo que lee `next dev`, así el test escribe en la base que la aplicación lee— con la misma guarda de stack local que `tests/setup/entorno.ts`, y usa el `next dev` que ya esté levantado. Los datos se crean y se borran en el mismo archivo; después de correr no queda ninguna cuenta ni producto de prueba. **Se comprobó que el test puede fallar**: sacándole a mano el filtro por comprador a `leerDireccion`, la dirección de B pasa a dar 200 y el test lo marca; sacándoselo a `eliminarDireccion`, la repetición borra la dirección de B y también lo marca. Las dos roturas se revirtieron. **La Compuerta F10 queda en verde** |
 | F10.2 | Resto de los tests E2E | ✅ | **Los cinco recorridos de §17.2 están, y `npm run e2e` corre los seis casos —diez tests— en unos 17 segundos.** Se hizo en dos PRs: los dos de la tienda primero, y los tres del panel después, sobre el mismo apoyo. **Caso 3, `tests/e2e/cargar-producto.spec.ts`**: la administradora entra por `/ingresar` y carga todo por las pantallas —el alta, dos colores con su stock y **una foto de verdad en cada uno**, un PNG que arma sharp y que pasa por el mismo procesamiento que una de Ana—; después, desde otro navegador y sin sesión, el producto aparece en el catálogo, la ficha tiene los dos colores con su disponible, y la foto de cada uno **carga** (`naturalWidth`, no solo el `alt`). **Caso 4, `tests/e2e/finalizar-orden.spec.ts`**: una orden activa con dos renglones de cantidades distintas —2 y 1, para que un descuento que tomara la cantidad equivocada no pase— y su stock reservado; se finaliza desde el detalle, y en la base `stock_total` baja en lo vendido, la reserva queda en 0, hay un asiento de `venta` por variante, y un tercer color que no está en la orden queda igual. **Caso 5, `tests/e2e/bloquear-usuario.spec.ts`**: con su control —la compradora entra antes del bloqueo—, Ana la bloquea con un motivo desde su ficha, y la compradora, al intentar entrar, lee «Tu cuenta está bloqueada» y **el motivo que escribió Ana**, y no queda con sesión. **Se comprobó que los dos últimos pueden fallar**: con la venta sin descontar `stock_total` falla el 4, y sin el `ban_duration` a GoTrue falla el 5; las dos roturas se revirtieron. Las fotos del caso 3 se borran del storage al terminar (`borrarFotos` en `apoyo/datos.ts`); después de correr no queda ningún archivo de un producto que no exista. **Caso 1, `tests/e2e/buscar.spec.ts`**: sin cuenta, busca desde la portada, filtra por color, abre la ficha, elige color y cantidad, y el enlace de «Comprá ya por WhatsApp» va al número de `site_settings` con producto, marca, color, cantidad, precio y la dirección de la ficha con su `?color=`. Son dos productos con la misma palabra y uno solo tiene el color filtrado: si la búsqueda trajera uno, un filtro que no hiciera nada también pasaría. **Caso 2, `tests/e2e/comprar.spec.ts`**: **la cuenta se crea por `/registro`** y se confirma con el enlace del email, que el test lee del Mailpit del stack local (`apoyo/buzon.ts`); después dos unidades al carrito, checkout con envío a una dirección nueva cargada ahí mismo, y «Confirmar pedido». Se mira la pantalla —la orden en «Mis compras»— y **la base**: la orden activa con el total del resumen, `reserved_stock` en 2 sobre la variante elegida y en 0 sobre la otra, y el carrito vacío. **Se comprobó que puede fallar**: con la reserva de `modules/stock/operaciones.ts` sumando 0, el test lo marca; se revirtió. **El E4 sale de verdad por Resend, a `delivered@resend.dev`** (decisión tuya del 2026-10-17): el test cambia la casilla de avisos mientras corre y la restaura al terminar. Los datos son propios de cada archivo y se borran al final (`apoyo/datos.ts`, una fábrica para que un archivo no le cierre la conexión al siguiente); después de correr no queda ni el email en el buzón. **El tope de `email_sent = 2` de `supabase/config.toml` no traba**: solo rige con un SMTP propio, y la suite corrió entera varias veces en la misma hora |
-| F10.5 | Repaso de seguridad | 🟡 | **Lo grave que apareció: un comprador con sesión leía el panel.** El rol se controlaba solo en el layout de `/admin`, y Next renderiza layout y página **en paralelo**: `/admin/usuarios` le daba 404, pero el HTML de ese 404 traía la página adentro —se comprobó con el email de una tercera cuenta—, y repitiendo la petición que hace el navegador al navegar dentro del panel (RSC, con `Next-Router-State-Tree`) el layout ni corría: 200 y la página entera. Afectaba a las 20 páginas del panel: usuarios, órdenes con teléfonos y direcciones, reportes. **Ahora cada página llama a `exigirAdmin()` (`lib/session.ts`) antes de leer nada**, y también el `generateMetadata` de la ficha de usuario, que lee el nombre. Lo controlan dos tests: `tests/unit/panel/control-de-rol.test.ts`, que falla si una página —también una nueva— no lo llama primero, y `tests/e2e/panel-cerrado.spec.ts`, que repite el ataque y **falla con el código de antes** (se comprobó revirtiendo `app/admin`). **Cabeceras** (`next.config.ts`): CSP fija, como pide §16 y decidiste el 2026-10-17 —con `'unsafe-inline'` en scripts, porque Next los escribe en el HTML; lo que sí frena es el iframe, los formularios hacia afuera y los orígenes que no son el propio ni Supabase—, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y HSTS de un año sin `preload`; y sin `x-powered-by`. **La suite E2E falla si la CSP bloquea algo** (`tests/e2e/apoyo/test.ts`, que mira la consola de todos los navegadores que abre): comprobado sacando `'unsafe-inline'`. **Subida de imágenes**: 30 por minuto por administradora (`lib/limite.ts`, en memoria), probado contra la ruta con 31 envíos —el 31 recibe 429 con «Esperá 60 segundos» y `Retry-After`—, y ahora también rechaza a una administradora bloqueada. **Verificado sin cambios**: *magic bytes* (`tests/unit/media/imagenes.test.ts`, «un HTML disfrazado de .jpg»); la clave de servicio no está en ningún archivo de `.next` después de `DATABASE_URL= npx next build`; Postgres no responde desde afuera en el 5432, 6543 ni 54322 de los dos servidores (V9, 2026-10-17). La revisión de las 85 acciones y las 5 rutas no encontró otra falta de autorización ni SQL armado con texto. **Queda una segunda parte**, abajo de esta tabla: cuatro arreglos que son de la aplicación y lo de GoTrue, que es del servidor |
+| F10.5 | Repaso de seguridad | ✅ | **Lo grave que apareció: un comprador con sesión leía el panel.** El rol se controlaba solo en el layout de `/admin`, y Next renderiza layout y página **en paralelo**: `/admin/usuarios` le daba 404, pero el HTML de ese 404 traía la página adentro —se comprobó con el email de una tercera cuenta—, y repitiendo la petición que hace el navegador al navegar dentro del panel (RSC, con `Next-Router-State-Tree`) el layout ni corría: 200 y la página entera. Afectaba a las 20 páginas del panel: usuarios, órdenes con teléfonos y direcciones, reportes. **Ahora cada página llama a `exigirAdmin()` (`lib/session.ts`) antes de leer nada**, y también el `generateMetadata` de la ficha de usuario, que lee el nombre. Lo controlan dos tests: `tests/unit/panel/control-de-rol.test.ts`, que falla si una página —también una nueva— no lo llama primero, y `tests/e2e/panel-cerrado.spec.ts`, que repite el ataque y **falla con el código de antes** (se comprobó revirtiendo `app/admin`). **Cabeceras** (`next.config.ts`): CSP fija, como pide §16 y decidiste el 2026-10-17 —con `'unsafe-inline'` en scripts, porque Next los escribe en el HTML; lo que sí frena es el iframe, los formularios hacia afuera y los orígenes que no son el propio ni Supabase—, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y HSTS de un año sin `preload`; y sin `x-powered-by`. **La suite E2E falla si la CSP bloquea algo** (`tests/e2e/apoyo/test.ts`, que mira la consola de todos los navegadores que abre): comprobado sacando `'unsafe-inline'`. **Subida de imágenes**: 30 por minuto por administradora (`lib/limite.ts`, en memoria), probado contra la ruta con 31 envíos —el 31 recibe 429 con «Esperá 60 segundos» y `Retry-After`—, y ahora también rechaza a una administradora bloqueada. **Verificado sin cambios**: *magic bytes* (`tests/unit/media/imagenes.test.ts`, «un HTML disfrazado de .jpg»); la clave de servicio no está en ningún archivo de `.next` después de `DATABASE_URL= npx next build`; Postgres no responde desde afuera en el 5432, 6543 ni 54322 de los dos servidores (V9, 2026-10-17). La revisión de las 85 acciones y las 5 rutas no encontró otra falta de autorización ni SQL armado con texto. **La segunda parte**, abajo de esta tabla, se cerró el 2026-10-17: cuatro arreglos de la aplicación (#60), la IP del comprador hasta GoTrue (#61), y en los servidores los límites de GoTrue, la tienda solo por Cloudflare y la reautenticación al cambiar la contraseña |
 
 ### F10.5, segunda parte — lo que se habló el 2026-10-17
 
@@ -2336,7 +2336,9 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
    *Backup Standard* de DonWeb —semanal, del VPS entero, una sola copia, se
    restaura por ticket— sigue activo y es lo único que hay. Lo evaluado está en
    la fila de F0.10.
-5. **F10.5 — los límites de GoTrue en el servidor DATA**, para ver juntos.
+5. ✅ **F10.5 — los límites de GoTrue en el servidor DATA. Hechos el
+   2026-10-17**; lo que sigue es cómo se llegó, y lo que queda opcional al
+   final.
    Leído en el código de la v2.184.0 (`internal/api/middleware.go`):
    **si `GOTRUE_RATE_LIMIT_HEADER` está vacía, GoTrue no limita por persona
    ni el ingreso, ni el alta, ni la recuperación**; queda solo el tope global
@@ -2440,15 +2442,70 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
      función y que `@supabase/ssr` de verdad manda las cabeceras en el
      ingreso y en la renovación. **Falta** la clave en Coolify,
      `SUPABASE_CLAVE_CLIENTE_IP`, la misma del archivo de nginx.
+     ✅ **Hecho (2026-10-17)**: la clave está en Coolify como variable de
+     ejecución, el #61 se mergeó y desplegó, y `/api/salud` sigue en 200.
+   - **Paso 3, que al sitio no se llegue sin Cloudflare — cuidado con el
+     panel.** El panel de Coolify también entra por el 443 del APP, como
+     `https://vps-5490980-x.dattaweb.com` (redirige a `/login`), y ese nombre
+     no pasa por Cloudflare. **Cerrar el 443 por firewall a todo lo que no
+     sea Cloudflare dejaría afuera el panel** y, probablemente, los avisos de
+     GitHub que disparan cada despliegue. Por eso el cierre va en Traefik y
+     solo para el router de la tienda, no en el firewall. El 8000, el 6001 y
+     el 8080 del APP no responden desde internet.
+     ✅ **Hecho (2026-10-17).** En *Container Labels* de la tienda en Coolify:
+     un middleware `solo-cloudflare` (`ipallowlist.sourcerange` con los 15
+     rangos IPv4 y los 7 IPv6 de `cloudflare.com/ips` de ese día) puesto
+     primero en las dos rutas HTTPS —`https-0-…` (`anavende.com.ar`):
+     `solo-cloudflare,gzip`; `https-1-…` (`www`):
+     `solo-cloudflare,gzip,1-…-to-non-www`—. Las del 80 solo redirigen y no
+     lo llevan. Comprobado desde afuera después del Redeploy: por Cloudflare
+     todo igual; directo a `149.34.225.107` con el nombre de la tienda,
+     **403**, también con `www` y con una `CF-Connecting-IP` inventada; el
+     panel sigue entrando. **Dos cosas para el día de mañana:** (1) las
+     etiquetas quedaron en **«Managed manually»** —si no, Coolify las
+     regenera y borra la regla—, así que **agregar o cambiar un dominio de la
+     tienda en Coolify ya no actualiza las rutas**: hay que editarlas a mano,
+     o volver a «Managed by Coolify» y agregar `solo-cloudflare` de nuevo;
+     (2) **si Cloudflare suma un rango** a `cloudflare.com/ips` (pasa muy de
+     vez en cuando), las visitas que entren por él darían 403 hasta
+     agregarlo.
+   - ✅ **Paso 4, GoTrue (2026-10-17).** `GOTRUE_RATE_LIMIT_HEADER:
+     "X-Cliente-Ip"` en el bloque `auth.environment` de
+     `~/app/docker-compose.override.yml`, debajo de las plantillas —la copia
+     de antes es `docker-compose.override.yml.antes-de-limites`—; comprobado
+     con `docker compose config auth` y aplicado con `docker compose up -d
+     auth`, que recrea solo GoTrue. `docker compose exec auth env` la
+     muestra.
+   - ✅ **Paso 5, comprobado desde afuera (2026-10-17).** Con la clave
+     anónima de producción —pública, viaja en el JavaScript de la tienda—,
+     36 pedidos de recuperación directo a GoTrue para un email inventado
+     —que no manda ningún email—: **los primeros 30 dieron 200 y después
+     429** `over_request_rate_limit`. Con el cupo agotado, **un pedido por
+     `/recuperar` de la tienda, desde la misma máquina, recibió el mismo
+     429** («No pudimos mandar el email»): GoTrue vio la IP del comprador
+     que reenvió la tienda con la clave, a través de nginx y Kong. Y el
+     control: 25 segundos después, con un lugar liberado, la misma pantalla
+     dijo «Revisá tu email». **La cadena entera funciona.**
+   - ✅ **La reautenticación al cambiar la contraseña (2026-10-17).**
+     `GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION: "true"` en el
+     mismo bloque del override —copia de antes:
+     `docker-compose.override.yml.antes-de-reautenticacion`—, aplicado con
+     `docker compose up -d auth` y visible en `docker compose exec auth env`.
+     Leído en `internal/api/user.go` de la v2.184.0: **si la sesión tiene más
+     de 24 horas desde el ingreso**, GoTrue rechaza la contraseña nueva con
+     `reauthentication_needed` hasta que se reingrese o se mande el código
+     por email. **No hizo falta tocar la pantalla** —lo que se había anotado
+     antes estaba mal—: `cambiarContrasena` ya traduce ese error a «Por
+     seguridad, cerrá sesión y volvé a entrar antes de cambiarla», y al
+     reingresar la sesión es nueva. La recuperación por email tampoco se ve
+     afectada: el enlace abre una sesión nueva. **El límite:** una sesión
+     robada de menos de 24 horas todavía puede cambiarla; achica la ventana,
+     no la cierra.
    (3) **Que el 443 del servidor APP solo acepte a
    Cloudflare**: hoy contesta directo a su IP, y eso deja inventar la IP con
    la que la aplicación cuenta los intentos (segunda parte de F10.5, punto
-   4). **Aparte, opcional:** con
-   `GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION` apagada —en el
-   stack local lo está; en producción no se sabe desde afuera— una sesión
-   robada cambia la contraseña sin saber la actual. Prenderla no es solo la
-   variable: GoTrue pide un código por email y la pantalla de cambio de
-   contraseña tendría que pedirlo.
+   4). **Aparte:** la reautenticación al cambiar la contraseña, que también
+   se prendió (arriba, en la lista de lo relevado).
 6. **El correo del dominio, en este orden — baja prioridad**, decidido el
    2026-09-11: nada de esto frena la tienda. Hoy `hola@anavende.com.ar` **no es
    una casilla en ningún lado**: es el remitente con el que Resend firma, y los
