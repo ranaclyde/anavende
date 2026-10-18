@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 
+import {
+  Turnstile,
+  TURNSTILE_ACTIVO,
+  type ControlDeTurnstile,
+} from "@/components/shop/turnstile";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,11 +36,22 @@ export function AvisoDeVerificacion({
   const [reenviado, setReenviado] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // F10.5b: el reenvío también pide el token de Turnstile.
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const turnstile = useRef<ControlDeTurnstile>(null);
+  const idDelAviso = useId();
+  const faltaCaptcha = TURNSTILE_ACTIVO && !captcha;
+
   const reenviar = () => {
     if (!email) return;
     setError(null);
     iniciar(async () => {
-      const r = await enviarVerificacion({ email, volver });
+      const r = await enviarVerificacion({
+        email,
+        volver,
+        captcha: captcha ?? undefined,
+      });
+      turnstile.current?.reiniciar();
       if (r.ok) setReenviado(true);
       else setError(r.message);
     });
@@ -69,16 +85,27 @@ export function AvisoDeVerificacion({
                 Listo, te mandamos otro.
               </p>
             ) : (
-              <Button
-                type="button"
-                variant="secondary"
-                size="md"
-                loading={reenviando}
-                loadingLabel="Reenviando"
-                onClick={reenviar}
-              >
-                No me llegó, reenviar
-              </Button>
+              <>
+                <div className="self-stretch">
+                  <Turnstile
+                    ref={turnstile}
+                    onToken={setCaptcha}
+                    idDelAviso={idDelAviso}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  loading={reenviando}
+                  loadingLabel="Reenviando"
+                  disabled={faltaCaptcha}
+                  aria-describedby={faltaCaptcha ? idDelAviso : undefined}
+                  onClick={reenviar}
+                >
+                  No me llegó, reenviar
+                </Button>
+              </>
             )}
             <FieldError>{error}</FieldError>
           </div>

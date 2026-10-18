@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 
 // Google y Facebook quedan APAGADOS hasta que F1.7 tenga las apps creadas en
 // las consolas de Google y Meta (2026-09-10, pedido tuyo). El componente
@@ -11,6 +11,11 @@ import { useState, useTransition } from "react";
 // la pantalla donde menos conviene dudar. Para volver: descomentar esta línea
 // y la del render, abajo. No hace falta nada más.
 // import { ProveedoresSociales } from "@/components/shop/proveedores-sociales";
+import {
+  Turnstile,
+  TURNSTILE_ACTIVO,
+  type ControlDeTurnstile,
+} from "@/components/shop/turnstile";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,6 +45,12 @@ export function SignUpForm({ volver }: { volver?: string }) {
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
 
+  // F10.5b: el token de Turnstile, uno por envío.
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const turnstile = useRef<ControlDeTurnstile>(null);
+  const idDelAviso = useId();
+  const faltaCaptcha = TURNSTILE_ACTIVO && !captcha;
+
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const datos = new FormData(e.currentTarget);
@@ -56,7 +67,9 @@ export function SignUpForm({ volver }: { volver?: string }) {
         // cuenta» (F5.7): el alta es el camino largo, y es el único que pasa
         // por otra pestaña.
         volver,
+        captcha: captcha ?? undefined,
       });
+      turnstile.current?.reiniciar();
 
       if (!r.ok) {
         setErrores(leerErrores<Campo>(r));
@@ -179,6 +192,12 @@ export function SignUpForm({ volver }: { volver?: string }) {
 
           <FieldError>{errores.general}</FieldError>
 
+          <Turnstile
+            ref={turnstile}
+            onToken={setCaptcha}
+            idDelAviso={idDelAviso}
+          />
+
           <Button
             type="submit"
             variant="brand"
@@ -186,6 +205,8 @@ export function SignUpForm({ volver }: { volver?: string }) {
             className="w-full"
             loading={enviando}
             loadingLabel="Creando la cuenta"
+            disabled={faltaCaptcha}
+            aria-describedby={faltaCaptcha ? idDelAviso : undefined}
           >
             Crear cuenta
           </Button>

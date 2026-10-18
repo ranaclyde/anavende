@@ -73,6 +73,13 @@ export const rutaDeRegreso = z
   .transform((v) => (v.startsWith("/") && !v.startsWith("//") ? v : undefined))
   .optional();
 
+/**
+ * El token de Turnstile (F10.5b, §16). Lo valida GoTrue, no la tienda: acá
+ * solo se acota. Opcional porque sin `NEXT_PUBLIC_TURNSTILE_SITE_KEY` no hay
+ * widget —en desarrollo sin claves— y GoTrue tampoco lo pide.
+ */
+const captcha = z.string().trim().max(4096).optional();
+
 export const registroSchema = z.object({
   firstName: nombre,
   lastName: apellido,
@@ -80,18 +87,24 @@ export const registroSchema = z.object({
   phone: telefono,
   password: contrasena,
   volver: rutaDeRegreso,
+  captcha,
 });
 export type EntradaRegistro = z.input<typeof registroSchema>;
 
 export const ingresoSchema = z.object({
   email,
   password: z.string().min(1, "Escribí tu contraseña."),
+  captcha,
 });
 
-export const reenvioSchema = z.object({ email, volver: rutaDeRegreso });
+export const reenvioSchema = z.object({
+  email,
+  volver: rutaDeRegreso,
+  captcha,
+});
 
 /** RF-05: el pedido del enlace para cambiar la contraseña. */
-export const recuperacionSchema = z.object({ email });
+export const recuperacionSchema = z.object({ email, captcha });
 
 /** Se completa tras el primer ingreso por Google o Facebook (RF-06). */
 export const completarPerfilSchema = z.object({

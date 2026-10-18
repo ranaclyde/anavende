@@ -1,7 +1,6 @@
 "use server";
 
 import * as Sentry from "@sentry/nextjs";
-import { createClient as crearClienteSuelto } from "@supabase/supabase-js";
 import { eq, sql } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
@@ -14,6 +13,7 @@ import { domainError } from "@/lib/errors";
 import { frenarSiInsiste } from "@/lib/limite";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { coincideLaContrasena } from "@/modules/users/contrasena";
 import { actualizarDatos } from "@/modules/users/perfil";
 import {
   cambioDeContrasenaSchema,
@@ -51,11 +51,34 @@ import {
  * que frena a quien le pega directo, va aparte: PROGRESO.md, F10.5.
  */
 const MINUTO = 60_000;
+
+/**
+ * El token de Turnstile, en las opciones que entiende GoTrue (F10.5b). Sin
+ * token no se manda nada: en desarrollo sin claves no hay widget, y GoTrue
+ * tampoco lo pide.
+ */
+function conCaptcha(token: string | undefined) {
+  return token ? { captchaToken: token } : {};
+}
+
+/**
+ * GoTrue rechazó el token de Turnstile: vencido, ya usado o de un robot. No
+ * dice nada de la cuenta, así que se puede informar igual en todas las
+ * pantallas. La pantalla pide un token nuevo después de cada envío.
+ */
+function captchaFallido() {
+  return domainError("VALIDATION", {
+    message:
+      "No pudimos comprobar que sos una persona. Esperá a que termine la verificación de abajo y probá de nuevo.",
+  });
+}
+
 const CUPOS = {
   ingreso: { tope: 10, ventanaMs: 5 * MINUTO },
   alta: { tope: 5, ventanaMs: 60 * MINUTO },
   reenvio: { tope: 5, ventanaMs: 15 * MINUTO },
   recuperacion: { tope: 5, ventanaMs: 15 * MINUTO },
+  contrasenaActual: { tope: 10, ventanaMs: 15 * MINUTO },
 };
 
 function urlDeConfirmacion(volver?: string) {
@@ -101,8 +124,21 @@ export const registrar = action
           first_name: input.firstName,
         },
         emailRedirectTo: urlDeConfirmacion(input.volver),
+        ...conCaptcha(input.captcha),
       },
     });
+
+    if (errorAlta?.code === "captcha_failed") throw captchaFallido();
+
+    // El tope de emails por hora de GoTrue (F10.5b): está para que un ataque
+    // no se coma el cupo de Resend, y cuando se llega no sale el email de
+    // verificación, así que tampoco se crea la cuenta.
+    if (errorAlta?.code === "over_email_send_rate_limit") {
+      throw domainError("VALIDATION", {
+        message:
+          "Ahora no podemos mandarte el email para confirmar la cuenta. Probá de nuevo en un rato.",
+      });
+    }
 
     if (errorAlta || !alta.user) {
       throw new Error(`signUp falló: ${errorAlta?.message}`);
@@ -165,13 +201,18 @@ export const registrar = action
  * si el email no tiene cuenta, no crea ninguna. El perfil sigue siendo
  * obligatorio y solo lo crea `registrar`.
  */
-async function mandarVerificacion(email: string, volver?: string) {
+async function mandarVerificacion(
+  email: string,
+  volver?: string,
+  captcha?: string,
+) {
   const supabase = await createClient();
   return supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: urlDeConfirmacion(volver),
       shouldCreateUser: false,
+      ...conCaptcha(captcha),
     },
   });
 }
@@ -191,7 +232,12 @@ export const enviarVerificacion = action
     // antes se avisaba «esperá un momento», pero GoTrue solo frena a una
     // cuenta que existe, así que pedir dos veces seguidas decía si el email
     // estaba registrado. Quien pidió dos veces ya tiene el primero en camino.
-    await mandarVerificacion(input.email, input.volver);
+    const { error } = await mandarVerificacion(
+      input.email,
+      input.volver,
+      input.captcha,
+    );
+    if (error?.code === "captcha_failed") throw captchaFallido();
     return { enviado: true };
   });
 
@@ -214,8 +260,10 @@ export const pedirRecuperacion = action
     const supabase = await createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(input.email, {
       redirectTo: urlDeConfirmacion("/recuperar/nueva-contrasena"),
+      ...conCaptcha(input.captcha),
     });
 
+    if (error?.code === "captcha_failed") throw captchaFallido();
     if (error && error.code !== "over_email_send_rate_limit") {
       throw domainError("VALIDATION", {
         message: "No pudimos mandar el email. Probá de nuevo en un momento.",
@@ -238,9 +286,13 @@ export const ingresar = action
     const { error } = await supabase.auth.signInWithPassword({
       email: input.email,
       password: input.password,
+      options: conCaptcha(input.captcha),
     });
 
     if (!error) return { ok: true as const };
+
+    // GoTrue mira el token antes que la cuenta: esto no dice si existe.
+    if (error.code === "captcha_failed") throw captchaFallido();
 
     // RF-27: el bloqueado ve LA RAZÓN. GoTrue devuelve `user_banned` —también
     // cuando la contraseña es incorrecta, comprobado en F1.7— pero no guarda
@@ -258,36 +310,27 @@ export const ingresar = action
     // contraseña se compara acá contra el hash de GoTrue: si no coincide, es
     // el mismo mensaje que una contraseña mal escrita.
     if (error.code === "user_banned") {
-      const [perfil] = await db.execute<{
-        motivo: string | null;
-        closedAt: string | null;
-        coincide: boolean;
-      }>(sql`
-        SELECT p.ban_reason AS motivo,
-               p.closed_at AS "closedAt",
-               (u.encrypted_password <> ''
-                AND u.encrypted_password =
-                    extensions.crypt(${input.password}, u.encrypted_password))
-                 AS coincide
-          FROM user_profiles p
-          JOIN auth.users u ON u.id = p.id
-         WHERE lower(p.email) = ${input.email}
-         LIMIT 1`);
-
-      if (!perfil?.coincide) {
-        throw domainError("VALIDATION", {
-          message: NO_COINCIDEN,
-        });
+      if (!(await coincideLaContrasena(input.email, input.password))) {
+        throw domainError("VALIDATION", { message: NO_COINCIDEN });
       }
 
-      if (perfil.closedAt) {
+      const [perfil] = await db
+        .select({
+          motivo: userProfiles.banReason,
+          closedAt: userProfiles.closedAt,
+        })
+        .from(userProfiles)
+        .where(eq(sql`lower(${userProfiles.email})`, input.email))
+        .limit(1);
+
+      if (perfil?.closedAt) {
         throw domainError("ACCOUNT_CLOSED", {
-          dadaDeBajaEl: new Date(perfil.closedAt).toISOString(),
+          dadaDeBajaEl: perfil.closedAt.toISOString(),
         });
       }
 
       throw domainError("USER_BANNED", {
-        motivo: perfil.motivo,
+        motivo: perfil?.motivo ?? null,
       });
     }
 
@@ -384,43 +427,6 @@ export const guardarMisDatos = action
   });
 
 /**
- * ¿Es esta la contraseña de la cuenta? Se le pregunta a GoTrue ingresando.
- *
- * **Con un cliente suelto, que no escribe cookies.** El de la sesión, si el
- * ingreso sale bien, reemplazaría la sesión de la persona por la de la
- * comprobación. Y la sesión que abre la comprobación **se cierra en el acto,
- * con alcance `local`**: el `global` por omisión cerraría también la de ella.
- *
- * Existe la alternativa de GoTrue —`current_password` en `updateUser`—, pero
- * solo funciona con `GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD`
- * encendido en el servidor DATA, y esto no depende de cómo esté configurado.
- */
-async function esLaContrasena(email: string, password: string) {
-  const cliente = crearClienteSuelto(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
-
-  const { error } = await cliente.auth.signInWithPassword({ email, password });
-
-  if (!error) {
-    await cliente.auth.signOut({ scope: "local" });
-    return true;
-  }
-
-  if (error.code === "invalid_credentials") return false;
-
-  if (error.code === "over_request_rate_limit") {
-    throw domainError("VALIDATION", {
-      message: "Probaste muchas veces seguidas. Esperá un momento.",
-    });
-  }
-
-  throw new Error(`comprobar la contraseña falló: ${error.message}`);
-}
-
-/**
  * Deja anotado que una cuenta de Google o Facebook ya tiene contraseña.
  *
  * GoTrue **no suma `email` a `providers`** cuando la define —comprobado en
@@ -471,7 +477,11 @@ export const cambiarContrasena = action
       if (!identity.email) {
         throw new Error("sesión con contraseña y sin email");
       }
-      if (!(await esLaContrasena(identity.email, input.actual))) {
+      // En la base y no ingresando en GoTrue, que con el captcha prendido
+      // pediría un token (`coincideLaContrasena`, F10.5b). Por eso el tope:
+      // el de GoTrue ya no aplica a esta comprobación.
+      await frenarSiInsiste("contrasena-actual", CUPOS.contrasenaActual);
+      if (!(await coincideLaContrasena(identity.email, input.actual))) {
         throw errorEnCampo("actual", "Esa no es tu contraseña actual.");
       }
     }

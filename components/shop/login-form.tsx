@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 
 // Google y Facebook quedan APAGADOS hasta que F1.7 tenga las apps creadas en
 // las consolas de Google y Meta (2026-09-10, pedido tuyo). El componente
@@ -11,6 +11,11 @@ import { useState, useTransition } from "react";
 // la pantalla donde menos conviene dudar. Para volver: descomentar esta línea
 // y la del render, abajo. No hace falta nada más.
 // import { ProveedoresSociales } from "@/components/shop/proveedores-sociales";
+import {
+  Turnstile,
+  TURNSTILE_ACTIVO,
+  type ControlDeTurnstile,
+} from "@/components/shop/turnstile";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -58,6 +63,13 @@ export function LoginForm({
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
   const [reenviado, setReenviado] = useState(false);
 
+  // F10.5b: un token por envío, que sirve igual para ingresar y para
+  // reenviar la verificación. Después de cada uno se pide otro.
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const turnstile = useRef<ControlDeTurnstile>(null);
+  const idDelAviso = useId();
+  const faltaCaptcha = TURNSTILE_ACTIVO && !captcha;
+
   const bloqueado = errores.codigo === "USER_BANNED";
   const dadoDeBaja = errores.codigo === "ACCOUNT_CLOSED";
   const sinVerificar = errores.codigo === "EMAIL_NOT_VERIFIED";
@@ -74,7 +86,9 @@ export function LoginForm({
       const r = await ingresar({
         email: String(datos.get("email") ?? ""),
         password: String(datos.get("password") ?? ""),
+        captcha: captcha ?? undefined,
       });
+      turnstile.current?.reiniciar();
 
       if (!r.ok) {
         setErrores(leerErrores<Campo>(r));
@@ -91,7 +105,12 @@ export function LoginForm({
     iniciarReenvio(async () => {
       // Con el `volver` puesto, el enlace del email devuelve a donde estaba
       // queriendo comprar y no a «Mi cuenta» (F5.7).
-      const r = await enviarVerificacion({ email: emailSinVerificar, volver });
+      const r = await enviarVerificacion({
+        email: emailSinVerificar,
+        volver,
+        captcha: captcha ?? undefined,
+      });
+      turnstile.current?.reiniciar();
       if (r.ok) setReenviado(true);
       else setErrores((prev) => ({ ...prev, general: r.message }));
     });
@@ -238,6 +257,8 @@ export function LoginForm({
                   size="sm"
                   loading={reenviando}
                   loadingLabel="Reenviando"
+                  disabled={faltaCaptcha}
+                  aria-describedby={faltaCaptcha ? idDelAviso : undefined}
                   onClick={reenviar}
                 >
                   Reenviar verificación
@@ -250,6 +271,12 @@ export function LoginForm({
             <FieldError>{errores.general}</FieldError>
           )}
 
+          <Turnstile
+            ref={turnstile}
+            onToken={setCaptcha}
+            idDelAviso={idDelAviso}
+          />
+
           <Button
             type="submit"
             variant="brand"
@@ -257,6 +284,8 @@ export function LoginForm({
             className="w-full"
             loading={enviando}
             loadingLabel="Ingresando"
+            disabled={faltaCaptcha}
+            aria-describedby={faltaCaptcha ? idDelAviso : undefined}
           >
             Ingresar
           </Button>

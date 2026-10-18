@@ -108,7 +108,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules/postgres ./node_modules/postgres
 COPY --from=builder --chown=nextjs:nodejs /app/db/migrations ./db/migrations
-COPY --chown=nextjs:nodejs scripts/migrar.mjs scripts/salud.mjs ./scripts/
+COPY --chown=nextjs:nodejs scripts/migrar.mjs scripts/salud.mjs scripts/limpiar-cuentas.mjs ./scripts/
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 
 # sharp explícito y no confiando en el trazado: es la pieza que §18.1 señala
