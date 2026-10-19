@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, ChartColumn, Download, Minus } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { BarraDePeriodo } from "@/components/admin/reportes/barra-de-periodo";
@@ -179,6 +180,12 @@ export default async function Reportes({
           <VacioDelPanel
             icono={ChartColumn}
             titulo="No hubo ventas en este período"
+            accion={
+              // El listado abre en «Activas», que es su solapa de fábrica.
+              <Button asChild variant="secondary" size="sm">
+                <Link href="/admin/ordenes">Ver las órdenes activas</Link>
+              </Button>
+            }
           >
             Una orden cuenta como venta el día en que se finaliza. Probá con
             otro período, o mirá las órdenes activas que todavía falta entregar.

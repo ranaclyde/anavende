@@ -76,7 +76,7 @@ function siEsDuplicado(e: unknown): never {
   if (esDuplicado(e)) {
     throw domainError("VALIDATION", {
       message:
-        "Ese color, o esa combinación de colores, ya está cargado en este producto. Editá la variante que ya existe en vez de agregar otra.",
+        "Ese color, o esa combinación de colores, ya está cargado en este producto. Editá el que ya está en vez de agregarlo de nuevo.",
     });
   }
   throw e;
@@ -132,7 +132,7 @@ async function verificarColor(
   ) {
     throw domainError("ENTITY_IN_USE", {
       message:
-        "Ese color está inactivo, así que no puede tener una variante activa en un producto activo. Activá el color, o guardá la variante como inactiva.",
+        "Ese color está inactivo en el catálogo, así que no puede ofrecerse en un producto activo. Activalo en «Colores», o guardalo en este producto como inactivo.",
     });
   }
 }
@@ -177,7 +177,7 @@ export const agregarUnaVariante = action
           variantId: fila.id,
           nuevoTotal: input.stockTotal,
           actorUserId: ctx.session.profile.id,
-          note: "Stock inicial de la variante",
+          note: "Stock inicial al agregar el color",
         });
 
         return fila.id;
@@ -422,7 +422,8 @@ export const reutilizarImagenes = action
     if (input.sourceId) {
       if (input.sourceId === input.id) {
         throw domainError("VALIDATION", {
-          message: "Una variante no puede reutilizar sus propias imágenes.",
+          message:
+            "Un color no puede reutilizar sus propias fotos. Elegí otro.",
         });
       }
 
@@ -438,7 +439,7 @@ export const reutilizarImagenes = action
       if (fuente.productId !== actual.productId) {
         throw domainError("VALIDATION", {
           message:
-            "Solo se pueden reutilizar las imágenes de otra variante del mismo producto.",
+            "Solo se pueden reutilizar las fotos de otro color del mismo producto. Actualizá la página y elegí de nuevo.",
         });
       }
 
@@ -449,13 +450,13 @@ export const reutilizarImagenes = action
       if (fuente.imagesSourceId) {
         throw domainError("VALIDATION", {
           message:
-            "Esa variante ya está reutilizando las imágenes de otra. Elegí la que las tiene de verdad.",
+            "Ese color ya usa las fotos de otro. Elegí el color que las tiene de verdad.",
         });
       }
 
       if (actual.prestadaA > 0) {
         throw domainError("VALIDATION", {
-          message: `Hay ${actual.prestadaA === 1 ? "otra variante que reutiliza" : `${actual.prestadaA} variantes que reutilizan`} las imágenes de esta, así que no puede reutilizar las de otra. Cambialas primero.`,
+          message: `${actual.prestadaA === 1 ? "Otro color usa" : `${actual.prestadaA} colores usan`} las fotos de este, así que este no puede usar las de otro. Cambiá primero ${actual.prestadaA === 1 ? "ese color" : "esos colores"}.`,
         });
       }
 
@@ -468,7 +469,7 @@ export const reutilizarImagenes = action
        */
       if (actual.propias > 0) {
         throw domainError("VALIDATION", {
-          message: `Esta variante tiene ${actual.propias === 1 ? "una imagen propia" : `${actual.propias} imágenes propias`}. Borrá${actual.propias === 1 ? "la" : "las"} para poder reutilizar las de otra.`,
+          message: `Este color tiene ${actual.propias === 1 ? "una foto propia" : `${actual.propias} fotos propias`}. Borrá${actual.propias === 1 ? "la" : "las"} para poder usar las de otro.`,
         });
       }
     }

@@ -141,13 +141,13 @@ export async function publicarImagenDeVariante({
   if (estado.imagesSourceId) {
     throw domainError("VALIDATION", {
       message:
-        "Esa variante está reutilizando las imágenes de otra. Dejá de reutilizarlas para poder subirle las propias.",
+        "Ese color usa las fotos de otro. Dejá de reutilizarlas para poder subirle las propias.",
     });
   }
 
   if (estado.n >= MAXIMO_POR_VARIANTE) {
     throw domainError("VALIDATION", {
-      message: `Esa variante ya tiene ${MAXIMO_POR_VARIANTE} imágenes, que son las que entran. Borrá una para subir otra.`,
+      message: `Ese color ya tiene ${MAXIMO_POR_VARIANTE} fotos, que son las que entran. Borrá una para subir otra.`,
     });
   }
 

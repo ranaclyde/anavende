@@ -104,7 +104,7 @@ export function ListadoDeMediosDePago({
     setPorBorrar(null);
     correr(async () => {
       const r = await eliminarUnMedioDePago({ id: medio.id });
-      if (r.ok) avisar(`Borramos «${medio.name}».`);
+      if (r.ok) avisar(`Borraste «${medio.name}».`);
       return r;
     });
   };

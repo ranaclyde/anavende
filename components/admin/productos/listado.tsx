@@ -118,7 +118,7 @@ export function ListadoDeProductos({
       // check verde al lado la frase se lee de reojo como «listo, borrado»,
       // que es justo lo que no pasó.
       if (r.data.resultado === "borrado") {
-        avisar(`Borramos «${p.name}».`);
+        avisar(`Borraste «${p.name}».`);
       } else {
         avisarConPero(
           `«${p.name}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede borrar: lo desactivamos y ya no se ve en la tienda.`,

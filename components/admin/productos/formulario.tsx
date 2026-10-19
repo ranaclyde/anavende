@@ -203,7 +203,7 @@ export function FormularioDeProducto({
       // exactamente el caso que DR §6.15 llama flotante.
       avisar(
         producto
-          ? `Guardamos los cambios de «${nombre.trim()}».`
+          ? `Guardaste los cambios de «${nombre.trim()}».`
           : `Creaste «${nombre.trim()}». Cargale un color para poder venderlo.`,
       );
 

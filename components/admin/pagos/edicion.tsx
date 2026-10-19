@@ -139,7 +139,7 @@ export function EdicionDeMedioDePago({
 
       avisar(
         medio
-          ? `Guardamos «${nombre.trim()}».`
+          ? `Guardaste «${nombre.trim()}».`
           : `Creaste el medio de pago «${nombre.trim()}».`,
       );
       alCerrar();

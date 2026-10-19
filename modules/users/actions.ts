@@ -499,11 +499,14 @@ export const cambiarContrasena = action
     }
 
     if (error.code === "weak_password") {
-      throw errorEnCampo("nueva", "Esa contraseña es muy fácil de adivinar.");
+      throw errorEnCampo(
+        "nueva",
+        "Esa contraseña es muy fácil de adivinar. Probá con una más larga.",
+      );
     }
 
     // Con *Secure password change* encendido, GoTrue pide reingresar a quien
-    // entró hace más de 24 horas. Hoy está apagado; si alguien lo enciende,
+    // entró hace más de 24 horas. En producción está encendido desde F10.5:
     // esto dice qué hacer en vez de fallar mudo.
     if (error.code === "reauthentication_needed") {
       throw domainError("VALIDATION", {

@@ -115,7 +115,7 @@ export function PanelDeCatalogo({
       // «Destacar» y «Activar», que por eso no avisan nada.
       if (c.accion === "borrar") {
         avisar(
-          `Borramos ${palabras.articulo} ${palabras.singular} «${c.item.name}».`,
+          `Borraste ${palabras.articulo} ${palabras.singular} «${c.item.name}».`,
         );
       }
       setConfirmacion(null);
