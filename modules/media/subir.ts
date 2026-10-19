@@ -335,6 +335,21 @@ export function urlDeImagen(storageKey: string, sufijo: string): string {
   return almacenamiento().publicUrl(clave(storageKey, sufijo));
 }
 
+/**
+ * La vista previa al compartir, servida desde el dominio de la tienda — la
+ * excepción a §9.4 del 2026-10-19.
+ *
+ * Con el `-og.jpg` en el subdominio de Storage, WhatsApp no la dibujaba: el
+ * teléfono mostraba el título sin la foto y Escritorio, el enlace pelado. La
+ * home, con su foto en `anavende.com.ar`, se veía entera en los dos. La
+ * entrega la hace `app/vista-previa/[...clave]/route.ts`.
+ *
+ * Es relativa a propósito: `metadataBase` (`app/layout.tsx`) la completa.
+ */
+export function rutaDeVistaPrevia(storageKey: string): string {
+  return `/vista-previa/${clave(storageKey, "og")}`;
+}
+
 // ── Logos: marca (RF-18), medio de pago (RF-19) e imagen de categoría ───
 //
 // La imagen de categoría (FA-21) entró después y por la misma puerta: no es
