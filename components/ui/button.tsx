@@ -17,15 +17,16 @@ import { cn } from "@/lib/utils";
  * ESCALERA DE ÉNFASIS, de más a menos peso:
  *
  *   brand      relleno burdeos  — LA acción de la pantalla, una sola
- *   alterna    relleno pizarra  — la OTRA forma de hacer lo mismo, a la par
+ *   whatsapp   relleno verde    — abrir WhatsApp, cuando es LA acción o su par
  *   secondary  contorno gris    — acciones de apoyo entre pares
  *   tertiary   sin caja         — cancelar, volver, lo que no debe pesar
  *
- * `alterna` no es un escalón más abajo de `brand`: es su PAR. Da 9,05:1
- * contra blanco y el burdeos da 9,07:1, así que los dos pesan lo mismo y la
- * persona elige por lo que dicen, no por cuál se ve más. Es para cuando hay
- * dos caminos igual de válidos —el carrito y el WhatsApp de la ficha—, no
- * para jerarquizar.
+ * `whatsapp` no es un escalón más abajo de `brand` (§2.6, 2026-10-19): es la
+ * acción principal donde la conversación es lo único que queda —sin stock, la
+ * orden confirmada— y el PAR del carrito en la ficha. Donde WhatsApp es apoyo
+ * —legales, el panel— va `secondary`, y el logo pone el verde solo
+ * (`IconoWhatsApp`). Acá el logo pasa a la tinta inversa: verde sobre verde
+ * no se ve.
  *
  * `tertiary` es el ghost: texto solo en reposo, y al pasar el puntero aparece
  * el plato de `--canvas`. En táctil no hay hover, por eso el texto se ve
@@ -45,8 +46,8 @@ const buttonVariants = cva(
         // Una sola por pantalla.
         brand:
           "bg-brand text-ink-inverse hover:bg-brand-hover active:bg-brand-active",
-        alterna:
-          "bg-accent text-ink-inverse hover:bg-accent-hover active:bg-accent-active",
+        whatsapp:
+          "bg-whatsapp text-ink-inverse hover:bg-whatsapp-hover active:bg-whatsapp-active [&_svg]:text-current",
         secondary:
           "border border-border bg-surface text-ink hover:bg-surface-sunken hover:border-border-strong",
         tertiary:

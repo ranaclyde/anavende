@@ -49,9 +49,10 @@
   --shadow-focus-raw: 0 0 0 3px #f7edef, 0 0 0 1px #832833;
 
   /*
-   * Segundo color: azul pizarra. Su trabajo es LA OTRA ACCIÓN DE COMPRA
-   * —«Comprá ya por WhatsApp», que no es apoyo sino la forma que cierra la
-   * venta— y LO ELEGIDO, como el checkbox marcado.
+   * Segundo color: azul pizarra. Hoy marca LO ELEGIDO, como el checkbox
+   * marcado. Hasta el 2026-10-19 fue también «Comprá ya por WhatsApp», que
+   * pasó al verde de WhatsApp (abajo); su papel nuevo, darle color a la
+   * tienda más allá de las acciones, está por decidirse (§2.5).
    *
    * Se eligió por un solo número: 9,05:1 contra blanco, contra los 9,07:1 del
    * burdeos. Con 0,02 de diferencia los dos botones pesan igual y ninguno
@@ -63,6 +64,20 @@
   --accent-active: #24394f;
   --accent-tint: #eef2f7;
   --accent-tint-border: #d5deea;
+
+  /*
+   * El verde de WhatsApp (§2.6, 2026-10-19). No es un color de la tienda: es
+   * el de la marca ajena, y marca todo lo que abre una conversación. El logo
+   * va siempre en este verde; el relleno, solo donde WhatsApp es la acción
+   * principal o par del carrito.
+   *
+   * `#008069` y no el `#25d366` de siempre: con texto blanco, el claro da
+   * 1,98:1 y este, 4,89:1. Es el verde oscuro que usa la propia WhatsApp. El
+   * hover OSCURECE, al revés que el de marca: aclarar bajaría de 4,5:1.
+   */
+  --whatsapp: #008069;
+  --whatsapp-hover: #006d59;
+  --whatsapp-active: #005c4b;
 
   /* Superficies */
   --canvas: #f2f4f5; /* fondo de página */
@@ -120,6 +135,12 @@
   --accent-tint: #1a2230;
   --accent-tint-border: #2a3648;
 
+  /* El verde claro de siempre: sobre la superficie oscura da 8,38:1, y la
+     tinta inversa encima, 9,28:1. */
+  --whatsapp: #25d366;
+  --whatsapp-hover: #3ee07a;
+  --whatsapp-active: #1fb855;
+
   --canvas: #141416;
   --surface: #1e1e21;
   --surface-sunken: #18181b;
@@ -157,6 +178,10 @@
   --color-accent-tint: var(--accent-tint);
   --color-accent-tint-border: var(--accent-tint-border);
 
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-hover: var(--whatsapp-hover);
+  --color-whatsapp-active: var(--whatsapp-active);
+
   --color-canvas: var(--canvas);
   --color-logo-chip: var(--logo-chip);
   --color-logo-chip-ink: var(--logo-chip-ink);
@@ -179,7 +204,6 @@
   --color-danger-tint: var(--danger-tint);
   --color-info: var(--info);
   --color-info-tint: var(--info-tint);
-
 }
 
 /*
@@ -190,8 +214,8 @@
  */
 @theme {
   /* Tipografía (§3.3) — una sola familia, pesos 400/500/600 */
-  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI",
-    sans-serif;
+  --font-sans:
+    var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* Escala tipográfica: tamaño / interlínea / tracking / peso.
      La firma del sistema es el tracking negativo: lo grande se comprime. */
@@ -254,8 +278,8 @@
 
   /* Sombras (§3.6) — las tarjetas se separan por sombra, nunca por borde */
   --shadow-sm: 0 2px 8px rgb(17 16 16 / 0.06);
-  --shadow-md: 0 4px 6px -1px rgb(17 16 16 / 0.1), 0 2px 4px -2px
-    rgb(17 16 16 / 0.1);
+  --shadow-md:
+    0 4px 6px -1px rgb(17 16 16 / 0.1), 0 2px 4px -2px rgb(17 16 16 / 0.1);
   --shadow-lg: 0 4px 24px rgb(17 16 16 / 0.12);
   --shadow-brand: 0 4px 24px var(--brand-shadow);
   --shadow-focus: var(--shadow-focus-raw);
@@ -373,7 +397,6 @@
     outline: 2px solid transparent;
     outline-offset: 2px;
   }
-
 }
 
 /*

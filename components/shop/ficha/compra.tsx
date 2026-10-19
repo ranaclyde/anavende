@@ -184,7 +184,10 @@ export function Compra({
     setImagen(i);
     const track = pista.current;
     if (track) {
-      track.scrollTo({ left: i * track.clientWidth, behavior: comoDesplazar() });
+      track.scrollTo({
+        left: i * track.clientWidth,
+        behavior: comoDesplazar(),
+      });
     }
   }
 
@@ -277,8 +280,7 @@ export function Compra({
 // ── La compra que quedó pendiente de iniciar sesión (F5.7) ──────────────
 
 type ResultadoDelCarrito =
-  | { ok: true; enElCarrito: number }
-  | { ok: false; mensaje: string };
+  { ok: true; enElCarrito: number } | { ok: false; mensaje: string };
 
 type Retomada = {
   enCurso: boolean;
@@ -501,26 +503,24 @@ function SelectorDeColor({
 // ── Las acciones ────────────────────────────────────────────────────────
 
 /**
- * El botón de WhatsApp. Con el carrito encendido (F5.5) pasa a secundario en
- * la ficha con stock, que es donde §7.3 lo pone, y sigue siendo el principal
- * sin stock y en «todavía no está a la venta».
+ * El botón de WhatsApp: relleno verde en los tres estados de la ficha (§2.6,
+ * 2026-10-19). Con stock es el par del carrito —la otra forma de comprar, no
+ * una acción de apoyo—; sin stock y en «todavía no está a la venta» es la
+ * única acción que queda.
  *
  * El ícono va adelante del texto y NO es lo único que dice de qué se trata:
  * el rótulo lleva «por WhatsApp» con todas las letras, así que el logo es
- * reconocimiento y no información (§9). Va en `currentColor` por §11 — ver el
- * comentario de `IconoWhatsApp`.
+ * reconocimiento y no información (§9).
  */
 function BotonDeWhatsApp({
   href,
-  variante,
   children,
 }: {
   href: string;
-  variante: "brand" | "alterna" | "secondary";
   children: ReactNode;
 }) {
   return (
-    <Button asChild size="lg" variant={variante} className="w-full">
+    <Button asChild size="lg" variant="whatsapp" className="w-full">
       <a href={href} target="_blank" rel="noopener noreferrer">
         <IconoWhatsApp className="size-4" />
         {children}
@@ -593,14 +593,13 @@ function ConStock({
         )}
 
         {/*
-          Relleno pizarra y no contorno: comprar por WhatsApp no es una acción
-          de apoyo, es la otra forma de comprar —y la que cierra la venta—.
-          Va a la par del carrito, no debajo. En blanco su borde daba 1,08:1
-          contra el canvas y quedaba igual que «Compartir».
+          Relleno y no contorno: comprar por WhatsApp no es una acción de
+          apoyo, es la otra forma de comprar —y la que cierra la venta—. Va a
+          la par del carrito, no debajo. En contorno se leía igual que
+          «Compartir».
         */}
         {whatsapp ? (
           <BotonDeWhatsApp
-            variante="alterna"
             href={enlaceDeWhatsApp(
               whatsapp,
               mensajeDeCompra(mensaje, cantidad, precioUnitario),
@@ -760,7 +759,6 @@ function SinStock({
       {whatsapp ? (
         <div className="flex flex-col gap-2">
           <BotonDeWhatsApp
-            variante="brand"
             href={enlaceDeWhatsApp(whatsapp, mensajeDeDisponibilidad(mensaje))}
           >
             Preguntá si va a haber
@@ -804,7 +802,6 @@ function TodaviaNo({
       </p>
       {whatsapp ? (
         <BotonDeWhatsApp
-          variante="brand"
           href={enlaceDeWhatsApp(whatsapp, mensajeDeDisponibilidad(mensaje))}
         >
           Consultá por WhatsApp

@@ -151,7 +151,7 @@ export default async function DetalleDeLaCompra({ params }: Props) {
       {activa ? (
         <div className="flex flex-col gap-3">
           {whatsapp ? (
-            <Button asChild variant="brand" size="lg" className="w-full">
+            <Button asChild variant="whatsapp" size="lg" className="w-full">
               <a
                 href={enlaceDeWhatsApp(
                   whatsapp,

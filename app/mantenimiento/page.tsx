@@ -81,7 +81,7 @@ export default async function Mantenimiento() {
           dibuja: un `wa.me` sin número abre WhatsApp en la nada. */}
       {numero ? (
         <div className="flex flex-col items-center gap-2">
-          <Button asChild variant="brand" size="lg">
+          <Button asChild variant="whatsapp" size="lg">
             <a
               href={enlaceDeWhatsApp(numero, "Hola, quería hacer una consulta.")}
               target="_blank"

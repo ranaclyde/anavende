@@ -129,7 +129,7 @@ export default async function PaginaDeLaOrden({ params }: Props) {
           lo que se puede hacer desde acá.
         */}
         {whatsapp ? (
-          <Button asChild variant="brand" size="lg" className="w-full">
+          <Button asChild variant="whatsapp" size="lg" className="w-full">
             <a
               href={enlaceDeWhatsApp(
                 whatsapp,
