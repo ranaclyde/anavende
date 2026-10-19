@@ -43,7 +43,7 @@ export function Logo({
       )}
       aria-label="AnaVende, ir al inicio"
     >
-      <Isotipo claro={claro} />
+      <Isotipo claro={claro} inmediato />
       {wordmark && (
         <span
           aria-hidden
@@ -65,9 +65,16 @@ export function Logo({
  */
 export function Isotipo({
   claro = false,
+  inmediato = false,
   className,
 }: {
   claro?: boolean;
+  /**
+   * Arriba del pliegue: el encabezado, el ingreso, el menú del panel. Sin
+   * diferir. Con `priority` se precargaban los dos logos en todas las
+   * páginas, también el claro del pie, que está abajo (F10.4).
+   */
+  inmediato?: boolean;
   className?: string;
 }) {
   return (
@@ -78,7 +85,7 @@ export function Isotipo({
       // 32px es el tamaño de uso (§2.3); `sizes` evita que Next sirva el
       // original de 1180px para pintarlo a 32.
       sizes="32px"
-      priority
+      loading={inmediato ? "eager" : undefined}
       className={cn("size-8 shrink-0 object-contain", className)}
     />
   );
@@ -96,8 +103,8 @@ export function Isotipo({
 export function IsotipoSegunTema({ className }: { className?: string }) {
   return (
     <>
-      <Isotipo className={cn("dark:hidden", className)} />
-      <Isotipo claro className={cn("hidden dark:block", className)} />
+      <Isotipo inmediato className={cn("dark:hidden", className)} />
+      <Isotipo claro inmediato className={cn("hidden dark:block", className)} />
     </>
   );
 }

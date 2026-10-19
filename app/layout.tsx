@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { urlDelSitio } from "@/lib/env";
 import { inter } from "@/lib/fuente";
 import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE, ZONA_DE_ENTREGA } from "@/lib/seo";
@@ -46,13 +45,7 @@ export default function RootLayout({
     // cliente difieren a propósito. Sin esto, cada visita al panel deja una
     // advertencia en la consola que después tapa las de verdad.
     <html lang="es-AR" className={inter.variable} suppressHydrationWarning>
-      {/*
-        Radix exige un proveedor arriba de cualquier tooltip. Va en la raíz y
-        no en la tienda para que el panel pueda usarlos sin repetirlo.
-      */}
-      <body>
-        <TooltipProvider>{children}</TooltipProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

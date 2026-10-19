@@ -215,10 +215,12 @@ export function BloquesDelHero({
                       // tiene 8px de relleno de cada lado, así que 152 son 136
                       // de foto.
                       sizes="(min-width: 1024px) 136px, (min-width: 640px) 96px, 72px"
-                      // Sólo la primera tanda, que es la que está arriba del
-                      // pliegue en el primer pintado. Las que siguen llegan
-                      // cuando ya no hay nada que disputarle al LCP.
-                      priority={indice === 0}
+                      // La primera tanda está arriba del pliegue en el
+                      // primer pintado: sin diferir, y React la precarga. Sin
+                      // prioridad alta, que es solo de la foto de la ficha
+                      // (TS §20, F10.4). Las que siguen llegan cuando hace
+                      // falta.
+                      loading={indice === 0 ? "eager" : undefined}
                       className="object-cover"
                     />
                   </div>

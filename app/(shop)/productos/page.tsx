@@ -210,7 +210,7 @@ export default async function Catalogo({
                     producto={producto}
                     // La primera fila está arriba del pliegue: diferirla
                     // penaliza el LCP. Cuatro es el ancho de la grilla.
-                    prioridad={i < 4}
+                    inmediata={i < 4}
                     accionFavorito={
                       <BotonFavorito
                         forma="corazon"

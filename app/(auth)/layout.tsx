@@ -38,7 +38,7 @@ export default function AuthLayout({
         className="inline-flex items-center gap-2.5 rounded-pill"
         aria-label="AnaVende, ir a la tienda"
       >
-        <Isotipo />
+        <Isotipo inmediato />
         <span className="text-heading text-ink">AnaVende</span>
       </Link>
       <div className="w-full max-w-sm">{children}</div>

@@ -6,6 +6,7 @@ import { ID_AVISO_DE_PAUSA } from "@/components/shop/cuenta-en-pausa-id";
 import { RetomarFavorito } from "@/components/shop/favorito";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSession } from "@/lib/session";
 import { contarUnidades } from "@/modules/cart/queries";
 import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
@@ -51,28 +52,34 @@ export default async function ShopLayout({
     ]);
 
   return (
-    <div className="flex min-h-svh flex-col bg-canvas">
-      {cerradaParaElResto ? <AvisoDeTiendaCerrada /> : null}
-      {enPausa ? <AvisoDeBajaPedida /> : null}
-      {favoritoPendiente ? <RetomarFavorito /> : null}
+    // Radix exige un proveedor arriba de cualquier tooltip, y solo la tienda
+    // los usa. Estuvo en la raíz hasta F10.4: así, Floating UI —unos 19 KB
+    // comprimidos— viajaba también al ingreso, al alta y al panel, que no
+    // tienen ninguno. Si el panel los suma, lleva su propio proveedor.
+    <TooltipProvider>
+      <div className="flex min-h-svh flex-col bg-canvas">
+        {cerradaParaElResto ? <AvisoDeTiendaCerrada /> : null}
+        {enPausa ? <AvisoDeBajaPedida /> : null}
+        {favoritoPendiente ? <RetomarFavorito /> : null}
 
-      {/* El buscador lee la URL, así que el encabezado necesita el límite
+        {/* El buscador lee la URL, así que el encabezado necesita el límite
           de Suspense que Next exige alrededor de useSearchParams. */}
-      <Suspense fallback={<div className="h-14 bg-surface" />}>
-        <SiteHeader
-          userName={sesion?.profile.fullName ?? null}
-          cartCount={unidadesEnElCarrito}
-        />
-      </Suspense>
+        <Suspense fallback={<div className="h-14 bg-surface" />}>
+          <SiteHeader
+            userName={sesion?.profile.fullName ?? null}
+            cartCount={unidadesEnElCarrito}
+          />
+        </Suspense>
 
-      <main className="flex-1">
-        <ProveedorDeCuentaEnPausa enPausa={enPausa}>
-          {children}
-        </ProveedorDeCuentaEnPausa>
-      </main>
+        <main className="flex-1">
+          <ProveedorDeCuentaEnPausa enPausa={enPausa}>
+            {children}
+          </ProveedorDeCuentaEnPausa>
+        </main>
 
-      <SiteFooter />
-    </div>
+        <SiteFooter />
+      </div>
+    </TooltipProvider>
   );
 }
 

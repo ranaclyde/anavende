@@ -62,7 +62,7 @@ export default async function Mantenimiento() {
   return (
     <main className="mx-auto flex min-h-svh max-w-shop flex-col items-center justify-center gap-8 px-4 py-16 text-center">
       <div className="inline-flex items-center gap-2.5">
-        <Isotipo />
+        <Isotipo inmediato />
         <span className="text-heading text-ink">AnaVende</span>
       </div>
 
