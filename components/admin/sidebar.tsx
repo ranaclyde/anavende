@@ -5,6 +5,7 @@ import {
   ChevronsLeft,
   FileText,
   LayoutDashboard,
+  LogOut,
   Menu,
   Package,
   PanelsTopLeft,
@@ -17,12 +18,19 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 
 import { ThemeToggle } from "@/components/admin/theme";
 import { IsotipoSegunTema } from "@/components/shop/logo";
 import { crearPreferencia } from "@/lib/preferencia-local";
 import { cn } from "@/lib/utils";
+import { salir } from "@/modules/users/actions";
 
 /**
  * Menú lateral del panel — DESIGN-REFERENCE §5.2.
@@ -31,7 +39,9 @@ import { cn } from "@/lib/utils";
  * arranca colapsado; en móvil es un panel deslizable, porque un menú fijo se
  * come la mitad de una pantalla en la que hay que leer tablas.
  *
- * El interruptor de modo oscuro vive al pie del menú.
+ * El interruptor de modo oscuro vive al pie del menú. Debajo, aparte, quién
+ * está adentro, con «Cerrar sesión»: el panel no tiene otro lugar desde
+ * donde salir.
  */
 
 type Seccion = {
@@ -75,6 +85,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
     () => false,
   );
   const [abiertoEnMovil, setAbiertoEnMovil] = useState(false);
+  const [saliendo, iniciarSalida] = useTransition();
 
   // Al navegar se cierra el panel de móvil: si no, tapa lo que se acaba de
   // abrir. Se ajusta durante el render, cuando cambia la ruta, y no en un
@@ -268,23 +279,6 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
             )}
           </Link>
 
-          <div
-            className={cn(
-              "mt-1 flex items-center gap-2 px-2.5 py-2",
-              colapsado && !abiertoEnMovil && "justify-center px-0",
-            )}
-          >
-            <span
-              aria-hidden
-              className="grid size-7 shrink-0 place-items-center rounded-pill bg-surface-sunken text-caption font-medium text-ink-secondary"
-            >
-              {nombre.slice(0, 1).toUpperCase()}
-            </span>
-            {(!colapsado || abiertoEnMovil) && (
-              <span className="truncate text-body-sm text-ink">{nombre}</span>
-            )}
-          </div>
-
           <button
             type="button"
             onClick={alternarColapso}
@@ -310,6 +304,55 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
             ) : (
               <span className="truncate">Contraer el menú</span>
             )}
+          </button>
+        </div>
+
+        {/* Quién está adentro, aparte de las acciones del menú: con el nombre
+            en un renglón más, entre botones, se leía como uno que no hacía
+            nada. El rol en la segunda línea lo termina de separar, y
+            «Cerrar sesión» va pegado al nombre porque es de la cuenta y no
+            del panel. Colapsado, el ícono de salir baja debajo del avatar. */}
+        <div
+          className={cn(
+            "flex items-center gap-2.5 border-t border-border px-3 py-3",
+            colapsado && !abiertoEnMovil && "flex-col gap-2 px-0",
+          )}
+        >
+          <span
+            aria-hidden
+            className="grid size-8 shrink-0 place-items-center rounded-pill bg-brand-tint text-body-sm font-medium text-brand"
+          >
+            {nombre.slice(0, 1).toUpperCase()}
+          </span>
+          {(!colapsado || abiertoEnMovil) && (
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-body-sm font-medium text-ink">
+                {nombre}
+              </span>
+              {/* Todo el que entra al panel es administrador: el layout
+                  rechaza al resto (`exigirAdmin`). */}
+              <span className="truncate text-caption text-ink-secondary">
+                Administradora
+              </span>
+            </span>
+          )}
+
+          {/* La misma acción que «Mi cuenta»: cierra la sesión y lleva a la
+              tienda. Apagado mientras sale, para que un segundo toque no
+              mande otra. Solo ícono, con el nombre en el `title` y para el
+              lector de pantalla. */}
+          <button
+            type="button"
+            onClick={() => iniciarSalida(() => salir())}
+            disabled={saliendo}
+            aria-busy={saliendo || undefined}
+            title="Cerrar sesión"
+            className="grid size-9 max-md:size-11 shrink-0 place-items-center rounded-panel-control text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink disabled:opacity-60"
+          >
+            <LogOut aria-hidden className="size-4" />
+            <span className="sr-only">
+              {saliendo ? "Cerrando sesión" : "Cerrar sesión"}
+            </span>
           </button>
         </div>
       </aside>

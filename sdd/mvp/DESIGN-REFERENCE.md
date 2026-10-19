@@ -661,7 +661,8 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 
 - Menú lateral de **240px con etiquetas visibles**, colapsable a 64px de solo íconos.
 - En tablet arranca colapsado; en móvil se convierte en un panel deslizable.
-- El interruptor de modo oscuro vive al pie del menú.
+- El interruptor de modo oscuro vive al pie del menú, con «Ver la tienda» y «Contraer el menú».
+- **Debajo, separado por una línea, quién está adentro** (2026-10-19): avatar con la inicial en bordó sobre `--brand-tint`, el nombre en medium y «Administradora» en caption secundario, y a la derecha **«Cerrar sesión» como botón de ícono**, con su nombre en el `title` y para el lector de pantalla. Colapsado, el ícono baja debajo del avatar. No es el desplegable «Ana ▾» del croquis: se comparó con él y se eligió el ícono, que sale con un toque. El nombre como renglón más, entre los botones, se leía como uno que no hacía nada.
 
 ---
 

@@ -2282,6 +2282,7 @@ Cada una se escribió primero en la especificación y después en el código
 | **El rol del panel se controla en cada página, no solo en el layout** (F10.5, 2026-10-17) | `TECHNICAL-SPEC.md` §16, fila «Autorización» | §13.7 ponía la guardia en el layout y alcanzaba en apariencia: el 404 salía. Pero Next renderiza layout y página en paralelo y los datos de la página viajaban igual. **Y los dos `dangerouslySetInnerHTML` que hay quedan anotados como excepciones revisadas** (fila «XSS»): §16 decía que no había ninguno |
 | **Turnstile también en el ingreso, no solo en el alta, el reenvío y la recuperación** (F10.5b, 2026-10-17) | `TECHNICAL-SPEC.md` §16, fila «Altas falsas» | El plan nombraba tres pantallas, pero con `GOTRUE_SECURITY_CAPTCHA_ENABLED` GoTrue exige el token también en `/token` con contraseña (`verifyCaptcha` en `internal/api/middleware.go`, v2.184.0) y no hay forma de prenderlo para algunas rutas. Decisión tuya: el widget va en todas las pantallas que lo requieran. Además frena a quien prueba contraseñas |
 | **La vista previa de la ficha sale del dominio de la tienda, no de Storage** (2026-10-19) | `TECHNICAL-SPEC.md` §9.4, fila «Entrega al navegador»; `app/vista-previa/[...clave]/route.ts` | Decisión tuya del 2026-10-19. Con el `-og.jpg` ya en JPEG y el bucket aceptándolo, WhatsApp seguía sin dibujar la ficha: en el teléfono, título y precio sin foto; en Escritorio, el enlace pelado. Se descartaron con pruebas tuyas el caché (una URL nueva con `?v=3`), el IPv6 (wifi y datos, igual) y, desde afuera, el certificado, el tipo, el tamaño (88 KB) y los metadatos. **La home, con su foto en `anavende.com.ar`, se vio entera en los dos**: lo único distinto era de dónde salía la foto. Por qué WhatsApp rechaza el host de Storage no se sabe. Solo esa foto pasa por el servidor APP —la piden los chats al armar la tarjeta, no la gente, y Cloudflare la guarda un año—; la galería y el catálogo siguen saliendo directo, como pide §9.4 |
+| **«Cerrar sesión» en el pie del menú del panel, como ícono junto al nombre y no como desplegable** (2026-10-19) | `DESIGN-REFERENCE.md` §5.2; `components/admin/sidebar.tsx` | Pedido tuyo: desde el panel no había forma de cerrar la sesión. El croquis de §5.2 mostraba «Ana ▾» al pie, pero el desplegable nunca se hizo y el pie quedó con el nombre solo, en un renglón entre botones que se leía como uno que no hacía nada. Ahora el pie tiene dos partes: arriba las acciones del menú (modo, tienda, contraer) y, separado por una línea, un bloque con el avatar en bordó, el nombre, «Administradora» y el ícono de «Cerrar sesión», con la misma acción `salir` de «Mi cuenta». Se comparó, aplicado al panel en claro, oscuro, colapsado y teléfono, contra el nombre como desplegable, y elegiste el ícono: sale con un toque. Colapsado, el ícono baja debajo del avatar, con el nombre en el `title` y para el lector de pantalla. Lo prueba `tests/e2e/salir-del-panel.spec.ts`, en escritorio y en el teléfono: después de salir, `/admin` manda a `/ingresar` |
 | **El verde de WhatsApp en todo lo que abre WhatsApp, y la variante `alterna` pasa a `whatsapp`** (2026-10-19) | `DESIGN-REFERENCE.md` §1.2, §2.5, **§2.6 nueva**, §3.1, §3.2, §6.3, §7.3 y §11; `DESIGN.md`; `app/globals.css` | Decisión tuya del 2026-10-19. En pizarra, «Comprá ya por WhatsApp» parecía un botón más de la tienda; el verde con el logo es lo que se reconoce. Se compararon aplicadas a la ficha dos versiones —relleno `#008069` y contorno con el logo verde— y elegiste el relleno donde WhatsApp es la acción principal o el par del carrito (los tres estados de compra de la ficha, la orden, «Mis compras», mantenimiento) y el contorno con el logo verde donde es apoyo (legales, el detalle de orden y de usuario del panel, los enlaces del ingreso). `#008069` y no el `#25d366`: con texto blanco da 4,89:1 contra 1,98:1. **No cuenta como tercer color**: es de una marca ajena, como los logos de los medios de pago. **Y el segundo color cambia de rumbo**: no se buscaba para repartir acciones sino para darle vida a la tienda; §2.5 queda marcada para reescribirse con una comparación aplicada |
 ---
 
@@ -2770,17 +2771,20 @@ había medido porque comparó sólo contra rojo, verde y ámbar.
 > **El 2026-10-19 cambió el rumbo** (decisión tuya): el segundo color no se
 > buscaba para repartir acciones —lo elegido, los filtros, el WhatsApp— sino
 > para **darle vida a la tienda**, que es blanca y burdeos. «Comprá ya por
-> WhatsApp» ya no va en pizarra: pasó al verde de WhatsApp (DR §2.6). Lo que
-> sigue es una comparación del pizarra como **color de ambiente** —bandas de
-> sección, tarjetas de categoría, pie, fondos de bloques informativos— aplicada
-> a la home y la ficha, con el burdeos como acción. La lista de abajo es la del
-> plan anterior y se revisa con esa comparación delante. Lo del checkout —lo
-> elegido en rosa, que parece un error— se puede arreglar aparte y sin el
-> segundo color.
+> WhatsApp» ya no va en pizarra: pasó al verde de WhatsApp (DR §2.6).
+>
+> **La comparación del pizarra como color de ambiente se hizo el mismo día,
+> en la home**, con tres variantes: tintes suaves; tintes más un «piso» en
+> pizarra oscuro para los medios de pago y el pie; y lo mismo en ciruela.
+> **Ana decidió dejar la home como está hasta verla con el catálogo real**:
+> las fotos de prueba son grises y las de verdad cambian cuánto color le
+> falta. Se retoma con esas fotos, y la lista de abajo, que es la del plan
+> anterior, se revisa ahí. Para entonces: el tinte pizarra que se distingue
+> del fondo es `#e1e8f1`; `#eef2f7` no se ve.
+>
+> **El checkout queda como está** (decisión tuya del 2026-10-19), con lo
+> elegido en rosa: sale de esta lista.
 
-- **Lo elegido en el checkout**: las opciones de entrega y la dirección siguen
-  con borde bordó sobre `--brand-tint`. Es el caso que originó esta entrada y
-  **sigue sin arreglar**: ese rosa está a 12° del tinte de error.
 - **Los filtros** del catálogo: chip activo, chips de filtro aplicado y el
   contador siguen en bordó.
 - **Los enlaces**, y decidir si el anillo de foco pasa al azul.
