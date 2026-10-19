@@ -2770,17 +2770,20 @@ había medido porque comparó sólo contra rojo, verde y ámbar.
 > **El 2026-10-19 cambió el rumbo** (decisión tuya): el segundo color no se
 > buscaba para repartir acciones —lo elegido, los filtros, el WhatsApp— sino
 > para **darle vida a la tienda**, que es blanca y burdeos. «Comprá ya por
-> WhatsApp» ya no va en pizarra: pasó al verde de WhatsApp (DR §2.6). Lo que
-> sigue es una comparación del pizarra como **color de ambiente** —bandas de
-> sección, tarjetas de categoría, pie, fondos de bloques informativos— aplicada
-> a la home y la ficha, con el burdeos como acción. La lista de abajo es la del
-> plan anterior y se revisa con esa comparación delante. Lo del checkout —lo
-> elegido en rosa, que parece un error— se puede arreglar aparte y sin el
-> segundo color.
+> WhatsApp» ya no va en pizarra: pasó al verde de WhatsApp (DR §2.6).
+>
+> **La comparación del pizarra como color de ambiente se hizo el mismo día,
+> en la home**, con tres variantes: tintes suaves; tintes más un «piso» en
+> pizarra oscuro para los medios de pago y el pie; y lo mismo en ciruela.
+> **Ana decidió dejar la home como está hasta verla con el catálogo real**:
+> las fotos de prueba son grises y las de verdad cambian cuánto color le
+> falta. Se retoma con esas fotos, y la lista de abajo, que es la del plan
+> anterior, se revisa ahí. Para entonces: el tinte pizarra que se distingue
+> del fondo es `#e1e8f1`; `#eef2f7` no se ve.
+>
+> **El checkout queda como está** (decisión tuya del 2026-10-19), con lo
+> elegido en rosa: sale de esta lista.
 
-- **Lo elegido en el checkout**: las opciones de entrega y la dirección siguen
-  con borde bordó sobre `--brand-tint`. Es el caso que originó esta entrada y
-  **sigue sin arreglar**: ese rosa está a 12° del tinte de error.
 - **Los filtros** del catálogo: chip activo, chips de filtro aplicado y el
   contador siguen en bordó.
 - **Los enlaces**, y decidir si el anillo de foco pasa al azul.
