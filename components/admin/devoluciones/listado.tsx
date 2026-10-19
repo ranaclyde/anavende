@@ -80,7 +80,7 @@ export function SinDevoluciones() {
         </Button>
       }
     >
-      Se registran desde la orden que se devuelve, y sólo sobre órdenes
+      Se registran desde la orden que se devuelve, y solo sobre órdenes
       finalizadas: abrí la orden y usá «Registrar devolución». Ahí elegís qué
       productos vuelven y cuáles vuelven al stock.
     </VacioDelPanel>

@@ -63,7 +63,7 @@ export function FormularioDeTextoLegal({
         return;
       }
 
-      avisar(`Guardamos «${titulo}». Ya se ve así en la tienda.`);
+      avisar(`Guardaste «${titulo}». Ya se ve así en la tienda.`);
       router.refresh();
     });
   }

@@ -32,8 +32,16 @@ export const metadata: Metadata = { title: "Mi cuenta" };
  * contenido (`items-start`): igualarlas en alto dejaría los botones a
  * distinta altura.
  */
-export default async function MiCuenta() {
+export default async function MiCuenta({
+  searchParams,
+}: {
+  searchParams: Promise<{ contrasena?: string }>;
+}) {
   const sesion = await getSession();
+  // Quien viene de definir la contraseña desde el enlace de recuperación
+  // llega acá sin otra señal de que salió bien: la pantalla no cambia (§6.15,
+  // F10.7). Se dice en la tarjeta de la contraseña, como el «Listo» de cambiarla.
+  const { contrasena } = await searchParams;
 
   if (!sesion) {
     // Hay identidad pero no perfil: falta completarlo (§13.4).
@@ -73,7 +81,12 @@ export default async function MiCuenta() {
               : "Entraste con Google o Facebook. Si definís una, también vas a poder entrar con tu email"}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-5">
+          {contrasena === "nueva" ? (
+            <p role="status" className="text-body-sm text-success">
+              Listo, ya tenés tu contraseña nueva.
+            </p>
+          ) : null}
           <CambiarContrasenaForm
             email={profile.email}
             tieneContrasena={identity.tieneContrasena}

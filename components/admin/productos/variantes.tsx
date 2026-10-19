@@ -133,7 +133,7 @@ export function VariantesDelProducto({
       // en su lugar (DR §6.15). El error sí se queda acá arriba, que es
       // donde estuvo la acción.
       if (r.data.resultado === "borrado") {
-        avisar(`Sacamos «${nombreDe(v)}».`);
+        avisar(`Sacaste «${nombreDe(v)}».`);
       } else {
         avisarConPero(
           `«${nombreDe(v)}» está en ${dondeEsta(r.data.ordenes, r.data.carritos)}, así que no se puede sacar: la desactivamos y ya no se ofrece en la tienda.`,
@@ -657,6 +657,7 @@ function DialogoDeVariante({
               <option value="">Elegí un color</option>
               <option value={UNICO} disabled={tomadas.has(UNICO)}>
                 Único — no se vende por color
+                {tomadas.has(UNICO) ? " (ya cargado)" : ""}
               </option>
               {/* Los inactivos no se ofrecen, salvo el que la variante ya
                   tiene puesto: si desapareciera del selector, guardar se lo
@@ -715,6 +716,7 @@ function DialogoDeVariante({
                   disabled={tomadas.has(combinacion(color, null))}
                 >
                   Ninguno — es de un solo color
+                  {tomadas.has(combinacion(color, null)) ? " (ya cargado)" : ""}
                 </option>
                 {ofrecidos
                   .filter((c) => c.id !== color)

@@ -72,7 +72,7 @@ async function exigirOrdenFinalizada(
     throw domainError("INVALID_ORDER_STATE", {
       estadoActual: orden.status,
       message:
-        "Sólo se registran devoluciones sobre órdenes finalizadas. Una orden " +
+        "Solo se registran devoluciones sobre órdenes finalizadas. Una orden " +
         "que todavía no se entregó se edita o se cancela.",
     });
   }

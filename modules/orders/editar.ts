@@ -79,7 +79,7 @@ async function exigirOrdenActiva(
   if (orden.status !== "activa") {
     throw domainError("INVALID_ORDER_STATE", {
       estadoActual: orden.status,
-      message: "Sólo se pueden editar órdenes activas. Actualizá la página.",
+      message: "Solo se pueden editar órdenes activas. Actualizá la página.",
     });
   }
 }
@@ -237,7 +237,7 @@ export async function reducirCantidad(
     // **F7.2a** (RF-22, «Criterios — sumar»). Hasta que exista, acá se
     // rechaza en vez de dejar pasar un número más grande sin reservar nada.
     throw domainError("VALIDATION", {
-      message: `No se puede agregar unidades desde acá: la orden tiene ${item.quantity} y sólo se puede bajar.`,
+      message: `No se pueden agregar unidades desde acá: la orden tiene ${item.quantity} y solo se puede bajar.`,
     });
   }
 
@@ -326,7 +326,7 @@ async function reservarODecirCuantoHay(
       variantId: args.variantId,
       message:
         hay > 0
-          ? `Sólo ${hay === 1 ? "queda 1 unidad" : `quedan ${hay} unidades`} de «${args.nombre}», y hacen falta ${args.quantity}. Si va a entrar mercadería, cargá el stock primero.`
+          ? `Solo ${hay === 1 ? "queda 1 unidad" : `quedan ${hay} unidades`} de «${args.nombre}», y hacen falta ${args.quantity}. Si va a entrar mercadería, cargá el stock primero.`
           : `No queda stock de «${args.nombre}». Si va a entrar mercadería, cargá el stock primero.`,
     });
   }
@@ -355,7 +355,7 @@ export async function aumentarCantidad(
 
   if (args.nuevaCantidad < item.quantity) {
     throw domainError("VALIDATION", {
-      message: `Esto sólo sube: la orden tiene ${item.quantity}. Para bajar, usá el botón de quitar unidades.`,
+      message: `Esto solo sube: la orden tiene ${item.quantity}. Para bajar, usá el botón de quitar unidades.`,
     });
   }
 

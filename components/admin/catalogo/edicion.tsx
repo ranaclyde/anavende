@@ -248,7 +248,7 @@ export function EdicionDeItem({
       // sin aviso, guardar no contesta nada (§6.15).
       avisar(
         item
-          ? `Guardamos ${palabras.articulo} ${palabras.singular} «${nombre.trim()}».`
+          ? `Guardaste ${palabras.articulo} ${palabras.singular} «${nombre.trim()}».`
           : `Creaste ${palabras.articulo} ${palabras.singular} «${nombre.trim()}».`,
       );
       alCerrar();

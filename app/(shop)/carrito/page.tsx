@@ -382,7 +382,7 @@ function CarritoVacio() {
         Mirá el catálogo y sumá lo que necesites.
       </p>
       <Button asChild variant="brand" size="lg" className="mt-2">
-        <Link href="/productos">Ver productos</Link>
+        <Link href="/productos">Explorar el catálogo</Link>
       </Button>
     </div>
   );

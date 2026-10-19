@@ -63,7 +63,7 @@ export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
     plural: "colores",
     nuevo: "Nuevo color",
     vacio: "Todavía no cargaste ningún color.",
-    desactivar: "Va a dejar de ofrecerse al agregar variantes a un producto.",
+    desactivar: "Va a dejar de ofrecerse al agregarle colores a un producto.",
     activo: "Activo",
     inactivo: "Inactivo",
     demostrativo: "este",

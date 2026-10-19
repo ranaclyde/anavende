@@ -61,10 +61,16 @@ export async function POST(request: NextRequest) {
   const session = await getSession();
 
   // 404 y no 403: un `customer` que sondea el panel no recibe la confirmación
-  // de que la ruta existe (§13.3, RF-14).
+  // de que la ruta existe (§13.3, RF-14). El texto tampoco la confirma, y le
+  // sirve a la administradora a la que se le venció la sesión: al actualizar,
+  // el panel la manda a ingresar (F10.7).
   if (session?.role !== "admin" || session.profile.isBanned) {
     return NextResponse.json(
-      { ok: false, message: "No encontrado." },
+      {
+        ok: false,
+        message:
+          "No pudimos subir la imagen. Actualizá la página y probá de nuevo.",
+      },
       { status: 404 },
     );
   }
@@ -108,7 +114,11 @@ export async function POST(request: NextRequest) {
 
   if (!campos.success) {
     return NextResponse.json(
-      { ok: false, message: "Faltan datos de la imagen." },
+      {
+        ok: false,
+        message:
+          "No pudimos subir la imagen. Actualizá la página y probá de nuevo.",
+      },
       { status: 400 },
     );
   }
@@ -116,7 +126,10 @@ export async function POST(request: NextRequest) {
   const archivo = form.get("archivo");
   if (!(archivo instanceof File)) {
     return NextResponse.json(
-      { ok: false, message: "No llegó ningún archivo." },
+      {
+        ok: false,
+        message: "No llegó ninguna imagen. Elegila de nuevo.",
+      },
       { status: 400 },
     );
   }

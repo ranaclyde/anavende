@@ -46,12 +46,20 @@ export function UpdatePasswordForm() {
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      setError("No pudimos guardar la contraseña. Probá de nuevo.");
+      // Los mismos casos que «Mis datos» (`cambiarContrasena`): con estos,
+      // probar de nuevo no sirve, así que se dice qué cambiar (F10.7).
+      setError(
+        error.code === "same_password"
+          ? "Es la misma que ya tenías. Elegí otra."
+          : error.code === "weak_password"
+            ? "Esa contraseña es muy fácil de adivinar. Probá con una más larga."
+            : "No pudimos guardar la contraseña. Probá de nuevo.",
+      );
       setEnviando(false);
       return;
     }
 
-    router.push("/mi-cuenta");
+    router.push("/mi-cuenta?contrasena=nueva");
     router.refresh();
   };
 
