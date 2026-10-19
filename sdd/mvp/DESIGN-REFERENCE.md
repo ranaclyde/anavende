@@ -36,6 +36,7 @@ Toma el sistema de shop.app como referencia estructural —canvas claro, tarjeta
 | **Segunda escala, más densa, para el panel** | El lenguaje aéreo de la tienda vuelve ilegible una tabla de órdenes. Ver §4 |
 | **Modo oscuro solo en el panel** | La tienda vive del blanco; el panel es donde se pasan horas |
 | **Un segundo color: azul pizarra `#2f4a6d`** (2026-09-17) | La ficha tiene **dos formas de comprar** y ninguna es el plan B de la otra. Un solo color no puede decir eso: el segundo botón quedaba en contorno blanco, a 1,08:1 contra el canvas. El pizarra da 9,05:1 contra los 9,07:1 del burdeos, así que pesan igual. Ver §2.5 |
+| **El verde de WhatsApp en todo lo que abre WhatsApp** (2026-10-19) | El verde con el logo es lo que la gente reconoce como «esto abre WhatsApp»; en pizarra, «Comprá ya por WhatsApp» parecía un botón más de la tienda. Es el color de una marca ajena, como los logos de los medios de pago, no un tercer color de la tienda. Ver §2.6 |
 
 ### 1.3 Lo que cambió el canvas de F3.8
 
@@ -170,9 +171,16 @@ Es un juego con el nombre: «Ana **vende**» y del otro lado quien elige. Repart
 
 ### 2.5 El segundo color
 
-> **Azul pizarra `#2f4a6d`.** Tiene dos trabajos y nada más: **la otra acción
-> de compra** —«Comprá ya por WhatsApp» en la ficha— y **lo elegido**, como el
-> checkbox marcado.
+> **Azul pizarra `#2f4a6d`.** Hoy marca **lo elegido**, como el checkbox
+> marcado. **La otra acción de compra —«Comprá ya por WhatsApp»— dejó de ir en
+> pizarra el 2026-10-19 y pasó al verde de WhatsApp (§2.6).**
+>
+> **Esta sección se reescribe** (decisión tuya del 2026-10-19): el segundo
+> color no se buscaba para repartir acciones sino para **darle vida a la
+> tienda**, que es blanca y burdeos. El papel nuevo del pizarra —superficies,
+> zonas, color de ambiente, con el burdeos como acción— se elige con una
+> comparación aplicada a pantallas reales, y ahí cambia también el «Nunca»
+> del final. Lo de abajo es el razonamiento original, y explica el número.
 
 **Es un desvío deliberado de §1 y §11**, que pedían un solo color. Se toma por
 un motivo que no es estético: en la ficha hay **dos formas de comprar**, el
@@ -205,6 +213,41 @@ diferencia de peso y 72° del `--info`.
 **Nunca:** usarlo en la acción principal, en el precio, en el logo, ni como
 fondo de sección.
 
+### 2.6 El verde de WhatsApp
+
+> **`#008069`, en todo lo que abre WhatsApp** (decisión tuya del 2026-10-19).
+> El logo va **siempre** en verde; el botón va **relleno** solo donde WhatsApp
+> es la acción principal o el par del carrito.
+
+**Por qué.** El verde con el logo es lo que la gente reconoce como «esto abre
+WhatsApp», y casi todos los sitios conocidos lo usan así. En pizarra, «Comprá
+ya por WhatsApp» parecía un botón más de la tienda y había que leerlo para
+saber qué hacía.
+
+**No es un tercer color de la tienda** (§11): es el de una marca ajena, igual
+que los logos de los medios de pago, y solo aparece pegado a su logo.
+
+| Propiedad | Valor | Consecuencia |
+|---|---|---|
+| Texto blanco sobre `#008069` | **4,89:1** | AA. El `#25d366` de siempre da 1,98:1: no sirve de relleno con texto |
+| `#008069` sobre el canvas | 4,44:1 | El logo suelto pasa el 3:1 de un gráfico con margen |
+| Hover `#006d59` · activo `#005c4b` | 6,30:1 · 7,98:1 | **El hover oscurece**, al revés que el burdeos: aclarar bajaría de 4,5:1 |
+| En el modo oscuro del panel | `#25d366` | 8,38:1 sobre la superficie; la tinta inversa encima, 9,28:1 |
+
+**Dónde va relleno** (variante `whatsapp`, §6.3): los tres estados de compra
+de la ficha —«Comprá ya por WhatsApp», «Preguntá si va a haber», «Consultá
+por WhatsApp»—, «Coordinar pago por WhatsApp» de la orden y de «Mis compras»,
+y la página de mantenimiento.
+
+**Dónde va el logo solo** (en `secundario` o en un enlace de texto): las
+páginas legales, el detalle de la orden y del usuario en el panel, y los dos
+enlaces del ingreso. Ahí WhatsApp es apoyo, y un relleno verde le ganaría a la
+acción de la pantalla.
+
+**El rojo y el verde juntos.** En la ficha el burdeos y el verde quedan uno
+arriba del otro. Con el verde oscuro no se lee navideño —se miró aplicado, a
+390 y a 1280—, pero es la razón para no usar el `#25d366`.
+
 ---
 
 ## 3. Tokens
@@ -222,11 +265,16 @@ fondo de sección.
   --brand-shadow:     rgba(131, 40, 51, 0.34);
 
   /* ── Segundo color (§2.5) ──────────────────────────── */
-  --accent:           #2f4a6d;   /* la otra acción de compra, lo elegido */
+  --accent:           #2f4a6d;   /* lo elegido; su papel nuevo, §2.5 */
   --accent-hover:     #3c5d87;   /* MÁS CLARO: el color base ya es oscuro */
   --accent-active:    #24394f;
   --accent-tint:      #eef2f7;   /* reservado; todavía sin uso */
   --accent-tint-border:#d5deea;  /* reservado; todavía sin uso */
+
+  /* ── WhatsApp (§2.6): el color de una marca ajena ──── */
+  --whatsapp:         #008069;   /* 4,89:1 con texto blanco */
+  --whatsapp-hover:   #006d59;   /* MÁS OSCURO: aclarar bajaría de 4,5:1 */
+  --whatsapp-active:  #005c4b;
 
   /* ── Superficies ───────────────────────────────────── */
   --canvas:           #f2f4f5;   /* fondo de página */
@@ -318,6 +366,10 @@ sus metadatos en **2,17:1**. Para que algo retroceda se cambia su superficie
   --accent-active:    #6b8cb5;
   --accent-tint:      #1a2230;
   --accent-tint-border:#2a3648;
+
+  --whatsapp:         #25d366;   /* 8,38:1 sobre la superficie oscura */
+  --whatsapp-hover:   #3ee07a;
+  --whatsapp-active:  #1fb855;
 
   --canvas:           #141416;
   --surface:          #1e1e21;
@@ -696,14 +748,14 @@ Tres cosas que cada copia tenía que acordarse de traer, y que ahora están escr
 | Variante | Fondo | Texto | Borde | Uso |
 |---|---|---|---|---|
 | **Principal** | `--brand` | blanco | — | Una sola por pantalla |
-| **Alterna** | `--accent` | blanco | — | **Par de la principal**, no escalón debajo: la otra forma de hacer lo mismo (§2.5) |
+| **WhatsApp** | `--whatsapp` | blanco | — | Abre WhatsApp donde es la acción principal o el **par** de la principal (§2.6). Donde es apoyo va **secundario**, con el logo en verde |
 | **Secundario** | `--surface` | `--ink` | `--border` | Acciones de apoyo entre pares: «Guardar», «Compartir» |
 | **Terciario** | transparente | `--ink-secondary` | — | **Ghost.** «Cancelar», «Volver». Al pasar el puntero aparece el plato de `--canvas` |
 | **Destructivo** | transparente | `--danger` | `--danger` | Eliminar, cancelar orden, **con rótulo**. **Con ícono** |
 | **Destructivo ghost** | transparente | `--danger` | — | **Solo el panel** (§2.2). El destructivo de una columna de acciones: ícono rojo desde el reposo, sin caja; al pasar el puntero aparece el plato `--danger-tint` |
 | **Destructivo confirmado** | `--danger` | blanco | — | **Solo dentro del diálogo de confirmación** |
 
-> **«Blanco» en esa columna quiere decir `--ink-inverse`, no `#ffffff`.** Las tres variantes de relleno —principal, alterna y destructivo confirmado— usan el token, que en claro vale blanco y **en oscuro se da vuelta**. Escribirlo literal cuesta caro justo en el destructivo confirmado: en oscuro `--danger` se aclara a `#f87171`, y el blanco encima da **2,77:1**, por debajo de AA incluso para texto grande; con el token da 6,65:1. Estuvo así hasta el 2026-09-18, en los nueve diálogos destructivos del panel.
+> **«Blanco» en esa columna quiere decir `--ink-inverse`, no `#ffffff`.** Las tres variantes de relleno —principal, WhatsApp y destructivo confirmado— usan el token, que en claro vale blanco y **en oscuro se da vuelta**. Escribirlo literal cuesta caro justo en el destructivo confirmado: en oscuro `--danger` se aclara a `#f87171`, y el blanco encima da **2,77:1**, por debajo de AA incluso para texto grande; con el token da 6,65:1. Estuvo así hasta el 2026-09-18, en los nueve diálogos destructivos del panel.
 
 | Tamaño | Alto | Texto | Padding |
 |---|---|---|---|
@@ -1303,7 +1355,7 @@ El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del con
 │                      │  ✓ 5 disponibles            │
 │                      │                             │
 │                      │  [  Agregá al carrito  ]    │  principal, ancho completo
-│                      │  [ Comprá ya por WhatsApp ] │  secundario, con ícono
+│                      │  [ Comprá ya por WhatsApp ] │  par, verde WhatsApp (§2.6)
 │                      │                             │
 │                      │  [ ♡ Guardar ][ ⤴ Compartir]│  dos secundarios, mitad y mitad
 │                      │  ─────────────────────────  │
@@ -1479,10 +1531,10 @@ La misma persona escribe toda la interfaz: **cercana, directa, rioplatense**.
 ### No hacer
 
 - **No sumar un TERCER color saturado.** El sistema tiene dos —el burdeos y el
-  azul pizarra de §2.5— y de ahí sale su fuerza. El pizarra entró el 2026-09-17
-  por un motivo estructural, no estético: en la ficha hay dos formas de comprar
-  y tienen que pesar igual. Cualquier otro caso se resuelve con la escala de
-  grises, con el contorno o con los semánticos, que ya existen.
+  azul pizarra de §2.5— y de ahí sale su fuerza. Cualquier otro caso se
+  resuelve con la escala de grises, con el contorno o con los semánticos, que
+  ya existen. **El verde de WhatsApp (§2.6) no cuenta**: es el color de una
+  marca ajena y solo aparece pegado a su logo, como los de los medios de pago.
 - **No usar burdeos relleno para acciones destructivas.** Están a 7 grados de matiz del rojo de peligro: se separan por forma (§2.2).
 - No usar pesos de 700 o más: la jerarquía sale del grado y del tracking.
 - No poner texto por debajo de 12px.

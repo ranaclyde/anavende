@@ -1,6 +1,6 @@
 ---
 name: AnaVende
-description: Acromático con dos voces de igual peso — el burdeos y el pizarra son dos formas de comprar, y el color de estado es de los semánticos.
+description: Acromático con el burdeos como única acción, el pizarra para lo elegido, el verde de WhatsApp en todo lo que abre WhatsApp, y el color de estado de los semánticos.
 colors:
   malbec: "#832833"
   malbec-hover: "#9d3040"
@@ -10,6 +10,9 @@ colors:
   pizarra: "#2f4a6d"
   pizarra-hover: "#3c5d87"
   pizarra-active: "#24394f"
+  whatsapp: "#008069"
+  whatsapp-hover: "#006d59"
+  whatsapp-active: "#005c4b"
   canvas: "#f2f4f5"
   surface: "#ffffff"
   surface-sunken: "#fafbfb"
@@ -102,15 +105,15 @@ components:
   button-brand-active:
     backgroundColor: "{colors.malbec-active}"
     textColor: "{colors.ink-inverse}"
-  button-alterna:
-    backgroundColor: "{colors.pizarra}"
+  button-whatsapp:
+    backgroundColor: "{colors.whatsapp}"
     textColor: "{colors.ink-inverse}"
     typography: "{typography.body}"
     rounded: "{rounded.pill}"
     padding: "0 24px"
     height: "48px"
-  button-alterna-hover:
-    backgroundColor: "{colors.pizarra-hover}"
+  button-whatsapp-hover:
+    backgroundColor: "{colors.whatsapp-hover}"
     textColor: "{colors.ink-inverse}"
   button-secondary:
     backgroundColor: "{colors.surface}"
@@ -189,12 +192,11 @@ Malbec, hay algo que hacer o alguien que responde; en todo lo demás, el color
 se lo lleva la foto del producto. Una pantalla donde el burdeos decora es una
 pantalla que perdió el hilo.
 
-La excepción es exacta y tiene una sola razón: en la ficha hay **dos formas de
-comprar**, el carrito y el WhatsApp, y ninguna es el plan B de la otra. El azul
-pizarra existe para eso y pesa deliberadamente lo mismo que el burdeos —9,05:1
-contra 9,07:1— para que la persona elija por lo que dicen los botones y no por
-cuál se ve más fuerte. Aparte de eso, el color de un **estado** no sale de la
-identidad: sale de los semánticos. Un resultado que salió bien es verde, no
+Hay un segundo color, el azul pizarra, que hoy marca lo elegido y cuyo papel
+se está redefiniendo: darle vida a la tienda más allá de las acciones (DR
+§2.5). Y todo lo que abre WhatsApp lleva **el verde de WhatsApp**, que no es un
+color de la tienda sino el de una marca ajena, pegado a su logo (DR §2.6). El
+color de un **estado** no sale de la identidad: sale de los semánticos. Un resultado que salió bien es verde, no
 burdeos.
 
 La densidad es generosa donde se mira y apretada donde se opera. La tienda
@@ -239,11 +241,14 @@ cuatro semánticos que sólo hablan cuando hay algo que decir.
 
 ### Secondary
 
-- **Azul Pizarra** (`pizarra`): la **otra acción de compra** y **lo elegido**.
-  Hoy son dos lugares: el botón «Comprá ya por WhatsApp» de la ficha y el
-  checkbox marcado. Da 9,05:1 sobre blanco contra los 9,07:1 del Malbec: **0,02
-  de diferencia**, que es la cifra por la que se eligió. No es un escalón debajo
-  del Malbec, es su par.
+- **Azul Pizarra** (`pizarra`): **lo elegido**; hoy, el checkbox marcado. Da
+  9,05:1 sobre blanco contra los 9,07:1 del Malbec. Hasta el 2026-10-19 fue
+  también «Comprá ya por WhatsApp»; su papel nuevo, como color de ambiente de
+  la tienda, está por decidirse (DR §2.5).
+- **Verde WhatsApp** (`whatsapp`): el color de una marca ajena, no de la
+  tienda. El logo de WhatsApp va siempre en verde, y el botón va relleno donde
+  WhatsApp es la acción principal o el par del carrito (DR §2.6). 4,89:1 con
+  texto blanco; el hover oscurece.
 
 ### Neutral
 
@@ -490,7 +495,7 @@ fondo blanco se fundan con la página.
 
 - **Shape:** píldora en la tienda (`9999px`), 8px en el panel. Alturas 32 / 40 / 48px, y el ícono suelto es cuadrado de 44px en móvil.
 - **Brand:** relleno Malbec, texto blanco. **Una sola por pantalla.** El hover aclara (`malbec-hover`) y el activo oscurece (`malbec-active`).
-- **Alterna:** relleno pizarra, texto inverso. La otra forma de hacer lo mismo, a la par de la marca. En la ficha es «Comprá ya por WhatsApp» debajo del carrito.
+- **WhatsApp:** relleno verde WhatsApp, texto y logo inversos. Abre WhatsApp donde es la acción principal o el par de la marca: en la ficha es «Comprá ya por WhatsApp» debajo del carrito. Donde WhatsApp es apoyo va **Secondary**, con el logo en verde. El hover oscurece.
 - **Secondary:** superficie blanca con borde; el hover hunde el fondo y marca el borde. Es para acciones de apoyo entre pares —«Guardar», «Compartir»— y para el «Cancelar» de un diálogo destructivo, donde la salida segura tiene que pesar igual que el botón que borra.
 - **Tertiary (ghost):** sin caja en reposo; al pasar el puntero aparece el plato de `canvas` y la tinta sube a plena. Es el «Cancelar» y el «Volver». En táctil no hay hover, así que el texto tiene que alcanzar solo: nunca un ícono sin rótulo.
 - **Destructive:** contorno rojo sobre transparente, con ícono; para acciones con rótulo. **Destructive ghost:** ícono rojo sin caja, plato `--danger-tint` al hover — **sólo el panel**, para la columna de acciones de una tabla. **Destructive solid:** relleno rojo, exclusivo del diálogo de confirmación.

@@ -2282,6 +2282,7 @@ Cada una se escribió primero en la especificación y después en el código
 | **El rol del panel se controla en cada página, no solo en el layout** (F10.5, 2026-10-17) | `TECHNICAL-SPEC.md` §16, fila «Autorización» | §13.7 ponía la guardia en el layout y alcanzaba en apariencia: el 404 salía. Pero Next renderiza layout y página en paralelo y los datos de la página viajaban igual. **Y los dos `dangerouslySetInnerHTML` que hay quedan anotados como excepciones revisadas** (fila «XSS»): §16 decía que no había ninguno |
 | **Turnstile también en el ingreso, no solo en el alta, el reenvío y la recuperación** (F10.5b, 2026-10-17) | `TECHNICAL-SPEC.md` §16, fila «Altas falsas» | El plan nombraba tres pantallas, pero con `GOTRUE_SECURITY_CAPTCHA_ENABLED` GoTrue exige el token también en `/token` con contraseña (`verifyCaptcha` en `internal/api/middleware.go`, v2.184.0) y no hay forma de prenderlo para algunas rutas. Decisión tuya: el widget va en todas las pantallas que lo requieran. Además frena a quien prueba contraseñas |
 | **La vista previa de la ficha sale del dominio de la tienda, no de Storage** (2026-10-19) | `TECHNICAL-SPEC.md` §9.4, fila «Entrega al navegador»; `app/vista-previa/[...clave]/route.ts` | Decisión tuya del 2026-10-19. Con el `-og.jpg` ya en JPEG y el bucket aceptándolo, WhatsApp seguía sin dibujar la ficha: en el teléfono, título y precio sin foto; en Escritorio, el enlace pelado. Se descartaron con pruebas tuyas el caché (una URL nueva con `?v=3`), el IPv6 (wifi y datos, igual) y, desde afuera, el certificado, el tipo, el tamaño (88 KB) y los metadatos. **La home, con su foto en `anavende.com.ar`, se vio entera en los dos**: lo único distinto era de dónde salía la foto. Por qué WhatsApp rechaza el host de Storage no se sabe. Solo esa foto pasa por el servidor APP —la piden los chats al armar la tarjeta, no la gente, y Cloudflare la guarda un año—; la galería y el catálogo siguen saliendo directo, como pide §9.4 |
+| **El verde de WhatsApp en todo lo que abre WhatsApp, y la variante `alterna` pasa a `whatsapp`** (2026-10-19) | `DESIGN-REFERENCE.md` §1.2, §2.5, **§2.6 nueva**, §3.1, §3.2, §6.3, §7.3 y §11; `DESIGN.md`; `app/globals.css` | Decisión tuya del 2026-10-19. En pizarra, «Comprá ya por WhatsApp» parecía un botón más de la tienda; el verde con el logo es lo que se reconoce. Se compararon aplicadas a la ficha dos versiones —relleno `#008069` y contorno con el logo verde— y elegiste el relleno donde WhatsApp es la acción principal o el par del carrito (los tres estados de compra de la ficha, la orden, «Mis compras», mantenimiento) y el contorno con el logo verde donde es apoyo (legales, el detalle de orden y de usuario del panel, los enlaces del ingreso). `#008069` y no el `#25d366`: con texto blanco da 4,89:1 contra 1,98:1. **No cuenta como tercer color**: es de una marca ajena, como los logos de los medios de pago. **Y el segundo color cambia de rumbo**: no se buscaba para repartir acciones sino para darle vida a la tienda; §2.5 queda marcada para reescribirse con una comparación aplicada |
 ---
 
 ## La baja de cuenta ya es un requisito: RF-34
@@ -2682,7 +2683,7 @@ consumidores distintos, dos respuestas distintas.
     fijo—, con la galería reservando un lugar que la foto no ocupa. Las de
     lienzo fijo quedaron fuera de esa cuenta.
 
-**Actualización del 2026-10-19:** el bucket ya acepta `image/jpeg` y el `-og.jpg` se genera, pero WhatsApp seguía sin dibujar la ficha mientras la foto saliera del host de Storage. Ahora la sirve la tienda (`/vista-previa/…`, en «Decisiones que cambiaron las especificaciones»). **El script de abajo no hace falta**: lo que hay en producción se va a borrar antes del catálogo real, y cada foto nueva trae su `-og.jpg`. **A confirmar después del despliegue**: compartir una ficha desde el teléfono y desde Escritorio.
+**Actualización del 2026-10-19:** el bucket ya acepta `image/jpeg` y el `-og.jpg` se genera, pero WhatsApp seguía sin dibujar la ficha mientras la foto saliera del host de Storage. Ahora la sirve la tienda (`/vista-previa/…`, en «Decisiones que cambiaron las especificaciones»). **El script de abajo no hace falta**: lo que hay en producción se va a borrar antes del catálogo real, y cada foto nueva trae su `-og.jpg`. **Confirmado el 2026-10-19, después del merge de #69**: la ficha compartida por WhatsApp sale con foto, título y precio desde el teléfono y desde Escritorio —visto por vos—, y desde afuera `/vista-previa/…` da 200 `image/jpeg`, `cf-cache-status: HIT` al segundo pedido, y 404 con una clave que no es de producto.
 
 ~~**Lo que falta, y es tuyo:**~~ en Studio, agregarle `image/jpeg` a los formatos
 permitidos del bucket `productos`; después correr `npm run og:productos
@@ -2765,6 +2766,17 @@ pueden verse juntos es **«Mis compras»**. Si molesta, la salida es correr el
 había medido porque comparó sólo contra rojo, verde y ámbar.
 
 ### Lo que falta, la segunda mitad
+
+> **El 2026-10-19 cambió el rumbo** (decisión tuya): el segundo color no se
+> buscaba para repartir acciones —lo elegido, los filtros, el WhatsApp— sino
+> para **darle vida a la tienda**, que es blanca y burdeos. «Comprá ya por
+> WhatsApp» ya no va en pizarra: pasó al verde de WhatsApp (DR §2.6). Lo que
+> sigue es una comparación del pizarra como **color de ambiente** —bandas de
+> sección, tarjetas de categoría, pie, fondos de bloques informativos— aplicada
+> a la home y la ficha, con el burdeos como acción. La lista de abajo es la del
+> plan anterior y se revisa con esa comparación delante. Lo del checkout —lo
+> elegido en rosa, que parece un error— se puede arreglar aparte y sin el
+> segundo color.
 
 - **Lo elegido en el checkout**: las opciones de entrega y la dirección siguen
   con borde bordó sobre `--brand-tint`. Es el caso que originó esta entrada y
