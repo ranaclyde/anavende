@@ -661,7 +661,7 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 
 - Menú lateral de **240px con etiquetas visibles**, colapsable a 64px de solo íconos.
 - En tablet arranca colapsado; en móvil se convierte en un panel deslizable.
-- El interruptor de modo oscuro vive al pie del menú.
+- El interruptor de modo oscuro vive al pie del menú, y también **«Cerrar sesión»**, como un renglón más debajo del nombre y no como un desplegable bajo «Ana ▾» (2026-10-19): es la única opción que tendría, y un menú de una sola entrada es un toque de más.
 
 ---
 

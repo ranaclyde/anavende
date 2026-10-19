@@ -5,6 +5,7 @@ import {
   ChevronsLeft,
   FileText,
   LayoutDashboard,
+  LogOut,
   Menu,
   Package,
   PanelsTopLeft,
@@ -17,12 +18,19 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 
 import { ThemeToggle } from "@/components/admin/theme";
 import { IsotipoSegunTema } from "@/components/shop/logo";
 import { crearPreferencia } from "@/lib/preferencia-local";
 import { cn } from "@/lib/utils";
+import { salir } from "@/modules/users/actions";
 
 /**
  * Menú lateral del panel — DESIGN-REFERENCE §5.2.
@@ -31,7 +39,8 @@ import { cn } from "@/lib/utils";
  * arranca colapsado; en móvil es un panel deslizable, porque un menú fijo se
  * come la mitad de una pantalla en la que hay que leer tablas.
  *
- * El interruptor de modo oscuro vive al pie del menú.
+ * El interruptor de modo oscuro vive al pie del menú, y también «Cerrar
+ * sesión»: el panel no tiene otro lugar desde donde salir.
  */
 
 type Seccion = {
@@ -75,6 +84,7 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
     () => false,
   );
   const [abiertoEnMovil, setAbiertoEnMovil] = useState(false);
+  const [saliendo, iniciarSalida] = useTransition();
 
   // Al navegar se cierra el panel de móvil: si no, tapa lo que se acaba de
   // abrir. Se ajusta durante el render, cuando cambia la ruta, y no en un
@@ -284,6 +294,32 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
               <span className="truncate text-body-sm text-ink">{nombre}</span>
             )}
           </div>
+
+          {/* La misma acción que «Mi cuenta»: cierra la sesión y lleva a la
+              tienda. Apagado mientras sale, para que un segundo toque no
+              mande otra. */}
+          <button
+            type="button"
+            onClick={() => iniciarSalida(() => salir())}
+            disabled={saliendo}
+            aria-busy={saliendo || undefined}
+            className={cn(
+              "flex h-9 max-md:h-11 items-center gap-2 rounded-panel-control px-2.5",
+              "text-body-sm text-ink-secondary transition-colors duration-150",
+              "hover:bg-surface-sunken hover:text-ink disabled:opacity-60",
+              colapsado && !abiertoEnMovil && "justify-center px-0",
+            )}
+            title={colapsado && !abiertoEnMovil ? "Cerrar sesión" : undefined}
+          >
+            <LogOut aria-hidden className="size-4 shrink-0" />
+            {colapsado && !abiertoEnMovil ? (
+              <span className="sr-only">Cerrar sesión</span>
+            ) : (
+              <span className="truncate">
+                {saliendo ? "Cerrando sesión…" : "Cerrar sesión"}
+              </span>
+            )}
+          </button>
 
           <button
             type="button"
