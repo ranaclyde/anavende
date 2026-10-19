@@ -1076,7 +1076,7 @@ interface ObjectStorage {
 | Aspecto | Definición |
 |---|---|
 | Acceso desde el servidor | Con la **clave de servicio**, por la red privada o por HTTPS. Nunca desde el navegador |
-| Entrega al navegador | **Directa** desde el subdominio público de Storage. No pasa por el servidor APP: hacerlo duplicaría el tráfico y le sumaría carga |
+| Entrega al navegador | **Directa** desde el subdominio público de Storage. No pasa por el servidor APP: hacerlo duplicaría el tráfico y le sumaría carga. **Una excepción, desde el 2026-10-19: la vista previa al compartir** (`-og.jpg`) sale de `anavende.com.ar/vista-previa/…` (`app/vista-previa/[...clave]/route.ts`), porque desde el host de Storage WhatsApp no la dibujaba. Solo acepta claves `productos/…-og.jpg`, y Cloudflare la guarda |
 | Bucket | Público en lectura; la escritura solo con clave de servicio |
 | Claves | El resto del código maneja **claves**, no URLs ni SDKs. Solo el adaptador conoce el backend |
 
