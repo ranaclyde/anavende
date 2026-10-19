@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import type { ProductoEnTarjeta } from "@/components/shop/tarjeta-producto";
-import { urlDeImagen, urlDeLogo } from "@/modules/media/subir";
+import { urlDeLogo } from "@/modules/media/subir";
 import {
   aTarjeta,
   COLUMNAS_DE_TARJETA,
@@ -22,12 +22,6 @@ import {
  * tandas —primero las categorías, después todo lo demás en paralelo— y no en
  * seis viajes encadenados.
  *
- * **El hero sale de la MISMA consulta que las secciones** (2026-09-22): son
- * los mismos productos de las mismas categorías, mirados de otra manera. Una
- * consulta propia para el hero traería otra vez lo que ya está en memoria y,
- * peor, podría traer otro orden —el hero mostrando un teclado que su sección
- * no muestra—.
- *
  * **Las tarjetas salen del mismo par de fragmentos que el catálogo**
  * (`COLUMNAS_DE_TARJETA` y `UNIONES_DE_TARJETA`): una segunda definición de
  * «qué necesita una tarjeta» terminaría mostrando otra portada o otro stock
@@ -40,25 +34,12 @@ export const CATEGORIAS_EN_LA_HOME = 7;
 /** Una fila de la grilla de escritorio (§7.1). Si no llena, no se rellena. */
 export const POR_SECCION = 4;
 
-/** Los bloques flotantes del hero (§7.1). Se dibujan los que haya. */
-export const EN_EL_HERO = 5;
-
 /**
- * Debajo de esto la categoría no entra a la rotación del hero (§7.1): con dos
- * bloques el arco no se lee como un arco, se lee como que faltan cosas.
+ * Cuántos productos se traen por categoría destacada: los de su sección.
+ * Hasta el 2026-10-19 eran ocho, porque el hero usaba los primeros cinco con
+ * foto; desde que el hero tiene imágenes propias, ya no los necesita.
  */
-export const MINIMO_EN_EL_HERO = 3;
-
-/**
- * Cuántos productos se traen por categoría destacada.
- *
- * No es `POR_SECCION`: la sección usa los primeros cuatro, pero el hero usa
- * los primeros cinco **con foto**, y un producto sin foto no sirve para un
- * bloque que es casi toda imagen (F2.4 hace el alta en dos pasos, así que
- * productos sin foto existen de verdad). Se piden ocho para que un par sin
- * foto no dejen el hero corto, y el recorte pasa acá al lado, sin otro viaje.
- */
-const POR_CATEGORIA = 8;
+const POR_CATEGORIA = POR_SECCION;
 
 /** Cuántas se nombran abajo. No es un listado: es una muestra con salida. */
 export const MAS_CATEGORIAS = 8;
@@ -69,31 +50,6 @@ export type CategoriaDeLaHome = {
   slug: string;
   nombre: string;
   productos: ProductoEnTarjeta[];
-};
-
-/**
- * Lo que viaja al navegador por cada bloque del hero, y nada más.
- *
- * El hero es un componente de cliente —tiene un reloj y se frena cuando lo
- * mirás—, así que todo lo que reciba se serializa dentro del HTML. Mandarle
- * `ProductoEnTarjeta` entero sería mandar precios, colores y stock de hasta
- * 35 productos para dibujar una foto y dos renglones.
- */
-export type ProductoDelHero = {
-  slug: string;
-  nombre: string;
-  /**
-   * Ya resuelta, y en `card` y no en `thumb`: el bloque se dibuja a 136px,
-   * pero en una pantalla de las de hoy eso son 272 píxeles de imagen y
-   * `thumb` tiene 200. Con la foto de relleno del seed casi no se nota; con
-   * una foto de verdad, el borde de un teclado a 200px estirado a 272 sí.
-   */
-  src: string;
-};
-
-export type ConjuntoDelHero = {
-  categoria: string;
-  productos: ProductoDelHero[];
 };
 
 export type MedioDePagoDeLaHome = {
@@ -117,8 +73,6 @@ export type CategoriaEnTarjeta = {
 export type DatosDeLaHome = {
   /** Las destacadas, hasta siete: son los chips Y las secciones. */
   destacadas: CategoriaDeLaHome[];
-  /** Una tanda de bloques por categoría que llegue al mínimo (§7.1). */
-  hero: ConjuntoDelHero[];
   destacados: ProductoEnTarjeta[];
   ofertas: ProductoEnTarjeta[];
   /** Las demás activas, para la sección del pie. */
@@ -206,26 +160,6 @@ export async function leerHome(): Promise<DatosDeLaHome> {
       productos: filas.slice(0, POR_SECCION).map(aTarjeta),
     })),
 
-    hero: conProductos.flatMap(({ nombre, filas }) => {
-      const productos = filas
-        .flatMap((f) =>
-          f.imagenKey
-            ? [
-                {
-                  slug: f.slug,
-                  nombre: f.nombre,
-                  src: urlDeImagen(f.imagenKey, "card"),
-                },
-              ]
-            : [],
-        )
-        .slice(0, EN_EL_HERO);
-
-      return productos.length >= MINIMO_EN_EL_HERO
-        ? [{ categoria: nombre, productos }]
-        : [];
-    }),
-
     destacados: destacados.map(aTarjeta),
     ofertas: ofertas.map(aTarjeta),
     masCategorias: masCategorias.map(({ imageKey, ...categoria }) => ({
@@ -271,9 +205,7 @@ async function productosPorCategoria(
      WHERE x.n <= ${POR_CATEGORIA}
      -- El ORDER BY de afuera no es decorativo: sin él, Postgres devuelve las
      -- filas de la subconsulta en el orden que le conviene, y lo que la home
-     -- llama «los primeros cuatro» pasa a ser «cuatro cualesquiera». Se notó
-     -- al usar la misma consulta para el hero, que toma «los primeros cinco
-     -- con foto».
+     -- llama «los primeros cuatro» pasa a ser «cuatro cualesquiera».
      ORDER BY x."categoriaId", x.n`);
 
   for (const fila of filas) {

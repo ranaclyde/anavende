@@ -339,6 +339,24 @@
     }
   }
 
+  /* La palabra que rota en el eslogan del hero (2026-10-19): sube medio
+     renglón y se enfoca. Curva exponencial de salida: arranca rápido y frena
+     largo, que es como se asienta algo que cae en su lugar. */
+  --animate-palabra: palabra 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes palabra {
+    from {
+      opacity: 0;
+      transform: translateY(0.45em);
+      filter: blur(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+  }
+
   /* Anchos máximos (§4) */
   --container-shop: 1200px;
   /* El panel va a ancho completo menos el menú, SALVO los formularios y el
@@ -434,5 +452,29 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* El paralaje del hero (2026-10-19). `--px` y `--py` van de -1 a 1 según
+   dónde está el mouse, `--sy` son los píxeles de scroll, y `--d` es la
+   profundidad de cada pieza: cuanto más cerca, más se mueve y más se
+   inclina. Las escribe `HeroDeLaHome` sin pasar por React; acá solo se
+   combinan. Van al revés del mouse, como lo cercano cuando movés la cabeza.
+   `will-change` solo mientras se mueve (`data-moviendo`): quieta, la escena
+   no reserva memoria de la placa de video. */
+@utility paralaje {
+  transform-style: preserve-3d;
+  transform: translate3d(
+      calc(var(--px, 0) * var(--d, 1) * -34px),
+      calc(
+        var(--py, 0) * var(--d, 1) * -24px - var(--sy, 0) * var(--d, 1) * 0.25px
+      ),
+      0
+    )
+    rotateY(calc(var(--px, 0) * var(--d, 1) * 9deg))
+    rotateX(calc(var(--py, 0) * var(--d, 1) * -7deg));
+
+  [data-moviendo] & {
+    will-change: transform;
   }
 }

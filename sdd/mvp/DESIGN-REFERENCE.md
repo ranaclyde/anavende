@@ -153,9 +153,11 @@ Una cuadrícula de cuatro celdas —**A**, un joystick, unos auriculares y una *
 
 **La palabra sola, grande y en burdeos, es un uso más y vive en un solo lugar:
 el hero de la home** (§7.1, agregado el 2026-09-22). Ahí no acompaña a la
-navegación —**es** la pantalla—, así que va en minúsculas, en burdeos y por
-encima de la escala tipográfica. El isotipo no la acompaña y no cambia de
-tamaño ni de color en ningún caso: lo de esta tabla sigue valiendo tal cual.
+navegación —**es** la pantalla—, así que va en burdeos y por encima de la
+escala tipográfica, escrita como el nombre: «AnaVende». Hasta el 2026-10-19
+iba en minúsculas; se volvió a la forma del nombre con el hero nuevo. El
+isotipo no la acompaña y no cambia de tamaño ni de color en ningún caso: lo de
+esta tabla sigue valiendo tal cual.
 
 ### 2.4 El eslogan
 
@@ -1176,23 +1178,24 @@ Los reportes (RF-28) y el inicio del panel (RF-14) dibujan con el componente
 
 ```
 ┌────────────────────────────────────────────────────┐
-│           ┌────┐        ┌────┐                     │
-│   ┌────┐  │    │ ┌────┐ │    │  ┌────┐             │  bloques flotantes:
-│   │    │  │    │ │    │ └────┘  │    │             │  hasta 5 productos de
-│   └────┘  └────┘ └────┘         └────┘             │  UNA categoría, que
-│                                                    │  cambia cada tanto
-│                   anavende                         │  la palabra, burdeos
-│      Insumos informáticos nuevos, en caja.         │  body-lg, secundario
-│      Elegí, armá tu pedido y te lo llevamos.       │
-│                                                    │
+│  ╭──╮  ▫                               ╭───╮       │  la escena: piezas
+│  │🎧│                                   │🎮 │       │  decorativas en tres
+│  ╰──╯              AnaVende             ╰───╯  ▫   │  profundidades
+│            vos elegís los auriculares.             │  marca + eslogan,
+│                                                    │  la palabra rota
 │      (  ¿Qué estás buscando hoy?        (→)  )     │  buscador, máx 560px
-│                                                    │
+│   Productos nuevos, cerrados y en su empaque …     │  la aclaración, caption
+│  ╭─╮                                   ╭──────╮    │
+│  ╰─╯                       ▫           │ ⌨    │    │
+│                                        ╰──────╯    │
 │   [Teclados] [Mouses] [Auriculares] [Cables] …     │  píldoras, hasta 7
 │                                                    │
 │  [🚚 Envíos a Viedma, Carmen de Patagones y …  ]   │  el aviso de RN-10
 ├──────────────────────── 80px ──────────────────────┤
 │  Destacados                                   →    │  heading 20px
 │  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │  una fila, grilla de 4
+├──────────────────────── 80px ──────────────────────┤
+│  ←  [logo] [logo] [logo] [logo] [logo] [logo]  →   │  medios de pago, giran
 ├──────────────────────── 80px ──────────────────────┤
 │  Teclados                                     →    │  una sección por cada
 │  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │  categoría destacada
@@ -1203,61 +1206,66 @@ Los reportes (RF-28) y el inicio del panel (RF-14) dibujan con el componente
 │  En oferta                                    →    │
 │  [tarjeta] [tarjeta] [tarjeta] [tarjeta]           │
 ├──────────────────────── 80px ──────────────────────┤
-│  (Vistos recientemente)                            │  F8.4, todavía no
-├──────────────────────── 80px ──────────────────────┤
-│  ←  [logo] [logo] [logo] [logo] [logo] [logo]  →   │  hilera que gira
+│  (Vistos recientemente)                            │  F8.4
 ├──────────────────────── 80px ──────────────────────┤
 │  Más categorías                    (Ver todas)     │  el botón, apagado
 │  [img] [img] [ C ] [img] [ S ] …                   │  tarjetas, hasta 8
 └────────────────────────────────────────────────────┘
 ```
 
-**Sigue sin haber foto de portada, y ahora el hero tampoco está vacío.** La
-foto genérica de banco de imágenes le resta credibilidad a una tienda de
-reventa; lo que llena el hero es **el catálogo mismo**, en cinco bloques
-escalonados. Es la respuesta más corta a «¿qué hay acá?»: productos de verdad,
-con su nombre y su categoría, antes de haber leído una sola línea.
+> **El hero se rehízo el 2026-10-19, pedido tuyo.** Antes eran cinco bloques
+> flotantes con productos de una categoría, que cambiaba cada seis segundos,
+> y la marca en minúsculas. Ahora es una escena propia alrededor del nombre y
+> el eslogan. Lo de abajo describe el nuevo; el viejo queda en el historial.
 
-**Los bloques son de UNA categoría por vez, y la categoría cambia.** Primero
-unos mouses, al rato unos teclados. Mezclarlos daría una vitrina bonita y muda;
-de a una categoría, el hero cuenta el catálogo por partes y cada vuelta dice
-algo nuevo. **Se dibujan los que haya**: una categoría con cuatro productos
-muestra cuatro bloques y el arco se reacomoda —es la misma regla de las
-secciones—. Entra a la rotación la que tenga **al menos tres productos activos
-con foto**: con menos no es un hero, es un hueco.
+**La marca y el eslogan, al centro.** Se lee «AnaVende / vos elegís **los
+auriculares**.»: el nombre es la primera mitad del eslogan (§2.4), así que no
+se repite «Ana vende». **La palabra final rota** por las categorías destacadas
+—las mismas de los chips—, cada 3,5 segundos, y entra subiendo medio renglón.
+Es el contexto que §2.4 pide para rotarla. El lector de pantalla no la oye
+rotar: oye una vez la forma canónica, «vos elegís la tecnología». El artículo
+sale de una regla (`-as` → «las», el resto «los»); si el catálogo trae una
+categoría femenina que no termina en -as, tiene que pasar a ser un dato de la
+categoría.
+
+**Debajo, el buscador, con aire arriba**, y debajo del buscador la aclaración
+en caption —«Productos nuevos, cerrados y en su empaque original. Elegí y armá
+tu pedido.»—: es la nota al pie, no el mensaje, y por eso es más chica que el
+eslogan.
+
+**Alrededor, una escena decorativa, y no el catálogo.** Son ilustraciones del
+diseño (`components/shop/home/escena-del-hero.ts`, archivos en
+`public/hero/base/`), recortadas y sin fondo: no dependen de qué cargó la
+vendedora, no son enlaces y el lector de pantalla no las oye. **Está pensada
+para cambiarse por fecha** —Navidad, Halloween—: otra lista de piezas con sus
+archivos, sin tocar el componente. Eso se arma aparte. Seis piezas desde `lg`,
+a los costados; cuatro hasta ahí, arriba y abajo del texto, porque entre 640 y
+1024 los costados no tienen lugar.
+
+**Un solo movimiento: la profundidad.** Nada flota solo. Cada pieza tiene una
+profundidad de tres posibles, y se corre e inclina según ella: **con el mouse**
+donde hay uno, en sentido contrario y con inercia, y **con el scroll** en
+todos lados, que es la profundidad del teléfono. Las cercanas son más grandes,
+tienen más sombra y se mueven más; las lejanas, un poco desenfocadas. El
+centro no se mueve nunca.
 
 | Propiedad | Valor | Por qué |
 |---|---|---|
-| Bloques | hasta 5 | Más no entran sin achicarlos por debajo de lo que se reconoce |
-| En teléfono | 3 | A 390px, cinco bloques serían cinco estampillas |
-| Vuelta | 6s | Alcanza para mirar cinco fotos sin que parezca un cartel de ruta |
-| Vaivén | 8px en 5s | Flotan de arriba abajo, cada uno con su retraso y su duración |
-| Mínimo para rotar | 3 productos con foto | Debajo de eso la categoría no entra |
+| Piezas | 6 desde `lg`, 4 hasta ahí | En 390px, seis serían seis estampillas |
+| Profundidades | 1 · 0,65 · 0,35 | Más de tres o cuatro escalones no se distinguen |
+| Mouse | hasta 34px y 9° en la más cercana | Se nota sin marear |
+| Scroll | 0,25 px por px en la más cercana | Separa las capas sin despegarlas del hero |
+| Palabra | 3,5s | Lo justo para leerla y mirar la escena |
 
-**Se mueven, apenas.** Los bloques flotan de arriba abajo —ocho píxeles en
-cinco segundos, menos de lo que se mueve una hoja—, y cada uno con su propio
-retraso y su propia duración: en sincronía serían un ascensor de cinco puertas.
-Es lo que hace que se lean como bloques flotando y no como cinco tarjetas
-pegadas en diagonal, y con la hilera de logos son el único movimiento continuo
-de la tienda.
+**Y se puede parar con un botón** (WCAG 2.2.2): la palabra cambia sola, y eso
+es movimiento que arranca solo. Siempre a la vista —abajo al medio hasta `lg`,
+arriba a la derecha desde ahí—; detiene la palabra y deja la escena quieta. La
+palabra también para cuando el hero sale de la pantalla. Con
+`prefers-reduced-motion` no se mueve nada, el eslogan queda en su forma
+canónica y el botón no se dibuja.
 
-**Y se puede parar a mano, con un botón.** Arriba a la derecha del arco, en el
-margen que los bloques dejan libre en todos los anchos, y **siempre a la
-vista**. No es un lujo: WCAG 2.2.2 pide una forma de detener cualquier
-movimiento que arranque solo y dure más de cinco segundos, y frenar con el
-mouse encima no le sirve a quien entra desde el teléfono —que acá es la mayoría
-(RNF-01)—. El botón detiene **las dos cosas**, la vuelta de categoría y el
-vaivén: parar una sola sería un freno a medias. Con `prefers-reduced-motion` no
-se dibuja, porque ahí no hay nada que parar.
-
-**Se frena mientras lo estás mirando.** Con el mouse encima o el foco del
-teclado adentro, la rotación se detiene: los bloques son **enlaces a la ficha**
-y un enlace que se va justo cuando lo apuntás es peor que no tenerlo. Con
-`prefers-reduced-motion` no arranca nunca —se queda en la primera categoría,
-entera y alcanzable (§8)—.
-
-**La palabra de la marca va en burdeos y en minúsculas, y sólo acá.** Es un
-desvío anotado de §2.3, que la fija en tinta al lado del isotipo: ahí la marca
+**La marca va en burdeos, escrita como el nombre, y sólo acá.** Es un desvío
+anotado de §2.3, que la fija en tinta al lado del isotipo: ahí la marca
 acompaña a la navegación y no puede competir con ella, y acá **es** la
 pantalla. El isotipo no se agranda ni se recolorea; lo que crece es la palabra.
 
@@ -1288,8 +1296,10 @@ pantalla de secciones vacías es peor que una home más corta, y es lo que
 protege a esta pantalla del riesgo P1 —hoy se ve con un catálogo sembrado y
 mañana con el de Ana, que va a tener otra forma—.
 
-**La hilera de medios de pago gira, y se queda quieta con
-`prefers-reduced-motion`** (§9). Van sólo los que tienen logo: un nombre suelto
+**La hilera de medios de pago va justo debajo de «Destacados»** (2026-10-19,
+pedido tuyo): cómo se paga es una duda de entrada, y al fondo de la página
+llegaba poca gente. **Gira, y se queda quieta con `prefers-reduced-motion`**
+(§9). Van sólo los que tienen logo: un nombre suelto
 en una fila de logos se lee como una imagen que no cargó. Los que no tienen
 logo siguen estando donde importan —§7.3, la ficha, donde se nombran—.
 

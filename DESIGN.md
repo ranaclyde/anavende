@@ -314,7 +314,7 @@ apretados y sólidos sin necesidad de un peso más alto.
 
 ### Hierarchy
 
-- **Marca** (600, 3.5rem/56px, 1.0): la palabra «AnaVende» en el hero de la home, en minúsculas y en Malbec, y en ningún otro lado. Debajo de `sm` cae a Display.
+- **Marca** (600, 3.5rem/56px, 1.0): la palabra «AnaVende» en el hero de la home, en Malbec y escrita como el nombre, y en ningún otro lado. Debajo de `sm` cae a Display.
 - **Display** (600, 2.25rem/36px, 1.1): el hero de la portada, y sólo ahí.
 - **Title** (600, 1.5rem/24px, 1.2): nombre del producto en la ficha, títulos de pantalla.
 - **Heading** (600, 1.25rem/20px, 1.25): encabezados de sección.
