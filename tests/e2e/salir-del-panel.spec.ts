@@ -8,9 +8,9 @@ import { ingresar } from "./apoyo/sesion";
  *
  * Hasta acá no podía: el pie del menú tenía el modo oscuro, «Ver la tienda» y
  * su nombre, pero no «Cerrar sesión», y el panel no tiene otro lugar desde
- * donde salir. Se prueba en las dos formas del menú —la columna fija de
- * escritorio y el panel deslizable del teléfono—, porque el botón vive en el
- * mismo pie pero se llega distinto.
+ * donde salir. Ahora es el ícono junto al nombre. Se prueba en las dos
+ * formas del menú —la columna fija de escritorio y el panel deslizable del
+ * teléfono—, porque el botón vive en el mismo pie pero se llega distinto.
  *
  * Lo que se mira es que la sesión **se cerró de verdad**: después de salir,
  * volver a `/admin` manda a `/ingresar`.
