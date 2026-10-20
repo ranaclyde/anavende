@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 
 import {
   ControlesDelItem,
@@ -144,6 +144,12 @@ export default async function PaginaDelCarrito() {
  * subtotal, porque no hay nada que elegir ni que sumar; y no disponible
  * pierde además el enlace y el precio: la ficha ya no existe para el
  * público, y un precio de algo que no se vende no informa nada.
+ *
+ * **Quitarlo no lo borra de golpe** (2026-10-20): `<ViewTransition>` apaga el
+ * que se va y sube los de abajo a su lugar (`globals.css`, `.renglon`). Lo
+ * dispara la acción, que refresca la página dentro de una transición; un
+ * cambio de cantidad, por lo mismo, funde el subtotal viejo con el nuevo. Sin
+ * soporte del navegador, el renglón desaparece como antes.
  */
 function Renglon({ item }: { item: ItemDelCarrito }) {
   const vigente = item.estado === "vigente";
@@ -168,78 +174,80 @@ function Renglon({ item }: { item: ItemDelCarrito }) {
   );
 
   return (
-    <li className="flex gap-4 rounded-card bg-surface p-3 shadow-md sm:p-4">
-      <div className="relative size-20 shrink-0 overflow-hidden rounded-image bg-surface-sunken">
-        {item.imagenKey ? (
-          <Image
-            src={urlDeImagen(item.imagenKey, "thumb")}
-            alt={alt}
-            fill
-            sizes="80px"
-            className={
-              seVende ? "object-cover" : "object-cover opacity-50 grayscale"
-            }
-          />
-        ) : null}
-      </div>
-
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
-          {item.marca}
-        </p>
-        <h3 className="text-body-sm font-medium text-ink">
-          {seVende ? (
-            <Link
-              href={ruta}
-              className="rounded-pill underline-offset-4 hover:underline"
-            >
-              {item.nombre}
-            </Link>
-          ) : (
-            item.nombre
-          )}
-        </h3>
-        {item.colorNombre ? (
-          <p className="text-caption text-ink-secondary">
-            Color: {item.colorNombre}
-          </p>
-        ) : null}
-
-        {seVende ? (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <div className="flex items-end gap-1.5">
-              <Precio
-                precio={item.precio}
-                descuento={item.descuento}
-                precioFinal={item.precioFinal}
-              />
-              <span className="text-caption text-ink-secondary">c/u</span>
-            </div>
-            {vigente ? null : <Badge tone="danger">Sin stock</Badge>}
-          </div>
-        ) : null}
-
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <ControlesDelItem
-            variantId={item.variantId}
-            nombre={item.nombre}
-            cantidad={item.cantidad}
-            maximo={maximo}
-            soloQuitar={!vigente}
-          />
-          {vigente ? (
-            <p className="text-body font-medium text-ink tabular-nums">
-              <span className="sr-only">Subtotal: </span>
-              {formatMoney(item.subtotal)}
-            </p>
-          ) : (
-            <p className="text-body-sm text-ink-secondary">
-              {seVende ? "No suma al total" : "Ya no está a la venta"}
-            </p>
-          )}
+    <ViewTransition default="none" update="renglon" exit="renglon-sale">
+      <li className="flex gap-4 rounded-card bg-surface p-3 shadow-md sm:p-4">
+        <div className="relative size-20 shrink-0 overflow-hidden rounded-image bg-surface-sunken">
+          {item.imagenKey ? (
+            <Image
+              src={urlDeImagen(item.imagenKey, "thumb")}
+              alt={alt}
+              fill
+              sizes="80px"
+              className={
+                seVende ? "object-cover" : "object-cover opacity-50 grayscale"
+              }
+            />
+          ) : null}
         </div>
-      </div>
-    </li>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
+            {item.marca}
+          </p>
+          <h3 className="text-body-sm font-medium text-ink">
+            {seVende ? (
+              <Link
+                href={ruta}
+                className="rounded-pill underline-offset-4 hover:underline"
+              >
+                {item.nombre}
+              </Link>
+            ) : (
+              item.nombre
+            )}
+          </h3>
+          {item.colorNombre ? (
+            <p className="text-caption text-ink-secondary">
+              Color: {item.colorNombre}
+            </p>
+          ) : null}
+
+          {seVende ? (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <div className="flex items-end gap-1.5">
+                <Precio
+                  precio={item.precio}
+                  descuento={item.descuento}
+                  precioFinal={item.precioFinal}
+                />
+                <span className="text-caption text-ink-secondary">c/u</span>
+              </div>
+              {vigente ? null : <Badge tone="danger">Sin stock</Badge>}
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <ControlesDelItem
+              variantId={item.variantId}
+              nombre={item.nombre}
+              cantidad={item.cantidad}
+              maximo={maximo}
+              soloQuitar={!vigente}
+            />
+            {vigente ? (
+              <p className="text-body font-medium text-ink tabular-nums">
+                <span className="sr-only">Subtotal: </span>
+                {formatMoney(item.subtotal)}
+              </p>
+            ) : (
+              <p className="text-body-sm text-ink-secondary">
+                {seVende ? "No suma al total" : "Ya no está a la venta"}
+              </p>
+            )}
+          </div>
+        </div>
+      </li>
+    </ViewTransition>
   );
 }
 

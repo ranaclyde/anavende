@@ -665,6 +665,11 @@ function IniciarSesionParaComprar({
  * volver del ingreso ocupa el mismo lugar que el de un agregado a mano, y el
  * primer clic lo descarta. Dos «Listo» apilados, uno de hace un rato y otro
  * recién, se leen como que se agregó dos veces.
+ *
+ * **El botón dice «Agregado» un segundo y medio** (2026-10-20), como
+ * «Compartir» dice «¡Copiado!»: el aviso de abajo queda fuera de la vista en
+ * un teléfono chico, y el botón es lo que se está mirando. Mientras tanto, el
+ * número del encabezado da un salto (`site-header.tsx`).
  */
 function AgregarAlCarrito({
   variantId,
@@ -677,10 +682,18 @@ function AgregarAlCarrito({
 }) {
   const [enCurso, iniciar] = useTransition();
   const [propio, setPropio] = useState<ResultadoDelCarrito | null>(null);
+  const [agregado, setAgregado] = useState(false);
+  const reloj = useRef<number>(undefined);
   const pausa = propsDePausa(useCuentaEnPausa());
+
+  // Al cambiar de color el componente se desmonta (`key` en `Compra`), y el
+  // reloj no puede quedar vivo para cambiar el estado de algo que ya no está.
+  useEffect(() => () => window.clearTimeout(reloj.current), []);
 
   function agregar() {
     setPropio(null);
+    setAgregado(false);
+    window.clearTimeout(reloj.current);
     retomada.descartar();
 
     iniciar(async () => {
@@ -690,6 +703,10 @@ function AgregarAlCarrito({
           ? { ok: true, enElCarrito: r.data.cantidad }
           : { ok: false, mensaje: r.message },
       );
+      if (r.ok) {
+        setAgregado(true);
+        reloj.current = window.setTimeout(() => setAgregado(false), 1500);
+      }
     });
   }
 
@@ -706,8 +723,12 @@ function AgregarAlCarrito({
         onClick={agregar}
         {...pausa}
       >
-        <ShoppingCart aria-hidden />
-        Agregá al carrito
+        {/*
+          Lo que pasó lo anuncia la región viva de abajo, como en
+          «Compartir»: el botón solo cambia lo que se ve.
+        */}
+        {agregado ? <Check aria-hidden /> : <ShoppingCart aria-hidden />}
+        {agregado ? "Agregado" : "Agregá al carrito"}
       </Button>
 
       <AvisoDelCarrito resultado={propio ?? retomada.resultado} />
