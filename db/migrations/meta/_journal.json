@@ -148,6 +148,13 @@
       "when": 1792179144656,
       "tag": "0020_paginas_legales",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792521474276,
+      "tag": "0021_redes_sociales",
+      "breakpoints": true
     }
   ]
 }

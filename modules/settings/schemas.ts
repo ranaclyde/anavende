@@ -122,10 +122,93 @@ const umbralDeStock = z
     `Más de ${UMBRAL_MAXIMO} marca casi todo el catálogo, y el aviso deja de señalar nada.`,
   );
 
+/**
+ * El perfil de una red social, para el pie de la tienda (2026-10-20).
+ *
+ * Se escribe **como salga**, igual que el WhatsApp: el enlace copiado del
+ * navegador o de la app —con `?igsh=…` y todo—, sin `https://`, o solo el
+ * usuario con o sin `@`. Se guarda siempre como `https://www.<red>.com/usuario`,
+ * así la tienda lo pone en un `href` tal cual.
+ *
+ * **Solo se aceptan enlaces de esa red.** El pie los muestra con el logo de
+ * Facebook o de Instagram, y un logo que lleva a otro sitio es exactamente lo
+ * que no tiene que poder pasar.
+ *
+ * Vacío es `null`: las dos son opcionales y sin valor el pie no las muestra.
+ */
+function redSocial({
+  red,
+  dominios,
+  ejemplo,
+}: {
+  red: string;
+  dominios: readonly string[];
+  ejemplo: string;
+}) {
+  const invalido = `Ese enlace no es de un perfil de ${red}. Pegá el de tu perfil, por ejemplo ${ejemplo}.`;
+
+  return z
+    .string()
+    .trim()
+    .max(200, invalido)
+    .transform((escrito, ctx) => {
+      if (escrito === "") return null;
+
+      const sinArroba = escrito.replace(/^@/, "");
+
+      // Solo el usuario: sin barras ni algo que parezca un dominio. Los puntos
+      // sueltos sí, que un usuario de Instagram puede ser «ana.vende».
+      if (
+        /^[a-z0-9._]+$/i.test(sinArroba) &&
+        !/\.(com|net|org|ar|me)(\.|$)/i.test(sinArroba)
+      ) {
+        return `https://www.${dominios[0]}/${sinArroba}`;
+      }
+
+      let url: URL;
+      try {
+        url = new URL(
+          /^https?:\/\//i.test(escrito) ? escrito : `https://${escrito}`,
+        );
+      } catch {
+        ctx.addIssue({ code: "custom", message: invalido });
+        return z.NEVER;
+      }
+
+      const host = url.hostname.toLowerCase();
+      const esDeLaRed = dominios.some(
+        (d) => host === d || host.endsWith(`.${d}`),
+      );
+      const ruta = url.pathname.replace(/\/+$/, "");
+
+      if (!esDeLaRed || ruta === "") {
+        ctx.addIssue({ code: "custom", message: invalido });
+        return z.NEVER;
+      }
+
+      // Lo que viene después del `?` es rastreo de la app (`igsh`, `mibextid`),
+      // salvo en los perfiles sin usuario de Facebook, que son `?id=`.
+      const id = ruta === "/profile.php" ? url.searchParams.get("id") : null;
+      return `https://www.${dominios[0]}${ruta}${id ? `?id=${id}` : ""}`;
+    })
+    .nullable()
+    .default(null);
+}
+
 export const configuracionDelSitio = z.object({
   whatsappNumber: numeroDeWhatsapp,
   adminNotificationEmail: emailDeAvisos,
   lowStockThreshold: umbralDeStock,
+  facebookUrl: redSocial({
+    red: "Facebook",
+    dominios: ["facebook.com", "fb.com"],
+    ejemplo: "facebook.com/anavende",
+  }),
+  instagramUrl: redSocial({
+    red: "Instagram",
+    dominios: ["instagram.com"],
+    ejemplo: "instagram.com/anavende",
+  }),
 });
 
 export type EntradaDeConfiguracion = z.input<typeof configuracionDelSitio>;

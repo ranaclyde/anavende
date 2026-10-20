@@ -40,17 +40,23 @@ export async function escribirLaConfiguracion(
 ): Promise<ConfiguracionDelSitio> {
   const [fila] = await db.execute<ConfiguracionDelSitio>(sql`
     INSERT INTO site_settings
-           (id, whatsapp_number, admin_notification_email, low_stock_threshold)
+           (id, whatsapp_number, admin_notification_email, low_stock_threshold,
+            facebook_url, instagram_url)
     VALUES (1, ${entrada.whatsappNumber}, ${entrada.adminNotificationEmail},
-            ${entrada.lowStockThreshold})
+            ${entrada.lowStockThreshold}, ${entrada.facebookUrl},
+            ${entrada.instagramUrl})
     ON CONFLICT (id) DO UPDATE
        SET whatsapp_number          = EXCLUDED.whatsapp_number,
            admin_notification_email = EXCLUDED.admin_notification_email,
            low_stock_threshold      = EXCLUDED.low_stock_threshold,
+           facebook_url             = EXCLUDED.facebook_url,
+           instagram_url            = EXCLUDED.instagram_url,
            updated_at               = now()
     RETURNING whatsapp_number          AS "whatsappNumber",
               admin_notification_email AS "adminNotificationEmail",
-              low_stock_threshold      AS "lowStockThreshold"`);
+              low_stock_threshold      AS "lowStockThreshold",
+              facebook_url             AS "facebookUrl",
+              instagram_url            AS "instagramUrl"`);
 
   return fila;
 }

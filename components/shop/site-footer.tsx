@@ -2,15 +2,18 @@ import { Truck } from "lucide-react";
 import Link from "next/link";
 
 import { Isotipo } from "@/components/shop/logo";
+import { IconoFacebook, IconoInstagram } from "@/components/ui/iconos-de-redes";
 import { PAGINAS_LEGALES } from "@/modules/content/paginas";
+import type { RedesSociales } from "@/modules/settings/queries";
 
 /**
  * Pie de la tienda — DESIGN-REFERENCE §5.1.
  * Pie oscuro con la zona de entrega, los medios de pago y los legales.
  *
- * Los medios de pago los carga la vendedora (RF-19, F2.6) y las páginas
- * legales son editables (RF-29, F9.3): los dos llegan como datos, no como
- * texto fijo en el código.
+ * Los medios de pago los carga la vendedora (RF-19, F2.6), las páginas
+ * legales son editables (RF-29, F9.3) y las redes sociales salen de la
+ * configuración (2026-10-20): llegan como datos, no como texto fijo en el
+ * código.
  */
 
 export type MedioDePago = { id: string; name: string };
@@ -36,9 +39,16 @@ const LEGALES = [
 
 export function SiteFooter({
   mediosDePago = [],
+  redes = { facebook: null, instagram: null },
 }: {
   mediosDePago?: MedioDePago[];
+  redes?: RedesSociales;
 }) {
+  const perfiles = [
+    { red: "Instagram", href: redes.instagram, Icono: IconoInstagram },
+    { red: "Facebook", href: redes.facebook, Icono: IconoFacebook },
+  ].flatMap((p) => (p.href ? [{ ...p, href: p.href }] : []));
+
   return (
     // El pie es la única superficie oscura de la tienda, y lo es a propósito:
     // cierra la página sin competir con las fotos de producto.
@@ -52,6 +62,26 @@ export function SiteFooter({
               <Isotipo claro />
               <span className="text-heading">AnaVende</span>
             </div>
+            {perfiles.length > 0 && (
+              // Debajo del logo, pedido del 2026-10-20. 44px de lado (§9), y
+              // corrido a la izquierda lo que sobra del cuadro, para que el
+              // primer ícono quede alineado con el isotipo y no con su aire.
+              <ul aria-label="Redes sociales" className="-ml-2.5 flex gap-1">
+                {perfiles.map(({ red, href, Icono }) => (
+                  <li key={red}>
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`AnaVende en ${red}`}
+                      className="flex size-11 items-center justify-center rounded-pill text-white/75 transition-colors duration-150 hover:bg-white/10 hover:text-ink-inverse"
+                    >
+                      <Icono className="size-5" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
             <p className="text-body-sm text-white/65">
               Teclados, mouses, auriculares, cables y memorias.
             </p>
