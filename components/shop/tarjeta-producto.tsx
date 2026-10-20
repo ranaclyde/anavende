@@ -202,13 +202,18 @@ export function TarjetaProducto({
           {accionFavorito ? (
             <div className="absolute top-2 right-2 z-10">{accionFavorito}</div>
           ) : null}
+
+          <CantidadDeColores colores={colores} />
         </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-1 px-1 pt-3 pb-1">
-        <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
-          {marca}
-        </p>
+        {/*
+          Sin versalitas, y pegada al nombre (2026-10-20, pedido tuyo): en
+          mayúsculas y con aire propio se leía más importante que el nombre
+          del producto. Queda en 12px, que es el piso (§3).
+        */}
+        <p className="-mb-1 text-caption text-ink-secondary">{marca}</p>
 
         <h3 className="text-body-sm font-medium text-ink">
           {/*
@@ -218,17 +223,20 @@ export function TarjetaProducto({
             inalcanzable con teclado. El pseudo-elemento cubre la tarjeta sin
             anidar nada.
 
-            `line-clamp-2` con el alto reservado: sin él, un nombre de una línea
-            y otro de dos dejan los precios de la fila a distinta altura.
+            `line-clamp-2` y **sin alto reservado** (2026-10-20). Lo tuvo para
+            que un nombre de una línea y otro de dos no dejaran los precios de
+            la fila a distinta altura; ahora eso lo resuelve el `mt-auto` del
+            precio, que lo pega al fondo de la tarjeta, y la reserva solo
+            dejaba un renglón en blanco bajo los nombres cortos.
           */}
           {noDisponible ? (
-            <span className="line-clamp-2 min-h-[2.9em]">{nombre}</span>
+            <span className="line-clamp-2">{nombre}</span>
           ) : (
             // Al tocarla, la foto viaja a la ficha (`foto-viajera.tsx`).
             <EnlaceDeTarjeta
               href={`/productos/${slug}`}
               slug={slug}
-              className="line-clamp-2 min-h-[2.9em] after:absolute after:inset-0 after:rounded-card after:content-['']"
+              className="line-clamp-2 after:absolute after:inset-0 after:rounded-card after:content-['']"
             >
               {nombre}
             </EnlaceDeTarjeta>
@@ -236,25 +244,73 @@ export function TarjetaProducto({
         </h3>
 
         {/*
-          Precio a la izquierda, colores a la derecha, en la misma línea (§6.1).
-          `items-end` y no `items-center`: el precio tiene dos tamaños de texto
-          y alinear por el centro deja los puntos flotando alto.
+          Solo el precio, con el tachado arriba (2026-10-20). Hasta ese día
+          compartía renglón con los puntos de color, y cuando no entraban
+          juntos el precio se partía: el tachado subía en una tarjeta y no en
+          la de al lado, y con cinco colores o en el carrusel del teléfono, se
+          pisaban. Los colores pasaron a la foto (`CantidadDeColores`).
         */}
-        <div className="flex items-end justify-between gap-2 pt-1">
-          <Precio
-            precio={producto.precio}
-            descuento={producto.descuento}
-            precioFinal={producto.precioFinal}
-          />
-          <PuntosDeColor colores={colores} />
-        </div>
+        <Precio
+          precio={producto.precio}
+          descuento={producto.descuento}
+          precioFinal={producto.precioFinal}
+          apilado
+          className="mt-auto pt-1"
+        />
       </div>
     </article>
   );
 }
 
 /**
- * Los colores en que viene el producto, como puntos (§6.1).
+ * Cuántos colores hay, sobre la foto — 2026-10-20, a la manera de Mercado
+ * Libre.
+ *
+ * **Con un solo color no se muestra nada**: no hay nada que elegir, y la
+ * foto ya lo muestra. Con dos o más, una pastilla abajo a la izquierda con
+ * una ruedita y el número. **La ruedita es un arcoíris fijo, igual en
+ * todas** (decisión tuya del 2026-10-20): su trabajo es decir «hay más de un
+ * color», no cuáles. Partida en los colores reales, con diez se volvía una
+ * mancha, y con negro y gris se perdía contra la pastilla oscura.
+ *
+ * Reemplaza a los puntos debajo del precio, que no tenían un ancho donde
+ * entrar siempre: con cinco colores, o en el carrusel del teléfono, pisaban
+ * el precio. Un número entra en cualquier tarjeta.
+ *
+ * Abajo a la izquierda porque arriba a la derecha está el corazón, y en el
+ * centro la píldora de «Sin stock».
+ */
+function CantidadDeColores({
+  colores,
+}: {
+  colores: { nombre: string; hex: string; hex2?: string | null }[];
+}) {
+  if (colores.length < 2) return null;
+
+  return (
+    <p className="absolute bottom-2 left-2 flex items-center gap-1 rounded-pill bg-ink/75 py-0.5 pr-2 pl-1 text-caption font-medium text-ink-inverse tabular-nums">
+      <span
+        aria-hidden
+        className="block size-3.5 rounded-full border border-ink-inverse/60"
+        style={{ background: RUEDA }}
+      />
+      <span aria-hidden>{colores.length}</span>
+      <span className="sr-only">
+        En {colores.length} colores:{" "}
+        {colores.map((c) => c.nombre.toLowerCase()).join(", ")}
+      </span>
+    </p>
+  );
+}
+
+/** El círculo cromático, el mismo en toda la tienda. */
+const RUEDA =
+  "conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)";
+
+/**
+ * Los colores en que viene el producto, como puntos (§6.1). Desde el
+ * 2026-10-20 los usa solo el renglón de «Favoritos»; la tarjeta muestra
+ * `CantidadDeColores`.
  *
  * **No son seleccionables acá.** Elegir color es de la ficha (§6.5): en la
  * grilla son un dato —«esto viene en tres colores»— y hacerlos clicables

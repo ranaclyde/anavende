@@ -679,14 +679,14 @@ El componente más importante del sistema. Aparece en catálogo, home, recomenda
 │  ┌───────────────────┐  │   sombra md, sin borde
 │  │                   │  │
 │  │   imagen 1:1      │  │   radio 20px (8 menos que la tarjeta)
-│  │                   │  │
+│  │ (◑ 3)             │  │   con 2+ colores: pastilla abajo a la izq.
 │  └───────────────────┘  │
 │                         │
-│  LOGITECH               │   caption 12px/500, secundario, VERSALITAS
+│  Logitech               │   caption 12px, secundario, pegada al nombre
 │  Teclado mecánico K120  │   body-sm 14px/500, ink, máx. 2 líneas
 │                         │
-│  $27.500,00 $24.500,00 ●●│  una línea: tachado y después final
-│                     ♡   │   puntos de color a la derecha
+│  $27.500,00             │   tachado arriba, renglón reservado
+│  $24.500,00             │   final abajo, body-lg 18px/600
 └─────────────────────────┘
 ```
 
@@ -696,17 +696,18 @@ El componente más importante del sistema. Aparece en catálogo, home, recomenda
 | Hover | Elevación a `--shadow-lg`, la tarjeta sube 2px, la imagen escala a 1.03 dentro de su marco. Transición 200ms |
 | Presionada | Se hunde a 0.98 mientras se aprieta el enlace, no el corazón. Es la única respuesta al toque en el teléfono, donde no hay hover (2026-10-20) |
 | Foco | `--shadow-focus` sobre toda la tarjeta |
-| **Con descuento** | Precio tachado a la izquierda del final, en la misma línea. El final va en burdeos. **Sin píldora sobre la imagen** |
+| **Con descuento** | Precio tachado **arriba** del final, en su propio renglón. El final va en burdeos. **Sin píldora sobre la imagen** |
+| **Sin descuento** | El renglón del tachado queda **reservado vacío**: los precios de una fila caen a la misma altura (2026-10-20) |
 | **Sin stock** | Imagen al 55% de opacidad + píldora «Sin stock» centrada sobre ella, superficie blanca al 92%. **La tarjeta sigue siendo clicable** (RN-05) |
 | **Favorito** | Corazón arriba a la derecha de la imagen, **siempre a la vista**. Contorno cuando no está marcado, **relleno `--brand`** cuando sí. Área táctil de 44px aunque el ícono mida 20. Fondo `--surface` al 92% detrás, porque la imagen de abajo puede ser de cualquier color. **Late al marcarlo**, y no al desmarcarlo: escala a 1.25 y vuelve en 200ms (2026-10-20) |
 
-**Sobre la marca en versalitas:** separa visualmente marca de producto sin sumar un color ni un peso. Es un recurso de la referencia y funciona bien con Inter.
+**Sobre la marca, sin versalitas** (2026-10-20). Iba en mayúsculas para separarla del nombre sin sumar un color ni un peso, y el efecto fue el contrario: en versalitas y con aire propio se leía más importante que el nombre del producto. Ahora va en caja normal, en 12px —el piso, §3— y pegada al nombre, igual en la tarjeta y en la ficha.
 
 **Sobre los dos números, y no cuatro.** La tarjeta llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el precio final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces y cuatro números para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, que es lo que ya dibujaba este esquema y lo que hace el canvas aprobado en F3.8. Desde el 2026-09-08 **la ficha hace lo mismo** (§6.7, RN-04c): la regla dejó de ser de la tarjeta y pasó a ser de la tienda.
 
 **Sobre el corazón, que no espera al hover.** Revelarlo al pasar el mouse deja media tienda sin favoritos: en un teléfono no hay hover, y ahí el botón no existiría. Y va **encima** del enlace estirado —`z-10`, fuera del ancla— porque envolver la tarjeta entera en un `<a>` metería el corazón adentro del enlace: HTML inválido, e inalcanzable con teclado. El relleno no es la única señal de estado: el botón lo anuncia también para lectores de pantalla (§9), que no ven un contorno lleno.
 
-**Sobre los puntos de color.** Hasta cuatro, y «+N» si hay más; un producto con nueve colores llenaría media tarjeta de puntos y empujaría el precio. **No son seleccionables**: elegir color es de la ficha (§6.5), y hacerlos clicables metería un segundo destino dentro de una tarjeta que ya es un enlace entero. Llevan borde: un punto blanco sobre superficie blanca, sin contorno, no existe.
+**Sobre los colores: una pastilla con la cantidad, no puntos** (2026-10-20, a la manera de Mercado Libre). Hasta ese día iban hasta cuatro puntos y «+N» en el renglón del precio, y no había ancho donde entraran siempre: con cinco colores, en el teléfono o en el carrusel, el precio se partía —el tachado subía en una tarjeta y no en la de al lado— o se pisaba con los puntos. Ahora, **con un solo color no se muestra nada**, y con dos o más va una pastilla oscura abajo a la izquierda de la foto —arriba a la derecha está el corazón y al centro «Sin stock»— con una ruedita y el número. **La ruedita es un arcoíris fijo, igual en todas** (decisión tuya del 2026-10-20): dice «hay más de un color», no cuáles. Se probó partida en los colores reales y no sirve: con diez se vuelve una mancha, y un negro o un gris se pierden contra la pastilla oscura. El nombre de cada color va en `sr-only`. **No es seleccionable**: elegir color es de la ficha (§6.5). El renglón de «Favoritos» conserva los puntos, porque ahí hay ancho.
 
 ### 6.2 Buscador
 
@@ -839,17 +840,19 @@ Color:  Negro
 Componente propio, porque aparece en todas partes y tiene que ser consistente.
 
 ```
-FICHA (§7.3) — apilado
-Sin oferta:      $ 27.500,00              ink, peso 600, 24px
-Con oferta:      $ 24.500,00              burdeos, peso 600, 24px
+FICHA (§7.3) — apilado, el tachado abajo
+Sin oferta:      $ 27.500,00              ink, peso 500, 28px
+Con oferta:      $ 24.500,00              burdeos, peso 500, 28px
                  $ 27.500,00              tachado, secundario, 12px
 
-TARJETA (§6.1) — una línea
-Sin oferta:      $ 27.500,00              ink, peso 600
-Con oferta:      $ 27.500,00 $ 24.500,00  tachado secundario 12px, después burdeos 600
+TARJETA (§6.1) — apilado, el tachado arriba (2026-10-20)
+Sin oferta:      (renglón reservado)
+                 $ 27.500,00              ink, peso 600, 18px
+Con oferta:      $ 27.500,00              tachado, secundario, 12px
+                 $ 24.500,00              burdeos, peso 600, 18px
 ```
 
-**Dos números en las dos, y lo único que cambia es la disposición.** La ficha llevó «Ahorrás $ 3.000,00» hasta el 2026-09-08 y ya no: una oferta se comunica con cuánto valía y cuánto vale, y el tercer número dice la misma oferta otra vez (RN-04c). Lo que separa las dos composiciones es el lugar. En la grilla el precio comparte renglón con los puntos de color y tiene que entrar en una línea; en la ficha es lo primero que se lee después del nombre, sube a 24px y el tachado baja, donde no le compite.
+**Dos números en las dos, y lo único que cambia es la disposición.** La ficha llevó «Ahorrás $ 3.000,00» hasta el 2026-09-08 y ya no: una oferta se comunica con cuánto valía y cuánto vale, y el tercer número dice la misma oferta otra vez (RN-04c). Lo que separa las dos composiciones es el lugar. En la grilla el tachado va arriba del final y su renglón se reserva aunque no haya oferta (2026-10-20); en la ficha es lo primero que se lee después del nombre, sube a 24px y el tachado baja, donde no le compite.
 
 El tachado va **primero en la tarjeta** porque así se lee un cartel de oferta —«valía tanto, ahora tanto»— y **después en la ficha** porque ahí el final ya es lo más grande de la pantalla y no necesita que nada lo anuncie.
 
@@ -1356,10 +1359,10 @@ El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del con
 
 ```
 ┌──────────────────────┬─────────────────────────────┐
-│ ┌──┐                 │  LOGITECH                   │  caption, versalitas
+│ ┌──┐                 │  Logitech                   │  caption, pegada al nombre
 │ └──┘                 │  Teclado mecánico K120      │  title 24px
 │ ┌──┐    imagen       │                             │
-│ └──┘  principal   ›  │  $ 24.500,00                │  burdeos, 24px
+│ └──┘  principal   ›  │  $ 24.500,00                │  burdeos, 28px/500
 │ ┌──┐                 │  $ 27.500,00                │  tachado, secundario, 12px
 │ └──┘                 │                             │
 │                      │  Color: Negro               │
