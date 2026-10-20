@@ -503,14 +503,74 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   pointer-events: none;
 }
 
+/* Lo que tiene que quedar quieto y ARRIBA durante una View Transition: el
+   encabezado y el panel de filtros. El navegador dibuja lo que se anima en
+   una capa propia, por encima de toda la página, y sin esto las tarjetas que
+   se reacomodan al filtrar le pasaban por encima al panel abierto —y le
+   pasarían al encabezado al subir—. Nombrados, entran a esa capa con su
+   propia foto; la nueva se muestra tal cual y la vieja no, así que no se
+   mueven ni se funden. El orden es el de la página: en escritorio el panel
+   es un desplegable debajo del encabezado, y en el teléfono es una hoja a
+   pantalla completa que lo tapa. */
+::view-transition-group(encabezado),
+::view-transition-group(panel-filtros),
+::view-transition-new(encabezado),
+::view-transition-new(panel-filtros) {
+  animation: none;
+}
+
+::view-transition-old(encabezado),
+::view-transition-old(panel-filtros) {
+  display: none;
+}
+
+::view-transition-group(encabezado) {
+  z-index: 100;
+}
+
+::view-transition-group(panel-filtros) {
+  z-index: 90;
+}
+
+@media (max-width: 767px) {
+  ::view-transition-group(panel-filtros) {
+    z-index: 110;
+  }
+}
+
 /* La foto que viaja de la tarjeta a la ficha (2026-10-20,
    `components/shop/foto-viajera.tsx`): 300ms, el techo de §8, porque recorre
-   media pantalla y en 200 no se llega a seguir. Por encima del encabezado,
-   que en el teléfono queda en su camino. */
+   media pantalla y en 200 no se llega a seguir. Por encima de todo, también
+   del encabezado, que en el teléfono queda en su camino. */
 ::view-transition-group(.foto) {
   animation-duration: 300ms;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 50;
+  z-index: 200;
+}
+
+/* Las tarjetas del catálogo al filtrar, ordenar o buscar (2026-10-20,
+   `app/(shop)/productos/page.tsx`). Las que siguen se deslizan a su lugar en
+   200ms, las que se van se apagan en 150 —salir más rápido que entrar— y las
+   nuevas aparecen en 200. Todas juntas y sin escalonar: la lista no aparece,
+   se reacomoda, y moverse a la vez es lo que dice «es la misma grilla». */
+::view-transition-group(.tarjeta) {
+  animation-duration: 200ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(.tarjeta-sale) {
+  animation: 150ms cubic-bezier(0.4, 0, 0.2, 1) both renglon-sale;
+}
+
+::view-transition-new(.tarjeta-entra) {
+  animation: 200ms cubic-bezier(0.4, 0, 0.2, 1) both tarjeta-entra;
+}
+
+@keyframes tarjeta-entra {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
 }
 
 ::view-transition-group(.renglon) {

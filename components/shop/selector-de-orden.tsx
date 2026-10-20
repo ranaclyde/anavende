@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+import { useAvisarFiltrando } from "@/components/shop/filtrando";
 import { Select } from "@/components/ui/select";
+import { TIPO_FILTRO } from "@/lib/transiciones";
 import {
   ORDENES_DE_TIENDA,
   urlCambiando,
@@ -28,6 +30,7 @@ import {
 export function SelectorDeOrden({ filtros }: { filtros: FiltrosDeTienda }) {
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
+  useAvisarFiltrando(pendiente);
 
   return (
     <label className="flex items-center gap-2 text-body-sm text-ink-secondary">
@@ -42,6 +45,8 @@ export function SelectorDeOrden({ filtros }: { filtros: FiltrosDeTienda }) {
           iniciar(() => {
             router.push(
               urlCambiando(filtros, { orden: e.target.value as OrdenDeTienda }),
+              // Al ordenar, las tarjetas se deslizan a su lugar nuevo.
+              { transitionTypes: TIPO_FILTRO },
             );
           });
         }}

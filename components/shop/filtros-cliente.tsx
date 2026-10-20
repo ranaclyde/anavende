@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import {
   urlCambiando,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
+import {
+  EsperaDelFiltro,
+  useAvisarFiltrando,
+} from "@/components/shop/filtrando";
+import { TIPO_FILTRO } from "@/lib/transiciones";
 import { cn } from "@/lib/utils";
 
 /**
@@ -80,9 +85,11 @@ export function LimpiarFiltros({
     <Link
       href={href}
       onClick={(e) => cerrarPanel(e.currentTarget)}
+      transitionTypes={TIPO_FILTRO}
       className={className}
     >
       Limpiar filtros
+      <EsperaDelFiltro />
     </Link>
   );
 }
@@ -119,6 +126,10 @@ const aTexto = (n: number | null) => (n === null ? "" : String(n));
  */
 export function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
   const router = useRouter();
+  // La transición es para enterarse de cuándo termina: mientras tanto, la
+  // grilla se atenúa (`filtrando.tsx`).
+  const [pendiente, iniciar] = useTransition();
+  useAvisarFiltrando(pendiente);
   const [desde, setDesde] = useState(aTexto(filtros.precioMin));
   const [hasta, setHasta] = useState(aTexto(filtros.precioMax));
   const espera = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -150,8 +161,11 @@ export function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
       [min, max] = [max, min];
     }
     if (min === filtros.precioMin && max === filtros.precioMax) return;
-    router.replace(urlCambiando(filtros, { precioMin: min, precioMax: max }), {
-      scroll: false,
+    iniciar(() => {
+      router.replace(
+        urlCambiando(filtros, { precioMin: min, precioMax: max }),
+        { scroll: false, transitionTypes: TIPO_FILTRO },
+      );
     });
   };
 

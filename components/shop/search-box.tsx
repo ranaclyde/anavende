@@ -2,12 +2,14 @@
 
 import { ArrowRight, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 
+import { useAvisarFiltrando } from "@/components/shop/filtrando";
 import {
   leerFiltrosDeTienda,
   urlCambiando,
 } from "@/modules/catalog/products/filtros-tienda";
+import { TIPO_FILTRO } from "@/lib/transiciones";
 import { cn } from "@/lib/utils";
 
 /**
@@ -57,6 +59,9 @@ export function SearchBox({
 }) {
   const router = useRouter();
   const params = useSearchParams();
+  // Solo para saber cuándo termina una búsqueda dentro del catálogo.
+  const [pendiente, iniciar] = useTransition();
+  useAvisarFiltrando(pendiente);
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const caja = useRef<HTMLFormElement>(null);
@@ -101,7 +106,13 @@ export function SearchBox({
     // copia que se puede desincronizar. `urlCambiando` vuelve a la página 1,
     // que es justo lo que corresponde al cambiar la búsqueda.
     const actuales = leerFiltrosDeTienda(Object.fromEntries(params.entries()));
-    router.push(urlCambiando(actuales, { q }));
+    // Buscar dentro del catálogo es filtrarlo: la grilla se atenúa mientras
+    // espera y las tarjetas se reacomodan al llegar (`filtrando.tsx`).
+    iniciar(() => {
+      router.push(urlCambiando(actuales, { q }), {
+        transitionTypes: TIPO_FILTRO,
+      });
+    });
   };
 
   const limpiar = () => {

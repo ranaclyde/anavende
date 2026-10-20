@@ -3,6 +3,7 @@ import { Check, SlidersHorizontal, X } from "lucide-react";
 
 import { BotonCerrarFiltros } from "@/components/shop/boton-cerrar-filtros";
 import { BotonVerResultados } from "@/components/shop/boton-ver-resultados";
+import { EsperaDelFiltro } from "@/components/shop/filtrando";
 import {
   CierreDelPanel,
   LimpiarFiltros,
@@ -18,6 +19,7 @@ import {
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
 import { formatMoney } from "@/lib/money";
+import { TIPO_FILTRO } from "@/lib/transiciones";
 import type {
   OpcionDeColor,
   OpcionDeFiltro,
@@ -132,10 +134,14 @@ export function PanelDeFiltros({
         entra y sale, y con la altura del viewport fija el pie de la hoja se
         va abajo del borde justo cuando aparece. `z-50` porque tiene que tapar
         el encabezado, que es `z-40`.
+
+        El nombre de View Transition es para que las tarjetas no le pasen
+        por encima al filtrar con el panel abierto (`globals.css`).
       */}
       <div
         className={cn(
           "absolute inset-x-0 top-full z-20 mt-3 flex flex-col gap-6",
+          "[view-transition-name:panel-filtros]",
           "max-h-[min(70vh,32rem)] overflow-y-auto overscroll-contain",
           "rounded-card bg-surface p-5 shadow-lg sm:p-6",
           "max-md:fixed max-md:inset-0 max-md:z-50 max-md:mt-0 max-md:h-dvh",
@@ -313,6 +319,8 @@ function GrupoDeChips({
                 // Volver a tocar el chip encendido lo apaga: lo resuelve
                 // `alternar`, y es el gesto que la gente prueba primero.
                 href={urlDe(o.slug)}
+                // Las tarjetas se reacomodan al llegar (`lib/transiciones.ts`).
+                transitionTypes={TIPO_FILTRO}
                 // §9: el color nunca es el único portador del estado. Un
                 // lector de pantalla no ve el relleno burdeos.
                 aria-current={activo ? "true" : undefined}
@@ -362,6 +370,7 @@ function GrupoDeChips({
                 <span className="sr-only">
                   {activo ? " — quitar este filtro" : " — aplicar este filtro"}
                 </span>
+                <EsperaDelFiltro />
               </Link>
             </li>
           );
@@ -392,6 +401,7 @@ function Casilla({
   return (
     <Link
       href={href}
+      transitionTypes={TIPO_FILTRO}
       aria-current={activa ? "true" : undefined}
       className={cn(
         "relative flex w-fit items-center gap-2.5 rounded-pill py-1.5 pr-3 pl-1.5",
@@ -416,6 +426,7 @@ function Casilla({
       <span className="sr-only">
         {activa ? " — quitar este filtro" : " — aplicar este filtro"}
       </span>
+      <EsperaDelFiltro />
     </Link>
   );
 }
@@ -506,6 +517,7 @@ export function ChipsDeFiltros({
         <li key={p.clave}>
           <Link
             href={p.href}
+            transitionTypes={TIPO_FILTRO}
             // Tinte de marca y no blanco: sobre el canvas gris, un chip
             // blanco es una superficie más entre otras y no se lee como «esto
             // está aplicado». El tinte lo dice sin sumar un color al sistema.
@@ -520,6 +532,7 @@ export function ChipsDeFiltros({
             {p.etiqueta}
             <X className="size-3.5 shrink-0" aria-hidden="true" />
             <span className="sr-only">Quitar este filtro</span>
+            <EsperaDelFiltro />
           </Link>
         </li>
       ))}
@@ -527,6 +540,7 @@ export function ChipsDeFiltros({
       <li>
         <Link
           href={urlDeTienda({ orden: filtros.orden })}
+          transitionTypes={TIPO_FILTRO}
           className={cn(
             "relative rounded-full px-2 py-1.5 text-caption font-medium text-ink-secondary underline underline-offset-2",
             "transition-colors duration-150 hover:text-brand",
@@ -535,6 +549,7 @@ export function ChipsDeFiltros({
           )}
         >
           Limpiar todo
+          <EsperaDelFiltro />
         </Link>
       </li>
     </ul>
