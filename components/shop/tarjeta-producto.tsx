@@ -220,17 +220,20 @@ export function TarjetaProducto({
             inalcanzable con teclado. El pseudo-elemento cubre la tarjeta sin
             anidar nada.
 
-            `line-clamp-2` con el alto reservado: sin él, un nombre de una línea
-            y otro de dos dejan los precios de la fila a distinta altura.
+            `line-clamp-2` y **sin alto reservado** (2026-10-20). Lo tuvo para
+            que un nombre de una línea y otro de dos no dejaran los precios de
+            la fila a distinta altura; ahora eso lo resuelve el `mt-auto` del
+            precio, que lo pega al fondo de la tarjeta, y la reserva solo
+            dejaba un renglón en blanco bajo los nombres cortos.
           */}
           {noDisponible ? (
-            <span className="line-clamp-2 min-h-[2.9em]">{nombre}</span>
+            <span className="line-clamp-2">{nombre}</span>
           ) : (
             // Al tocarla, la foto viaja a la ficha (`foto-viajera.tsx`).
             <EnlaceDeTarjeta
               href={`/productos/${slug}`}
               slug={slug}
-              className="line-clamp-2 min-h-[2.9em] after:absolute after:inset-0 after:rounded-card after:content-['']"
+              className="line-clamp-2 after:absolute after:inset-0 after:rounded-card after:content-['']"
             >
               {nombre}
             </EnlaceDeTarjeta>

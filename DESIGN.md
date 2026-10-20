@@ -628,8 +628,9 @@ tarjeta sube media unidad y pasa a `shadow-lg` mientras la foto escala un 3%, la
 dos cosas bajo `motion-safe`. Al apretar el enlace —no el corazón— se hunde a
 0.98, que en el teléfono es la única respuesta al toque. El foco del enlace interior enciende el anillo en
 toda la tarjeta (`has-[a:focus-visible]`). La marca va arriba en caption
-mayúsculo, el nombre en cuerpo pequeño a dos líneas con alto mínimo reservado, y
-el precio con el tachado arriba y su renglón reservado aunque no haya oferta.
+mayúsculo, el nombre en cuerpo pequeño hasta dos líneas, y el precio pegado al
+fondo con `mt-auto` —así se alinea en la fila aunque los nombres midan
+distinto—, con el tachado arriba y su renglón reservado aunque no haya oferta.
 Con dos o más colores, una pastilla oscura abajo a la izquierda de la foto con
 una ruedita de arcoíris —la misma siempre— y la cantidad; con uno, nada.
 
