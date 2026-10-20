@@ -126,6 +126,7 @@ export function Compra({
   const pista = useRef<HTMLUListElement>(null);
 
   const variante = variantes[iVariante];
+  const slug = producto.ruta.split("/")[2];
   const imagenes = variante?.imagenes ?? [];
 
   // Derivados, no estado: RF-24 permite stock NEGATIVO —una venta cargada
@@ -207,6 +208,7 @@ export function Compra({
           pista={pista}
           onScroll={setImagen}
           onElegir={irALaImagen}
+          transicion={slug}
         />
       </div>
 

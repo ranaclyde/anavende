@@ -1,3 +1,4 @@
+import { FotoQueLlega } from "@/components/shop/foto-viajera";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -29,7 +30,13 @@ export default function CargandoFicha() {
               <Skeleton key={i} className="size-16 rounded-panel-image" />
             ))}
           </div>
-          <Skeleton className="aspect-square min-w-0 flex-1 rounded-card" />
+          {/*
+            Si se llegó tocando una tarjeta, acá aterriza su foto
+            (`foto-viajera.tsx`). Mismo lugar y misma forma que la galería.
+          */}
+          <FotoQueLlega className="aspect-square min-w-0 flex-1 overflow-hidden rounded-card bg-surface shadow-md">
+            <Skeleton className="aspect-square min-w-0 flex-1 rounded-card" />
+          </FotoQueLlega>
         </div>
 
         <div className="flex flex-col">
