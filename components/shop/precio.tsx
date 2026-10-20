@@ -35,6 +35,14 @@ type Props = {
    * $ X» se fue de las dos por decisión del 2026-09-08 (DR §14).
    */
   tamano?: "tarjeta" | "ficha";
+  /**
+   * Solo para `tarjeta`: el tachado en su propio renglón, arriba del final, y
+   * ese renglón **reservado aunque no haya oferta** (2026-10-20). Es lo que usa
+   * la tarjeta de producto: en una grilla, que el tachado subiera solo en
+   * algunas tarjetas dejaba los precios de una misma fila a distinta altura.
+   * El carrito y los favoritos lo siguen teniendo al lado.
+   */
+  apilado?: boolean;
   className?: string;
 };
 
@@ -43,6 +51,7 @@ export function Precio({
   descuento,
   precioFinal,
   tamano = "tarjeta",
+  apilado = false,
   className,
 }: Props) {
   const hayOferta = isPositive(descuento);
@@ -60,6 +69,33 @@ export function Precio({
    * en la ficha es lo primero que se lee después del nombre, sube a 24px y el
    * tachado pasa abajo, donde no le compite.
    */
+  if (!enFicha && apilado) {
+    return (
+      <div className={cn("flex min-w-0 flex-col", className)}>
+        {hayOferta ? (
+          <s className="text-caption text-ink-secondary tabular-nums">
+            <span className="sr-only">Antes: </span>
+            {formatMoney(precio)}
+          </s>
+        ) : (
+          // El renglón vacío ocupa lo mismo que el tachado: así el precio
+          // final cae a la misma altura en toda la fila.
+          <span aria-hidden className="text-caption">
+            &nbsp;
+          </span>
+        )}
+        <p
+          className={cn(
+            "text-body font-semibold tabular-nums",
+            hayOferta ? "text-brand" : "text-ink",
+          )}
+        >
+          {formatMoney(precioFinal)}
+        </p>
+      </div>
+    );
+  }
+
   if (!enFicha) {
     return (
       <div

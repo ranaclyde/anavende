@@ -629,7 +629,9 @@ dos cosas bajo `motion-safe`. Al apretar el enlace —no el corazón— se hunde
 0.98, que en el teléfono es la única respuesta al toque. El foco del enlace interior enciende el anillo en
 toda la tarjeta (`has-[a:focus-visible]`). La marca va arriba en caption
 mayúsculo, el nombre en cuerpo pequeño a dos líneas con alto mínimo reservado, y
-los puntos de color de las variantes abajo a la derecha.
+el precio con el tachado arriba y su renglón reservado aunque no haya oferta.
+Con dos o más colores, una pastilla oscura abajo a la izquierda de la foto con
+una ruedita partida en los colores del producto y la cantidad; con uno, nada.
 
 ### Buscador (signature)
 

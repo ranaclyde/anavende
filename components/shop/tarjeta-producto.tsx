@@ -202,6 +202,8 @@ export function TarjetaProducto({
           {accionFavorito ? (
             <div className="absolute top-2 right-2 z-10">{accionFavorito}</div>
           ) : null}
+
+          <CantidadDeColores colores={colores} />
         </div>
       </div>
 
@@ -236,25 +238,82 @@ export function TarjetaProducto({
         </h3>
 
         {/*
-          Precio a la izquierda, colores a la derecha, en la misma línea (§6.1).
-          `items-end` y no `items-center`: el precio tiene dos tamaños de texto
-          y alinear por el centro deja los puntos flotando alto.
+          Solo el precio, con el tachado arriba (2026-10-20). Hasta ese día
+          compartía renglón con los puntos de color, y cuando no entraban
+          juntos el precio se partía: el tachado subía en una tarjeta y no en
+          la de al lado, y con cinco colores o en el carrusel del teléfono, se
+          pisaban. Los colores pasaron a la foto (`CantidadDeColores`).
         */}
-        <div className="flex items-end justify-between gap-2 pt-1">
-          <Precio
-            precio={producto.precio}
-            descuento={producto.descuento}
-            precioFinal={producto.precioFinal}
-          />
-          <PuntosDeColor colores={colores} />
-        </div>
+        <Precio
+          precio={producto.precio}
+          descuento={producto.descuento}
+          precioFinal={producto.precioFinal}
+          apilado
+          className="mt-auto pt-1"
+        />
       </div>
     </article>
   );
 }
 
 /**
- * Los colores en que viene el producto, como puntos (§6.1).
+ * Cuántos colores hay, sobre la foto — 2026-10-20, a la manera de Mercado
+ * Libre.
+ *
+ * **Con un solo color no se muestra nada**: no hay nada que elegir, y la
+ * foto ya lo muestra. Con dos o más, una pastilla abajo a la izquierda con
+ * una ruedita y el número. La ruedita está partida en **los colores del
+ * producto** y no es un arcoíris genérico: con el mismo lugar dice cuáles
+ * son, al menos los primeros.
+ *
+ * Reemplaza a los puntos debajo del precio, que no tenían un ancho donde
+ * entrar siempre: con cinco colores, o en el carrusel del teléfono, pisaban
+ * el precio. Un número entra en cualquier tarjeta.
+ *
+ * Abajo a la izquierda porque arriba a la derecha está el corazón, y en el
+ * centro la píldora de «Sin stock».
+ */
+function CantidadDeColores({
+  colores,
+}: {
+  colores: { nombre: string; hex: string; hex2?: string | null }[];
+}) {
+  if (colores.length < 2) return null;
+
+  return (
+    <p className="absolute bottom-2 left-2 flex items-center gap-1 rounded-pill bg-ink/75 py-0.5 pr-2 pl-1 text-caption font-medium text-ink-inverse tabular-nums">
+      <span
+        aria-hidden
+        className="block size-3.5 rounded-full border border-ink-inverse/60"
+        style={{ background: rueda(colores) }}
+      />
+      <span aria-hidden>{colores.length}</span>
+      <span className="sr-only">
+        En {colores.length} colores:{" "}
+        {colores.map((c) => c.nombre.toLowerCase()).join(", ")}
+      </span>
+    </p>
+  );
+}
+
+/**
+ * Una porción por color, de hasta seis: más ya no se distinguen en 14px. Una
+ * variante de dos colores aporta los dos.
+ */
+function rueda(colores: { hex: string; hex2?: string | null }[]): string {
+  const tonos = colores
+    .flatMap((c) => (c.hex2 ? [c.hex, c.hex2] : [c.hex]))
+    .slice(0, 6);
+  const paso = 100 / tonos.length;
+  return `conic-gradient(${tonos
+    .map((t, i) => `${t} ${i * paso}% ${(i + 1) * paso}%`)
+    .join(", ")})`;
+}
+
+/**
+ * Los colores en que viene el producto, como puntos (§6.1). Desde el
+ * 2026-10-20 los usa solo el renglón de «Favoritos»; la tarjeta muestra
+ * `CantidadDeColores`.
  *
  * **No son seleccionables acá.** Elegir color es de la ficha (§6.5): en la
  * grilla son un dato —«esto viene en tres colores»— y hacerlos clicables

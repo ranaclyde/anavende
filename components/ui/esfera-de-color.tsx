@@ -34,7 +34,7 @@ export function EsferaDeColor({
       // El borde importa en los claros: un punto blanco sobre superficie
       // blanca, sin contorno, no existe.
       className={cn(
-        "block shrink-0 rounded-full border border-border",
+        "block shrink-0 rounded-full border border-ink/30",
         className,
       )}
       style={{ background: fondoDeColor(hex, hex2) }}
