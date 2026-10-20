@@ -8,7 +8,8 @@ import type { RedesSociales } from "@/modules/settings/queries";
 
 /**
  * Pie de la tienda — DESIGN-REFERENCE §5.1.
- * Pie oscuro con la zona de entrega, los medios de pago y los legales.
+ * Pie oscuro con la zona de entrega, los medios de pago, la ayuda y los
+ * legales.
  *
  * Los medios de pago los carga la vendedora (RF-19, F2.6), las páginas
  * legales son editables (RF-29, F9.3) y las redes sociales salen de la
@@ -18,24 +19,53 @@ import type { RedesSociales } from "@/modules/settings/queries";
 
 export type MedioDePago = { id: string; name: string };
 
-const LEGALES = [
-  ...PAGINAS_LEGALES.map((p) => ({
-    href: `/legales/${p.slug}`,
-    titulo: p.titulo,
-  })),
-  /*
-   * El «botón de arrepentimiento» (F9.3, pedido del 2026-10-16), con ese
-   * nombre porque es el que la gente busca. Lleva a «Mis compras», donde un
-   * pedido activo se cancela (RF-23); sin sesión, el ingreso vuelve ahí.
-   */
-  { href: "/mi-cuenta/compras", titulo: "Botón de arrepentimiento" },
-  /*
-   * RF-34 pide el acceso a la baja «a la vista», y es un requisito legal: el
-   * pie está en todas las páginas. Lleva a la tarjeta de «Mis datos» donde se
-   * pide (pedido del 2026-09-14); sin sesión, el ingreso vuelve ahí.
-   */
-  { href: "/mi-cuenta#baja", titulo: "Dar de baja mi cuenta" },
+const legal = (slug: string) => {
+  const p = PAGINAS_LEGALES.find((p) => p.slug === slug)!;
+  return { href: `/legales/${p.slug}`, titulo: p.titulo };
+};
+
+/**
+ * Dos grupos con nombre y no una sola lista (pedido del 2026-10-20): con
+ * Contacto eran siete enlaces bajo «Información», y una lista de siete no se
+ * escanea. «Ayuda» es lo que se busca para resolver algo; «Legales», lo que
+ * hay que tener a mano.
+ */
+const GRUPOS = [
+  {
+    titulo: "Ayuda",
+    enlaces: [
+      { href: "/contacto", titulo: "Contacto" },
+      legal("como-comprar"),
+      legal("garantias"),
+      /*
+       * El «botón de arrepentimiento» (F9.3, pedido del 2026-10-16), con ese
+       * nombre porque es el que la gente busca. Lleva a «Mis compras», donde un
+       * pedido activo se cancela (RF-23); sin sesión, el ingreso vuelve ahí.
+       */
+      { href: "/mi-cuenta/compras", titulo: "Botón de arrepentimiento" },
+    ],
+  },
+  {
+    titulo: "Legales",
+    enlaces: [
+      legal("terminos"),
+      legal("privacidad"),
+      /*
+       * RF-34 pide el acceso a la baja «a la vista», y es un requisito legal: el
+       * pie está en todas las páginas. Lleva a la tarjeta de «Mis datos» donde se
+       * pide (pedido del 2026-09-14); sin sesión, el ingreso vuelve ahí.
+       */
+      { href: "/mi-cuenta#baja", titulo: "Dar de baja mi cuenta" },
+    ],
+  },
 ];
+
+/**
+ * El título de cada grupo, en blanco pleno y semibold: hasta el 2026-10-20
+ * iba en el mismo blanco atenuado que los enlaces y se leían al mismo nivel.
+ */
+const TITULO_DE_GRUPO =
+  "text-caption font-semibold tracking-wide text-ink-inverse uppercase";
 
 export function SiteFooter({
   mediosDePago = [],
@@ -105,36 +135,42 @@ export function SiteFooter({
             </p>
           </div>
 
-          <nav aria-label="Información" className="flex flex-col gap-3">
-            <h2 className="text-caption tracking-wide text-white/70 uppercase">
-              Información
-            </h2>
-            {/*
-              44px de alto por fila en teléfono (§9). Acá no sirve
-              `AREA_TACTIL`: con 8px entre filas, lo que sobresale de una se
-              mete en la de al lado y el dedo activa el enlace equivocado. La
-              fila gana altura de verdad y el `gap` se va, que es lo mismo por
-              otro lado. En escritorio queda como estaba.
-            */}
-            <ul className="flex flex-col gap-2 max-md:gap-0">
-              {LEGALES.map((l) => (
-                <li key={l.href}>
-                  <Link
-                    href={l.href}
-                    className="inline-flex items-center rounded-pill text-body-sm text-white/75 underline-offset-4 transition-colors duration-150 max-md:min-h-11 hover:text-ink-inverse hover:underline"
-                  >
-                    {l.titulo}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          {/* En el teléfono, los dos grupos lado a lado: apilados, el pie
+              sumaba otra pantalla entera de enlaces. */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:flex md:gap-16">
+            {GRUPOS.map((grupo) => (
+              <nav
+                key={grupo.titulo}
+                aria-label={grupo.titulo}
+                className="flex flex-col gap-3"
+              >
+                <h2 className={TITULO_DE_GRUPO}>{grupo.titulo}</h2>
+                {/*
+                  44px de alto por fila en teléfono (§9). Acá no sirve
+                  `AREA_TACTIL`: con 8px entre filas, lo que sobresale de una se
+                  mete en la de al lado y el dedo activa el enlace equivocado. La
+                  fila gana altura de verdad y el `gap` se va, que es lo mismo por
+                  otro lado. En escritorio queda como estaba.
+                */}
+                <ul className="flex flex-col gap-2 max-md:gap-0">
+                  {grupo.enlaces.map((l) => (
+                    <li key={l.href}>
+                      <Link
+                        href={l.href}
+                        className="inline-flex items-center rounded-pill text-body-sm text-white/70 underline-offset-4 transition-colors duration-150 max-md:min-h-11 hover:text-ink-inverse hover:underline"
+                      >
+                        {l.titulo}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+          </div>
 
           {mediosDePago.length > 0 && (
             <div className="flex flex-col gap-3">
-              <h2 className="text-caption tracking-wide text-white/70 uppercase">
-                Medios de pago
-              </h2>
+              <h2 className={TITULO_DE_GRUPO}>Medios de pago</h2>
               <ul className="flex flex-wrap gap-2">
                 {mediosDePago.map((m) => (
                   <li
