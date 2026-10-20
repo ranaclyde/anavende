@@ -497,6 +497,22 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   animation: none;
 }
 
+/* Mientras corre una transición, la capa de arriba se traga los clics; así
+   pasan a la página. */
+::view-transition {
+  pointer-events: none;
+}
+
+/* La foto que viaja de la tarjeta a la ficha (2026-10-20,
+   `components/shop/foto-viajera.tsx`): 300ms, el techo de §8, porque recorre
+   media pantalla y en 200 no se llega a seguir. Por encima del encabezado,
+   que en el teléfono queda en su camino. */
+::view-transition-group(.foto) {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+}
+
 ::view-transition-group(.renglon) {
   animation-duration: 200ms;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

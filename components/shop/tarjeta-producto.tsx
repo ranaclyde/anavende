@@ -1,7 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { EnlaceDeTarjeta } from "@/components/shop/foto-viajera";
 import { Precio } from "@/components/shop/precio";
 import { EsferaDeColor } from "@/components/ui/esfera-de-color";
 import type { Money } from "@/lib/money";
@@ -156,8 +156,12 @@ export function TarjetaProducto({
               // Son las tres columnas de §7.2: 2 / 3 / 4.
               sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
               loading={inmediata ? "eager" : undefined}
+              // La que viaja a la ficha al tocar la tarjeta. El radio va
+              // también en la foto porque viaja sola, sin el marco que la
+              // recorta.
+              data-foto-tarjeta
               className={cn(
-                "object-cover",
+                "rounded-image object-cover",
                 "motion-safe:transition-transform motion-safe:duration-200",
                 "motion-safe:group-hover:scale-[1.03]",
                 // §6.1: la imagen baja a 55% cuando no hay stock. La píldora
@@ -220,13 +224,14 @@ export function TarjetaProducto({
           {noDisponible ? (
             <span className="line-clamp-2 min-h-[2.9em]">{nombre}</span>
           ) : (
-            <Link
+            // Al tocarla, la foto viaja a la ficha (`foto-viajera.tsx`).
+            <EnlaceDeTarjeta
               href={`/productos/${slug}`}
-              data-enlace-tarjeta
+              slug={slug}
               className="line-clamp-2 min-h-[2.9em] after:absolute after:inset-0 after:rounded-card after:content-['']"
             >
               {nombre}
-            </Link>
+            </EnlaceDeTarjeta>
           )}
         </h3>
 

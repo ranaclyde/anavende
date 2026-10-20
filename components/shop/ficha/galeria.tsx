@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef, useState, type RefObject } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { llegadaDeLaFoto } from "@/components/shop/foto-viajera";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { VarianteDeFicha } from "@/modules/catalog/products/ficha";
@@ -61,6 +62,7 @@ export function Galeria({
   pista,
   onScroll,
   onElegir,
+  transicion,
 }: {
   imagenes: Imagenes;
   indice: number;
@@ -69,6 +71,12 @@ export function Galeria({
   pista: RefObject<HTMLUListElement | null>;
   onScroll: (i: number) => void;
   onElegir: (i: number) => void;
+  /**
+   * El slug del producto, para recibir la foto que viene volando desde la
+   * tarjeta (`foto-viajera.tsx`). La recibe solo la primera, que es la que se
+   * ve al llegar.
+   */
+  transicion: string;
 }) {
   const [ampliada, setAmpliada] = useState(false);
   const actual = Math.min(indice, Math.max(0, imagenes.length - 1));
@@ -119,15 +127,17 @@ export function Galeria({
             if (i !== indice) onScroll(i);
           }}
         >
-          {imagenes.map((img, i) => (
-            <li key={img.grande} className="w-full shrink-0 snap-center">
-              {/*
-                `contain` y no `cover` (§6.8): los periféricos vienen
-                fotografiados sobre fondo blanco, y recortarlos los mutila. El
-                aspecto se reserva con CSS para que la página no salte cuando
-                llega la foto.
-              */}
-              <div className="relative aspect-square">
+          {imagenes.map((img, i) => {
+            /*
+              `contain` y no `cover` (§6.8): los periféricos vienen
+              fotografiados sobre fondo blanco, y recortarlos los mutila. El
+              aspecto se reserva con CSS para que la página no salte cuando
+              llega la foto.
+            */
+            // El radio también acá, aunque la pista ya lo recorta: la foto
+            // que viaja se dibuja sola, sin la pista alrededor.
+            const foto = (
+              <div className="relative aspect-square overflow-hidden rounded-card">
                 <Image
                   src={img.grande}
                   alt={
@@ -146,8 +156,17 @@ export function Galeria({
                   className="object-contain"
                 />
               </div>
-            </li>
-          ))}
+            );
+            return (
+              <li key={img.grande} className="w-full shrink-0 snap-center">
+                {i === 0 ? (
+                  <div {...llegadaDeLaFoto(transicion)}>{foto}</div>
+                ) : (
+                  foto
+                )}
+              </li>
+            );
+          })}
         </ul>
 
         {/*
