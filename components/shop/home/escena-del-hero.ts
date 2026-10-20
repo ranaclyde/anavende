@@ -19,8 +19,8 @@
  * `mouse.webp` con otro dibujo, durante meses se sigue viendo el viejo.
  *
  * **El orden importa.** Hasta `lg` se ven las cuatro primeras, arriba y abajo
- * del texto —entre los costados no hay lugar—; desde `lg`, las siete, a los
- * costados. Por eso las cuatro primeras están repartidas en las cuatro
+ * del texto —entre los costados no hay lugar—; desde `lg`, las seis, tres por
+ * costado. Por eso las cuatro primeras están repartidas en las cuatro
  * esquinas.
  */
 export type PiezaDelHero = {
@@ -64,13 +64,13 @@ export const ESCENA_BASE: PiezaDelHero[] = [
       "left-[8%] bottom-0 w-16 sm:w-20 lg:bottom-[4%] lg:left-[9%] lg:w-28",
     d: 0.65,
   },
-  // Las tres lejanas, solo en computadora: el disco junto al título, el
-  // cable a la derecha del eslogan y el pendrive debajo del buscador.
+  // Las dos lejanas, solo en computadora: una por costado, a media altura,
+  // para que queden tres y tres.
   {
-    src: "/hero/base/disco.webp",
+    src: "/hero/base/almacenamiento.webp",
     ancho: 1000,
-    alto: 539,
-    lugar: "hidden lg:block lg:left-[17%] lg:top-[2%] lg:w-32",
+    alto: 608,
+    lugar: "hidden lg:block lg:left-[14%] lg:top-[46%] lg:w-32",
     d: 0.35,
   },
   {
@@ -78,13 +78,6 @@ export const ESCENA_BASE: PiezaDelHero[] = [
     ancho: 1000,
     alto: 772,
     lugar: "hidden lg:block lg:right-[19%] lg:top-[36%] lg:w-24",
-    d: 0.35,
-  },
-  {
-    src: "/hero/base/pendrive.webp",
-    ancho: 1000,
-    alto: 762,
-    lugar: "hidden lg:block lg:left-[25%] lg:bottom-0 lg:w-20",
     d: 0.35,
   },
 ];
