@@ -631,7 +631,7 @@ toda la tarjeta (`has-[a:focus-visible]`). La marca va arriba en caption
 mayúsculo, el nombre en cuerpo pequeño a dos líneas con alto mínimo reservado, y
 el precio con el tachado arriba y su renglón reservado aunque no haya oferta.
 Con dos o más colores, una pastilla oscura abajo a la izquierda de la foto con
-una ruedita partida en los colores del producto y la cantidad; con uno, nada.
+una ruedita de arcoíris —la misma siempre— y la cantidad; con uno, nada.
 
 ### Buscador (signature)
 

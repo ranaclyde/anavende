@@ -262,9 +262,10 @@ export function TarjetaProducto({
  *
  * **Con un solo color no se muestra nada**: no hay nada que elegir, y la
  * foto ya lo muestra. Con dos o más, una pastilla abajo a la izquierda con
- * una ruedita y el número. La ruedita está partida en **los colores del
- * producto** y no es un arcoíris genérico: con el mismo lugar dice cuáles
- * son, al menos los primeros.
+ * una ruedita y el número. **La ruedita es un arcoíris fijo, igual en
+ * todas** (decisión tuya del 2026-10-20): su trabajo es decir «hay más de un
+ * color», no cuáles. Partida en los colores reales, con diez se volvía una
+ * mancha, y con negro y gris se perdía contra la pastilla oscura.
  *
  * Reemplaza a los puntos debajo del precio, que no tenían un ancho donde
  * entrar siempre: con cinco colores, o en el carrusel del teléfono, pisaban
@@ -285,7 +286,7 @@ function CantidadDeColores({
       <span
         aria-hidden
         className="block size-3.5 rounded-full border border-ink-inverse/60"
-        style={{ background: rueda(colores) }}
+        style={{ background: RUEDA }}
       />
       <span aria-hidden>{colores.length}</span>
       <span className="sr-only">
@@ -296,19 +297,9 @@ function CantidadDeColores({
   );
 }
 
-/**
- * Una porción por color, de hasta seis: más ya no se distinguen en 14px. Una
- * variante de dos colores aporta los dos.
- */
-function rueda(colores: { hex: string; hex2?: string | null }[]): string {
-  const tonos = colores
-    .flatMap((c) => (c.hex2 ? [c.hex, c.hex2] : [c.hex]))
-    .slice(0, 6);
-  const paso = 100 / tonos.length;
-  return `conic-gradient(${tonos
-    .map((t, i) => `${t} ${i * paso}% ${(i + 1) * paso}%`)
-    .join(", ")})`;
-}
+/** El círculo cromático, el mismo en toda la tienda. */
+const RUEDA =
+  "conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)";
 
 /**
  * Los colores en que viene el producto, como puntos (§6.1). Desde el
