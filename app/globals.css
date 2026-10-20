@@ -379,6 +379,45 @@
     }
   }
 
+  /* El sello del pedido registrado (2026-10-20,
+     `app/(shop)/orden/[numero]/page.tsx`), en tres tiempos que se pisan un
+     poco para leerse como un solo gesto:
+       · el contorno da la vuelta, de 0 a 600 ms;
+       · el círculo se llena, de 500 a 800 ms, creciendo desde el centro;
+       · el tilde se traza, de 750 a 1150 ms.
+     Pasa el techo de 300 ms de §8 a propósito: es la entrada con autoría de
+     la compra. Apretados en 300 los tres tiempos se veían toscos, y en 750
+     todavía bruscos. Curvas suaves de entrada y salida para el contorno, y
+     de salida para lo que llega. */
+  --animate-anillo: anillo 600ms cubic-bezier(0.45, 0, 0.25, 1) both;
+  --animate-relleno: relleno 300ms cubic-bezier(0.22, 1, 0.36, 1) 500ms both;
+  --animate-tilde: tilde 400ms cubic-bezier(0.33, 1, 0.68, 1) 750ms both;
+
+  @keyframes anillo {
+    from {
+      stroke-dashoffset: 453;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes relleno {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+  }
+
+  @keyframes tilde {
+    from {
+      stroke-dashoffset: 100;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
   /* Anchos máximos (§4) */
   --container-shop: 1200px;
   /* El panel va a ancho completo menos el menú, SALVO los formularios y el

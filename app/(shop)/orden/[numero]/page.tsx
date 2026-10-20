@@ -1,4 +1,3 @@
-import { Check } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -69,10 +68,50 @@ export default async function PaginaDeLaOrden({ params }: Props) {
         a 7° de matiz del rojo de error (§2.2). Un círculo casi rojo con un
         tilde adentro se lee como problema durante el instante que importa.
         El color no es lo único que lo dice: está el tilde y está el título.
+
+        **Al llegar, el sello se dibuja en tres tiempos** (2026-10-20): el
+        contorno del círculo da la vuelta, el círculo se llena de verde y el
+        tilde se traza en blanco, de izquierda a derecha. Es el único momento
+        de la compra que se gana un movimiento propio, y pasa una vez por
+        compra. Dura unos 1,15 s (`globals.css`, `anillo`, `relleno` y
+        `tilde`): pasa el techo de §8 a propósito, porque apretados en 300 los
+        tres tiempos se veían toscos, y en 750 ms todavía bruscos. Sin JavaScript: la pantalla sigue siendo
+        servidor. El texto y el resumen quedan quietos, que son lo que se vino
+        a leer. Con movimiento reducido, el sello ya está completo.
+
+        El largo de cada trazo va en `stroke-dasharray`: 453 es la vuelta del
+        círculo (2π·72 ≈ 452,4) y 100 cubre el tilde (≈ 97).
       */}
-      <div className="flex size-16 items-center justify-center rounded-full bg-success text-ink-inverse">
-        <Check aria-hidden className="size-8" />
-      </div>
+      <svg
+        aria-hidden
+        viewBox="0 0 154 154"
+        className="size-16 overflow-visible"
+      >
+        {/* Arranca arriba, como las agujas del reloj, y no a las tres. */}
+        <circle
+          cx="77"
+          cy="77"
+          r="72"
+          fill="none"
+          strokeWidth="4"
+          transform="rotate(-90 77 77)"
+          className="stroke-success [stroke-dasharray:453] motion-safe:animate-anillo"
+        />
+        <circle
+          cx="77"
+          cy="77"
+          r="72"
+          className="origin-center fill-success [transform-box:fill-box] motion-safe:animate-relleno"
+        />
+        <polyline
+          points="43.5,77.8 63.7,97.9 112.2,49.4"
+          fill="none"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="stroke-ink-inverse [stroke-dasharray:100] motion-safe:animate-tilde"
+        />
+      </svg>
 
       <div className="flex flex-col gap-2">
         <h1 className="text-title text-ink">
