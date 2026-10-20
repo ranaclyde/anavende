@@ -49,6 +49,18 @@ export function SiteHeader({
     setBuscadorAbierto(false);
   }
 
+  // El número salta cuando SUBE: agregar desde la ficha refresca la pantalla
+  // y el encabezado recibe el número nuevo. Quitar no salta, porque el salto
+  // dice «acá fue a parar». Cada salto cambia la `key` del número, y así la
+  // animación vuelve a empezar aunque se agregue dos veces seguidas. Se ajusta
+  // al pintar, como la ruta de arriba, y nunca en la primera carga.
+  const [cuentaVista, setCuentaVista] = useState(cartCount);
+  const [saltos, setSaltos] = useState(0);
+  if (cuentaVista !== cartCount) {
+    if (cartCount > cuentaVista) setSaltos((n) => n + 1);
+    setCuentaVista(cartCount);
+  }
+
   return (
     <header
       className={cn(
@@ -97,7 +109,14 @@ export function SiteHeader({
             className="ml-1 flex h-10 max-md:h-11 items-center gap-2 rounded-pill border border-border bg-surface px-3.5 text-body-sm text-ink shadow-sm transition-shadow duration-150 hover:shadow-md"
           >
             <ShoppingCart aria-hidden className="size-4 shrink-0" />
-            <span aria-hidden className="tabular-nums">
+            <span
+              key={saltos}
+              aria-hidden
+              className={cn(
+                "inline-block tabular-nums",
+                saltos > 0 && "motion-safe:animate-salto",
+              )}
+            >
               {cartCount}
             </span>
             <span className="sr-only">

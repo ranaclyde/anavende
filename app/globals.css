@@ -357,6 +357,28 @@
     }
   }
 
+  /* El salto del número del carrito cuando sube (2026-10-20): en el teléfono
+     el botón de agregar queda lejos del encabezado, y el salto dice a dónde
+     fue a parar lo que se agregó. 200ms, el tiempo de §8 para una
+     transformación. */
+  --animate-salto: salto 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  @keyframes salto {
+    50% {
+      transform: scale(1.35);
+    }
+  }
+
+  /* El pulso del corazón al MARCAR, no al desmarcar (2026-10-20): con el
+     mismo gesto en los dos sentidos, el movimiento no diría qué pasó. */
+  --animate-latido: latido 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  @keyframes latido {
+    50% {
+      transform: scale(1.25);
+    }
+  }
+
   /* Anchos máximos (§4) */
   --container-shop: 1200px;
   /* El panel va a ancho completo menos el menú, SALVO los formularios y el
@@ -452,6 +474,42 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Los pseudo-elementos de las View Transitions no son `*` ni `::before`:
+     sin esto, el renglón del carrito se seguiría moviendo. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Quitar un renglón del carrito (2026-10-20). React lo anima con
+   `<ViewTransition>` (`app/(shop)/carrito/page.tsx`): el que se va se apaga
+   en 150ms —salir más rápido que entrar— y los de abajo suben a su lugar en
+   200, en vez de saltar. */
+/* La página no se funde: el navegador hace un fundido de toda la pantalla en
+   cada View Transition, y lo que tiene que moverse es solo lo que React
+   nombró. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(.renglon) {
+  animation-duration: 200ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(.renglon-sale) {
+  animation: 150ms cubic-bezier(0.4, 0, 0.2, 1) both renglon-sale;
+}
+
+@keyframes renglon-sale {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
   }
 }
 

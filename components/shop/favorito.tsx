@@ -53,19 +53,43 @@ type Props = {
 };
 
 export function BotonFavorito({ conSesion, ...props }: Props) {
-  return conSesion ? <Alternar {...props} /> : <IngresarParaGuardar {...props} />;
+  return conSesion ? (
+    <Alternar {...props} />
+  ) : (
+    <IngresarParaGuardar {...props} />
+  );
 }
 
-function Corazon({ marcado, className }: { marcado: boolean; className?: string }) {
+/**
+ * `latidos` cuenta las veces que se marcó desde que se montó: cada una cambia
+ * la `key` del envoltorio y el pulso vuelve a empezar. En cero no late, así
+ * que un corazón que ya venía lleno de la base no se mueve al cargar. Late el
+ * envoltorio y no el SVG: un `transform` sobre el `<svg>` no siempre se
+ * acelera por hardware.
+ */
+function Corazon({
+  marcado,
+  latidos = 0,
+  className,
+}: {
+  marcado: boolean;
+  latidos?: number;
+  className?: string;
+}) {
   return (
-    <Heart
+    <span
+      key={latidos}
       aria-hidden
-      className={cn(
-        "transition-colors duration-150",
-        marcado ? "fill-brand text-brand" : "",
-        className,
-      )}
-    />
+      className={cn("inline-flex", latidos > 0 && "motion-safe:animate-latido")}
+    >
+      <Heart
+        className={cn(
+          "transition-colors duration-150",
+          marcado ? "fill-brand text-brand" : "",
+          className,
+        )}
+      />
+    </span>
   );
 }
 
@@ -107,12 +131,16 @@ function Alternar({
 
   const [anuncio, setAnuncio] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [latidos, setLatidos] = useState(0);
 
   // Optimista: el corazón se llena al tocarlo, no cuando vuelve el servidor.
   // Si el servidor lo rechaza, vuelve a como estaba y el motivo queda escrito.
+  // Late solo al marcar (2026-10-20): desmarcar es el mismo toque, y si los
+  // dos latieran el movimiento no diría cuál de las dos cosas pasó.
   function alternar() {
     const nuevo = !actual;
     setActual(nuevo);
+    if (nuevo) setLatidos((n) => n + 1);
     setError(null);
     setAnuncio("");
 
@@ -134,9 +162,18 @@ function Alternar({
         // y la etiqueta con el nombre del producto, para quien escucha.
         <Tooltip>
           <TooltipTrigger asChild>
-            <button type="button" onClick={alternar} className={AREA} {...pausa}>
+            <button
+              type="button"
+              onClick={alternar}
+              className={AREA}
+              {...pausa}
+            >
               <span className={CIRCULO}>
-                <Corazon marcado={actual} className="size-5" />
+                <Corazon
+                  marcado={actual}
+                  latidos={latidos}
+                  className="size-5"
+                />
               </span>
               <span className="sr-only">
                 {actual
@@ -157,7 +194,7 @@ function Alternar({
           className="flex-1"
           {...pausa}
         >
-          <Corazon marcado={actual} />
+          <Corazon marcado={actual} latidos={latidos} />
           {/*
             Lo que se ve es el estado —«Guardado»— y lo que se oye además dice
             qué pasa al tocarlo. El nombre accesible empieza por el texto a la
@@ -235,7 +272,9 @@ function IngresarParaGuardar({
       <Link href={href} onClick={anotar}>
         <Corazon marcado={false} />
         Guardar
-        <span className="sr-only">: iniciá sesión para guardarlo en favoritos</span>
+        <span className="sr-only">
+          : iniciá sesión para guardarlo en favoritos
+        </span>
       </Link>
     </Button>
   );

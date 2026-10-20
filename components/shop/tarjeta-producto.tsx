@@ -127,7 +127,16 @@ export function TarjetaProducto({
         noDisponible
           ? ""
           : "hover:shadow-lg motion-safe:hover:-translate-y-0.5",
-        "motion-safe:transition-[box-shadow,transform]",
+        // Al apretarla, se hunde apenas (2026-10-20). Es la única respuesta
+        // al toque en un teléfono, donde no hay hover, y sin ella no pasa nada
+        // a la vista hasta que carga la ficha. Mira el enlace y no la tarjeta:
+        // apretar el corazón no la tiene que hundir.
+        noDisponible
+          ? ""
+          : "motion-safe:has-[[data-enlace-tarjeta]:active]:scale-[0.98]",
+        // `translate` y `scale` y no `transform`: Tailwind 4 mueve con esas
+        // dos propiedades, y con `transform` la subida no se animaba.
+        "motion-safe:transition-[box-shadow,translate,scale]",
       )}
     >
       <div className="relative overflow-hidden rounded-image bg-surface-sunken">
@@ -213,6 +222,7 @@ export function TarjetaProducto({
           ) : (
             <Link
               href={`/productos/${slug}`}
+              data-enlace-tarjeta
               className="line-clamp-2 min-h-[2.9em] after:absolute after:inset-0 after:rounded-card after:content-['']"
             >
               {nombre}

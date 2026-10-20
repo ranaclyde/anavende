@@ -625,7 +625,8 @@ El componente que define la tienda. Tarjeta de 28px con 12px de padding; adentro
 la foto en un contenedor de 20px con relación de aspecto cuadrada **reservada**, de
 modo que la grilla no salta mientras cargan las imágenes. Al pasar el puntero la
 tarjeta sube media unidad y pasa a `shadow-lg` mientras la foto escala un 3%, las
-dos cosas bajo `motion-safe`. El foco del enlace interior enciende el anillo en
+dos cosas bajo `motion-safe`. Al apretar el enlace —no el corazón— se hunde a
+0.98, que en el teléfono es la única respuesta al toque. El foco del enlace interior enciende el anillo en
 toda la tarjeta (`has-[a:focus-visible]`). La marca va arriba en caption
 mayúsculo, el nombre en cuerpo pequeño a dos líneas con alto mínimo reservado, y
 los puntos de color de las variantes abajo a la derecha.

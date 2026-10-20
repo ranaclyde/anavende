@@ -694,10 +694,11 @@ El componente más importante del sistema. Aparece en catálogo, home, recomenda
 |---|---|
 | Reposo | `--shadow-md` |
 | Hover | Elevación a `--shadow-lg`, la tarjeta sube 2px, la imagen escala a 1.03 dentro de su marco. Transición 200ms |
+| Presionada | Se hunde a 0.98 mientras se aprieta el enlace, no el corazón. Es la única respuesta al toque en el teléfono, donde no hay hover (2026-10-20) |
 | Foco | `--shadow-focus` sobre toda la tarjeta |
 | **Con descuento** | Precio tachado a la izquierda del final, en la misma línea. El final va en burdeos. **Sin píldora sobre la imagen** |
 | **Sin stock** | Imagen al 55% de opacidad + píldora «Sin stock» centrada sobre ella, superficie blanca al 92%. **La tarjeta sigue siendo clicable** (RN-05) |
-| **Favorito** | Corazón arriba a la derecha de la imagen, **siempre a la vista**. Contorno cuando no está marcado, **relleno `--brand`** cuando sí. Área táctil de 44px aunque el ícono mida 20. Fondo `--surface` al 92% detrás, porque la imagen de abajo puede ser de cualquier color |
+| **Favorito** | Corazón arriba a la derecha de la imagen, **siempre a la vista**. Contorno cuando no está marcado, **relleno `--brand`** cuando sí. Área táctil de 44px aunque el ícono mida 20. Fondo `--surface` al 92% detrás, porque la imagen de abajo puede ser de cualquier color. **Late al marcarlo**, y no al desmarcarlo: escala a 1.25 y vuelve en 200ms (2026-10-20) |
 
 **Sobre la marca en versalitas:** separa visualmente marca de producto sin sumar un color ni un peso. Es un recurso de la referencia y funciona bien con Inter.
 
