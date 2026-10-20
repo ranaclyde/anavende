@@ -15,7 +15,7 @@ import type { MedioDePagoDeLaHome } from "@/modules/catalog/products/home";
  * 0,01ms con una sola vuelta, así que el que pidió menos movimiento ve la
  * hilera detenida en vez de detenida a los tirones.
  *
- * **Y tiene freno, como el carrusel de arriba** (`hero.tsx`): WCAG 2.2.2 pide
+ * **Y tiene freno, como el hero** (`hero.tsx`): WCAG 2.2.2 pide
  * poder parar lo que se mueve solo más de cinco segundos, y la preferencia
  * del sistema no alcanza, porque no todos saben que existe. El botón está
  * siempre a la vista —sin hover, en el teléfono, no habría cómo llegar— y

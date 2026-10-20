@@ -6,7 +6,7 @@ import { Suspense } from "react";
 
 import { DatosEstructurados } from "@/components/seo/datos-estructurados";
 import { BotonFavorito } from "@/components/shop/favorito";
-import { BloquesDelHero } from "@/components/shop/home/hero";
+import { HeroDeLaHome } from "@/components/shop/home/hero";
 import { HileraDePagos } from "@/components/shop/home/pagos";
 import {
   GrillaDeLaHome,
@@ -92,8 +92,8 @@ export default async function Home() {
         <TarjetaProducto
           producto={producto}
           // La primera fila no puede ir DIFERIDA (2026-10-05): en tableta y
-          // escritorio sus tarjetas miden 205–248px contra los 136px de un
-          // bloque del hero, así que el LCP es una de ellas, y diferida
+          // escritorio sus tarjetas miden 205–248px de lado, más que
+          // cualquier pieza del hero, así que el LCP es una de ellas, y diferida
           // llegaba tarde. Va sin diferir y sin prioridad alta (F10.4: ver
           // `inmediata`). Cuatro es el ancho de la grilla.
           inmediata={seccion === primeraSeccion && i < 4}
@@ -120,31 +120,24 @@ export default async function Home() {
       */}
       <DatosEstructurados datos={[organizacion(), sitio()]} />
 
-      {/* ── El hero: el catálogo, la marca y el buscador (§7.1) ────── */}
+      {/* ── El hero: la marca y el eslogan, el catálogo alrededor y el
+          buscador (§7.1) ─────────────────────────────────────────── */}
       <section className="flex flex-col items-center gap-5 pb-10 text-center">
-        <BloquesDelHero conjuntos={datos.hero} />
+        <HeroDeLaHome categorias={datos.destacadas.map((c) => c.nombre)}>
+          <SearchBox
+            principal
+            placeholder="¿Qué estás buscando hoy?"
+            // Aire arriba: pegado al eslogan se leía como parte del título.
+            className="mt-4 w-full max-w-[560px] sm:mt-6"
+          />
 
-        {/*
-          La palabra de la marca, en burdeos y en minúsculas: es el único
-          lugar donde se usa así (§2.3, desvío anotado el 2026-09-22). El
-          texto del DOM sigue diciendo «AnaVende» —las minúsculas las hace
-          CSS—, que es lo que lee un lector de pantalla y lo que se copia al
-          portapapeles.
-        */}
-        <h1 className="text-display lowercase text-brand sm:text-marca">
-          AnaVende
-        </h1>
-
-        <p className="max-w-prose text-body-lg text-ink-secondary">
-          Insumos informáticos nuevos, en caja. Elegí, armá tu pedido y te lo
-          llevamos.
-        </p>
-
-        <SearchBox
-          principal
-          placeholder="¿Qué estás buscando hoy?"
-          className="w-full max-w-[560px]"
-        />
+          {/* Debajo del buscador y chica a propósito: es la aclaración, no el
+              mensaje. */}
+          <p className="max-w-prose text-caption font-normal text-balance text-ink-secondary sm:text-body-sm">
+            Productos nuevos, cerrados y en su empaque original. Elegí y armá tu
+            pedido.
+          </p>
+        </HeroDeLaHome>
 
         {datos.destacadas.length > 0 ? (
           <nav aria-label="Categorías destacadas" className="w-full">
@@ -215,6 +208,11 @@ export default async function Home() {
           </SeccionDeLaHome>
         ) : null}
 
+        {/* ── Los medios de pago, justo después de lo primero que se
+            mira (2026-10-19, pedido tuyo): cómo se paga es una duda de
+            entrada, y al fondo de la página no llegaba casi nadie. ─────── */}
+        <HileraDePagos medios={datos.mediosDePago} />
+
         {/* ── Una sección por categoría destacada ──────────────────── */}
         {datos.destacadas.map((categoria) =>
           categoria.productos.length === 0 ? null : (
@@ -250,8 +248,6 @@ export default async function Home() {
         <Suspense fallback={null}>
           <VistosRecientemente ruta="/" />
         </Suspense>
-
-        <HileraDePagos medios={datos.mediosDePago} />
 
         {/* ── Más categorías, con la salida apagada ────────────────── */}
         {/*

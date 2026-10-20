@@ -2,82 +2,86 @@
 
 import { Pause, Play } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
-import type { ConjuntoDelHero } from "@/modules/catalog/products/home";
+import { ESCENA_BASE, type PiezaDelHero } from "./escena-del-hero";
 import { cn } from "@/lib/utils";
 
 /**
- * Los bloques flotantes del hero — RF-01, §7.1. Tarea F3.7.
+ * El hero de la home — RF-01, §7.1. Rehecho el 2026-10-19 (pedido tuyo).
  *
- * **Lo que llena el hero es el catálogo**, y no una foto de banco de imágenes:
- * cinco productos de verdad, con su nombre, antes de que nadie haya leído una
- * línea. Es la respuesta más corta a «¿qué hay acá?».
+ * **El nombre y el eslogan al centro, una escena alrededor.** Se lee
+ * «AnaVende / vos elegís los auriculares»: el nombre es la primera mitad del
+ * eslogan (§2.4), así que no se repite «Ana vende». La palabra final rota por
+ * las categorías destacadas —las mismas de los chips de abajo—, que es el
+ * contexto que §2.4 pide para rotarla.
  *
- * **Una categoría por vez, y la categoría cambia.** Mezclar productos de cinco
- * categorías daría una vitrina linda y muda; de a una, cada vuelta cuenta una
- * parte del catálogo —ahora mouses, al rato teclados—.
+ * **La escena es decorativa y no se toca.** Son imágenes del diseño
+ * (`escena-del-hero.ts`), no productos: no son enlaces y el lector de
+ * pantalla no las oye. Lo que se puede tocar está todo al centro.
  *
- * **Flotan.** Ocho píxeles de recorrido en cinco segundos, cada bloque con su
- * retraso y su duración: en sincronía serían un ascensor de cinco puertas, y
- * desfasados son cosas que flotan. Es el único movimiento continuo de la
- * pantalla junto con la hilera de logos, y la regla global lo apaga entero con
- * `prefers-reduced-motion`.
+ * **Un solo movimiento: la profundidad.** Las piezas no flotan solas; se
+ * corren y se inclinan según su profundidad, y eso es lo que las hace leer en
+ * 3D:
  *
- * **Y se puede parar a mano.** El botón de pausa no es un lujo: WCAG 2.2.2
- * pide una forma de detener cualquier movimiento que arranque solo y dure más
- * de cinco segundos, y frenar con el mouse encima no le sirve a quien entra
- * desde el teléfono —que acá es la mayoría (RNF-01)—. Para ellos, hasta que
- * existió este botón, el hero no tenía freno. Detiene las dos cosas: la vuelta
- * de categoría y el vaivén.
+ * - **Con el mouse**, solo donde hay uno (`pointer: fine`): la escena sigue
+ *   al puntero con inercia, en sentido contrario, como lo cercano cuando
+ *   movés la cabeza.
+ * - **Con el scroll**, en todos lados: al bajar, las capas se separan a
+ *   distinta velocidad. Es la profundidad del teléfono, que no tiene mouse y
+ *   donde el giroscopio pide un permiso con un cartel.
  *
- * **Se frena mientras lo mirás.** Los bloques son enlaces a la ficha, y un
- * enlace que se va justo cuando lo estás apuntando es peor que no tenerlo: con
- * el mouse encima o el foco del teclado adentro, el reloj se para. Y con
- * `prefers-reduced-motion` no arranca nunca (§8): se queda en la primera
- * categoría, entera y alcanzable.
+ * **Nada de esto pasa por React.** El puntero y el scroll escriben tres
+ * variables CSS en el escenario (`--px`, `--py`, `--sy`) dentro de un
+ * `requestAnimationFrame`, y cada pieza arma su `transform` con ellas
+ * (`paralaje` en `globals.css`). Moverse no vuelve a dibujar ningún
+ * componente, y el bucle se apaga solo cuando la escena llegó a su lugar.
  *
- * **No se precarga la tanda siguiente.** El bloque más grande mide 152px, la
- * entrada escalonada le da a cada uno entre 300 y 400ms de ventaja, y después
- * de la primera vuelta están todas en la caché del navegador.
- * Precargarlas exigiría un segundo árbol invisible con sus enlaces apagados,
- * que es mucho andamio para el problema que resuelve.
+ * **El freno (WCAG 2.2.2).** La palabra cambia sola cada pocos segundos, y
+ * eso es movimiento que arranca solo: el botón de pausa la detiene, y de paso
+ * deja la escena quieta. Con `prefers-reduced-motion` no se mueve nada y el
+ * eslogan queda en su forma canónica.
  */
 
-/** §7.1: alcanza para mirar cinco fotos sin que parezca un cartel de ruta. */
-const VUELTA = 6000;
+/** Lo que dura cada palabra: lo justo para leerla y mirar la escena. */
+const VUELTA = 3500;
 
 /**
- * El arco. Son las posiciones del boceto, de izquierda a derecha: sube, baja,
- * sube más, y el último vuelve al medio. En el teléfono los saltos son la
- * mitad —con 88px de bloque, un desnivel de 44 se lee como un error—.
+ * «Auriculares» → «los auriculares». Es una aproximación: «Sillas» da «las»,
+ * pero una categoría femenina que no termina en -as («Notebooks»,
+ * «Fuentes») saldría con «los». Si el catálogo real trae una, el artículo
+ * tiene que ser un dato de la categoría y no una regla.
  */
-const ARCO = [
-  "translate-y-4 sm:translate-y-7",
-  "-translate-y-3 sm:-translate-y-5",
-  "translate-y-6 sm:translate-y-11",
-  "sm:-translate-y-9",
-  "lg:translate-y-3",
-];
+function conArticulo(categoria: string): string {
+  const palabra = categoria.toLocaleLowerCase("es-AR");
+  return `${/as$/.test(palabra) ? "las" : "los"} ${palabra}`;
+}
 
-/**
- * Cuántos bloques entran según el ancho: tres en el teléfono, cuatro desde
- * `sm`, los cinco desde `lg`. A 390px, cinco serían cinco estampillas.
- */
-const VISIBILIDAD = ["", "", "", "hidden sm:block", "hidden lg:block"];
+/** Más cerca, más sombra y más nítida: es parte de la profundidad. */
+const POR_PROFUNDIDAD: Record<PiezaDelHero["d"], string> = {
+  1: "drop-shadow-[0_22px_28px_rgb(17_16_16/0.22)]",
+  0.65: "drop-shadow-[0_14px_18px_rgb(17_16_16/0.16)]",
+  0.35: "opacity-90 blur-[1px] drop-shadow-[0_8px_10px_rgb(17_16_16/0.12)]",
+};
 
-export function BloquesDelHero({
-  conjuntos,
+export function HeroDeLaHome({
+  categorias,
+  escena = ESCENA_BASE,
+  children,
 }: {
-  conjuntos: ConjuntoDelHero[];
+  /** Los nombres de las categorías destacadas, para la palabra que rota. */
+  categorias: string[];
+  escena?: PiezaDelHero[];
+  /** La bajada y el buscador: los arma la página. */
+  children: ReactNode;
 }) {
   const [indice, setIndice] = useState(0);
-  const [pausado, setPausado] = useState(false);
   const [quieto, setQuieto] = useState(false);
-  /** Lo pidió la persona, con el botón. Distinto de `pausado`, que es el
-   *  mouse o el foco y se va solo cuando se van. */
+  /** Lo pidió la persona, con el botón. */
   const [detenido, setDetenido] = useState(false);
+  /** Fuera de la pantalla no tiene sentido seguir cambiando la palabra. */
+  const [aLaVista, setALaVista] = useState(true);
+  const escenario = useRef<HTMLDivElement>(null);
 
   // El estado y no una lectura suelta de `matchMedia`: quien cambia la
   // preferencia del sistema con la pestaña abierta espera que el movimiento
@@ -91,46 +95,154 @@ export function BloquesDelHero({
   }, []);
 
   useEffect(() => {
-    if (quieto || detenido || pausado || conjuntos.length < 2) return;
+    const nodo = escenario.current;
+    if (!nodo) return;
+    const observador = new IntersectionObserver(([entrada]) =>
+      setALaVista(entrada.isIntersecting),
+    );
+    observador.observe(nodo);
+    return () => observador.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (quieto || detenido || !aLaVista || categorias.length < 2) return;
     const reloj = setInterval(
-      () => setIndice((n) => (n + 1) % conjuntos.length),
+      () => setIndice((n) => (n + 1) % categorias.length),
       VUELTA,
     );
     return () => clearInterval(reloj);
-  }, [quieto, detenido, pausado, conjuntos.length]);
+  }, [quieto, detenido, aLaVista, categorias.length]);
 
-  if (conjuntos.length === 0) return null;
+  // El paralaje. Un solo bucle que acerca el valor actual al objetivo un 8%
+  // por cuadro: eso es la inercia. Mientras corre, el escenario lleva
+  // `data-moviendo`, que es lo que enciende `will-change` (`globals.css`):
+  // con la escena quieta no reserva memoria de la placa de video.
+  useEffect(() => {
+    const nodo = escenario.current;
+    if (!nodo) return;
+    if (quieto || detenido) {
+      for (const v of ["--px", "--py", "--sy"]) nodo.style.setProperty(v, "0");
+      return;
+    }
 
-  const actual = conjuntos[indice % conjuntos.length];
+    const conMouse = window.matchMedia("(pointer: fine)").matches;
+    const objetivo = { x: 0, y: 0, s: 0 };
+    const actual = { x: 0, y: 0, s: 0 };
+    let cuadro = 0;
+
+    const pintar = () => {
+      actual.x += (objetivo.x - actual.x) * 0.08;
+      actual.y += (objetivo.y - actual.y) * 0.08;
+      actual.s += (objetivo.s - actual.s) * 0.2;
+      nodo.style.setProperty("--px", actual.x.toFixed(4));
+      nodo.style.setProperty("--py", actual.y.toFixed(4));
+      nodo.style.setProperty("--sy", actual.s.toFixed(1));
+      const falta =
+        Math.abs(objetivo.x - actual.x) +
+        Math.abs(objetivo.y - actual.y) +
+        Math.abs(objetivo.s - actual.s);
+      if (falta > 0.001) {
+        cuadro = requestAnimationFrame(pintar);
+      } else {
+        cuadro = 0;
+        delete nodo.dataset.moviendo;
+      }
+    };
+    const arrancar = () => {
+      if (cuadro) return;
+      nodo.dataset.moviendo = "";
+      cuadro = requestAnimationFrame(pintar);
+    };
+
+    const alMover = (e: PointerEvent) => {
+      const caja = nodo.getBoundingClientRect();
+      // De -1 a 1 desde el centro del escenario, recortado: con el puntero
+      // lejos del hero, la escena no sigue yéndose.
+      const x = ((e.clientX - caja.left) / caja.width) * 2 - 1;
+      const y = ((e.clientY - caja.top) / caja.height) * 2 - 1;
+      objetivo.x = Math.max(-1, Math.min(1, x));
+      objetivo.y = Math.max(-1, Math.min(1, y));
+      arrancar();
+    };
+    const alSalir = () => {
+      objetivo.x = 0;
+      objetivo.y = 0;
+      arrancar();
+    };
+    const alBajar = () => {
+      // Solo mientras el hero se ve: más abajo no hay nada que separar.
+      objetivo.s = Math.min(window.scrollY, nodo.offsetHeight);
+      arrancar();
+    };
+
+    if (conMouse) {
+      window.addEventListener("pointermove", alMover, { passive: true });
+      document.documentElement.addEventListener("pointerleave", alSalir);
+    }
+    window.addEventListener("scroll", alBajar, { passive: true });
+    alBajar();
+
+    return () => {
+      cancelAnimationFrame(cuadro);
+      delete nodo.dataset.moviendo;
+      window.removeEventListener("pointermove", alMover);
+      document.documentElement.removeEventListener("pointerleave", alSalir);
+      window.removeEventListener("scroll", alBajar);
+    };
+  }, [quieto, detenido]);
+
+  const rota = !quieto && categorias.length > 0;
+  const palabra = rota
+    ? conArticulo(categorias[indice % categorias.length])
+    : "la tecnología";
 
   return (
     <div
-      role="group"
-      aria-label={`Algunos productos de ${actual.categoria}`}
-      // `onFocus`/`onBlur` de React son `focusin`/`focusout`: suben desde el
-      // enlace de adentro, que es justo lo que hace falta acá.
-      onMouseEnter={() => setPausado(true)}
-      onMouseLeave={() => setPausado(false)}
-      onFocus={() => setPausado(true)}
-      onBlur={() => setPausado(false)}
-      className="relative w-full"
+      ref={escenario}
+      className="relative isolate w-full pt-32 pb-36 sm:pt-40 sm:pb-44 lg:py-32"
     >
-      {/*
-        El freno. Va arriba a la derecha, en el margen que el arco deja libre
-        en todos los anchos, y **siempre a la vista**: revelarlo al pasar el
-        mouse lo dejaría inalcanzable justo para quien más lo necesita, que es
-        quien entra desde el teléfono y no tiene hover. Con
-        `prefers-reduced-motion` no se dibuja: ahí no hay nada que parar.
-      */}
-      {quieto ? null : (
+      {/* El centro. No se mueve. */}
+      <div className="relative z-10 mx-auto flex max-w-lg flex-col items-center gap-5 text-center">
+        {/*
+          La marca, en burdeos y escrita como se escribe: «AnaVende», con las
+          dos mayúsculas. Hasta el 2026-10-19 iba en minúsculas (§2.3, desvío
+          del 2026-09-22); se volvió a la forma del nombre a pedido tuyo.
+        */}
+        <h1 className="flex flex-col items-center gap-1">
+          <span className="text-display text-brand sm:text-marca">
+            AnaVende
+          </span>
+          {/* El lector de pantalla oye la forma canónica una vez, y no una
+              categoría nueva cada pocos segundos. */}
+          <span className="sr-only">: vos elegís la tecnología.</span>
+          <span
+            aria-hidden
+            className="text-heading font-normal text-ink-secondary sm:text-title sm:font-normal"
+          >
+            vos elegís{" "}
+            <span
+              key={palabra}
+              className="inline-block font-semibold text-ink motion-safe:animate-palabra"
+            >
+              {palabra}
+            </span>
+            .
+          </span>
+        </h1>
+
+        {children}
+      </div>
+
+      {rota ? (
         <button
           type="button"
           onClick={() => setDetenido((v) => !v)}
           // El rótulo va dos veces: en `sr-only` para el lector de pantalla y
-          // en `title` para el globo del navegador. Un botón de ícono sin
-          // rótulo visible necesita las dos.
+          // en `title` para el globo del navegador.
           title={detenido ? "Reanudar el movimiento" : "Pausar el movimiento"}
-          className="absolute top-0 right-0 z-10 grid size-11 place-items-center rounded-pill text-ink-secondary transition-colors duration-150 hover:bg-surface hover:text-ink"
+          // Hasta `lg`, abajo al medio: es el hueco que dejan las piezas de
+          // abajo. Desde `lg`, arriba a la derecha.
+          className="absolute bottom-0 left-1/2 z-20 grid size-11 -translate-x-1/2 place-items-center rounded-pill text-ink-secondary transition-colors duration-150 hover:bg-surface hover:text-ink lg:top-0 lg:right-0 lg:bottom-auto lg:left-auto lg:translate-x-0"
         >
           {detenido ? (
             <Play aria-hidden className="size-4" />
@@ -141,102 +253,40 @@ export function BloquesDelHero({
             {detenido ? "Reanudar el movimiento" : "Pausar el movimiento"}
           </span>
         </button>
-      )}
+      ) : null}
 
-      {/*
-        La `key` es el índice, y eso es lo que hace la animación de entrada:
-        React desmonta la tanda anterior y monta la nueva, así que los bloques
-        vuelven a arrancar su `animate-bloque` sin un solo estado más.
-      */}
-      <ul
-        key={indice}
-        // El relleno de abajo no es simétrico, y por eso no es `py-`: el arco
-        // baja hasta 44px con `translate`, que no ocupa lugar en el layout. Sin
-        // esa reserva, el bloque más bajo se le montaba a la palabra de la
-        // marca —se veía, y ninguna medida del código lo decía—.
-        className="flex items-center justify-center gap-2.5 pt-8 pb-10 sm:gap-4 sm:pt-10 sm:pb-16"
-      >
-        {actual.productos.map((producto, i) => (
-          <li
-            key={producto.slug}
-            // El desnivel del arco va ACÁ y la animación adentro: las dos son
-            // `transform`, y en el mismo elemento la animación se come el
-            // desnivel al terminar (`both` deja el estado final puesto).
-            className={cn("shrink-0", ARCO[i], VISIBILIDAD[i])}
+      {/* La escena. `aria-hidden` entera: es decoración. */}
+      <div aria-hidden className="absolute inset-0 [perspective:1100px]">
+        {escena.map((pieza) => (
+          <div
+            key={pieza.src}
+            className={cn("absolute", pieza.lugar)}
+            style={
+              {
+                "--d": pieza.d,
+                zIndex: Math.round(pieza.d * 10),
+              } as React.CSSProperties
+            }
           >
-            <div
-              className="animate-bloque"
-              // Escalonados: la tanda entra como una tanda y no como un
-              // parpadeo. Inline porque es un número por bloque, no una clase.
-              style={{ animationDelay: `${i * 80}ms` }}
-            >
-              {/*
-                El vaivén va en su propio envoltorio, entre la entrada y el
-                enlace: las tres son `transform` y en el mismo elemento se
-                pisan —la entrada terminaría clavando el bloque a media altura
-                y el `hover` de la tarjeta no levantaría nada—.
-              */}
-              <div
+            <div className="paralaje">
+              <Image
+                src={pieza.src}
+                alt=""
+                width={pieza.ancho}
+                height={pieza.alto}
+                sizes="(min-width: 1024px) 288px, (min-width: 640px) 208px, 160px"
+                // Arriba del pliegue en el primer pintado: sin diferir.
+                loading="eager"
+                draggable={false}
                 className={cn(
-                  "animate-vaiven",
-                  // El botón para las DOS cosas: parar la vuelta y dejar los
-                  // bloques flotando sería un freno a medias.
-                  detenido && "[animation-play-state:paused]",
+                  "h-auto w-full select-none",
+                  POR_PROFUNDIDAD[pieza.d],
                 )}
-                // Cada uno con su tiempo: en sincronía serían un ascensor de
-                // cinco puertas. Desfasados son cosas que flotan.
-                style={{
-                  animationDelay: `${i * 700}ms`,
-                  animationDuration: `${5 + i * 0.4}s`,
-                }}
-              >
-                <Link
-                  href={`/productos/${producto.slug}`}
-                  className={cn(
-                    "group flex w-22 flex-col rounded-card bg-surface p-2 shadow-md sm:w-28 lg:w-38",
-                    "transition-shadow duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
-                    "hover:shadow-lg focus-visible:shadow-focus",
-                    "motion-safe:transition-[box-shadow,transform] motion-safe:hover:-translate-y-0.5",
-                  )}
-                >
-                  <div className="relative aspect-square overflow-hidden rounded-image bg-surface-sunken">
-                    {/*
-                      `alt` vacío a propósito: el nombre del producto está acá
-                      abajo, DENTRO del mismo enlace, así que un texto
-                      alternativo lo repetiría —«Teclado Kumara K552, Teclado
-                      Kumara K552»— cada vez que alguien recorre la página con
-                      un lector de pantalla.
-                    */}
-                    <Image
-                      src={producto.src}
-                      alt=""
-                      fill
-                      // Es el ancho de la IMAGEN, no el del bloque: el bloque
-                      // tiene 8px de relleno de cada lado, así que 152 son 136
-                      // de foto.
-                      sizes="(min-width: 1024px) 136px, (min-width: 640px) 96px, 72px"
-                      // La primera tanda está arriba del pliegue en el
-                      // primer pintado: sin diferir, y React la precarga. Sin
-                      // prioridad alta, que es solo de la foto de la ficha
-                      // (TS §20, F10.4). Las que siguen llegan cuando hace
-                      // falta.
-                      loading={indice === 0 ? "eager" : undefined}
-                      className="object-cover"
-                    />
-                  </div>
-
-                  <p className="truncate pt-2 text-caption font-medium text-ink">
-                    {producto.nombre}
-                  </p>
-                  <p className="truncate text-caption text-ink-secondary">
-                    {actual.categoria}
-                  </p>
-                </Link>
-              </div>
+              />
             </div>
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
