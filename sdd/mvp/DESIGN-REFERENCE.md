@@ -1238,7 +1238,8 @@ diseño (`components/shop/home/escena-del-hero.ts`, archivos en
 `public/hero/base/`), recortadas y sin fondo: no dependen de qué cargó la
 vendedora, no son enlaces y el lector de pantalla no las oye. **Está pensada
 para cambiarse por fecha** —Navidad, Halloween—: otra lista de piezas con sus
-archivos, sin tocar el componente. Eso se arma aparte. Seis piezas desde `lg`,
+archivos, sin tocar el componente. Eso se arma aparte. Siete piezas desde `lg` —auriculares, joystick, teclado,
+mouse, cable, disco sólido y pendrive—,
 a los costados; cuatro hasta ahí, arriba y abajo del texto, porque entre 640 y
 1024 los costados no tienen lugar.
 
@@ -1251,7 +1252,7 @@ centro no se mueve nunca.
 
 | Propiedad | Valor | Por qué |
 |---|---|---|
-| Piezas | 6 desde `lg`, 4 hasta ahí | En 390px, seis serían seis estampillas |
+| Piezas | 7 desde `lg`, 4 hasta ahí | En 390px, siete serían siete estampillas |
 | Profundidades | 1 · 0,65 · 0,35 | Más de tres o cuatro escalones no se distinguen |
 | Mouse | hasta 34px y 9° en la más cercana | Se nota sin marear |
 | Scroll | 0,25 px por px en la más cercana | Separa las capas sin despegarlas del hero |
