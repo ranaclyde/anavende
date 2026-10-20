@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ViewTransition } from "react";
 
 import {
   ChipsDeFiltros,
   PanelDeFiltros,
 } from "@/components/shop/filtros-catalogo";
 import { BotonFavorito } from "@/components/shop/favorito";
+import { GrillaQueEspera } from "@/components/shop/filtrando";
 import { Paginacion } from "@/components/shop/paginacion";
 import { SearchBox } from "@/components/shop/search-box";
 import { SelectorDeOrden } from "@/components/shop/selector-de-orden";
@@ -203,28 +205,45 @@ export default async function Catalogo({
         */}
         {pagina.productos.length > 0 ? (
           <>
-            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {/*
+              Al filtrar, ordenar o buscar (2026-10-20), las tarjetas que
+              siguen en el resultado se deslizan a su lugar nuevo, las que se
+              van se apagan y las nuevas aparecen (`globals.css`, `.tarjeta`).
+              Solo con el tipo `filtro` (`lib/transiciones.ts`): la página 2
+              cambia todas las tarjetas y además scrollea, y al tocar una la
+              que vuela es la foto (`foto-viajera.tsx`), que una transición de
+              React acá cortaría. Mientras espera, la grilla se atenúa.
+            */}
+            <GrillaQueEspera className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {pagina.productos.map((producto, i) => (
-                <li key={producto.slug}>
-                  <TarjetaProducto
-                    producto={producto}
-                    // La primera fila está arriba del pliegue: diferirla
-                    // penaliza el LCP. Cuatro es el ancho de la grilla.
-                    inmediata={i < 4}
-                    accionFavorito={
-                      <BotonFavorito
-                        forma="corazon"
-                        productId={producto.id}
-                        nombre={producto.nombre}
-                        marcado={guardados.has(producto.id)}
-                        conSesion={favoritos !== null}
-                        volver={volver}
-                      />
-                    }
-                  />
-                </li>
+                <ViewTransition
+                  key={producto.slug}
+                  enter={{ filtro: "tarjeta-entra", default: "none" }}
+                  exit={{ filtro: "tarjeta-sale", default: "none" }}
+                  update={{ filtro: "tarjeta", default: "none" }}
+                  default="none"
+                >
+                  <li>
+                    <TarjetaProducto
+                      producto={producto}
+                      // La primera fila está arriba del pliegue: diferirla
+                      // penaliza el LCP. Cuatro es el ancho de la grilla.
+                      inmediata={i < 4}
+                      accionFavorito={
+                        <BotonFavorito
+                          forma="corazon"
+                          productId={producto.id}
+                          nombre={producto.nombre}
+                          marcado={guardados.has(producto.id)}
+                          conSesion={favoritos !== null}
+                          volver={volver}
+                        />
+                      }
+                    />
+                  </li>
+                </ViewTransition>
               ))}
-            </ul>
+            </GrillaQueEspera>
 
             <Paginacion
               pagina={filtros.pagina}

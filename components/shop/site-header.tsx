@@ -65,6 +65,8 @@ export function SiteHeader({
     <header
       className={cn(
         "sticky top-0 z-40 bg-surface transition-shadow duration-150",
+        // Que nada de una View Transition le pase por encima (`globals.css`).
+        "[view-transition-name:encabezado]",
         conSombra && "shadow-lg",
       )}
     >
