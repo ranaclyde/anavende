@@ -7,6 +7,7 @@ import { listarProductos } from "@/modules/catalog/products/queries";
 import { AYUDA_DEL_UMBRAL } from "@/modules/settings/limites";
 import {
   leerLaConfiguracion,
+  redesSociales,
   umbralDeStockBajo,
   UMBRAL_DE_STOCK_BAJO_POR_DEFECTO,
 } from "@/modules/settings/queries";
@@ -45,6 +46,8 @@ type FilaPrevia = {
   whatsappNumber: string;
   adminNotificationEmail: string;
   lowStockThreshold: number;
+  facebookUrl: string | null;
+  instagramUrl: string | null;
   updatedAt: Date;
 };
 
@@ -129,6 +132,67 @@ describe("el umbral de stock bajo (RF-20)", () => {
   });
 });
 
+describe("las redes sociales (2026-10-20)", () => {
+  const instagram = (v: string) => valido({ ...base, instagramUrl: v });
+  const facebook = (v: string) => valido({ ...base, facebookUrl: v });
+
+  test("son opcionales: sin ellas, o vacías, quedan en null", () => {
+    expect(valido(base).data?.instagramUrl).toBeNull();
+    expect(instagram("   ").data?.instagramUrl).toBeNull();
+    expect(facebook("").data?.facebookUrl).toBeNull();
+  });
+
+  test.each([
+    "anavende",
+    "@anavende",
+    "instagram.com/anavende",
+    "www.instagram.com/anavende/",
+    "https://www.instagram.com/anavende?igsh=MXd6Z2t4",
+    "http://instagram.com/anavende",
+  ])("«%s» termina en el mismo enlace guardado", (escrito) => {
+    expect(instagram(escrito).data?.instagramUrl).toBe(
+      "https://www.instagram.com/anavende",
+    );
+  });
+
+  test.each([
+    "anavende",
+    "facebook.com/anavende",
+    "https://m.facebook.com/anavende/?mibextid=ZbWKwL",
+    "fb.com/anavende",
+  ])("Facebook: «%s» termina en el mismo enlace guardado", (escrito) => {
+    expect(facebook(escrito).data?.facebookUrl).toBe(
+      "https://www.facebook.com/anavende",
+    );
+  });
+
+  test("un perfil de Facebook sin usuario conserva su `?id=`", () => {
+    expect(
+      facebook("https://www.facebook.com/profile.php?id=1000123&sk=about").data
+        ?.facebookUrl,
+    ).toBe("https://www.facebook.com/profile.php?id=1000123");
+  });
+
+  /**
+   * El pie lo muestra con el logo de la red: un enlace a otro sitio detrás de
+   * ese logo es justo lo que no puede pasar.
+   */
+  test.each([
+    "anavende.com.ar",
+    "https://evil.com/instagram.com",
+    "https://instagram.com@evil.com/anavende",
+    "https://facebook.com/anavende",
+    "instagram.com",
+    "instagram.com/",
+  ])("Instagram: «%s» se rechaza", (malo) => {
+    const r = instagram(malo);
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0]?.message).toMatch(
+      /no es de un perfil de Instagram/,
+    );
+  });
+});
+
 describe("guardar y leer (§5.9)", () => {
   let previa: FilaPrevia | undefined;
 
@@ -137,6 +201,8 @@ describe("guardar y leer (§5.9)", () => {
       SELECT whatsapp_number          AS "whatsappNumber",
              admin_notification_email AS "adminNotificationEmail",
              low_stock_threshold      AS "lowStockThreshold",
+             facebook_url             AS "facebookUrl",
+             instagram_url            AS "instagramUrl",
              updated_at               AS "updatedAt"
         FROM site_settings WHERE id = 1`);
   });
@@ -148,9 +214,11 @@ describe("guardar y leer (§5.9)", () => {
     if (previa) {
       await db.execute(sql`
         INSERT INTO site_settings (id, whatsapp_number, admin_notification_email,
-                                   low_stock_threshold, updated_at)
+                                   low_stock_threshold, facebook_url,
+                                   instagram_url, updated_at)
         VALUES (1, ${previa.whatsappNumber}, ${previa.adminNotificationEmail},
-                ${previa.lowStockThreshold}, ${previa.updatedAt})`);
+                ${previa.lowStockThreshold}, ${previa.facebookUrl},
+                ${previa.instagramUrl}, ${previa.updatedAt})`);
     }
   });
 
@@ -226,6 +294,24 @@ describe("guardar y leer (§5.9)", () => {
     );
   });
 
+  test("las redes se guardan, se leen y el pie las recibe; vaciarlas las borra", async () => {
+    await sinFila();
+    expect(await redesSociales()).toEqual({ facebook: null, instagram: null });
+
+    const guardada = await escribirLaConfiguracion(
+      valido({ ...base, instagramUrl: "@anavende", facebookUrl: "" }).data!,
+    );
+    expect(guardada.instagramUrl).toBe("https://www.instagram.com/anavende");
+    expect(guardada.facebookUrl).toBeNull();
+    expect(await redesSociales()).toEqual({
+      facebook: null,
+      instagram: "https://www.instagram.com/anavende",
+    });
+
+    await escribirLaConfiguracion(valido({ ...base, instagramUrl: "" }).data!);
+    expect((await leerLaConfiguracion())?.instagramUrl).toBeNull();
+  });
+
   test("una segunda fila la rechaza el CHECK `singleton`, no el código", async () => {
     await sinFila();
     await escribirLaConfiguracion(valido(base).data!);
@@ -252,6 +338,8 @@ describe("el umbral guardado es el que usa el listado (§10.3)", () => {
       SELECT whatsapp_number          AS "whatsappNumber",
              admin_notification_email AS "adminNotificationEmail",
              low_stock_threshold      AS "lowStockThreshold",
+             facebook_url             AS "facebookUrl",
+             instagram_url            AS "instagramUrl",
              updated_at               AS "updatedAt"
         FROM site_settings WHERE id = 1`);
   });
@@ -263,9 +351,11 @@ describe("el umbral guardado es el que usa el listado (§10.3)", () => {
     if (previa) {
       await db.execute(sql`
         INSERT INTO site_settings (id, whatsapp_number, admin_notification_email,
-                                   low_stock_threshold, updated_at)
+                                   low_stock_threshold, facebook_url,
+                                   instagram_url, updated_at)
         VALUES (1, ${previa.whatsappNumber}, ${previa.adminNotificationEmail},
-                ${previa.lowStockThreshold}, ${previa.updatedAt})`);
+                ${previa.lowStockThreshold}, ${previa.facebookUrl},
+                ${previa.instagramUrl}, ${previa.updatedAt})`);
     }
   });
 

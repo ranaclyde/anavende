@@ -732,6 +732,9 @@ CREATE TABLE site_settings (
   whatsapp_number       text NOT NULL,
   admin_notification_email text NOT NULL,
   low_stock_threshold   integer NOT NULL DEFAULT 3,
+  maintenance_mode      boolean NOT NULL DEFAULT false,  -- F2.7b
+  facebook_url          text,                -- enlaces normalizados; NULL = no se muestra (2026-10-20)
+  instagram_url         text,
   updated_at            timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT singleton CHECK (id = 1)
 );

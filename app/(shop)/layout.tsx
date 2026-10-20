@@ -10,6 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSession } from "@/lib/session";
 import { contarUnidades } from "@/modules/cart/queries";
 import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
+import { redesSociales } from "@/modules/settings/queries";
 import { hayFavoritoPendiente } from "@/modules/users/favoritos/pendiente";
 
 /**
@@ -43,12 +44,17 @@ export default async function ShopLayout({
   // El favorito pendiente (F5.4, RF-05) se mira acá y no en cada página: el
   // corazón está en el catálogo y en la ficha, y quien ingresa vuelve a la que
   // estaba. Sin sesión no hay nada que retomar y la nota sigue esperando.
-  const [unidadesEnElCarrito, cerradaParaElResto, favoritoPendiente] =
+  //
+  // Las redes del pie (2026-10-20) no dependen de nada y van en la misma
+  // tanda. Si la base no contesta, el pie sale sin ellas en vez de tirar la
+  // tienda entera por dos íconos.
+  const [unidadesEnElCarrito, cerradaParaElResto, favoritoPendiente, redes] =
     await Promise.all([
       sesion ? contarUnidades(sesion.profile.id) : 0,
       sesion?.role === "admin" ? estaEnMantenimiento() : false,
       // Con la cuenta en pausa no se retoma nada: la acción la rechazaría.
       sesion && !enPausa ? hayFavoritoPendiente() : false,
+      redesSociales().catch(() => undefined),
     ]);
 
   return (
@@ -77,7 +83,7 @@ export default async function ShopLayout({
           </ProveedorDeCuentaEnPausa>
         </main>
 
-        <SiteFooter />
+        <SiteFooter redes={redes} />
       </div>
     </TooltipProvider>
   );

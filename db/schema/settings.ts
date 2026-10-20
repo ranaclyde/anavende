@@ -14,7 +14,7 @@ import {
 /**
  * Una sola fila, garantizada por el CHECK. Acá viven los valores que la
  * vendedora tiene que poder cambiar sin desplegar (RF-20): el número de
- * WhatsApp, el email de avisos y el umbral de stock bajo.
+ * WhatsApp, el email de avisos, el umbral de stock bajo y las redes sociales.
  */
 export const siteSettings = pgTable(
   "site_settings",
@@ -29,6 +29,14 @@ export const siteSettings = pgTable(
      * ruta que siempre pasa; ver `modules/settings/mantenimiento.ts`.
      */
     maintenanceMode: boolean("maintenance_mode").notNull().default(false),
+    /**
+     * Los perfiles que el pie de la tienda enlaza debajo del logo (2026-10-20).
+     * Opcionales: `null` = esa red no se muestra. Se guardan como enlace
+     * completo y normalizado (`modules/settings/schemas.ts`), así la tienda los
+     * pone en un `href` sin armar nada.
+     */
+    facebookUrl: text("facebook_url"),
+    instagramUrl: text("instagram_url"),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -43,6 +43,9 @@ export type ConfiguracionDelSitio = {
   whatsappNumber: string;
   adminNotificationEmail: string;
   lowStockThreshold: number;
+  /** Enlaces completos y normalizados; `null` = esa red no se muestra. */
+  facebookUrl: string | null;
+  instagramUrl: string | null;
 };
 
 /**
@@ -57,7 +60,9 @@ export async function leerLaConfiguracion(): Promise<ConfiguracionDelSitio | nul
   const [fila] = await db.execute<ConfiguracionDelSitio>(sql`
     SELECT whatsapp_number           AS "whatsappNumber",
            admin_notification_email  AS "adminNotificationEmail",
-           low_stock_threshold       AS "lowStockThreshold"
+           low_stock_threshold       AS "lowStockThreshold",
+           facebook_url              AS "facebookUrl",
+           instagram_url             AS "instagramUrl"
       FROM site_settings
      WHERE id = 1
   `);
@@ -162,6 +167,25 @@ export async function numeroDeWhatsApp(): Promise<string | null> {
     SELECT whatsapp_number AS numero FROM site_settings WHERE id = 1
   `);
   return fila?.numero ?? null;
+}
+
+export type RedesSociales = {
+  facebook: string | null;
+  instagram: string | null;
+};
+
+/**
+ * Los perfiles que el pie enlaza debajo del logo (2026-10-20).
+ *
+ * Sin fila, o con las dos vacías, el pie no muestra ninguna: un ícono que no
+ * lleva a ningún lado es peor que no tenerlo.
+ */
+export async function redesSociales(): Promise<RedesSociales> {
+  const [fila] = await db.execute<RedesSociales>(sql`
+    SELECT facebook_url AS facebook, instagram_url AS instagram
+      FROM site_settings WHERE id = 1
+  `);
+  return fila ?? { facebook: null, instagram: null };
 }
 
 /** Un medio de pago como lo ve el comprador (RF-01, RF-02, RF-03). */

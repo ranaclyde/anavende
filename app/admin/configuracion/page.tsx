@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Configuración" };
  *
  * Lo que RF-20 llama «datos de contacto y textos legales» no está acá: son
  * las páginas de RF-29, que tienen su propia tabla (`legal_pages`), su
- * propio editor y su propia tarea (F9.3). Lo de esta pantalla son los tres
+ * propio editor y su propia tarea (F9.3). Lo de esta pantalla son los
  * valores sueltos que hoy no tendrían dónde vivir salvo pegados en el
  * código.
  */
@@ -36,7 +36,7 @@ export default async function ConfiguracionDelSitio() {
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EncabezadoDePanel
         titulo="Configuración"
-        bajada="Por dónde te escriben, dónde te avisamos y cuándo un producto se está por acabar."
+        bajada="Por dónde te escriben y te siguen, dónde te avisamos y cuándo un producto se está por acabar."
       />
 
       <FormularioDeConfiguracion

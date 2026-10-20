@@ -16,10 +16,13 @@ export default function CargandoConfiguracion() {
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EsqueletoDeEncabezado titulo="w-40" bajada="w-full max-w-md" />
 
-      {/* Contacto: el WhatsApp. Su ayuda ocupa dos renglones y la de los
-          avisos uno: es la diferencia que más se nota si el esqueleto la
-          ignora. */}
-      <Tarjeta campos={["sm:max-w-64"]} lineasDeAyuda={2} />
+      {/* Contacto: el WhatsApp, Instagram y Facebook. Sus ayudas ocupan dos
+          renglones y la de los avisos uno: es la diferencia que más se nota
+          si el esqueleto la ignora. */}
+      <Tarjeta
+        campos={["sm:max-w-64", "sm:max-w-96", "sm:max-w-96"]}
+        lineasDeAyuda={2}
+      />
       {/* Avisos: el email y el umbral, que es angosto y lleva «unidades» al
           lado. Antes los tres campos medían `max-w-72`, que no es el ancho de
           ninguno. */}

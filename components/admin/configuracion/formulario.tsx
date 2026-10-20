@@ -25,6 +25,8 @@ import type { ConfiguracionDelSitio } from "@/modules/settings/queries";
  */
 const CAMPOS = [
   "whatsappNumber",
+  "instagramUrl",
+  "facebookUrl",
   "adminNotificationEmail",
   "lowStockThreshold",
 ] as const;
@@ -34,9 +36,10 @@ type Campo = (typeof CAMPOS)[number];
 /**
  * Configuración del sitio — RF-20, F2.7.
  *
- * Tres valores que la vendedora tiene que poder cambiar sin que nadie
- * despliegue nada: el número por el que vende, la casilla donde le avisamos
- * y a partir de cuántas unidades considera que algo se está por acabar.
+ * Lo que la vendedora tiene que poder cambiar sin que nadie despliegue
+ * nada: el número por el que vende, sus redes sociales, la casilla donde le
+ * avisamos y a partir de cuántas unidades considera que algo se está por
+ * acabar.
  *
  * **La fila puede no existir todavía** (§5.9): la escribe este formulario la
  * primera vez que se guarda. Por eso `configuracion` puede ser `null`, y por
@@ -66,6 +69,8 @@ export function FormularioDeConfiguracion({
   const [seGuardoRecien, setSeGuardoRecien] = useState(false);
 
   const [whatsapp, setWhatsapp] = useState(configuracion?.whatsappNumber ?? "");
+  const [instagram, setInstagram] = useState(configuracion?.instagramUrl ?? "");
+  const [facebook, setFacebook] = useState(configuracion?.facebookUrl ?? "");
   const [email, setEmail] = useState(
     configuracion?.adminNotificationEmail ?? "",
   );
@@ -88,6 +93,8 @@ export function FormularioDeConfiguracion({
   const sinCambios =
     guardado !== null &&
     whatsapp === guardado.whatsappNumber &&
+    instagram === (guardado.instagramUrl ?? "") &&
+    facebook === (guardado.facebookUrl ?? "") &&
     email === guardado.adminNotificationEmail &&
     umbral === String(guardado.lowStockThreshold);
 
@@ -146,6 +153,8 @@ export function FormularioDeConfiguracion({
     iniciar(async () => {
       const resultado = await guardarLaConfiguracion({
         whatsappNumber: whatsapp,
+        instagramUrl: instagram,
+        facebookUrl: facebook,
         adminNotificationEmail: email,
         // `Number.parseInt` explícito, que es lo que pide la regla de lint de
         // §7.1: acá no hay un monto sino un conteo de unidades. La guarda de
@@ -167,6 +176,8 @@ export function FormularioDeConfiguracion({
       // «+5491155555555» es la confirmación de que se entendió el número.
       setGuardado(resultado.data);
       setWhatsapp(resultado.data.whatsappNumber);
+      setInstagram(resultado.data.instagramUrl ?? "");
+      setFacebook(resultado.data.facebookUrl ?? "");
       setEmail(resultado.data.adminNotificationEmail);
       setUmbral(String(resultado.data.lowStockThreshold));
       setSeGuardoRecien(true);
@@ -207,6 +218,44 @@ export function FormularioDeConfiguracion({
             </FieldHint>
           )}
         </div>
+
+        {/* Las dos redes van al pie de la tienda, debajo del logo. Mismo
+            criterio que el WhatsApp: se pega como venga y vuelve normalizado. */}
+        {(
+          [
+            ["instagramUrl", "Instagram", instagram, setInstagram],
+            ["facebookUrl", "Facebook", facebook, setFacebook],
+          ] as const
+        ).map(([nombre, red, valor, poner]) => (
+          <div key={nombre} className="flex flex-col gap-1.5">
+            <Label htmlFor={campo(nombre).id}>
+              {red}
+              <span className="font-normal text-ink-secondary">(opcional)</span>
+            </Label>
+            <Input
+              {...campo(nombre)}
+              type="text"
+              inputMode="url"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              value={valor}
+              onChange={escribir(nombre, poner)}
+              placeholder={`${red.toLowerCase()}.com/anavende`}
+              className="sm:max-w-96"
+            />
+            {errores.campos[nombre] ? (
+              <FieldError id={`${idBase}-${nombre}-error`}>
+                {errores.campos[nombre]}
+              </FieldError>
+            ) : (
+              <FieldHint id={`${idBase}-${nombre}-ayuda`}>
+                Pegá el enlace de tu perfil o escribí tu usuario. Aparece en el
+                pie de la tienda; vacío, no se muestra.
+              </FieldHint>
+            )}
+          </div>
+        ))}
       </TarjetaDeSeccion>
 
       {/* ── Lo que ve solo la vendedora ──────────────────────────────── */}
