@@ -86,7 +86,7 @@ export function Precio({
         )}
         <p
           className={cn(
-            "text-body font-semibold tabular-nums",
+            "text-body-lg font-medium tabular-nums",
             hayOferta ? "text-brand" : "text-ink",
           )}
         >
@@ -142,7 +142,11 @@ export function Precio({
     <div className={cn("flex flex-col gap-0.5", className)}>
       <p
         className={cn(
-          "text-title font-semibold tabular-nums",
+          // 28px y medium, por encima del título de 24 (2026-10-20, pedido
+          // tuyo): en semibold y al mismo tamaño que el nombre del producto
+          // competían. No hay un token entre `title` y `display`, que es solo
+          // del hero, así que va el tamaño a mano con el tracking de `title`.
+          "text-[1.75rem] leading-[1.15] font-medium tracking-[-0.03em] tabular-nums",
           hayOferta ? "text-brand" : "text-ink",
         )}
       >

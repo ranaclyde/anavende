@@ -682,11 +682,11 @@ El componente más importante del sistema. Aparece en catálogo, home, recomenda
 │  │ (◑ 3)             │  │   con 2+ colores: pastilla abajo a la izq.
 │  └───────────────────┘  │
 │                         │
-│  LOGITECH               │   caption 12px/500, secundario, VERSALITAS
+│  Logitech               │   caption 12px, secundario, pegada al nombre
 │  Teclado mecánico K120  │   body-sm 14px/500, ink, máx. 2 líneas
 │                         │
 │  $27.500,00             │   tachado arriba, renglón reservado
-│  $24.500,00             │   final abajo
+│  $24.500,00             │   final abajo, body-lg 18px/600
 └─────────────────────────┘
 ```
 
@@ -701,7 +701,7 @@ El componente más importante del sistema. Aparece en catálogo, home, recomenda
 | **Sin stock** | Imagen al 55% de opacidad + píldora «Sin stock» centrada sobre ella, superficie blanca al 92%. **La tarjeta sigue siendo clicable** (RN-05) |
 | **Favorito** | Corazón arriba a la derecha de la imagen, **siempre a la vista**. Contorno cuando no está marcado, **relleno `--brand`** cuando sí. Área táctil de 44px aunque el ícono mida 20. Fondo `--surface` al 92% detrás, porque la imagen de abajo puede ser de cualquier color. **Late al marcarlo**, y no al desmarcarlo: escala a 1.25 y vuelve en 200ms (2026-10-20) |
 
-**Sobre la marca en versalitas:** separa visualmente marca de producto sin sumar un color ni un peso. Es un recurso de la referencia y funciona bien con Inter.
+**Sobre la marca, sin versalitas** (2026-10-20). Iba en mayúsculas para separarla del nombre sin sumar un color ni un peso, y el efecto fue el contrario: en versalitas y con aire propio se leía más importante que el nombre del producto. Ahora va en caja normal, en 12px —el piso, §3— y pegada al nombre, igual en la tarjeta y en la ficha.
 
 **Sobre los dos números, y no cuatro.** La tarjeta llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el precio final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces y cuatro números para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, que es lo que ya dibujaba este esquema y lo que hace el canvas aprobado en F3.8. Desde el 2026-09-08 **la ficha hace lo mismo** (§6.7, RN-04c): la regla dejó de ser de la tarjeta y pasó a ser de la tienda.
 
@@ -840,14 +840,16 @@ Color:  Negro
 Componente propio, porque aparece en todas partes y tiene que ser consistente.
 
 ```
-FICHA (§7.3) — apilado
-Sin oferta:      $ 27.500,00              ink, peso 600, 24px
-Con oferta:      $ 24.500,00              burdeos, peso 600, 24px
+FICHA (§7.3) — apilado, el tachado abajo
+Sin oferta:      $ 27.500,00              ink, peso 500, 28px
+Con oferta:      $ 24.500,00              burdeos, peso 500, 28px
                  $ 27.500,00              tachado, secundario, 12px
 
-TARJETA (§6.1) — una línea
-Sin oferta:      $ 27.500,00              ink, peso 600
-Con oferta:      $ 27.500,00 $ 24.500,00  tachado secundario 12px, después burdeos 600
+TARJETA (§6.1) — apilado, el tachado arriba (2026-10-20)
+Sin oferta:      (renglón reservado)
+                 $ 27.500,00              ink, peso 600, 18px
+Con oferta:      $ 27.500,00              tachado, secundario, 12px
+                 $ 24.500,00              burdeos, peso 600, 18px
 ```
 
 **Dos números en las dos, y lo único que cambia es la disposición.** La ficha llevó «Ahorrás $ 3.000,00» hasta el 2026-09-08 y ya no: una oferta se comunica con cuánto valía y cuánto vale, y el tercer número dice la misma oferta otra vez (RN-04c). Lo que separa las dos composiciones es el lugar. En la grilla el tachado va arriba del final y su renglón se reserva aunque no haya oferta (2026-10-20); en la ficha es lo primero que se lee después del nombre, sube a 24px y el tachado baja, donde no le compite.
@@ -1357,10 +1359,10 @@ El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del con
 
 ```
 ┌──────────────────────┬─────────────────────────────┐
-│ ┌──┐                 │  LOGITECH                   │  caption, versalitas
+│ ┌──┐                 │  Logitech                   │  caption, pegada al nombre
 │ └──┘                 │  Teclado mecánico K120      │  title 24px
 │ ┌──┐    imagen       │                             │
-│ └──┘  principal   ›  │  $ 24.500,00                │  burdeos, 24px
+│ └──┘  principal   ›  │  $ 24.500,00                │  burdeos, 28px/500
 │ ┌──┐                 │  $ 27.500,00                │  tachado, secundario, 12px
 │ └──┘                 │                             │
 │                      │  Color: Negro               │

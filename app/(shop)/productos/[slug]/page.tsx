@@ -295,7 +295,9 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         favorito={{ productId: ficha.id, marcado: guardado }}
         encabezado={
           <header key="encabezado" className="flex flex-col gap-2">
-            <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
+            {/* Sin versalitas y pegada al nombre, igual que en la tarjeta
+                (2026-10-20): en mayúsculas parecía más importante que él. */}
+            <p className="-mb-1 text-caption text-ink-secondary">
               {ficha.marca}
             </p>
             {/*

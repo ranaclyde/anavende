@@ -208,9 +208,12 @@ export function TarjetaProducto({
       </div>
 
       <div className="flex flex-1 flex-col gap-1 px-1 pt-3 pb-1">
-        <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
-          {marca}
-        </p>
+        {/*
+          Sin versalitas, y pegada al nombre (2026-10-20, pedido tuyo): en
+          mayúsculas y con aire propio se leía más importante que el nombre
+          del producto. Queda en 12px, que es el piso (§3).
+        */}
+        <p className="-mb-1 text-caption text-ink-secondary">{marca}</p>
 
         <h3 className="text-body-sm font-medium text-ink">
           {/*
