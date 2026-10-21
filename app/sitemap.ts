@@ -7,8 +7,8 @@ import { PAGINAS_LEGALES } from "@/modules/content/paginas";
 /**
  * `sitemap.xml` — F3.9, RNF-04.
  *
- * **Solo las direcciones que se indexan**: la home, el catálogo sin filtrar y
- * cada ficha activa. Los filtros no entran —son `?categoria=<slug>` y salen
+ * **Solo las direcciones que se indexan**: la home, el catálogo sin filtrar,
+ * las categorías y cada ficha activa. Los filtros no entran —son `?categoria=<slug>` y salen
  * marcados `noindex` (ver `productos/page.tsx`)—, y las páginas de sesión
  * tampoco. Un mapa del sitio no es el índice de todo lo que responde 200: es
  * la lista de lo que pedimos que se indexe, y meter ahí algo que la misma
@@ -40,6 +40,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: urlAbsoluta("/"), lastModified: ultimoCambio },
     { url: urlAbsoluta("/productos"), lastModified: ultimoCambio },
+    // F3.10: cambia cuando cambia un producto —las cantidades— igual que el
+    // catálogo.
+    { url: urlAbsoluta("/categorias"), lastModified: ultimoCambio },
     ...productos.map((p) => ({
       url: urlAbsoluta(`/productos/${p.slug}`),
       lastModified: p.actualizado,

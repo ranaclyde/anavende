@@ -1,6 +1,5 @@
 import { Truck } from "lucide-react";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -13,9 +12,13 @@ import {
   SeccionDeLaHome,
 } from "@/components/shop/home/seccion";
 import { SearchBox } from "@/components/shop/search-box";
+import {
+  ANCHO_EN_FILA_DE_CATEGORIAS,
+  FilaDeCategorias,
+  TarjetaCuadradaDeCategoria,
+} from "@/components/shop/tarjeta-de-categoria";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
 import { VistosRecientemente } from "@/components/shop/vistos";
-import { Button } from "@/components/ui/button";
 import { organizacion, sitio } from "@/lib/datos-estructurados";
 import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE } from "@/lib/seo";
 import { getIdentity } from "@/lib/session";
@@ -249,7 +252,7 @@ export default async function Home() {
           <VistosRecientemente ruta="/" />
         </Suspense>
 
-        {/* ── Más categorías, con la salida apagada ────────────────── */}
+        {/* ── Más categorías, con la salida a la página de todas ────── */}
         {/*
           TARJETAS con imagen y nombre, como pide el boceto. La imagen es un
           campo propio de la categoría (FA-21), cargado en el panel, y es
@@ -257,69 +260,26 @@ export default async function Home() {
           así que la fila no se desarma con categorías sin imagen mezcladas.
         */}
         {datos.masCategorias.length > 0 ? (
-          <section
-            aria-labelledby="mas-categorias"
-            className="flex flex-col gap-5"
+          <SeccionDeLaHome
+            titulo="Más categorías"
+            enlace={{
+              href: "/categorias",
+              etiqueta: "Ver todas las categorías",
+              texto: "Ver todas",
+            }}
           >
-            <div className="flex items-center justify-between gap-4">
-              <h2 id="mas-categorias" className="text-heading text-ink">
-                Más categorías
-              </h2>
-
-              {/*
-                RNF-08: un botón apagado explica por qué. La pantalla que
-                listaría todas las categorías no existe y no tiene tarea en
-                ninguna fase; el botón se enciende el día que exista, y
-                mientras tanto el hueco se ve —que es lo que hace que alguien
-                se acuerde de decidirlo—.
-              */}
-              <Button
-                variant="tertiary"
-                size="sm"
-                disabled
-                title="Todavía no hay una pantalla con todas las categorías"
-              >
-                Ver todas
-              </Button>
-            </div>
-
-            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+            <FilaDeCategorias grilla="sm:grid-cols-4 lg:grid-cols-8">
               {datos.masCategorias.map((categoria) => (
-                <li key={categoria.id}>
-                  <Link
-                    href={urlDeTienda({ categoria: [categoria.slug] })}
-                    className="group flex h-full flex-col gap-2 rounded-card bg-surface p-2 shadow-md transition-shadow duration-200 hover:shadow-lg focus-visible:shadow-focus focus-visible:outline-none"
-                  >
-                    {/* Cuadrada siempre, con imagen o sin ella: el aspecto lo
-                        reserva el CSS y la fila no salta cuando cargan (CLS). */}
-                    <span className="relative grid aspect-square place-items-center overflow-hidden rounded-image bg-surface-sunken">
-                      {categoria.imagenUrl ? (
-                        // Decorativa: el nombre va debajo, en texto, y
-                        // repetirlo en el `alt` lo haría leer dos veces (§9).
-                        <Image
-                          src={categoria.imagenUrl}
-                          alt=""
-                          fill
-                          sizes="(min-width: 1024px) 12vw, (min-width: 640px) 25vw, 33vw"
-                          className="object-cover motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-[1.03]"
-                        />
-                      ) : (
-                        <span
-                          aria-hidden
-                          className="text-heading text-ink-tertiary"
-                        >
-                          {categoria.nombre.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </span>
-                    <span className="px-1 pb-1 text-body-sm font-medium break-words hyphens-auto text-ink transition-colors duration-150 group-hover:text-brand">
-                      {categoria.nombre}
-                    </span>
-                  </Link>
+                <li key={categoria.id} className={ANCHO_EN_FILA_DE_CATEGORIAS}>
+                  <TarjetaCuadradaDeCategoria
+                    categoria={categoria}
+                    imagenUrl={categoria.imagenUrl}
+                    sizes="(min-width: 1024px) 12vw, (min-width: 640px) 25vw, 40vw"
+                  />
                 </li>
               ))}
-            </ul>
-          </section>
+            </FilaDeCategorias>
+          </SeccionDeLaHome>
         ) : null}
       </div>
     </div>

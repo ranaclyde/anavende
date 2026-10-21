@@ -25,12 +25,19 @@ const legal = (slug: string) => {
 };
 
 /**
- * Dos grupos con nombre y no una sola lista (pedido del 2026-10-20): con
- * Contacto eran siete enlaces bajo «Información», y una lista de siete no se
- * escanea. «Ayuda» es lo que se busca para resolver algo; «Legales», lo que
- * hay que tener a mano.
+ * Grupos con nombre y no una sola lista (pedido del 2026-10-20): con Contacto
+ * eran siete enlaces bajo «Información», y una lista de siete no se escanea.
+ * «Tienda» es por dónde se recorre lo que hay (F3.10, DR §5.1); «Ayuda», lo
+ * que se busca para resolver algo; «Legales», lo que hay que tener a mano.
  */
 const GRUPOS = [
+  {
+    titulo: "Tienda",
+    enlaces: [
+      { href: "/productos", titulo: "Catálogo" },
+      { href: "/categorias", titulo: "Categorías" },
+    ],
+  },
   {
     titulo: "Ayuda",
     enlaces: [
@@ -135,8 +142,8 @@ export function SiteFooter({
             </p>
           </div>
 
-          {/* En el teléfono, los dos grupos lado a lado: apilados, el pie
-              sumaba otra pantalla entera de enlaces. */}
+          {/* En el teléfono, de a dos por fila: apilados, el pie sumaba otra
+              pantalla entera de enlaces. */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:flex md:gap-16">
             {GRUPOS.map((grupo) => (
               <nav

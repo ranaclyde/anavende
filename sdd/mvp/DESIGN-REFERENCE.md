@@ -1319,8 +1319,12 @@ porque esa la elegiría una consulta y no ella. Es la tarjeta de producto en
 chico —mismo radio, misma sombra, recuadro cuadrado— y sin nada más que el
 nombre. **La imagen es opcional**, y la que no tiene muestra **su inicial** en
 el mismo recuadro hundido: la fila conserva su forma con categorías sin imagen
-mezcladas, que es lo que FA-21 pedía. Tres por fila en el teléfono, cuatro en
-tableta y ocho en escritorio, que es el tope de la sección.
+mezcladas, que es lo que FA-21 pedía. Cuatro por fila en tableta y ocho en
+escritorio, que es el tope de la sección. **En el teléfono, una fila que se
+desliza** (2026-10-21, pedido tuyo), con dos tarjetas enteras y un tercio de
+la tercera asomado, que es lo que dice que sigue: tres por fila dejaban 72px
+para el nombre y lo partían a mitad de palabra. **«Ver todas» es el mismo
+enlace de las secciones de arriba** —burdeos con flecha—, no un botón aparte.
 
 **«Ver todas» nació apagado, con el motivo al lado** (RNF-08), porque la
 pantalla de categorías no existía. Desde el 2026-10-21 está descrita en §7.6
@@ -1500,21 +1504,19 @@ El botón de WhatsApp es la **acción principal**: es lo que efectivamente cierr
 │  [▢ Adaptadores   ›] [▢ Auriculares  ›] [▢ …     ] │  tarjeta en fila,
 │     3 productos         14 productos               │  1 · 2 · 3 por fila
 ├──────────────────────── 80px ──────────────────────┤
-│  Todavía sin productos                             │  sólo si hay alguna
-│  [▢ Sillas gamer           Consultar] …            │  hundida, sin enlace
-├──────────────────────── 80px ──────────────────────┤
 │  ¿No encontrás lo que buscás?                      │  heading 20px
 │  Escribinos y te decimos si lo tenemos o si        │  body, secundario
 │  pensamos traerlo.                                 │
-│  [ Escribinos por WhatsApp ]                       │  verde (§2.6)
+│  [ Escribinos por WhatsApp ]                       │  blanco, logo verde
 └────────────────────────────────────────────────────┘
 ```
 
 **Las destacadas arriba, y también en la lista.** Arriba van las destacadas
 con al menos un producto, hasta siete —las mismas de los chips de la home—, en
 la tarjeta cuadrada de «Más categorías» (§7.1) con la cantidad debajo del
-nombre. Dos por fila en el teléfono, cuatro en tableta y siete en escritorio:
-nunca más de una fila. **Abajo se repiten a propósito**: la lista de la A a la
+nombre, y en **una sola fila siempre**: en el teléfono se desliza como la de
+«Más categorías» (§7.1), con dos enteras y la tercera asomada; cuatro por fila
+en tableta y siete en escritorio. **Abajo se repiten a propósito**: la lista de la A a la
 Z es la que se recorre buscando algo, y con huecos deja de servir. Se descartó
 marcarlas con otro borde: el burdeos es de la marca y de lo accionable (§2.1),
 y ahí sólo decoraría.
@@ -1538,27 +1540,30 @@ abajo, que es como se lee una fila.
 Una por fila en el teléfono, dos en tableta y tres en escritorio. El orden es
 alfabético sin distinguir acentos ni mayúsculas, como en el resto de la tienda.
 
-**Las que no tienen productos van al final**, bajo «Todavía sin productos», y
-sólo si hay alguna. Es la misma tarjeta en fila **sin enlace**, porque llevaría
-a un catálogo vacío: **sobre la superficie hundida y sin sombra**, que es lo que
-la separa de las que se tocan. **Lo que se atenúa es la superficie, no el
-texto**, que conserva el contraste AA (§9). En lugar de la cantidad dice «Sin
-productos por ahora», y a la derecha va **«Consultar»**, un botón terciario de
-44px con el logo de WhatsApp en verde (§2.6) que abre la consulta de categoría
-(RF-35). Terciario y no relleno: en esta fila no es la acción principal. Una destacada sin
-productos va acá y no arriba.
+**Las que no tienen productos no se muestran**, como en «Más categorías» de la
+home: nombrarlas sería un enlace a un catálogo vacío. Se probaron al final,
+primero en superficie hundida con un «Consultar» debajo y después como una
+tarjeta más con el logo de WhatsApp en lugar de la flecha, y se descartaron
+el mismo día (2026-10-21, decisión tuya): en las dos formas rompían la lista.
+Quien busca algo que no está tiene el cierre. Una destacada sin productos
+tampoco aparece arriba.
 
 **El buscador filtra mientras se escribe**, sin acentos ni mayúsculas, sobre
-las tres secciones y en el navegador: son decenas de categorías, no hace falta
-ir a la base. Mientras hay texto, **«Destacadas» se oculta** —la misma
-categoría estaría dos veces— y quedan la lista con lo que coincide y, debajo,
-las sin productos que coincidan. Arriba de la lista, **«3 categorías»** se
+las dos secciones y en el navegador. Es la píldora de §6.2 **sin el botón de
+enviar** —no hay nada que enviar— y con una lupa a la izquierda, que es lo que
+dice que es un buscador. Son decenas de categorías: no hace falta ir a la
+base. Mientras hay texto, **«Destacadas» se oculta** —la misma categoría
+estaría dos veces— y quedan la lista con lo que coincide, titulada
+«Resultados». Arriba de la lista, **«3 categorías»** se
 anuncia al lector de pantalla (`aria-live`). El texto va a la dirección
 (`?q=`) **reemplazando** la entrada del historial: la búsqueda se comparte, y
 el botón atrás no tiene que deshacer letra por letra.
 
-**El cierre invita a escribirle a la vendedora**, siempre al final, con el verde
-de WhatsApp (§2.6). Sin búsqueda manda la consulta general. **Con una búsqueda
+**El cierre invita a escribirle a la vendedora**, siempre al final, con el
+botón **secundario**: blanco con el logo de WhatsApp en verde (§2.6), el mismo
+de «¿Te quedó una duda?» en las páginas de ayuda (2026-10-21, pedido tuyo). No
+va relleno porque esta pantalla no es para comprar: es una consulta, como la
+de ayuda. Sin búsqueda manda la consulta general. **Con una búsqueda
 que no encontró nada, sube al lugar de la lista y es el estado vacío**: «No
 encontramos «sillas»» arriba y el mensaje con lo que se buscó, así el «no
 está» termina en una conversación y no en una pantalla vacía. Sin número de
