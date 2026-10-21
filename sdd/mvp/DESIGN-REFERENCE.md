@@ -623,11 +623,8 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  [AV] AnaVende    ( Buscar productos...       (→) )      │  56px, blanco
-│                              ♡ Favoritos  🛒 3   Ana ▾   │  sombra al scrollear
-├──────────────────────────────────────────────────────────┤
-│   Teclados · Mouses · Auriculares · Cables · Memorias    │  chips, scroll horiz.
-├──────────────────────────────────────────────────────────┤
+│ [AV] AnaVende  Catálogo (Categorías) Ofertas   🔍 ♡ (🛒 3) Ana │  56px, blanco
+├──────────────────────────────────────────────────────────┤  sombra al scrollear
 │                                                          │
 │                    [ contenido ]           canvas #f2f4f5│
 │                    máx. 1200px                           │
@@ -638,7 +635,10 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 ```
 
 - El encabezado es **fijo (sticky)** y gana `--shadow-lg` al hacer scroll.
-- En móvil, el buscador colapsa a un ícono y las acciones pasan a un menú.
+- **La navegación va al lado del logo** (2026-10-21): «Catálogo», «Categorías» (§7.6) y «Ofertas» —el catálogo con el filtro de descuento—. La página en la que se está lleva una **píldora `--brand-tint` con el texto en burdeos**. La píldora **viaja como una gota**: sigue al mouse y al foco, el borde que va adelante llega en 220ms y el de atrás en 560ms, así que se estira en el camino y se recoge al llegar. Al hacer clic suelta una ráfaga de ocho puntos burdeos que se apagan en ~700ms. Sin movimiento con `prefers-reduced-motion`. La fila de chips de categorías que dibujaba esta sección no se hizo: los chips están en la home y la lista en `/categorias`.
+- **En el teléfono** (por debajo de `md`) los enlaces pasan a un **menú lateral que sale por la izquierda** (☰ antes del isotipo), de 320px como máximo, con los tres destinos, la cuenta, «Contacto» y «Cómo comprar». La cuenta sale de la fila.
+- **El buscador es una lupa en todos los tamaños** y se abre a ancho completo debajo del encabezado; Escape lo cierra y devuelve el foco a la lupa. Sigue sin dibujarse mientras la página tiene su buscador a la vista.
+- **El carrito es una píldora** (F3.8, no un ícono con insignia encima). Vacía, solo el ícono. Con productos, el número va en un **círculo burdeos de 28px con texto blanco** adentro de la píldora (2026-10-21), y desde 100 dice «99+».
 - La fila de categorías **desaparece en el panel del comprador y en el checkout**: ahí no se está explorando.
 - **El pie agrupa sus enlaces en tres** (2026-10-21): **«Tienda»** —«Catálogo» y «Categorías» (§7.6)—, **«Ayuda»** y **«Legales»**, en ese orden. En el teléfono van de a dos por fila.
 

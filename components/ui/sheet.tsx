@@ -27,16 +27,23 @@ import { cn } from "@/lib/utils";
  * y pie usa `SheetForm`, que es la misma columna con el `min-h-0` puesto.
  */
 const Sheet = DialogPrimitive.Root;
+const SheetTrigger = DialogPrimitive.Trigger;
 
 function SheetContent({
   className,
   children,
   closeLabel = "Cerrar",
+  lado = "derecha",
   onOpenAutoFocus,
   onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   closeLabel?: string;
+  /**
+   * La izquierda es sólo para navegar: el menú de la tienda en el teléfono.
+   * Un formulario sale siempre por la derecha (arriba, por qué).
+   */
+  lado?: "derecha" | "izquierda";
 }) {
   const foco = useFocoQueVuelve({ onOpenAutoFocus, onCloseAutoFocus });
   // La misma razón que en `DialogContent`: el portal saca la caja de
@@ -54,9 +61,14 @@ function SheetContent({
           // `dvh`: el alto entero que se ve, también con la barra del
           // navegador del teléfono a la vista. 32rem alcanzan para que un
           // renglón de categoría relacionada entre en una línea.
-          "fixed inset-y-0 right-0 z-50 flex h-dvh w-full flex-col bg-surface text-ink shadow-lg sm:max-w-[32rem] sm:border-l sm:border-border",
-          "data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=open]:duration-200 data-[state=open]:ease-out",
-          "data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=closed]:duration-150 data-[state=closed]:ease-in",
+          "fixed inset-y-0 z-50 flex h-dvh w-full flex-col bg-surface text-ink shadow-lg",
+          lado === "derecha"
+            ? "right-0 sm:max-w-[32rem] sm:border-l sm:border-border data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right"
+            : // El menú no ocupa la pantalla entera: el borde de la página
+              // que queda a la vista dice que se cierra tocando afuera.
+              "left-0 max-w-[20rem] border-r border-border data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
+          "data-[state=open]:animate-in data-[state=open]:duration-200 data-[state=open]:ease-out",
+          "data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=closed]:ease-in",
           "motion-reduce:animate-none",
           className,
         )}
@@ -155,6 +167,7 @@ function SheetDescription({
 
 export {
   Sheet,
+  SheetTrigger,
   SheetContent,
   SheetHeader,
   SheetForm,
