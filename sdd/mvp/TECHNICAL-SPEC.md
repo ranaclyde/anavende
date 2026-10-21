@@ -209,6 +209,7 @@ anavende/
 │  │  ├─ productos/
 │  │  │  ├─ page.tsx             # Catálogo (RF-02)
 │  │  │  └─ [slug]/page.tsx      # Ficha (RF-03)
+│  │  ├─ categorias/page.tsx     # Todas las categorías (RF-35)
 │  │  ├─ carrito/page.tsx        # (RF-08)
 │  │  ├─ checkout/page.tsx       # (RF-11)
 │  │  ├─ orden/[numero]/page.tsx # Confirmación (RF-12)

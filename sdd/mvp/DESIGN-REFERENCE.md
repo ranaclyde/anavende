@@ -640,6 +640,7 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 - El encabezado es **fijo (sticky)** y gana `--shadow-lg` al hacer scroll.
 - En móvil, el buscador colapsa a un ícono y las acciones pasan a un menú.
 - La fila de categorías **desaparece en el panel del comprador y en el checkout**: ahí no se está explorando.
+- **El pie agrupa sus enlaces en tres** (2026-10-21): **«Tienda»** —«Catálogo» y «Categorías» (§7.6)—, **«Ayuda»** y **«Legales»**, en ese orden. En el teléfono van de a dos por fila.
 
 ### 5.2 Panel de administración
 
@@ -1214,7 +1215,7 @@ Los reportes (RF-28) y el inicio del panel (RF-14) dibujan con el componente
 ├──────────────────────── 80px ──────────────────────┤
 │  (Vistos recientemente)                            │  F8.4
 ├──────────────────────── 80px ──────────────────────┤
-│  Más categorías                    (Ver todas)     │  el botón, apagado
+│  Más categorías                    (Ver todas)     │  lleva a §7.6
 │  [img] [img] [ C ] [img] [ S ] …                   │  tarjetas, hasta 8
 └────────────────────────────────────────────────────┘
 ```
@@ -1321,10 +1322,9 @@ el mismo recuadro hundido: la fila conserva su forma con categorías sin imagen
 mezcladas, que es lo que FA-21 pedía. Tres por fila en el teléfono, cuatro en
 tableta y ocho en escritorio, que es el tope de la sección.
 
-**«Ver todas» nace apagado, con el motivo al lado** (RNF-08): la pantalla de
-categorías no existe todavía y no tiene tarea en ninguna fase. La sección se
-construye igual porque el hueco es real; el botón se enciende el día que esa
-pantalla exista.
+**«Ver todas» nació apagado, con el motivo al lado** (RNF-08), porque la
+pantalla de categorías no existía. Desde el 2026-10-21 está descrita en §7.6
+(F3.10), y el botón se enciende cuando se construya.
 
 ### 7.2 Catálogo
 
@@ -1478,6 +1478,95 @@ Pantalla de éxito, centrada, sin distracciones:
 ```
 
 El botón de WhatsApp es la **acción principal**: es lo que efectivamente cierra la venta (RF-12). **Pero el texto de arriba lo presenta como opcional**, y las dos cosas no se contradicen: la venta ya está registrada y la vendedora ya fue avisada, así que apurarla es una elección de quien compra. Destacado porque es lo que más le conviene, no porque sin él no pase nada.
+
+### 7.6 Categorías
+
+> **Pedida el 2026-10-21 (F3.10, RF-35).** El canvas de F3.8 la traía entre sus
+> siete pantallas y no tenía tarea; el «Ver todas» de la home estaba apagado
+> esperándola. Se llega desde ahí y desde el pie, en «Tienda» (§5.1).
+
+```
+┌────────────────────────────────────────────────────┐
+│  Categorías                                        │  title 24px
+│  Todo lo que vendemos, de la A a la Z.             │  body, secundario
+│  ( Buscá una categoría…                       )    │  §6.2, máx. 560px
+│                                                    │
+│  Destacadas                                        │  heading 20px
+│  [ img  ] [ img  ] [ img  ] [ img  ] …             │  tarjeta cuadrada,
+│  Teclados  Mouses   …                              │  2 · 4 · 7 por fila
+│  14 prod.  9 prod.                                 │
+├──────────────────────── 80px ──────────────────────┤
+│  Todas, de la A a la Z                             │  heading 20px
+│  [▢ Adaptadores   ›] [▢ Auriculares  ›] [▢ …     ] │  tarjeta en fila,
+│     3 productos         14 productos               │  1 · 2 · 3 por fila
+├──────────────────────── 80px ──────────────────────┤
+│  Todavía sin productos                             │  sólo si hay alguna
+│  [▢ Sillas gamer           Consultar] …            │  hundida, sin enlace
+├──────────────────────── 80px ──────────────────────┤
+│  ¿No encontrás lo que buscás?                      │  heading 20px
+│  Escribinos y te decimos si lo tenemos o si        │  body, secundario
+│  pensamos traerlo.                                 │
+│  [ Escribinos por WhatsApp ]                       │  verde (§2.6)
+└────────────────────────────────────────────────────┘
+```
+
+**Las destacadas arriba, y también en la lista.** Arriba van las destacadas
+con al menos un producto, hasta siete —las mismas de los chips de la home—, en
+la tarjeta cuadrada de «Más categorías» (§7.1) con la cantidad debajo del
+nombre. Dos por fila en el teléfono, cuatro en tableta y siete en escritorio:
+nunca más de una fila. **Abajo se repiten a propósito**: la lista de la A a la
+Z es la que se recorre buscando algo, y con huecos deja de servir. Se descartó
+marcarlas con otro borde: el burdeos es de la marca y de lo accionable (§2.1),
+y ahí sólo decoraría.
+
+**La lista va en tarjetas en fila, no cuadradas.** La cuadrada se probó el
+2026-10-21 con nombres reales: tres por fila en un teléfono de 320 dejan 72px
+de texto —«Webcams» se parte en dos— y un nombre de 60 caracteres, el máximo
+del panel, ocupa ocho renglones y estira la fila entera. La fila tiene ancho
+para el nombre y para la cantidad, y una lista alfabética se recorre de arriba
+abajo, que es como se lee una fila.
+
+| Parte | Cómo es |
+|---|---|
+| Imagen | 56px, cuadrada, radio de imagen. Sin imagen, la **inicial** en el recuadro hundido, como en §7.1 |
+| Nombre | body 16px/500, ink, **sin tope de renglones**: con el ancho de la fila, 60 caracteres son dos o tres |
+| Cantidad | body-sm 14px, secundario, debajo del nombre. «1 producto», «14 productos» |
+| Flecha | `›` a la derecha, decorativa (`aria-hidden`) |
+| Enlace | **La tarjeta entera**, al catálogo filtrado por esa categoría (§7.2) |
+| Superficie | La de la tarjeta de producto: radio de tarjeta, sombra, y el mismo hover y foco (§6.1). Alto mínimo 72px |
+
+Una por fila en el teléfono, dos en tableta y tres en escritorio. El orden es
+alfabético sin distinguir acentos ni mayúsculas, como en el resto de la tienda.
+
+**Las que no tienen productos van al final**, bajo «Todavía sin productos», y
+sólo si hay alguna. Es la misma tarjeta en fila **sin enlace**, porque llevaría
+a un catálogo vacío: **sobre la superficie hundida y sin sombra**, que es lo que
+la separa de las que se tocan. **Lo que se atenúa es la superficie, no el
+texto**, que conserva el contraste AA (§9). En lugar de la cantidad dice «Sin
+productos por ahora», y a la derecha va **«Consultar»**, un botón terciario de
+44px con el logo de WhatsApp en verde (§2.6) que abre la consulta de categoría
+(RF-35). Terciario y no relleno: en esta fila no es la acción principal. Una destacada sin
+productos va acá y no arriba.
+
+**El buscador filtra mientras se escribe**, sin acentos ni mayúsculas, sobre
+las tres secciones y en el navegador: son decenas de categorías, no hace falta
+ir a la base. Mientras hay texto, **«Destacadas» se oculta** —la misma
+categoría estaría dos veces— y quedan la lista con lo que coincide y, debajo,
+las sin productos que coincidan. Arriba de la lista, **«3 categorías»** se
+anuncia al lector de pantalla (`aria-live`). El texto va a la dirección
+(`?q=`) **reemplazando** la entrada del historial: la búsqueda se comparte, y
+el botón atrás no tiene que deshacer letra por letra.
+
+**El cierre invita a escribirle a la vendedora**, siempre al final, con el verde
+de WhatsApp (§2.6). Sin búsqueda manda la consulta general. **Con una búsqueda
+que no encontró nada, sube al lugar de la lista y es el estado vacío**: «No
+encontramos «sillas»» arriba y el mensaje con lo que se buscó, así el «no
+está» termina en una conversación y no en una pantalla vacía. Sin número de
+WhatsApp configurado no se dibuja el botón (RF-04), y el texto enlaza a
+Contacto.
+
+**Sin ninguna categoría activa**, la página dice «Todavía no hay categorías»,
+ofrece «Ver el catálogo» y muestra el cierre.
 
 ---
 
