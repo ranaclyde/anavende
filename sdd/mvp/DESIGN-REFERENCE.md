@@ -1543,15 +1543,21 @@ sólo si hay alguna. Es la misma tarjeta en fila **sin enlace**, porque llevarí
 a un catálogo vacío: **sobre la superficie hundida y sin sombra**, que es lo que
 la separa de las que se tocan. **Lo que se atenúa es la superficie, no el
 texto**, que conserva el contraste AA (§9). En lugar de la cantidad dice «Sin
-productos por ahora», y a la derecha va **«Consultar»**, un botón terciario de
-44px con el logo de WhatsApp en verde (§2.6) que abre la consulta de categoría
-(RF-35). Terciario y no relleno: en esta fila no es la acción principal. Una destacada sin
+productos por ahora», y **debajo del texto** va **«Consultar»**, un botón
+terciario de 44px con el logo de WhatsApp en verde (§2.6) que abre la consulta
+de categoría (RF-35). Terciario y no relleno: en esta fila no es la acción
+principal. **Debajo y no a la derecha** (2026-10-21, al construirla): al
+costado le sacaba 120px al nombre, y a 320px uno de 60 caracteres se partía a
+mitad de palabra. Una destacada sin
 productos va acá y no arriba.
 
 **El buscador filtra mientras se escribe**, sin acentos ni mayúsculas, sobre
-las tres secciones y en el navegador: son decenas de categorías, no hace falta
-ir a la base. Mientras hay texto, **«Destacadas» se oculta** —la misma
-categoría estaría dos veces— y quedan la lista con lo que coincide y, debajo,
+las tres secciones y en el navegador. Es la píldora de §6.2 **sin el botón de
+enviar** —no hay nada que enviar— y con una lupa a la izquierda, que es lo que
+dice que es un buscador. Son decenas de categorías: no hace falta ir a la
+base. Mientras hay texto, **«Destacadas» se oculta** —la misma categoría
+estaría dos veces— y quedan la lista con lo que coincide, titulada
+«Resultados», y, debajo,
 las sin productos que coincidan. Arriba de la lista, **«3 categorías»** se
 anuncia al lector de pantalla (`aria-live`). El texto va a la dirección
 (`?q=`) **reemplazando** la entrada del historial: la búsqueda se comparte, y

@@ -1,6 +1,5 @@
 import { Truck } from "lucide-react";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -13,6 +12,7 @@ import {
   SeccionDeLaHome,
 } from "@/components/shop/home/seccion";
 import { SearchBox } from "@/components/shop/search-box";
+import { TarjetaCuadradaDeCategoria } from "@/components/shop/tarjeta-de-categoria";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
 import { VistosRecientemente } from "@/components/shop/vistos";
 import { Button } from "@/components/ui/button";
@@ -266,56 +266,22 @@ export default async function Home() {
                 Más categorías
               </h2>
 
-              {/*
-                RNF-08: un botón apagado explica por qué. La pantalla que
-                listaría todas las categorías no existe y no tiene tarea en
-                ninguna fase; el botón se enciende el día que exista, y
-                mientras tanto el hueco se ve —que es lo que hace que alguien
-                se acuerde de decidirlo—.
-              */}
-              <Button
-                variant="tertiary"
-                size="sm"
-                disabled
-                title="Todavía no hay una pantalla con todas las categorías"
-              >
-                Ver todas
+              {/* Desde F3.10 lleva a la página con todas (§7.6). En `md` y
+                  no en `sm`: apagado no importaba, pero encendido es algo que
+                  se toca, y `sm` mide 32px contra los 44 de §9. */}
+              <Button asChild variant="tertiary">
+                <Link href="/categorias">Ver todas</Link>
               </Button>
             </div>
 
             <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-8">
               {datos.masCategorias.map((categoria) => (
                 <li key={categoria.id}>
-                  <Link
-                    href={urlDeTienda({ categoria: [categoria.slug] })}
-                    className="group flex h-full flex-col gap-2 rounded-card bg-surface p-2 shadow-md transition-shadow duration-200 hover:shadow-lg focus-visible:shadow-focus focus-visible:outline-none"
-                  >
-                    {/* Cuadrada siempre, con imagen o sin ella: el aspecto lo
-                        reserva el CSS y la fila no salta cuando cargan (CLS). */}
-                    <span className="relative grid aspect-square place-items-center overflow-hidden rounded-image bg-surface-sunken">
-                      {categoria.imagenUrl ? (
-                        // Decorativa: el nombre va debajo, en texto, y
-                        // repetirlo en el `alt` lo haría leer dos veces (§9).
-                        <Image
-                          src={categoria.imagenUrl}
-                          alt=""
-                          fill
-                          sizes="(min-width: 1024px) 12vw, (min-width: 640px) 25vw, 33vw"
-                          className="object-cover motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:scale-[1.03]"
-                        />
-                      ) : (
-                        <span
-                          aria-hidden
-                          className="text-heading text-ink-tertiary"
-                        >
-                          {categoria.nombre.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </span>
-                    <span className="px-1 pb-1 text-body-sm font-medium break-words hyphens-auto text-ink transition-colors duration-150 group-hover:text-brand">
-                      {categoria.nombre}
-                    </span>
-                  </Link>
+                  <TarjetaCuadradaDeCategoria
+                    categoria={categoria}
+                    imagenUrl={categoria.imagenUrl}
+                    sizes="(min-width: 1024px) 12vw, (min-width: 640px) 25vw, 33vw"
+                  />
                 </li>
               ))}
             </ul>

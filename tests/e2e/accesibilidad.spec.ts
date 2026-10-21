@@ -57,6 +57,7 @@ const PANTALLAS: Pantalla[] = [
   // La tienda, sin cuenta.
   { ruta: "/", quien: "visitante" },
   { ruta: "/productos", quien: "visitante" },
+  { ruta: "/categorias", quien: "visitante" },
   {
     ruta: "/productos/[slug]",
     quien: "visitante",
