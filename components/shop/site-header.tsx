@@ -3,9 +3,13 @@
 import { Heart, Search, ShoppingCart, User, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Logo } from "@/components/shop/logo";
+import {
+  MenuDelTelefono,
+  NavegacionPrincipal,
+} from "@/components/shop/navegacion-principal";
 import { SearchBox } from "@/components/shop/search-box";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +20,14 @@ import { cn } from "@/lib/utils";
  * está arriba el encabezado se apoya en el canvas sin separarse; en cuanto
  * hay contenido debajo, la sombra explica que está por encima.
  *
- * En móvil el buscador colapsa a un ícono y se abre a ancho completo.
+ * **La navegación va al lado del logo** (2026-10-21): Catálogo, Categorías y
+ * Ofertas, con la píldora que viaja (`NavegacionPrincipal`). En el teléfono no
+ * entran y pasan a un menú lateral, que se lleva también la cuenta.
+ *
+ * **El buscador es una lupa en todos los tamaños** y se abre a ancho completo
+ * debajo. Abierto en escritorio le quitaba a los enlaces el lugar que
+ * necesitan entre 768 y 1024px, y donde más se busca —la home y el catálogo—
+ * la página ya trae uno grande.
  *
  * **El buscador no se dibuja si la página ya tiene el suyo** (F3.8). La regla
  * vive en `globals.css`; vuelve solo en cuanto el de la página sale de la
@@ -31,6 +42,7 @@ export function SiteHeader({
 }) {
   const [conSombra, setConSombra] = useState(false);
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
+  const lupa = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -71,22 +83,21 @@ export function SiteHeader({
       )}
     >
       <div className="mx-auto flex h-14 max-w-shop items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <MenuDelTelefono userName={userName} />
         <Logo />
+        <NavegacionPrincipal />
 
         <div className="flex-1" />
 
-        {/* Escritorio: 268px fijos, junto al carrito. */}
-        <div data-buscador-navbar className="hidden w-[268px] md:block">
-          <SearchBox tamano="compacto" placeholder="¿Qué estás buscando?" />
-        </div>
-
         <nav aria-label="Tu cuenta" className="flex items-center gap-1">
           <button
+            ref={lupa}
             type="button"
             data-buscador-navbar
             onClick={() => setBuscadorAbierto((v) => !v)}
             aria-expanded={buscadorAbierto}
-            className="grid size-11 place-items-center rounded-pill text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink md:hidden"
+            aria-controls="buscador-del-encabezado"
+            className="grid size-11 place-items-center rounded-pill text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink"
           >
             {buscadorAbierto ? (
               <X aria-hidden className="size-5" />
@@ -103,24 +114,31 @@ export function SiteHeader({
           </AccionDelEncabezado>
 
           {/*
-            Píldora con el número A LA VISTA, no un ícono con insignia encima:
-            la insignia de 18px sobre el ícono obliga a entrecerrar los ojos.
+            Píldora y no un ícono con insignia encima: la insignia de 18px
+            sobre el ícono obliga a entrecerrar los ojos (F3.8). Vacía es solo
+            el carrito; con algo adentro, el número va en un círculo burdeos
+            de 28px (2026-10-21), que se lee como insignia sin achicarse.
           */}
           <Link
             href="/carrito"
-            className="ml-1 flex h-10 max-md:h-11 items-center gap-2 rounded-pill border border-border bg-surface px-3.5 text-body-sm text-ink shadow-sm transition-shadow duration-150 hover:shadow-md"
+            className={cn(
+              "ml-1 flex h-10 items-center gap-2 rounded-pill border border-border bg-surface text-body-sm text-ink shadow-sm transition-shadow duration-150 hover:shadow-md max-md:h-11",
+              cartCount > 0 ? "pr-1.5 pl-3.5" : "px-3.5",
+            )}
           >
             <ShoppingCart aria-hidden className="size-4 shrink-0" />
-            <span
-              key={saltos}
-              aria-hidden
-              className={cn(
-                "inline-block tabular-nums",
-                saltos > 0 && "motion-safe:animate-salto",
-              )}
-            >
-              {cartCount}
-            </span>
+            {cartCount > 0 ? (
+              <span
+                key={saltos}
+                aria-hidden
+                className={cn(
+                  "grid h-7 min-w-7 place-items-center rounded-pill bg-brand px-1.5 text-caption font-semibold text-ink-inverse tabular-nums",
+                  saltos > 0 && "motion-safe:animate-salto",
+                )}
+              >
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            ) : null}
             <span className="sr-only">
               {cartCount > 0
                 ? `Carrito, ${cartCount} ${cartCount === 1 ? "producto" : "productos"}`
@@ -128,9 +146,10 @@ export function SiteHeader({
             </span>
           </Link>
 
+          {/* En el teléfono la cuenta está en el menú. */}
           <Link
             href={userName ? "/mi-cuenta" : "/ingresar"}
-            className="flex h-11 items-center gap-2 rounded-pill px-3 text-body-sm text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink"
+            className="flex h-11 items-center gap-2 rounded-pill px-3 text-body-sm text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink max-md:hidden"
           >
             <User aria-hidden className="size-5 shrink-0" />
             <span className="hidden max-w-28 truncate lg:inline">
@@ -144,13 +163,23 @@ export function SiteHeader({
         </nav>
       </div>
 
-      {/* Móvil: el buscador se despliega a ancho completo. */}
+      {/* El buscador se despliega a ancho completo; Escape lo cierra y
+          devuelve el foco a la lupa. */}
       {buscadorAbierto && (
         <div
+          id="buscador-del-encabezado"
           data-buscador-navbar
-          className="border-t border-border px-4 py-3 md:hidden"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setBuscadorAbierto(false);
+              lupa.current?.focus();
+            }
+          }}
+          className="border-t border-border"
         >
-          <SearchBox autoFocus />
+          <div className="mx-auto max-w-shop px-4 py-3 sm:px-6 lg:px-8">
+            <SearchBox autoFocus className="md:mx-auto md:max-w-140" />
+          </div>
         </div>
       )}
     </header>
