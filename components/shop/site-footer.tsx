@@ -1,4 +1,3 @@
-import { Truck } from "lucide-react";
 import Link from "next/link";
 
 import { Isotipo } from "@/components/shop/logo";
@@ -8,7 +7,7 @@ import type { RedesSociales } from "@/modules/settings/queries";
 
 /**
  * Pie de la tienda — DESIGN-REFERENCE §5.1.
- * Pie oscuro con la zona de entrega, los medios de pago, la ayuda y los
+ * Pie oscuro con la marca y su eslogan, los medios de pago, la ayuda y los
  * legales.
  *
  * Los medios de pago los carga la vendedora (RF-19, F2.6), las páginas
@@ -91,13 +90,24 @@ export function SiteFooter({
     // cierra la página sin competir con las fotos de producto.
     <footer className="mt-20 bg-ink text-ink-inverse">
       <div className="mx-auto max-w-shop px-4 py-12 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-10 md:flex-row md:justify-between">
+        <div className="flex flex-col gap-8 md:flex-row md:justify-between md:gap-10">
           <div className="flex max-w-sm flex-col gap-3">
-            <div className="flex items-center gap-2.5">
-              {/* Versión clara: el burdeos del original no se lee sobre
-                  esta superficie (§2.3). */}
-              <Isotipo claro />
-              <span className="text-heading">AnaVende</span>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2.5">
+                {/* Versión clara: el burdeos del original no se lee sobre
+                    esta superficie (§2.3). */}
+                <Isotipo claro />
+                <span className="text-heading">AnaVende</span>
+              </div>
+              {/*
+                El eslogan en su forma canónica (§2.4): el pie se ve una vez y
+                tiene que decir de qué se trata, así que acá no rota. Ocupa el
+                lugar del aviso de zona (pedido del 2026-10-21), que sigue en
+                la home, la ficha, el carrito y el checkout.
+              */}
+              <p className="text-body text-white/85">
+                Ana vende, vos elegís la tecnología.
+              </p>
             </div>
             {perfiles.length > 0 && (
               // Debajo del logo, pedido del 2026-10-20. 44px de lado (§9), y
@@ -120,51 +130,35 @@ export function SiteFooter({
               </ul>
             )}
             <p className="text-body-sm text-white/65">
-              Teclados, mouses, auriculares, cables y memorias.
-            </p>
-            <p className="flex items-start gap-2 text-body-sm text-white/65">
-              <Truck aria-hidden className="mt-0.5 size-4 shrink-0" />
-              {/*
-                Se nombra la ZONA y no la mensajería (RN-10, reescrita el
-                2026-09-08): la empresa que lleva el paquete puede cambiar, y
-                lo que decide si alguien puede comprar acá no es su nombre
-                sino hasta dónde llegamos. La tienda atiende Viedma, Carmen de
-                Patagones y los pueblos de alrededor, no la provincia entera.
-              */}
-              <span>
-                Entregamos a domicilio en{" "}
-                <span className="text-ink-inverse">
-                  Viedma, Carmen de Patagones y alrededores
-                </span>
-                , o lo retirás por nuestro punto de entrega. El envío se
-                coordina por WhatsApp cuando armamos tu pedido.
-              </span>
+              Tu tienda de confianza para productos de tecnología y accesorios.
             </p>
           </div>
 
-          {/* En el teléfono, de a dos por fila: apilados, el pie sumaba otra
-              pantalla entera de enlaces. */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:flex md:gap-16">
+          {/* En el teléfono, un grupo debajo del otro y juntos (pedido del
+              2026-10-21): de a dos por fila, los nombres largos de «Ayuda»
+              partían la columna y el pie quedaba desparejo. */}
+          <div className="flex flex-col gap-6 md:flex-row md:gap-16">
             {GRUPOS.map((grupo) => (
               <nav
                 key={grupo.titulo}
                 aria-label={grupo.titulo}
-                className="flex flex-col gap-3"
+                className="flex flex-col gap-3 max-md:gap-1"
               >
                 <h2 className={TITULO_DE_GRUPO}>{grupo.titulo}</h2>
                 {/*
-                  44px de alto por fila en teléfono (§9). Acá no sirve
-                  `AREA_TACTIL`: con 8px entre filas, lo que sobresale de una se
-                  mete en la de al lado y el dedo activa el enlace equivocado. La
-                  fila gana altura de verdad y el `gap` se va, que es lo mismo por
-                  otro lado. En escritorio queda como estaba.
+                  40px de alto por fila en teléfono, y no los 44 de §9 (pedido
+                  del 2026-10-21): con 44 el pie medía 850px. 40 sigue muy por
+                  encima de los 24 de WCAG 2.5.8, y sin espacio entre filas
+                  ningún enlace le roba el toque al de al lado. Acá no sirve
+                  `AREA_TACTIL`: lo que sobresale de una fila se mete en la
+                  vecina. En escritorio queda como estaba.
                 */}
                 <ul className="flex flex-col gap-2 max-md:gap-0">
                   {grupo.enlaces.map((l) => (
                     <li key={l.href}>
                       <Link
                         href={l.href}
-                        className="inline-flex items-center rounded-pill text-body-sm text-white/70 underline-offset-4 transition-colors duration-150 max-md:min-h-11 hover:text-ink-inverse hover:underline"
+                        className="inline-flex items-center rounded-pill text-body-sm text-white/70 underline-offset-4 transition-colors duration-150 max-md:min-h-10 hover:text-ink-inverse hover:underline"
                       >
                         {l.titulo}
                       </Link>
@@ -195,7 +189,7 @@ export function SiteFooter({
           )}
         </div>
 
-        <p className="mt-10 border-t border-white/10 pt-6 text-caption text-white/50">
+        <p className="mt-8 border-t border-white/10 pt-6 text-caption text-white/50 md:mt-10">
           © {new Date().getFullYear()} AnaVende
         </p>
       </div>
