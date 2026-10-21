@@ -65,13 +65,13 @@ export function Precio({
    * primero, como se lee un cartel de oferta.
    *
    * Lo que separa las dos variantes es la DISPOSICIÓN. En la grilla el precio
-   * comparte renglón con los puntos de color y tiene que entrar en una línea;
-   * en la ficha es lo primero que se lee después del nombre, sube a 24px y el
-   * tachado pasa abajo, donde no le compite.
+   * tiene que entrar en una línea en una columna angosta; en la ficha es lo
+   * primero que se lee después del nombre, sube a 28px y el tachado pasa
+   * abajo, donde no le compite.
    */
   if (!enFicha && apilado) {
     return (
-      <div className={cn("flex min-w-0 flex-col", className)}>
+      <div className={cn("@container flex min-w-0 flex-col", className)}>
         {hayOferta ? (
           <s className="text-caption text-ink-secondary tabular-nums">
             <span className="sr-only">Antes: </span>
@@ -86,7 +86,16 @@ export function Precio({
         )}
         <p
           className={cn(
-            "text-body-lg font-medium tabular-nums",
+            /*
+              18px mientras la tarjeta tenga lugar, y menos cuando no: un
+              precio de siete cifras —«$ 1.250.000,00», un monitor— mide 7,3
+              veces el tamaño de la letra, y a 18px no entra en la tarjeta de
+              un teléfono de 360 o 320px (se salía del borde). Se mide contra
+              el ancho de la tarjeta y no contra el número, así que todas las
+              de una fila quedan del mismo tamaño. Piso de 14px, que a 320px
+              todavía entra. Desde 390px es siempre 18.
+            */
+            "text-[clamp(0.875rem,13cqi,1.125rem)] leading-[1.45] font-medium tracking-[-0.015em] tabular-nums",
             hayOferta ? "text-brand" : "text-ink",
           )}
         >
@@ -154,7 +163,7 @@ export function Precio({
       </p>
 
       {/*
-        El descuento NO se enuncia: se muestra. El tachado arriba del final
+        El descuento NO se enuncia: se muestra. El tachado debajo del final
         dice cuánto bajó sin obligar a leer un tercer número, y jamás se
         expresa como porcentaje (RN-04b) — «11% off» hay que calcularlo
         mentalmente sobre un monto que todavía no se leyó.

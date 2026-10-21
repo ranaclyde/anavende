@@ -630,7 +630,7 @@ dos cosas bajo `motion-safe`. Al apretar el enlace —no el corazón— se hunde
 toda la tarjeta (`has-[a:focus-visible]`). La marca va arriba en caption, en
 caja normal y pegada al nombre —en la ficha también—, el nombre en cuerpo pequeño hasta dos líneas, y el precio pegado al
 fondo con `mt-auto` —así se alinea en la fila aunque los nombres midan
-distinto—, en 18px, con el tachado arriba y su renglón reservado aunque no haya
+distinto—, en 18px —menos en una tarjeta angosta, hasta 14, para que entre un precio de siete cifras—, con el tachado arriba y su renglón reservado aunque no haya
 oferta. En la ficha el precio final va en 28px y medium, por encima del título.
 Con dos o más colores, una pastilla oscura abajo a la izquierda de la foto con
 una ruedita de arcoíris —la misma siempre— y la cantidad; con uno, nada.

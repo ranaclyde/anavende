@@ -852,7 +852,9 @@ Con oferta:      $ 27.500,00              tachado, secundario, 12px
                  $ 24.500,00              burdeos, peso 600, 18px
 ```
 
-**Dos números en las dos, y lo único que cambia es la disposición.** La ficha llevó «Ahorrás $ 3.000,00» hasta el 2026-09-08 y ya no: una oferta se comunica con cuánto valía y cuánto vale, y el tercer número dice la misma oferta otra vez (RN-04c). Lo que separa las dos composiciones es el lugar. En la grilla el tachado va arriba del final y su renglón se reserva aunque no haya oferta (2026-10-20); en la ficha es lo primero que se lee después del nombre, sube a 24px y el tachado baja, donde no le compite.
+**Dos números en las dos, y lo único que cambia es la disposición.** La ficha llevó «Ahorrás $ 3.000,00» hasta el 2026-09-08 y ya no: una oferta se comunica con cuánto valía y cuánto vale, y el tercer número dice la misma oferta otra vez (RN-04c). Lo que separa las dos composiciones es el lugar. En la grilla el tachado va arriba del final y su renglón se reserva aunque no haya oferta (2026-10-20); en la ficha es lo primero que se lee después del nombre, sube a 28px y el tachado baja, donde no le compite.
+
+**En la tarjeta, 18px mientras haya lugar** (2026-10-21, repaso de F3.2). Un precio de siete cifras —«$ 1.250.000,00»— mide unas 7,3 veces el tamaño de la letra y a 18px no entra en la tarjeta de un teléfono de 360 o 320px: se salía del borde. El tamaño se toma del ancho de la tarjeta (`clamp(14px, 13cqi, 18px)`) y no del número, así que todas las de una fila miden lo mismo; desde 390px es siempre 18.
 
 El tachado va **primero en la tarjeta** porque así se lee un cartel de oferta —«valía tanto, ahora tanto»— y **después en la ficha** porque ahí el final ya es lo más grande de la pantalla y no necesita que nada lo anuncie.
 
