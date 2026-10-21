@@ -162,7 +162,7 @@ F10 Endurecimiento y lanzamiento
 | **F1.13** | Encabezado, pie y layout base de la tienda | M | DR §5.1, §7 | Encabezado fijo con sombra al scrollear; pie con la zona de entrega y el retiro (RN-10), medios de pago y legales |
 | **F1.14** | Layout del panel con menú lateral y modo oscuro | M | DR §4, §5.2, §3.2 | Menú de 240px colapsable; el interruptor de modo oscuro funciona y **persiste** |
 | **F1.15** | Sentry en servidor y cliente, con datos personales filtrados | S | TS §16, §19 | Un error de prueba llega a Sentry **sin** email, teléfono ni dirección |
-| **F1.16** | Dockerfile con base Debian slim, y despliegue por CI a Coolify | M | TS §18.1, §18.2, R3 | Un push a `main` despliega. **sharp funciona dentro del contenedor** (V7) |
+| **F1.16** | Dockerfile con base Debian slim, y despliegue a Coolify por webhook | M | TS §18.1, §18.2, R3 | Un push a `main` despliega. **sharp funciona dentro del contenedor** (V7) |
 
 > **Compuerta F1:** el sitio despliega solo, se puede crear una cuenta y entrar al panel vacío. Es el primer momento en que algo real está en línea.
 

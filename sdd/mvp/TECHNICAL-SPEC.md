@@ -151,7 +151,7 @@ Se adopta la **opción C** con una precisión importante: **ambos servidores est
 
 | Servidor | Mínimo | Motivo |
 |---|---|---|
-| **APP** | 2 vCPU · 2 GB RAM · **30 GB disco** | Mínimo documentado de Coolify. Con 2 GB, compilar fuera del servidor es obligatorio (§18.2) |
+| **APP** | 2 vCPU · 2 GB RAM · **30 GB disco** | Mínimo documentado de Coolify. Con 2 GB no se puede compilar en el servidor; producción tiene **4 GB** y compila en él (§18.2) |
 | **DATA** | 2 vCPU · 4 GB RAM · 40 GB disco | Supabase completo ocupa 1,5-2,5 GB; el resto queda para Postgres, Storage y crecimiento |
 
 > **Sobre el firewall de DonWeb:** su firewall virtual **solo aplica a la interfaz pública**. Para restringir el tráfico por la interfaz privada hay que configurar un firewall local (`ufw` / `iptables`) en cada servidor. No hacerlo deja la base accesible a cualquier otra máquina que comparta esa LAN.
@@ -1519,8 +1519,8 @@ Las pruebas de stock y órdenes corren contra una **Postgres real en Docker**, n
 | Aspecto | Definición |
 |---|---|
 | Entornos | **Solo producción** más el desarrollo local |
-| Despliegue | Automático desde `main` en Coolify |
-| **Dónde se compila** | **Fuera del servidor APP.** `next build` con Turbopack es exigente en memoria y hay fallas de *out of memory* reportadas por debajo de 4 GB. La imagen se construye en CI y Coolify solo la descarga. Si el servidor APP se aprovisiona con 4 GB o más, compilar en él pasa a ser viable, pero sigue siendo preferible no hacerlo: la caché de build consume disco, que es el recurso más escaso (§2.4) |
+| Despliegue | Automático desde `main`: el push dispara el **webhook de GitHub** y Coolify construye y levanta la imagen. **Sin CI**: no hay workflow de GitHub Actions ni registro de imágenes |
+| **Dónde se compila** | **En el servidor APP**, con el Dockerfile, cuando Coolify recibe el webhook. Se decidió el 2026-09-09, apartándose de lo que pedía esta tabla —compilar en CI y que Coolify solo descargara la imagen—. Ese pedido tenía dos motivos: `next build` con Turbopack es exigente en memoria y hay fallas de *out of memory* reportadas por debajo de 4 GB, y la caché de build consume disco, que es el recurso más escaso (§2.4). **El servidor APP se aprovisionó con 4 GB**, y con eso el primero deja de mandar; el segundo lo contiene la limpieza programada de Docker (§2.4, R11). A cambio, **la configuración vive en un solo lugar**: compilando en CI, las variables de construcción estarían en GitHub y los secretos en Coolify, dos lugares que se desincronizan el día que cambia un dominio. **Lo que lo sostiene, y no se quita:** 4 GB de swap en el servidor APP —el 2026-09-13 una sola construcción sin swap lo dejó trancado— y Coolify con **una construcción simultánea** por servidor —el 2026-09-11 dos seguidas lo tumbaron—. **Si vuelve a quedarse sin memoria**, primero un tope de heap para `next build` en el Dockerfile, y después pasar a CI: es agregar un workflow que construya y publique la imagen, y el Dockerfile no cambia |
 | Migraciones | `drizzle-kit migrate` en el arranque del contenedor, antes de levantar el servidor. Instancia única: no hay riesgo de migraciones concurrentes |
 | TLS | Let's Encrypt, gestionado por Coolify |
 | Base de datos | Supabase en el servidor DATA, alcanzada por la **IP privada**. `DATABASE_URL` apunta a la LAN, nunca a una IP pública |
@@ -1609,8 +1609,8 @@ El número de WhatsApp y el email de avisos **no son variables de entorno**: viv
 | **R7** | Identidad sin perfil: un usuario que puede entrar y con el que la aplicación no sabe qué hacer | Alto | Compensación explícita en el alta y creación diferida tras OAuth (§13.4). Sin perfil no se opera |
 | **R8** | El catálogo crece y `LIMIT/OFFSET` se degrada | Bajo | Volumen esperado bajo (S-05); migración a cursor documentada como paso siguiente |
 | **R9** | Cambios de Next 16 aún en evolución (Cache Components) | Bajo | No se adoptan en el MVP; el camino queda preparado pero cerrado (§12) |
-| **R10** | `next build` agota la memoria del servidor | Medio | Depende de la infraestructura (§2.4). Se resuelve compilando en CI; si se compila en el servidor, exige swap y límite de heap de Node |
-| **R11** | El disco del servidor APP se llena con imágenes Docker y caché de build | Medio | Coolify trae limpieza automática, **pero desactivada**: hay que configurarla explícitamente al aprovisionar (§2.4). Compilar en CI reduce mucho la acumulación |
+| **R10** | `next build` agota la memoria del servidor | Medio | Depende de la infraestructura (§2.4). Se compila en el servidor (§18.2), con 4 GB de RAM, swap y una sola construcción a la vez. Si no alcanza, tope de heap de Node y, después, compilar en CI |
+| **R11** | El disco del servidor APP se llena con imágenes Docker y caché de build | Medio | Coolify trae limpieza automática, **pero desactivada**: hay que configurarla explícitamente al aprovisionar (§2.4). Se compila en el servidor (§18.2), así que la limpieza programada no es opcional |
 | **R12** | La LAN privada queda accesible a otros clientes del proveedor, o Postgres escucha en la interfaz pública | **Alto** | Firewall local en ambos servidores, `listen_addresses` y `pg_hba.conf` restringidos. Se verifica desde afuera que el puerto de Postgres no responde (V9) |
 | **R13** | Sin RLS, una consulta que olvide filtrar por `user_id` filtra datos entre compradores | **Alto** | Decisión consciente (§13.4). Se compensa con test E2E de aislamiento obligatorio (§17.2) y atención específica en revisión de código |
 | **R14** | Caída del servidor DATA deja el sitio inoperable | Medio | Punto único de falla aceptado en el MVP. Ahora también cae la **autenticación**, no solo la base. Healthcheck que distinga «app caída» de «DATA inalcanzable» (§19) |
