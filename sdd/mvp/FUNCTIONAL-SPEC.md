@@ -104,11 +104,11 @@ Ver detalle en §12 (Fuera de alcance).
 6. **Una sección por cada categoría destacada**, con sus productos —los que entren en una fila—. La sección no aparece si la categoría no tiene ninguno activo.
 7. **Sección de productos en oferta** (con descuento activo).
 8. **Franja de medios de pago**: **sólo los que tienen logo cargado** (RF-19), en una sola hilera que gira. Va abajo y no arriba: es información de respaldo, no la propuesta de la pantalla.
-9. **Sección de más categorías**, con un botón **«Ver todas»**.
+9. **Sección de más categorías**, con un botón **«Ver todas»** que lleva a la página de categorías (RF-35).
 
 **Lo que no entra, y por qué:**
 - **«Vistos recientemente»** es RF-33 y se construye en F8.4. Su lugar en la pantalla está previsto en §7.1; hasta entonces no se dibuja.
-- **La pantalla de listado de categorías no existe** y no tiene tarea en ninguna fase. Por eso **«Ver todas» nace deshabilitado, con el motivo al lado** (RNF-08): la sección se construye ahora y el botón se enciende el día que esa pantalla exista.
+- **«Ver todas» nació deshabilitado, con el motivo al lado** (RNF-08), porque la pantalla de listado de categorías no existía. Desde el 2026-10-21 la describe RF-35 (F3.10), y el botón se enciende cuando se construya.
 - **«Más categorías» va en tarjetas con imagen y nombre** desde el 2026-10-05 (F2.9). La imagen es un campo propio de la categoría (FA-21), opcional: la que no tiene muestra su inicial en el mismo recuadro, así que la fila se ve prolija con categorías sin imagen mezcladas.
 
 **Criterios de aceptación:**
@@ -224,6 +224,50 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 - [ ] El número de WhatsApp de destino es configurable desde el panel, no está hardcodeado.
 - [ ] El mensaje se genera correctamente codificado (acentos, saltos de línea, símbolo `$`).
 - [ ] La pantalla aclara al visitante que el stock no queda reservado y que puede registrarse para reservarlo.
+
+---
+
+### RF-35 — Página de categorías
+
+**Descripción:** Todas las categorías de la tienda en una pantalla, para quien quiere ver qué hay antes de saber qué busca. Agregada el 2026-10-21 (F3.10): el canvas de F3.8 la traía y el «Ver todas» de la home (RF-01) esperaba por ella. El dibujo está en `DESIGN-REFERENCE.md` §7.6.
+
+**Cómo se llega:** desde «Ver todas» de la sección «Más categorías» de la home, y desde el pie del sitio, en un grupo nuevo, **«Tienda»**, con «Catálogo» y «Categorías».
+
+**Contenido**, en este orden:
+
+1. **Título y subtítulo**: «Categorías» y «Todo lo que vendemos, de la A a la Z.».
+2. **Buscador de categorías.** Filtra la página a medida que se escribe; no es el buscador de productos.
+3. **Destacadas**: las categorías destacadas (RF-18) **con al menos un producto activo**, hasta siete —las mismas de los chips de la home—, en tarjetas con imagen grande.
+4. **Todas, de la A a la Z**: todas las categorías con productos, **destacadas incluidas**, en tarjetas en fila con imagen, nombre y **cantidad de productos**.
+5. **Todavía sin productos**: las categorías activas con cero productos, **al final** y sólo si hay alguna.
+6. **Cierre para hablar con la vendedora**: «¿No encontrás lo que buscás?», con el botón de WhatsApp.
+
+**Comportamiento:**
+- Sólo se muestran categorías **activas** (RN-11b), ordenadas por nombre sin distinguir acentos ni mayúsculas, como en el resto de la tienda.
+- **La cantidad** son los productos **activos** de la categoría, con o sin stock: es lo que el catálogo muestra al filtrar por ella (RN-05). «1 producto», «14 productos».
+- **Cada tarjeta con productos lleva al catálogo filtrado por esa categoría** (RF-02), no a una pantalla propia.
+- Una categoría **sin productos no enlaza al catálogo**, que estaría vacío. Muestra «Sin productos por ahora» y un **«Consultar»** que abre WhatsApp.
+- **El buscador** compara sin acentos ni mayúsculas y filtra las tres secciones. Mientras hay texto, «Destacadas» se oculta: la misma categoría estaría dos veces. El texto queda en la dirección (`?q=`), así que la página filtrada se puede compartir.
+- **Si la búsqueda no encuentra nada**, el cierre sube al lugar de la lista y hace de estado vacío: el mensaje de WhatsApp lleva lo que se buscó.
+
+**Los mensajes prellenados son tres**, con la misma tubería que RF-04:
+
+| Mensaje | Cuándo | Qué dice |
+|---|---|---|
+| **Consulta de categoría** | «Consultar» en una categoría sin productos | _¡Hola! Vi que la categoría «Sillas gamer» todavía no tiene productos y quería saber si va a haber._ |
+| **Búsqueda sin resultados** | El cierre, con una búsqueda que no encontró nada | _¡Hola! Busqué «sillas» entre las categorías y no lo encontré. ¿Lo tienen o piensan traerlo?_ |
+| **Consulta general** | El cierre, sin búsqueda o con resultados | _¡Hola! Quería consultar por algo que no encontré entre las categorías de la tienda._ |
+
+**Criterios de aceptación:**
+- [ ] La página se alcanza desde «Ver todas» de la home y desde «Tienda» → «Categorías» en el pie.
+- [ ] Las categorías salen ordenadas por nombre, sin distinguir acentos ni mayúsculas, y sólo las activas.
+- [ ] Cada tarjeta muestra la cantidad de productos activos, con o sin stock, y lleva al catálogo filtrado por esa categoría.
+- [ ] Las categorías sin productos van al final, sin enlace al catálogo y con «Consultar» por WhatsApp.
+- [ ] Las destacadas con productos aparecen arriba y también en la lista de la A a la Z. Una destacada sin productos va sólo al final.
+- [ ] El buscador encuentra «auriculares» escribiendo «AURICULARES» o «aurícu», y la búsqueda queda en la dirección.
+- [ ] Una búsqueda sin resultados muestra el cierre con el mensaje que lleva lo buscado.
+- [ ] Sin número de WhatsApp configurado (RF-20) no se dibuja ningún botón de WhatsApp, y el cierre enlaza a la página de contacto.
+- [ ] Sin ninguna categoría activa, la página lo dice y ofrece ir al catálogo.
 
 ---
 
@@ -1035,7 +1079,7 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | FA-17 | Recomendaciones por co-compra / co-visitación («quienes compraron esto también compraron») | Requiere volumen de órdenes que el MVP no tiene (*cold start*). Candidato natural para la fase 2, reutilizando los bloques de RF-32 |
 | FA-18 | Relacionados curados manualmente producto a producto | Se resuelve por afinidad de categorías (RF-31). Es la capa a sumar antes que la co-compra si hace falta más precisión |
 | FA-19 | Recomendaciones personalizadas por perfil o historial de compras | Más allá de «Vistos recientemente» (RF-33) |
-| FA-21 | **Imagen de categoría**, chica, como referencia visual en un listado de categorías. **Entró al MVP el 2026-10-05 (F2.9)**: se carga en el panel y se ve en «Más categorías» de la home | Hoy la categoría es sólo texto en las tres superficies donde aparece —chips del encabezado, accesos de la portada, filtro del listado—. Una imagen chica al lado del nombre ayuda a reconocerla de un vistazo; **no** es una portada ni una cabecera, y por eso no necesita el tamaño `detail` de §9.2: con `thumb` y `card` alcanza. Es **una** imagen por categoría, así que va en una columna de `categories` y no en una tabla aparte — `variant_images` existe porque un producto tiene hasta cinco y hay que ordenarlas. **La marca no lleva otra imagen**: su logo (RF-18) ya cubre lo que necesita. La condición para que esto se vea bien: el listado tiene que quedar prolijo **con categorías sin imagen mezcladas**, porque va a haberlas — el día que se agregue nadie va a cargar las diez de una sentada |
+| FA-21 | **Imagen de categoría**, chica, como referencia visual en un listado de categorías. **Entró al MVP el 2026-10-05 (F2.9)**: se carga en el panel y se ve en «Más categorías» de la home y, desde el 2026-10-21, en la página de categorías (RF-35) | Hoy la categoría es sólo texto en las tres superficies donde aparece —chips del encabezado, accesos de la portada, filtro del listado—. Una imagen chica al lado del nombre ayuda a reconocerla de un vistazo; **no** es una portada ni una cabecera, y por eso no necesita el tamaño `detail` de §9.2: con `thumb` y `card` alcanza. Es **una** imagen por categoría, así que va en una columna de `categories` y no en una tabla aparte — `variant_images` existe porque un producto tiene hasta cinco y hay que ordenarlas. **La marca no lleva otra imagen**: su logo (RF-18) ya cubre lo que necesita. La condición para que esto se vea bien: el listado tiene que quedar prolijo **con categorías sin imagen mezcladas**, porque va a haberlas — el día que se agregue nadie va a cargar las diez de una sentada |
 | FA-20 | **Etiquetas de producto** (*tags*) y filtro por etiqueta | Un producto pertenece a **una** categoría y `categories` no tiene jerarquía, así que hoy la única forma de subdividir una categoría grande —«Cables» en HDMI, VGA, USB-C, energía— es el nombre del producto, ayudado por la búsqueda tolerante de RF-02. Alcanza mientras la categoría entre en una página (24 productos). Cuando deje de entrar, la respuesta son etiquetas —muchas por producto, transversales a la categoría— y no partir la categoría en hermanas: seis «Cables …» al mismo nivel que «Teclados» arruinan la fila de categorías del encabezado, que es la navegación principal |
 
 ---
@@ -1123,3 +1167,4 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-08-30 | Recomendados por afinidad de categorías + similares automáticos, en cascada | Barato de configurar, no depende de volumen de datos y nunca deja un bloque vacío |
 | 2026-08-30 | Las relaciones entre categorías son recíprocas por defecto | Evita cargar cada relación dos veces y que queden a medias |
 | 2026-08-30 | Co-compra queda fuera del MVP | Sin volumen de órdenes daría resultados vacíos o ruidosos |
+| 2026-10-21 | Página de categorías (RF-35), con las vacías al final y una consulta por WhatsApp | «Ver todas» de la home no llevaba a ningún lado. Una categoría sin productos no enlaza a un catálogo vacío: invita a preguntar si va a haber |
