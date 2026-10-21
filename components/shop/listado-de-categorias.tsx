@@ -268,7 +268,7 @@ function Cierre({
           <p className="max-w-prose text-body text-ink-secondary">
             Escribinos y te decimos si lo tenemos o si pensamos traerlo.
           </p>
-          <Button asChild variant="whatsapp" size="lg" className="mt-2">
+          <Button asChild variant="secondary" className="mt-2">
             <a
               href={enlaceDeWhatsApp(whatsapp, mensaje)}
               target="_blank"

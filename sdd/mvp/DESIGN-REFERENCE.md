@@ -1510,7 +1510,7 @@ El botón de WhatsApp es la **acción principal**: es lo que efectivamente cierr
 │  ¿No encontrás lo que buscás?                      │  heading 20px
 │  Escribinos y te decimos si lo tenemos o si        │  body, secundario
 │  pensamos traerlo.                                 │
-│  [ Escribinos por WhatsApp ]                       │  verde (§2.6)
+│  [ Escribinos por WhatsApp ]                       │  blanco, logo verde
 └────────────────────────────────────────────────────┘
 ```
 
@@ -1569,8 +1569,11 @@ anuncia al lector de pantalla (`aria-live`). El texto va a la dirección
 (`?q=`) **reemplazando** la entrada del historial: la búsqueda se comparte, y
 el botón atrás no tiene que deshacer letra por letra.
 
-**El cierre invita a escribirle a la vendedora**, siempre al final, con el verde
-de WhatsApp (§2.6). Sin búsqueda manda la consulta general. **Con una búsqueda
+**El cierre invita a escribirle a la vendedora**, siempre al final, con el
+botón **secundario**: blanco con el logo de WhatsApp en verde (§2.6), el mismo
+de «¿Te quedó una duda?» en las páginas de ayuda (2026-10-21, pedido tuyo). No
+va relleno porque esta pantalla no es para comprar: es una consulta, como la
+de ayuda. Sin búsqueda manda la consulta general. **Con una búsqueda
 que no encontró nada, sube al lugar de la lista y es el estado vacío**: «No
 encontramos «sillas»» arriba y el mensaje con lo que se buscó, así el «no
 está» termina en una conversación y no en una pantalla vacía. Sin número de
