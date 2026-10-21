@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { FormularioDeDireccion } from "@/components/shop/direcciones/formulario";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getIdentity, getSession } from "@/lib/session";
+import { telefonoLocal } from "@/lib/telefono";
 import { valoresDeUbicacion } from "@/modules/users/direcciones/constantes";
 import { leerDireccion } from "@/modules/users/direcciones/operaciones";
 import { soloIdSchema } from "@/modules/users/direcciones/schemas";
@@ -27,7 +28,9 @@ export default async function EditarDireccion({
   const sesion = await getSession();
   if (!sesion) {
     if (await getIdentity()) redirect("/completar-perfil");
-    redirect(`/ingresar?volver=/mi-cuenta/direcciones/${encodeURIComponent(id)}`);
+    redirect(
+      `/ingresar?volver=/mi-cuenta/direcciones/${encodeURIComponent(id)}`,
+    );
   }
 
   if (!soloIdSchema.safeParse({ id }).success) notFound();
@@ -49,7 +52,7 @@ export default async function EditarDireccion({
           inicial={{
             label: d.label,
             recipientName: d.recipientName,
-            phone: d.phone.replace(/^\+549/, ""),
+            phone: telefonoLocal(d.phone),
             street: d.street,
             number: d.number,
             apartment: d.apartment ?? "",

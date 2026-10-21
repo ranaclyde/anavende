@@ -75,7 +75,7 @@ export function CamposDeDireccion({
           alCambiar={(v) => alCambiar({ phone: v })}
           error={errores.phone}
           id={`${base}-phone`}
-          inputMode="tel"
+          type="tel"
         />
       </div>
 

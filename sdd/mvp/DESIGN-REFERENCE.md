@@ -834,6 +834,7 @@ Color:  Negro
 | Ayuda | `caption` 12px, `--ink-secondary`, debajo del campo |
 | Error | Borde `--danger`, mensaje en `--danger` **con ícono**, debajo |
 | Obligatorio | Se marcan los **opcionales** con «(opcional)», no los obligatorios con asterisco |
+| Teléfono | **Bandera argentina y «+54» adentro, a la izquierda**, en `--ink-secondary` (2026-10-21). Lo pone `Input` solo con `type="tel"`, en la tienda y en el panel. Es dibujo: no se envía ni se lee. Se escriben los diez dígitos —característica y número—, y lo guardado (`+549…`) se muestra sin el `+549` (`telefonoLocal`) |
 
 **Los errores aparecen al salir del campo, no mientras se escribe**, salvo confirmación de contraseña. Validar cada tecla convierte un formulario en una regañina.
 

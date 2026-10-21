@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getIdentity, getSession } from "@/lib/session";
+import { telefonoLocal } from "@/lib/telefono";
 import { MAXIMO_DE_DIRECCIONES } from "@/modules/users/direcciones/constantes";
 import { listarDirecciones } from "@/modules/users/direcciones/operaciones";
 
@@ -56,7 +57,7 @@ export default async function NuevaDireccion() {
           inicial={{
             label: "",
             recipientName: profile.fullName,
-            phone: profile.phone.replace(/^\+549/, ""),
+            phone: telefonoLocal(profile.phone),
             street: "",
             number: "",
             apartment: "",

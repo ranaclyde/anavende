@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { Campo } from "@/components/admin/formulario";
 import { Button } from "@/components/ui/button";
 import { leerErrores, SIN_ERRORES } from "@/lib/form";
+import { telefonoLocal } from "@/lib/telefono";
 import { guardarDatosDelUsuario } from "@/modules/users/panel/actions";
 
 /**
@@ -36,7 +37,8 @@ export function EditarDatosDelUsuario({
 
   const [firstName, setFirstName] = useState(usuario.firstName);
   const [lastName, setLastName] = useState(usuario.lastName);
-  const [phone, setPhone] = useState(usuario.telefono);
+  // Sin el `+549`: el campo ya muestra el +54 (`Input`, `type="tel"`).
+  const [phone, setPhone] = useState(telefonoLocal(usuario.telefono));
 
   /**
    * Con qué se compara para saber si hay algo sin guardar.
@@ -50,7 +52,7 @@ export function EditarDatosDelUsuario({
   const [guardadoEnLaBase, setGuardadoEnLaBase] = useState({
     firstName: usuario.firstName,
     lastName: usuario.lastName,
-    phone: usuario.telefono,
+    phone: telefonoLocal(usuario.telefono),
   });
 
   const cambio =
@@ -76,11 +78,12 @@ export function EditarDatosDelUsuario({
       }
 
       // Los campos pasan a mostrar lo que quedó guardado: el teléfono, con su
-      // forma normalizada.
-      setFirstName(r.data.firstName);
-      setLastName(r.data.lastName);
-      setPhone(r.data.phone);
-      setGuardadoEnLaBase(r.data);
+      // forma normalizada y sin el `+549` que el campo ya muestra.
+      const guardados = { ...r.data, phone: telefonoLocal(r.data.phone) };
+      setFirstName(guardados.firstName);
+      setLastName(guardados.lastName);
+      setPhone(guardados.phone);
+      setGuardadoEnLaBase(guardados);
       setGuardado(true);
     });
   }
