@@ -13,8 +13,8 @@
 
 /**
  * Los dos mensajes de la ficha de producto, y por qué son dos. (El sistema
- * tiene siete: más abajo están los dos de una orden ya creada y los tres de
- * la página de categorías.)
+ * tiene siete: más abajo están los dos de una orden ya creada, los dos de la
+ * página de categorías y el de «Nosotros».)
  *
  * El de COMPRA (RF-04) es un pedido: lleva cantidad y precio, que es lo que
  * la vendedora necesita para contestar con un total. El de DISPONIBILIDAD
@@ -190,4 +190,12 @@ export function mensajeDeBusquedaSinResultados(buscado: string): string {
 /** El cierre de la página, cuando no hay una búsqueda que contar. */
 export function mensajeDeConsultaGeneral(): string {
   return "¡Hola! Quería consultar por algo que no encontré entre las categorías de la tienda.";
+}
+
+/**
+ * El de «Nosotros» (2026-10-21). Quien llega ahí acaba de leer quién es Ana,
+ * así que el saludo va con su nombre, y la consulta la escribe la persona.
+ */
+export function mensajeDesdeNosotros(): string {
+  return "¡Hola, Ana! Estuve leyendo sobre la tienda y quería hacerte una consulta.";
 }

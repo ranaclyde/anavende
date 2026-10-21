@@ -35,6 +35,7 @@ const GRUPOS = [
     enlaces: [
       { href: "/productos", titulo: "Catálogo" },
       { href: "/categorias", titulo: "Categorías" },
+      { href: "/nosotros", titulo: "Nosotros" },
     ],
   },
   {
