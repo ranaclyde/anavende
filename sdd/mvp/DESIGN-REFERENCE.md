@@ -686,7 +686,7 @@ El componente más importante del sistema. Aparece en catálogo, home, recomenda
 │  Teclado mecánico K120  │   body-sm 14px/500, ink, máx. 2 líneas
 │                         │
 │  $27.500,00             │   tachado arriba, renglón reservado
-│  $24.500,00             │   final abajo, body-lg 18px/600
+│  $24.500,00             │   final abajo, body-lg 18px/500
 └─────────────────────────┘
 ```
 
@@ -847,9 +847,9 @@ Con oferta:      $ 24.500,00              burdeos, peso 500, 28px
 
 TARJETA (§6.1) — apilado, el tachado arriba (2026-10-20)
 Sin oferta:      (renglón reservado)
-                 $ 27.500,00              ink, peso 600, 18px
+                 $ 27.500,00              ink, peso 500, 18px
 Con oferta:      $ 27.500,00              tachado, secundario, 12px
-                 $ 24.500,00              burdeos, peso 600, 18px
+                 $ 24.500,00              burdeos, peso 500, 18px
 ```
 
 **Dos números en las dos, y lo único que cambia es la disposición.** La ficha llevó «Ahorrás $ 3.000,00» hasta el 2026-09-08 y ya no: una oferta se comunica con cuánto valía y cuánto vale, y el tercer número dice la misma oferta otra vez (RN-04c). Lo que separa las dos composiciones es el lugar. En la grilla el tachado va arriba del final y su renglón se reserva aunque no haya oferta (2026-10-20); en la ficha es lo primero que se lee después del nombre, sube a 28px y el tachado baja, donde no le compite.
