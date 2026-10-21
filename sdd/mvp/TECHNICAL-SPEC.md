@@ -1364,7 +1364,7 @@ Lo que implica, en concreto:
 
 | Costo | Detalle | Mitigación |
 |---|---|---|
-| **Emails de autenticación fuera de React Email** | E1, E2 y E3 usan las plantillas de Supabase (HTML con variables Go) enviadas por SMTP. E4 sigue por la API de Resend con React Email | Se replica la identidad visual en las plantillas de Supabase. Se **verifica en F0** si el *Send Email Hook* funciona auto-hospedado: si funciona, los cuatro emails vuelven a un solo camino |
+| **Emails de autenticación fuera de React Email** | E1, E2 y E3 usan las plantillas de Supabase (HTML con variables Go) enviadas por SMTP. E4 sigue por la API de Resend con React Email | La identidad visual es una sola igual: E1, E2 y E3 se escriben con React Email (`lib/email/`), `npm run email` las convierte en el HTML con variables Go que lee GoTrue, y la aplicación las sirve desde `public/` (F1.8). **El *Send Email Hook* no se verifica (F0.13, descartada el 2026-10-21)**: lo único que unificaría es el camino de envío, y con las plantillas ya hechas así no hay nada que ganar en el MVP que justifique tocar GoTrue en el servidor DATA. Queda como mejora para después del lanzamiento |
 | **Identidad en dos lugares** | `auth.users` (GoTrue) y `user_profiles` (nuestro) | El alta la controla nuestro código, con compensación (§13.4). Sin *trigger* |
 | **Acoplamiento a Supabase** | La autenticación deja de ser portable | Aceptado: la decisión de infraestructura ya apuesta a Supabase |
 | **SMTP obligatorio** | El emisor de correo por omisión de Supabase no sirve para producción: 2 mensajes por hora y solo a direcciones autorizadas | Resend configurado como proveedor SMTP, algo que Supabase documenta explícitamente. **Verificar en F0** |
@@ -1419,10 +1419,10 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 | E4 | Nueva orden recibida | **Nuestra aplicación** | React Email → API de Resend | Después del `COMMIT` (§8.4) |
 | ~~E5~~ | ~~Pedido de baja de cuenta~~ | — | — | **Descartado el 2026-09-14**: la baja pedida se ve en el panel (RF-14, RF-34) |
 
-> **Dos caminos hacia el mismo proveedor.** Es el costo asumido de usar Supabase Auth (§13.6): E1, E2 y E3 los emite GoTrue con sus propias plantillas; solo E4 pasa por React Email. **F0 verifica si el *Send Email Hook* funciona auto-hospedado**; si funciona, los cuatro vuelven a un único camino.
+> **Dos caminos hacia el mismo proveedor.** Es el costo asumido de usar Supabase Auth (§13.6): E1, E2 y E3 los emite GoTrue con sus propias plantillas; solo E4 se envía desde la aplicación. Las cuatro plantillas sí salen de React Email (F1.8), así que lo que se ve es uno solo. **El *Send Email Hook*, que juntaría también el envío, no se verifica**: F0.13 quedó descartada el 2026-10-21 (tabla de arriba).
 
 - **SMTP propio es obligatorio.** El emisor por omisión de Supabase envía 2 mensajes por hora y solo a direcciones autorizadas: no sirve para producción. Resend se configura como proveedor SMTP en Supabase, algo que su documentación contempla de forma explícita.
-- Las plantillas de Supabase se personalizan para replicar la identidad visual; **E4 usa React Email** con layout propio y previsualización local.
+- Las plantillas de E1, E2 y E3 se escriben con React Email y se convierten al HTML que lee GoTrue (`npm run email`); **E4 usa React Email** directo. Las cuatro comparten layout y previsualización local.
 - El envío ocurre **siempre después del commit** y **nunca bloquea** la operación de negocio: un fallo de Resend se registra en Sentry y la orden queda creada igual (RF-12). **E4 sale con `after()`**, o sea después de la respuesta y no solo fuera de la transacción (F6.4): renderizar el HTML y hablar con Resend son un par de segundos que no tienen por qué pasar con el comprador esperando. **Agendarlo tampoco puede fallar:** `after()` lanza si lo llaman fuera de una petición, y sin atajarlo esa excepción viajaría por el envoltorio de acciones y el comprador vería un error con la orden ya creada.
 - **E4 no se manda dos veces por la misma orden.** Un reintento con la misma clave de idempotencia devuelve la orden que ya existía (§8.5) y no dispara un segundo aviso.
 - **E4 no sale si no hay casilla configurada**, y en ese caso la pantalla de confirmación tampoco le dice al comprador que se avisó a la vendedora. La fila de `site_settings` puede no existir (§5.9) y no hay dirección de respaldo razonable.
@@ -1540,7 +1540,7 @@ Mientras F0.3 no esté hecha no hay Supabase al que apuntar, así que el desarro
 | El esquema y sus restricciones (`npm run db:verificar`) | La latencia real de la LAN (§20, V10) |
 | El comportamiento de `pg_trgm` y `unaccent` (F0.6) | Que Postgres no responda desde internet (F0.4, V9) |
 | La lógica de stock y de órdenes (§8) | Que los emails salgan de verdad: en local los captura Mailpit, en producción hacen falta las credenciales SMTP de Resend (F0.11) |
-| La Admin API de Auth (§13.5) | El *Send Email Hook* auto-hospedado (F0.13, V3c) |
+| La Admin API de Auth (§13.5) | ~~El *Send Email Hook* auto-hospedado (F0.13, V3c)~~ — descartado el 2026-10-21 (§13.6) |
 | El envoltorio de Server Actions (§6.2) | Los backups y su restauración (§19, F0.10) |
 | Google y Facebook, con credenciales reales de OAuth | El consumo de memoria de sharp bajo carga (F10.6, R3) |
 
@@ -1658,7 +1658,7 @@ Estos son datos que dependen de la versión exacta que se instale y deben confir
 | V2 | **SMTP de Resend configurado en Supabase**, con un email de verificación efectivamente recibido | R15. Sin esto no hay registro posible |
 | V3 | Admin API de Auth auto-hospedada: crear, invitar, bloquear y desbloquear usuarios | RF-26 y RF-27 dependen de ella |
 | V3b | Si un usuario bloqueado recibe `user_banned` en el **primer** intento de ingreso o un error genérico | Cambia cómo se detecta el bloqueo en §13.5 |
-| V3c | Si el *Send Email Hook* funciona auto-hospedado | Decide si los cuatro emails se unifican en React Email (§13.6) |
+| ~~V3c~~ | ~~Si el *Send Email Hook* funciona auto-hospedado~~ | **Descartada el 2026-10-21** (F0.13): las cuatro plantillas ya salen de React Email; el hook solo juntaría el envío (§13.6) |
 | V4 | Subida, descarga y borrado contra Supabase Storage auto-hospedado, extremo a extremo | R6: hay fallas de firma S3 reportadas en self-hosted |
 | V5 | Que `pg_trgm` y `unaccent` se puedan crear en la Postgres de Supabase | Toda la búsqueda depende de ello (§10.1) |
 | V6 | Comportamiento de `numeric` en la versión de Drizzle instalada (`string` por omisión) | §7.1 se apoya en eso |
