@@ -99,7 +99,7 @@ Ver detalle en §12 (Fuera de alcance).
 1. **Hero con bloques flotantes.** Hasta cinco productos de **una** categoría destacada, en tarjetas escalonadas que flotan, con la marca y la bajada debajo. Los bloques **cambian de categoría cada tanto** —unos mouses, después unos teclados—, **cada uno enlaza a su ficha** y el movimiento **se puede parar** con un botón.
 2. **Buscador**, con la invitación «¿Qué estás buscando hoy?». Sigue siendo lo que la pantalla pide hacer: no hay foto de portada ni banner.
 3. **Chips de categoría**: las **destacadas** (RF-18), **hasta siete**. Las que no entran no se muestran acá. Cada chip lleva al catálogo **ya filtrado por esa categoría**, no a una pantalla propia.
-4. **Aviso de la zona de entrega** (RN-10), **pegado a los chips**: es lo primero que alguien de afuera necesita saber para decidir si esta tienda le sirve. Acá va **en una línea** —hasta dónde llevamos y que el envío se coordina por WhatsApp—; la versión completa, con el retiro en el punto de entrega, la sigue diciendo el pie del sitio, que está en todas las pantallas.
+4. **Aviso de la zona de entrega** (RN-10), **pegado a los chips**: es lo primero que alguien de afuera necesita saber para decidir si esta tienda le sirve. Acá va **en una línea** —hasta dónde llevamos y que el envío se coordina por WhatsApp—; el retiro en el punto de entrega lo dicen la ficha, el carrito y el checkout (el pie lo decía hasta el 2026-10-21).
 5. **Sección de productos destacados** (RF-20).
 6. **Una sección por cada categoría destacada**, con sus productos —los que entren en una fila—. La sección no aparece si la categoría no tiene ninguno activo.
 7. **Sección de productos en oferta** (con descuento activo).
@@ -822,7 +822,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] Páginas accesibles desde el pie de página: **Garantías y devoluciones**, **Términos y condiciones**, **Política de privacidad**, **Cómo comprar**.
 - [ ] «Garantías y devoluciones» explica plazos, condiciones, qué cubre la garantía y el procedimiento (coordinación por WhatsApp).
 - [ ] Explica también **cómo arrepentirse de una compra**: cancelar la orden desde «Mis compras» si todavía está activa (RF-23), o pedir la devolución si ya se finalizó (RF-25). Es donde el sitio deja por escrito cómo se ejerce ese derecho.
-- [ ] El aviso de **zona de entrega y retiro** está presente en: pie de página, ficha de producto, carrito y checkout (RN-10). Ninguno de los cuatro nombra a la empresa de mensajería.
+- [ ] El aviso de **zona de entrega y retiro** está presente en: home, ficha de producto, carrito y checkout (RN-10). Ninguno nombra a la empresa de mensajería. **El pie no lo lleva desde el 2026-10-21**: en su lugar va el eslogan.
 - [ ] El texto legal es editable desde el panel sin necesidad de un deploy.
 - [ ] **El plazo para arrepentirse es de 10 días corridos desde el pedido, mientras la orden siga activa** (decisión de negocio del 2026-10-16). Casi todas las ventas se entregan en el día, así que en la práctica el plazo lo corta la entrega; después rigen los cambios y devoluciones, que se aceptan solo por falla de fábrica.
 - [ ] **Hay un «Botón de arrepentimiento»** en el pie de todas las páginas, y una tarjeta arriba de «Garantías y devoluciones», que llevan a «Mis compras»: ahí el comprador decide qué pedido cancelar (RF-23). Sin sesión, el ingreso vuelve ahí.
@@ -1165,4 +1165,5 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-08-30 | Recomendados por afinidad de categorías + similares automáticos, en cascada | Barato de configurar, no depende de volumen de datos y nunca deja un bloque vacío |
 | 2026-08-30 | Las relaciones entre categorías son recíprocas por defecto | Evita cargar cada relación dos veces y que queden a medias |
 | 2026-08-30 | Co-compra queda fuera del MVP | Sin volumen de órdenes daría resultados vacíos o ruidosos |
+| 2026-10-21 | El pie deja el aviso de zona y lleva el eslogan (RN-10, RF-01) | Pedido tuyo. La zona sigue en la home, la ficha, el carrito y el checkout |
 | 2026-10-21 | Página de categorías (RF-35), sin las categorías vacías | «Ver todas» de la home no llevaba a ningún lado. Las vacías se probaron al final con una consulta por WhatsApp y rompían la lista: no se muestran, como en la home |
