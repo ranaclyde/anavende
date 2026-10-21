@@ -239,22 +239,20 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 2. **Buscador de categorías.** Filtra la página a medida que se escribe; no es el buscador de productos.
 3. **Destacadas**: las categorías destacadas (RF-18) **con al menos un producto activo**, hasta siete —las mismas de los chips de la home—, en tarjetas con imagen grande.
 4. **Todas, de la A a la Z**: todas las categorías con productos, **destacadas incluidas**, en tarjetas en fila con imagen, nombre y **cantidad de productos**.
-5. **Todavía sin productos**: las categorías activas con cero productos, **al final** y sólo si hay alguna.
-6. **Cierre para hablar con la vendedora**: «¿No encontrás lo que buscás?», con el botón de WhatsApp.
+5. **Cierre para hablar con la vendedora**: «¿No encontrás lo que buscás?», con el botón de WhatsApp.
 
 **Comportamiento:**
-- Sólo se muestran categorías **activas** (RN-11b), ordenadas por nombre sin distinguir acentos ni mayúsculas, como en el resto de la tienda.
+- Sólo se muestran categorías **activas** (RN-11b) **con al menos un producto activo**, ordenadas por nombre sin distinguir acentos ni mayúsculas, como en el resto de la tienda.
 - **La cantidad** son los productos **activos** de la categoría, con o sin stock: es lo que el catálogo muestra al filtrar por ella (RN-05). «1 producto», «14 productos».
 - **Cada tarjeta con productos lleva al catálogo filtrado por esa categoría** (RF-02), no a una pantalla propia.
-- Una categoría **sin productos no enlaza al catálogo**, que estaría vacío. Muestra «Sin productos por ahora» y un **«Consultar»** que abre WhatsApp.
-- **El buscador** compara sin acentos ni mayúsculas y filtra las tres secciones. Mientras hay texto, «Destacadas» se oculta: la misma categoría estaría dos veces. El texto queda en la dirección (`?q=`), así que la página filtrada se puede compartir.
+- **Una categoría sin productos no aparece**, como en la home: nombrarla sería un enlace a un catálogo vacío. Se probó mostrarlas al final con una consulta por WhatsApp y se descartó el mismo día (2026-10-21): rompían la lista. Quien busca algo que no está tiene el cierre.
+- **El buscador** compara sin acentos ni mayúsculas y filtra las dos secciones. Mientras hay texto, «Destacadas» se oculta: la misma categoría estaría dos veces. El texto queda en la dirección (`?q=`), así que la página filtrada se puede compartir.
 - **Si la búsqueda no encuentra nada**, el cierre sube al lugar de la lista y hace de estado vacío: el mensaje de WhatsApp lleva lo que se buscó.
 
-**Los mensajes prellenados son tres**, con la misma tubería que RF-04:
+**Los mensajes prellenados son dos**, con la misma tubería que RF-04:
 
 | Mensaje | Cuándo | Qué dice |
 |---|---|---|
-| **Consulta de categoría** | «Consultar» en una categoría sin productos | _¡Hola! Vi que la categoría «Sillas gamer» todavía no tiene productos y quería saber si va a haber._ |
 | **Búsqueda sin resultados** | El cierre, con una búsqueda que no encontró nada | _¡Hola! Busqué «sillas» entre las categorías y no lo encontré. ¿Lo tienen o piensan traerlo?_ |
 | **Consulta general** | El cierre, sin búsqueda o con resultados | _¡Hola! Quería consultar por algo que no encontré entre las categorías de la tienda._ |
 
@@ -262,8 +260,8 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 - [ ] La página se alcanza desde «Ver todas» de la home y desde «Tienda» → «Categorías» en el pie.
 - [ ] Las categorías salen ordenadas por nombre, sin distinguir acentos ni mayúsculas, y sólo las activas.
 - [ ] Cada tarjeta muestra la cantidad de productos activos, con o sin stock, y lleva al catálogo filtrado por esa categoría.
-- [ ] Las categorías sin productos van al final, sin enlace al catálogo y con «Consultar» por WhatsApp.
-- [ ] Las destacadas con productos aparecen arriba y también en la lista de la A a la Z. Una destacada sin productos va sólo al final.
+- [ ] Las categorías sin productos activos no aparecen, tampoco si son destacadas.
+- [ ] Las destacadas con productos aparecen arriba y también en la lista de la A a la Z.
 - [ ] El buscador encuentra «auriculares» escribiendo «AURICULARES» o «aurícu», y la búsqueda queda en la dirección.
 - [ ] Una búsqueda sin resultados muestra el cierre con el mensaje que lleva lo buscado.
 - [ ] Sin número de WhatsApp configurado (RF-20) no se dibuja ningún botón de WhatsApp, y el cierre enlaza a la página de contacto.
@@ -1167,4 +1165,4 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-08-30 | Recomendados por afinidad de categorías + similares automáticos, en cascada | Barato de configurar, no depende de volumen de datos y nunca deja un bloque vacío |
 | 2026-08-30 | Las relaciones entre categorías son recíprocas por defecto | Evita cargar cada relación dos veces y que queden a medias |
 | 2026-08-30 | Co-compra queda fuera del MVP | Sin volumen de órdenes daría resultados vacíos o ruidosos |
-| 2026-10-21 | Página de categorías (RF-35), con las vacías al final y una consulta por WhatsApp | «Ver todas» de la home no llevaba a ningún lado. Una categoría sin productos no enlaza a un catálogo vacío: invita a preguntar si va a haber |
+| 2026-10-21 | Página de categorías (RF-35), sin las categorías vacías | «Ver todas» de la home no llevaba a ningún lado. Las vacías se probaron al final con una consulta por WhatsApp y rompían la lista: no se muestran, como en la home |

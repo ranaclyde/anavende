@@ -176,20 +176,13 @@ export function mensajeParaElComprador(numero: number): string {
 }
 
 /**
- * Los tres de la página de categorías — RF-35, F3.10. **No hablan de un
+ * Los dos de la página de categorías — RF-35, F3.10. **No hablan de un
  * producto**, así que no llevan enlace a ninguna ficha: preguntan por algo
  * que la tienda todavía no tiene, y lo único que la vendedora necesita para
  * contestar es de qué se habla.
  *
- * El de la categoría vacía dice «todavía no tiene productos» por lo mismo que
- * el de disponibilidad dice «vi que está sin stock»: sin eso, del otro lado
- * llega una pregunta que obliga a ir a fijarse por qué la hacen.
+ * La búsqueda que no encontró nada lleva lo que se escribió, tal cual.
  */
-export function mensajeDeCategoriaSinProductos(categoria: string): string {
-  return `¡Hola! Vi que la categoría «${categoria}» todavía no tiene productos y quería saber si va a haber.`;
-}
-
-/** La búsqueda que no encontró nada: lleva lo que se escribió, tal cual. */
 export function mensajeDeBusquedaSinResultados(buscado: string): string {
   return `¡Hola! Busqué «${buscado.trim()}» entre las categorías y no lo encontré. ¿Lo tienen o piensan traerlo?`;
 }

@@ -1504,9 +1504,6 @@ El botón de WhatsApp es la **acción principal**: es lo que efectivamente cierr
 │  [▢ Adaptadores   ›] [▢ Auriculares  ›] [▢ …     ] │  tarjeta en fila,
 │     3 productos         14 productos               │  1 · 2 · 3 por fila
 ├──────────────────────── 80px ──────────────────────┤
-│  Todavía sin productos                             │  sólo si hay alguna
-│  [▢ Sillas gamer           Consultar] …            │  hundida, sin enlace
-├──────────────────────── 80px ──────────────────────┤
 │  ¿No encontrás lo que buscás?                      │  heading 20px
 │  Escribinos y te decimos si lo tenemos o si        │  body, secundario
 │  pensamos traerlo.                                 │
@@ -1543,28 +1540,21 @@ abajo, que es como se lee una fila.
 Una por fila en el teléfono, dos en tableta y tres en escritorio. El orden es
 alfabético sin distinguir acentos ni mayúsculas, como en el resto de la tienda.
 
-**Las que no tienen productos van al final**, bajo «Todavía sin productos», y
-sólo si hay alguna. Es la misma tarjeta en fila **sin enlace**, porque llevaría
-a un catálogo vacío: **sobre la superficie hundida y sin sombra**, que es lo que
-la separa de las que se tocan. **Lo que se atenúa es la superficie, no el
-texto**, que conserva el contraste AA (§9). En lugar de la cantidad dice «Sin
-productos por ahora», y **debajo del texto** va **«Consultar»**, el botón
-**secundario** —blanco, con el logo de WhatsApp en verde (§2.6)—, como el de
-«¿Te quedó una duda?» de las páginas de ayuda (2026-10-21, pedido tuyo): abre
-la consulta de categoría (RF-35). Blanco y no relleno: en esta fila no es la
-acción principal. **Debajo y no a la derecha** (2026-10-21, al construirla): al
-costado le sacaba 120px al nombre, y a 320px uno de 60 caracteres se partía a
-mitad de palabra. Una destacada sin
-productos va acá y no arriba.
+**Las que no tienen productos no se muestran**, como en «Más categorías» de la
+home: nombrarlas sería un enlace a un catálogo vacío. Se probaron al final,
+primero en superficie hundida con un «Consultar» debajo y después como una
+tarjeta más con el logo de WhatsApp en lugar de la flecha, y se descartaron
+el mismo día (2026-10-21, decisión tuya): en las dos formas rompían la lista.
+Quien busca algo que no está tiene el cierre. Una destacada sin productos
+tampoco aparece arriba.
 
 **El buscador filtra mientras se escribe**, sin acentos ni mayúsculas, sobre
-las tres secciones y en el navegador. Es la píldora de §6.2 **sin el botón de
+las dos secciones y en el navegador. Es la píldora de §6.2 **sin el botón de
 enviar** —no hay nada que enviar— y con una lupa a la izquierda, que es lo que
 dice que es un buscador. Son decenas de categorías: no hace falta ir a la
 base. Mientras hay texto, **«Destacadas» se oculta** —la misma categoría
 estaría dos veces— y quedan la lista con lo que coincide, titulada
-«Resultados», y, debajo,
-las sin productos que coincidan. Arriba de la lista, **«3 categorías»** se
+«Resultados». Arriba de la lista, **«3 categorías»** se
 anuncia al lector de pantalla (`aria-live`). El texto va a la dirección
 (`?q=`) **reemplazando** la entrada del historial: la búsqueda se comparte, y
 el botón atrás no tiene que deshacer letra por letra.

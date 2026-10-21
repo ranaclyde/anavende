@@ -123,35 +123,25 @@ export const ANCHO_EN_FILA_DE_CATEGORIAS =
   "w-[40%] shrink-0 snap-start sm:w-auto";
 
 /**
- * La tarjeta en fila de §7.6. Con productos es un enlace entero al catálogo
- * filtrado; sin productos no enlaza —llevaría a una grilla vacía— y en su
- * lugar ofrece `accion`, el «Consultar» por WhatsApp.
+ * La tarjeta en fila de §7.6: un enlace entero al catálogo filtrado, con la
+ * cantidad y la flecha. Solo hay categorías con productos (las vacías no se
+ * muestran, 2026-10-21).
  */
 export function TarjetaEnFilaDeCategoria({
   categoria,
   miniaturaUrl,
   cantidad,
-  accion,
 }: {
   categoria: Categoria;
   miniaturaUrl: string | null;
   cantidad: number;
-  /** Solo para la que no tiene productos. */
-  accion?: React.ReactNode;
 }) {
-  const conProductos = cantidad > 0;
-
-  const contenido = (
-    <>
-      {/* Sobre la tarjeta hundida, el recuadro va en superficie: hundido
-          sobre hundido no se vería. */}
-      <span
-        className={
-          conProductos
-            ? "relative grid size-14 shrink-0 place-items-center overflow-hidden rounded-image bg-surface-sunken"
-            : "relative grid size-14 shrink-0 place-items-center overflow-hidden rounded-image bg-surface"
-        }
-      >
+  return (
+    <Link
+      href={urlDeTienda({ categoria: [categoria.slug] })}
+      className="group flex h-full min-h-18 items-center gap-4 rounded-card bg-surface p-2 pr-4 shadow-md transition-shadow duration-200 hover:shadow-lg focus-visible:shadow-focus focus-visible:outline-none"
+    >
+      <span className="relative grid size-14 shrink-0 place-items-center overflow-hidden rounded-image bg-surface-sunken">
         {miniaturaUrl ? (
           <Image
             src={miniaturaUrl}
@@ -171,53 +161,17 @@ export function TarjetaEnFilaDeCategoria({
         {/* Sin tope de renglones: el panel admite 60 caracteres, y con el
             ancho de la fila son dos o tres. Cortarlo escondería justo la
             parte que distingue a «Cables USB-C» de «Cables USB-C a HDMI». */}
-        <span
-          className={
-            conProductos
-              ? "text-body font-medium break-words text-ink transition-colors duration-150 group-hover:text-brand"
-              : "text-body font-medium break-words text-ink"
-          }
-        >
+        <span className="text-body font-medium break-words text-ink transition-colors duration-150 group-hover:text-brand">
           {categoria.nombre}
         </span>
         <span className="text-body-sm text-ink-secondary">
-          {conProductos
-            ? cantidadDeProductos(cantidad)
-            : "Sin productos por ahora"}
+          {cantidadDeProductos(cantidad)}
         </span>
       </span>
-    </>
-  );
-
-  if (conProductos) {
-    return (
-      <Link
-        href={urlDeTienda({ categoria: [categoria.slug] })}
-        className="group flex h-full min-h-18 items-center gap-4 rounded-card bg-surface p-2 pr-4 shadow-md transition-shadow duration-200 hover:shadow-lg focus-visible:shadow-focus focus-visible:outline-none"
-      >
-        {contenido}
-        <ChevronRight
-          aria-hidden
-          className="size-5 shrink-0 text-ink-tertiary transition-transform duration-200 motion-safe:group-hover:translate-x-0.5"
-        />
-      </Link>
-    );
-  }
-
-  /*
-   * Lo que se atenúa es la SUPERFICIE —hundida y sin sombra—, no el texto,
-   * que conserva el contraste AA (§9): una categoría sin productos sigue
-   * siendo algo que se lee, y lo que se dice es que no se toca.
-   *
-   * «Consultar» va DEBAJO del texto y no a su derecha: al costado le sacaba
-   * 120px al nombre, y a 320px uno de 60 caracteres se partía a mitad de
-   * palabra («estuche-s»). El `pl-14` deja el ícono del botón, que trae 16px
-   * propios, alineado con el texto de arriba.
-   */
-  return (
-    <div className="flex h-full flex-col rounded-card bg-surface-sunken p-2 pr-4">
-      <div className="flex min-h-14 items-center gap-4">{contenido}</div>
-      {accion ? <div className="pl-14">{accion}</div> : null}
-    </div>
+      <ChevronRight
+        aria-hidden
+        className="size-5 shrink-0 text-ink-tertiary transition-transform duration-200 motion-safe:group-hover:translate-x-0.5"
+      />
+    </Link>
   );
 }

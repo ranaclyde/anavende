@@ -7,7 +7,6 @@ import { db } from "@/db";
 import {
   enlaceDeWhatsApp,
   mensajeDeBusquedaSinResultados,
-  mensajeDeCategoriaSinProductos,
   mensajeDeConsultaGeneral,
 } from "@/lib/whatsapp";
 import {
@@ -47,7 +46,7 @@ async function unaCategoria(
 }
 
 describe("leerCategoriasDeLaTienda (RF-35)", () => {
-  test("cuenta solo los productos activos, y trae las vacías pero no las inactivas", async () => {
+  test("cuenta solo los productos activos, y no trae las vacías ni las inactivas", async () => {
     const productoId = await unProducto();
     const [{ categoryId, brandId }] = await db.execute<{
       categoryId: string;
@@ -76,21 +75,24 @@ describe("leerCategoriasDeLaTienda (RF-35)", () => {
     const conUno = categorias.find((c) => c.id === categoryId);
 
     expect(conUno?.cantidad).toBe(1);
-    expect(categorias.find((c) => c.id === vacia.id)?.cantidad).toBe(0);
+    expect(categorias.some((c) => c.id === vacia.id)).toBe(false);
     expect(categorias.some((c) => c.id === apagada.id)).toBe(false);
   });
 
   test("vienen ordenadas por nombre sin distinguir acentos ni mayúsculas", async () => {
-    // Con un orden por bytes, «É» va después de toda la «e» minúscula.
+    // Con un orden por bytes, «É» va después de toda la «e» minúscula. Cada
+    // una necesita un producto activo: las vacías no vienen.
     const sufijo = randomUUID().slice(0, 8);
     const ids: string[] = [];
     for (const nombre of [`eco ${sufijo}`, `Ébano ${sufijo}`]) {
-      const [fila] = await db.execute<{ id: string }>(sql`
-        INSERT INTO categories (name, slug)
-        VALUES (${nombre}, ${`orden-${randomUUID().slice(0, 8)}`})
-        RETURNING id`);
-      sueltas.categorias.push(fila.id);
-      ids.push(fila.id);
+      const productoId = await unProducto();
+      const [{ categoryId }] = await db.execute<{ categoryId: string }>(sql`
+        UPDATE products SET is_active = true WHERE id = ${productoId}
+        RETURNING category_id AS "categoryId"`);
+      await db.execute(
+        sql`UPDATE categories SET name = ${nombre} WHERE id = ${categoryId}`,
+      );
+      ids.push(categoryId);
     }
 
     const orden = (await leerCategoriasDeLaTienda())
@@ -135,9 +137,8 @@ describe("repartirCategorias (DR §7.6)", () => {
       "Cables",
       "Teclados",
     ]);
-    // Una destacada sin productos va al final y no arriba.
-    expect(r.sinProductos.map((c) => c.nombre)).toEqual(["Micrófonos"]);
-    expect(r.total).toBe(4);
+    // Una destacada sin productos no aparece en ningún lado.
+    expect(r.total).toBe(3);
     expect(r.buscando).toBe(false);
   });
 
@@ -151,18 +152,13 @@ describe("repartirCategorias (DR §7.6)", () => {
     expect(r.conProductos.map((c) => c.nombre)).toEqual(["Auriculares"]);
     expect(r.buscando).toBe(true);
 
-    expect(
-      repartirCategorias(categorias, "microfono", 7).sinProductos.map(
-        (c) => c.nombre,
-      ),
-    ).toEqual(["Micrófonos"]);
+    expect(repartirCategorias(categorias, "microfono", 7).total).toBe(0);
   });
 
   test("una búsqueda sin resultados da total cero", () => {
     const r = repartirCategorias(categorias, "sillas", 7);
     expect(r.total).toBe(0);
     expect(r.conProductos).toEqual([]);
-    expect(r.sinProductos).toEqual([]);
   });
 
   test("solo espacios no es buscar", () => {
@@ -179,10 +175,7 @@ describe("cantidadDeProductos", () => {
 });
 
 describe("mensajes de la página de categorías (RF-35)", () => {
-  test("los tres textos de la especificación", () => {
-    expect(mensajeDeCategoriaSinProductos("Sillas gamer")).toBe(
-      "¡Hola! Vi que la categoría «Sillas gamer» todavía no tiene productos y quería saber si va a haber.",
-    );
+  test("los dos textos de la especificación", () => {
     expect(mensajeDeBusquedaSinResultados("  sillas ")).toBe(
       "¡Hola! Busqué «sillas» entre las categorías y no lo encontré. ¿Lo tienen o piensan traerlo?",
     );

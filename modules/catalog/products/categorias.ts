@@ -43,18 +43,16 @@ export function cantidadDeProductos(cantidad: number): string {
 export type CategoriasRepartidas = {
   /** Destacadas con productos. Vacía mientras se busca: estarían dos veces. */
   destacadas: CategoriaDeLaPagina[];
-  /** Todas las que tienen productos, destacadas incluidas. */
+  /** Todas las que coinciden, destacadas incluidas. */
   conProductos: CategoriaDeLaPagina[];
-  /** Las que no tienen ninguno, para el final. */
-  sinProductos: CategoriaDeLaPagina[];
-  /** Cuántas coinciden en total, para el «3 categorías» que se anuncia. */
+  /** Cuántas coinciden, para el «3 categorías» que se anuncia. */
   total: number;
   /** `true` si hay texto escrito. */
   buscando: boolean;
 };
 
 /**
- * Reparte las categorías en las tres secciones de §7.6, ya filtradas por lo
+ * Reparte las categorías en las dos secciones de §7.6, ya filtradas por lo
  * escrito. Llegan ordenadas de la base y el orden se conserva: filtrar no
  * reordena.
  *
@@ -71,6 +69,8 @@ export function repartirCategorias(
     ? categorias.filter((c) => normalizar(c.nombre).includes(buscado))
     : categorias;
 
+  // La consulta ya trae solo las que tienen productos; el filtro queda por
+  // si alguna llega en cero, que llevaría a un catálogo vacío.
   const conProductos = coinciden.filter((c) => c.cantidad > 0);
 
   return {
@@ -78,8 +78,7 @@ export function repartirCategorias(
       ? []
       : conProductos.filter((c) => c.destacada).slice(0, topeDeDestacadas),
     conProductos,
-    sinProductos: coinciden.filter((c) => c.cantidad === 0),
-    total: coinciden.length,
+    total: conProductos.length,
     buscando: buscado !== "",
   };
 }

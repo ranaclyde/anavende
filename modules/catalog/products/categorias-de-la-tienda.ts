@@ -18,8 +18,10 @@ import { urlDeLogo } from "@/modules/media/subir";
  * que el catálogo muestra al filtrar por esa categoría (RN-05): un «3
  * productos» que lleva a una grilla de cinco sería una promesa rota.
  *
- * Van **todas**, también las que no tienen productos: la página las pone al
- * final con «Consultar», en vez de esconderlas como la home.
+ * **Sólo las que tienen algún producto activo**, como «Más categorías» de la
+ * home: una categoría vacía nombrada en la página es un enlace a un «no hay
+ * nada» (2026-10-21, pedido tuyo; se probó mostrarlas al final con una
+ * consulta por WhatsApp y rompían la lista).
  */
 export async function leerCategoriasDeLaTienda(): Promise<
   CategoriaDeLaPagina[]
@@ -42,6 +44,8 @@ export async function leerCategoriasDeLaTienda(): Promise<
              WHERE p.category_id = c.id AND p.is_active) AS cantidad
       FROM categories c
      WHERE c.is_active
+       AND EXISTS (SELECT 1 FROM products p
+                    WHERE p.category_id = c.id AND p.is_active)
      ORDER BY immutable_unaccent(lower(c.name)), c.id`);
 
   return filas.map(({ imageKey, ...categoria }) => ({

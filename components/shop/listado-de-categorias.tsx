@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 import {
   enlaceDeWhatsApp,
   mensajeDeBusquedaSinResultados,
-  mensajeDeCategoriaSinProductos,
   mensajeDeConsultaGeneral,
 } from "@/lib/whatsapp";
 import {
@@ -51,8 +50,11 @@ export function ListadoDeCategorias({
 }) {
   const [busqueda, setBusqueda] = useState(busquedaInicial);
   const id = useId();
-  const { destacadas, conProductos, sinProductos, total, buscando } =
-    repartirCategorias(categorias, busqueda, topeDeDestacadas);
+  const { destacadas, conProductos, total, buscando } = repartirCategorias(
+    categorias,
+    busqueda,
+    topeDeDestacadas,
+  );
 
   function buscar(valor: string) {
     setBusqueda(valor);
@@ -151,46 +153,6 @@ export function ListadoDeCategorias({
                       categoria={c}
                       miniaturaUrl={c.miniaturaUrl}
                       cantidad={c.cantidad}
-                    />
-                  </li>
-                ))}
-              </ListaEnFila>
-            </Seccion>
-          ) : null}
-
-          {sinProductos.length > 0 ? (
-            <Seccion titulo="Todavía sin productos">
-              <ListaEnFila>
-                {sinProductos.map((c) => (
-                  <li key={c.id}>
-                    <TarjetaEnFilaDeCategoria
-                      categoria={c}
-                      miniaturaUrl={c.miniaturaUrl}
-                      cantidad={0}
-                      accion={
-                        whatsapp ? (
-                          <Button
-                            asChild
-                            variant="secondary"
-                            className="shrink-0"
-                          >
-                            <a
-                              href={enlaceDeWhatsApp(
-                                whatsapp,
-                                mensajeDeCategoriaSinProductos(c.nombre),
-                              )}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <IconoWhatsApp />
-                              Consultar
-                              <span className="sr-only">
-                                por {c.nombre} en WhatsApp
-                              </span>
-                            </a>
-                          </Button>
-                        ) : null
-                      }
                     />
                   </li>
                 ))}
