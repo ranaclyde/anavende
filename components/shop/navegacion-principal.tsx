@@ -19,8 +19,10 @@ import { cn } from "@/lib/utils";
 /**
  * La navegación de la tienda — DESIGN-REFERENCE §5.1 (2026-10-21).
  *
- * Tres destinos y no más: por dónde se recorre lo que hay. Lo demás —ayuda,
- * legales— vive en el pie, y en el teléfono también en el menú.
+ * Cuatro destinos: por dónde se recorre lo que hay, y Contacto (pedido del
+ * 2026-10-21). Lo demás —ayuda, legales— vive en el pie. El menú del
+ * teléfono lleva los mismos, para que la tienda no cambie de mapa según la
+ * pantalla.
  *
  * «Ofertas» es el catálogo con el filtro de descuento puesto (RN-04b): no es
  * otra pantalla, así que «Catálogo» se marca sólo cuando ese filtro no está.
@@ -42,6 +44,11 @@ const ENLACES = [
     href: "/productos?oferta=1",
     etiqueta: "Ofertas",
     activo: (ruta: string, oferta: boolean) => ruta === "/productos" && oferta,
+  },
+  {
+    href: "/contacto",
+    etiqueta: "Contacto",
+    activo: (ruta: string) => ruta === "/contacto",
   },
 ];
 
@@ -222,12 +229,13 @@ export function NavegacionPrincipal() {
 }
 
 /**
- * El menú del teléfono: por debajo de `md` los tres enlaces no entran al lado
+ * El menú del teléfono: por debajo de `md` los enlaces no entran al lado
  * del logo. Sale por la izquierda porque ahí está el botón que lo abre, y
  * porque la izquierda es la navegación (DESIGN.md, «Drawers»).
  *
- * Suma lo que en el teléfono ya no está en la fila —la cuenta— y lo que se
- * busca para resolver algo, que en escritorio está en el pie.
+ * Los mismos enlaces que en escritorio, y abajo de todo, fija, la cuenta —que
+ * en el teléfono ya no está en la fila— (pedido del 2026-10-21): es donde se
+ * la busca en un menú, y no se corre si algún día se suman enlaces.
  */
 export function MenuDelTelefono({ userName }: { userName?: string | null }) {
   const activo = useEnlaceActivo();
@@ -269,37 +277,17 @@ export function MenuDelTelefono({ userName }: { userName?: string | null }) {
               ))}
             </ul>
           </nav>
-          <ul className="flex flex-col gap-1 border-t border-border pt-4">
-            <li>
-              <Link
-                href={userName ? "/mi-cuenta" : "/ingresar"}
-                onClick={() => setAbierto(false)}
-                className={cn(fila, "gap-3")}
-              >
-                <User aria-hidden className="size-5 text-ink-secondary" />
-                <span className="truncate">{userName ?? "Ingresar"}</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/contacto"
-                onClick={() => setAbierto(false)}
-                className={fila}
-              >
-                Contacto
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/legales/como-comprar"
-                onClick={() => setAbierto(false)}
-                className={fila}
-              >
-                Cómo comprar
-              </Link>
-            </li>
-          </ul>
         </SheetBody>
+        <div className="shrink-0 border-t border-border px-4 py-3">
+          <Link
+            href={userName ? "/mi-cuenta" : "/ingresar"}
+            onClick={() => setAbierto(false)}
+            className={cn(fila, "gap-3")}
+          >
+            <User aria-hidden className="size-5 shrink-0 text-ink-secondary" />
+            <span className="truncate">{userName ?? "Ingresar"}</span>
+          </Link>
+        </div>
       </SheetContent>
     </Sheet>
   );
