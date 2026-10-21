@@ -12,10 +12,13 @@ import {
   SeccionDeLaHome,
 } from "@/components/shop/home/seccion";
 import { SearchBox } from "@/components/shop/search-box";
-import { TarjetaCuadradaDeCategoria } from "@/components/shop/tarjeta-de-categoria";
+import {
+  ANCHO_EN_FILA_DE_CATEGORIAS,
+  FilaDeCategorias,
+  TarjetaCuadradaDeCategoria,
+} from "@/components/shop/tarjeta-de-categoria";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
 import { VistosRecientemente } from "@/components/shop/vistos";
-import { Button } from "@/components/ui/button";
 import { organizacion, sitio } from "@/lib/datos-estructurados";
 import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE } from "@/lib/seo";
 import { getIdentity } from "@/lib/session";
@@ -249,7 +252,7 @@ export default async function Home() {
           <VistosRecientemente ruta="/" />
         </Suspense>
 
-        {/* ── Más categorías, con la salida apagada ────────────────── */}
+        {/* ── Más categorías, con la salida a la página de todas ────── */}
         {/*
           TARJETAS con imagen y nombre, como pide el boceto. La imagen es un
           campo propio de la categoría (FA-21), cargado en el panel, y es
@@ -257,35 +260,26 @@ export default async function Home() {
           así que la fila no se desarma con categorías sin imagen mezcladas.
         */}
         {datos.masCategorias.length > 0 ? (
-          <section
-            aria-labelledby="mas-categorias"
-            className="flex flex-col gap-5"
+          <SeccionDeLaHome
+            titulo="Más categorías"
+            enlace={{
+              href: "/categorias",
+              etiqueta: "Ver todas las categorías",
+              texto: "Ver todas",
+            }}
           >
-            <div className="flex items-center justify-between gap-4">
-              <h2 id="mas-categorias" className="text-heading text-ink">
-                Más categorías
-              </h2>
-
-              {/* Desde F3.10 lleva a la página con todas (§7.6). En `md` y
-                  no en `sm`: apagado no importaba, pero encendido es algo que
-                  se toca, y `sm` mide 32px contra los 44 de §9. */}
-              <Button asChild variant="tertiary">
-                <Link href="/categorias">Ver todas</Link>
-              </Button>
-            </div>
-
-            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+            <FilaDeCategorias grilla="sm:grid-cols-4 lg:grid-cols-8">
               {datos.masCategorias.map((categoria) => (
-                <li key={categoria.id}>
+                <li key={categoria.id} className={ANCHO_EN_FILA_DE_CATEGORIAS}>
                   <TarjetaCuadradaDeCategoria
                     categoria={categoria}
                     imagenUrl={categoria.imagenUrl}
-                    sizes="(min-width: 1024px) 12vw, (min-width: 640px) 25vw, 33vw"
+                    sizes="(min-width: 1024px) 12vw, (min-width: 640px) 25vw, 40vw"
                   />
                 </li>
               ))}
-            </ul>
-          </section>
+            </FilaDeCategorias>
+          </SeccionDeLaHome>
         ) : null}
       </div>
     </div>

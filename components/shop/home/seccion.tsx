@@ -22,8 +22,12 @@ export function SeccionDeLaHome({
   children,
 }: {
   titulo: string;
-  /** A dónde lleva el «→». Sin esto la sección no ofrece salida. */
-  enlace?: { href: string; etiqueta: string };
+  /**
+   * A dónde lleva el «→». Sin esto la sección no ofrece salida. `texto` es lo
+   * que se ve, «Ver todo» si no se dice otra cosa: «Más categorías» dice «Ver
+   * todas».
+   */
+  enlace?: { href: string; etiqueta: string; texto?: string };
   /**
    * Un control en el lugar del enlace, para la sección que no lleva a un
    * listado sino que hace algo: «Borrar historial» de «Vistos
@@ -46,7 +50,7 @@ export function SeccionDeLaHome({
             href={enlace.href}
             className="flex h-11 shrink-0 items-center gap-1.5 rounded-pill px-2 text-body-sm font-medium text-brand transition-colors duration-150 hover:text-brand-hover"
           >
-            <span aria-hidden>Ver todo</span>
+            <span aria-hidden>{enlace.texto ?? "Ver todo"}</span>
             <span className="sr-only">{enlace.etiqueta}</span>
             <ArrowRight aria-hidden className="size-4" />
           </Link>

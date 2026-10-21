@@ -90,6 +90,39 @@ export function TarjetaCuadradaDeCategoria({
 }
 
 /**
+ * La fila de tarjetas cuadradas (2026-10-21, pedido tuyo). **En el teléfono
+ * se desliza con el dedo**, con dos enteras y la tercera asomada, que es lo
+ * que dice que sigue: tres por fila en un teléfono de 320 dejaban 72px para
+ * el nombre y lo partían a mitad de palabra. **Desde `sm`, la grilla**, con
+ * las columnas que pide cada pantalla en `grilla` (las clases van enteras
+ * para que Tailwind las encuentre).
+ *
+ * Es la pista del `Carrusel` sin flechas y solo hasta `sm`: estirada hasta el
+ * borde de la página (`-mx-4` con `px-4`) para que la tarjeta se vaya por el
+ * costado en vez de cortarse contra el margen, y con `py-3` para que la
+ * sombra no quede recortada. Sin JavaScript: se pinta igual desde el servidor.
+ */
+export function FilaDeCategorias({
+  grilla,
+  children,
+}: {
+  grilla: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <ul
+      className={`-mx-4 -my-3 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-4 py-3 scroll-px-4 [scrollbar-width:none] sm:mx-0 sm:my-0 sm:grid sm:overflow-visible sm:p-0 [&::-webkit-scrollbar]:hidden ${grilla}`}
+    >
+      {children}
+    </ul>
+  );
+}
+
+/** El ancho de cada `<li>` en la fila: 40% asoma un tercio de la tercera. */
+export const ANCHO_EN_FILA_DE_CATEGORIAS =
+  "w-[40%] shrink-0 snap-start sm:w-auto";
+
+/**
  * La tarjeta en fila de §7.6. Con productos es un enlace entero al catálogo
  * filtrado; sin productos no enlaza —llevaría a una grilla vacía— y en su
  * lugar ofrece `accion`, el «Consultar» por WhatsApp.

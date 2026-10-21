@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useId, useState } from "react";
 
 import {
+  ANCHO_EN_FILA_DE_CATEGORIAS,
+  FilaDeCategorias,
   TarjetaCuadradaDeCategoria,
   TarjetaEnFilaDeCategoria,
 } from "@/components/shop/tarjeta-de-categoria";
@@ -125,18 +127,18 @@ export function ListadoDeCategorias({
 
           {destacadas.length > 0 ? (
             <Seccion titulo="Destacadas">
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+              <FilaDeCategorias grilla="sm:grid-cols-4 lg:grid-cols-7">
                 {destacadas.map((c) => (
-                  <li key={c.id}>
+                  <li key={c.id} className={ANCHO_EN_FILA_DE_CATEGORIAS}>
                     <TarjetaCuadradaDeCategoria
                       categoria={c}
                       imagenUrl={c.imagenUrl}
                       cantidad={c.cantidad}
-                      sizes="(min-width: 1024px) 15vw, (min-width: 640px) 25vw, 50vw"
+                      sizes="(min-width: 1024px) 15vw, (min-width: 640px) 25vw, 40vw"
                     />
                   </li>
                 ))}
-              </ul>
+              </FilaDeCategorias>
             </Seccion>
           ) : null}
 
@@ -169,7 +171,7 @@ export function ListadoDeCategorias({
                         whatsapp ? (
                           <Button
                             asChild
-                            variant="tertiary"
+                            variant="secondary"
                             className="shrink-0"
                           >
                             <a

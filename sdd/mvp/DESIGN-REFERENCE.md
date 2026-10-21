@@ -1319,8 +1319,12 @@ porque esa la elegiría una consulta y no ella. Es la tarjeta de producto en
 chico —mismo radio, misma sombra, recuadro cuadrado— y sin nada más que el
 nombre. **La imagen es opcional**, y la que no tiene muestra **su inicial** en
 el mismo recuadro hundido: la fila conserva su forma con categorías sin imagen
-mezcladas, que es lo que FA-21 pedía. Tres por fila en el teléfono, cuatro en
-tableta y ocho en escritorio, que es el tope de la sección.
+mezcladas, que es lo que FA-21 pedía. Cuatro por fila en tableta y ocho en
+escritorio, que es el tope de la sección. **En el teléfono, una fila que se
+desliza** (2026-10-21, pedido tuyo), con dos tarjetas enteras y un tercio de
+la tercera asomado, que es lo que dice que sigue: tres por fila dejaban 72px
+para el nombre y lo partían a mitad de palabra. **«Ver todas» es el mismo
+enlace de las secciones de arriba** —burdeos con flecha—, no un botón aparte.
 
 **«Ver todas» nació apagado, con el motivo al lado** (RNF-08), porque la
 pantalla de categorías no existía. Desde el 2026-10-21 está descrita en §7.6
@@ -1513,8 +1517,9 @@ El botón de WhatsApp es la **acción principal**: es lo que efectivamente cierr
 **Las destacadas arriba, y también en la lista.** Arriba van las destacadas
 con al menos un producto, hasta siete —las mismas de los chips de la home—, en
 la tarjeta cuadrada de «Más categorías» (§7.1) con la cantidad debajo del
-nombre. Dos por fila en el teléfono, cuatro en tableta y siete en escritorio:
-nunca más de una fila. **Abajo se repiten a propósito**: la lista de la A a la
+nombre, y en **una sola fila siempre**: en el teléfono se desliza como la de
+«Más categorías» (§7.1), con dos enteras y la tercera asomada; cuatro por fila
+en tableta y siete en escritorio. **Abajo se repiten a propósito**: la lista de la A a la
 Z es la que se recorre buscando algo, y con huecos deja de servir. Se descartó
 marcarlas con otro borde: el burdeos es de la marca y de lo accionable (§2.1),
 y ahí sólo decoraría.
@@ -1543,10 +1548,11 @@ sólo si hay alguna. Es la misma tarjeta en fila **sin enlace**, porque llevarí
 a un catálogo vacío: **sobre la superficie hundida y sin sombra**, que es lo que
 la separa de las que se tocan. **Lo que se atenúa es la superficie, no el
 texto**, que conserva el contraste AA (§9). En lugar de la cantidad dice «Sin
-productos por ahora», y **debajo del texto** va **«Consultar»**, un botón
-terciario de 44px con el logo de WhatsApp en verde (§2.6) que abre la consulta
-de categoría (RF-35). Terciario y no relleno: en esta fila no es la acción
-principal. **Debajo y no a la derecha** (2026-10-21, al construirla): al
+productos por ahora», y **debajo del texto** va **«Consultar»**, el botón
+**secundario** —blanco, con el logo de WhatsApp en verde (§2.6)—, como el de
+«¿Te quedó una duda?» de las páginas de ayuda (2026-10-21, pedido tuyo): abre
+la consulta de categoría (RF-35). Blanco y no relleno: en esta fila no es la
+acción principal. **Debajo y no a la derecha** (2026-10-21, al construirla): al
 costado le sacaba 120px al nombre, y a 320px uno de 60 caracteres se partía a
 mitad de palabra. Una destacada sin
 productos va acá y no arriba.
