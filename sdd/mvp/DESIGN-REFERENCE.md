@@ -640,8 +640,8 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 - **El buscador es una lupa en todos los tamaños** y se abre a ancho completo debajo del encabezado; Escape lo cierra y devuelve el foco a la lupa. Sigue sin dibujarse mientras la página tiene su buscador a la vista.
 - **El carrito es una píldora** (F3.8, no un ícono con insignia encima). Vacía, solo el ícono. Con productos, el número va en un **círculo burdeos de 28px con texto blanco** adentro de la píldora (2026-10-21), y desde 100 dice «99+».
 - La fila de categorías **desaparece en el panel del comprador y en el checkout**: ahí no se está explorando.
-- **El pie agrupa sus enlaces en tres** (2026-10-21): **«Tienda»** —«Catálogo» y «Categorías» (§7.6)—, **«Ayuda»** y **«Legales»**, en ese orden. **En el teléfono, un grupo debajo del otro** y con poco aire entre ellos (2026-10-21): de a dos por fila los nombres largos partían la columna. Cada enlace sigue midiendo 44px de alto (§9).
-- **Debajo de la marca va el eslogan en su forma canónica** (§2.4), «Ana vende, vos elegís la tecnología.», en lugar del aviso de zona de entrega (2026-10-21, pedido tuyo). La zona sigue en la home, la ficha, el carrito y el checkout (RN-10).
+- **El pie agrupa sus enlaces en tres** (2026-10-21): **«Tienda»** —«Catálogo» y «Categorías» (§7.6)—, **«Ayuda»** y **«Legales»**, en ese orden. **En el teléfono, un grupo debajo del otro** y con poco aire entre ellos (2026-10-21): de a dos por fila los nombres largos partían la columna. Cada enlace mide **40px de alto, una excepción a los 44 de §9** pedida para que el pie no mida 850px: sigue muy por encima de los 24px de WCAG 2.5.8, y sin espacio entre filas no hay toques que caigan en el vecino.
+- **Debajo de la marca va el eslogan en su forma canónica** (§2.4), «Ana vende, vos elegís la tecnología.», y debajo «Tu tienda de confianza para productos de tecnología y accesorios.», en lugar del aviso de zona de entrega y de la lista de categorías (2026-10-21, pedido tuyo). La zona sigue en la home, la ficha, el carrito y el checkout (RN-10).
 
 ### 5.2 Panel de administración
 

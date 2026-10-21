@@ -130,14 +130,13 @@ export function SiteFooter({
               </ul>
             )}
             <p className="text-body-sm text-white/65">
-              Teclados, mouses, auriculares, cables y memorias.
+              Tu tienda de confianza para productos de tecnología y accesorios.
             </p>
           </div>
 
           {/* En el teléfono, un grupo debajo del otro y juntos (pedido del
               2026-10-21): de a dos por fila, los nombres largos de «Ayuda»
-              partían la columna y el pie quedaba desparejo. Lo que lo
-              acorta es el aire entre grupos, no la fila de 44px (§9). */}
+              partían la columna y el pie quedaba desparejo. */}
           <div className="flex flex-col gap-6 md:flex-row md:gap-16">
             {GRUPOS.map((grupo) => (
               <nav
@@ -147,18 +146,19 @@ export function SiteFooter({
               >
                 <h2 className={TITULO_DE_GRUPO}>{grupo.titulo}</h2>
                 {/*
-                  44px de alto por fila en teléfono (§9). Acá no sirve
-                  `AREA_TACTIL`: con 8px entre filas, lo que sobresale de una se
-                  mete en la de al lado y el dedo activa el enlace equivocado. La
-                  fila gana altura de verdad y el `gap` se va, que es lo mismo por
-                  otro lado. En escritorio queda como estaba.
+                  40px de alto por fila en teléfono, y no los 44 de §9 (pedido
+                  del 2026-10-21): con 44 el pie medía 850px. 40 sigue muy por
+                  encima de los 24 de WCAG 2.5.8, y sin espacio entre filas
+                  ningún enlace le roba el toque al de al lado. Acá no sirve
+                  `AREA_TACTIL`: lo que sobresale de una fila se mete en la
+                  vecina. En escritorio queda como estaba.
                 */}
                 <ul className="flex flex-col gap-2 max-md:gap-0">
                   {grupo.enlaces.map((l) => (
                     <li key={l.href}>
                       <Link
                         href={l.href}
-                        className="inline-flex items-center rounded-pill text-body-sm text-white/70 underline-offset-4 transition-colors duration-150 max-md:min-h-11 hover:text-ink-inverse hover:underline"
+                        className="inline-flex items-center rounded-pill text-body-sm text-white/70 underline-offset-4 transition-colors duration-150 max-md:min-h-10 hover:text-ink-inverse hover:underline"
                       >
                         {l.titulo}
                       </Link>
