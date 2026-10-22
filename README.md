@@ -1,109 +1,117 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# AnaVende
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+Tienda online de productos de informática y gaming para Viedma, Carmen de
+Patagones y alrededores. **No cobra online**: la web es catálogo, carrito y
+generadora de órdenes, y la venta se cierra por WhatsApp con Ana, la
+vendedora, que ya recibe el producto, el color, la cantidad y el precio.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+Tiene dos lados:
 
-## Features
+- **La tienda**, para quien compra: catálogo con filtros y búsqueda, ficha de
+  producto, carrito, favoritos, direcciones e historial de órdenes. Quien no
+  tiene cuenta navega todo y consulta por WhatsApp.
+- **El panel** (`/admin`), para Ana: productos con sus fotos y su stock por
+  color, órdenes, devoluciones, usuarios y reportes. El stock del sistema es
+  la única fuente de verdad, incluidas las ventas por WhatsApp o en persona.
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+## Documentación
 
-## Demo
+**Para trabajar en el código**
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+- [Cómo se trabaja](CLAUDE.md): idioma, ramas, PR y lo que se revisa antes
+  de commitear.
+- [Diseño](DESIGN.md): tokens, componentes y la lista de accesibilidad de
+  cada pantalla.
+- [Versiones](VERSIONS.md): las versiones exactas del stack, que son las que
+  se consultan en la documentación de cada biblioteca.
 
-## Deploy to Vercel
+**Para operar**
 
-Vercel deployment will guide you through creating a Supabase account and project.
+- [Seguridad](SECURITY.md): cómo reportar una vulnerabilidad.
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+**El porqué de cada cosa**
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+- [Producto](PRODUCT.md): para quién es, qué resuelve y cómo se posiciona.
+- [Especificación funcional](sdd/mvp/FUNCTIONAL-SPEC.md): qué tiene que
+  hacer el sistema, con sus requisitos y reglas de negocio.
+- [Especificación técnica](sdd/mvp/TECHNICAL-SPEC.md): arquitectura, modelo
+  de datos, stock, autenticación y despliegue, tal como se planearon.
+- [Referencia de diseño](sdd/mvp/DESIGN-REFERENCE.md): la identidad visual y
+  cada pantalla.
+- [Plan de desarrollo](sdd/mvp/DEVELOPMENT-PLAN.md): las fases y sus tareas.
+- [Progreso](PROGRESO.md): el estado tarea por tarea y las decisiones que se
+  apartaron de las especificaciones.
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+Las especificaciones mandan: si el código o este README dicen otra cosa, se
+corrige uno de los dos y la diferencia se anota en `PROGRESO.md`.
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+## Stack
 
-## Clone and run locally
+Next.js 16 (App Router) con React 19 y TypeScript, Tailwind CSS 4 y
+shadcn/ui. Supabase auto-hospedado para la autenticación y el almacenamiento
+de fotos, con Drizzle sobre Postgres 15 para los datos. Sharp convierte las
+fotos, React Email arma los correos y Sentry recibe los errores. Vitest para
+los tests y Playwright para los de extremo a extremo. Las versiones exactas
+están en [VERSIONS.md](VERSIONS.md).
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+Producción son dos servidores: uno corre la aplicación con Coolify y el otro,
+Supabase. Hay un solo entorno: producción y el desarrollo local.
 
-2. Create a Next.js app using the Supabase Starter template npx command
+## Levantarlo en local
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+Hace falta Node 22, Docker y el [CLI de Supabase](https://supabase.com/docs/guides/local-development/cli/getting-started),
+que no viene entre las dependencias del proyecto.
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+```sh
+npm ci
+npm run dev:stack            # Postgres, Auth, Storage, Studio y Mailpit en Docker
+cp .env.example .env.local   # y completarlo con los valores del stack local
+npm run db:reset             # crea el esquema y lo verifica
+npm run seed                 # carga un catálogo de prueba
+npm run dev                  # http://localhost:3000
+```
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+Las claves de `.env.local` salen de `npx supabase status`. Son las del stack
+local, fijas e iguales en todas las máquinas; las de producción no van en
+ningún archivo del repositorio. Con el stack levantado:
 
-3. Use `cd` to change into the app's directory
+| Qué                            | Dónde                    |
+| ------------------------------ | ------------------------ |
+| La tienda                      | <http://localhost:3000>  |
+| Studio, para mirar la base     | <http://localhost:54323> |
+| Mailpit, donde caen los emails | <http://localhost:54324> |
 
-   ```bash
-   cd with-supabase-app
-   ```
+Una cuenta nueva nace como `customer`. Para entrar al panel, se le da el rol
+desde Studio:
 
-4. Rename `.env.example` to `.env.local` and update the following:
+```sql
+UPDATE user_profiles SET role = 'admin', updated_at = now()
+ WHERE email = 'tu@email' RETURNING id, email, role;
+```
 
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+**`npm run db:reset` borra la base a la que apunte `DATABASE_URL`.** En local
+es lo que se quiere; contra cualquier otra cosa, no.
 
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+## Scripts
 
-5. You can now run the Next.js local development server:
+| Script                                 | Qué hace                                                                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run dev`                          | La aplicación en modo desarrollo                                                                                                           |
+| `npm run dev:stack` / `dev:stack:stop` | Levanta o apaga el stack local de Supabase                                                                                                 |
+| `npm test`                             | Los tests de Vitest. Corren solo contra el stack local, y se niegan a arrancar si `.env.test` apunta a otro lado (ver `.env.test.example`) |
+| `npm run e2e`                          | Los tests de Playwright. Levantan `npm run dev` si no está corriendo                                                                       |
+| `npm run lint` / `typecheck`           | ESLint y el chequeo de tipos                                                                                                               |
+| `npm run db:generate`                  | Genera una migración a partir de cambios en `db/`                                                                                          |
+| `npm run db:migrate`                   | Aplica las migraciones pendientes                                                                                                          |
+| `npm run db:reset`                     | Recrea la base local desde cero y verifica el esquema                                                                                      |
+| `npm run seed` / `seed:limpiar`        | Siembra el catálogo de prueba, o borra solo lo que sembró                                                                                  |
+| `npm run email`                        | Convierte las plantillas de `lib/email/` en el HTML que usa Auth                                                                           |
 
-   ```bash
-   npm run dev
-   ```
+Antes de commitear algo que lea la base, `DATABASE_URL= npx next build`:
+producción compila sin base, y `next dev` no muestra ese error.
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+## Cómo llega a producción
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
-
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
-
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+Nada va directo a `main`: rama, PR y merge con _merge commit_. Un push a
+`main` hace que Coolify construya la imagen con el `Dockerfile` y la levante;
+las migraciones se aplican al arrancar el contenedor. No hay CI.
