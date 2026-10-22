@@ -32,22 +32,22 @@ export const metadata: Metadata = {
 const PASOS_DEL_CHECKOUT: PasoDeAyuda[] = [
   {
     elemento: "entrega",
-    titulo: "Cómo lo recibís",
+    titulo: "¿Envío o retiro?",
     texto:
-      "Elegí si te lo enviamos o pasás a retirarlo. El envío no se cobra acá: se coordina aparte.",
+      "Te lo llevamos o pasás a buscarlo, como te quede mejor. El costo del envío lo charlamos por WhatsApp.",
   },
   {
     elemento: "pagos",
-    titulo: "Con qué podés pagar",
+    titulo: "¿Con qué pagás?",
     texto:
-      "Son los medios que aceptamos, para que lo sepas de antemano. El pago se hace después, por WhatsApp.",
+      "Para que vayas viendo cuál te queda más cómodo. Lo elegís cuando coordinamos.",
     opcional: true,
   },
   {
     elemento: "confirmar-pedido",
-    titulo: "Confirmá el pedido",
+    titulo: "Último paso",
     texto:
-      "Te guardamos el stock y le avisamos a la vendedora. Todavía no se cobra nada.",
+      "Al confirmar te guardamos lo que elegiste y le avisamos a la vendedora. Después seguimos por WhatsApp.",
   },
 ];
 

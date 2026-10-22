@@ -20,28 +20,23 @@ export const metadata: Metadata = { title: "Mis compras" };
 const RUTA = "/mi-cuenta/compras";
 
 /**
- * La guía del listado (F6.6, RF-36): dónde está cada pedido, qué quiere decir
- * su estado y dónde se cancela. Señala la primera compra; sin compras no hay
- * guía, porque la pantalla vacía ya dice qué va a aparecer.
+ * La guía del listado (F6.6, RF-36): qué se hace desde un pedido y qué dice
+ * su estado. Señala la primera compra; sin compras no hay guía, porque la
+ * pantalla vacía ya dice qué va a aparecer. El orden y los precios no se
+ * explican: los dice la bajada de la pantalla.
  */
 const PASOS_DEL_LISTADO: PasoDeAyuda[] = [
   {
     elemento: "compra",
-    titulo: "Tus pedidos",
+    titulo: "Todo lo que pediste",
     texto:
-      "Están todos, del más nuevo al más viejo, con el precio del día que los hiciste. Tocá uno para ver el detalle.",
+      "Tocá un pedido para escribirnos sobre él o, si cambiaste de idea, cancelarlo.",
   },
   {
     elemento: "estado-compra",
-    titulo: "Su estado",
+    titulo: "¿En qué anda?",
     texto:
-      "En preparación: te guardamos el stock y falta coordinar el pago y la entrega por WhatsApp. Entregada: ya lo tenés. Cancelada: no se cobró nada.",
-  },
-  {
-    elemento: "compra",
-    titulo: "Si te arrepentiste",
-    texto:
-      "Mientras un pedido está en preparación, lo cancelás desde su detalle.",
+      "«En preparación» quiere decir que te lo estamos guardando mientras coordinamos. Cuando lo recibís, pasa a «Entregada».",
   },
 ];
 

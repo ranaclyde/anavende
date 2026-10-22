@@ -485,36 +485,36 @@ function pasosDeLaFicha(conSesion: boolean): PasoDeAyuda[] {
   return [
     {
       elemento: "elegir-color",
-      titulo: "Elegí el color",
+      titulo: "Elegí tu color",
       texto:
-        "Cada color tiene sus fotos y su stock. Al cambiarlo, la página se actualiza sola.",
+        "Cada color tiene sus propias fotos y su stock, así ves exactamente lo que te llevás.",
       opcional: true,
     },
     conSesion
       ? {
           elemento: "comprar-carrito",
-          titulo: "Agregalo al carrito",
+          titulo: "Sumalo al carrito",
           texto:
-            "Queda guardado en tu cuenta. Cuando confirmes el pedido, te apartamos el stock hasta coordinar el pago.",
+            "Juntá todo lo que quieras y, cuando confirmes el pedido, te lo guardamos.",
         }
       : {
           elemento: "comprar-carrito",
           titulo: "Comprá con tu cuenta",
           texto:
-            "Con una cuenta armás el carrito y seguís tus pedidos. Al ingresar, el producto queda agregado.",
+            "Ingresá o creá tu cuenta y este producto te espera en el carrito. Además, vas a poder seguir tus pedidos.",
         },
     {
       elemento: "comprar-whatsapp",
-      titulo: "O escribinos por WhatsApp",
+      titulo: "¿Preferís escribirnos?",
       texto:
-        "Sin cuenta ni carrito: el mensaje ya va con el producto, el color y la cantidad.",
+        "Comprá directo por WhatsApp, sin cuenta. El mensaje sale armado con el producto, el color y la cantidad.",
       opcional: true,
     },
     {
       elemento: "como-sigue",
-      titulo: "Acá no se paga",
+      titulo: "Acá no se paga nada",
       texto:
-        "El pago y la entrega se arreglan por WhatsApp, cuando te confirmamos el stock y el precio.",
+        "Pagás recién cuando hablemos por WhatsApp. En este recuadro te contamos cómo sigue todo.",
     },
   ];
 }

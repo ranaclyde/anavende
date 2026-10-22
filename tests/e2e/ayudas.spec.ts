@@ -95,7 +95,7 @@ test("la ficha: aparece la primera vez, se recorre con teclado y no vuelve", asy
   await page.goto(`/productos/${slug}`);
 
   // Sin sesión el segundo paso habla de la cuenta, no del carrito.
-  await expect(globo(page)).toHaveAccessibleName("Elegí el color");
+  await expect(globo(page)).toHaveAccessibleName("Elegí tu color");
   await expect(page.getByRole("button", { name: "Siguiente" })).toBeFocused();
   expect(await axeDelGlobo(page)).toEqual([]);
 
@@ -112,7 +112,7 @@ test("la ficha: aparece la primera vez, se recorre con teclado y no vuelve", asy
 
   // «Ver la guía» la vuelve a abrir desde el principio.
   await page.getByRole("button", { name: "Ver la guía" }).click();
-  await expect(globo(page)).toHaveAccessibleName("Elegí el color");
+  await expect(globo(page)).toHaveAccessibleName("Elegí tu color");
 
   // Hasta el final con «Siguiente» y «Listo».
   for (let i = 0; i < 4; i++) {
@@ -120,7 +120,7 @@ test("la ficha: aparece la primera vez, se recorre con teclado y no vuelve", asy
     if (await listo.isVisible()) break;
     await page.getByRole("button", { name: "Siguiente" }).click();
   }
-  await expect(globo(page)).toHaveAccessibleName("Acá no se paga");
+  await expect(globo(page)).toHaveAccessibleName("Acá no se paga nada");
   await page.getByRole("button", { name: "Listo" }).click();
   await expect(globo(page)).toBeHidden();
 });
@@ -145,17 +145,18 @@ test("el checkout y «Mis compras» tienen la suya, una vez cada una", async ({
   await ingresar(page, compradora);
 
   await page.goto("/checkout");
-  await expect(globo(page)).toHaveAccessibleName("Cómo lo recibís");
+  await expect(globo(page)).toHaveAccessibleName("¿Envío o retiro?");
   await page.getByRole("button", { name: "Cerrar la guía" }).click();
   await expect(globo(page)).toBeHidden();
 
   await page.goto("/mi-cuenta/compras");
-  await expect(globo(page)).toHaveAccessibleName("Tus pedidos");
+  await expect(globo(page)).toHaveAccessibleName("Todo lo que pediste");
   await page.keyboard.press("Escape");
 
   await page.goto(`/mi-cuenta/compras/${orden.numero}`);
+  // El paso de WhatsApp se saltea si el stack no tiene número configurado.
   await expect(globo(page)).toHaveAccessibleName(
-    "Tu pedido está en preparación",
+    /^(Seguimos por WhatsApp|¿Cambiaste de idea\?)$/,
   );
   expect(await axeDelGlobo(page)).toEqual([]);
   await page.keyboard.press("Escape");

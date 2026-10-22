@@ -11,7 +11,7 @@
 ## 1. Qué es y dónde va
 
 Una guía corta hecha con [Driver.js](https://driverjs.com/): oscurece la
-página, resalta un elemento y explica en un globo qué es. Se encadenan de 3 a
+página, resalta un elemento y explica en un globo qué es. Se encadenan de 2 a
 4 pasos. Es para quien llega por primera vez a una tienda que **no cobra
 online**: lo que más confunde no es el catálogo sino cómo se compra.
 
@@ -53,6 +53,15 @@ WhatsApp, y es una pantalla que se ve una sola vez y con el sello animado
 Los pasos señalan elementos con `data-ayuda="…"`. «Opcional» quiere decir que
 si el elemento no está se saltea.
 
+**Cómo están escritos** (revisados el 2026-10-22, a pedido tuyo: más
+amistosos y sin repetir). Cada paso dice algo que la pantalla **no** dice al
+lado de lo que señala. Ejemplos: el encabezado del checkout ya avisa que no se
+cobra nada, así que ningún paso lo repite; la bajada de «Mis compras» ya
+explica el orden y los precios; la frase debajo del estado del detalle ya
+explica qué quiere decir. Hablan de vos, usan la primera persona del plural
+cuando es la tienda la que hace algo, y no repiten el título de la sección
+que señalan.
+
 ### Ficha (`/productos/[slug]`) — id `ficha`
 
 Arranca **solo con stock**: el paso del carrito es obligatorio, y sin stock
@@ -60,19 +69,19 @@ la única salida es WhatsApp, que se explica sola.
 
 | # | Señala | Título | Texto |
 |---|---|---|---|
-| 1 | Selector de color (opcional: solo con más de un color) | Elegí el color | Cada color tiene sus fotos y su stock. Al cambiarlo, la página se actualiza sola. |
-| 2 | Botón del carrito, con sesión | Agregalo al carrito | Queda guardado en tu cuenta. Cuando confirmes el pedido, te apartamos el stock hasta coordinar el pago. |
-| 2 | El mismo botón, sin sesión | Comprá con tu cuenta | Con una cuenta armás el carrito y seguís tus pedidos. Al ingresar, el producto queda agregado. |
-| 3 | «Comprá ya por WhatsApp» (opcional) | O escribinos por WhatsApp | Sin cuenta ni carrito: el mensaje ya va con el producto, el color y la cantidad. |
-| 4 | «¿Cómo sigue después de comprar?» | Acá no se paga | El pago y la entrega se arreglan por WhatsApp, cuando te confirmamos el stock y el precio. |
+| 1 | Selector de color (opcional: solo con más de un color) | Elegí tu color | Cada color tiene sus propias fotos y su stock, así ves exactamente lo que te llevás. |
+| 2 | Botón del carrito, con sesión | Sumalo al carrito | Juntá todo lo que quieras y, cuando confirmes el pedido, te lo guardamos. |
+| 2 | El mismo botón, sin sesión | Comprá con tu cuenta | Ingresá o creá tu cuenta y este producto te espera en el carrito. Además, vas a poder seguir tus pedidos. |
+| 3 | «Comprá ya por WhatsApp» (opcional) | ¿Preferís escribirnos? | Comprá directo por WhatsApp, sin cuenta. El mensaje sale armado con el producto, el color y la cantidad. |
+| 4 | «¿Cómo sigue después de comprar?» | Acá no se paga nada | Pagás recién cuando hablemos por WhatsApp. En este recuadro te contamos cómo sigue todo. |
 
 ### Checkout (`/checkout`) — id `checkout`
 
 | # | Señala | Título | Texto |
 |---|---|---|---|
-| 1 | Las dos opciones de entrega | Cómo lo recibís | Elegí si te lo enviamos o pasás a retirarlo. El envío no se cobra acá: se coordina aparte. |
-| 2 | Medios de pago (opcional) | Con qué podés pagar | Son los medios que aceptamos, para que lo sepas de antemano. El pago se hace después, por WhatsApp. |
-| 3 | «Confirmar pedido» | Confirmá el pedido | Te guardamos el stock y le avisamos a la vendedora. Todavía no se cobra nada. |
+| 1 | Las dos opciones de entrega | ¿Envío o retiro? | Te lo llevamos o pasás a buscarlo, como te quede mejor. El costo del envío lo charlamos por WhatsApp. |
+| 2 | Medios de pago (opcional) | ¿Con qué pagás? | Para que vayas viendo cuál te queda más cómodo. Lo elegís cuando coordinamos. |
+| 3 | «Confirmar pedido» | Último paso | Al confirmar te guardamos lo que elegiste y le avisamos a la vendedora. Después seguimos por WhatsApp. |
 
 El paso 1 señala las opciones y no la sección entera: con el envío elegido, la
 sección trae el formulario de la dirección y en el teléfono mide más que la
@@ -84,9 +93,11 @@ Solo con al menos una compra: el estado vacío ya explica qué va a haber.
 
 | # | Señala | Título | Texto |
 |---|---|---|---|
-| 1 | La primera compra | Tus pedidos | Están todos, del más nuevo al más viejo, con el precio del día que los hiciste. Tocá uno para ver el detalle. |
-| 2 | Su estado | Su estado | En preparación: te guardamos el stock y falta coordinar el pago y la entrega por WhatsApp. Entregada: ya lo tenés. Cancelada: no se cobró nada. |
-| 3 | La primera compra, otra vez | Si te arrepentiste | Mientras un pedido está en preparación, lo cancelás desde su detalle. |
+| 1 | La primera compra | Todo lo que pediste | Tocá un pedido para escribirnos sobre él o, si cambiaste de idea, cancelarlo. |
+| 2 | Su estado | ¿En qué anda? | «En preparación» quiere decir que te lo estamos guardando mientras coordinamos. Cuando lo recibís, pasa a «Entregada». |
+
+Eran tres pasos; el tercero señalaba otra vez la primera compra para decir
+dónde se cancela, y eso entró en el primero.
 
 ### Detalle (`/mi-cuenta/compras/[numero]`) — id `detalle-compra`
 
@@ -96,9 +107,11 @@ demás estados.
 
 | # | Señala | Título | Texto |
 |---|---|---|---|
-| 1 | El estado | Tu pedido está en preparación | Te guardamos el stock. Todavía no se cobró nada. |
-| 2 | «Escribir por WhatsApp» (opcional) | Seguí por WhatsApp | Ahí se arreglan el pago y la entrega. El mensaje ya va con tu pedido. |
-| 3 | «Cancelar el pedido» | Si te arrepentiste | Cancelalo acá, sin dar explicaciones. Se libera el stock y no se te cobra nada. |
+| 1 | «Escribir por WhatsApp» (opcional) | Seguimos por WhatsApp | Escribinos desde acá: el mensaje ya lleva tu pedido, así no tenés que explicar nada. |
+| 2 | «Cancelar el pedido» | ¿Cambiaste de idea? | Mientras esté en preparación lo podés cancelar, sin dar explicaciones. No se te cobra nada. |
+
+El paso del estado se sacó: la frase debajo de la etiqueta ya dice que el
+stock está guardado hasta coordinar.
 
 ## 4. Lo que se probó de Driver.js
 

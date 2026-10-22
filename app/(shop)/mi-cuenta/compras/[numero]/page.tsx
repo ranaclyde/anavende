@@ -19,28 +19,24 @@ import { numeroDeWhatsApp } from "@/modules/settings/queries";
 type Props = { params: Promise<{ numero: string }> };
 
 /**
- * La guía del detalle (F6.6, RF-36), para un pedido en preparación: qué
- * quiere decir, cómo sigue y dónde se cancela. Sin número de WhatsApp
- * configurado el botón no existe, y ese paso se saltea.
+ * La guía del detalle (F6.6, RF-36), para un pedido en preparación: cómo
+ * sigue y dónde se cancela. El estado no se explica: la frase de abajo de la
+ * etiqueta ya lo dice. Sin número de WhatsApp configurado el botón no
+ * existe, y ese paso se saltea.
  */
 const PASOS_DEL_DETALLE: PasoDeAyuda[] = [
   {
-    elemento: "estado-pedido",
-    titulo: "Tu pedido está en preparación",
-    texto: "Te guardamos el stock. Todavía no se cobró nada.",
-  },
-  {
     elemento: "seguir-whatsapp",
-    titulo: "Seguí por WhatsApp",
+    titulo: "Seguimos por WhatsApp",
     texto:
-      "Ahí se arreglan el pago y la entrega. El mensaje ya va con tu pedido.",
+      "Escribinos desde acá: el mensaje ya lleva tu pedido, así no tenés que explicar nada.",
     opcional: true,
   },
   {
     elemento: "cancelar-pedido",
-    titulo: "Si te arrepentiste",
+    titulo: "¿Cambiaste de idea?",
     texto:
-      "Cancelalo acá, sin dar explicaciones. Se libera el stock y no se te cobra nada.",
+      "Mientras esté en preparación lo podés cancelar, sin dar explicaciones. No se te cobra nada.",
   },
 ];
 
@@ -112,9 +108,7 @@ export default async function DetalleDeLaCompra({ params }: Props) {
         <h2 id="titulo" className="text-heading text-ink">
           Pedido #{orden.numero}
         </h2>
-        <span data-ayuda="estado-pedido">
-          <EstadoDeLaOrden estado={orden.estado} />
-        </span>
+        <EstadoDeLaOrden estado={orden.estado} />
       </header>
 
       {/*

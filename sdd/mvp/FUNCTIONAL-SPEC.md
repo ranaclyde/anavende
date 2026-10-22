@@ -507,8 +507,8 @@ resalta un elemento y lo explica en un globo. Hay uno por pantalla:
 |---|---|
 | Ficha de producto | Elegir el color; el carrito (o ingresar para comprar, sin sesión); WhatsApp como la otra forma de comprar; que acá no se paga |
 | Checkout | Envío o retiro; los medios de pago, que se usan después; qué hace confirmar |
-| «Mis compras» | Dónde está cada pedido, qué dice su estado y dónde se cancela |
-| Detalle de un pedido en preparación | Que el stock está guardado; seguir por WhatsApp; cancelar |
+| «Mis compras» | Qué se hace desde un pedido (escribir o cancelar) y qué dice su estado |
+| Detalle de un pedido en preparación | Seguir por WhatsApp; cancelar |
 
 **Criterios de aceptación:**
 - [ ] Cada guía **aparece sola la primera vez** que se entra a su pantalla, y no vuelve a aparecer sola. Lo visto se anota en el navegador, así que vale para visitantes y compradores por igual.
