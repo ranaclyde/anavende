@@ -34,6 +34,8 @@ Tiene dos lados:
 
 **Para operar**
 
+- [Operación](docs/OPERACION.md): despliegue, migraciones, variables de
+  entorno, tareas programadas y qué mirar cuando algo falla.
 - [Seguridad](SECURITY.md): cómo reportar una vulnerabilidad.
 
 **El porqué de cada cosa**
