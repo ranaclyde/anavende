@@ -16,6 +16,11 @@ Tiene dos lados:
 
 ## Documentación
 
+**Para entender el sistema**
+
+- [Arquitectura](docs/ARQUITECTURA.md): cómo está armado y cómo se conectan
+  las piezas.
+
 **Para trabajar en el código**
 
 - [Cómo se trabaja](CLAUDE.md): idioma, ramas, PR y lo que se revisa antes
