@@ -28,7 +28,7 @@ filtros lo entiende cualquiera, y una guía ahí es la que todos saltean.
 **La confirmación del pedido** (`/orden/[numero]`) tampoco tiene. Su texto ya
 dice que se le avisó a la vendedora, que el stock quedó guardado y para qué es
 WhatsApp, y es una pantalla que se ve una sola vez y con el sello animado
-(F6.3). **Queda a confirmar** si «la compra» la incluía.
+(F6.3). **Decisión tuya del 2026-10-22: no lleva guía.**
 
 ## 2. Cuándo aparece
 
