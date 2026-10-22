@@ -543,6 +543,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 **Criterios de aceptación de la descripción:**
 - [ ] El editor es visual: la vendedora no escribe ni ve sintaxis de formato en ningún momento.
 - [ ] Pegar texto con formato desde Word, Google Docs o una página web **conserva lo que está en la lista de arriba y descarta el resto**, en silencio y sin romper el resto del texto.
+- [ ] Pegar **texto plano con Markdown escrito** —`**negrita**`, `*cursiva*` o `_cursiva_`, renglones que empiezan con `- ` o `1. `, un `#` de título— lo convierte a esos mismos formatos, y la sintaxis no queda a la vista. Un texto sin esas marcas se pega como viene, cada renglón por su lado. *(Agregado el 2026-10-22.)*
 - [ ] Lo que se descarta se descarta en el **servidor** al guardar, no solo en el editor.
 - [ ] La descripción admite hasta 5.000 caracteres de texto; el editor muestra cuántos quedan cuando se está cerca del límite.
 - [ ] Una descripción vacía es válida: no todo producto necesita una.

@@ -115,7 +115,10 @@ se cancela (`modules/returns/registrar.ts`).
 
 1. **Alta del producto** en el panel: nombre, marca, categoría, precio,
    descuento y descripción con formato
-   (`modules/catalog/products/actions.ts`).
+   (`modules/catalog/products/actions.ts`). La descripción se escribe con
+   los botones del editor; pegar texto con formato lo conserva, y pegar
+   Markdown escrito como texto (`**negrita**`, `- ` para viñetas) lo
+   convierte (`components/admin/productos/formato.ts`).
 2. **Variantes de color**, cada una con su stock
    (`modules/catalog/variants/actions.ts`). Cambiar el stock desde acá es un
    **ajuste** que queda asentado en el libro mayor como cualquier otro

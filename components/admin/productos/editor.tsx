@@ -22,13 +22,6 @@ import {
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
-  BOLD_ITALIC_STAR,
-  BOLD_STAR,
-  HEADING,
-  ITALIC_STAR,
-  ORDERED_LIST,
-  UNORDERED_LIST,
-  type Transformer,
 } from "@lexical/markdown";
 import {
   $createHeadingNode,
@@ -41,12 +34,21 @@ import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
+  $insertNodes,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
+  PASTE_COMMAND,
   type LexicalEditor,
 } from "lexical";
 
+import {
+  $nodosDesdeMarkdown,
+  pareceMarkdown,
+  SUBTITULO,
+  TRANSFORMADORES,
+} from "@/components/admin/productos/formato";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AVISO_DE_LIMITE, LIMITE_DE_TEXTO } from "@/modules/content/limites";
@@ -56,32 +58,13 @@ import { AVISO_DE_LIMITE, LIMITE_DE_TEXTO } from "@/modules/content/limites";
  *
  * La vendedora nunca ve la sintaxis: escribe con los botones y el resultado
  * se guarda como Markdown. Lo que hace que la regla se cumpla no es este
- * componente sino su lista de *transformadores*: **es** la lista blanca de
- * §16, no una copia. Un formato que no está acá no tiene ida ni vuelta
- * posible, así que agregarlo por accidente no se puede.
+ * componente sino su lista de *transformadores* (`formato.ts`): **es** la
+ * lista blanca de §16, no una copia.
  *
  * El servidor vuelve a filtrar de todos modos (`modules/content/markdown.ts`).
  * Esto corre en la máquina de quien escribe y por eso no garantiza nada: es
  * para que se vea lo que va a quedar, no para que quede.
  */
-const TRANSFORMADORES: Transformer[] = [
-  HEADING,
-  UNORDERED_LIST,
-  ORDERED_LIST,
-  // El combinado va primero: si `BOLD_STAR` mirara antes, `***texto***`
-  // saldría como negrita con dos asteriscos sueltos alrededor.
-  BOLD_ITALIC_STAR,
-  BOLD_STAR,
-  ITALIC_STAR,
-];
-
-/**
- * El único nivel de subtítulo (RF-15). `h3` y no `h2`: en la ficha el nombre
- * del producto es el `h1` y «Descripción» el `h2`, así que un subtítulo
- * adentro de la descripción es el escalón siguiente. El sanitizador del
- * servidor normaliza a este mismo nivel.
- */
-const SUBTITULO = "h3" as const;
 
 /** Dice QUÉ escribir, no «Escribí acá» (§10). */
 const MARCADOR = "Qué es, para qué sirve y qué trae en la caja.";
@@ -326,6 +309,51 @@ function Contador({ limite }: { limite: number }) {
   );
 }
 
+/**
+ * Pegar Markdown escrito como texto: `**negrita**`, `*cursiva*`, renglones
+ * con `- ` o `1. `, `### subtítulo`. Sin esto, lo copiado de un archivo, de
+ * una terminal o de un bloc de notas entra con los asteriscos a la vista.
+ *
+ * **Decide el texto plano, no el HTML.** Lo que se copia de una página o de
+ * Word trae su formato en HTML y Lexical ya lo respeta; pero un editor de
+ * código también pone HTML en el portapapeles —el texto coloreado, con los
+ * asteriscos adentro—, y ahí el formato real está en las marcas. Si el texto
+ * plano trae marcas de Markdown, son la intención de quien copió. La única
+ * excepción es lo copiado del mismo editor, que Lexical pega entero.
+ *
+ * Lo que no parece Markdown sigue el camino de siempre (ver `pareceMarkdown`).
+ * Corre antes que el pegado de `RichTextPlugin`, que está en la prioridad más
+ * baja, y deshacer lo revierte de un solo paso.
+ */
+function PegarMarkdown() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return editor.registerCommand(
+      PASTE_COMMAND,
+      (evento) => {
+        // El mismo comando llega también desde el teclado y desde `input`:
+        // solo un evento de portapapeles trae lo pegado.
+        if (!(evento instanceof ClipboardEvent)) return false;
+        const datos = evento.clipboardData;
+        if (!datos || datos.types.includes("application/x-lexical-editor")) {
+          return false;
+        }
+
+        const texto = datos.getData("text/plain");
+        if (!pareceMarkdown(texto)) return false;
+
+        evento.preventDefault();
+        $insertNodes($nodosDesdeMarkdown(texto));
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+  }, [editor]);
+
+  return null;
+}
+
 /** Carga el Markdown guardado una sola vez, al montar. */
 function CargaInicial({ markdown }: { markdown: string }) {
   const [editor] = useLexicalComposerContext();
@@ -449,6 +477,7 @@ export function EditorDeDescripcion({
         <ListPlugin />
         {/* ⌘Z y ⌘⇧Z. Sin esto, un formato mal puesto se deshace a mano. */}
         <HistoryPlugin />
+        <PegarMarkdown />
         <CargaInicial markdown={valorInicial} />
         <Contador limite={limite} />
         <EditorRefPlugin editorRef={refEditor} />
