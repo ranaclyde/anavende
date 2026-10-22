@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AyudaGuiada, type PasoDeAyuda } from "@/components/shop/ayuda-guiada";
 import { EstadoDeLaOrden } from "@/components/shop/compras/estado";
 import { Paginacion } from "@/components/shop/paginacion";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,32 @@ import {
 export const metadata: Metadata = { title: "Mis compras" };
 
 const RUTA = "/mi-cuenta/compras";
+
+/**
+ * La guía del listado (F6.6, RF-36): dónde está cada pedido, qué quiere decir
+ * su estado y dónde se cancela. Señala la primera compra; sin compras no hay
+ * guía, porque la pantalla vacía ya dice qué va a aparecer.
+ */
+const PASOS_DEL_LISTADO: PasoDeAyuda[] = [
+  {
+    elemento: "compra",
+    titulo: "Tus pedidos",
+    texto:
+      "Están todos, del más nuevo al más viejo, con el precio del día que los hiciste. Tocá uno para ver el detalle.",
+  },
+  {
+    elemento: "estado-compra",
+    titulo: "Su estado",
+    texto:
+      "En preparación: te guardamos el stock y falta coordinar el pago y la entrega por WhatsApp. Entregada: ya lo tenés. Cancelada: no se cobró nada.",
+  },
+  {
+    elemento: "compra",
+    titulo: "Si te arrepentiste",
+    texto:
+      "Mientras un pedido está en preparación, lo cancelás desde su detalle.",
+  },
+];
 
 /**
  * «Mis compras» — RF-07. Tarea F6.5.
@@ -68,9 +95,18 @@ export default async function MisCompras({ searchParams }: Props) {
   return (
     <section aria-labelledby="titulo" className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <h2 id="titulo" className="text-heading text-ink">
-          Mis compras
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h2 id="titulo" className="text-heading text-ink">
+            Mis compras
+          </h2>
+          {total > 0 ? (
+            <AyudaGuiada
+              id="mis-compras"
+              pasos={PASOS_DEL_LISTADO}
+              className="-mr-2"
+            />
+          ) : null}
+        </div>
         {total > 0 ? (
           <p className="text-body text-ink-secondary">
             Tocá una para ver el detalle. Los precios son los del día que la
@@ -83,9 +119,9 @@ export default async function MisCompras({ searchParams }: Props) {
         <SinCompras />
       ) : (
         <ul className="flex flex-col gap-3">
-          {compras.map((compra) => (
+          {compras.map((compra, i) => (
             <li key={compra.numero}>
-              <RenglonDeCompra compra={compra} />
+              <RenglonDeCompra compra={compra} primera={i === 0} />
             </li>
           ))}
         </ul>
@@ -103,10 +139,18 @@ export default async function MisCompras({ searchParams }: Props) {
  * única acción que tiene el renglón, y un área táctil del alto de la tarjeta
  * se acierta con el pulgar (§9).
  */
-function RenglonDeCompra({ compra }: { compra: CompraDelHistorial }) {
+function RenglonDeCompra({
+  compra,
+  primera,
+}: {
+  compra: CompraDelHistorial;
+  /** La que señala la guía (F6.6). */
+  primera: boolean;
+}) {
   return (
     <Link
       href={`${RUTA}/${compra.numero}`}
+      data-ayuda={primera ? "compra" : undefined}
       className="flex items-center gap-4 rounded-card bg-surface p-4 shadow-md transition-colors duration-150 hover:bg-surface-sunken"
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -114,7 +158,9 @@ function RenglonDeCompra({ compra }: { compra: CompraDelHistorial }) {
           <span className="text-body-sm font-medium text-ink">
             Pedido #{compra.numero}
           </span>
-          <EstadoDeLaOrden estado={compra.estado} />
+          <span data-ayuda={primera ? "estado-compra" : undefined}>
+            <EstadoDeLaOrden estado={compra.estado} />
+          </span>
         </div>
         <p className="truncate text-body-sm text-ink-secondary">
           {compra.resumen}

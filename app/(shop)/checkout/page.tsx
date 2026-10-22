@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
+import { AyudaGuiada, type PasoDeAyuda } from "@/components/shop/ayuda-guiada";
 import { Avisos } from "@/components/shop/carrito/avisos";
 import { Checkout } from "@/components/shop/checkout/checkout";
 import { formatMoney, type Money } from "@/lib/money";
@@ -22,6 +23,33 @@ export const metadata: Metadata = {
   // F3.9: es de una persona y de un momento, no del sitio.
   robots: FUERA_DEL_INDICE,
 };
+
+/**
+ * La guía del checkout (F6.6, RF-36): cómo se recibe, cómo se paga y qué
+ * hace confirmar. Los medios de pago son opcionales porque la sección no
+ * existe sin ninguno cargado.
+ */
+const PASOS_DEL_CHECKOUT: PasoDeAyuda[] = [
+  {
+    elemento: "entrega",
+    titulo: "Cómo lo recibís",
+    texto:
+      "Elegí si te lo enviamos o pasás a retirarlo. El envío no se cobra acá: se coordina aparte.",
+  },
+  {
+    elemento: "pagos",
+    titulo: "Con qué podés pagar",
+    texto:
+      "Son los medios que aceptamos, para que lo sepas de antemano. El pago se hace después, por WhatsApp.",
+    opcional: true,
+  },
+  {
+    elemento: "confirmar-pedido",
+    titulo: "Confirmá el pedido",
+    texto:
+      "Te guardamos el stock y le avisamos a la vendedora. Todavía no se cobra nada.",
+  },
+];
 
 /**
  * El checkout — FS RF-11 · TS §8.4, §8.5. Tarea F6.1.
@@ -75,7 +103,14 @@ export default async function PaginaDelCheckout() {
   return (
     <div className="mx-auto w-full max-w-shop px-4 py-10 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-2 pb-7">
-        <h1 className="text-title text-ink">Confirmá tu pedido</h1>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h1 className="text-title text-ink">Confirmá tu pedido</h1>
+          <AyudaGuiada
+            id="checkout"
+            pasos={PASOS_DEL_CHECKOUT}
+            className="-mr-2"
+          />
+        </div>
         <p className="text-body text-ink-secondary">
           Revisá tus datos y cómo lo recibís. No se cobra nada acá: el pago lo
           coordinamos por WhatsApp.

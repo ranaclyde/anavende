@@ -63,6 +63,7 @@ export function CancelarLaOrden({
         variant="destructive"
         size="lg"
         className="w-full"
+        data-ayuda="cancelar-pedido"
         onClick={() => setConfirmando(true)}
       >
         Cancelar el pedido

@@ -265,6 +265,7 @@ F10 Endurecimiento y lanzamiento
 | **F6.3** | Confirmación: pantalla de éxito y WhatsApp | M | FS RF-12 · DR §7.5 | Número de orden, resumen y botón de WhatsApp como acción principal. Recargar no duplica |
 | **F6.4** | Email E4 a la administradora, sobre el layout de F1.8 | S | FS RF-30 · TS §14 | Llega con el detalle completo y enlace al panel. **Si falla, la orden se crea igual**. Acá se escribe también su plantilla: el layout compartido ya existe desde F1.8, lo que faltaba era la orden que le da contenido |
 | **F6.5** | «Mis compras» y cancelación por el comprador | M | FS RF-07, RF-23, RF-34 | Historial con precios de la orden (snapshot). Cancelar libera la reserva. **Cancelar es el arrepentimiento**, así que está a la vista en el detalle de la orden y no detrás de un menú: su visibilidad es parte del requisito |
+| **F6.6** | Guías de uso en la ficha, el checkout y «Mis compras» | M | FS RF-36 · `sdd/ayudas-guiadas/DEFINICION.md` | Cada guía aparece sola la primera vez y no vuelve; «Ver la guía» la reabre. El foco entra al globo y vuelve al cerrarlo, respeta el movimiento reducido, entra a 320px y pasa axe abierto. Agregada el 2026-10-22 |
 
 > **Compuerta F6:** una compra completa de punta a punta, con el stock reservado correctamente al final.
 
@@ -384,7 +385,6 @@ Ordenado por relación entre valor y esfuerzo, no por entusiasmo. Nada de esto e
 | 10 | Más atributos de variante además de color | FA-16 |
 | 11 | Entorno de staging | TS §18.2 |
 | 12 | **Gift cards**: se compran con cuenta, se activan al confirmar el cobro y se canjean con o sin cuenta | `sdd/gift-card/DEFINICION.md` |
-| 13 | **Ayuda guiada en «Mis compras»** con Driver.js: la primera vez que se entra, cómo leer el estado y dónde cancelar | `sdd/ayuda-mis-compras/DEFINICION.md` |
 
 > **La imagen de categoría (FA-21) salió de esta lista el 2026-10-05**: entró al MVP como F2.9, a pedido tuyo, antes de F8.
 

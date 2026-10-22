@@ -490,6 +490,35 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 - [ ] Toda transición registra quién la hizo y cuándo.
 - [ ] No existen otros estados en el MVP.
 
+### RF-36 — Guías de uso en la ficha, el checkout y «Mis compras»
+
+> **El número es el siguiente libre, no la posición** (ver RF-34). Vive acá
+> porque las tres pantallas que explica son las de comprar y seguir un pedido.
+
+**Origen:** pedido del 2026-10-22, para que quien llega por primera vez
+entienda cómo se compra en una tienda que no cobra online. Agregada como F6.6.
+El detalle —los textos, lo que se probó de la librería y por qué— está en
+`sdd/ayudas-guiadas/DEFINICION.md`.
+
+**Descripción:** Un recorrido corto, con Driver.js, que oscurece la página,
+resalta un elemento y lo explica en un globo. Hay uno por pantalla:
+
+| Pantalla | Qué explica |
+|---|---|
+| Ficha de producto | Elegir el color; el carrito (o ingresar para comprar, sin sesión); WhatsApp como la otra forma de comprar; que acá no se paga |
+| Checkout | Envío o retiro; los medios de pago, que se usan después; qué hace confirmar |
+| «Mis compras» | Dónde está cada pedido, qué dice su estado y dónde se cancela |
+| Detalle de un pedido en preparación | Que el stock está guardado; seguir por WhatsApp; cancelar |
+
+**Criterios de aceptación:**
+- [ ] Cada guía **aparece sola la primera vez** que se entra a su pantalla, y no vuelve a aparecer sola. Lo visto se anota en el navegador, así que vale para visitantes y compradores por igual.
+- [ ] **Se reabre** con «Ver la guía», a la vista en cada pantalla que tiene una.
+- [ ] Se cierra en cualquier paso: «Listo», la cruz, Esc o un toque afuera.
+- [ ] Una guía **no arranca si falta un elemento que necesita**: la de la ficha, sin stock (no hay carrito que señalar); la del detalle, con el pedido entregado o cancelado (no hay qué cancelar); la de «Mis compras», sin compras. Los pasos opcionales —el color con un solo color, WhatsApp sin número configurado, los medios de pago sin ninguno— se saltean.
+- [ ] El globo es un diálogo: el foco entra a «Siguiente» al abrirse y **vuelve a «Ver la guía» al cerrarse**; el teclado lo recorre entero (Tab, flechas, Enter, Esc).
+- [ ] Respeta `prefers-reduced-motion`: sin fundidos ni desplazamientos.
+- [ ] Entra a 320px sin desbordar, y pasa axe (WCAG 2.2 AA) abierto.
+
 ---
 
 ## 8. Módulo: Panel de administración
@@ -1169,3 +1198,4 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-08-30 | Co-compra queda fuera del MVP | Sin volumen de órdenes daría resultados vacíos o ruidosos |
 | 2026-10-21 | El pie deja el aviso de zona y lleva el eslogan (RN-10, RF-01) | Pedido tuyo. La zona sigue en la home, la ficha, el carrito y el checkout |
 | 2026-10-21 | Página de categorías (RF-35), sin las categorías vacías | «Ver todas» de la home no llevaba a ningún lado. Las vacías se probaron al final con una consulta por WhatsApp y rompían la lista: no se muestran, como en la home |
+| 2026-10-22 | Guías de uso en la ficha, el checkout y «Mis compras» (RF-36), en el MVP | Pedido tuyo: ayudan a entender cómo se compra en una tienda que no cobra online. Lo visto se anota en el navegador y no en la base, porque la ficha la usa sobre todo quien no tiene cuenta |

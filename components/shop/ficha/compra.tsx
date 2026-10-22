@@ -423,7 +423,11 @@ function SelectorDeColor({
     // separación real entre el precio y el «Color:» era CERO —el relleno solo
     // empujaba las muestras— y el rótulo se leía como una aclaración del
     // precio. §3.4: agrupar apretado, separar generoso.
-    <fieldset className="mt-8">
+    <fieldset
+      className="mt-8"
+      // Con un solo color no hay nada que elegir, y la guía no lo señala.
+      data-ayuda={variantes.length > 1 ? "elegir-color" : undefined}
+    >
       <legend className="text-body-sm text-ink-secondary">
         Color:{" "}
         <span className="font-medium text-ink">
@@ -516,13 +520,22 @@ function SelectorDeColor({
  */
 function BotonDeWhatsApp({
   href,
+  ayuda,
   children,
 }: {
   href: string;
+  /** El paso de la ayuda guiada que lo señala (F6.6). */
+  ayuda?: string;
   children: ReactNode;
 }) {
   return (
-    <Button asChild size="lg" variant="whatsapp" className="w-full">
+    <Button
+      asChild
+      size="lg"
+      variant="whatsapp"
+      className="w-full"
+      data-ayuda={ayuda}
+    >
       <a href={href} target="_blank" rel="noopener noreferrer">
         <IconoWhatsApp className="size-4" />
         {children}
@@ -602,6 +615,7 @@ function ConStock({
         */}
         {whatsapp ? (
           <BotonDeWhatsApp
+            ayuda="comprar-whatsapp"
             href={enlaceDeWhatsApp(
               whatsapp,
               mensajeDeCompra(mensaje, cantidad, precioUnitario),
@@ -640,7 +654,13 @@ function IniciarSesionParaComprar({
   volver: string;
 }) {
   return (
-    <Button asChild size="lg" variant="brand" className="w-full">
+    <Button
+      asChild
+      size="lg"
+      variant="brand"
+      className="w-full"
+      data-ayuda="comprar-carrito"
+    >
       <Link
         href={`/ingresar?volver=${encodeURIComponent(volver)}`}
         onClick={() => {
@@ -701,6 +721,7 @@ function AgregarAlCarrito({
         size="lg"
         variant="brand"
         className="w-full"
+        data-ayuda="comprar-carrito"
         loading={enCurso || retomada.enCurso}
         loadingLabel={
           retomada.enCurso ? "Retomando tu compra" : "Agregando al carrito"

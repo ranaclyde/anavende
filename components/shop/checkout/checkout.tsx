@@ -197,7 +197,12 @@ export function Checkout({
         </Seccion>
 
         <Seccion id="entrega-titulo" titulo="Entrega">
-          <fieldset className="flex flex-col gap-3">
+          {/*
+            La guía señala las dos opciones y no la sección: con el envío
+            elegido, la sección trae el formulario de la dirección y en el
+            teléfono mide más que la pantalla.
+          */}
+          <fieldset className="flex flex-col gap-3" data-ayuda="entrega">
             <legend className="sr-only">¿Cómo querés recibirlo?</legend>
             <div className="grid gap-3 sm:grid-cols-2">
               <Opcion
@@ -296,7 +301,7 @@ export function Checkout({
         </Seccion>
 
         {mediosDePago.length > 0 ? (
-          <Seccion id="pagos-titulo" titulo="Medios de pago">
+          <Seccion id="pagos-titulo" titulo="Medios de pago" ayuda="pagos">
             <ul className="flex flex-wrap gap-2">
               {mediosDePago.map((m) => (
                 <li
@@ -330,6 +335,7 @@ export function Checkout({
             size="lg"
             variant="brand"
             className="w-full"
+            data-ayuda="confirmar-pedido"
             disabled={motivo !== null}
             aria-describedby={motivo ? "confirmar-motivo" : undefined}
             loading={confirmando}
@@ -358,16 +364,20 @@ export function Checkout({
 function Seccion({
   id,
   titulo,
+  ayuda,
   children,
 }: {
   id: string;
   titulo: string;
+  /** El paso de la ayuda guiada que la señala (F6.6). */
+  ayuda?: string;
   children: ReactNode;
 }) {
   return (
     <section
       aria-labelledby={id}
       className="flex flex-col gap-4 rounded-card bg-surface p-5 shadow-md sm:p-6"
+      data-ayuda={ayuda}
     >
       <h2 id={id} className="text-body-lg font-medium text-ink">
         {titulo}
