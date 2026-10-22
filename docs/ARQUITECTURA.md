@@ -42,7 +42,7 @@ flowchart LR
     gotrue -- SMTP --> resend
     next -- E4 --> resend
     next --> sentry
-    nav -. enlace wa.me .-> wa
+    nav -.->|"enlace wa.me"| wa
 ```
 
 Dos servidores, y un solo entorno de verdad: producción. El desarrollo local
