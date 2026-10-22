@@ -292,6 +292,7 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 - [ ] Requisitos mínimos de contraseña visibles antes de enviar el formulario.
 - [ ] El enlace de verificación expira y puede reenviarse.
 - [ ] El teléfono es obligatorio en el alta y no puede quedar vacío en el perfil: es el canal por el que se coordina la venta.
+- [ ] **El teléfono es argentino y tiene diez dígitos** —característica y número—, que empiezan con 1, 2 o 3. Se aceptan con o sin +54, 9 o 0 adelante, y con espacios, puntos, guiones o paréntesis. Si faltan o sobran, el error dice cuántos; con el 15 en el medio, pide sacarlo en vez de adivinar dónde estaba (2026-10-21). La regla es una sola para todos los teléfonos del sistema (`lib/telefono.ts`).
 - [ ] Quien intenta ingresar sin haber verificado ve el motivo y puede **reenviar la verificación desde ahí mismo**, sin volver a registrarse.
 - [ ] Si el registro se inició desde una acción de compra (agregar al carrito, favorito), al **verificar e ingresar** se vuelve a esa acción y se ejecuta.
 
