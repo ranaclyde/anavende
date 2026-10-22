@@ -27,6 +27,28 @@ export * from "@playwright/test";
 
 const bloqueos: string[] = [];
 
+/**
+ * **Las guías de F6.6 arrancan vistas** en todos los contextos: la primera
+ * visita a la ficha, el checkout o «Mis compras» abre un globo con el fondo
+ * oscurecido, y cada recorrido que pasa por ahí tendría que cerrarlo primero.
+ * `ayudas.spec.ts` las prueba con `test.use({ ayudasVistas: false })`.
+ *
+ * La clave y los ids son los de `components/shop/ayuda-guiada.tsx` y sus
+ * pantallas, escritos a mano: si cambian, la guía aparece en los recorridos
+ * y el que pase por ahí falla por el fondo que no deja tocar.
+ */
+const GUIAS = ["ficha", "checkout", "mis-compras", "detalle-compra"];
+
+async function marcarGuiasVistas(contexto: BrowserContext): Promise<void> {
+  await contexto.addInitScript((vistas) => {
+    try {
+      localStorage.setItem("anavende:ayudas:v1", JSON.stringify(vistas));
+    } catch {
+      // Una página sin almacenamiento tampoco abre la guía sola.
+    }
+  }, GUIAS);
+}
+
 function vigilar(contexto: BrowserContext): void {
   contexto.on("console", (mensaje) => {
     const texto = mensaje.text();
@@ -36,14 +58,19 @@ function vigilar(contexto: BrowserContext): void {
 
 export const test = base.extend<
   { vigilarContexto: void },
-  { browser: Browser }
+  { browser: Browser; ayudasVistas: boolean }
 >({
+  // Del worker y no del test: la fixture `context` de Playwright también
+  // nace de `browser.newContext`, que es donde se marcan.
+  ayudasVistas: [true, { option: true, scope: "worker" }],
+
   browser: [
-    async ({ browser }, use) => {
+    async ({ browser, ayudasVistas }, use) => {
       const crear = browser.newContext.bind(browser);
       browser.newContext = async (opciones) => {
         const contexto = await crear(opciones);
         vigilar(contexto);
+        if (ayudasVistas) await marcarGuiasVistas(contexto);
         return contexto;
       };
       await use(browser);

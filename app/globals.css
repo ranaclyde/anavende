@@ -651,3 +651,142 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
     will-change: transform;
   }
 }
+
+/* La ayuda guiada (F6.6, `components/shop/ayuda-guiada.tsx`). Reemplaza al
+   `driver.css` de la librería, que no se importa: sin capa, le ganaría a las
+   utilidades con las que se visten los botones. Acá va lo que hace andar el
+   recorrido —quién recibe el puntero mientras está abierto— y el globo, que
+   es un diálogo de la tienda: superficie, radio de modal y `shadow-lg`. El
+   fundido dura 200 ms; con movimiento reducido no hay ninguno, porque la
+   regla de arriba lo corta y el componente apaga el que dibuja Driver.js. */
+@layer components {
+  .driver-active .driver-overlay,
+  .driver-active * {
+    pointer-events: none;
+  }
+
+  .driver-active .driver-active-element,
+  .driver-active .driver-active-element *,
+  .driver-popover,
+  .driver-popover * {
+    pointer-events: auto;
+  }
+
+  .driver-active.driver-no-scroll {
+    overflow: hidden;
+  }
+
+  .driver-active-element-parent-no-scroll {
+    overflow: hidden !important;
+  }
+
+  .driver-no-interaction,
+  .driver-no-interaction * {
+    pointer-events: none !important;
+  }
+
+  .driver-fade .driver-overlay,
+  .driver-fade .driver-popover {
+    animation: ayuda-aparece 200ms ease-out;
+  }
+
+  .driver-popover {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 1000000000;
+    box-sizing: border-box;
+    width: min(22rem, calc(100vw - 2rem));
+    margin: 0;
+    padding: 20px;
+    border-radius: var(--radius-modal);
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    color: var(--ink);
+  }
+
+  /* Deja lugar a la cruz, que va arriba a la derecha. */
+  .driver-popover-title {
+    margin: 0;
+    padding-right: 2.5rem;
+    font-size: var(--text-body-lg);
+    font-weight: 500;
+    line-height: var(--text-body-lg--line-height);
+    letter-spacing: var(--text-body-lg--letter-spacing);
+  }
+
+  .driver-popover-description {
+    margin: 6px 0 0;
+    font-size: var(--text-body-sm);
+    line-height: var(--text-body-sm--line-height);
+    color: var(--ink-secondary);
+  }
+
+  .driver-popover-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .driver-popover-progress-text {
+    font-size: var(--text-caption);
+    font-weight: 500;
+    color: var(--ink-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .driver-popover-navigation-btns {
+    display: flex;
+    flex-grow: 1;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  /* «Anterior» en el primer paso: no se dibuja apagado, no está. */
+  .driver-popover-btn-disabled {
+    display: none !important;
+  }
+
+  .driver-popover-arrow {
+    position: absolute;
+    border: 6px solid var(--surface);
+  }
+
+  .driver-popover-arrow-side-left {
+    left: 100%;
+    border-block-color: transparent;
+    border-right-color: transparent;
+  }
+
+  .driver-popover-arrow-side-right {
+    right: 100%;
+    border-block-color: transparent;
+    border-left-color: transparent;
+  }
+
+  .driver-popover-arrow-side-top {
+    top: 100%;
+    border-inline-color: transparent;
+    border-bottom-color: transparent;
+  }
+
+  .driver-popover-arrow-side-bottom {
+    bottom: 100%;
+    border-inline-color: transparent;
+    border-top-color: transparent;
+  }
+
+  .driver-popover-arrow-side-over,
+  .driver-popover-arrow-side-center,
+  .driver-popover-arrow-none {
+    display: none;
+  }
+}
+
+@keyframes ayuda-aparece {
+  from {
+    opacity: 0;
+  }
+}

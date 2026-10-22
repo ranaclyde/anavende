@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { ChevronRight, RotateCcw } from "lucide-react";
 
 import { DatosEstructurados } from "@/components/seo/datos-estructurados";
+import { AyudaGuiada, type PasoDeAyuda } from "@/components/shop/ayuda-guiada";
 import { Compra } from "@/components/shop/ficha/compra";
 import { Descripcion } from "@/components/shop/ficha/descripcion";
 import {
@@ -320,6 +321,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
             key="informacion"
             mediosDePago={mediosDePago}
             descripcion={ficha.descripcion}
+            conSesion={identidad !== null}
           />
         }
       />
@@ -414,15 +416,17 @@ function Migas({
 function Informacion({
   mediosDePago,
   descripcion,
+  conSesion,
 }: {
   mediosDePago: MedioDePagoDeLaTienda[];
   descripcion: string;
+  conSesion: boolean;
 }) {
   return (
     <div className="mt-8 border-t border-border pt-6">
       <Datos mediosDePago={mediosDePago} />
       <Descripcion markdown={descripcion} />
-      <ComoSigue />
+      <ComoSigue conSesion={conSesion} />
     </div>
   );
 }
@@ -471,15 +475,67 @@ const PASOS = [
   "Coordinamos la entrega en Viedma, Carmen de Patagones y alrededores, o pasás a retirarlo.",
 ];
 
-function ComoSigue() {
+/**
+ * La guía de la ficha (F6.6, RF-36). Explica las dos formas de comprar y que
+ * acá no se paga. **Solo arranca con stock**: el botón del carrito es el
+ * paso obligatorio, y sin stock la única salida es WhatsApp, que ya se
+ * explica sola. El segundo paso cambia con la sesión porque cambia el botón.
+ */
+function pasosDeLaFicha(conSesion: boolean): PasoDeAyuda[] {
+  return [
+    {
+      elemento: "elegir-color",
+      titulo: "Elegí tu color",
+      texto:
+        "Cada color tiene sus propias fotos y su stock, así ves exactamente lo que te llevás.",
+      opcional: true,
+    },
+    conSesion
+      ? {
+          elemento: "comprar-carrito",
+          titulo: "Sumalo al carrito",
+          texto:
+            "Juntá todo lo que quieras y, cuando confirmes el pedido, te lo guardamos.",
+        }
+      : {
+          elemento: "comprar-carrito",
+          titulo: "Comprá con tu cuenta",
+          texto:
+            "Ingresá o creá tu cuenta y este producto te espera en el carrito. Además, vas a poder seguir tus pedidos.",
+        },
+    {
+      elemento: "comprar-whatsapp",
+      titulo: "¿Preferís escribirnos?",
+      texto:
+        "Comprá directo por WhatsApp, sin cuenta. El mensaje sale armado con el producto, el color y la cantidad.",
+      opcional: true,
+    },
+    {
+      elemento: "como-sigue",
+      titulo: "Acá no se paga nada",
+      texto:
+        "Pagás recién cuando hablemos por WhatsApp. En este recuadro te contamos cómo sigue todo.",
+    },
+  ];
+}
+
+function ComoSigue({ conSesion }: { conSesion: boolean }) {
   return (
     <section
       aria-labelledby="como-sigue"
       className="mt-10 rounded-card bg-surface p-5 shadow-md"
+      data-ayuda="como-sigue"
     >
-      <h2 id="como-sigue" className="text-body-lg font-medium text-ink">
-        ¿Cómo sigue después de comprar?
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <h2 id="como-sigue" className="text-body-lg font-medium text-ink">
+          ¿Cómo sigue después de comprar?
+        </h2>
+        <AyudaGuiada
+          id="ficha"
+          pasos={pasosDeLaFicha(conSesion)}
+          className="-mr-2"
+        />
+      </div>
 
       <ol className="mt-4 flex flex-col gap-3 text-body-sm text-ink-secondary">
         {PASOS.map((paso, i) => (

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { AyudaGuiada, type PasoDeAyuda } from "@/components/shop/ayuda-guiada";
 import { CancelarLaOrden } from "@/components/shop/compras/cancelar";
 import { EstadoDeLaOrden } from "@/components/shop/compras/estado";
 import { RenglonDelPedido } from "@/components/shop/compras/renglon";
@@ -16,6 +17,28 @@ import { leerOrdenDelComprador } from "@/modules/orders/queries";
 import { numeroDeWhatsApp } from "@/modules/settings/queries";
 
 type Props = { params: Promise<{ numero: string }> };
+
+/**
+ * La guía del detalle (F6.6, RF-36), para un pedido en preparación: cómo
+ * sigue y dónde se cancela. El estado no se explica: la frase de abajo de la
+ * etiqueta ya lo dice. Sin número de WhatsApp configurado el botón no
+ * existe, y ese paso se saltea.
+ */
+const PASOS_DEL_DETALLE: PasoDeAyuda[] = [
+  {
+    elemento: "seguir-whatsapp",
+    titulo: "Seguimos por WhatsApp",
+    texto:
+      "Escribinos desde acá: el mensaje ya lleva tu pedido, así no tenés que explicar nada.",
+    opcional: true,
+  },
+  {
+    elemento: "cancelar-pedido",
+    titulo: "¿Cambiaste de idea?",
+    texto:
+      "Mientras esté en preparación lo podés cancelar, sin dar explicaciones. No se te cobra nada.",
+  },
+];
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { numero } = await params;
@@ -64,13 +87,21 @@ export default async function DetalleDeLaCompra({ params }: Props) {
 
   return (
     <section aria-labelledby="titulo" className="flex flex-col gap-6">
-      <div>
+      <div className="flex items-center justify-between gap-3">
         <Button asChild variant="tertiary" size="sm" className="-ml-3">
           <Link href="/mi-cuenta/compras">
             <ChevronLeft aria-hidden />
             Mis compras
           </Link>
         </Button>
+        {/* Solo en preparación: es cuando existen las dos acciones. */}
+        {activa ? (
+          <AyudaGuiada
+            id="detalle-compra"
+            pasos={PASOS_DEL_DETALLE}
+            className="-mr-2"
+          />
+        ) : null}
       </div>
 
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -153,6 +184,7 @@ export default async function DetalleDeLaCompra({ params }: Props) {
           {whatsapp ? (
             <Button asChild variant="whatsapp" size="lg" className="w-full">
               <a
+                data-ayuda="seguir-whatsapp"
                 href={enlaceDeWhatsApp(
                   whatsapp,
                   mensajeDeOrden(
