@@ -383,6 +383,7 @@ Ordenado por relación entre valor y esfuerzo, no por entusiasmo. Nada de esto e
 | 9 | Pago en línea | FA-01 |
 | 10 | Más atributos de variante además de color | FA-16 |
 | 11 | Entorno de staging | TS §18.2 |
+| 12 | **Gift cards**: se compran con cuenta, se activan al confirmar el cobro y se canjean con o sin cuenta | `sdd/gift-card/DEFINICION.md` |
 
 > **La imagen de categoría (FA-21) salió de esta lista el 2026-10-05**: entró al MVP como F2.9, a pedido tuyo, antes de F8.
 
