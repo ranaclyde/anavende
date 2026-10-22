@@ -13,6 +13,10 @@ lineamientos.
 - **Dónde está cada cosa:** especificaciones en `sdd/mvp/`; estado tarea por
   tarea en `PROGRESO.md`, que se actualiza en el mismo commit que cierra la
   tarea. Las especificaciones mandan: desviarse es una decisión que se anota.
+- **Documentación del sistema:** `docs/` cuenta cómo es hoy (arquitectura,
+  recorridos y operación). Si una tarea cambia un recorrido, una pieza o la
+  forma de operar, actualiza el documento en el mismo commit; un documento
+  nuevo se suma al menú del `README.md`.
 - **Flujo:** un push a `main` despliega (Coolify). Nunca push directo: rama,
   PR y merge con *merge commit* (sin squash ni rebase). El merge lo hace el
   usuario.
