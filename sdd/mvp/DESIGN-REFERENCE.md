@@ -979,6 +979,7 @@ Dos piezas de la misma decisión (FS RF-15): dónde se escribe la descripción y
 | Borde y foco | Los mismos de §6.6: el conjunto barra + área es **un solo campo** y el anillo de foco lo rodea entero |
 | Contador | Aparece recién en los últimos 500 caracteres, en `caption`; antes es ruido |
 | Teclado | Negrita y cursiva responden a `⌘B` / `⌘I`. Toda la barra es alcanzable con `Tab` |
+| Pegado | Lo que llega con formato —Word, una página— conserva la lista blanca. Lo que llega como texto plano con Markdown escrito se convierte: los renglones seguidos se unen en un párrafo, como los lee Markdown, y todo título pasa a ser el subtítulo. Sin marcas, se pega tal cual (FS RF-15) |
 
 **El texto renderizado, en la ficha.** Es el único bloque de la tienda con texto largo, y necesita medida y aire propios:
 
