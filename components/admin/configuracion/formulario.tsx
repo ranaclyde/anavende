@@ -9,6 +9,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { telefonoLocal } from "@/lib/telefono";
 import { guardarLaConfiguracion } from "@/modules/settings/actions";
 import {
   AYUDA_DEL_UMBRAL,
@@ -68,7 +69,10 @@ export function FormularioDeConfiguracion({
   const [guardado, setGuardado] = useState(configuracion);
   const [seGuardoRecien, setSeGuardoRecien] = useState(false);
 
-  const [whatsapp, setWhatsapp] = useState(configuracion?.whatsappNumber ?? "");
+  // Sin el `+549`: el campo ya muestra el +54 (`Input`, `type="tel"`).
+  const [whatsapp, setWhatsapp] = useState(
+    telefonoLocal(configuracion?.whatsappNumber ?? ""),
+  );
   const [instagram, setInstagram] = useState(configuracion?.instagramUrl ?? "");
   const [facebook, setFacebook] = useState(configuracion?.facebookUrl ?? "");
   const [email, setEmail] = useState(
@@ -92,7 +96,7 @@ export function FormularioDeConfiguracion({
    */
   const sinCambios =
     guardado !== null &&
-    whatsapp === guardado.whatsappNumber &&
+    whatsapp === telefonoLocal(guardado.whatsappNumber) &&
     instagram === (guardado.instagramUrl ?? "") &&
     facebook === (guardado.facebookUrl ?? "") &&
     email === guardado.adminNotificationEmail &&
@@ -118,19 +122,19 @@ export function FormularioDeConfiguracion({
    * No es validar mientras se escribe, que §6.6 no quiere: es dejar de
    * afirmar algo que se dijo sobre un valor que ya no está.
    */
-  const escribir = (nombre: Campo, poner: (v: string) => void) => (
-    evento: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    poner(evento.target.value);
+  const escribir =
+    (nombre: Campo, poner: (v: string) => void) =>
+    (evento: React.ChangeEvent<HTMLInputElement>) => {
+      poner(evento.target.value);
 
-    if (errores.campos[nombre] || errores.general) {
-      setErrores((previos) => ({
-        ...previos,
-        general: null,
-        campos: { ...previos.campos, [nombre]: undefined },
-      }));
-    }
-  };
+      if (errores.campos[nombre] || errores.general) {
+        setErrores((previos) => ({
+          ...previos,
+          general: null,
+          campos: { ...previos.campos, [nombre]: undefined },
+        }));
+      }
+    };
 
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
@@ -172,10 +176,10 @@ export function FormularioDeConfiguracion({
         return;
       }
 
-      // Se pisan los campos con lo GUARDADO: escribir «11 5555 5555» y ver
-      // «+5491155555555» es la confirmación de que se entendió el número.
+      // Se pisan los campos con lo GUARDADO: escribir «(011) 15-5555-5555»
+      // y ver «1155555555» es la confirmación de que se entendió el número.
       setGuardado(resultado.data);
-      setWhatsapp(resultado.data.whatsappNumber);
+      setWhatsapp(telefonoLocal(resultado.data.whatsappNumber));
       setInstagram(resultado.data.instagramUrl ?? "");
       setFacebook(resultado.data.facebookUrl ?? "");
       setEmail(resultado.data.adminNotificationEmail);
@@ -189,12 +193,11 @@ export function FormularioDeConfiguracion({
       {guardado === null ? <SinConfigurar umbral={umbralPorDefecto} /> : null}
 
       {/* ── Lo que ve el comprador ───────────────────────────────────── */}
-            <TarjetaDeSeccion
+      <TarjetaDeSeccion
         id="contacto"
         titulo="Contacto"
         ayuda="Es lo único de esta pantalla que ve el comprador."
       >
-
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={campo("whatsappNumber").id}>Número de WhatsApp</Label>
           <Input
@@ -259,12 +262,11 @@ export function FormularioDeConfiguracion({
       </TarjetaDeSeccion>
 
       {/* ── Lo que ve solo la vendedora ──────────────────────────────── */}
-            <TarjetaDeSeccion
+      <TarjetaDeSeccion
         id="avisos"
         titulo="Avisos"
         ayuda="Nada de esto se muestra en la tienda."
       >
-
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={campo("adminNotificationEmail").id}>
             Email para los avisos
@@ -284,8 +286,8 @@ export function FormularioDeConfiguracion({
             </FieldError>
           ) : (
             <FieldHint id={`${idBase}-adminNotificationEmail-ayuda`}>
-              Acá te llegan las órdenes nuevas. Puede ser distinto del email
-              con el que entrás al panel.
+              Acá te llegan las órdenes nuevas. Puede ser distinto del email con
+              el que entrás al panel.
             </FieldHint>
           )}
         </div>
@@ -382,9 +384,9 @@ export function FormularioDeConfiguracion({
 function SinConfigurar({ umbral }: { umbral: number }) {
   return (
     <p className="rounded-panel-card border border-dashed border-border bg-surface-sunken px-4 py-3 text-body-sm text-ink-secondary">
-      Todavía no guardaste la configuración. Hasta que lo hagas no hay número
-      de WhatsApp para mostrar en la tienda, y el aviso de stock bajo se
-      enciende con {umbral} unidades.
+      Todavía no guardaste la configuración. Hasta que lo hagas no hay número de
+      WhatsApp para mostrar en la tienda, y el aviso de stock bajo se enciende
+      con {umbral} unidades.
     </p>
   );
 }

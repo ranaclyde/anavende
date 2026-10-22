@@ -9,6 +9,7 @@ import { Checkout } from "@/components/shop/checkout/checkout";
 import { formatMoney, type Money } from "@/lib/money";
 import { FUERA_DEL_INDICE } from "@/lib/seo";
 import { getIdentity, getSession } from "@/lib/session";
+import { telefonoLocal } from "@/lib/telefono";
 import { leerCarrito, type ItemDelCarrito } from "@/modules/cart/queries";
 import { revisarCarrito } from "@/modules/cart/revision";
 import { urlDeImagen } from "@/modules/media/subir";
@@ -92,7 +93,7 @@ export default async function PaginaDelCheckout() {
         email={identity.email ?? profile.email}
         emailVerificado={identity.emailVerified}
         nombreInicial={profile.fullName}
-        telefonoInicial={profile.phone.replace(/^\+549/, "")}
+        telefonoInicial={telefonoLocal(profile.phone)}
         direcciones={direcciones.map((d) => ({
           id: d.id,
           nombre: d.label,
@@ -105,7 +106,7 @@ export default async function PaginaDelCheckout() {
         nuevaDireccion={{
           label: "",
           recipientName: profile.fullName,
-          phone: profile.phone.replace(/^\+549/, ""),
+          phone: telefonoLocal(profile.phone),
           street: "",
           number: "",
           apartment: "",

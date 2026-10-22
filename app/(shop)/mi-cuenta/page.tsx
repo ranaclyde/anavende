@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { telefonoLocal } from "@/lib/telefono";
 import { cn } from "@/lib/utils";
 import { getIdentity, getSession } from "@/lib/session";
 
@@ -56,7 +57,9 @@ export default async function MiCuenta({
       <Card>
         <CardHeader>
           <CardTitle>Mis datos</CardTitle>
-          <CardDescription>Con estos datos coordinamos tus compras</CardDescription>
+          <CardDescription>
+            Con estos datos coordinamos tus compras
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
           <EmailDeLaCuenta
@@ -67,7 +70,7 @@ export default async function MiCuenta({
             firstName={profile.firstName}
             lastName={profile.lastName}
             // Se guarda como +549…; se muestra como lo escribe la gente.
-            telefono={profile.phone.replace(/^\+549/, "")}
+            telefono={telefonoLocal(profile.phone)}
           />
         </CardContent>
       </Card>
@@ -159,7 +162,12 @@ function BajaDeLaCuenta({
               <RetirarPedidoDeBaja />
             </>
           ) : (
-            <Button asChild variant="destructive" size="md" className="self-start">
+            <Button
+              asChild
+              variant="destructive"
+              size="md"
+              className="self-start"
+            >
               <Link href="/mi-cuenta/baja">
                 <UserX aria-hidden />
                 Pedir la baja de mi cuenta

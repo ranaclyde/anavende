@@ -24,6 +24,7 @@ import {
   SIN_ERRORES,
 } from "@/lib/form";
 import { comoMonto, formatMoney, isMoney, multiply, sum } from "@/lib/money";
+import { telefonoLocal } from "@/lib/telefono";
 import { crearLaOrdenManualDelPanel } from "@/modules/orders/actions-manual";
 import type {
   CompradorParaLaOrden,
@@ -133,7 +134,7 @@ export function AltaDeOrdenManual() {
     // Se completa lo que esté vacío y no se pisa lo ya escrito: si la
     // vendedora escribió «Rosa (regalo para Ana)», eso lo puso por algo.
     setNombre((v) => v || comprador.nombre);
-    setTelefono((v) => v || comprador.telefono);
+    setTelefono((v) => v || telefonoLocal(comprador.telefono));
     setEmail((v) => v || comprador.email);
     const primera = comprador.direcciones[0];
     if (primera) setDireccionGuardada(primera.id);
@@ -298,7 +299,7 @@ export function AltaDeOrdenManual() {
             valor={telefono}
             alCambiar={setTelefono}
             error={e.telefono}
-            inputMode="tel"
+            type="tel"
             ayuda="Con característica, por ejemplo 2920 55 5555."
           />
         </div>
@@ -484,7 +485,7 @@ function deDireccionGuardada(d: {
 
   return {
     recipientName: d.recipientName,
-    phone: d.phone,
+    phone: telefonoLocal(d.phone),
     street: d.street,
     number: d.number,
     apartment: d.apartment ?? "",
