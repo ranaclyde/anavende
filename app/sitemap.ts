@@ -53,5 +53,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: urlAbsoluta(`/legales/${p.slug}`),
     })),
     { url: urlAbsoluta("/contacto") },
+    { url: urlAbsoluta("/nosotros") },
   ];
 }

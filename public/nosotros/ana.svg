@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 600" role="img" aria-label="Ilustración provisoria de Ana">
+  <!-- Ilustración PROVISORIA (2026-10-21): se reemplaza por la foto real de
+       Ana. Ver FOTO_DE_ANA en app/(shop)/nosotros/page.tsx. -->
+  <rect width="480" height="600" fill="#f7edef"/>
+  <circle cx="380" cy="120" r="150" fill="#f2dcdf"/>
+  <circle cx="70" cy="520" r="110" fill="#f2dcdf"/>
+
+  <!-- Pelo, la parte de atrás -->
+  <path d="M138 250 C128 150 190 112 244 112 C306 112 356 152 350 252 C346 330 360 380 372 420 L116 420 C130 380 142 330 138 250 Z" fill="#3a2621"/>
+
+  <!-- Cuerpo: el buzo en burdeos -->
+  <path d="M70 600 C74 486 140 438 240 438 C340 438 406 486 410 600 Z" fill="#832833"/>
+  <path d="M196 440 L240 486 L284 440 Z" fill="#6b202a"/>
+
+  <!-- Cuello -->
+  <path d="M212 360 L268 360 L272 446 C256 458 224 458 208 446 Z" fill="#e2ad88"/>
+
+  <!-- Cara -->
+  <ellipse cx="240" cy="270" rx="80" ry="96" fill="#f0c29f"/>
+  <ellipse cx="160" cy="282" rx="12" ry="18" fill="#e9b490"/>
+  <ellipse cx="320" cy="282" rx="12" ry="18" fill="#e9b490"/>
+  <circle cx="160" cy="304" r="4" fill="#f6b40e"/>
+  <circle cx="320" cy="304" r="4" fill="#f6b40e"/>
+
+  <!-- Pelo, el flequillo -->
+  <path d="M160 250 C158 180 200 150 246 152 C292 154 326 186 322 246 C304 214 270 196 238 194 C214 210 186 228 160 250 Z" fill="#3a2621"/>
+
+  <!-- Ojos sonriendo, mejillas y sonrisa -->
+  <path d="M200 280 Q212 268 224 280" fill="none" stroke="#3a2621" stroke-width="5" stroke-linecap="round"/>
+  <path d="M256 280 Q268 268 280 280" fill="none" stroke="#3a2621" stroke-width="5" stroke-linecap="round"/>
+  <ellipse cx="196" cy="310" rx="14" ry="8" fill="#e79a8c" opacity="0.55"/>
+  <ellipse cx="284" cy="310" rx="14" ry="8" fill="#e79a8c" opacity="0.55"/>
+  <path d="M218 324 Q240 344 262 324" fill="none" stroke="#9c4a3c" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Los auriculares al cuello: el mismo dibujo que el isotipo -->
+  <path d="M172 470 C172 404 308 404 308 470" fill="none" stroke="#111010" stroke-width="12" stroke-linecap="round"/>
+  <rect x="152" y="452" width="40" height="56" rx="14" fill="#111010"/>
+  <rect x="288" y="452" width="40" height="56" rx="14" fill="#111010"/>
+  <rect x="160" y="462" width="24" height="36" rx="8" fill="#2d2b2b"/>
+  <rect x="296" y="462" width="24" height="36" rx="8" fill="#2d2b2b"/>
+</svg>

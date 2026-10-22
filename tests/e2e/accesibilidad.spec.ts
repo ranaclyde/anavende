@@ -69,6 +69,7 @@ const PANTALLAS: Pantalla[] = [
     url: () => "/legales/garantias",
   },
   { ruta: "/contacto", quien: "visitante" },
+  { ruta: "/nosotros", quien: "visitante" },
   { ruta: "/ingresar", quien: "visitante" },
   { ruta: "/registro", quien: "visitante" },
   {
