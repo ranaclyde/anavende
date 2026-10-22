@@ -20,6 +20,8 @@ Tiene dos lados:
 
 - [Arquitectura](docs/ARQUITECTURA.md): cómo está armado y cómo se conectan
   las piezas.
+- [Funcionamiento](docs/FUNCIONAMIENTO.md): los recorridos importantes, paso
+  a paso: comprar, gestionar una orden, cargar un producto, las cuentas.
 
 **Para trabajar en el código**
 
