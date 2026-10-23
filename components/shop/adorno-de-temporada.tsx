@@ -9,14 +9,14 @@ import type { Escena } from "@/lib/escenas";
  * logo», está anotada en §2.3 y tiene dos límites: no tapa más que el borde
  * de la cuadrícula, y el nombre accesible del enlace no cambia.
  *
- * Mide un poco más que el isotipo (40 sobre 32) para que la guirnalda y la
- * araña puedan salirse del borde, que es lo que las hace leer como cosas
- * colgadas y no como parte del dibujo.
+ * Mide un poco más que el isotipo (40 sobre 32) para que la guirnalda, la
+ * araña y las orejas puedan salirse del borde, que es lo que las hace leer
+ * como cosas colgadas o asomadas y no como parte del dibujo.
  *
  * **Lo que se mueve, se mueve poco y se queda quieto.** Las luces titilan
- * cuatro veces y quedan prendidas; la araña baja una vez. Las dos terminan
- * antes de los cinco segundos de WCAG 2.2.2, así que no necesitan pausa, y
- * con `prefers-reduced-motion` no se mueven.
+ * cuatro veces y quedan prendidas; la araña baja una vez; las orejas asoman
+ * una vez. Todo termina antes de los cinco segundos de WCAG 2.2.2, así que no
+ * necesita pausa, y con `prefers-reduced-motion` no se mueve.
  */
 export function AdornoDeTemporada({ escena }: { escena: Escena }) {
   return (
@@ -25,7 +25,13 @@ export function AdornoDeTemporada({ escena }: { escena: Escena }) {
       viewBox="0 0 40 40"
       className="pointer-events-none absolute -inset-1 size-10 overflow-visible"
     >
-      {escena === "navidad" ? <Guirnalda /> : <Arana />}
+      {escena === "navidad" ? (
+        <Guirnalda />
+      ) : escena === "halloween" ? (
+        <Arana />
+      ) : (
+        <Orejas />
+      )}
     </svg>
   );
 }
@@ -135,5 +141,44 @@ function Arana() {
         <circle cx="39" cy="16.5" r="0.3" fill="#f28c28" />
       </g>
     </g>
+  );
+}
+
+/**
+ * Dos orejas de conejo que asoman por detrás del borde de arriba, sobre la
+ * celda del joystick. El recorte las corta en el borde: suben desde atrás del
+ * isotipo en vez de deslizarse por encima de él. Blancas con el interior
+ * rosado, y un contorno gris para que no se pierdan en el encabezado blanco.
+ */
+function Orejas() {
+  return (
+    <>
+      <defs>
+        <clipPath id="detras-del-borde">
+          <rect x="0" y="-12" width="40" height="16.6" />
+        </clipPath>
+      </defs>
+      <g clipPath="url(#detras-del-borde)">
+        <g className="animate-orejas">
+          {[
+            { x: 25.5, giro: -12 },
+            { x: 31.5, giro: 10 },
+          ].map(({ x, giro }) => (
+            <g key={x} transform={`rotate(${giro} ${x} 5)`}>
+              <path
+                d={`M${x} 5.5C${x - 3} 4 ${x - 3.2} -2 ${x} -5C${x + 3.2} -2 ${x + 3} 4 ${x} 5.5Z`}
+                fill="#ffffff"
+                stroke="#b9b3ae"
+                strokeWidth="0.6"
+              />
+              <path
+                d={`M${x} 4.5C${x - 1.5} 3 ${x - 1.6} -1 ${x} -3.4C${x + 1.6} -1 ${x + 1.5} 3 ${x} 4.5Z`}
+                fill="#f6a3c0"
+              />
+            </g>
+          ))}
+        </g>
+      </g>
+    </>
   );
 }

@@ -318,6 +318,7 @@ describe("guardar y leer (§5.9)", () => {
   test("las escenas por fecha: permitidas sin fila, se apagan de a una y guardar sin nombrarlas no las apaga (F9.5)", async () => {
     await sinFila();
     expect((await configuracionDeLaTienda()).escenas).toEqual({
+      pascua: true,
       halloween: true,
       navidad: true,
     });
@@ -328,6 +329,7 @@ describe("guardar y leer (§5.9)", () => {
     expect(guardada.halloweenScene).toBe(false);
     expect(guardada.christmasScene).toBe(true);
     expect((await configuracionDeLaTienda()).escenas).toEqual({
+      pascua: true,
       halloween: false,
       navidad: true,
     });
@@ -336,6 +338,7 @@ describe("guardar y leer (§5.9)", () => {
     // prendidas. Apagar una tiene que ser a propósito.
     await escribirLaConfiguracion(valido(base).data!);
     expect((await configuracionDeLaTienda()).escenas).toEqual({
+      pascua: true,
       halloween: true,
       navidad: true,
     });

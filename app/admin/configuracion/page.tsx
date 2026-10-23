@@ -8,6 +8,7 @@ import {
   leerLaConfiguracion,
   UMBRAL_DE_STOCK_BAJO_POR_DEFECTO,
 } from "@/modules/settings/queries";
+import { periodoEscrito } from "@/lib/escenas";
 import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Configuración" };
@@ -42,6 +43,11 @@ export default async function ConfiguracionDelSitio() {
       <FormularioDeConfiguracion
         configuracion={configuracion}
         umbralPorDefecto={UMBRAL_DE_STOCK_BAJO_POR_DEFECTO}
+        periodos={{
+          pascua: periodoEscrito("pascua"),
+          halloween: periodoEscrito("halloween"),
+          navidad: periodoEscrito("navidad"),
+        }}
       />
 
       {/* Fuera del formulario y con su propio botón (F2.7b): cerrar la

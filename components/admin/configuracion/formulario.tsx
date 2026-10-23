@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { PERIODOS, type Escena } from "@/lib/escenas";
+import type { Escena } from "@/lib/escenas";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { telefonoLocal } from "@/lib/telefono";
 import { guardarLaConfiguracion } from "@/modules/settings/actions";
@@ -37,11 +37,14 @@ const CAMPOS = [
 type Campo = (typeof CAMPOS)[number];
 
 /**
- * Las escenas por fecha (F9.5, RF-38), en el orden del año. El período sale
- * de `PERIODOS`, el mismo que decide cuándo se encienden: escrito a mano acá,
- * el día que cambie uno la pantalla diría otra cosa.
+ * Las escenas por fecha (F9.5, RF-38), en el orden del año. El período
+ * escrito lo trae la página (`periodoEscrito`), del mismo lugar que decide
+ * cuándo se encienden: escrito a mano acá, el día que cambie uno la pantalla
+ * diría otra cosa. Y se calcula en el servidor porque el de Pascua depende de
+ * la fecha de hoy.
  */
 const FECHAS = [
+  { escena: "pascua", nombre: "Pascua", columna: "easterScene" },
   { escena: "halloween", nombre: "Halloween", columna: "halloweenScene" },
   { escena: "navidad", nombre: "Navidad", columna: "christmasScene" },
 ] as const satisfies readonly {
@@ -50,26 +53,7 @@ const FECHAS = [
   columna: keyof ConfiguracionDelSitio;
 }[];
 
-const MESES = [
-  "enero",
-  "febrero",
-  "marzo",
-  "abril",
-  "mayo",
-  "junio",
-  "julio",
-  "agosto",
-  "septiembre",
-  "octubre",
-  "noviembre",
-  "diciembre",
-];
-
-/** «Del 1 de diciembre al 7 de enero.» */
-function periodo(escena: Escena): string {
-  const { desde, hasta } = PERIODOS[escena];
-  return `Del ${desde.dia} de ${MESES[desde.mes - 1]} al ${hasta.dia} de ${MESES[hasta.mes - 1]}.`;
-}
+type Columna = (typeof FECHAS)[number]["columna"];
 
 /**
  * Configuración del sitio — RF-20, F2.7.
@@ -87,11 +71,14 @@ function periodo(escena: Escena): string {
 export function FormularioDeConfiguracion({
   configuracion,
   umbralPorDefecto,
+  periodos,
 }: {
   /** `null` = todavía no se guardó nunca. */
   configuracion: ConfiguracionDelSitio | null;
   /** El que usa el sistema mientras la fila no existe (§10.3). */
   umbralPorDefecto: number;
+  /** Cada período escrito, «Del 1 de diciembre al 7 de enero.» (F9.5). */
+  periodos: Record<Escena, string>;
 }) {
   const idBase = useId();
   const [enviando, iniciar] = useTransition();
@@ -122,7 +109,8 @@ export function FormularioDeConfiguracion({
     String(configuracion?.lowStockThreshold ?? umbralPorDefecto),
   );
   // Sin fila, prendidas: es lo que la tienda está haciendo (`TODAS_PERMITIDAS`).
-  const [escenas, setEscenas] = useState({
+  const [escenas, setEscenas] = useState<Record<Columna, boolean>>({
+    easterScene: configuracion?.easterScene ?? true,
     halloweenScene: configuracion?.halloweenScene ?? true,
     christmasScene: configuracion?.christmasScene ?? true,
   });
@@ -143,8 +131,7 @@ export function FormularioDeConfiguracion({
     facebook === (guardado.facebookUrl ?? "") &&
     email === guardado.adminNotificationEmail &&
     umbral === String(guardado.lowStockThreshold) &&
-    escenas.halloweenScene === guardado.halloweenScene &&
-    escenas.christmasScene === guardado.christmasScene;
+    FECHAS.every(({ columna }) => escenas[columna] === guardado[columna]);
 
   const campo = (nombre: Campo) => ({
     id: `${idBase}-${nombre}`,
@@ -230,6 +217,7 @@ export function FormularioDeConfiguracion({
       setEmail(resultado.data.adminNotificationEmail);
       setUmbral(String(resultado.data.lowStockThreshold));
       setEscenas({
+        easterScene: resultado.data.easterScene,
         halloweenScene: resultado.data.halloweenScene,
         christmasScene: resultado.data.christmasScene,
       });
@@ -339,7 +327,7 @@ export function FormularioDeConfiguracion({
                   {nombre}
                 </label>
                 <FieldHint id={`${idBase}-${columna}-ayuda`}>
-                  {periodo(escena)}
+                  {periodos[escena]}
                 </FieldHint>
               </div>
             </li>

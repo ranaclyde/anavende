@@ -214,6 +214,7 @@ export const configuracionDelSitio = z.object({
   // propósito.
   halloweenScene: z.boolean().default(true),
   christmasScene: z.boolean().default(true),
+  easterScene: z.boolean().default(true),
 });
 
 export type EntradaDeConfiguracion = z.input<typeof configuracionDelSitio>;

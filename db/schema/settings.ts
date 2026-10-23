@@ -45,6 +45,7 @@ export const siteSettings = pgTable(
      */
     halloweenScene: boolean("halloween_scene").notNull().default(true),
     christmasScene: boolean("christmas_scene").notNull().default(true),
+    easterScene: boolean("easter_scene").notNull().default(true),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -188,9 +188,56 @@ export const ESCENA_NAVIDAD: PiezaDelHero[] = [
   },
 ];
 
+export const ESCENA_PASCUA: PiezaDelHero[] = [
+  {
+    src: "/hero/pascua/auriculares-conejo.webp",
+    ancho: 779,
+    alto: 1000,
+    lugar: "left-0 top-0 w-24 sm:w-32 lg:top-[2%] lg:left-0 lg:w-40",
+    d: 1,
+  },
+  {
+    src: "/hero/pascua/teclado-huevos.webp",
+    ancho: 1000,
+    alto: 389,
+    lugar: "right-0 bottom-2 w-44 sm:w-56 lg:right-0 lg:bottom-[4%] lg:w-72",
+    d: 1,
+  },
+  {
+    src: "/hero/pascua/joystick-canasta.webp",
+    ancho: 926,
+    alto: 723,
+    lugar: "right-[3%] top-3 w-32 sm:w-40 lg:top-[3%] lg:right-[5%] lg:w-52",
+    d: 0.65,
+  },
+  {
+    src: "/hero/pascua/mouse-huevo.webp",
+    ancho: 747,
+    alto: 1000,
+    lugar:
+      "left-[8%] bottom-0 w-16 sm:w-20 lg:bottom-[4%] lg:left-[9%] lg:w-28",
+    d: 0.65,
+  },
+  {
+    src: "/hero/pascua/conejo.webp",
+    ancho: 428,
+    alto: 832,
+    lugar: "hidden lg:block lg:left-[17%] lg:top-[38%] lg:w-16",
+    d: 0.35,
+  },
+  {
+    src: "/hero/pascua/huevo-chocolate.webp",
+    ancho: 460,
+    alto: 600,
+    lugar: "hidden lg:block lg:right-[18%] lg:top-[40%] lg:w-16",
+    d: 0.35,
+  },
+];
+
 /** Qué piezas lleva el hero según la escena de hoy; `null` es la base. */
 export function escenaDelHero(escena: Escena | null): PiezaDelHero[] {
   if (escena === "halloween") return ESCENA_HALLOWEEN;
   if (escena === "navidad") return ESCENA_NAVIDAD;
+  if (escena === "pascua") return ESCENA_PASCUA;
   return ESCENA_BASE;
 }

@@ -106,7 +106,7 @@ despliegue. En local se ven en Mailpit (<http://localhost:54324>).
 público ve una página con un 503 y quien administra ve la tienda normal.
 `/api/salud` sigue contestando.
 
-**Apagar una fecha especial** (Halloween, Navidad): «Configuración» →
+**Apagar una fecha especial** (Pascua, Halloween, Navidad): «Configuración» →
 «Fechas especiales», destildarla y «Guardar cambios». La tienda vuelve a la
 escena de todos los días en el próximo pedido.
 

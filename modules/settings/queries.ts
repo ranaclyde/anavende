@@ -51,6 +51,7 @@ export type ConfiguracionDelSitio = {
   /** Si la escena de cada fecha puede encenderse sola (F9.5, RF-38). */
   halloweenScene: boolean;
   christmasScene: boolean;
+  easterScene: boolean;
 };
 
 /**
@@ -69,7 +70,8 @@ export async function leerLaConfiguracion(): Promise<ConfiguracionDelSitio | nul
            facebook_url              AS "facebookUrl",
            instagram_url             AS "instagramUrl",
            halloween_scene           AS "halloweenScene",
-           christmas_scene           AS "christmasScene"
+           christmas_scene           AS "christmasScene",
+           easter_scene              AS "easterScene"
       FROM site_settings
      WHERE id = 1
   `);
@@ -199,13 +201,12 @@ export type ConfiguracionDeLaTienda = {
  */
 export const configuracionDeLaTienda = cache(
   async (): Promise<ConfiguracionDeLaTienda> => {
-    const [fila] = await db.execute<
-      RedesSociales & { halloween: boolean; navidad: boolean }
-    >(sql`
+    const [fila] = await db.execute<RedesSociales & EscenasPermitidas>(sql`
       SELECT facebook_url    AS facebook,
              instagram_url   AS instagram,
              halloween_scene AS halloween,
-             christmas_scene AS navidad
+             christmas_scene AS navidad,
+             easter_scene    AS pascua
         FROM site_settings WHERE id = 1
     `);
     if (!fila) {
@@ -216,7 +217,11 @@ export const configuracionDeLaTienda = cache(
     }
     return {
       redes: { facebook: fila.facebook, instagram: fila.instagram },
-      escenas: { halloween: fila.halloween, navidad: fila.navidad },
+      escenas: {
+        halloween: fila.halloween,
+        navidad: fila.navidad,
+        pascua: fila.pascua,
+      },
     };
   },
 );

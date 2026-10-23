@@ -180,10 +180,11 @@ mes» da lo mismo en los dos. Los reportes se exportan a Excel desde
 
 ## Fechas especiales
 
-En **Halloween** (1 de octubre al 1 de noviembre) y en **Navidad** (1 de
-diciembre al 7 de enero) la tienda se decora sola: el hero de la home cambia
-sus dibujos y el logo de la barra lleva un adorno. Los períodos están en
-`lib/escenas.ts` y se cuentan con la fecha de Argentina; las piezas de cada
+En **Pascua** (la Semana Santa, del Domingo de Ramos al de Pascua),
+**Halloween** (1 de octubre al 1 de noviembre) y **Navidad** (1 de diciembre
+al 7 de enero) la tienda se decora sola: el hero de la home cambia sus dibujos
+y el logo de la barra lleva un adorno. Los períodos están en `lib/escenas.ts`
+y se cuentan con la fecha de Argentina; Pascua se calcula para cada año; las piezas de cada
 escena, en `components/shop/home/escena-del-hero.ts`. Cada fecha se apaga
 desde «Configuración» → «Fechas especiales».
 

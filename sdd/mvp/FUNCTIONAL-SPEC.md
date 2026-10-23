@@ -986,19 +986,23 @@ orden, que es otra acción y está disponible siempre.
 
 **Origen:** pedido del 2026-10-23. Agregada como F9.5.
 
-**Descripción:** En Halloween y en Navidad la tienda se decora sola: el hero
+**Descripción:** En Pascua, Halloween y Navidad la tienda se decora sola: el hero
 de la home cambia sus dibujos por los de la fecha y el logo de la barra lleva
 un adorno. Se enciende y se apaga sin que nadie haga nada, y la vendedora
 puede **apagar cada fecha** desde la configuración (RF-20).
 
 | Fecha | Desde | Hasta (incluido) | Hero | Logo |
 |---|---|---|---|---|
+| Pascua | Domingo de Ramos | Domingo de Pascua | Auriculares con orejas de conejo, joystick en una canasta, mouse pintado como huevo, teclado con huevitos, un conejo y un huevo de chocolate | Dos orejas de conejo que asoman |
 | Halloween | 1 de octubre | 1 de noviembre | Auriculares en una calabaza, joystick con sombrero de bruja, mouse murciélago, teclado con arañas, un fantasma y un caramelo | Telaraña y una araña que baja |
 | Navidad | 1 de diciembre | 7 de enero | Auriculares con gorro, joystick con moño, mouse reno, teclado con guirnalda, una esfera y un bastón | Una guirnalda de luces |
 
 **Criterios de aceptación:**
 - [ ] Cada escena se ve **solo en su período**, contado con la fecha de
       Argentina y no con la del servidor.
+- [ ] **Pascua se calcula para cada año**, sin una tabla de fechas que haya
+      que renovar, y el panel la muestra con su año: la de este, o la del que
+      viene si ya pasó.
 - [ ] Desde la configuración se apaga cada fecha por separado; apagada, la
       tienda se ve como todos los días. **Prendidas por defecto**, también antes
       de que la configuración se haya guardado nunca.
@@ -1257,3 +1261,4 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-10-22 | Guías de uso en la ficha, el checkout y «Mis compras» (RF-36), en el MVP | Pedido tuyo: ayudan a entender cómo se compra en una tienda que no cobra online. Lo visto se anota en el navegador y no en la base, porque la ficha la usa sobre todo quien no tiene cuenta |
 | 2026-10-23 | Guías de uso en el panel (RF-37), en el MVP | Pedido tuyo: en la orden activa, la orden manual, el producto y las devoluciones, donde una acción mueve el stock o no tiene vuelta atrás. Lo visto se anota en el navegador, como en la tienda: guardarlo por usuario no vale un segundo mecanismo |
 | 2026-10-23 | Escenas por fecha (RF-38), en el MVP: Halloween y Navidad | Pedido tuyo. Se encienden solas y se apagan desde la configuración, una por una. Los períodos están en el código y no en el panel: cada fecha nueva trae sus dibujos, así que sumar una sin desplegar no tendría con qué verse |
+| 2026-10-23 | Pascua se suma a las escenas por fecha (RF-38): la Semana Santa | Pedido tuyo, en el mismo día. Va del Domingo de Ramos al de Pascua, y como se mueve se calcula cada año en vez de cargar una tabla |

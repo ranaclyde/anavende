@@ -360,9 +360,11 @@
   /* Los adornos del logo en las escenas por fecha (F9.5,
      `components/shop/adorno-de-temporada.tsx`). Los dos terminan solos antes
      de los cinco segundos de WCAG 2.2.2: las luces titilan cuatro veces y
-     quedan prendidas, y la araña baja una vez y se queda colgada. */
+     quedan prendidas, la araña baja una vez y se queda colgada, y las orejas
+     de Pascua asoman una vez, con un rebote chico. */
   --animate-foquito: foquito 900ms ease-in-out 4 both;
   --animate-arana: arana 1400ms cubic-bezier(0.16, 1, 0.3, 1) 300ms both;
+  --animate-orejas: orejas 900ms cubic-bezier(0.34, 1.4, 0.64, 1) 400ms both;
 
   @keyframes foquito {
     50% {
@@ -373,6 +375,12 @@
   @keyframes arana {
     from {
       transform: translateY(-14px);
+    }
+  }
+
+  @keyframes orejas {
+    from {
+      transform: translateY(10px);
     }
   }
 

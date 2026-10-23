@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 
-import { escenaDeHoy, TODAS_PERMITIDAS } from "@/lib/escenas";
+import {
+  domingoDePascua,
+  escenaDeHoy,
+  periodoEscrito,
+  TODAS_PERMITIDAS,
+} from "@/lib/escenas";
 
 /**
  * F9.5 — RF-38. Cuándo se enciende cada escena por fecha.
@@ -44,6 +49,62 @@ describe("escenaDeHoy", () => {
     ).toBeNull();
     expect(escenaDeHoy(sinHalloween, new Date("2026-12-24T12:00:00Z"))).toBe(
       "navidad",
+    );
+  });
+
+  test("Pascua: la Semana Santa, del Domingo de Ramos al de Pascua, que se mueve cada año", () => {
+    // 2027: Pascua el 28 de marzo, Ramos el 21.
+    expect(en("2027-03-20T15:00:00Z")).toBeNull();
+    expect(en("2027-03-21T15:00:00Z")).toBe("pascua");
+    expect(en("2027-03-28T15:00:00Z")).toBe("pascua");
+    expect(en("2027-03-29T15:00:00Z")).toBeNull();
+    // 2028: Pascua el 16 de abril, Ramos el 9.
+    expect(en("2028-04-08T15:00:00Z")).toBeNull();
+    expect(en("2028-04-09T15:00:00Z")).toBe("pascua");
+    expect(en("2028-04-16T15:00:00Z")).toBe("pascua");
+    // Ramos en un mes y Pascua en el otro: 2029, del 25 de marzo al 1 de abril.
+    expect(en("2029-03-25T15:00:00Z")).toBe("pascua");
+    expect(en("2029-04-01T15:00:00Z")).toBe("pascua");
+    expect(en("2029-04-02T15:00:00Z")).toBeNull();
+  });
+});
+
+describe("domingoDePascua", () => {
+  test("coincide con el calendario, incluidos los extremos de marzo y abril", () => {
+    const fechas: [number, number, number][] = [
+      [2008, 3, 23],
+      [2011, 4, 24],
+      [2019, 4, 21],
+      [2024, 3, 31],
+      [2025, 4, 20],
+      [2026, 4, 5],
+      [2027, 3, 28],
+      [2038, 4, 25],
+      [2285, 3, 22],
+    ];
+    for (const [anio, mes, dia] of fechas) {
+      expect(domingoDePascua(anio), String(anio)).toEqual({ mes, dia });
+    }
+  });
+});
+
+describe("periodoEscrito", () => {
+  test("las fijas, sin año", () => {
+    expect(periodoEscrito("navidad")).toBe("Del 1 de diciembre al 7 de enero.");
+  });
+
+  test("Pascua con su año: la de este, y si ya pasó, la del que viene", () => {
+    expect(periodoEscrito("pascua", new Date("2027-02-10T15:00:00Z"))).toBe(
+      "Semana Santa: del 21 al 28 de marzo de 2027.",
+    );
+    expect(periodoEscrito("pascua", new Date("2026-10-23T15:00:00Z"))).toBe(
+      "Semana Santa: del 21 al 28 de marzo de 2027.",
+    );
+    expect(periodoEscrito("pascua", new Date("2028-01-05T15:00:00Z"))).toBe(
+      "Semana Santa: del 9 al 16 de abril de 2028.",
+    );
+    expect(periodoEscrito("pascua", new Date("2029-01-05T15:00:00Z"))).toBe(
+      "Semana Santa: del 25 de marzo al 1 de abril de 2029.",
     );
   });
 });
