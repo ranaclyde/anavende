@@ -266,6 +266,7 @@ F10 Endurecimiento y lanzamiento
 | **F6.4** | Email E4 a la administradora, sobre el layout de F1.8 | S | FS RF-30 · TS §14 | Llega con el detalle completo y enlace al panel. **Si falla, la orden se crea igual**. Acá se escribe también su plantilla: el layout compartido ya existe desde F1.8, lo que faltaba era la orden que le da contenido |
 | **F6.5** | «Mis compras» y cancelación por el comprador | M | FS RF-07, RF-23, RF-34 | Historial con precios de la orden (snapshot). Cancelar libera la reserva. **Cancelar es el arrepentimiento**, así que está a la vista en el detalle de la orden y no detrás de un menú: su visibilidad es parte del requisito |
 | **F6.6** | Guías de uso en la ficha, el checkout y «Mis compras» | M | FS RF-36 · `sdd/ayudas-guiadas/DEFINICION.md` | Cada guía aparece sola la primera vez y no vuelve; «Ver la guía» la reabre. El foco entra al globo y vuelve al cerrarlo, respeta el movimiento reducido, entra a 320px y pasa axe abierto. Agregada el 2026-10-22 |
+| **F6.7** | Guías de uso en el panel | M | FS RF-37 · `sdd/ayudas-guiadas/DEFINICION.md` §7 | Detalle de una orden activa, nueva orden, edición de un producto y devoluciones. Lo mismo que F6.6, más axe abierto en los dos temas y las medidas del panel. Agregada el 2026-10-23 |
 
 > **Compuerta F6:** una compra completa de punta a punta, con el stock reservado correctamente al final.
 

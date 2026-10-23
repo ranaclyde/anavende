@@ -845,6 +845,33 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 
 ---
 
+### RF-37 — Guías de uso en el panel
+
+> **El número es el siguiente libre, no la posición** (ver RF-34). Es la
+> misma guía que RF-36, puesta en el panel.
+
+**Origen:** pedido del 2026-10-23. Agregada como F6.7. El detalle —los
+textos y lo que cambia respecto de la tienda— está en
+`sdd/ayudas-guiadas/DEFINICION.md` §7.
+
+**Descripción:** El mismo recorrido de RF-36, en las pantallas del panel donde
+una acción mueve el stock o no se puede deshacer:
+
+| Pantalla | Qué explica |
+|---|---|
+| Detalle de una orden activa | Ajustar los renglones; agregar un producto y a qué precio entra; que al comprador no le llega aviso; qué cambia al finalizar o cancelar |
+| Nueva orden manual | Que se puede cargar más de lo que figura en stock; cuándo dejarla activa |
+| Edición de un producto | Que manda el stock disponible; que el total se escribe con lo reservado incluido |
+| Devoluciones | Que se cargan desde la orden; que las dos clases restan de las ventas; que se anulan en vez de editarse |
+
+**Criterios de aceptación:**
+- [ ] Los de RF-36 —aparece sola la primera vez, se reabre con «Ver la guía», se cierra en cualquier paso, foco, teclado y movimiento reducido— valen igual.
+- [ ] **Lo visto se anota en el navegador**, como en la tienda (decisión del 2026-10-23).
+- [ ] Una guía **no arranca si falta un elemento que necesita**: la de la orden, si no está activa; la del producto, sin colores; la de devoluciones, sin ninguna.
+- [ ] Pasa axe (WCAG 2.2 AA) abierta, **en el tema claro y en el oscuro**, y toma las medidas del panel y no las de la tienda.
+
+---
+
 ## 9. Módulo: Contenido y legales
 
 ### RF-29 — Sección de legales
@@ -1199,3 +1226,4 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-10-21 | El pie deja el aviso de zona y lleva el eslogan (RN-10, RF-01) | Pedido tuyo. La zona sigue en la home, la ficha, el carrito y el checkout |
 | 2026-10-21 | Página de categorías (RF-35), sin las categorías vacías | «Ver todas» de la home no llevaba a ningún lado. Las vacías se probaron al final con una consulta por WhatsApp y rompían la lista: no se muestran, como en la home |
 | 2026-10-22 | Guías de uso en la ficha, el checkout y «Mis compras» (RF-36), en el MVP | Pedido tuyo: ayudan a entender cómo se compra en una tienda que no cobra online. Lo visto se anota en el navegador y no en la base, porque la ficha la usa sobre todo quien no tiene cuenta |
+| 2026-10-23 | Guías de uso en el panel (RF-37), en el MVP | Pedido tuyo: en la orden activa, la orden manual, el producto y las devoluciones, donde una acción mueve el stock o no tiene vuelta atrás. Lo visto se anota en el navegador, como en la tienda: guardarlo por usuario no vale un segundo mecanismo |
