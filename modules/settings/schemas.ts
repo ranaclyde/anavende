@@ -209,6 +209,11 @@ export const configuracionDelSitio = z.object({
     dominios: ["instagram.com"],
     ejemplo: "instagram.com/anavende",
   }),
+  // Las escenas por fecha (F9.5, RF-38). Con `default(true)` para que un
+  // envío que no las nombre no apague ninguna: apagarla tiene que ser a
+  // propósito.
+  halloweenScene: z.boolean().default(true),
+  christmasScene: z.boolean().default(true),
 });
 
 export type EntradaDeConfiguracion = z.input<typeof configuracionDelSitio>;

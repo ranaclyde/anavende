@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { AdornoDeTemporada } from "@/components/shop/adorno-de-temporada";
+import type { Escena } from "@/lib/escenas";
 import isotipo from "@/public/marca/logo.png";
 import isotipoClaro from "@/public/marca/logo-claro.png";
 import { AREA_TACTIL_CUADRADA, cn } from "@/lib/utils";
@@ -21,6 +23,7 @@ export function Logo({
   href = "/",
   wordmark = true,
   claro = false,
+  escena = null,
   className,
 }: {
   href?: string;
@@ -28,6 +31,8 @@ export function Logo({
   wordmark?: boolean;
   /** Sobre fondo oscuro: pie del sitio. */
   claro?: boolean;
+  /** La de hoy, si hay (F9.5): el isotipo lleva su adorno encima. */
+  escena?: Escena | null;
   className?: string;
 }) {
   return (
@@ -43,7 +48,10 @@ export function Logo({
       )}
       aria-label="AnaVende, ir al inicio"
     >
-      <Isotipo claro={claro} inmediato />
+      <span className="relative grid shrink-0">
+        <Isotipo claro={claro} inmediato />
+        {escena ? <AdornoDeTemporada escena={escena} /> : null}
+      </span>
       {wordmark && (
         <span
           aria-hidden

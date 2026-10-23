@@ -1,3 +1,5 @@
+import type { Escena } from "@/lib/escenas";
+
 /**
  * Lo que flota alrededor del nombre en el hero de la home (2026-10-19).
  *
@@ -5,6 +7,7 @@
  * cargó Ana ni de que una categoría tenga fotos: es una vitrina armada a
  * propósito, y por eso se puede cambiar entera para una fecha —Navidad,
  * Halloween— cambiando esta lista y sus archivos, sin tocar el componente.
+ * Así quedó en F9.5: `escenaDelHero()`, al final.
  * Las de todos los días están en `public/hero/base/`: ilustraciones
  * recortadas, sin fondo, porque el efecto 3D luce con piezas sueltas y no
  * con fotos en una tarjeta.
@@ -81,3 +84,113 @@ export const ESCENA_BASE: PiezaDelHero[] = [
     d: 0.35,
   },
 ];
+
+/*
+ * ── Las escenas por fecha (F9.5, RF-38) ──────────────────────────────────
+ *
+ * Las mismas cuatro esquinas y las mismas profundidades que la base, con las
+ * piezas disfrazadas: siguen siendo auriculares, teclado, joystick y mouse,
+ * porque la tienda vende eso y la escena tiene que seguir diciéndolo. Las dos
+ * lejanas sí son de la fecha. Los tamaños cambian donde el disfraz cambia la
+ * proporción —las alas hacen al mouse ancho, el bastón es angosto—, para que
+ * cada pieza pese en pantalla lo mismo que la que reemplaza.
+ */
+
+export const ESCENA_HALLOWEEN: PiezaDelHero[] = [
+  {
+    src: "/hero/halloween/calabaza.webp",
+    ancho: 1000,
+    alto: 954,
+    lugar: "left-0 top-0 w-28 sm:w-36 lg:top-[6%] lg:left-0 lg:w-48",
+    d: 1,
+  },
+  {
+    src: "/hero/halloween/teclado-aranas.webp",
+    ancho: 1000,
+    alto: 600,
+    lugar: "right-0 bottom-2 w-44 sm:w-56 lg:right-0 lg:bottom-[4%] lg:w-72",
+    d: 1,
+  },
+  {
+    src: "/hero/halloween/joystick-sombrero.webp",
+    ancho: 1000,
+    alto: 875,
+    lugar: "right-[3%] top-2 w-32 sm:w-40 lg:top-[2%] lg:right-[5%] lg:w-52",
+    d: 0.65,
+  },
+  {
+    src: "/hero/halloween/mouse-murcielago.webp",
+    ancho: 1000,
+    alto: 618,
+    lugar:
+      "left-[4%] bottom-0 w-28 sm:w-32 lg:bottom-[4%] lg:left-[5%] lg:w-44",
+    d: 0.65,
+  },
+  {
+    src: "/hero/halloween/fantasma.webp",
+    ancho: 530,
+    alto: 739,
+    lugar: "hidden lg:block lg:left-[16%] lg:top-[42%] lg:w-24",
+    d: 0.35,
+  },
+  {
+    src: "/hero/halloween/caramelo.webp",
+    ancho: 852,
+    alto: 380,
+    lugar: "hidden lg:block lg:right-[21%] lg:top-[45%] lg:w-24",
+    d: 0.35,
+  },
+];
+
+export const ESCENA_NAVIDAD: PiezaDelHero[] = [
+  {
+    src: "/hero/navidad/auriculares-gorro.webp",
+    ancho: 860,
+    alto: 1000,
+    lugar: "left-0 top-0 w-24 sm:w-32 lg:top-[3%] lg:left-0 lg:w-44",
+    d: 1,
+  },
+  {
+    src: "/hero/navidad/teclado-guirnalda.webp",
+    ancho: 1000,
+    alto: 506,
+    lugar: "right-0 bottom-2 w-44 sm:w-56 lg:right-0 lg:bottom-[4%] lg:w-72",
+    d: 1,
+  },
+  {
+    src: "/hero/navidad/joystick-regalo.webp",
+    ancho: 1000,
+    alto: 740,
+    lugar: "right-[3%] top-3 w-32 sm:w-40 lg:top-[3%] lg:right-[5%] lg:w-52",
+    d: 0.65,
+  },
+  {
+    src: "/hero/navidad/mouse-reno.webp",
+    ancho: 614,
+    alto: 1000,
+    lugar:
+      "left-[8%] bottom-0 w-16 sm:w-20 lg:bottom-[4%] lg:left-[9%] lg:w-28",
+    d: 0.65,
+  },
+  {
+    src: "/hero/navidad/esfera.webp",
+    ancho: 600,
+    alto: 715,
+    lugar: "hidden lg:block lg:left-[17%] lg:top-[35%] lg:w-20",
+    d: 0.35,
+  },
+  {
+    src: "/hero/navidad/baston.webp",
+    ancho: 330,
+    alto: 862,
+    lugar: "hidden lg:block lg:right-[23%] lg:top-[43%] lg:w-12",
+    d: 0.35,
+  },
+];
+
+/** Qué piezas lleva el hero según la escena de hoy; `null` es la base. */
+export function escenaDelHero(escena: Escena | null): PiezaDelHero[] {
+  if (escena === "halloween") return ESCENA_HALLOWEEN;
+  if (escena === "navidad") return ESCENA_NAVIDAD;
+  return ESCENA_BASE;
+}

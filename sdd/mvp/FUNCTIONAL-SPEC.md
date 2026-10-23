@@ -980,6 +980,35 @@ cumple.
 activas no le quita nada a esto: quien quiera revocar una compra cancela la
 orden, que es otra acción y está disponible siempre.
 
+### RF-38 — Escenas por fecha
+
+> **El número es el siguiente libre, no la posición** (ver RF-34).
+
+**Origen:** pedido del 2026-10-23. Agregada como F9.5.
+
+**Descripción:** En Halloween y en Navidad la tienda se decora sola: el hero
+de la home cambia sus dibujos por los de la fecha y el logo de la barra lleva
+un adorno. Se enciende y se apaga sin que nadie haga nada, y la vendedora
+puede **apagar cada fecha** desde la configuración (RF-20).
+
+| Fecha | Desde | Hasta (incluido) | Hero | Logo |
+|---|---|---|---|---|
+| Halloween | 1 de octubre | 1 de noviembre | Auriculares en una calabaza, joystick con sombrero de bruja, mouse murciélago, teclado con arañas, un fantasma y un caramelo | Telaraña y una araña que baja |
+| Navidad | 1 de diciembre | 7 de enero | Auriculares con gorro, joystick con moño, mouse reno, teclado con guirnalda, una esfera y un bastón | Una guirnalda de luces |
+
+**Criterios de aceptación:**
+- [ ] Cada escena se ve **solo en su período**, contado con la fecha de
+      Argentina y no con la del servidor.
+- [ ] Desde la configuración se apaga cada fecha por separado; apagada, la
+      tienda se ve como todos los días. **Prendidas por defecto**, también antes
+      de que la configuración se haya guardado nunca.
+- [ ] Las piezas siguen siendo los productos que vende la tienda,
+      disfrazados: la escena no deja de decir qué se vende.
+- [ ] **El isotipo no se toca**: el adorno es un dibujo aparte, encima, y el
+      nombre accesible del logo no cambia (DESIGN-REFERENCE §2.3).
+- [ ] Lo que se mueve en el adorno termina solo antes de los cinco segundos,
+      y con `prefers-reduced-motion` no se mueve.
+
 ---
 
 ## 10. Módulo: Emails transaccionales
@@ -1227,3 +1256,4 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-10-21 | Página de categorías (RF-35), sin las categorías vacías | «Ver todas» de la home no llevaba a ningún lado. Las vacías se probaron al final con una consulta por WhatsApp y rompían la lista: no se muestran, como en la home |
 | 2026-10-22 | Guías de uso en la ficha, el checkout y «Mis compras» (RF-36), en el MVP | Pedido tuyo: ayudan a entender cómo se compra en una tienda que no cobra online. Lo visto se anota en el navegador y no en la base, porque la ficha la usa sobre todo quien no tiene cuenta |
 | 2026-10-23 | Guías de uso en el panel (RF-37), en el MVP | Pedido tuyo: en la orden activa, la orden manual, el producto y las devoluciones, donde una acción mueve el stock o no tiene vuelta atrás. Lo visto se anota en el navegador, como en la tienda: guardarlo por usuario no vale un segundo mecanismo |
+| 2026-10-23 | Escenas por fecha (RF-38), en el MVP: Halloween y Navidad | Pedido tuyo. Se encienden solas y se apagan desde la configuración, una por una. Los períodos están en el código y no en el panel: cada fecha nueva trae sus dibujos, así que sumar una sin desplegar no tendría con qué verse |

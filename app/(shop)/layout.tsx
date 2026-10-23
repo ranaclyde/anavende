@@ -9,8 +9,9 @@ import { SiteHeader } from "@/components/shop/site-header";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSession } from "@/lib/session";
 import { contarUnidades } from "@/modules/cart/queries";
+import { escenaDeHoy } from "@/lib/escenas";
 import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
-import { redesSociales } from "@/modules/settings/queries";
+import { configuracionDeLaTienda } from "@/modules/settings/queries";
 import { hayFavoritoPendiente } from "@/modules/users/favoritos/pendiente";
 
 /**
@@ -45,17 +46,20 @@ export default async function ShopLayout({
   // corazón está en el catálogo y en la ficha, y quien ingresa vuelve a la que
   // estaba. Sin sesión no hay nada que retomar y la nota sigue esperando.
   //
-  // Las redes del pie (2026-10-20) no dependen de nada y van en la misma
-  // tanda. Si la base no contesta, el pie sale sin ellas en vez de tirar la
-  // tienda entera por dos íconos.
-  const [unidadesEnElCarrito, cerradaParaElResto, favoritoPendiente, redes] =
+  // Las redes del pie (2026-10-20) y las escenas por fecha (F9.5) no
+  // dependen de nada y van en la misma tanda, en una sola consulta. Si la
+  // base no contesta, el pie sale sin redes y la tienda sin escena, en vez de
+  // tirarla entera por dos íconos y un adorno.
+  const [unidadesEnElCarrito, cerradaParaElResto, favoritoPendiente, tienda] =
     await Promise.all([
       sesion ? contarUnidades(sesion.profile.id) : 0,
       sesion?.role === "admin" ? estaEnMantenimiento() : false,
       // Con la cuenta en pausa no se retoma nada: la acción la rechazaría.
       sesion && !enPausa ? hayFavoritoPendiente() : false,
-      redesSociales().catch(() => undefined),
+      configuracionDeLaTienda().catch(() => undefined),
     ]);
+
+  const escena = tienda ? escenaDeHoy(tienda.escenas) : null;
 
   return (
     // Radix exige un proveedor arriba de cualquier tooltip, y solo la tienda
@@ -74,6 +78,7 @@ export default async function ShopLayout({
           <SiteHeader
             userName={sesion?.profile.fullName ?? null}
             cartCount={unidadesEnElCarrito}
+            escena={escena}
           />
         </Suspense>
 
@@ -83,7 +88,7 @@ export default async function ShopLayout({
           </ProveedorDeCuentaEnPausa>
         </main>
 
-        <SiteFooter redes={redes} />
+        <SiteFooter redes={tienda?.redes} />
       </div>
     </TooltipProvider>
   );

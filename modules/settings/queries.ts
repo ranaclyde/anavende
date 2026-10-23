@@ -1,8 +1,10 @@
 import "server-only";
 
 import { sql } from "drizzle-orm";
+import { cache } from "react";
 
 import { db } from "@/db";
+import { TODAS_PERMITIDAS, type EscenasPermitidas } from "@/lib/escenas";
 import { POR_PAGINA } from "@/modules/catalog/filtros-panel";
 import { urlDeLogo } from "@/modules/media/subir";
 
@@ -46,6 +48,9 @@ export type ConfiguracionDelSitio = {
   /** Enlaces completos y normalizados; `null` = esa red no se muestra. */
   facebookUrl: string | null;
   instagramUrl: string | null;
+  /** Si la escena de cada fecha puede encenderse sola (F9.5, RF-38). */
+  halloweenScene: boolean;
+  christmasScene: boolean;
 };
 
 /**
@@ -62,7 +67,9 @@ export async function leerLaConfiguracion(): Promise<ConfiguracionDelSitio | nul
            admin_notification_email  AS "adminNotificationEmail",
            low_stock_threshold       AS "lowStockThreshold",
            facebook_url              AS "facebookUrl",
-           instagram_url             AS "instagramUrl"
+           instagram_url             AS "instagramUrl",
+           halloween_scene           AS "halloweenScene",
+           christmas_scene           AS "christmasScene"
       FROM site_settings
      WHERE id = 1
   `);
@@ -174,19 +181,45 @@ export type RedesSociales = {
   instagram: string | null;
 };
 
+export type ConfiguracionDeLaTienda = {
+  redes: RedesSociales;
+  escenas: EscenasPermitidas;
+};
+
 /**
- * Los perfiles que el pie enlaza debajo del logo (2026-10-20).
+ * Lo que la tienda lee de la configuración en cada página: los perfiles del
+ * pie (2026-10-20) y qué escenas por fecha están permitidas (F9.5, RF-38).
  *
- * Sin fila, o con las dos vacías, el pie no muestra ninguna: un ícono que no
- * lleva a ningún lado es peor que no tenerlo.
+ * **Una consulta y no dos**, porque las dos van en la misma tanda del layout.
+ * Con `cache()` porque la home la vuelve a pedir para el hero, y dentro de
+ * un mismo pedido no tiene que volver a la base.
+ *
+ * Sin fila, ninguna red —un ícono que no lleva a ningún lado es peor que no
+ * tenerlo— y todas las escenas permitidas, lo mismo que el DEFAULT.
  */
-export async function redesSociales(): Promise<RedesSociales> {
-  const [fila] = await db.execute<RedesSociales>(sql`
-    SELECT facebook_url AS facebook, instagram_url AS instagram
-      FROM site_settings WHERE id = 1
-  `);
-  return fila ?? { facebook: null, instagram: null };
-}
+export const configuracionDeLaTienda = cache(
+  async (): Promise<ConfiguracionDeLaTienda> => {
+    const [fila] = await db.execute<
+      RedesSociales & { halloween: boolean; navidad: boolean }
+    >(sql`
+      SELECT facebook_url    AS facebook,
+             instagram_url   AS instagram,
+             halloween_scene AS halloween,
+             christmas_scene AS navidad
+        FROM site_settings WHERE id = 1
+    `);
+    if (!fila) {
+      return {
+        redes: { facebook: null, instagram: null },
+        escenas: TODAS_PERMITIDAS,
+      };
+    }
+    return {
+      redes: { facebook: fila.facebook, instagram: fila.instagram },
+      escenas: { halloween: fila.halloween, navidad: fila.navidad },
+    };
+  },
+);
 
 /** Un medio de pago como lo ve el comprador (RF-01, RF-02, RF-03). */
 export type MedioDePagoDeLaTienda = {

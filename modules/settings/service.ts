@@ -41,22 +41,27 @@ export async function escribirLaConfiguracion(
   const [fila] = await db.execute<ConfiguracionDelSitio>(sql`
     INSERT INTO site_settings
            (id, whatsapp_number, admin_notification_email, low_stock_threshold,
-            facebook_url, instagram_url)
+            facebook_url, instagram_url, halloween_scene, christmas_scene)
     VALUES (1, ${entrada.whatsappNumber}, ${entrada.adminNotificationEmail},
             ${entrada.lowStockThreshold}, ${entrada.facebookUrl},
-            ${entrada.instagramUrl})
+            ${entrada.instagramUrl}, ${entrada.halloweenScene},
+            ${entrada.christmasScene})
     ON CONFLICT (id) DO UPDATE
        SET whatsapp_number          = EXCLUDED.whatsapp_number,
            admin_notification_email = EXCLUDED.admin_notification_email,
            low_stock_threshold      = EXCLUDED.low_stock_threshold,
            facebook_url             = EXCLUDED.facebook_url,
            instagram_url            = EXCLUDED.instagram_url,
+           halloween_scene          = EXCLUDED.halloween_scene,
+           christmas_scene          = EXCLUDED.christmas_scene,
            updated_at               = now()
     RETURNING whatsapp_number          AS "whatsappNumber",
               admin_notification_email AS "adminNotificationEmail",
               low_stock_threshold      AS "lowStockThreshold",
               facebook_url             AS "facebookUrl",
-              instagram_url            AS "instagramUrl"`);
+              instagram_url            AS "instagramUrl",
+              halloween_scene          AS "halloweenScene",
+              christmas_scene          AS "christmasScene"`);
 
   return fila;
 }

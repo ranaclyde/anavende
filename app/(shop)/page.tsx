@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { DatosEstructurados } from "@/components/seo/datos-estructurados";
 import { BotonFavorito } from "@/components/shop/favorito";
+import { escenaDelHero } from "@/components/shop/home/escena-del-hero";
 import { HeroDeLaHome } from "@/components/shop/home/hero";
 import { HileraDePagos } from "@/components/shop/home/pagos";
 import {
@@ -20,10 +21,12 @@ import {
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
 import { VistosRecientemente } from "@/components/shop/vistos";
 import { organizacion, sitio } from "@/lib/datos-estructurados";
+import { escenaDeHoy } from "@/lib/escenas";
 import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE } from "@/lib/seo";
 import { getIdentity } from "@/lib/session";
 import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
 import { leerHome } from "@/modules/catalog/products/home";
+import { configuracionDeLaTienda } from "@/modules/settings/queries";
 import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
 
 const DESCRIPCION =
@@ -71,10 +74,17 @@ export default async function Home() {
   // Independientes: los favoritos son del visitante y el catálogo no es de
   // nadie. Encadenarlas sumaría un viaje a la pantalla de entrada, que es la
   // que más caro paga cada milisegundo (RNF-03).
-  const [datos, favoritos] = await Promise.all([
+  //
+  // La configuración ya la pidió el layout para el logo: `cache()` hace que
+  // acá no vuelva a la base (F9.5). Si falla, el hero sale con la escena de
+  // todos los días.
+  const [datos, favoritos, tienda] = await Promise.all([
     leerHome(),
     getIdentity().then((i) => (i ? idsDeFavoritos(i.userId) : null)),
+    configuracionDeLaTienda().catch(() => undefined),
   ]);
+
+  const escena = escenaDelHero(tienda ? escenaDeHoy(tienda.escenas) : null);
 
   const guardados = new Set(favoritos ?? []);
 
@@ -126,7 +136,10 @@ export default async function Home() {
       {/* ── El hero: la marca y el eslogan, el catálogo alrededor y el
           buscador (§7.1) ─────────────────────────────────────────── */}
       <section className="flex flex-col items-center gap-5 pb-10 text-center">
-        <HeroDeLaHome categorias={datos.destacadas.map((c) => c.nombre)}>
+        <HeroDeLaHome
+          categorias={datos.destacadas.map((c) => c.nombre)}
+          escena={escena}
+        >
           <SearchBox
             principal
             placeholder="¿Qué estás buscando hoy?"

@@ -11,6 +11,7 @@ import {
   NavegacionPrincipal,
 } from "@/components/shop/navegacion-principal";
 import { SearchBox } from "@/components/shop/search-box";
+import type { Escena } from "@/lib/escenas";
 import { cn } from "@/lib/utils";
 
 /**
@@ -36,9 +37,12 @@ import { cn } from "@/lib/utils";
 export function SiteHeader({
   cartCount = 0,
   userName,
+  escena = null,
 }: {
   cartCount?: number;
   userName?: string | null;
+  /** La escena por fecha de hoy (F9.5): el logo lleva su adorno. */
+  escena?: Escena | null;
 }) {
   const [conSombra, setConSombra] = useState(false);
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
@@ -83,8 +87,8 @@ export function SiteHeader({
       )}
     >
       <div className="mx-auto flex h-14 max-w-shop items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <MenuDelTelefono userName={userName} />
-        <Logo />
+        <MenuDelTelefono userName={userName} escena={escena} />
+        <Logo escena={escena} />
         <NavegacionPrincipal />
 
         <div className="flex-1" />

@@ -736,6 +736,8 @@ CREATE TABLE site_settings (
   maintenance_mode      boolean NOT NULL DEFAULT false,  -- F2.7b
   facebook_url          text,                -- enlaces normalizados; NULL = no se muestra (2026-10-20)
   instagram_url         text,
+  halloween_scene       boolean NOT NULL DEFAULT true,  -- F9.5: se puede encender en su período
+  christmas_scene       boolean NOT NULL DEFAULT true,
   updated_at            timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT singleton CHECK (id = 1)
 );

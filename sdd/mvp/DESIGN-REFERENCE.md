@@ -151,6 +151,15 @@ Una cuadrícula de cuatro celdas —**A**, un joystick, unos auriculares y una *
 
 **Nunca:** deformar la proporción, cambiarle el color —salvo la versión clara de esta tabla—, ponerle sombra, rotarlo, ni apoyarlo sobre una foto sin una superficie sólida debajo.
 
+**La única cosa que se le pone encima es el adorno de una fecha** (F9.5,
+RF-38, 2026-10-23): una guirnalda de luces en Navidad y una telaraña con una
+araña en Halloween, en el encabezado de la tienda y solo en su período. El
+isotipo sigue intacto debajo: el adorno es un dibujo aparte
+(`components/shop/adorno-de-temporada.tsx`), no tapa más que el borde de la
+cuadrícula, no cambia el nombre accesible del enlace, y lo que se mueve
+—las luces titilan, la araña baja— termina solo antes de los cinco segundos.
+En el pie, los emails y el panel no va nunca.
+
 **La palabra sola, grande y en burdeos, es un uso más y vive en un solo lugar:
 el hero de la home** (§7.1, agregado el 2026-09-22). Ahí no acompaña a la
 navegación —**es** la pantalla—, así que va en burdeos y por encima de la
@@ -1246,9 +1255,15 @@ eslogan.
 **Alrededor, una escena decorativa, y no el catálogo.** Son ilustraciones del
 diseño (`components/shop/home/escena-del-hero.ts`, archivos en
 `public/hero/base/`), recortadas y sin fondo: no dependen de qué cargó la
-vendedora, no son enlaces y el lector de pantalla no las oye. **Está pensada
-para cambiarse por fecha** —Navidad, Halloween—: otra lista de piezas con sus
-archivos, sin tocar el componente. Eso se arma aparte. Seis piezas desde `lg`, tres por costado —auriculares,
+vendedora, no son enlaces y el lector de pantalla no las oye. **Se cambia por
+fecha** (F9.5, RF-38): en Halloween y en Navidad, otra lista de piezas con sus
+archivos (`public/hero/halloween/`, `public/hero/navidad/`), sin tocar el
+componente. **Las cuatro cercanas son las mismas piezas disfrazadas** —los
+auriculares puestos en una calabaza o con gorro, el joystick con sombrero de
+bruja o con moño—, porque la escena tiene que seguir diciendo qué se vende;
+las dos lejanas sí son de la fecha. Cambian los tamaños donde el disfraz
+cambia la proporción, para que cada pieza pese en pantalla lo mismo que la
+que reemplaza. Seis piezas desde `lg`, tres por costado —auriculares,
 mouse y un disco sólido con un pendrive a la izquierda; joystick, cable y
 teclado a la derecha—,
 a los costados; cuatro hasta ahí, arriba y abajo del texto, porque entre 640 y

@@ -106,6 +106,16 @@ despliegue. En local se ven en Mailpit (<http://localhost:54324>).
 público ve una página con un 503 y quien administra ve la tienda normal.
 `/api/salud` sigue contestando.
 
+**Apagar una fecha especial** (Halloween, Navidad): «Configuración» →
+«Fechas especiales», destildarla y «Guardar cambios». La tienda vuelve a la
+escena de todos los días en el próximo pedido.
+
+**Sumar una fecha especial**: es código, no panel. Lleva su período en
+`lib/escenas.ts`, sus seis piezas en `public/hero/<fecha>/` con su lista en
+`components/shop/home/escena-del-hero.ts`, su adorno en
+`components/shop/adorno-de-temporada.tsx` y su interruptor en
+`site_settings`. Una imagen cambiada lleva un nombre nuevo, por la caché.
+
 **Sumar una administradora**: desde el panel, «Usuarios» → nuevo, que manda
 una invitación por email. A mano, desde Studio:
 

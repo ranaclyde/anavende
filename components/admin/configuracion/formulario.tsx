@@ -5,9 +5,11 @@ import { useId, useRef, useState, useTransition } from "react";
 
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
+import { PERIODOS, type Escena } from "@/lib/escenas";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { telefonoLocal } from "@/lib/telefono";
 import { guardarLaConfiguracion } from "@/modules/settings/actions";
@@ -33,6 +35,41 @@ const CAMPOS = [
 ] as const;
 
 type Campo = (typeof CAMPOS)[number];
+
+/**
+ * Las escenas por fecha (F9.5, RF-38), en el orden del año. El período sale
+ * de `PERIODOS`, el mismo que decide cuándo se encienden: escrito a mano acá,
+ * el día que cambie uno la pantalla diría otra cosa.
+ */
+const FECHAS = [
+  { escena: "halloween", nombre: "Halloween", columna: "halloweenScene" },
+  { escena: "navidad", nombre: "Navidad", columna: "christmasScene" },
+] as const satisfies readonly {
+  escena: Escena;
+  nombre: string;
+  columna: keyof ConfiguracionDelSitio;
+}[];
+
+const MESES = [
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
+];
+
+/** «Del 1 de diciembre al 7 de enero.» */
+function periodo(escena: Escena): string {
+  const { desde, hasta } = PERIODOS[escena];
+  return `Del ${desde.dia} de ${MESES[desde.mes - 1]} al ${hasta.dia} de ${MESES[hasta.mes - 1]}.`;
+}
 
 /**
  * Configuración del sitio — RF-20, F2.7.
@@ -84,6 +121,11 @@ export function FormularioDeConfiguracion({
   const [umbral, setUmbral] = useState(
     String(configuracion?.lowStockThreshold ?? umbralPorDefecto),
   );
+  // Sin fila, prendidas: es lo que la tienda está haciendo (`TODAS_PERMITIDAS`).
+  const [escenas, setEscenas] = useState({
+    halloweenScene: configuracion?.halloweenScene ?? true,
+    christmasScene: configuracion?.christmasScene ?? true,
+  });
 
   const errorGeneral = useRef<HTMLDivElement | null>(null);
 
@@ -100,7 +142,9 @@ export function FormularioDeConfiguracion({
     instagram === (guardado.instagramUrl ?? "") &&
     facebook === (guardado.facebookUrl ?? "") &&
     email === guardado.adminNotificationEmail &&
-    umbral === String(guardado.lowStockThreshold);
+    umbral === String(guardado.lowStockThreshold) &&
+    escenas.halloweenScene === guardado.halloweenScene &&
+    escenas.christmasScene === guardado.christmasScene;
 
   const campo = (nombre: Campo) => ({
     id: `${idBase}-${nombre}`,
@@ -164,6 +208,7 @@ export function FormularioDeConfiguracion({
         // §7.1: acá no hay un monto sino un conteo de unidades. La guarda de
         // arriba ya garantizó que hay dígitos y nada más.
         lowStockThreshold: Number.parseInt(umbral.trim(), 10),
+        ...escenas,
       });
 
       if (!resultado.ok) {
@@ -184,6 +229,10 @@ export function FormularioDeConfiguracion({
       setFacebook(resultado.data.facebookUrl ?? "");
       setEmail(resultado.data.adminNotificationEmail);
       setUmbral(String(resultado.data.lowStockThreshold));
+      setEscenas({
+        halloweenScene: resultado.data.halloweenScene,
+        christmasScene: resultado.data.christmasScene,
+      });
       setSeGuardoRecien(true);
     });
   }
@@ -259,6 +308,43 @@ export function FormularioDeConfiguracion({
             )}
           </div>
         ))}
+      </TarjetaDeSeccion>
+
+      {/* ── Las escenas por fecha (F9.5) ──────────────────────────────── */}
+      <TarjetaDeSeccion
+        id="fechas"
+        titulo="Fechas especiales"
+        ayuda="En estas fechas la tienda se decora sola: cambian los dibujos de la portada y el logo lleva un adorno."
+      >
+        <ul className="flex flex-col gap-1">
+          {FECHAS.map(({ escena, nombre, columna }) => (
+            <li key={escena} className="flex min-h-11 items-start gap-3 py-1">
+              <Checkbox
+                id={`${idBase}-${columna}`}
+                checked={escenas[columna]}
+                onCheckedChange={(v) =>
+                  setEscenas((previas) => ({
+                    ...previas,
+                    [columna]: v === true,
+                  }))
+                }
+                aria-describedby={`${idBase}-${columna}-ayuda`}
+                className="mt-0.5"
+              />
+              <div className="flex flex-col gap-0.5">
+                <label
+                  htmlFor={`${idBase}-${columna}`}
+                  className="text-body-sm font-medium text-ink"
+                >
+                  {nombre}
+                </label>
+                <FieldHint id={`${idBase}-${columna}-ayuda`}>
+                  {periodo(escena)}
+                </FieldHint>
+              </div>
+            </li>
+          ))}
+        </ul>
       </TarjetaDeSeccion>
 
       {/* ── Lo que ve solo la vendedora ──────────────────────────────── */}

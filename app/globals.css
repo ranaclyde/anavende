@@ -357,6 +357,25 @@
     }
   }
 
+  /* Los adornos del logo en las escenas por fecha (F9.5,
+     `components/shop/adorno-de-temporada.tsx`). Los dos terminan solos antes
+     de los cinco segundos de WCAG 2.2.2: las luces titilan cuatro veces y
+     quedan prendidas, y la araña baja una vez y se queda colgada. */
+  --animate-foquito: foquito 900ms ease-in-out 4 both;
+  --animate-arana: arana 1400ms cubic-bezier(0.16, 1, 0.3, 1) 300ms both;
+
+  @keyframes foquito {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  @keyframes arana {
+    from {
+      transform: translateY(-14px);
+    }
+  }
+
   /* El salto del número del carrito cuando sube (2026-10-20): en el teléfono
      el botón de agregar queda lejos del encabezado, y el salto dice a dónde
      fue a parar lo que se agregó. 200ms, el tiempo de §8 para una

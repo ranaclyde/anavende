@@ -6,8 +6,8 @@ import { FILTROS_VACIOS } from "@/modules/catalog/products/filtros";
 import { listarProductos } from "@/modules/catalog/products/queries";
 import { AYUDA_DEL_UMBRAL } from "@/modules/settings/limites";
 import {
+  configuracionDeLaTienda,
   leerLaConfiguracion,
-  redesSociales,
   umbralDeStockBajo,
   UMBRAL_DE_STOCK_BAJO_POR_DEFECTO,
 } from "@/modules/settings/queries";
@@ -296,20 +296,49 @@ describe("guardar y leer (§5.9)", () => {
 
   test("las redes se guardan, se leen y el pie las recibe; vaciarlas las borra", async () => {
     await sinFila();
-    expect(await redesSociales()).toEqual({ facebook: null, instagram: null });
+    expect((await configuracionDeLaTienda()).redes).toEqual({
+      facebook: null,
+      instagram: null,
+    });
 
     const guardada = await escribirLaConfiguracion(
       valido({ ...base, instagramUrl: "@anavende", facebookUrl: "" }).data!,
     );
     expect(guardada.instagramUrl).toBe("https://www.instagram.com/anavende");
     expect(guardada.facebookUrl).toBeNull();
-    expect(await redesSociales()).toEqual({
+    expect((await configuracionDeLaTienda()).redes).toEqual({
       facebook: null,
       instagram: "https://www.instagram.com/anavende",
     });
 
     await escribirLaConfiguracion(valido({ ...base, instagramUrl: "" }).data!);
     expect((await leerLaConfiguracion())?.instagramUrl).toBeNull();
+  });
+
+  test("las escenas por fecha: permitidas sin fila, se apagan de a una y guardar sin nombrarlas no las apaga (F9.5)", async () => {
+    await sinFila();
+    expect((await configuracionDeLaTienda()).escenas).toEqual({
+      halloween: true,
+      navidad: true,
+    });
+
+    const guardada = await escribirLaConfiguracion(
+      valido({ ...base, halloweenScene: false }).data!,
+    );
+    expect(guardada.halloweenScene).toBe(false);
+    expect(guardada.christmasScene).toBe(true);
+    expect((await configuracionDeLaTienda()).escenas).toEqual({
+      halloween: false,
+      navidad: true,
+    });
+
+    // Un envío que no las nombra no apaga ninguna: el esquema las da por
+    // prendidas. Apagar una tiene que ser a propósito.
+    await escribirLaConfiguracion(valido(base).data!);
+    expect((await configuracionDeLaTienda()).escenas).toEqual({
+      halloween: true,
+      navidad: true,
+    });
   });
 
   test("una segunda fila la rechaza el CHECK `singleton`, no el código", async () => {

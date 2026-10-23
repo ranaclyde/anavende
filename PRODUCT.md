@@ -134,7 +134,9 @@ es una decisión abierta.
   en `public/marca/logo.png` y `public/marca/logo-claro.png`; la versión clara
   se deriva del original con `scripts/derivar-logo.mts`, no se mantiene a mano.
   **Nunca** se deforma, recolorea, sombrea ni rota, y no se usa por debajo de
-  24px salvo en el favicon (DESIGN-REFERENCE §2.3).
+  24px salvo en el favicon (DESIGN-REFERENCE §2.3). Lo único que lleva encima
+  es el adorno de una fecha especial en la barra de la tienda (RF-38), como
+  dibujo aparte.
 - **Eslogan:** «Ana vende, vos elegís la tecnología.» La última palabra rota por
   categoría donde hay contexto que lo justifique; la forma canónica va donde la
   persona lo lee una sola vez —pie de página, emails—. Nunca se invierten las
