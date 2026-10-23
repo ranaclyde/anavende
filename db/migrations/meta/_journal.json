@@ -155,6 +155,20 @@
       "when": 1792521474276,
       "tag": "0021_redes_sociales",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792786433517,
+      "tag": "0022_escenas_por_fecha",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792787919836,
+      "tag": "0023_escena_de_pascua",
+      "breakpoints": true
     }
   ]
 }

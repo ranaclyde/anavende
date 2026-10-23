@@ -14,6 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import type { Escena } from "@/lib/escenas";
 import { cn } from "@/lib/utils";
 
 /**
@@ -237,7 +238,13 @@ export function NavegacionPrincipal() {
  * en el teléfono ya no está en la fila— (pedido del 2026-10-21): es donde se
  * la busca en un menú, y no se corre si algún día se suman enlaces.
  */
-export function MenuDelTelefono({ userName }: { userName?: string | null }) {
+export function MenuDelTelefono({
+  userName,
+  escena,
+}: {
+  userName?: string | null;
+  escena?: Escena | null;
+}) {
   const activo = useEnlaceActivo();
   const [abierto, setAbierto] = useState(false);
 
@@ -253,7 +260,7 @@ export function MenuDelTelefono({ userName }: { userName?: string | null }) {
       <SheetContent lado="izquierda" closeLabel="Cerrar el menú">
         <SheetHeader className="border-b-0">
           <SheetTitle className="sr-only">Menú</SheetTitle>
-          <Logo />
+          <Logo escena={escena} />
         </SheetHeader>
         <SheetBody className="flex flex-col gap-6 px-4 pt-2">
           <nav aria-label="Principal">

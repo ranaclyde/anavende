@@ -178,6 +178,16 @@ El inicio del panel y los reportes usan esa misma definición, así que «este
 mes» da lo mismo en los dos. Los reportes se exportan a Excel desde
 `/admin/reportes`.
 
+## Fechas especiales
+
+En **Pascua** (la Semana Santa, del Domingo de Ramos al de Pascua),
+**Halloween** (1 de octubre al 1 de noviembre) y **Navidad** (1 de diciembre
+al 7 de enero) la tienda se decora sola: el hero de la home cambia sus dibujos
+y el logo de la barra lleva un adorno. Los períodos están en `lib/escenas.ts`
+y se cuentan con la fecha de Argentina; Pascua se calcula para cada año; las piezas de cada
+escena, en `components/shop/home/escena-del-hero.ts`. Cada fecha se apaga
+desde «Configuración» → «Fechas especiales».
+
 ## Tienda cerrada
 
 Con el **modo mantenimiento** prendido desde «Configuración», el público ve
