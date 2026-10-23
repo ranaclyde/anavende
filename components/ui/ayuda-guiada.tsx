@@ -5,10 +5,11 @@ import { CircleHelp } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
+import { useDataScale } from "@/components/ui/escala";
 import { cn } from "@/lib/utils";
 
 /**
- * Ayuda guiada — FS RF-36. Tarea F6.6.
+ * Ayuda guiada — FS RF-36 y RF-37. Tareas F6.6 (la tienda) y F6.7 (el panel).
  *
  * Un recorrido corto con Driver.js: oscurece la página, resalta un elemento y
  * explica en un globo qué es. **Aparece solo la primera vez** que se entra a
@@ -25,6 +26,17 @@ import { cn } from "@/lib/utils";
  * atributo dice para qué está y nadie lo borra por estética. Un paso cuyo
  * elemento no está en pantalla no se arma; si el que falta es obligatorio,
  * el recorrido entero espera a una visita en la que esté.
+ *
+ * **Cada paso señala el primer elemento visible con su `data-ayuda`.** En el
+ * panel el atributo va en todas las copias —cada renglón de una orden, cada
+ * color de un producto—, y una misma pieza puede estar dos veces, una para
+ * cada ancho: la orden se dibuja como tabla en escritorio y como lista en el
+ * teléfono, y la que está oculta viene primero.
+ *
+ * **En el panel el globo lleva su escala** (F6.7). Driver.js lo pinta en el
+ * `<body>`, fuera de `data-scale="admin"`, igual que los diálogos (ver
+ * `escala.tsx`): sin el atributo, sus botones tomaban las medidas de la
+ * tienda. El modo oscuro llega solo, porque `data-theme` está en `<html>`.
  *
  * **La librería se pide recién al abrir** (`import()`): quien ya la vio no
  * la descarga. Y **su CSS no se importa**: sin capa, ganaría a las utilidades
@@ -66,9 +78,14 @@ function marcarVista(id: string): void {
 }
 
 function buscar(paso: PasoDeAyuda): Element | null {
-  const elemento = document.querySelector(`[data-ayuda="${paso.elemento}"]`);
+  const elementos = document.querySelectorAll(
+    `[data-ayuda="${paso.elemento}"]`,
+  );
   // Un elemento oculto —`display: none`, el del otro ancho— no tiene cajas.
-  return elemento && elemento.getClientRects().length > 0 ? elemento : null;
+  for (const elemento of elementos) {
+    if (elemento.getClientRects().length > 0) return elemento;
+  }
+  return null;
 }
 
 /** Los pasos que se pueden mostrar hoy, o `null` si falta uno obligatorio. */
@@ -99,8 +116,9 @@ const CRUZ =
  * que se anuncia tiene que ser el recorrido, no la salida. Va diferido porque
  * la librería enfoca DESPUÉS de este gancho y lo pisaría.
  */
-function vestir(globo: PopoverDOM): void {
+function vestir(globo: PopoverDOM, escala: "admin" | undefined): void {
   globo.wrapper.setAttribute("aria-modal", "true");
+  if (escala) globo.wrapper.setAttribute("data-scale", escala);
   // Driver.js arma el título con `<header>` y el pie con `<footer>`, y fuera
   // de una sección eso son las regiones «banner» y «contentinfo» de la
   // página: un lector de pantalla las listaría junto al encabezado del sitio.
@@ -129,13 +147,17 @@ function vestir(globo: PopoverDOM): void {
 export function AyudaGuiada({
   id,
   pasos,
+  tamano = "md",
   className,
 }: {
   /** Una por pantalla: es lo que se anota como vista. */
   id: string;
   pasos: PasoDeAyuda[];
+  /** `sm` en el encabezado del panel, al lado de sus otras acciones. */
+  tamano?: "sm" | "md";
   className?: string;
 }) {
+  const escala = useDataScale();
   const boton = useRef<HTMLButtonElement>(null);
   const activo = useRef<Driver | null>(null);
   // El `import()` tarda: sin esto, dos llamadas seguidas —el doble efecto de
@@ -169,7 +191,9 @@ export function AyudaGuiada({
       overlayColor: "rgb(17 16 16)",
       overlayOpacity: 0.55,
       stagePadding: 8,
-      stageRadius: 20,
+      // El radio de lo resaltado sigue al de sus piezas: píldoras y tarjetas
+      // de 20 a 28px en la tienda, controles y tarjetas de 8 a 12 en el panel.
+      stageRadius: escala ? 12 : 20,
       popoverClass: "ayuda-guiada",
       // Que un toque en lo resaltado no navegue a mitad del recorrido.
       disableActiveInteraction: true,
@@ -179,7 +203,7 @@ export function AyudaGuiada({
       prevBtnText: "Anterior",
       doneBtnText: "Listo",
       closeBtnLabel: "Cerrar la guía",
-      onPopoverRender: vestir,
+      onPopoverRender: (globo) => vestir(globo, escala),
       // El foco vuelve al botón que la reabre; diferido por lo mismo que en
       // `vestir`.
       onDestroyed: () => {
@@ -216,7 +240,7 @@ export function AyudaGuiada({
       type="button"
       onClick={() => void abrir()}
       className={cn(
-        buttonVariants({ variant: "tertiary", size: "md" }),
+        buttonVariants({ variant: "tertiary", size: tamano }),
         className,
       )}
     >

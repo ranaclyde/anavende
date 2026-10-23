@@ -176,6 +176,7 @@ export function AgregarProductos({
         variant="secondary"
         className="self-start"
         onClick={() => setAbierto(true)}
+        data-ayuda="agregar-productos"
       >
         <Plus aria-hidden />
         Agregar productos

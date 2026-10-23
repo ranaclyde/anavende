@@ -124,7 +124,7 @@ había salido cuatro días antes.
 - El foco queda atrapado en el globo y el elemento resaltado.
 - Las flechas pasan de paso y Esc cierra.
 
-**Lo que hubo que corregir**, todo en `components/shop/ayuda-guiada.tsx`:
+**Lo que hubo que corregir**, todo en `components/ui/ayuda-guiada.tsx`:
 
 | Problema | Corrección |
 |---|---|
@@ -228,11 +228,14 @@ El paso 1 señala los botones y no el renglón entero: en el teléfono el
 renglón es una tarjeta, y los botones son lo que no tiene nombre a la vista.
 
 **Nueva orden (`/admin/ordenes/nueva`) — id `panel-orden-nueva`.** Arranca
-siempre: los dos elementos están desde que se abre la pantalla.
+siempre: los dos elementos están desde que se abre la pantalla. El texto del
+paso 1 se corrigió al implementarlo: decía que se podía cargar más de lo que
+hay sin aclarar que es solo como finalizada, y como activa el renglón lo
+impide.
 
 | # | Señala | Título | Texto |
 |---|---|---|---|
-| 1 | «Buscar un producto» | Lo que vendiste | Buscalo por nombre o marca. Si vendiste más de lo que figura en stock, igual se puede cargar: el aviso aparece en el renglón. |
+| 1 | «Agregar productos», que abre el buscador | Lo que vendiste | Buscalo por nombre o marca. Si vendiste más de lo que figura en stock, igual la podés cargar como finalizada. |
 | 2 | «Cómo queda la orden» | ¿Ya la entregaste? | Si falta entregar, cobrar o cerrar el precio, dejala activa: así la podés ajustar. Una finalizada ya no se edita. |
 
 Son dos pasos porque el resto del formulario ya se explica solo (§7.2).
@@ -263,26 +266,43 @@ que no quede ninguna vigente en la página.
 
 ### 7.4 Lo que cambia respecto de la tienda
 
-- **El componente se comparte.** Hoy vive en
-  `components/shop/ayuda-guiada.tsx`; pasa a un lugar común y la tienda y el
-  panel lo importan de ahí. La clave de `localStorage` es la misma: los ids
-  del panel empiezan con `panel-` y no se pisan con los de la tienda.
-- **El modo oscuro.** El panel lo tiene y la tienda no. El globo ya se dibuja
-  con las variables de color, que `[data-theme="dark"]` redefine en `<html>`,
-  así que debería tomarlo solo. Hay que revisar el contraste del fondo
-  oscurecido y del globo en los dos temas, y pasar axe con los dos.
+- **El componente se comparte.** Pasó de `components/shop/` a
+  `components/ui/ayuda-guiada.tsx`, y la tienda y el panel lo importan de
+  ahí. La clave de `localStorage` es la misma: los ids del panel empiezan con
+  `panel-` y no se pisan con los de la tienda.
+- **El modo oscuro llegó solo.** El globo se dibuja con las variables de
+  color, que `[data-theme="dark"]` redefine en `<html>`. Revisado a ojo en
+  los dos temas, y axe sin hallazgos en oscuro.
 - **La escala.** Driver.js pone el globo en el `<body>`, fuera del
   contenedor con `data-scale="admin"`. Sin ese atributo, el globo y sus
-  botones toman las medidas de la tienda. Se resuelve marcando el globo.
+  botones tomaban las medidas de la tienda. El componente lee la escala con
+  `useDataScale()`, como los diálogos, y se la pone al globo. Con ella, el
+  globo toma el radio de los diálogos del panel (8px) y lo resaltado, 12px.
 - **«Ver la guía»** va en las acciones de `EncabezadoDePanel`, como botón
-  terciario y al final, después de las acciones de la pantalla.
+  terciario `sm` y al final, después de las acciones de la pantalla.
+- **Cada paso señala el primer elemento visible** con su `data-ayuda`. En el
+  panel el atributo va en todas las copias —cada renglón, cada color, cada
+  devolución—, y la orden se dibuja dos veces: tabla en escritorio y lista en
+  el teléfono. La tienda solo buscaba el primero, y en el teléfono ese era el
+  de la tabla, oculta.
+- **Lo resaltado tiene que medir lo que su contenido.** Los botones de un
+  renglón de la orden y «Anular» iban en una fila a todo el ancho, y la guía
+  resaltaba un recuadro vacío a su izquierda. Se angostaron con `w-fit` y
+  `self-end`, sin cambiar dónde se ven.
 
 ### 7.5 Pruebas
 
 - **`tests/e2e/ayudas.spec.ts`** suma el panel:
   - Que aparece la primera vez y no la segunda.
-  - Que el foco vuelve a «Ver la guía» al cerrarla.
-  - Que tiene axe sin hallazgos con el globo abierto, en claro y en oscuro.
+  - Que la de la orden se recorre con el teclado y el foco vuelve a «Ver la
+    guía» al cerrarla.
+  - Que tiene axe sin hallazgos con el globo abierto, en claro y en oscuro,
+    y que el globo lleva `data-scale="admin"`.
+  - La devolución que necesita se arma por SQL, sobre una orden finalizada,
+    y se borra antes de desarmar: traba el borrado de su orden.
+- **Con la flecha a la derecha, un paso puede no avanzar** si la tecla llega
+  mientras el anterior se está armando. Por eso el test espera el foco en
+  «Siguiente» y avanza con Enter, como el de la ficha.
 - **`tests/e2e/apoyo/test.ts`** suma los ids nuevos a las guías vistas, para
   que los E2E del panel no tengan que cerrar el globo.
 - **Revisado con Playwright a 390 y a 1280** en las cuatro pantallas y en

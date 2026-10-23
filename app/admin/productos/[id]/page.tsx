@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { FormularioDeProducto } from "@/components/admin/productos/formulario";
 import { VariantesDelProducto } from "@/components/admin/productos/variantes";
+import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
 import {
   obtenerProducto,
   opcionesDeProducto,
@@ -15,6 +16,29 @@ import {
 import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Editar producto" };
+
+/**
+ * La guía del producto (F6.7, RF-37): cuál de los tres números manda y qué
+ * se escribe al corregir el stock. Las fotos, «Activo» y «Destacado» no
+ * entran, porque la pantalla ya los explica al lado.
+ *
+ * El segundo paso es el que más ahorra: escribir el total ya sin lo
+ * reservado deja el stock por debajo del real (objetivo O2).
+ */
+const PASOS_DEL_PRODUCTO: PasoDeAyuda[] = [
+  {
+    elemento: "stock-del-color",
+    titulo: "¿Cuánto podés vender?",
+    texto:
+      "Lo que manda es «disponibles»: el total menos lo guardado para órdenes activas. Las reservadas salen del total cuando finalizás la orden.",
+  },
+  {
+    elemento: "corregir-stock",
+    titulo: "Acá corregís el stock",
+    texto:
+      "Cuando entra mercadería o contás de nuevo, poné el total que tenés en la mano, con lo reservado incluido. Las reservas se descuentan solas.",
+  },
+];
 
 /** En Next 16 `params` y `searchParams` son asíncronos (§10.2). */
 type Props = {
@@ -72,6 +96,17 @@ export default async function EditarProducto({ params, searchParams }: Props) {
       <EncabezadoDePanel
         titulo={producto.name}
         volver={{ href: "/admin/productos", etiqueta: "Productos" }}
+        acciones={
+          // Sin colores no hay stock que explicar: el estado vacío ya dice
+          // qué hacer.
+          variantes.length > 0 ? (
+            <AyudaGuiada
+              id="panel-producto"
+              pasos={PASOS_DEL_PRODUCTO}
+              tamano="sm"
+            />
+          ) : null
+        }
       />
 
       {/* Dos columnas cuando hay lugar para las dos, y una sola cuando no.

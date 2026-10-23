@@ -652,7 +652,7 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   }
 }
 
-/* La ayuda guiada (F6.6, `components/shop/ayuda-guiada.tsx`). Reemplaza al
+/* La ayuda guiada (F6.6 y F6.7, `components/ui/ayuda-guiada.tsx`). Reemplaza al
    `driver.css` de la librería, que no se importa: sin capa, le ganaría a las
    utilidades con las que se visten los botones. Acá va lo que hace andar el
    recorrido —quién recibe el puntero mientras está abierto— y el globo, que
@@ -703,6 +703,12 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
     background: var(--surface);
     box-shadow: var(--shadow-lg);
     color: var(--ink);
+  }
+
+  /* En el panel (F6.7) el globo lleva el radio de sus diálogos, como
+     `admin:rounded-panel-image` en `DialogContent`. */
+  .driver-popover[data-scale="admin"] {
+    border-radius: var(--radius-panel-image);
   }
 
   /* Deja lugar a la cruz, que va arriba a la derecha. */

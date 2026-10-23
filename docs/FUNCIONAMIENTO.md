@@ -77,7 +77,7 @@ flowchart LR
 **Las guías de uso** (RF-36) explican este camino la primera vez que alguien
 pasa por la ficha, el checkout, «Mis compras» y el detalle de un pedido en
 preparación: un globo que resalta cada parte, hecho con Driver.js
-(`components/shop/ayuda-guiada.tsx`). Lo visto se anota en el navegador, no
+(`components/ui/ayuda-guiada.tsx`). Lo visto se anota en el navegador, no
 en la base, así que vale igual con o sin cuenta. «Ver la guía» la vuelve a
 abrir. Los pasos señalan elementos con `data-ayuda`: si se renombra uno, su
 paso deja de aparecer.
@@ -105,6 +105,13 @@ stateDiagram-v2
   cargarse finalizada, y entonces descuenta directo; si eso deja el stock en
   negativo, se permite, porque la venta ya ocurrió, y el panel lo destaca
   como una diferencia a revisar.
+
+**El panel también tiene guías de uso** (RF-37): en el detalle de una orden
+activa, la orden manual, la edición de un producto y devoluciones, que son
+las pantallas donde una acción mueve el stock o no tiene vuelta atrás. Es el
+mismo componente que en la tienda, con la escala y el modo oscuro del panel.
+Lo visto también se anota en el navegador, así que en otro dispositivo la
+guía se ve una vez más.
 
 ## Devoluciones
 

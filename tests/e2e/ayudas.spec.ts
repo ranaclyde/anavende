@@ -6,6 +6,8 @@ import { ingresar } from "./apoyo/sesion";
 
 /**
  * F6.6 — Las guías de la ficha, el checkout y «Mis compras». FS RF-36.
+ * F6.7 — Las del panel: la orden, la orden manual, el producto y las
+ * devoluciones. FS RF-37.
  *
  * Lo que se prueba es lo que hace que una guía no moleste: **aparece sola la
  * primera vez y nunca más**, se cierra de cualquier forma, el foco entra al
@@ -20,8 +22,11 @@ test.use({ ayudasVistas: false });
 
 const datos = datosDePrueba();
 let slug: string;
+let productoId: string;
 let compradora: Cuenta;
+let admin: Cuenta;
 let orden: Orden;
+let devolucionId: string;
 
 test.beforeAll(async () => {
   const palabra = sufijo();
@@ -40,6 +45,7 @@ test.beforeAll(async () => {
     stock: 5,
   });
   slug = teclado.slug;
+  productoId = teclado.id;
 
   compradora = await datos.unaCuenta("Compradora");
   orden = await datos.unaOrden(compradora, [
@@ -51,6 +57,30 @@ test.beforeAll(async () => {
     },
   ]);
 
+  // La guía de devoluciones necesita una: sobre una orden finalizada, como
+  // las de verdad (RF-25).
+  admin = await datos.unaCuenta("Administradora", "admin");
+  const entregada = await datos.unaOrden(compradora, [
+    {
+      variante: teclado.variantes[1],
+      producto: teclado,
+      cantidad: 1,
+      precio: "24500.00",
+    },
+  ]);
+  await datos.sql`
+    UPDATE orders SET status = 'finalizada', finalized_at = now()
+     WHERE id = ${entregada.id}`;
+  const [devolucion] = await datos.sql<{ id: string }[]>`
+    INSERT INTO returns (order_id, status, reason)
+    VALUES (${entregada.id}, 'registrada', 'Le quedaba chico')
+    RETURNING id`;
+  devolucionId = devolucion.id;
+  await datos.sql`
+    INSERT INTO return_items (return_id, order_item_id, quantity, restocks)
+    SELECT ${devolucionId}, id, 1, true
+      FROM order_items WHERE order_id = ${entregada.id}`;
+
   // El checkout sin nada en el carrito vuelve al carrito.
   const [carrito] = await datos.sql<{ id: string }[]>`
     INSERT INTO carts (user_id) VALUES (${compradora.id}) RETURNING id`;
@@ -60,6 +90,10 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
+  // La devolución traba el borrado de su orden (`restrict`).
+  if (devolucionId) {
+    await datos.sql`DELETE FROM returns WHERE id = ${devolucionId}`;
+  }
   await datos.desarmar();
 });
 
@@ -166,4 +200,66 @@ test("el checkout y «Mis compras» tienen la suya, una vez cada una", async ({
   await sinGuia(page);
   await page.goto("/mi-cuenta/compras");
   await sinGuia(page);
+});
+
+test("el panel: la orden activa, con teclado, y una vez cada pantalla", async ({
+  page,
+}) => {
+  await ingresar(page, admin);
+
+  await page.goto(`/admin/ordenes/${orden.numero}`);
+  await expect(globo(page)).toHaveAccessibleName("Ajustá cada producto");
+  await expect(page.getByRole("button", { name: "Siguiente" })).toBeFocused();
+  expect(await axeDelGlobo(page)).toEqual([]);
+
+  // Los cuatro pasos con el teclado: el foco vuelve a «Siguiente» en cada
+  // uno, y recién ahí el paso está armado para recibir la tecla.
+  for (const titulo of [
+    "¿Te pidió algo más?",
+    "Avisale los cambios",
+    "Cuando se resuelve",
+  ]) {
+    await expect(page.getByRole("button", { name: "Siguiente" })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(globo(page)).toHaveAccessibleName(titulo);
+  }
+  await page.keyboard.press("Escape");
+  await expect(globo(page)).toBeHidden();
+  await expect(page.getByRole("button", { name: "Ver la guía" })).toBeFocused();
+
+  await page.goto("/admin/ordenes/nueva");
+  await expect(globo(page)).toHaveAccessibleName("Lo que vendiste");
+  await page.keyboard.press("Escape");
+
+  await page.goto(`/admin/productos/${productoId}`);
+  await expect(globo(page)).toHaveAccessibleName("¿Cuánto podés vender?");
+  await page.keyboard.press("Escape");
+
+  await page.goto("/admin/devoluciones");
+  await expect(globo(page)).toHaveAccessibleName("Cada una con su orden");
+  await page.keyboard.press("Escape");
+
+  // Vistas las cuatro, ninguna vuelve.
+  await page.goto(`/admin/ordenes/${orden.numero}`);
+  await sinGuia(page);
+  await page.goto("/admin/devoluciones");
+  await sinGuia(page);
+});
+
+test("en el panel, el globo pasa axe en oscuro y lleva su escala", async ({
+  page,
+}) => {
+  await page.context().addInitScript(() => {
+    localStorage.setItem("anavende:admin-theme", "dark");
+  });
+  await ingresar(page, admin);
+
+  await page.goto(`/admin/productos/${productoId}`);
+  await expect(globo(page)).toHaveAccessibleName("¿Cuánto podés vender?");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator(".driver-popover")).toHaveAttribute(
+    "data-scale",
+    "admin",
+  );
+  expect(await axeDelGlobo(page)).toEqual([]);
 });
