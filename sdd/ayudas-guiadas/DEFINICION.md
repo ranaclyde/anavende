@@ -1,8 +1,9 @@
 # Guías de uso — definición
 
-> **Estado:** en el MVP como **F6.6**, con su requisito en
-> `FUNCTIONAL-SPEC.md` **RF-36**. Este documento guarda el detalle: los textos,
-> lo que se probó de la librería y el porqué de cada decisión.
+> **Estado:** en el MVP como **F6.6** (la tienda, `FUNCTIONAL-SPEC.md`
+> **RF-36**) y **F6.7** (el panel, **RF-37**, §7 de este documento). Este
+> documento guarda el detalle: los textos, lo que se probó de la librería y el
+> porqué de cada decisión.
 >
 > **Historia corta.** La primera versión, del 2026-10-22, la dejaba solo en
 > «Mis compras» y fuera del MVP. Se corrigió el mismo día: el pedido era
@@ -161,3 +162,128 @@ La tienda no tiene modo oscuro, así que el globo tampoco.
   - Que entra a 320px.
   - Que tiene axe sin hallazgos con el globo abierto, medido después del fundido: a mitad, el globo es semitransparente y axe mide contra lo que se ve a través.
 - **El resto de los E2E arrancan con las guías vistas** (`tests/e2e/apoyo/test.ts`). Si no, cada recorrido que pasa por esas pantallas tendría que cerrar un globo primero. La opción es del worker y no del test, porque la fixture `context` de Playwright también nace de `browser.newContext`.
+
+## 7. El panel (F6.7)
+
+Pedido del 2026-10-23: las cuatro pantallas de abajo, **en el MVP como F6.7**,
+y **lo visto se anota en el navegador**, igual que en la tienda (las dos
+decisiones son tuyas, del mismo día). Se evaluó guardarlo en la base: en el
+panel siempre hay sesión, y la guía no se repetiría en otro dispositivo. No
+vale una columna, una acción del servidor y un segundo mecanismo, por una
+guía que se ve una vez más en el teléfono.
+
+### 7.1 Dónde va y dónde no
+
+Cada una va donde **una acción mueve el stock o no se puede deshacer**. El
+panel lo usa una sola persona que ya lo conoce, así que la guía es sobre todo
+para una segunda cuenta de administradora (RF-26) y para lo que se hace poco.
+
+- **Detalle de una orden activa:** cómo se ajusta, cómo se le avisa al
+  comprador y qué cambia al resolverla.
+- **Nueva orden manual:** qué pasa si se vendió más de lo que figura y cuándo
+  dejarla activa.
+- **Edición de un producto:** cuál de los tres números de stock manda y qué
+  se escribe al corregirlo.
+- **Devoluciones:** de dónde salen, qué cambia entre las que vuelven al stock
+  y las que no, y qué se hace con una mal cargada.
+
+**No va en el inicio ni en reportes**, que son para mirar. **Tampoco en
+categorías, marcas, colores, medios de pago, legales, configuración ni
+usuarios**: son altas y bajas que se entienden solas. **Tampoco en «Nuevo
+producto»**: es un formulario de datos y precio, y su bajada ya dice que los
+colores, el stock y las fotos vienen después.
+
+### 7.2 Cómo están escritos
+
+Valen las reglas de §3, con un cambio: **en el panel nadie habla como
+«nosotros»**. En la tienda «nosotros» es la tienda y le habla al comprador;
+acá quien lee es la tienda. La guía le habla de vos a la vendedora, y lo que
+hace el sistema se dice en impersonal.
+
+**Lo que ya dice cada pantalla, y por eso la guía no repite:**
+- **El detalle de una orden activa** tiene un párrafo arriba que explica que
+  se ajusta desde la tabla, que lo quitado vuelve al stock, que finalizar
+  descuenta y que ni finalizar ni cancelar tienen vuelta atrás.
+- **El alta manual** tiene la bajada, el aviso de que el precio se puede
+  cambiar y la explicación de «Finalizada» y «Activa».
+- **El editor de producto** explica las fotos, cómo se elige la principal y
+  qué hacen «Activo» y «Destacado».
+- **Cada diálogo** muestra el stock que se mueve antes de confirmar.
+
+### 7.3 Los recorridos
+
+**Detalle de una orden (`/admin/ordenes/[numero]`) — id `panel-orden`.**
+Arranca **solo con la orden activa**, que es cuando existen las acciones. En
+los otros estados el botón «Ver la guía» no se dibuja, como en el detalle de
+la tienda.
+
+| # | Señala | Título | Texto |
+|---|---|---|---|
+| 1 | Los botones del primer renglón (subir, bajar, quitar) | Ajustá cada producto | Con + y − cambiás la cantidad, y con el tacho lo sacás de la orden. Antes de confirmar vas a ver cuánto stock se mueve. |
+| 2 | «Agregar un producto» | ¿Te pidió algo más? | Buscalo y sumalo. Un producto nuevo entra al precio de hoy; si ya estaba en la orden, se suma a su renglón con el precio que tenía. |
+| 3 | «Escribirle por WhatsApp» | Avisale los cambios | Al comprador no le llega ningún aviso cuando tocás la orden. Escribile desde acá: el mensaje ya sale con el número de la orden. |
+| 4 | «Finalizar» y «Cancelar la orden», juntos | Cuando se resuelve | Solo las finalizadas cuentan como ventas en Reportes. Si cancelás, el motivo que escribas lo puede leer el comprador. |
+
+El paso 1 señala los botones y no el renglón entero: en el teléfono el
+renglón es una tarjeta, y los botones son lo que no tiene nombre a la vista.
+
+**Nueva orden (`/admin/ordenes/nueva`) — id `panel-orden-nueva`.** Arranca
+siempre: los dos elementos están desde que se abre la pantalla.
+
+| # | Señala | Título | Texto |
+|---|---|---|---|
+| 1 | «Buscar un producto» | Lo que vendiste | Buscalo por nombre o marca. Si vendiste más de lo que figura en stock, igual se puede cargar: el aviso aparece en el renglón. |
+| 2 | «Cómo queda la orden» | ¿Ya la entregaste? | Si falta entregar, cobrar o cerrar el precio, dejala activa: así la podés ajustar. Una finalizada ya no se edita. |
+
+Son dos pasos porque el resto del formulario ya se explica solo (§7.2).
+
+**Edición de un producto (`/admin/productos/[id]`) — id `panel-producto`.**
+Arranca **solo con al menos un color**: sin colores la pantalla muestra el
+estado vacío, que ya dice qué hacer.
+
+| # | Señala | Título | Texto |
+|---|---|---|---|
+| 1 | El stock del primer color («en total · reservadas · disponibles») | ¿Cuánto podés vender? | Lo que manda es «disponibles»: el total menos lo guardado para órdenes activas. Las reservadas salen del total cuando finalizás la orden. |
+| 2 | El lápiz del primer color | Acá corregís el stock | Cuando entra mercadería o contás de nuevo, poné el total que tenés en la mano, con lo reservado incluido. Las reservas se descuentan solas. |
+
+El paso 2 es el que más ahorra: escribir el total ya sin lo reservado es el
+error que deja el stock por debajo de la realidad (objetivo O2).
+
+**Devoluciones (`/admin/devoluciones`) — id `panel-devoluciones`.** Arranca
+**solo con al menos una devolución**: el estado vacío ya dice dónde se cargan.
+
+| # | Señala | Título | Texto |
+|---|---|---|---|
+| 1 | «Orden #…» de la primera tarjeta | Cada una con su orden | Se cargan desde la orden finalizada, con «Registrar devolución». Tocá el número para ir a ella. |
+| 2 | La insignia del primer renglón | ¿Volvió o no? | Las dos se descuentan de las ventas en Reportes. La diferencia es solo el stock. |
+| 3 | «Anular» de la primera devolución vigente (opcional) | ¿Te equivocaste? | Una devolución no se edita: anulala y cargala de nuevo desde la orden. |
+
+El paso 3 es opcional porque una anulada no tiene el botón, y puede pasar
+que no quede ninguna vigente en la página.
+
+### 7.4 Lo que cambia respecto de la tienda
+
+- **El componente se comparte.** Hoy vive en
+  `components/shop/ayuda-guiada.tsx`; pasa a un lugar común y la tienda y el
+  panel lo importan de ahí. La clave de `localStorage` es la misma: los ids
+  del panel empiezan con `panel-` y no se pisan con los de la tienda.
+- **El modo oscuro.** El panel lo tiene y la tienda no. El globo ya se dibuja
+  con las variables de color, que `[data-theme="dark"]` redefine en `<html>`,
+  así que debería tomarlo solo. Hay que revisar el contraste del fondo
+  oscurecido y del globo en los dos temas, y pasar axe con los dos.
+- **La escala.** Driver.js pone el globo en el `<body>`, fuera del
+  contenedor con `data-scale="admin"`. Sin ese atributo, el globo y sus
+  botones toman las medidas de la tienda. Se resuelve marcando el globo.
+- **«Ver la guía»** va en las acciones de `EncabezadoDePanel`, como botón
+  terciario y al final, después de las acciones de la pantalla.
+
+### 7.5 Pruebas
+
+- **`tests/e2e/ayudas.spec.ts`** suma el panel:
+  - Que aparece la primera vez y no la segunda.
+  - Que el foco vuelve a «Ver la guía» al cerrarla.
+  - Que tiene axe sin hallazgos con el globo abierto, en claro y en oscuro.
+- **`tests/e2e/apoyo/test.ts`** suma los ids nuevos a las guías vistas, para
+  que los E2E del panel no tengan que cerrar el globo.
+- **Revisado con Playwright a 390 y a 1280** en las cuatro pantallas y en
+  los dos temas.
