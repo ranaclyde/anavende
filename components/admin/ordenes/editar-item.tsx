@@ -59,7 +59,13 @@ export function EditarElRenglon({
   >(null);
 
   return (
-    <div className="flex items-center justify-end gap-0.5">
+    // Lo señala la guía de la orden (F6.7): el primero visible. Mide lo que
+    // sus botones y se corre a la derecha con `ml-auto`, porque a todo el
+    // ancho la guía resaltaba un recuadro vacío a su izquierda.
+    <div
+      data-ayuda="ajustar-renglon"
+      className="ml-auto flex w-fit items-center gap-0.5"
+    >
       {/* **Subir está siempre, aunque no haya stock.** Al revés que bajar, acá
           la razón por la que no se puede no se ve en la pantalla —el
           disponible es de otra tabla—, y un botón ausente sin explicación

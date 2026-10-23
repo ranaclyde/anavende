@@ -52,7 +52,10 @@ export function ResolverLaOrden({
   const [abierto, setAbierto] = useState<"finalizar" | "cancelar" | null>(null);
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div
+      data-ayuda="resolver-orden"
+      className="flex flex-wrap items-center gap-2"
+    >
       <Button variant="brand" size="sm" onClick={() => setAbierto("finalizar")}>
         <Check aria-hidden />
         Finalizar

@@ -13,6 +13,7 @@ import { DevolverDeLaOrden } from "@/components/admin/ordenes/devolver";
 import { EditarElRenglon } from "@/components/admin/ordenes/editar-item";
 import { HistorialDeLaOrden } from "@/components/admin/ordenes/historial";
 import { ResolverLaOrden } from "@/components/admin/ordenes/resolver";
+import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import {
@@ -39,6 +40,38 @@ import {
 import { exigirAdmin } from "@/lib/session";
 
 type Props = { params: Promise<{ numero: string }> };
+
+/**
+ * La guía de la orden (F6.7, RF-37), solo con la orden activa: es cuando
+ * existen las acciones. No repite el párrafo de arriba de la tabla, que ya
+ * dice qué pasa con el stock al ajustar, finalizar o cancelar.
+ */
+const PASOS_DE_LA_ORDEN: PasoDeAyuda[] = [
+  {
+    elemento: "ajustar-renglon",
+    titulo: "Ajustá cada producto",
+    texto:
+      "Con + y − cambiás la cantidad, y con el tacho lo sacás de la orden. Antes de confirmar vas a ver cuánto stock se mueve.",
+  },
+  {
+    elemento: "agregar-a-la-orden",
+    titulo: "¿Te pidió algo más?",
+    texto:
+      "Buscalo y sumalo. Un producto nuevo entra al precio de hoy; si ya estaba en la orden, se suma a su renglón con el precio que tenía.",
+  },
+  {
+    elemento: "escribir-al-comprador",
+    titulo: "Avisale los cambios",
+    texto:
+      "Al comprador no le llega ningún aviso cuando tocás la orden. Escribile desde acá: el mensaje ya sale con el número de la orden.",
+  },
+  {
+    elemento: "resolver-orden",
+    titulo: "Cuando se resuelve",
+    texto:
+      "Solo las finalizadas cuentan como ventas en Reportes. Si cancelás, el motivo que escribas lo puede leer el comprador.",
+  },
+];
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { numero } = await params;
@@ -135,6 +168,7 @@ export default async function DetalleDeLaOrden({ params }: Props) {
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
+                data-ayuda="escribir-al-comprador"
               >
                 <IconoWhatsApp className="size-4" />
                 Escribirle por WhatsApp
@@ -165,6 +199,15 @@ export default async function DetalleDeLaOrden({ params }: Props) {
                   stock: item.stock,
                 }))}
                 loLeeElComprador={orden.cuenta !== null}
+              />
+            ) : null}
+
+            {/* Al final: es la acción que menos pesa de la cabecera. */}
+            {orden.estado === "activa" ? (
+              <AyudaGuiada
+                id="panel-orden"
+                pasos={PASOS_DE_LA_ORDEN}
+                tamano="sm"
               />
             ) : null}
           </div>

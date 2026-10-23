@@ -380,6 +380,7 @@ export function AltaDeOrdenManual() {
         id="como-queda"
         titulo="Cómo queda la orden"
         ayuda="De esto depende qué pasa con el stock."
+        data-ayuda="como-queda"
       >
         <div className="grid gap-2 sm:grid-cols-2">
           <Opcion

@@ -8,6 +8,7 @@ import {
   SinDevoluciones,
 } from "@/components/admin/devoluciones/listado";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
+import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
 import {
   POR_PAGINA,
   leerFiltros,
@@ -21,6 +22,34 @@ import {
 import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Devoluciones" };
+
+/**
+ * La guía de devoluciones (F6.7, RF-37), con al menos una cargada: sin
+ * ninguna, el estado vacío ya dice dónde se registran. «Anular» es opcional
+ * porque una anulada no lo tiene, y puede no quedar ninguna vigente en la
+ * página.
+ */
+const PASOS_DE_DEVOLUCIONES: PasoDeAyuda[] = [
+  {
+    elemento: "orden-de-la-devolucion",
+    titulo: "Cada una con su orden",
+    texto:
+      "Se cargan desde la orden finalizada, con «Registrar devolución». Tocá el número para ir a ella.",
+  },
+  {
+    elemento: "stock-de-la-devolucion",
+    titulo: "¿Volvió o no?",
+    texto:
+      "Las dos se descuentan de las ventas en Reportes. La diferencia es solo el stock.",
+  },
+  {
+    elemento: "anular-devolucion",
+    titulo: "¿Te equivocaste?",
+    texto:
+      "Una devolución no se edita: anulala y cargala de nuevo desde la orden.",
+    opcional: true,
+  },
+];
 
 /**
  * Listado de devoluciones — FS RF-25. Tarea F7.5.
@@ -61,6 +90,15 @@ export default async function DevolucionesDelPanel({
       <EncabezadoDePanel
         titulo="Devoluciones"
         bajada="Lo que volvió de las órdenes entregadas, con lo que se repuso al stock y lo que se descartó."
+        acciones={
+          hayAlguna ? (
+            <AyudaGuiada
+              id="panel-devoluciones"
+              pasos={PASOS_DE_DEVOLUCIONES}
+              tamano="sm"
+            />
+          ) : null
+        }
       />
 
       {/* Sin una sola devolución, los filtros no tienen sobre qué operar:

@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { ChevronRight, RotateCcw } from "lucide-react";
 
 import { DatosEstructurados } from "@/components/seo/datos-estructurados";
-import { AyudaGuiada, type PasoDeAyuda } from "@/components/shop/ayuda-guiada";
+import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
 import { Compra } from "@/components/shop/ficha/compra";
 import { Descripcion } from "@/components/shop/ficha/descripcion";
 import {

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
-import { AyudaGuiada, type PasoDeAyuda } from "@/components/shop/ayuda-guiada";
+import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
 import { Avisos } from "@/components/shop/carrito/avisos";
 import { Checkout } from "@/components/shop/checkout/checkout";
 import { formatMoney, type Money } from "@/lib/money";

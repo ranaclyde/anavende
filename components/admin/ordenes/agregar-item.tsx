@@ -55,6 +55,7 @@ export function AgregarALaOrden({ numero }: { numero: number }) {
           size="sm"
           className="-ml-3"
           onClick={() => setAbierto(true)}
+          data-ayuda="agregar-a-la-orden"
         >
           <Plus aria-hidden />
           Agregar un producto

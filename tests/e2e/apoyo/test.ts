@@ -28,16 +28,26 @@ export * from "@playwright/test";
 const bloqueos: string[] = [];
 
 /**
- * **Las guías de F6.6 arrancan vistas** en todos los contextos: la primera
- * visita a la ficha, el checkout o «Mis compras» abre un globo con el fondo
+ * **Las guías de F6.6 y F6.7 arrancan vistas** en todos los contextos: la
+ * primera visita a la ficha, el checkout, «Mis compras» o a una de las
+ * cuatro pantallas del panel que tienen la suya abre un globo con el fondo
  * oscurecido, y cada recorrido que pasa por ahí tendría que cerrarlo primero.
  * `ayudas.spec.ts` las prueba con `test.use({ ayudasVistas: false })`.
  *
- * La clave y los ids son los de `components/shop/ayuda-guiada.tsx` y sus
+ * La clave y los ids son los de `components/ui/ayuda-guiada.tsx` y sus
  * pantallas, escritos a mano: si cambian, la guía aparece en los recorridos
  * y el que pase por ahí falla por el fondo que no deja tocar.
  */
-const GUIAS = ["ficha", "checkout", "mis-compras", "detalle-compra"];
+const GUIAS = [
+  "ficha",
+  "checkout",
+  "mis-compras",
+  "detalle-compra",
+  "panel-orden",
+  "panel-orden-nueva",
+  "panel-producto",
+  "panel-devoluciones",
+];
 
 async function marcarGuiasVistas(contexto: BrowserContext): Promise<void> {
   await contexto.addInitScript((vistas) => {

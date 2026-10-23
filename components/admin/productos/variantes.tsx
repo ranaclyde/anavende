@@ -225,6 +225,7 @@ export function VariantesDelProducto({
                     onClick={() => setEnEdicion(v)}
                     disabled={enCurso}
                     title="Editar"
+                    data-ayuda="corregir-stock"
                   >
                     <Pencil aria-hidden />
                     <span className="sr-only">Editar {nombreDe(v)}</span>
@@ -317,7 +318,10 @@ function Stock({ variante }: { variante: VarianteDelPanel }) {
   const { stockTotal, reservedStock, disponible } = variante;
 
   return (
-    <span className="flex flex-wrap items-center gap-x-1.5 text-caption tabular-nums text-ink-secondary">
+    <span
+      data-ayuda="stock-del-color"
+      className="flex flex-wrap items-center gap-x-1.5 text-caption tabular-nums text-ink-secondary"
+    >
       <span className={stockTotal < 0 ? "font-medium text-danger" : undefined}>
         {stockTotal} en total
       </span>

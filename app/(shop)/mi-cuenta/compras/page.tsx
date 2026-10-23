@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AyudaGuiada, type PasoDeAyuda } from "@/components/shop/ayuda-guiada";
+import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
 import { EstadoDeLaOrden } from "@/components/shop/compras/estado";
 import { Paginacion } from "@/components/shop/paginacion";
 import { Button } from "@/components/ui/button";

@@ -33,6 +33,7 @@ export function TarjetaDeSeccion({
   insignias,
   ayuda,
   acciones,
+  "data-ayuda": guia,
   children,
 }: {
   /**
@@ -48,11 +49,14 @@ export function TarjetaDeSeccion({
   ayuda?: React.ReactNode;
   /** Lo que se puede hacer sobre la sección entera, arriba a la derecha. */
   acciones?: React.ReactNode;
+  /** El paso de una guía de uso que señala esta sección (F6.7). */
+  "data-ayuda"?: string;
   children: React.ReactNode;
 }) {
   return (
     <section
       aria-labelledby={id}
+      data-ayuda={guia}
       className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4"
     >
       <div

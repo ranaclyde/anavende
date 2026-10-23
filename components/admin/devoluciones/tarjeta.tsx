@@ -49,6 +49,7 @@ export function TarjetaDeDevolucion({
             {orden ? (
               <Link
                 href={`/admin/ordenes/${orden.numero}`}
+                data-ayuda="orden-de-la-devolucion"
                 className="text-body-sm font-medium text-ink hover:text-brand"
               >
                 Orden #{orden.numero}
@@ -114,7 +115,9 @@ export function TarjetaDeDevolucion({
           pueden devolver de nuevo.
         </p>
       ) : (
-        <div className="flex justify-end">
+        // `self-end` y no una fila a todo el ancho: la guía (F6.7) resalta
+        // esta caja, y tiene que medir lo que el botón.
+        <div data-ayuda="anular-devolucion" className="self-end">
           <AnularLaDevolucion
             returnId={devolucion.id}
             repuestas={devolucion.items
@@ -150,7 +153,10 @@ function Renglon({ item }: { item: ItemDevuelto }) {
       <span className="text-ink tabular-nums">
         {item.cantidad} × {nombrar(item)}
       </span>
-      <Badge tone={item.repone ? "success" : "warning"}>
+      <Badge
+        tone={item.repone ? "success" : "warning"}
+        data-ayuda="stock-de-la-devolucion"
+      >
         {item.repone ? "Volvió al stock" : "No volvió al stock"}
       </Badge>
       {item.motivo ? (
