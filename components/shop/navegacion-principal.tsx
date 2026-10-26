@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useLayoutEffect, useRef, useState } from "react";
 
 import { Logo } from "@/components/shop/logo";
+import { Avatar } from "@/components/ui/avatar";
 import {
   Sheet,
   SheetBody,
@@ -240,9 +241,11 @@ export function NavegacionPrincipal() {
  */
 export function MenuDelTelefono({
   userName,
+  userCara = null,
   escena,
 }: {
   userName?: string | null;
+  userCara?: string | null;
   escena?: Escena | null;
 }) {
   const activo = useEnlaceActivo();
@@ -291,7 +294,11 @@ export function MenuDelTelefono({
             onClick={() => setAbierto(false)}
             className={cn(fila, "gap-3")}
           >
-            <User aria-hidden className="size-5 shrink-0 text-ink-secondary" />
+            {userCara ? (
+              <Avatar src={userCara} tamano={32} className="-ml-1.5" />
+            ) : (
+              <User aria-hidden className="size-5 shrink-0 text-ink-secondary" />
+            )}
             <span className="truncate">{userName ?? "Ingresar"}</span>
           </Link>
         </div>

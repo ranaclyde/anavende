@@ -12,6 +12,7 @@ import { contarUnidades } from "@/modules/cart/queries";
 import { escenaDeHoy } from "@/lib/escenas";
 import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
 import { configuracionDeLaTienda } from "@/modules/settings/queries";
+import { caraDe } from "@/modules/users/avatar";
 import { hayFavoritoPendiente } from "@/modules/users/favoritos/pendiente";
 
 /**
@@ -77,6 +78,7 @@ export default async function ShopLayout({
         <Suspense fallback={<div className="h-14 bg-surface" />}>
           <SiteHeader
             userName={sesion?.profile.fullName ?? null}
+            userCara={sesion ? caraDe(sesion.profile) : null}
             cartCount={unidadesEnElCarrito}
             escena={escena}
           />

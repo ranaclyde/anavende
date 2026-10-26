@@ -31,8 +31,14 @@ export function EncabezadoDePanel({
   volver,
   insignias,
   acciones,
+  retrato,
 }: {
   titulo: React.ReactNode;
+  /**
+   * Lo que va a la izquierda del título, a la altura de las dos líneas. Lo
+   * usa la ficha de un usuario para su cara (F5.9).
+   */
+  retrato?: React.ReactNode;
   /** La frase bajo el título. Las fichas no la tienen: ahí el título es un dato. */
   bajada?: React.ReactNode;
   /** A dónde se sale, con el nombre de lo que se abre. */
@@ -66,14 +72,17 @@ export function EncabezadoDePanel({
           bajada ? "items-start" : "items-center"
         }`}
       >
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-title text-ink">{titulo}</h1>
-            {insignias}
+        <div className="flex min-w-0 items-center gap-4">
+          {retrato}
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-title text-ink">{titulo}</h1>
+              {insignias}
+            </div>
+            {bajada ? (
+              <p className="text-body-sm text-ink-secondary">{bajada}</p>
+            ) : null}
           </div>
-          {bajada ? (
-            <p className="text-body-sm text-ink-secondary">{bajada}</p>
-          ) : null}
         </div>
 
         {acciones}
@@ -100,9 +109,12 @@ export function EsqueletoDeEncabezado({
   volver,
   insignias = 0,
   acciones = [],
+  retrato,
 }: {
   /** El ancho del título, del largo del de verdad: `w-40`. */
   titulo: string;
+  /** El tamaño del círculo a la izquierda del título, si la ficha lleva cara: `size-16`. */
+  retrato?: string;
   /** El ancho de la bajada, o nada si esta pantalla no tiene. */
   bajada?: string;
   /** El ancho del botón de volver, o nada si la pantalla no vuelve. */
@@ -126,15 +138,20 @@ export function EsqueletoDeEncabezado({
           bajada ? "items-start" : "items-center"
         }`}
       >
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* `h-7`: el `text-title` real mide 29px, no 24. */}
-            <Skeleton className={`h-7 ${titulo}`} />
-            {Array.from({ length: insignias }).map((_, i) => (
-              <Skeleton key={i} className="h-5 w-20 rounded-pill" />
-            ))}
+        <div className="flex items-center gap-4">
+          {retrato ? (
+            <Skeleton className={`shrink-0 rounded-pill ${retrato}`} />
+          ) : null}
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* `h-7`: el `text-title` real mide 29px, no 24. */}
+              <Skeleton className={`h-7 ${titulo}`} />
+              {Array.from({ length: insignias }).map((_, i) => (
+                <Skeleton key={i} className="h-5 w-20 rounded-pill" />
+              ))}
+            </div>
+            {bajada ? <Skeleton className={`h-5 ${bajada}`} /> : null}
           </div>
-          {bajada ? <Skeleton className={`h-5 ${bajada}`} /> : null}
         </div>
 
         {acciones.length > 0 ? (

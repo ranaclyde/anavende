@@ -14,6 +14,7 @@ import {
 import { EditarDatosDelUsuario } from "@/components/admin/usuarios/editar";
 import { RestablecerContrasena } from "@/components/admin/usuarios/restablecer";
 import { RolDelUsuarioEditable } from "@/components/admin/usuarios/rol";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { fechaConHora, fechaCorta } from "@/lib/fechas";
@@ -87,6 +88,7 @@ export default async function FichaDeUsuario({ params }: Props) {
     <div className="flex flex-col gap-4">
       <EncabezadoDePanel
         titulo={usuario.nombre}
+        retrato={<Retrato usuario={usuario} />}
         volver={{ href: "/admin/usuarios", etiqueta: "Usuarios" }}
         insignias={
           <>
@@ -219,6 +221,31 @@ export default async function FichaDeUsuario({ params }: Props) {
  * por qué esa cuenta ya no está, y es lo primero que se va a querer saber
  * cuando alguien pregunte. Lo que lo borra es revertir.
  */
+/**
+ * La cara de la cuenta — F5.9. Con foto propia, abre la foto en otra pestaña:
+ * a 64px se reconoce a alguien, pero no se ve bien qué subió. Con el
+ * blobatar no hay nada más que ver, y no es un enlace.
+ */
+function Retrato({ usuario }: { usuario: UsuarioDelPanel }) {
+  if (!usuario.tieneFoto)
+    return <Avatar src={usuario.cara} tamano={64} arriba />;
+
+  return (
+    <a
+      href={usuario.cara}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Ver la foto"
+      className="shrink-0 rounded-pill transition-opacity duration-150 hover:opacity-85"
+    >
+      <Avatar src={usuario.cara} tamano={64} arriba />
+      <span className="sr-only">
+        Ver la foto de {usuario.firstName}, en otra pestaña
+      </span>
+    </a>
+  );
+}
+
 function LaBaja({ usuario }: { usuario: UsuarioDelPanel }) {
   if (!usuario.bajaPedida && !usuario.dadoDeBaja) return null;
 

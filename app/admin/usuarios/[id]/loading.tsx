@@ -12,6 +12,7 @@ export default function CargandoElUsuario() {
     <div className="flex flex-col gap-4">
       <EsqueletoDeEncabezado
         titulo="w-48"
+        retrato="size-16"
         volver="w-28"
         insignias={1}
         acciones={["w-28", "w-36"]}

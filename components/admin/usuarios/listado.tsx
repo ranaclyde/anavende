@@ -6,6 +6,7 @@ import {
   RolDelUsuario,
 } from "@/components/admin/usuarios/estado";
 import { VacioDelPanel } from "@/components/admin/vacio";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -62,16 +63,19 @@ export function ListadoDeUsuarios({
             {usuarios.map((usuario) => (
               <TableRow key={usuario.id}>
                 <TableCell>
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    <Link
-                      href={`/admin/usuarios/${usuario.id}`}
-                      className="truncate font-medium text-ink hover:text-brand"
-                    >
-                      {usuario.nombre}
-                    </Link>
-                    <span className="truncate text-caption text-ink-secondary">
-                      {usuario.email}
-                    </span>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar src={usuario.cara} tamano={32} />
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <Link
+                        href={`/admin/usuarios/${usuario.id}`}
+                        className="truncate font-medium text-ink hover:text-brand"
+                      >
+                        {usuario.nombre}
+                      </Link>
+                      <span className="truncate text-caption text-ink-secondary">
+                        {usuario.email}
+                      </span>
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell className="text-ink-secondary tabular-nums">
@@ -108,6 +112,7 @@ export function ListadoDeUsuarios({
               href={`/admin/usuarios/${usuario.id}`}
               className="flex items-center gap-3 rounded-panel-card border border-border bg-surface p-3 transition-colors duration-150 hover:bg-surface-sunken"
             >
+              <Avatar src={usuario.cara} tamano={40} className="self-start" />
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-body-sm font-medium text-ink">

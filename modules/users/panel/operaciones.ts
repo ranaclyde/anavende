@@ -7,6 +7,7 @@ import { userProfiles } from "@/db/schema";
 import { urlDelSitio } from "@/lib/env";
 import { domainError } from "@/lib/errors";
 import { createServiceClient } from "@/lib/supabase/service";
+import { borrarArchivosDeFoto } from "@/modules/media/subir";
 import { contarAdministradoras } from "@/modules/users/panel/queries";
 import type { RolAsignable } from "@/modules/users/panel/schemas";
 
@@ -446,6 +447,8 @@ export async function desbloquearUsuario(datos: {
  * registro de nada.
  *
  * Ejecutar lo ya ejecutado no hace nada, igual que bloquear lo bloqueado.
+ *
+ * **Y se lleva la foto de perfil** (F5.9): revertir la baja no la trae.
  */
 export async function ejecutarBaja(datos: {
   id: string;
@@ -456,16 +459,18 @@ export async function ejecutarBaja(datos: {
       pedida: boolean;
       yaEsta: boolean;
       motivo: string | null;
+      foto: string | null;
     }>(sql`
       SELECT closure_requested_at IS NOT NULL AS pedida,
              closed_at            IS NOT NULL AS "yaEsta",
-             closure_reason                   AS motivo
+             closure_reason                   AS motivo,
+             avatar_key                       AS foto
         FROM user_profiles
        WHERE id = ${datos.id}
          FOR NO KEY UPDATE`);
 
     if (!usuario) throw domainError("NOT_FOUND");
-    if (usuario.yaEsta) return false;
+    if (usuario.yaEsta) return null;
 
     // Pudo retirarlo mientras la administradora miraba la ficha: es una
     // pantalla que se deja abierta, y el pedido lo retira la persona cuando
@@ -478,10 +483,14 @@ export async function ejecutarBaja(datos: {
       });
     }
 
+    // La foto se va con la baja (decisión tuya del 2026-10-26): es un dato
+    // personal, y RN-13 protege el historial, no la cara. En la misma
+    // sentencia que la marca, así no hay cuenta dada de baja con foto.
     await tx.execute(sql`
       UPDATE user_profiles
          SET closed_at  = now(),
              closed_by  = ${datos.actorId},
+             avatar_key = NULL,
              updated_at = now()
        WHERE id = ${datos.id}`);
 
@@ -489,10 +498,14 @@ export async function ejecutarBaja(datos: {
       INSERT INTO user_status_history (user_id, event, reason, actor_user_id)
       VALUES (${datos.id}, 'baja', ${usuario.motivo}, ${datos.actorId})`);
 
-    return true;
+    return { foto: usuario.foto };
   });
 
   if (!hecha) return { ejecutada: false, errorDeAuth: null };
+
+  // Los archivos, recién con la transacción confirmada: borrarlos antes y que
+  // la transacción fallara dejaría una cuenta activa con la foto rota.
+  if (hecha.foto) await borrarArchivosDeFoto(hecha.foto);
 
   return {
     ejecutada: true,

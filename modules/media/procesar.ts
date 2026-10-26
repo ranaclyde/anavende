@@ -92,7 +92,7 @@ export async function procesarImagen(
   // el original entero, así que en paralelo el pico de memoria se multiplica
   // por la cantidad de versiones y lo que se gana en tiempo es poco.
   const versiones: Version[] = [];
-  for (const { sufijo, ancho, alto, calidad, formato } of tamanos) {
+  for (const { sufijo, ancho, alto, calidad, formato, cuadrado } of tamanos) {
     // `autoOrient` aplica la orientación del EXIF ANTES de redimensionar:
     // una foto sacada con el teléfono de costado se guarda derecha. Es el
     // único dato del EXIF que sobrevive — al no llamar a `keepMetadata`,
@@ -114,7 +114,23 @@ export async function procesarImagen(
               background: FONDO_OG,
               withoutEnlargement: true,
             }
-          : { width: ancho, fit: "inside", withoutEnlargement: true },
+          : cuadrado
+            ? // La foto de perfil (F5.9): un cuadrado lleno, recortado
+              // donde sharp encuentra lo que más llama la atención —piel,
+              // contraste—, que en una foto de alguien suele ser la cara.
+              // Centrado, un retrato vertical perdía la frente.
+              //
+              // **Sin `withoutEnlargement`**: con él, una foto más chica que
+              // 256px no se toca y sale con su proporción —100×200 sigue
+              // siendo 100×200—, y el círculo la deforma. Agrandar una foto
+              // diminuta la ablanda un poco; deformarla se ve peor.
+              {
+                width: ancho,
+                height: ancho,
+                fit: "cover",
+                position: sharp.strategy.attention,
+              }
+            : { width: ancho, fit: "inside", withoutEnlargement: true },
       );
 
     const { data, info } = await (

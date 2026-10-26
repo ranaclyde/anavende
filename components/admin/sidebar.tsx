@@ -28,6 +28,7 @@ import {
 
 import { ThemeToggle } from "@/components/admin/theme";
 import { IsotipoSegunTema } from "@/components/shop/logo";
+import { Avatar } from "@/components/ui/avatar";
 import { crearPreferencia } from "@/lib/preferencia-local";
 import { cn } from "@/lib/utils";
 import { salir } from "@/modules/users/actions";
@@ -71,7 +72,14 @@ const SECCIONES: Seccion[] = [
 
 const preferenciaDeColapso = crearPreferencia("anavende:admin-menu");
 
-export function AdminSidebar({ nombre }: { nombre: string }) {
+export function AdminSidebar({
+  nombre,
+  cara,
+}: {
+  nombre: string;
+  /** La foto o el blobatar (F5.9), ya resuelto en el servidor. */
+  cara: string;
+}) {
   const pathname = usePathname();
   const colapsado = useSyncExternalStore(
     preferenciaDeColapso.suscribir,
@@ -318,12 +326,9 @@ export function AdminSidebar({ nombre }: { nombre: string }) {
             colapsado && !abiertoEnMovil && "flex-col gap-2 px-0",
           )}
         >
-          <span
-            aria-hidden
-            className="grid size-8 shrink-0 place-items-center rounded-pill bg-brand-tint text-body-sm font-medium text-brand"
-          >
-            {nombre.slice(0, 1).toUpperCase()}
-          </span>
+          {/* Hasta F5.9 era la inicial en bordó; ahora es la misma cara que
+              en la tienda. */}
+          <Avatar src={cara} tamano={32} />
           {(!colapsado || abiertoEnMovil) && (
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-body-sm font-medium text-ink">

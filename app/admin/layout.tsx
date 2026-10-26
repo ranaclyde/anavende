@@ -3,6 +3,7 @@ import { scriptDeTema } from "@/components/admin/theme";
 import { MarcoDeEscala } from "@/components/ui/escala";
 import { Toaster } from "@/components/ui/sonner";
 import { exigirAdmin } from "@/lib/session";
+import { caraDe } from "@/modules/users/avatar";
 
 /**
  * Layout del panel — DESIGN-REFERENCE §4, §5.2 · TECHNICAL-SPEC §13.7.
@@ -51,7 +52,10 @@ export default async function AdminLayout({
         escala="admin"
         className="flex min-h-svh flex-col bg-canvas text-ink lg:flex-row"
       >
-        <AdminSidebar nombre={session.profile.fullName} />
+        <AdminSidebar
+          nombre={session.profile.fullName}
+          cara={caraDe(session.profile)}
+        />
         <main className="min-w-0 flex-1 p-4 lg:p-6">{children}</main>
 
         {/* Los avisos viven acá y no en cada pantalla, por dos motivos. Uno:

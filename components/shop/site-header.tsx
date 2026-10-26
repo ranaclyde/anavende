@@ -11,6 +11,7 @@ import {
   NavegacionPrincipal,
 } from "@/components/shop/navegacion-principal";
 import { SearchBox } from "@/components/shop/search-box";
+import { Avatar } from "@/components/ui/avatar";
 import type { Escena } from "@/lib/escenas";
 import { cn } from "@/lib/utils";
 
@@ -37,10 +38,13 @@ import { cn } from "@/lib/utils";
 export function SiteHeader({
   cartCount = 0,
   userName,
+  userCara = null,
   escena = null,
 }: {
   cartCount?: number;
   userName?: string | null;
+  /** La foto o el blobatar de quien entró (F5.9), ya resuelto en el servidor. */
+  userCara?: string | null;
   /** La escena por fecha de hoy (F9.5): el logo lleva su adorno. */
   escena?: Escena | null;
 }) {
@@ -87,7 +91,11 @@ export function SiteHeader({
       )}
     >
       <div className="mx-auto flex h-14 max-w-shop items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <MenuDelTelefono userName={userName} escena={escena} />
+        <MenuDelTelefono
+          userName={userName}
+          userCara={userCara}
+          escena={escena}
+        />
         <Logo escena={escena} />
         <NavegacionPrincipal />
 
@@ -153,9 +161,18 @@ export function SiteHeader({
           {/* En el teléfono la cuenta está en el menú. */}
           <Link
             href={userName ? "/mi-cuenta" : "/ingresar"}
-            className="flex h-11 items-center gap-2 rounded-pill px-3 text-body-sm text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink max-md:hidden"
+            className={cn(
+              "flex h-11 items-center gap-2 rounded-pill px-3 text-body-sm text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink max-md:hidden",
+              // Con la cara, el círculo de 32px llena el alto del ícono y un
+              // poco más: se le saca relleno para que el texto no quede lejos.
+              userCara && "pl-1.5 lg:pr-3",
+            )}
           >
-            <User aria-hidden className="size-5 shrink-0" />
+            {userCara ? (
+              <Avatar src={userCara} tamano={32} />
+            ) : (
+              <User aria-hidden className="size-5 shrink-0" />
+            )}
             <span className="hidden max-w-28 truncate lg:inline">
               {userName ?? "Ingresar"}
             </span>

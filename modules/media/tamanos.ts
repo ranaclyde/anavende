@@ -23,6 +23,12 @@ export type Tamano = {
   alto?: number;
   /** Por omisión WEBP (§9.2). */
   formato?: "webp" | "jpeg";
+  /**
+   * Recorta a un cuadrado de `ancho`×`ancho` en vez de conservar la
+   * proporción. Solo la foto de perfil (F5.9): se dibuja en un círculo, y
+   * una foto vertical metida entera dejaría franjas a los costados.
+   */
+  cuadrado?: boolean;
 };
 export type Sufijo = (typeof TAMANOS)[number]["sufijo"];
 
@@ -84,6 +90,20 @@ export const TAMANOS_OG = TAMANOS.filter(
   (t) => t.sufijo === "og",
 ) as unknown as readonly Tamano[];
 
+/**
+ * La foto de perfil — F5.9. **Una sola versión**, y chica: se muestra a 32px
+ * en el encabezado y a 96px en «Mi cuenta», y 256px cubre las dos al doble de
+ * densidad. Pesa del orden de 10 a 20 KB, contra los ~350 KB de los cuatro
+ * tamaños de una foto de producto.
+ *
+ * Va aparte de `TAMANOS` a propósito: esa tabla es la que se genera por
+ * omisión para un producto, y sumarle esta haría que cada foto de producto
+ * sacara también un recorte de cara que nadie mira.
+ */
+export const TAMANOS_PERFIL: readonly Tamano[] = [
+  { sufijo: "avatar", ancho: 256, calidad: 78, cuadrado: true },
+];
+
 /** Formatos que se aceptan en la subida (RF-17). El de salida es siempre WEBP. */
 export const TIPOS_ACEPTADOS = [
   "image/jpeg",
@@ -137,6 +157,17 @@ export function claveDeLogo(
   imageId: string,
 ): string {
   return `${CARPETAS_DE_LOGO[destino]}/${id}/${imageId}`;
+}
+
+/**
+ * `usuarios/{userId}/{imageId}` — la base de la foto de perfil, sin sufijo.
+ *
+ * El `imageId` es nuevo en cada subida aunque haya una sola foto por persona:
+ * con una clave fija, el navegador y cualquier caché intermedia seguirían
+ * mostrando la anterior después de cambiarla.
+ */
+export function claveDeFotoDePerfil(userId: string, imageId: string): string {
+  return `usuarios/${userId}/${imageId}`;
 }
 
 /** `…/{imageId}-card.webp`, `…/{imageId}-og.jpg` */

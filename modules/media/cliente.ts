@@ -53,6 +53,9 @@ export function subirImagen(
   campos: Record<string, string>,
   archivo: File,
   alProgreso?: (p: Progreso) => void,
+  // La foto de perfil (F5.9) va a su propia ruta: la del panel es solo de
+  // administradoras.
+  ruta: "/api/admin/upload" | "/api/mi-cuenta/foto" = "/api/admin/upload",
 ): Promise<ResultadoDeSubida> {
   return new Promise((resolve) => {
     const cuerpo = new FormData();
@@ -62,7 +65,7 @@ export function subirImagen(
     cuerpo.set("archivo", archivo);
 
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/admin/upload");
+    xhr.open("POST", ruta);
 
     xhr.upload.onprogress = (e) => {
       if (!e.lengthComputable) return;

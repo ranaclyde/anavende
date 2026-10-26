@@ -61,6 +61,19 @@ export const userProfiles = pgTable(
     /** RF-05: obligatorio, en las tres vías de alta. */
     phone: text("phone").notNull(),
     role: text("role").notNull().default("customer"),
+    /**
+     * La foto de perfil — RF-07, F5.9. CLAVE en Storage, no URL, como los
+     * logos (§9.2): `usuarios/{id}/{imageId}`, sin sufijo.
+     *
+     * Opcional, y sin ella nadie queda sin cara: se dibuja un blobatar a
+     * partir del `id` (`components/ui/avatar.tsx`). Por eso no hay columna
+     * para «el avatar generado»: se calcula, no se guarda.
+     *
+     * Ejecutar la baja la borra (decisión tuya del 2026-10-26): una foto es
+     * un dato personal, y RN-13 dice que la baja no borra **historial**, no
+     * que guarde la cara de quien se fue. Revertirla no la trae de vuelta.
+     */
+    avatarKey: text("avatar_key"),
 
     // RF-27: el motivo de bloqueo no existe en Supabase Auth. Es nuestro.
     isBanned: boolean("is_banned").notNull().default(false),

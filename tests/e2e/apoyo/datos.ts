@@ -270,6 +270,22 @@ export function datosDePrueba() {
   }
 
   /**
+   * La foto de perfil que haya quedado de una cuenta (F5.9). Borrar la
+   * cuenta se lleva la fila, no el archivo de Storage.
+   */
+  async function borrarFotoDePerfil(userId: string): Promise<void> {
+    const carpeta = `usuarios/${userId}`;
+    const { data: archivos, error } = await bucket.list(carpeta);
+    if (error) throw error;
+    if (archivos.length === 0) return;
+
+    const { error: alBorrar } = await bucket.remove(
+      archivos.map((a) => `${carpeta}/${a.name}`),
+    );
+    if (alBorrar) throw alBorrar;
+  }
+
+  /**
    * La casilla del E4 se cambia mientras dura el archivo (decisión tuya del
    * 2026-10-17): un pedido confirmado le avisa a la vendedora por Resend, con
    * la clave de verdad de `.env.local`. `delivered@resend.dev` es la
@@ -311,6 +327,7 @@ export function datosDePrueba() {
       await sql`DELETE FROM orders WHERE user_id = ${id}`;
       const { error } = await auth.deleteUser(id);
       if (error) throw error;
+      await borrarFotoDePerfil(id);
     }
     for (const id of creados.productos.splice(0)) {
       await sql`
