@@ -823,3 +823,17 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
     opacity: 0;
   }
 }
+
+/* La cara de la cuenta se mueve al pasar el mouse por el CONTROL que la
+   contiene —la píldora de la cuenta, la fila de la foto en «Mis datos»—, y
+   no solo por el dibujo, que en el encabezado mide 32px (F5.9). Es lo mismo
+   que `.mo-root:hover` de `blobatar/motion.css`, colgado de otro ancestro.
+   Con las mismas condiciones que la biblioteca: mouse de verdad y sin
+   «reducir movimiento». */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  [data-anima-cara]:hover .mo-root,
+  [data-anima-cara]:focus-visible .mo-root {
+    --mo-amp: 1;
+    transform: translateY(-1.5px) scale(1.04);
+  }
+}

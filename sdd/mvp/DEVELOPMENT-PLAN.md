@@ -249,6 +249,7 @@ F10 Endurecimiento y lanzamiento
 | **F5.7** | «Iniciá sesión para comprar» y retomar la acción pendiente | M | FS RF-08 · DR §7.3 | El visitante que intenta agregar al carrito va al login y, al volver, **el producto queda agregado** |
 
 | **F5.8** | **Pedir la baja de la cuenta** | M | FS RF-34, RF-07, RN-13, RF-14 | El acceso está a la vista en «Mis datos», y el pie enlaza ahí. La pantalla advierte qué implica y qué se conserva, y el motivo es obligatorio. **Con órdenes activas no procede**: se dice cuántas son y qué hacer, en vez de ofrecer un botón que va a fallar. **Con la baja pedida la cuenta es de solo lectura**, y el comprador puede retirarla mientras no se ejecutó. **Sin email** (2026-09-14): la baja pedida aparece como pendiente en el inicio del panel, con el enlace apagado hasta F7.9 |
+| **F5.9** | **Foto de perfil** (2026-10-26) | M | FS RF-07, RF-26, RF-34, RN-13 · TS §5.3, §9.2, §16 | Desde «Mis datos» se sube, se cambia y se quita, sin pasar por el alta. Una sola versión cuadrada de 256px en WEBP; cambiarla o quitarla borra el archivo anterior. **Sin foto, un blobatar** generado del id. Se ve en «Mi cuenta», en el encabezado de la tienda, en el menú del panel y en el listado y la ficha de usuarios, desde donde se abre grande. **La baja ejecutada la borra**. Con la baja pedida no se cambia |
 
 > **Compuerta F5:** un comprador arma un carrito, cierra sesión, entra desde otro dispositivo y lo encuentra igual.
 

@@ -6,6 +6,7 @@ import { db } from "@/db";
 import type { UserStatusEvent } from "@/db/schema";
 import type { Money } from "@/lib/money";
 import type { EstadoOrden } from "@/modules/orders/estados";
+import { caraDe } from "@/modules/users/avatar";
 import {
   POR_PAGINA,
   type FiltroDeEstado,
@@ -28,6 +29,10 @@ export type UsuarioDelListado = {
   nombre: string;
   email: string;
   telefono: string;
+  /** La foto o el blobatar (F5.9), lista para `<Avatar>`. */
+  cara: string;
+  /** Si subió una foto propia: la ficha la ofrece para verla grande. */
+  tieneFoto: boolean;
   rol: RolDeUsuario;
   bloqueado: boolean;
   /** RF-34: la pidió y nadie la ejecutó todavía. Es trabajo por hacer. */
@@ -38,6 +43,24 @@ export type UsuarioDelListado = {
   /** Cuántas órdenes tiene, que es lo que dice si es un cliente de verdad. */
   ordenes: number;
 };
+
+/**
+ * La fila tal como sale de la base: con la clave de Storage y sin la cara,
+ * que se resuelve en JavaScript —la URL depende del adaptador de Storage y el
+ * blobatar, de la biblioteca—.
+ */
+type ConFoto<T> = Omit<T, "cara" | "tieneFoto"> & { avatarKey: string | null };
+
+function conCara<T extends { id: string }>({
+  avatarKey,
+  ...fila
+}: T & { avatarKey: string | null }) {
+  return {
+    ...fila,
+    cara: caraDe({ id: fila.id, avatarKey }),
+    tieneFoto: avatarKey !== null,
+  };
+}
 
 /** Los comodines de `ILIKE` se escapan: sin esto, buscar «50%» trae todo. */
 function escaparComodines(termino: string): string {
@@ -97,11 +120,12 @@ export async function listarUsuarios(
   const where = condiciones(filtros);
 
   const [filas, [conteo]] = await Promise.all([
-    db.execute<UsuarioDelListado>(sql`
+    db.execute<ConFoto<UsuarioDelListado>>(sql`
       SELECT p.id,
              p.full_name  AS nombre,
              p.email,
              p.phone      AS telefono,
+             p.avatar_key AS "avatarKey",
              p.role       AS rol,
              p.is_banned  AS bloqueado,
              (p.closure_requested_at IS NOT NULL
@@ -118,7 +142,7 @@ export async function listarUsuarios(
       SELECT count(*)::int AS total FROM user_profiles p ${where}`),
   ]);
 
-  return { usuarios: [...filas], total: conteo.total };
+  return { usuarios: filas.map(conCara), total: conteo.total };
 }
 
 /**
@@ -219,13 +243,14 @@ export type UsuarioDelPanel = UsuarioDelListado & {
 export async function leerUsuarioDelPanel(
   id: string,
 ): Promise<UsuarioDelPanel | null> {
-  const [fila] = await db.execute<UsuarioDelPanel>(sql`
+  const [fila] = await db.execute<ConFoto<UsuarioDelPanel>>(sql`
     SELECT p.id,
            p.full_name  AS nombre,
            p.first_name AS "firstName",
            p.last_name  AS "lastName",
            p.email,
            p.phone      AS telefono,
+           p.avatar_key AS "avatarKey",
            p.role       AS rol,
            p.is_banned  AS bloqueado,
            p.ban_reason AS "motivoDelBloqueo",
@@ -278,7 +303,7 @@ export async function leerUsuarioDelPanel(
       LEFT JOIN user_profiles c ON c.id = p.closed_by
      WHERE p.id = ${id}`);
 
-  return fila ?? null;
+  return fila ? conCara(fila) : null;
 }
 
 /**

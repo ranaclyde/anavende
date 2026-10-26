@@ -84,7 +84,7 @@ Ver detalle en §12 (Fuera de alcance).
 | **RN-11** | Nunca se elimina físicamente un producto, marca, categoría o color que esté referenciado por una orden. Se desactiva (borrado lógico). **Lo mismo vale para un producto o una variante que esté en algún carrito** (2026-09-12): borrarlo se lo llevaría del carrito sin aviso, y RF-08 exige que el comprador lo vea apartado. |
 | **RN-11b** | **Ningún producto activo puede pertenecer a una marca o categoría inactiva, ni tener variantes activas de un color inactivo.** No se puede desactivar una marca, categoría o color que esté en uso por algo activo: primero se desactiva lo que la usa. Tampoco se puede activar un producto cuya marca o categoría esté inactiva. |
 | **RN-12** | Las órdenes conservan una copia del nombre y precio del producto al momento de crearse (snapshot), para que cambios posteriores del catálogo no alteren el historial. |
-| **RN-13** | **Un usuario dado de baja (RF-34) no es un usuario bloqueado (RF-27).** Comparten el efecto —no puede entrar, no se borra nada, se revierte— y no comparten ni el significado ni el mensaje. Ninguno de los dos elimina datos: los usuarios no se eliminan (§5.6). |
+| **RN-13** | **Un usuario dado de baja (RF-34) no es un usuario bloqueado (RF-27).** Comparten el efecto —no puede entrar, no se borra nada, se revierte— y no comparten ni el significado ni el mensaje. Ninguno de los dos elimina datos: los usuarios no se eliminan (§5.6). **La única excepción es la foto de perfil, que la baja ejecutada borra** (2026-10-26): no es historial, y no hay motivo para guardar la cara de quien pidió irse. |
 
 ---
 
@@ -327,7 +327,7 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 
 | Sección | Contenido |
 |---|---|
-| **Mis datos** | Nombre, email, teléfono. Cambio de contraseña. Acceso visible para **pedir la baja de la cuenta** (RF-34). |
+| **Mis datos** | Nombre, email, teléfono. **Foto de perfil, opcional** (2026-10-26, F5.9): se sube, se cambia o se quita desde acá, y no se pide en el alta. Sin foto, la cuenta se ve con un avatar generado a partir de ella, siempre el mismo. La foto se ve en «Mi cuenta», en el encabezado de la tienda y en el panel; no la ve ningún otro comprador. Cambio de contraseña. Acceso visible para **pedir la baja de la cuenta** (RF-34). |
 | **Mis direcciones** | Libreta de direcciones (RF-09). |
 | **Mis compras** | Listado de órdenes con estado, fecha, total y detalle. |
 | **Favoritos** | Productos marcados como favoritos. |
@@ -802,6 +802,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] **Modificar** datos y rol de un usuario.
 - [ ] **Resetear contraseña**: dispara el email de recuperación al usuario.
 - [ ] Ver las órdenes de un usuario desde su ficha.
+- [ ] **Ver la foto de perfil** (2026-10-26, F5.9): en el listado y en la ficha, y desde la ficha, abrirla grande. Quien no subió una se ve con su avatar generado.
 - [ ] La administradora no puede quitarse a sí misma el rol admin ni bloquear su propia cuenta.
 - [ ] **Bajas de cuenta pendientes** (RF-34): se ven los pedidos con su motivo, se ejecutan y se revierten. El filtro por estado distingue activo, bloqueado y dado de baja.
 - [ ] **No hay «eliminar usuario», y es a propósito** (§5.6): un comprador con órdenes no se borra ni se puede borrar. Lo que existe es bloquear (RF-27) y dar de baja (RF-34).
@@ -937,7 +938,10 @@ dados es una persona, no un formulario.
       para sacar a alguien por decisión suya está el bloqueo de RF-27, que
       además exige motivo y se lo muestra. Si las dos cosas salieran del mismo
       botón, «se fue sola» dejaría de querer decir eso (RN-13).
-- [ ] **La baja es lógica: no se borra nada.** Un usuario dado de baja no puede
+- [ ] **La baja es lógica: no se borra nada, salvo la foto de perfil.** La
+      foto se borra al ejecutarla (decisión del 2026-10-26): es un dato
+      personal y no es historial. Revertir la baja no la trae; la persona
+      vuelve con su avatar generado. Un usuario dado de baja no puede
       iniciar sesión y, al intentarlo, ve un mensaje **distinto del bloqueo de
       RF-27** — se fue por su cuenta, no lo echaron. Sus sesiones activas se
       cierran.

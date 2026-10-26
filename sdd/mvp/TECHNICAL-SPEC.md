@@ -334,6 +334,7 @@ CREATE TABLE user_profiles (
   email         text NOT NULL,          -- copia para listar y buscar sin cruzar a auth
   phone         text NOT NULL,          -- RF-05: obligatorio
   role          text NOT NULL DEFAULT 'customer',
+  avatar_key    text,                   -- F5.9: CLAVE en Storage de la foto, opcional (§9.2)
 
   -- RF-27: el motivo de bloqueo no existe en Supabase Auth; es nuestro
   is_banned     boolean NOT NULL DEFAULT false,
@@ -374,6 +375,8 @@ CREATE INDEX user_status_history_user_idx
 **El perfil lo crea nuestro código, nunca un *trigger*.** La documentación de Supabase propone poblar el perfil con un *trigger* sobre `auth.users` y advierte que, si el *trigger* falla, **bloquea los registros**. Se evita: el flujo de alta lo controla la aplicación (§13.4), donde un fallo se puede reportar y compensar.
 
 > **Nombre y apellido van separados, y `full_name` es una columna generada** (migración `0011`, 2026-09-10). El campo único obligaba a adivinar cuál era cuál, y esa adivinanza ya estaba escrita: el alta partía el nombre por el primer espacio para saludar en los emails, así que quien se registraba como «Sanhueza, Matías» recibía «Hola, Sanhueza,». Se pregunta separado porque separado es como se usa —los emails saludan por el nombre de pila, y RF-26 va a listar y ordenar por apellido—. `full_name` se conserva **generada** para que todo lo que muestra un nombre siga leyendo una sola columna y sea imposible que se desincronice; el `customer_name` de la orden (§5.6) **no** se parte: es un snapshot, una etiqueta congelada, y se compone al crear la orden.
+
+**La foto de perfil es una columna y no una tabla** (migración `0024`, 2026-10-26, F5.9): una por cuenta, como el logo de una marca. Sin foto, la cara es un **blobatar** —la biblioteca `blobatar`— generado a partir de `id`: determinístico, así que es siempre el mismo, y no se guarda en ningún lado (`modules/users/avatar.ts`). Se genera del `id` y no del nombre ni del email porque esos dos se editan. **Donde se anima** —el encabezado y «Mis datos»— es SVG en la página y no `<img>`, porque el `:hover` no entra a una imagen: lo arma el servidor con `blobatar/react` (`components/shop/cara-animada.tsx`), así que la biblioteca no llega al navegador; sí llega `blobatar/motion.css` (8 KB), que se carga en el layout de la tienda. La baja ejecutada pone `avatar_key` en `NULL` en la misma sentencia que la marca, y borra el archivo después de confirmar (RF-34).
 
 **Las tablas de dominio referencian `user_profiles(id)`**, no `auth.users`. Así el esquema de la aplicación es autocontenido y las claves foráneas no dependen de un esquema que administra otro servicio.
 
@@ -1050,6 +1053,14 @@ categorias/{categoryId}/{imageId}-thumb.webp
                         {imageId}-card.webp
 ```
 
+**La foto de perfil (F5.9) tiene una sola versión**, cuadrada, recortada donde sharp encuentra lo que más llama la atención (`position: attention`) y **ampliada si hace falta** —sin ampliar, una foto de menos de 256px salía con su proporción y el círculo la deformaba—:
+
+```
+usuarios/{userId}/{imageId}-avatar.webp        256 × 256, calidad 78
+```
+
+Se muestra a 32px en el encabezado y a 96px en «Mi cuenta», y 256 cubre las dos al doble de densidad. Pesa del orden de 10 a 20 KB, contra los ~350 KB de las cuatro versiones de una foto de producto. Es una por fila y la nueva borra a la anterior, como un logo, pero va por su propia ruta (`app/api/mi-cuenta/foto`): la de `/api/admin/upload` es solo de administradoras.
+
 **La imagen de categoría (FA-21, F2.9) va por el mismo camino que un logo**: una por fila, en `categories.image_key`, con los mismos dos tamaños, y la nueva reemplaza y borra a la anterior. `-card` es el que usa la tarjeta de «Más categorías» en la home.
 
 Dos tamaños y no tres: un logo se muestra chico —hoy solo en el listado del panel (RF-18, RF-19)— y `-detail`, pensado para la galería de una ficha a 1400px, no tiene dónde usarse. Se reutilizan los anchos de `-thumb` y `-card` en vez de inventar dos números nuevos: 200px cubre el listado en cualquier densidad de pantalla, y 600px queda para las franjas de la tienda —la de marcas y la de medios de pago (RF-01)—. `brands.logo_key` y `payment_methods.logo_key` guardan la base, igual que `variant_images.storage_key`.
@@ -1458,7 +1469,7 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 | **Contraseñas** | Hash a cargo de Supabase Auth. La aplicación nunca las almacena ni las registra |
 | **Datos personales** | Filtrados del contexto que se envía a Sentry (email, teléfono, dirección) |
 | **Secretos** | Solo en variables de entorno de Coolify. **La clave de servicio de Supabase nunca lleva prefijo `NEXT_PUBLIC_`**: es la única credencial que puede administrar usuarios |
-| **Rate limiting** | En autenticación (Supabase Auth) y en la subida de imágenes: **30 por minuto y por administradora**, en memoria (`lib/limite.ts`, F10.5), porque la aplicación corre en un solo contenedor. **GoTrue limita por persona con `GOTRUE_RATE_LIMIT_HEADER=X-Cliente-Ip`** —sin esa variable no limita nada por cliente—: la cabecera la pone el nginx del servidor DATA con la IP de la conexión, porque Kong pisa `X-Real-IP` y `X-Forwarded-For` se puede falsificar. Lo que la tienda pide desde su servidor llega desde la IP del APP, así que manda la IP del comprador (`CF-Connecting-IP`) con una clave que solo conocen ella y nginx (`lib/supabase/cliente-ip.ts`). Y a la tienda solo se llega por Cloudflare (`ipallowlist` en Traefik), para que esa IP no se pueda inventar. **La aplicación suma su propio tope** en el ingreso, el alta y los reenvíos (`frenarSiInsiste`). Detalle y comprobaciones: F10.5 en `PROGRESO.md` |
+| **Rate limiting** | En autenticación (Supabase Auth) y en la subida de imágenes: **30 por minuto y por administradora**, y **10 cada 10 minutos por cuenta** para la foto de perfil (F5.9), que la puede subir cualquier comprador, en memoria (`lib/limite.ts`, F10.5), porque la aplicación corre en un solo contenedor. **GoTrue limita por persona con `GOTRUE_RATE_LIMIT_HEADER=X-Cliente-Ip`** —sin esa variable no limita nada por cliente—: la cabecera la pone el nginx del servidor DATA con la IP de la conexión, porque Kong pisa `X-Real-IP` y `X-Forwarded-For` se puede falsificar. Lo que la tienda pide desde su servidor llega desde la IP del APP, así que manda la IP del comprador (`CF-Connecting-IP`) con una clave que solo conocen ella y nginx (`lib/supabase/cliente-ip.ts`). Y a la tienda solo se llega por Cloudflare (`ipallowlist` en Traefik), para que esa IP no se pueda inventar. **La aplicación suma su propio tope** en el ingreso, el alta y los reenvíos (`frenarSiInsiste`). Detalle y comprobaciones: F10.5 en `PROGRESO.md` |
 | **Altas falsas** | Turnstile de Cloudflare en el alta, el reenvío del enlace y la recuperación, validado por Supabase Auth (`GOTRUE_SECURITY_CAPTCHA_*`), **y también en el ingreso con contraseña**: con el captcha prendido GoTrue lo exige ahí, y no se puede prender solo para las otras tres (F10.5b, 2026-10-17). No lo pide para renovar la sesión, canjear el enlace del email ni a la clave de servicio, así que el panel y los procesos internos no lo necesitan. Un tope de emails de cuenta de **60 cada 24 horas** (`GOTRUE_RATE_LIMIT_EMAIL_SENT=60/24h`), para no vaciar el cupo gratuito de Resend —100 por día— y dejar lugar a los avisos de pedidos. Las cuentas sin verificar se borran a las 48 horas (`scripts/limpiar-cuentas.mjs`, tarea programada de Coolify), salvo las que invitó la administradora y las que tengan órdenes (decidido el 2026-09-30, F10.5b) |
 | **Cabeceras** | CSP, `X-Frame-Options`, `Referrer-Policy` y `Strict-Transport-Security` definidas en `next.config.ts` |
 | **Enumeración** | Los mensajes de login y de recuperación no revelan si un email existe (RF-06) |

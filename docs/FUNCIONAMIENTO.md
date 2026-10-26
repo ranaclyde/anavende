@@ -164,9 +164,17 @@ desactiva y se avisa. Una variante con stock reservado no se puede quitar.
 - **Bloquear** (panel, «Usuarios»): corta todo en el momento. Las acciones se
   rechazan porque releen el perfil, y las pantallas cierran la sesión aunque
   el token todavía sea válido (`modules/users/acceso.ts`).
+- **Foto de perfil** (`/mi-cuenta`, «Mis datos»): opcional, y no se pide en
+  el alta. Se guarda al elegirla, por `/api/mi-cuenta/foto`, como una sola
+  versión cuadrada de 256px (`modules/media/subir.ts`); cambiarla o quitarla
+  borra el archivo anterior. Sin foto, la cuenta se ve con un **blobatar**
+  sacado de su id, siempre el mismo (`modules/users/avatar.ts`). Se ve en
+  «Mi cuenta», en el encabezado, en el menú del panel y en «Usuarios», y no
+  la ve ningún otro comprador.
 - **Pedir la baja** (`/mi-cuenta/baja`): la cuenta pasa a solo lectura, y el
   comprador puede retirar el pedido mientras no se haya ejecutado. La
-  ejecuta Ana desde el panel.
+  ejecuta Ana desde el panel, y **ejecutarla borra la foto de perfil**:
+  revertirla no la trae.
 - **Administradoras:** se suman invitándolas desde el panel. El panel no deja
   quitarle el rol a la última, ni que una se lo quite a sí misma.
 

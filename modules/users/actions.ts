@@ -13,6 +13,8 @@ import { domainError } from "@/lib/errors";
 import { frenarSiInsiste } from "@/lib/limite";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { quitarFotoDePerfil } from "@/modules/media/subir";
+import { sinDatos } from "@/modules/users/baja/schemas";
 import { coincideLaContrasena } from "@/modules/users/contrasena";
 import { actualizarDatos } from "@/modules/users/perfil";
 import {
@@ -424,6 +426,22 @@ export const guardarMisDatos = action
     // El encabezado y el saludo leen el perfil: que se vea el nombre nuevo.
     refresh();
     return { guardado: true };
+  });
+
+/**
+ * «Quitar foto» — F5.9. La cuenta vuelve a su blobatar y el archivo se va de
+ * Storage. Subirla es un Route Handler (`app/api/mi-cuenta/foto`), porque
+ * lleva un archivo; quitarla no lleva nada, y pasa por el envoltorio como
+ * cualquier otro cambio de «Mis datos» —con la baja pedida, no se puede—.
+ */
+export const quitarMiFoto = action
+  .input(sinDatos)
+  .auth("customer")
+  .handler(async ({ ctx }) => {
+    await quitarFotoDePerfil(ctx.session.profile.id);
+    // La foto está también en el encabezado de toda la tienda.
+    refresh();
+    return { quitada: true };
   });
 
 /**

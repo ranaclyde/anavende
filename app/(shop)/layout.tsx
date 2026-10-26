@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
+// La animación del blobatar de la cuenta (F5.9). Sin esta hoja el dibujo sale
+// igual, pero quieto. Solo la tienda: en el panel las caras no se mueven.
+import "blobatar/motion.css";
 
+import { CaraAnimada } from "@/components/shop/cara-animada";
 import { ProveedorDeCuentaEnPausa } from "@/components/shop/cuenta-en-pausa";
 import { ID_AVISO_DE_PAUSA } from "@/components/shop/cuenta-en-pausa-id";
 import { RetomarFavorito } from "@/components/shop/favorito";
@@ -77,6 +81,7 @@ export default async function ShopLayout({
         <Suspense fallback={<div className="h-14 bg-surface" />}>
           <SiteHeader
             userName={sesion?.profile.fullName ?? null}
+            userCara={sesion ? <CaraAnimada cuenta={sesion.profile} /> : null}
             cartCount={unidadesEnElCarrito}
             escena={escena}
           />

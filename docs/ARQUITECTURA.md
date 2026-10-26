@@ -179,6 +179,15 @@ Las fotos se convierten **al subirlas**, no al mostrarlas (TS §9).
    de la tienda (`app/vista-previa/`) porque desde el de Storage WhatsApp no
    la mostraba.
 
+**La foto de perfil** (F5.9) usa la misma canalización con otra puerta:
+`app/api/mi-cuenta/foto`, que acepta a cualquier cuenta pero solo sobre sí
+misma, con un tope de 10 subidas cada 10 minutos. Sale **una sola versión**,
+cuadrada, en `usuarios/{id}/`. Sin foto no hay archivo: el blobatar se arma
+en el servidor y la biblioteca no llega al navegador. En el panel viaja como
+un `data:` de unos 700 bytes; en el encabezado y en «Mis datos» va como SVG
+en la página, porque ahí se mueve al pasar el mouse
+(`components/shop/cara-animada.tsx`), y lo anima `blobatar/motion.css`.
+
 ## Emails
 
 - **Los de la cuenta** (confirmar el alta, recuperar la contraseña, la

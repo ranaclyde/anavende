@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { createServiceClient } from "@/lib/supabase/service";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 import { CAPTCHA_DE_PRUEBA } from "@/tests/apoyo/captcha";
+import { existe, jpeg } from "@/tests/apoyo/imagenes";
 
 /**
  * F7.9 — Ejecutar y revertir bajas de cuenta. RF-34, RF-26, RN-13 · TS §13.5b.
@@ -51,6 +52,8 @@ const { leerUsuarioDelPanel, listarUsuarios } =
 const { FILTROS_VACIOS } = await import("@/modules/users/panel/filtros");
 const { tieneElAccesoCortado } = await import("@/modules/users/acceso");
 const { ingresar } = await import("@/modules/users/actions");
+const { publicarFotoDePerfil } = await import("@/modules/media/subir");
+const { clave, TAMANOS_PERFIL } = await import("@/modules/media/tamanos");
 
 function comoSesion(userId: string, role: "admin" | "customer") {
   sesion.actual = {
@@ -199,6 +202,35 @@ describe("ejecutar la baja (RF-34)", () => {
     expect(await elHistorial(otro.userId)).toEqual([
       { evento: "baja", motivo: "Me mudé al exterior", autor: ana.userId },
     ]);
+  });
+
+  // F5.9, decisión del 2026-10-26: la foto es un dato personal y se va con
+  // la baja. El archivo también, no solo la referencia.
+  test("se lleva la foto de perfil, de la base y de Storage", async () => {
+    const ana = await unComprador();
+    const otro = await unComprador();
+    comoSesion(ana.userId, "admin");
+
+    const { avatarKey } = await publicarFotoDePerfil({
+      userId: otro.userId,
+      archivo: await jpeg(600, 800),
+    });
+    const archivo = clave(avatarKey, TAMANOS_PERFIL[0].sufijo);
+    expect(await existe(archivo)).toBe(true);
+
+    await pedirBaja(otro.userId, "Chau");
+    await ejecutarBajaDeCuenta({ id: otro.userId });
+
+    const [fila] = await db.execute<{ foto: string | null }>(sql`
+      SELECT avatar_key AS foto FROM user_profiles WHERE id = ${otro.userId}`);
+    expect(fila.foto).toBeNull();
+    expect(await existe(archivo)).toBe(false);
+
+    // Revertir no la trae de vuelta: vuelve con su blobatar.
+    await revertirBajaDeCuenta({ id: otro.userId });
+    const [despues] = await db.execute<{ foto: string | null }>(sql`
+      SELECT avatar_key AS foto FROM user_profiles WHERE id = ${otro.userId}`);
+    expect(despues.foto).toBeNull();
   });
 
   test("ejecutarla dos veces no escribe dos veces", async () => {

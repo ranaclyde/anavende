@@ -10,16 +10,19 @@ import {
   variantImages,
 } from "@/db/schema/catalog";
 import { paymentMethods } from "@/db/schema/settings";
+import { userProfiles } from "@/db/schema/users";
 import { domainError } from "@/lib/errors";
 import { almacenamiento } from "@/lib/storage";
 import { procesarImagen } from "@/modules/media/procesar";
 import {
   claveBase,
+  claveDeFotoDePerfil,
   claveDeLogo,
   clave,
   MAXIMO_POR_VARIANTE,
   TAMANOS,
   TAMANOS_LOGO,
+  TAMANOS_PERFIL,
   tipoDe,
   type DestinoDeLogo,
   type Tamano,
@@ -528,4 +531,88 @@ export function urlDeLogo(
   sufijo: "thumb" | "card" = "thumb",
 ): string | null {
   return logoKey ? almacenamiento().publicUrl(clave(logoKey, sufijo)) : null;
+}
+
+// ── Foto de perfil — F5.9 ───────────────────────────────────────────────
+//
+// Tiene la forma de un logo —una por fila, en una columna, y la nueva borra a
+// la anterior— y por eso sigue su mismo orden: subir, apuntar la fila, y
+// recién ahí borrar la vieja. No entra en la tabla `LOGOS` porque no es del
+// catálogo: la escribe cada persona sobre su propia cuenta, con otra ruta y
+// otro control de acceso (`app/api/mi-cuenta/foto/route.ts`).
+
+async function fotoActual(userId: string): Promise<string | null | undefined> {
+  const [fila] = await db
+    .select({ avatarKey: userProfiles.avatarKey })
+    .from(userProfiles)
+    .where(eq(userProfiles.id, userId));
+  return fila?.avatarKey;
+}
+
+async function apuntarFoto(
+  userId: string,
+  avatarKey: string | null,
+): Promise<void> {
+  await db
+    .update(userProfiles)
+    .set({ avatarKey, updatedAt: new Date() })
+    .where(eq(userProfiles.id, userId));
+}
+
+export async function publicarFotoDePerfil({
+  userId,
+  archivo,
+}: {
+  userId: string;
+  archivo: Buffer;
+}): Promise<{ avatarKey: string }> {
+  const anterior = await fotoActual(userId);
+  if (anterior === undefined) throw domainError("NOT_FOUND");
+
+  const procesada = await procesarImagen(archivo, TAMANOS_PERFIL);
+
+  const base = claveDeFotoDePerfil(userId, crypto.randomUUID());
+  const subidas = await subirVersiones(base, procesada.versiones);
+
+  try {
+    await apuntarFoto(userId, base);
+  } catch (e) {
+    await borrarClaves(subidas);
+    throw e;
+  }
+
+  // Después de apuntar a la nueva, por lo mismo que el logo: al revés, un
+  // fallo entre medio dejaría la cuenta mostrando una foto rota.
+  if (anterior) await borrarClaves(clavesDe(anterior, TAMANOS_PERFIL));
+
+  return { avatarKey: base };
+}
+
+/**
+ * Quitar la foto: la cuenta vuelve a su blobatar y el archivo se va. Lo usan
+ * «Quitar foto» de «Mi cuenta» y la baja ejecutada (decisión del 2026-10-26).
+ * Sin foto no hace nada.
+ */
+export async function quitarFotoDePerfil(userId: string): Promise<void> {
+  const anterior = await fotoActual(userId);
+  if (!anterior) return;
+
+  await apuntarFoto(userId, null);
+  await borrarClaves(clavesDe(anterior, TAMANOS_PERFIL));
+}
+
+/**
+ * Los archivos de una foto que la fila ya dejó de nombrar. Para quien la saca
+ * de la cuenta dentro de su propia transacción —la baja ejecutada— y borra
+ * los archivos recién después de confirmarla.
+ */
+export async function borrarArchivosDeFoto(avatarKey: string): Promise<void> {
+  await borrarClaves(clavesDe(avatarKey, TAMANOS_PERFIL));
+}
+
+/** La URL de la foto de perfil, o `null` si la cuenta no tiene. */
+export function urlDeFotoDePerfil(avatarKey: string | null): string | null {
+  return avatarKey
+    ? almacenamiento().publicUrl(clave(avatarKey, TAMANOS_PERFIL[0].sufijo))
+    : null;
 }

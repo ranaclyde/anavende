@@ -2,6 +2,8 @@ import { BotonSalir } from "@/components/shop/boton-salir";
 import { MenuDeLaCuenta } from "@/components/shop/menu-de-la-cuenta";
 import type { Metadata } from "next";
 
+import { Avatar } from "@/components/ui/avatar";
+import { caraDe } from "@/modules/users/avatar";
 import { getSession } from "@/lib/session";
 import { FUERA_DEL_INDICE } from "@/lib/seo";
 
@@ -33,9 +35,14 @@ export default async function LayoutDeLaCuenta({
   return (
     <div className="mx-auto flex max-w-shop flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-title text-ink">
-          Hola, {sesion.profile.fullName}
-        </h1>
+        {/* La cara al lado del saludo (F5.9): en todas las secciones, y no
+            solo en «Mis datos», que es donde se cambia. */}
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar src={caraDe(sesion.profile)} tamano={40} arriba />
+          <h1 className="text-title text-ink">
+            Hola, {sesion.profile.fullName}
+          </h1>
+        </div>
         <div>
           <BotonSalir />
         </div>

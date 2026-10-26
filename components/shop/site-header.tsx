@@ -37,10 +37,16 @@ import { cn } from "@/lib/utils";
 export function SiteHeader({
   cartCount = 0,
   userName,
+  userCara = null,
   escena = null,
 }: {
   cartCount?: number;
   userName?: string | null;
+  /**
+   * La cara de quien entró (F5.9), ya armada en el servidor: la foto, o el
+   * blobatar que se mueve al pasar el mouse (`CaraAnimada`).
+   */
+  userCara?: React.ReactNode;
   /** La escena por fecha de hoy (F9.5): el logo lleva su adorno. */
   escena?: Escena | null;
 }) {
@@ -87,7 +93,11 @@ export function SiteHeader({
       )}
     >
       <div className="mx-auto flex h-14 max-w-shop items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <MenuDelTelefono userName={userName} escena={escena} />
+        <MenuDelTelefono
+          userName={userName}
+          userCara={userCara}
+          escena={escena}
+        />
         <Logo escena={escena} />
         <NavegacionPrincipal />
 
@@ -153,9 +163,19 @@ export function SiteHeader({
           {/* En el teléfono la cuenta está en el menú. */}
           <Link
             href={userName ? "/mi-cuenta" : "/ingresar"}
-            className="flex h-11 items-center gap-2 rounded-pill px-3 text-body-sm text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink max-md:hidden"
+            data-anima-cara
+            className={cn(
+              "flex h-11 items-center gap-2 rounded-pill px-3 text-body-sm text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink max-md:hidden",
+              // Con la cara, el círculo de 32px llena el alto del ícono y un
+              // poco más: se le saca relleno para que el texto no quede lejos.
+              userCara && "pl-1.5 lg:pr-3",
+            )}
           >
-            <User aria-hidden className="size-5 shrink-0" />
+            {userCara ? (
+              userCara
+            ) : (
+              <User aria-hidden className="size-5 shrink-0" />
+            )}
             <span className="hidden max-w-28 truncate lg:inline">
               {userName ?? "Ingresar"}
             </span>

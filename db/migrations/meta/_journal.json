@@ -169,6 +169,13 @@
       "when": 1792787919836,
       "tag": "0023_escena_de_pascua",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793018587896,
+      "tag": "0024_foto_de_perfil",
+      "breakpoints": true
     }
   ]
 }

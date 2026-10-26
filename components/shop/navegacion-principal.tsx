@@ -240,9 +240,11 @@ export function NavegacionPrincipal() {
  */
 export function MenuDelTelefono({
   userName,
+  userCara = null,
   escena,
 }: {
   userName?: string | null;
+  userCara?: React.ReactNode;
   escena?: Escena | null;
 }) {
   const activo = useEnlaceActivo();
@@ -291,7 +293,11 @@ export function MenuDelTelefono({
             onClick={() => setAbierto(false)}
             className={cn(fila, "gap-3")}
           >
-            <User aria-hidden className="size-5 shrink-0 text-ink-secondary" />
+            {userCara ? (
+              <span className="-ml-1.5 flex">{userCara}</span>
+            ) : (
+              <User aria-hidden className="size-5 shrink-0 text-ink-secondary" />
+            )}
             <span className="truncate">{userName ?? "Ingresar"}</span>
           </Link>
         </div>
