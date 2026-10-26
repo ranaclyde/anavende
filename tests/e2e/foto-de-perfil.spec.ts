@@ -68,6 +68,16 @@ function caraDelEncabezado(page: Page) {
     .filter({ visible: true });
 }
 
+/**
+ * El blobatar del encabezado: SVG en la página y no `<img>` —`.mo-root` es su grupo de adentro—, porque se mueve
+ * al pasar el mouse (`CaraAnimada`).
+ */
+function blobatarDelEncabezado(page: Page) {
+  return page
+    .locator('header a[href="/mi-cuenta"] svg .mo-root')
+    .filter({ visible: true });
+}
+
 async function claveGuardada(): Promise<string | null> {
   const [fila] = await sql<{ avatar_key: string | null }[]>`
     SELECT avatar_key FROM user_profiles WHERE id = ${compradora.id}`;
@@ -83,16 +93,50 @@ test("sin foto, la cuenta se ve con su blobatar", async ({ page }) => {
   await ingresar(page, compradora);
   await page.goto("/mi-cuenta");
 
-  await expect(caraDelEncabezado(page)).toHaveAttribute(
-    "src",
-    /^data:image\/svg\+xml/,
-  );
+  await expect(blobatarDelEncabezado(page)).toBeVisible();
+  await expect(caraDelEncabezado(page)).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Subir una foto" }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Quitar foto" })).toHaveCount(
     0,
   );
+});
+
+/**
+ * Se mueve al pasar el mouse por la píldora de la cuenta, no solo por el
+ * dibujo, y quieto con «reducir movimiento». Lo que se mira es el `transform`
+ * del SVG: en reposo no tiene, y al moverse sube y crece.
+ */
+test("el blobatar se mueve al pasar el mouse, y no con «reducir movimiento»", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await ingresar(page, compradora);
+  await page.goto("/mi-cuenta");
+
+  const bicho = blobatarDelEncabezado(page);
+  const transformacion = () =>
+    bicho.evaluate((el) => getComputedStyle(el).transform);
+  expect(await transformacion()).toBe("none");
+
+  // Sobre el nombre, a la derecha del dibujo: es la píldora la que lo mueve.
+  await page
+    .locator('header a[href="/mi-cuenta"]')
+    .filter({ visible: true })
+    .hover({ position: { x: 90, y: 22 } });
+  await expect.poll(transformacion).not.toBe("none");
+
+  await page.mouse.move(5, 500);
+  await expect.poll(transformacion).toBe("none");
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page
+    .locator('header a[href="/mi-cuenta"]')
+    .filter({ visible: true })
+    .hover({ position: { x: 90, y: 22 } });
+  await page.waitForTimeout(400);
+  expect(await transformacion()).toBe("none");
 });
 
 test("sube una foto y se ve en la tienda y en el panel", async ({
@@ -177,10 +221,8 @@ test("quitarla vuelve al blobatar y borra el archivo", async ({ page }) => {
   await page.getByRole("button", { name: "Quitar foto" }).click();
 
   await expect(page.getByRole("status")).toHaveText("Listo, quitamos tu foto.");
-  await expect(caraDelEncabezado(page)).toHaveAttribute(
-    "src",
-    /^data:image\/svg\+xml/,
-  );
+  await expect(blobatarDelEncabezado(page)).toBeVisible();
+  await expect(caraDelEncabezado(page)).toHaveCount(0);
   expect(await claveGuardada()).toBeNull();
   expect((await fetch(foto!)).status).toBeGreaterThanOrEqual(400);
 });

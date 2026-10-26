@@ -183,8 +183,10 @@ Las fotos se convierten **al subirlas**, no al mostrarlas (TS §9).
 `app/api/mi-cuenta/foto`, que acepta a cualquier cuenta pero solo sobre sí
 misma, con un tope de 10 subidas cada 10 minutos. Sale **una sola versión**,
 cuadrada, en `usuarios/{id}/`. Sin foto no hay archivo: el blobatar se arma
-en el servidor y viaja como un `data:` de unos 700 bytes, así que la
-biblioteca no llega al navegador.
+en el servidor y la biblioteca no llega al navegador. En el panel viaja como
+un `data:` de unos 700 bytes; en el encabezado y en «Mis datos» va como SVG
+en la página, porque ahí se mueve al pasar el mouse
+(`components/shop/cara-animada.tsx`), y lo anima `blobatar/motion.css`.
 
 ## Emails
 

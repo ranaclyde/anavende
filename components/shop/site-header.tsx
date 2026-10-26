@@ -11,7 +11,6 @@ import {
   NavegacionPrincipal,
 } from "@/components/shop/navegacion-principal";
 import { SearchBox } from "@/components/shop/search-box";
-import { Avatar } from "@/components/ui/avatar";
 import type { Escena } from "@/lib/escenas";
 import { cn } from "@/lib/utils";
 
@@ -43,8 +42,11 @@ export function SiteHeader({
 }: {
   cartCount?: number;
   userName?: string | null;
-  /** La foto o el blobatar de quien entró (F5.9), ya resuelto en el servidor. */
-  userCara?: string | null;
+  /**
+   * La cara de quien entró (F5.9), ya armada en el servidor: la foto, o el
+   * blobatar que se mueve al pasar el mouse (`CaraAnimada`).
+   */
+  userCara?: React.ReactNode;
   /** La escena por fecha de hoy (F9.5): el logo lleva su adorno. */
   escena?: Escena | null;
 }) {
@@ -161,6 +163,7 @@ export function SiteHeader({
           {/* En el teléfono la cuenta está en el menú. */}
           <Link
             href={userName ? "/mi-cuenta" : "/ingresar"}
+            data-anima-cara
             className={cn(
               "flex h-11 items-center gap-2 rounded-pill px-3 text-body-sm text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink max-md:hidden",
               // Con la cara, el círculo de 32px llena el alto del ícono y un
@@ -169,7 +172,7 @@ export function SiteHeader({
             )}
           >
             {userCara ? (
-              <Avatar src={userCara} tamano={32} />
+              userCara
             ) : (
               <User aria-hidden className="size-5 shrink-0" />
             )}

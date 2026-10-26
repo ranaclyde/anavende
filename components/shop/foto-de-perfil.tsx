@@ -31,16 +31,19 @@ import { quitarMiFoto } from "@/modules/users/actions";
  * una foto de celular no es instantánea (§9.1).
  *
  * Sin foto, la cuenta tiene igual una cara: el blobatar que arma el servidor
- * a partir del id (`modules/users/avatar.ts`).
+ * a partir del id, y que se mueve al pasar el mouse por la fila
+ * (`CaraAnimada`, `data-anima-cara`).
  */
 export function FotoDePerfil({
   cara,
-  tieneFoto,
+  fotoActual,
 }: {
-  /** Lo que se ve hoy: la URL de la foto o el `data:` del blobatar. */
-  cara: string;
-  tieneFoto: boolean;
+  /** Lo que se ve hoy, armado en el servidor: la foto o el blobatar. */
+  cara: React.ReactNode;
+  /** La clave de la foto guardada, o `null`: dice si hay una y cuándo cambió. */
+  fotoActual: string | null;
 }) {
+  const tieneFoto = fotoActual !== null;
   const router = useRouter();
   const enPausa = useCuentaEnPausa();
   const campoDeArchivo = useRef<HTMLInputElement>(null);
@@ -99,10 +102,10 @@ export function FotoDePerfil({
     router.refresh();
   };
 
-  // Cuando llega la cara nueva del servidor, la vista previa ya no hace falta.
-  const [caraVista, setCaraVista] = useState(cara);
-  if (caraVista !== cara) {
-    setCaraVista(cara);
+  // Cuando llega la foto nueva del servidor, la vista previa ya no hace falta.
+  const [fotoVista, setFotoVista] = useState(fotoActual);
+  if (fotoVista !== fotoActual) {
+    setFotoVista(fotoActual);
     if (!subiendo) setVistaPrevia(null);
   }
 
@@ -126,13 +129,17 @@ export function FotoDePerfil({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-4">
-        <Avatar
-          src={vistaPrevia ?? cara}
-          tamano={96}
-          arriba
-          className={subiendo ? "opacity-60 transition-opacity" : undefined}
-        />
+      <div data-anima-cara className="flex items-center gap-4">
+        {vistaPrevia ? (
+          <Avatar
+            src={vistaPrevia}
+            tamano={96}
+            arriba
+            className={subiendo ? "opacity-60 transition-opacity" : undefined}
+          />
+        ) : (
+          cara
+        )}
 
         <div className="flex min-w-0 flex-col items-start gap-2">
           <div className="flex flex-wrap items-center gap-2">

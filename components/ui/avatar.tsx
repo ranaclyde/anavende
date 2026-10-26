@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
  * El anillo de `--border` es para la foto de fondo blanco, que sobre la
  * superficie blanca no tendría borde.
  */
-const TAMANOS = {
+export const TAMANOS_DE_AVATAR = {
   32: "size-8",
   40: "size-10",
   64: "size-16",
@@ -36,7 +36,7 @@ export function Avatar({
   className,
 }: {
   src: string;
-  tamano?: keyof typeof TAMANOS;
+  tamano?: keyof typeof TAMANOS_DE_AVATAR;
   /**
    * Para la cara grande de una pantalla —«Mis datos», la ficha del panel—,
    * que está arriba de todo y en una cuenta nueva es lo más grande que hay:
@@ -55,7 +55,7 @@ export function Avatar({
       unoptimized
       className={cn(
         "shrink-0 rounded-pill bg-surface-sunken object-cover ring-1 ring-border",
-        TAMANOS[tamano],
+        TAMANOS_DE_AVATAR[tamano],
         className,
       )}
     />

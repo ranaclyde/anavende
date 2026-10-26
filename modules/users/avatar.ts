@@ -25,6 +25,10 @@ import { urlDeFotoDePerfil } from "@/modules/media/subir";
  * el encabezado y el menú del panel son componentes de cliente, y generarlo
  * ahí sumaría la biblioteca al JavaScript de todas las páginas para dibujar
  * algo que no cambia. Un `data:` de unos 700 bytes no hace pedido aparte.
+ *
+ * **Esta es la cara quieta**: el panel y el saludo de «Mi cuenta». La que se
+ * mueve al pasar el mouse —el encabezado y «Mis datos»— no puede ser una
+ * imagen y la arma `components/shop/cara-animada.tsx`.
  */
 export function caraDe(cuenta: {
   id: string;

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { RetirarPedidoDeBaja } from "@/components/shop/baja/retirar";
 import { CambiarContrasenaForm } from "@/components/shop/cambiar-contrasena-form";
+import { CaraAnimada } from "@/components/shop/cara-animada";
 import { FotoDePerfil } from "@/components/shop/foto-de-perfil";
 import { MisDatosForm } from "@/components/shop/mis-datos-form";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,6 @@ import { Label } from "@/components/ui/label";
 import { telefonoLocal } from "@/lib/telefono";
 import { cn } from "@/lib/utils";
 import { getIdentity, getSession } from "@/lib/session";
-import { caraDe } from "@/modules/users/avatar";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
 
@@ -66,8 +66,8 @@ export default async function MiCuenta({
         <CardContent className="flex flex-col gap-5">
           {/* Arriba de todo, que es donde se busca (F5.9). */}
           <FotoDePerfil
-            cara={caraDe(profile)}
-            tieneFoto={profile.avatarKey !== null}
+            cara={<CaraAnimada cuenta={profile} tamano={96} arriba />}
+            fotoActual={profile.avatarKey}
           />
           <EmailDeLaCuenta
             email={profile.email}
