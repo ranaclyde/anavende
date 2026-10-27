@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
   const volver =
     volverCrudo && volverCrudo.startsWith("/") && !volverCrudo.startsWith("//")
       ? volverCrudo
-      : "/mi-cuenta";
+      : "/";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/error?motivo=enlace-invalido`);

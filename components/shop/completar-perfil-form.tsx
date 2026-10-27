@@ -73,7 +73,7 @@ export function CompletarPerfilForm({
         return;
       }
 
-      router.push(volver && volver.startsWith("/") ? volver : "/mi-cuenta");
+      router.push(volver && volver.startsWith("/") ? volver : "/");
       router.refresh();
     });
   };
