@@ -1084,6 +1084,12 @@ el diálogo con tope de alto la cortaba con el nombre fuera de vista. Las otras
 tres solapas van igual aunque sean cortas: son la misma pantalla y se tienen que
 comportar igual.
 
+**La variante de un producto también** (2026-10-27, F2.12). «Agregar color» y
+editar un color abrían un diálogo centrado; ahora abren el mismo drawer, en dos
+secciones —qué color es; cuánto hay y si se ofrece—. Es un alta y una edición,
+y en F2.13 suma un paso adentro para crear el color sin salir. Sacar un color
+sigue confirmándose en diálogo.
+
 - **A la derecha, nunca a la izquierda.** La izquierda del panel es la
   navegación —el menú de §5.2, que en el teléfono ya se abre como drawer desde
   ese lado—. A la derecha deja a la vista la columna de nombres del listado, que
