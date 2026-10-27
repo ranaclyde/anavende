@@ -47,7 +47,7 @@ shadow_port = 54320
 health_timeout = "2m"
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
 # server_version;` on the remote database to check.
-major_version = 15  # La del servidor DATA: Postgres 15.8 (F0.9). TS §2.1 pide 15+.
+major_version = 17  # TEMPORAL, ver PROGRESO F10.5b — la del servidor DATA es 15: Postgres 15.8 (F0.9). TS §2.1 pide 15+.
 
 [db.pooler]
 enabled = false
