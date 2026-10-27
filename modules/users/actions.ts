@@ -14,6 +14,7 @@ import { frenarSiInsiste } from "@/lib/limite";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { quitarFotoDePerfil } from "@/modules/media/subir";
+import { laTiendaEstaCerradaPara } from "@/modules/settings/mantenimiento";
 import { sinDatos } from "@/modules/users/baja/schemas";
 import { coincideLaContrasena } from "@/modules/users/contrasena";
 import { importarFotoDeGoogle } from "@/modules/users/foto-de-google";
@@ -279,6 +280,8 @@ export const pedirRecuperacion = action
 
 /** El único mensaje de un ingreso fallido: no dice si el email existe. */
 const NO_COINCIDEN = "Ese email y esa contraseña no coinciden. Probá de nuevo.";
+const TIENDA_CERRADA =
+  "La tienda está cerrada por un rato y por ahora solo entra quien la administra. Volvé a probar más tarde.";
 
 export const ingresar = action
   .input(ingresoSchema)
@@ -286,13 +289,21 @@ export const ingresar = action
   .handler(async ({ input }) => {
     await frenarSiInsiste("ingreso", CUPOS.ingreso);
     const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: input.email,
       password: input.password,
       options: conCaptcha(input.captcha),
     });
 
-    if (!error) return { ok: true as const };
+    if (!error) {
+      // Con la tienda cerrada solo entran las administradoras. Se mira
+      // después de la contraseña, así que no le dice nada a quien no la sabe.
+      if (await laTiendaEstaCerradaPara(data.user.id)) {
+        await supabase.auth.signOut();
+        throw domainError("FORBIDDEN", { message: TIENDA_CERRADA });
+      }
+      return { ok: true as const };
+    }
 
     // GoTrue mira el token antes que la cuenta: esto no dice si existe.
     if (error.code === "captcha_failed") throw captchaFallido();

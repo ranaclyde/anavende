@@ -1,8 +1,11 @@
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { urlDelSitio } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { needsProfile } from "@/lib/session";
+import { laTiendaEstaCerradaPara } from "@/modules/settings/mantenimiento";
 import { anotarFotoDeGoogle } from "@/modules/users/foto-de-google";
 
 /**
@@ -12,6 +15,14 @@ import { anotarFotoDeGoogle } from "@/modules/users/foto-de-google";
  * perfil se resuelve DESPUÉS, y no se puede exigir teléfono en el alta como
  * en el registro por email.
  */
+/**
+ * Creada en este mismo ingreso. Una cuenta sin perfil de antes —alguien que
+ * entró con Google y nunca completó el teléfono— no la borra este camino.
+ */
+function esReciente(creadaEl: string): boolean {
+  return Date.now() - new Date(creadaEl).getTime() < 10 * 60_000;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
@@ -41,11 +52,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/error?motivo=vinculacion-rechazada`);
   }
 
-  if (await needsProfile()) {
+  const { session } = data;
+  const sinPerfil = await needsProfile();
+
+  // Con la tienda cerrada solo entran las administradoras (decisión tuya del
+  // 2026-10-26). GoTrue ya creó la cuenta antes de que lleguemos acá, así que
+  // si es nueva se borra: sin esto, cada intento dejaría una cuenta a medias.
+  if (await laTiendaEstaCerradaPara(session.user.id)) {
+    await supabase.auth.signOut();
+    if (sinPerfil && esReciente(session.user.created_at)) {
+      const { error: alBorrar } =
+        await createServiceClient().auth.admin.deleteUser(session.user.id);
+      if (alBorrar) {
+        Sentry.captureException(alBorrar, {
+          tags: { capa: "auth-callback", paso: "tienda-cerrada" },
+        });
+      }
+    }
+    return NextResponse.redirect(`${origin}/mantenimiento`);
+  }
+
+  if (sinPerfil) {
     // La foto de Google se averigua ahora porque el permiso para pedirla
     // (`provider_token`) solo viene en este intercambio; se guarda al crear
     // el perfil (`modules/users/foto-de-google.ts`).
-    const { session } = data;
     if (
       session.user.app_metadata.provider === "google" &&
       session.provider_token

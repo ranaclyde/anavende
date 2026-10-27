@@ -211,3 +211,10 @@ Con el **modo mantenimiento** prendido desde «Configuración», el público ve
 una página de mantenimiento, con un 503 para que los buscadores no la
 indexen, y quien administra ve la tienda normal, para revisar cada ficha
 como la va a ver un comprador (`modules/settings/mantenimiento.ts`).
+
+**Mientras está cerrada, solo entran las administradoras, y no se crean
+cuentas.** `/registro` responde 503 como el resto. En `/ingresar`, una
+compradora con la contraseña correcta recibe «La tienda está cerrada…» y
+no queda con la sesión abierta. Con Google, la vuelta cierra la sesión y
+manda a `/mantenimiento`, y si la cuenta la acababa de crear GoTrue, la
+borra (`app/api/auth/callback/route.ts`).

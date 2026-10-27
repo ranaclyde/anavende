@@ -148,3 +148,17 @@ export async function puedeVerLaTiendaCerrada(userId: string): Promise<boolean> 
     return false;
   }
 }
+
+/**
+ * ¿Esta cuenta se queda afuera? Con la tienda cerrada, entrar es solo para
+ * administradoras (decisión tuya del 2026-10-26): hasta ese día una
+ * compradora podía ingresar —y con Google, crearse la cuenta— para después
+ * chocar con el cartel en cada página. Lo usan los dos ingresos, el de
+ * contraseña (`ingresar`) y la vuelta de Google (`/api/auth/callback`).
+ */
+export async function laTiendaEstaCerradaPara(
+  userId: string,
+): Promise<boolean> {
+  if (!(await estaEnMantenimiento())) return false;
+  return !(await puedeVerLaTiendaCerrada(userId));
+}
