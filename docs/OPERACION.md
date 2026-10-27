@@ -87,8 +87,9 @@ volver a desplegar; cambiarla en Coolify sin reconstruir no hace nada.
   apagar uno allá alcanza. El proyecto de Google Cloud es de la cuenta
   `admin@anavende.com.ar`, y tiene que tener prendida la **API de People**
   (Google Cloud → APIs y servicios → Biblioteca): con ella se sabe si la foto
-  de Google es una elegida o la inicial genérica. Apagada, el ingreso anda
-  igual y las cuentas nuevas salen con su blobatar.
+  de Google es una elegida o la inicial genérica, y se traen el nombre y el
+  apellido por separado. Apagada, el ingreso anda igual, las cuentas nuevas
+  salen con su blobatar y el nombre se parte en el primer espacio.
 - El número de WhatsApp, el email que recibe los avisos y el modo
   mantenimiento viven en la base (`site_settings`), igual que los medios de
   pago (`payment_methods`). Ana los cambia desde el panel sin desplegar.

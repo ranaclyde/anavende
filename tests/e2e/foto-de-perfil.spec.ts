@@ -184,10 +184,14 @@ test("sube una foto y se ve en la tienda y en el panel", async ({
     ana.locator(`tr:has(a[href="/admin/usuarios/${compradora.id}"]) img`),
   ).toHaveAttribute("src", src!);
 
+  // En la ficha, tocarla la abre ampliada en un diálogo, sin salir de ahí.
   await ana.goto(`/admin/usuarios/${compradora.id}`);
-  await expect(
-    ana.getByRole("link", { name: /Ver la foto de Compradora/ }),
-  ).toHaveAttribute("href", src!);
+  await ana.getByRole("button", { name: /Ver la foto de Compradora/ }).click();
+  const dialogo = ana.getByRole("dialog", { name: /Foto de Compradora/ });
+  await expect(dialogo.getByRole("img")).toHaveAttribute("src", src!);
+  expect(new URL(ana.url()).pathname).toBe(`/admin/usuarios/${compradora.id}`);
+  await ana.keyboard.press("Escape");
+  await expect(dialogo).toBeHidden();
   await ana.context().close();
 });
 

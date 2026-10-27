@@ -12,6 +12,7 @@ import {
   RolDelUsuario,
 } from "@/components/admin/usuarios/estado";
 import { EditarDatosDelUsuario } from "@/components/admin/usuarios/editar";
+import { FotoAmpliada } from "@/components/admin/usuarios/foto-ampliada";
 import { RestablecerContrasena } from "@/components/admin/usuarios/restablecer";
 import { RolDelUsuarioEditable } from "@/components/admin/usuarios/rol";
 import { Avatar } from "@/components/ui/avatar";
@@ -222,27 +223,19 @@ export default async function FichaDeUsuario({ params }: Props) {
  * cuando alguien pregunte. Lo que lo borra es revertir.
  */
 /**
- * La cara de la cuenta — F5.9. Con foto propia, abre la foto en otra pestaña:
- * a 64px se reconoce a alguien, pero no se ve bien qué subió. Con el
- * blobatar no hay nada más que ver, y no es un enlace.
+ * La cara de la cuenta — F5.9. Con foto propia, tocarla la abre ampliada en
+ * un diálogo, sin salir de la ficha (`FotoAmpliada`). Con el blobatar no hay
+ * nada más que ver, y no es un botón.
  */
 function Retrato({ usuario }: { usuario: UsuarioDelPanel }) {
   if (!usuario.tieneFoto)
     return <Avatar src={usuario.cara} tamano={64} arriba />;
 
   return (
-    <a
-      href={usuario.cara}
-      target="_blank"
-      rel="noopener noreferrer"
-      title="Ver la foto"
-      className="shrink-0 rounded-pill transition-opacity duration-150 hover:opacity-85"
-    >
-      <Avatar src={usuario.cara} tamano={64} arriba />
-      <span className="sr-only">
-        Ver la foto de {usuario.firstName}, en otra pestaña
-      </span>
-    </a>
+    <FotoAmpliada
+      src={usuario.cara}
+      nombre={`${usuario.firstName} ${usuario.lastName}`}
+    />
   );
 }
 

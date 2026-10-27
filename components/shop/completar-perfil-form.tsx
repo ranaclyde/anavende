@@ -20,10 +20,12 @@ import { completarPerfil } from "@/modules/users/actions";
 type Campo = "firstName" | "lastName" | "phone";
 
 /**
- * Parte el nombre que entregó el proveedor social en nombre y apellido.
+ * Parte el nombre que entregó el proveedor social en nombre y apellido,
+ * cuando no llegan por separado (`separado`: Google los da por la API de
+ * People, `modules/users/datos-de-google.ts`).
  *
- * ES UNA ADIVINANZA, y acá está bien que lo sea: Google y Facebook entregan
- * un solo campo, y esto solo llena los valores por omisión de un formulario
+ * ES UNA ADIVINANZA, y acá está bien que lo sea: GoTrue guarda un solo
+ * campo, y esto solo llena los valores por omisión de un formulario
  * que la persona tiene delante y puede corregir. Es lo contrario de adivinar
  * en el servidor, callado, al guardar — que es lo que se sacó del alta el
  * 2026-09-10.
@@ -44,14 +46,17 @@ function partirNombre(sugerido: string | null) {
 export function CompletarPerfilForm({
   email,
   nombreSugerido,
+  separado,
   volver,
 }: {
   email: string | null;
   nombreSugerido: string | null;
+  /** Nombre y apellido tal como los dio el proveedor, si los dio. */
+  separado?: { nombre: string; apellido: string } | null;
   volver?: string;
 }) {
   const router = useRouter();
-  const sugerido = partirNombre(nombreSugerido);
+  const sugerido = separado ?? partirNombre(nombreSugerido);
   const [enviando, iniciar] = useTransition();
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
@@ -73,7 +78,7 @@ export function CompletarPerfilForm({
         return;
       }
 
-      router.push(volver && volver.startsWith("/") ? volver : "/mi-cuenta");
+      router.push(volver && volver.startsWith("/") ? volver : "/");
       router.refresh();
     });
   };

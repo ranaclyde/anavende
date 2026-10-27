@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { CompletarPerfilForm } from "@/components/shop/completar-perfil-form";
 import { getIdentity, getSession } from "@/lib/session";
+import { nombreDeGoogle } from "@/modules/users/datos-de-google";
 
 export const metadata: Metadata = { title: "Completá tu perfil" };
 
@@ -21,11 +22,17 @@ export default async function CompletarPerfil({
   // Con perfil ya no hay nada que completar.
   if (await getSession()) redirect("/mi-cuenta");
 
-  const { volver } = await searchParams;
+  // Nombre y apellido por separado si Google los dio; si no, el formulario
+  // parte el nombre completo.
+  const [{ volver }, deGoogle] = await Promise.all([
+    searchParams,
+    nombreDeGoogle(identidad.userId),
+  ]);
   return (
     <CompletarPerfilForm
       email={identidad.email}
       nombreSugerido={identidad.nombreSugerido}
+      separado={deGoogle}
       volver={volver}
     />
   );

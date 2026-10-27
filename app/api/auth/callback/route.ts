@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { needsProfile } from "@/lib/session";
 import { laTiendaEstaCerradaPara } from "@/modules/settings/mantenimiento";
-import { anotarFotoDeGoogle } from "@/modules/users/foto-de-google";
+import { anotarDatosDeGoogle } from "@/modules/users/datos-de-google";
 
 /**
  * Callback de OAuth — TECHNICAL-SPEC §4, §13.4 · RF-06.
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
   const volver =
     volverCrudo && volverCrudo.startsWith("/") && !volverCrudo.startsWith("//")
       ? volverCrudo
-      : "/mi-cuenta";
+      : "/";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/error?motivo=enlace-invalido`);
@@ -73,14 +73,15 @@ export async function GET(request: NextRequest) {
   }
 
   if (sinPerfil) {
-    // La foto de Google se averigua ahora porque el permiso para pedirla
-    // (`provider_token`) solo viene en este intercambio; se guarda al crear
-    // el perfil (`modules/users/foto-de-google.ts`).
+    // La foto, el nombre y el apellido de Google se averiguan ahora porque
+    // el permiso para pedirlos (`provider_token`) solo viene en este
+    // intercambio; se usan al completar el perfil
+    // (`modules/users/datos-de-google.ts`).
     if (
       session.user.app_metadata.provider === "google" &&
       session.provider_token
     ) {
-      await anotarFotoDeGoogle(session.user.id, session.provider_token);
+      await anotarDatosDeGoogle(session.user.id, session.provider_token);
     }
 
     const destino = new URL("/completar-perfil", origin);

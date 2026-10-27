@@ -17,7 +17,7 @@ import { quitarFotoDePerfil } from "@/modules/media/subir";
 import { laTiendaEstaCerradaPara } from "@/modules/settings/mantenimiento";
 import { sinDatos } from "@/modules/users/baja/schemas";
 import { coincideLaContrasena } from "@/modules/users/contrasena";
-import { importarFotoDeGoogle } from "@/modules/users/foto-de-google";
+import { importarFotoDeGoogle } from "@/modules/users/datos-de-google";
 import { actualizarDatos } from "@/modules/users/perfil";
 import {
   cambioDeContrasenaSchema,

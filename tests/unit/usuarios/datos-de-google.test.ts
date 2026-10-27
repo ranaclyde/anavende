@@ -8,7 +8,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { jpeg } from "@/tests/apoyo/imagenes";
 
 /**
- * F1.7 y F5.9 — La foto de Google como primera foto de perfil.
+ * F1.7 y F5.9 — Lo que se trae de Google al darse de alta: la foto, como
+ * primera foto de perfil, y el nombre y el apellido por separado.
  *
  * Lo que habla con Google se prueba reemplazando `fetch` solo para las
  * direcciones de Google: el resto —Storage y GoTrue del stack local— es de
@@ -18,8 +19,13 @@ import { jpeg } from "@/tests/apoyo/imagenes";
 
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
 
-const { buscarFotoDeGoogle, esFotoDeGoogle, importarFotoDeGoogle } =
-  await import("@/modules/users/foto-de-google");
+const {
+  anotarDatosDeGoogle,
+  esFotoDeGoogle,
+  importarFotoDeGoogle,
+  leerDeGoogle,
+  nombreDeGoogle,
+} = await import("@/modules/users/datos-de-google");
 const { quitarFotoDePerfil } = await import("@/modules/media/subir");
 
 const FOTO = "https://lh3.googleusercontent.com/a/ACg8ocFoto=s100";
@@ -85,36 +91,129 @@ describe("esFotoDeGoogle", () => {
   });
 });
 
-describe("buscarFotoDeGoogle", () => {
-  const people = (photos: unknown[], status = 200) =>
-    google(() => Response.json({ photos }, { status }));
+describe("leerDeGoogle", () => {
+  const people = (cuerpo: unknown, status = 200) =>
+    google(() => Response.json(cuerpo, { status }));
 
-  test("la foto elegida, pedida en 512px", async () => {
-    people([{ url: FOTO, metadata: { primary: true } }]);
-    expect(await buscarFotoDeGoogle("token")).toBe(
-      "https://lh3.googleusercontent.com/a/ACg8ocFoto=s512-c",
-    );
+  test("la foto elegida, pedida en 512px, y el nombre y el apellido por separado", async () => {
+    people({
+      names: [
+        {
+          givenName: "Juan Pablo",
+          familyName: "Pérez",
+          metadata: { primary: true },
+        },
+      ],
+      photos: [{ url: FOTO, metadata: { primary: true } }],
+    });
+    expect(await leerDeGoogle("token")).toEqual({
+      foto: "https://lh3.googleusercontent.com/a/ACg8ocFoto=s512-c",
+      nombre: "Juan Pablo",
+      apellido: "Pérez",
+    });
+  });
+
+  test("toma el nombre principal, no el primero", async () => {
+    people({
+      names: [
+        { givenName: "Viejo", familyName: "Nombre" },
+        {
+          givenName: "María",
+          familyName: "Gómez",
+          metadata: { primary: true },
+        },
+      ],
+    });
+    expect(await leerDeGoogle("token")).toMatchObject({
+      nombre: "María",
+      apellido: "Gómez",
+    });
+  });
+
+  test("sin apellido, solo el nombre, y sin espacios de más", async () => {
+    people({ names: [{ givenName: "  Ana  ", metadata: { primary: true } }] });
+    expect(await leerDeGoogle("token")).toEqual({
+      foto: null,
+      nombre: "Ana",
+      apellido: null,
+    });
   });
 
   test("la inicial que inventa Google no cuenta como foto", async () => {
-    people([{ url: FOTO, default: true, metadata: { primary: true } }]);
-    expect(await buscarFotoDeGoogle("token")).toBeNull();
+    people({
+      photos: [{ url: FOTO, default: true, metadata: { primary: true } }],
+    });
+    expect((await leerDeGoogle("token")).foto).toBeNull();
   });
 
-  test("sin fotos, ninguna", async () => {
-    people([]);
-    expect(await buscarFotoDeGoogle("token")).toBeNull();
+  test("sin fotos ni nombres, nada", async () => {
+    people({});
+    expect(await leerDeGoogle("token")).toEqual({
+      foto: null,
+      nombre: null,
+      apellido: null,
+    });
   });
 
   test("una dirección fuera de Google se descarta", async () => {
-    people([{ url: "https://otro.net/foto.jpg", metadata: { primary: true } }]);
-    expect(await buscarFotoDeGoogle("token")).toBeNull();
+    people({
+      photos: [
+        { url: "https://otro.net/foto.jpg", metadata: { primary: true } },
+      ],
+    });
+    expect((await leerDeGoogle("token")).foto).toBeNull();
   });
 
-  test("con la API de People apagada (403), ninguna", async () => {
+  test("con la API de People apagada (403), nada", async () => {
     vi.spyOn(console, "error").mockImplementationOnce(() => {});
-    people([], 403);
-    expect(await buscarFotoDeGoogle("token")).toBeNull();
+    people({}, 403);
+    expect(await leerDeGoogle("token")).toEqual({
+      foto: null,
+      nombre: null,
+      apellido: null,
+    });
+  });
+});
+
+describe("anotar y leer el nombre", () => {
+  test("lo que dice Google queda anotado y sale para el formulario", async () => {
+    const yo = await unaCuenta();
+    google(() =>
+      Response.json({
+        names: [
+          {
+            givenName: "Juan Pablo",
+            familyName: "Pérez",
+            metadata: { primary: true },
+          },
+        ],
+      }),
+    );
+    await anotarDatosDeGoogle(yo.userId, "token");
+    expect(await nombreDeGoogle(yo.userId)).toEqual({
+      nombre: "Juan Pablo",
+      apellido: "Pérez",
+    });
+  });
+
+  test("sin nombre de Google, el formulario parte el nombre completo", async () => {
+    const yo = await unaCuenta();
+    expect(await nombreDeGoogle(yo.userId)).toBeNull();
+  });
+
+  test("al completar el perfil, el nombre anotado también se va", async () => {
+    const yo = await unaCuenta();
+    google(() =>
+      Response.json({
+        names: [
+          { givenName: "Ana", familyName: "Ruiz", metadata: { primary: true } },
+        ],
+      }),
+    );
+    await anotarDatosDeGoogle(yo.userId, "token");
+
+    expect(await importarFotoDeGoogle(yo.userId)).toBe(false);
+    expect(await nombreDeGoogle(yo.userId)).toBeNull();
   });
 });
 
