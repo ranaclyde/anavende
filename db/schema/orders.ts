@@ -119,7 +119,7 @@ export const orders = pgTable(
       .on(t.idempotencyKey)
       .where(sql`idempotency_key IS NOT NULL`),
   ],
-);
+).enableRLS();
 
 export const orderItems = pgTable(
   "order_items",
@@ -155,7 +155,7 @@ export const orderItems = pgTable(
     check("item_price_not_negative", sql`${t.unitPrice} >= 0`),
     index("order_items_order_idx").on(t.orderId),
   ],
-);
+).enableRLS();
 
 /** Cada transición de estado deja rastro, con autor y motivo (RF-13). */
 export const orderStatusHistory = pgTable("order_status_history", {
@@ -181,7 +181,7 @@ export const orderStatusHistory = pgTable("order_status_history", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`clock_timestamp()`),
-});
+}).enableRLS();
 
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;

@@ -51,7 +51,7 @@ export const siteSettings = pgTable(
       .defaultNow(),
   },
   (t) => [check("singleton", sql`${t.id} = 1`)],
-);
+).enableRLS();
 
 export const paymentMethods = pgTable("payment_methods", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -61,7 +61,7 @@ export const paymentMethods = pgTable("payment_methods", {
   description: text("description"),
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
-});
+}).enableRLS();
 
 /** Garantías, términos, privacidad y cómo comprar (RF-29). Markdown. */
 export const legalPages = pgTable("legal_pages", {
@@ -72,7 +72,7 @@ export const legalPages = pgTable("legal_pages", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export type SiteSettings = typeof siteSettings.$inferSelect;
 export type PaymentMethod = typeof paymentMethods.$inferSelect;

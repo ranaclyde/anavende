@@ -176,6 +176,13 @@
       "when": 1793018587896,
       "tag": "0024_foto_de_perfil",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793115633250,
+      "tag": "0025_cerrar_postgrest",
+      "breakpoints": true
     }
   ]
 }

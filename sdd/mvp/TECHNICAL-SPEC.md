@@ -80,9 +80,9 @@
 | Se usa | No se usa |
 |---|---|
 | PostgreSQL | PostgREST — el acceso a datos es **Drizzle** |
-| **Auth (GoTrue)** — identidad y OAuth | **RLS** — la autorización vive en la aplicación (§13.5) |
+| **Auth (GoTrue)** — identidad y OAuth | **RLS como autorización** — vive en la aplicación (§13.5). Está activado sin políticas, solo como cerrojo (§13.8) |
 | Storage | Realtime, Edge Runtime, Supavisor |
-| Studio (inspección) | |
+| Studio (inspección), por túnel SSH | |
 
 > **Auth y datos van por caminos distintos, a propósito.** La identidad se consulta con el SDK de Supabase; el resto de los datos, con Drizzle sobre la conexión directa. No se mezclan: el SDK nunca lee tablas de dominio y Drizzle nunca escribe en `auth`.
 
@@ -91,7 +91,7 @@
 | Decisión | Motivo |
 |---|---|
 | **Supabase Auth en lugar de un sistema propio** | Ya corre en el servidor DATA: no suma una pieza a mantener. Verifica el JWT **localmente** contra el JWKS, sin llamar al servidor de autenticación en cada guardia de página. Y **vincula automáticamente** las identidades con el mismo email verificado, con protección contra apropiación previa de cuenta (RF-06). El costo asumido está en §13.6. |
-| **Conexión directa a Postgres, sin PostgREST ni RLS** | La autorización vive en el servidor de Next. RLS se evaluó y se descartó: como el JWT no llega a Postgres por la vía de Drizzle, quedaría inerte salvo un rediseño del acceso a datos (§13.8). |
+| **Conexión directa a Postgres, sin PostgREST ni RLS como autorización** | La autorización vive en el servidor de Next. RLS por persona se evaluó y se descartó: como el JWT no llega a Postgres por la vía de Drizzle, quedaría inerte salvo un rediseño del acceso a datos (§13.8). Sí está activado sin políticas, como cerrojo frente a PostgREST. |
 | **Server Actions en lugar de una API REST** | No hay otro consumidor previsto. Evita mantener una capa de endpoints, tipos de request/response y un cliente HTTP para lo mismo que ya resuelve una función tipada. |
 | **`numeric(12,2)` en lugar de centavos enteros** | Decisión del negocio: la base se lee y se audita a mano. Se compensa con la disciplina de P4 (§7.1). |
 | **sharp síncrono, sin cola** | Cinco imágenes por variante, cargadas por una sola persona. Una cola sumaría un worker, un broker y estados intermedios en la UI para resolver un problema que no existe a esta escala. |
@@ -163,7 +163,7 @@ Se adopta la **opción C** con una precisión importante: **ambos servidores est
 | Next.js | Pública, HTTPS | Es el sitio |
 | **Postgres** | **Solo privada** | Nunca debe aceptar conexiones desde internet |
 | Supabase Storage | Pública, HTTPS, subdominio propio | Las imágenes las descarga el navegador directamente: pasarlas por el servidor APP duplicaría el tráfico y le sumaría carga |
-| Supabase Studio | Pública, HTTPS, **con autenticación y restricción por IP** | Herramienta de administración: nunca abierta |
+| Supabase Studio | **Ninguna desde internet.** Se entra por túnel SSH al servidor DATA, con la autenticación del dashboard | Herramienta de administración: nunca abierta. La restricción por IP se cambió por el túnel el 2026-10-27: no hay IP fija desde donde administrar, y una lista de IPs dejaría afuera a quien administra cada vez que cambie la suya |
 
 ---
 
@@ -1422,6 +1422,14 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 - Las pruebas incluyen un caso explícito por cada tabla (§17.2, caso 6).
 - Es el punto que más atención merece en revisión de código.
 
+**RLS sí está activado, pero como cerrojo y no como autorización** (2026-10-27). Supabase les da a sus roles de API, `anon` y `authenticated`, todos los permisos sobre cada tabla nueva de `public`, y PostgREST quedó publicado por Kong aunque la tienda no lo use: con la clave pública, que viaja en el código del navegador, se podían leer y modificar las tablas, `user_profiles.role` incluido. Se cerró en tres capas:
+
+1. **nginx** deja pasar solo `/auth/v1/` y `/storage/v1/` (§16).
+2. **`REVOKE`** de todos los permisos de `anon` y `authenticated` sobre tablas, vistas y secuencias de `public`, y sobre las que se creen después (`ALTER DEFAULT PRIVILEGES`).
+3. **RLS sin políticas** en todas las tablas (`.enableRLS()` en el esquema de Drizzle): nadie ve filas salvo el dueño. A la tienda no la toca, porque se conecta como `postgres`, que es el dueño de las tablas y además tiene `BYPASSRLS` —la condición 2 de arriba, ahora a favor—. A las vistas RLS no las alcanza, y por eso el `REVOKE` no es opcional.
+
+Toda tabla nueva lleva `.enableRLS()`. `tests/unit/seguridad/roles-de-la-api.test.ts` falla si alguna nace sin RLS o con permisos para esos roles.
+
 ---
 
 ## 14. Emails (RF-30)
@@ -1474,7 +1482,7 @@ Hacerlo funcionar exigiría un rol dedicado sin privilegios de dueño y `SET LOC
 | **Cabeceras** | CSP, `X-Frame-Options`, `Referrer-Policy` y `Strict-Transport-Security` definidas en `next.config.ts` |
 | **Enumeración** | Los mensajes de login y de recuperación no revelan si un email existe (RF-06) |
 | **Red entre servidores** | Postgres escucha solo en la interfaz privada; `pg_hba.conf` restringido a la IP del servidor APP; firewall local en ambos servidores, porque el firewall virtual de DonWeb no cubre la interfaz privada |
-| **Superficie de Supabase** | De los servicios expuestos públicamente, solo Storage queda abierto (lectura). **Studio requiere autenticación y restricción por IP.** Postgres, Realtime y Edge Runtime no se exponen |
+| **Superficie de Supabase** | nginx deja pasar desde internet **solo `/auth/v1/` y `/storage/v1/`**: lo demás responde 404. **Studio, PostgREST, Realtime y Edge Runtime no se exponen**; Studio se usa por túnel SSH (§2.4). Y en la base, `anon` y `authenticated` no tienen permisos sobre `public` y todas las tablas tienen RLS sin políticas (§13.8), por si alguna vez se abriera `/rest/v1/` |
 | **Aislamiento entre compradores** | Sin RLS, el filtrado por id de sesión es la única barrera (§13.8). Cubierto por test E2E obligatorio (§17.2) |
 
 ---
@@ -1619,7 +1627,7 @@ El número de WhatsApp y el email de avisos **no son variables de entorno**: viv
 | **R2** | `numeric` como string mal manejado: totales con centavos erróneos | Alto | Aritmética en SQL o con `decimal.js`; prohibición de `parseFloat` como regla de lint (§7.1) |
 | **R3** | sharp falla en el build de Docker por musl vs glibc | Medio | Imagen base Debian slim, no Alpine (§18.1) |
 | **R4** | Un solo entorno: una migración mala impacta directo en producción | Alto | Migraciones compatibles hacia atrás, backup verificado previo, restauración probada (§18.2, §19) |
-| **R5** | Se opera un stack de doce servicios de Supabase para usar tres | Medio | Servidor dedicado, para que su consumo no compita con la aplicación. Solo Storage y Studio se exponen, y Studio con restricción por IP (§2.4) |
+| **R5** | Se opera un stack de doce servicios de Supabase para usar tres | Medio | Servidor dedicado, para que su consumo no compita con la aplicación. Solo Auth y Storage se exponen; Studio, por túnel SSH (§2.4) |
 | **R6** | Fallas de firma S3 reportadas en Supabase Storage auto-hospedado | Medio | Se valida subida, borrado y descarga extremo a extremo apenas se levanta el servidor DATA, antes de construir encima. El adaptador (§9.4) acota el reemplazo si hiciera falta |
 | **R7** | Identidad sin perfil: un usuario que puede entrar y con el que la aplicación no sabe qué hacer | Alto | Compensación explícita en el alta y creación diferida tras OAuth (§13.4). Sin perfil no se opera |
 | **R8** | El catálogo crece y `LIMIT/OFFSET` se degrada | Bajo | Volumen esperado bajo (S-05); migración a cursor documentada como paso siguiente |

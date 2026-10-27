@@ -48,6 +48,10 @@ construcciones seguidas o una sin swap ya lo dejaron trabado.
    que la base quedó como el esquema dice.
 4. En producción se aplica sola al desplegar.
 
+**Toda tabla nueva lleva `.enableRLS()`** en su `pgTable`. Sin políticas, es
+un cerrojo: la tienda no lo nota y la API de Supabase no ve nada (TS §13.8).
+`tests/unit/seguridad/roles-de-la-api.test.ts` falla si alguna lo olvida.
+
 Hay un solo entorno, así que una migración no tiene dónde ensayarse antes de
 producción. Por eso **toda migración es compatible hacia atrás**: primero se
 agrega, se despliega, y recién en otro cambio se borra lo viejo (TS §18.2).
@@ -106,6 +110,16 @@ La limpieza sale con código 1 si no puede conectarse o falla la consulta, así
 que en Coolify «Success» quiere decir que corrió de verdad.
 
 ## Tareas frecuentes
+
+**Entrar a Studio**: no está publicado en internet. Se abre un túnel SSH al
+servidor DATA, que escucha SSH en el 5400, y se deja la terminal abierta:
+
+```bash
+ssh -N -p 5400 -L 8000:localhost:8000 root@149.34.225.79
+```
+
+y se entra a <http://localhost:8000> con el usuario y la contraseña del
+dashboard. Ctrl+C cierra el túnel.
 
 **Cambiar una plantilla de email de la cuenta** (confirmación, recuperación,
 invitación, reenvío): se edita en `lib/email/plantillas/`, se corre

@@ -45,7 +45,7 @@ export const brands = pgTable(
       sql`immutable_unaccent(lower(${t.name})) gin_trgm_ops`,
     ),
   ],
-);
+).enableRLS();
 
 export const categories = pgTable(
   "categories",
@@ -76,7 +76,7 @@ export const categories = pgTable(
       .defaultNow(),
   },
   (t) => [uniqueIndex("categories_name_key").on(sql`lower(${t.name})`)],
-);
+).enableRLS();
 
 /**
  * Afinidad entre categorías (RF-31).
@@ -102,7 +102,7 @@ export const categoryRelations = pgTable(
       sql`${t.categoryId} <> ${t.relatedCategoryId}`,
     ),
   ],
-);
+).enableRLS();
 
 export const colors = pgTable(
   "colors",
@@ -117,7 +117,7 @@ export const colors = pgTable(
       .defaultNow(),
   },
   (t) => [uniqueIndex("colors_name_key").on(sql`lower(${t.name})`)],
-);
+).enableRLS();
 
 export const products = pgTable(
   "products",
@@ -202,7 +202,7 @@ export const products = pgTable(
       .on(t.createdAt.desc())
       .where(sql`is_active`),
   ],
-);
+).enableRLS();
 
 export const productVariants = pgTable(
   "product_variants",
@@ -282,7 +282,7 @@ export const productVariants = pgTable(
       .on(t.secondaryColorId)
       .where(sql`${t.secondaryColorId} IS NOT NULL`),
   ],
-);
+).enableRLS();
 
 export const variantImages = pgTable(
   "variant_images",
@@ -305,7 +305,7 @@ export const variantImages = pgTable(
   (t) => [
     index("variant_images_variant_idx").on(t.variantId, t.sortOrder),
   ],
-);
+).enableRLS();
 
 export type Brand = typeof brands.$inferSelect;
 export type Category = typeof categories.$inferSelect;
