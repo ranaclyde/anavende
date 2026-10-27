@@ -560,7 +560,7 @@ su alto desde afuera; uno que ocupa la pantalla entera anula el tope con
 ### Drawers
 
 **Dar de alta y editar en el catálogo es un drawer a la derecha**
-(`components/ui/sheet.tsx`): marcas, categorías, colores y medios de pago. Alto
+(`components/ui/sheet.tsx`): marcas, categorías, colores, medios de pago y la variante de color de un producto. Alto
 entero, 512px en escritorio, pantalla completa en el teléfono; título y pie
 fijos y el medio scrollea, así «Guardar» se ve siempre. A la derecha porque la
 izquierda es la navegación. Un paso adentro —elegir relacionadas— reemplaza al
