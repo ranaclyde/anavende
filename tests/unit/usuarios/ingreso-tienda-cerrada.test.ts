@@ -125,7 +125,9 @@ describe("el ingreso con contraseña", () => {
 
     const r = await entrar(compradora.email);
     expect(r).toMatchObject({ ok: false, code: "FORBIDDEN" });
-    expect(r.ok === false && r.message).toContain("cerrada");
+    expect(r.ok === false && r.message).toBe(
+      "El sitio está en mantenimiento. Por favor, intentá de nuevo más tarde.",
+    );
   });
 
   test("con la tienda cerrada, la administradora entra", async () => {
@@ -144,6 +146,6 @@ describe("el ingreso con contraseña", () => {
       captcha: CAPTCHA_DE_PRUEBA,
     });
     expect(r).toMatchObject({ ok: false, code: "VALIDATION" });
-    expect(JSON.stringify(r)).not.toContain("cerrada");
+    expect(JSON.stringify(r)).not.toContain("mantenimiento");
   });
 });

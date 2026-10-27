@@ -214,7 +214,8 @@ como la va a ver un comprador (`modules/settings/mantenimiento.ts`).
 
 **Mientras está cerrada, solo entran las administradoras, y no se crean
 cuentas.** `/registro` responde 503 como el resto. En `/ingresar`, una
-compradora con la contraseña correcta recibe «La tienda está cerrada…» y
-no queda con la sesión abierta. Con Google, la vuelta cierra la sesión y
+compradora con la contraseña correcta recibe «El sitio está en
+mantenimiento…», sin decir quién sí entra, y no queda con la sesión
+abierta. Con Google, la vuelta cierra la sesión y
 manda a `/mantenimiento`, y si la cuenta la acababa de crear GoTrue, la
 borra (`app/api/auth/callback/route.ts`).

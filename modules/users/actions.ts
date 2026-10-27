@@ -280,8 +280,9 @@ export const pedirRecuperacion = action
 
 /** El único mensaje de un ingreso fallido: no dice si el email existe. */
 const NO_COINCIDEN = "Ese email y esa contraseña no coinciden. Probá de nuevo.";
+// Genérico a propósito: no dice quién sí puede entrar.
 const TIENDA_CERRADA =
-  "La tienda está cerrada por un rato y por ahora solo entra quien la administra. Volvé a probar más tarde.";
+  "El sitio está en mantenimiento. Por favor, intentá de nuevo más tarde.";
 
 export const ingresar = action
   .input(ingresoSchema)
