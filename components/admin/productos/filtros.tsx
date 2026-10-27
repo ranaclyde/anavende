@@ -11,6 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
+  SelectorConBuscador,
+  type OpcionDelSelector,
+} from "@/components/ui/selector-con-buscador";
+import {
   DIRECCION_NATURAL,
   FILTROS_DE_STOCK,
   ORDENES,
@@ -97,33 +101,27 @@ export function BarraDeFiltros({
             **El estado ya no está acá**: desde el 2026-09-22 es una solapa,
             arriba de esta barra, como en órdenes y usuarios (§6.9). */}
         <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
-          <Select
+          <SelectorConBuscador
             aria-label="Filtrar por categoría"
-            value={filtros.categoria}
-            onChange={(e) => aplicar({ categoria: e.target.value })}
+            valor={filtros.categoria}
+            alCambiar={(categoria) => aplicar({ categoria })}
+            opciones={conTodas("Todas las categorías", categorias)}
+            marcador="Todas las categorías"
+            buscar="Buscar una categoría…"
+            sinResultados="No hay ninguna categoría con ese nombre."
             className="md:w-48"
-          >
-            <option value="">Todas las categorías</option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.isActive ? c.name : `${c.name} (inactiva)`}
-              </option>
-            ))}
-          </Select>
+          />
 
-          <Select
+          <SelectorConBuscador
             aria-label="Filtrar por marca"
-            value={filtros.marca}
-            onChange={(e) => aplicar({ marca: e.target.value })}
+            valor={filtros.marca}
+            alCambiar={(marca) => aplicar({ marca })}
+            opciones={conTodas("Todas las marcas", marcas)}
+            marcador="Todas las marcas"
+            buscar="Buscar una marca…"
+            sinResultados="No hay ninguna marca con ese nombre."
             className="md:w-48"
-          >
-            <option value="">Todas las marcas</option>
-            {marcas.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.isActive ? m.name : `${m.name} (inactiva)`}
-              </option>
-            ))}
-          </Select>
+          />
 
           {/* El `div` es para la grilla y no para el `Select`: `Select`
               envuelve al `<select>` en un `div` propio —ahí adentro va el
@@ -219,4 +217,23 @@ export function BarraDeFiltros({
 
 function cuantos(n: number): string {
   return n === 1 ? "1 producto" : `${n} productos`;
+}
+
+/**
+ * «Todas» primero —que es sacar el filtro—, y después las opciones. Las
+ * inactivas quedan, con la nota: un producto inactivo puede tener marca
+ * inactiva, y filtrar por ella es la forma de encontrarlo.
+ */
+function conTodas(
+  todas: string,
+  opciones: OpcionDeCatalogo[],
+): OpcionDelSelector[] {
+  return [
+    { valor: "", etiqueta: todas },
+    ...opciones.map((o) => ({
+      valor: o.id,
+      etiqueta: o.name,
+      nota: o.isActive ? undefined : "inactiva",
+    })),
+  ];
 }

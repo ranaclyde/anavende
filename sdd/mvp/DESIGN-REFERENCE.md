@@ -847,6 +847,8 @@ Color:  Negro
 | Obligatorio | Se marcan los **opcionales** con «(opcional)», no los obligatorios con asterisco |
 | Teléfono | **Bandera argentina y «+54» adentro, a la izquierda**, en `--ink-secondary` (2026-10-21). Lo pone `Input` solo con `type="tel"`, en la tienda y en el panel. Es dibujo: no se envía ni se lee. Se escriben los diez dígitos —característica y número—, y lo guardado (`+549…`) se muestra sin el `+549` (`telefonoLocal`) |
 
+**Las listas que crecen con el catálogo se eligen con buscador** (2026-10-27, F2.11). Marca, categoría y color pasaron del `<select>` nativo a `SelectorConBuscador`: con veinte o más opciones la rueda del teléfono no busca por una parte del nombre, y el `<select>` no puede pintar la esfera de un color al lado del nombre. El campo cerrado cumple esta misma tabla; abierto, es un globo con un buscador arriba que filtra sin tildes. Las listas cortas y cerradas —estado, rol, orden, localidad— siguen en el `<select>` nativo.
+
 **Los errores aparecen al salir del campo, no mientras se escribe**, salvo confirmación de contraseña. Validar cada tecla convierte un formulario en una regañina.
 
 ### 6.7 Precio

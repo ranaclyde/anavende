@@ -9,9 +9,9 @@ import {
   mensajeDeBusquedaSinResultados,
   mensajeDeConsultaGeneral,
 } from "@/lib/whatsapp";
+import { normalizar } from "@/lib/texto";
 import {
   cantidadDeProductos,
-  normalizar,
   repartirCategorias,
   type CategoriaDeLaPagina,
 } from "@/modules/catalog/products/categorias";
