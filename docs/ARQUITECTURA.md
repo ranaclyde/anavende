@@ -62,7 +62,10 @@ levanta las mismas piezas de Supabase en Docker (TS §18.2).
 
 Supabase pone la **identidad** (GoTrue) y el **almacenamiento de fotos**
 (Storage). Los datos los lee y escribe la tienda con **Drizzle sobre una
-conexión directa a Postgres**: no se usa PostgREST ni RLS (TS §2.3, §13.8).
+conexión directa a Postgres**: no se usa PostgREST, y RLS está activado sin
+políticas solo como cerrojo, para que la base no se pueda leer por la API de
+Supabase (TS §2.3, §13.8). Desde internet, nginx deja pasar solo
+`/auth/v1/` y `/storage/v1/`.
 
 La consecuencia es la regla más importante del proyecto: **la autorización
 vive en el servidor de Next, no en la base.** Un comprador no ve los datos de

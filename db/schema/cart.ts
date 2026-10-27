@@ -34,7 +34,7 @@ export const carts = pgTable("carts", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 /**
  * Guarda CANTIDAD, nunca precio: el precio se lee del producto en el momento
@@ -70,7 +70,7 @@ export const cartItems = pgTable(
     unique("cart_items_cart_variant_key").on(t.cartId, t.variantId),
     check("quantity_positive", sql`${t.quantity} > 0`),
   ],
-);
+).enableRLS();
 
 export const addresses = pgTable(
   "addresses",
@@ -107,7 +107,7 @@ export const addresses = pgTable(
       .on(t.userId)
       .where(sql`is_default AND deleted_at IS NULL`),
   ],
-);
+).enableRLS();
 
 export const favorites = pgTable(
   "favorites",
@@ -123,7 +123,7 @@ export const favorites = pgTable(
       .defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.productId] })],
-);
+).enableRLS();
 
 export type Cart = typeof carts.$inferSelect;
 export type CartItem = typeof cartItems.$inferSelect;

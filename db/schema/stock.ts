@@ -72,6 +72,6 @@ export const stockMovements = pgTable(
   (t) => [
     index("stock_movements_variant_idx").on(t.variantId, t.createdAt.desc()),
   ],
-);
+).enableRLS();
 
 export type StockMovement = typeof stockMovements.$inferSelect;

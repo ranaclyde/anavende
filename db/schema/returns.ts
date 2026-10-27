@@ -31,7 +31,7 @@ export const returns = pgTable("returns", {
     .notNull()
     .defaultNow(),
   voidedAt: timestamp("voided_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 export const returnItems = pgTable(
   "return_items",
@@ -49,7 +49,7 @@ export const returnItems = pgTable(
     reason: text("reason"),
   },
   (t) => [check("return_quantity_positive", sql`${t.quantity} > 0`)],
-);
+).enableRLS();
 
 export type Return = typeof returns.$inferSelect;
 export type ReturnItem = typeof returnItems.$inferSelect;

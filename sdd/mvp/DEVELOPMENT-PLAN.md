@@ -125,7 +125,7 @@ F10 Endurecimiento y lanzamiento
 | **F0.2** | Instalar Coolify en el servidor APP y **activar la limpieza automática de Docker** | S | TS §2.4, R11 | Coolify responde por HTTPS y la limpieza está programada, no solo disponible |
 | **F0.3** | Instalar Supabase en el servidor DATA | M | TS §2.2 | Studio accesible; Postgres responde por la IP privada |
 | **F0.4** | **Cerrar Postgres al mundo** y verificarlo desde afuera | S | TS §16, §18.2, R12, V9 | Desde una máquina externa, el puerto de Postgres **no responde**. Firewall local activo en ambos servidores |
-| **F0.5** | Restringir Studio: autenticación y acceso por IP | S | TS §2.4 | Studio no es accesible desde una IP no autorizada |
+| **F0.5** | Restringir Studio: autenticación y acceso por IP | S | TS §2.4 | Studio no es accesible desde internet: se entra por túnel SSH (cambio del 2026-10-27, TS §2.4) |
 | **F0.6** | Verificar `pg_trgm` y `unaccent` con una consulta de similitud real | S | TS §5.10, §10.1, V5 | `SELECT similarity(...)` sobre datos de prueba con acentos devuelve lo esperado |
 | **F0.7** | Verificar Supabase Storage: subir, leer y borrar desde un script | S | TS §9.4, R6, V4 | Las tres operaciones funcionan con la clave de servicio. La URL pública sirve el archivo |
 | **F0.8** | Medir la latencia real de la LAN con una consulta ida y vuelta | S | TS §20, V10 | Latencia medida y anotada. Si supera los 5 ms, revisar §20 antes de seguir |

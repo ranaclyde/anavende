@@ -149,7 +149,7 @@ export const userProfiles = pgTable(
     ),
     index("user_profiles_email_idx").on(sql`lower(${t.email})`),
   ],
-);
+).enableRLS();
 
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type NewUserProfile = typeof userProfiles.$inferInsert;
@@ -215,7 +215,7 @@ export const userStatusHistory = pgTable(
     ),
     index("user_status_history_user_idx").on(t.userId, t.createdAt.desc()),
   ],
-);
+).enableRLS();
 
 export type UserStatusEvent =
   | "bloqueo"
