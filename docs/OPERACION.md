@@ -79,6 +79,16 @@ volver a desplegar; cambiarla en Coolify sin reconstruir no hace nada.
 - El secreto de Turnstile, las credenciales SMTP de Resend y los límites de
   intentos son de **GoTrue**, y se cargan en el entorno del _docker compose_
   de Supabase, en el servidor de datos.
+- **El ingreso con Google** también: el ID y el secreto van en el `.env` del
+  stack (`GOOGLE_CLIENT_ID`, `GOOGLE_SECRET`) y las cuatro
+  `GOTRUE_EXTERNAL_GOOGLE_*` en `docker-compose.override.yml`. La tienda no
+  guarda ninguna lista: le pregunta a GoTrue qué proveedores tiene prendidos
+  (`modules/users/proveedores.ts`, recordado cinco minutos), así que prender o
+  apagar uno allá alcanza. El proyecto de Google Cloud es de la cuenta
+  `admin@anavende.com.ar`, y tiene que tener prendida la **API de People**
+  (Google Cloud → APIs y servicios → Biblioteca): con ella se sabe si la foto
+  de Google es una elegida o la inicial genérica. Apagada, el ingreso anda
+  igual y las cuentas nuevas salen con su blobatar.
 - El número de WhatsApp, el email que recibe los avisos y el modo
   mantenimiento viven en la base (`site_settings`), igual que los medios de
   pago (`payment_methods`). Ana los cambia desde el panel sin desplegar.

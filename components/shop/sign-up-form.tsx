@@ -4,13 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState, useTransition } from "react";
 
-// Google y Facebook quedan APAGADOS hasta que F1.7 tenga las apps creadas en
-// las consolas de Google y Meta (2026-09-10, pedido tuyo). El componente
-// resuelve bien el estado «no configurado» —botones deshabilitados con el
-// motivo al lado—, pero dos botones que nadie puede tocar son ruido justo en
-// la pantalla donde menos conviene dudar. Para volver: descomentar esta línea
-// y la del render, abajo. No hace falta nada más.
-// import { ProveedoresSociales } from "@/components/shop/proveedores-sociales";
+import { ProveedoresSociales } from "@/components/shop/proveedores-sociales";
 import {
   Turnstile,
   TURNSTILE_ACTIVO,
@@ -29,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { registrar } from "@/modules/users/actions";
+import type { ProveedorSocial } from "@/modules/users/proveedores";
 
 type Campo = "firstName" | "lastName" | "email" | "phone" | "password";
 
@@ -39,7 +34,13 @@ type Campo = "firstName" | "lastName" | "email" | "phone" | "password";
  * teléfono es obligatorio y el alta tiene que poder compensarse si falla a
  * mitad. La validación se repite en el servidor aunque acá ya haya pasado.
  */
-export function SignUpForm({ volver }: { volver?: string }) {
+export function SignUpForm({
+  volver,
+  proveedores,
+}: {
+  volver?: string;
+  proveedores: readonly ProveedorSocial[];
+}) {
   const router = useRouter();
   const [enviando, iniciar] = useTransition();
   const [errores, setErrores] =
@@ -91,7 +92,11 @@ export function SignUpForm({ volver }: { volver?: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
-        {/* <ProveedoresSociales volver={volver} accion="registro" /> */}
+        <ProveedoresSociales
+          volver={volver}
+          accion="registro"
+          disponibles={proveedores}
+        />
 
         <form onSubmit={enviar} className="flex flex-col gap-5" noValidate>
           {/* Dos campos y no uno: con un campo libre no hay forma de saber

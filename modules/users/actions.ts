@@ -14,8 +14,10 @@ import { frenarSiInsiste } from "@/lib/limite";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { quitarFotoDePerfil } from "@/modules/media/subir";
+import { laTiendaEstaCerradaPara } from "@/modules/settings/mantenimiento";
 import { sinDatos } from "@/modules/users/baja/schemas";
 import { coincideLaContrasena } from "@/modules/users/contrasena";
+import { importarFotoDeGoogle } from "@/modules/users/foto-de-google";
 import { actualizarDatos } from "@/modules/users/perfil";
 import {
   cambioDeContrasenaSchema,
@@ -278,6 +280,9 @@ export const pedirRecuperacion = action
 
 /** El único mensaje de un ingreso fallido: no dice si el email existe. */
 const NO_COINCIDEN = "Ese email y esa contraseña no coinciden. Probá de nuevo.";
+// Genérico a propósito: no dice quién sí puede entrar.
+const TIENDA_CERRADA =
+  "El sitio está en mantenimiento. Por favor, intentá de nuevo más tarde.";
 
 export const ingresar = action
   .input(ingresoSchema)
@@ -285,13 +290,21 @@ export const ingresar = action
   .handler(async ({ input }) => {
     await frenarSiInsiste("ingreso", CUPOS.ingreso);
     const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: input.email,
       password: input.password,
       options: conCaptcha(input.captcha),
     });
 
-    if (!error) return { ok: true as const };
+    if (!error) {
+      // Con la tienda cerrada solo entran las administradoras. Se mira
+      // después de la contraseña, así que no le dice nada a quien no la sabe.
+      if (await laTiendaEstaCerradaPara(data.user.id)) {
+        await supabase.auth.signOut();
+        throw domainError("FORBIDDEN", { message: TIENDA_CERRADA });
+      }
+      return { ok: true as const };
+    }
 
     // GoTrue mira el token antes que la cuenta: esto no dice si existe.
     if (error.code === "captcha_failed") throw captchaFallido();
@@ -392,6 +405,11 @@ export const completarPerfil = action
       phone: input.phone,
       role: "customer",
     });
+
+    // La foto de Google, si la vuelta de Google la dejó anotada. No lanza:
+    // sin ella, la cuenta sigue con su blobatar. El formulario refresca al
+    // terminar, así que el encabezado ya sale con la foto.
+    await importarFotoDeGoogle(claims.sub);
 
     return { yaEstaba: false };
   });

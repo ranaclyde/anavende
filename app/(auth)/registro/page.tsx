@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { SignUpForm } from "@/components/shop/sign-up-form";
 import { getIdentity } from "@/lib/session";
+import { proveedoresDisponibles } from "@/modules/users/proveedores";
 
 export const metadata: Metadata = { title: "Crear cuenta" };
 
@@ -13,6 +14,9 @@ export default async function Registro({
 }) {
   if (await getIdentity()) redirect("/mi-cuenta");
 
-  const { volver } = await searchParams;
-  return <SignUpForm volver={volver} />;
+  const [{ volver }, proveedores] = await Promise.all([
+    searchParams,
+    proveedoresDisponibles(),
+  ]);
+  return <SignUpForm volver={volver} proveedores={proveedores} />;
 }

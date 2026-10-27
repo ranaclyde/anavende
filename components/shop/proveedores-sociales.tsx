@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
+import { IconoGoogle } from "@/components/ui/icono-google";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import type { ProveedorSocial } from "@/modules/users/proveedores";
 
 /**
  * Ingreso con Google y Facebook — RF-06.
@@ -17,17 +19,27 @@ import { cn } from "@/lib/utils";
  * condición alguien podría registrarse con el email de otra persona y
  * quedarse con su cuenta cuando esa persona entre con Google (RF-06).
  *
- * Los botones se muestran DESHABILITADOS cuando el proveedor no está
- * configurado, con el motivo al lado. Un botón apagado sin explicación es un
- * callejón sin salida (DESIGN-REFERENCE §6.3, RNF-08).
+ * **Solo se muestran los que están prendidos en GoTrue** (`disponibles`,
+ * de `modules/users/proveedores.ts`), y sin ninguno no se muestra nada, ni el
+ * «o con tu email». Hasta el 2026-10-26 salían los dos deshabilitados con el
+ * motivo al lado; con Google andando y Facebook para el final, un botón que
+ * nadie puede tocar es ruido justo en la pantalla donde menos conviene dudar.
  */
 
-const PROVEEDORES = [
-  { id: "google", nombre: "Google" },
-  { id: "facebook", nombre: "Facebook" },
-] as const;
+const NOMBRES: Record<ProveedorSocial, string> = {
+  google: "Google",
+  facebook: "Facebook",
+};
 
-type Proveedor = (typeof PROVEEDORES)[number]["id"];
+/**
+ * El logo de cada uno, en sus colores (`icono-google.tsx`). Facebook va sin
+ * logo hasta que se configure: el de `iconos-de-redes.tsx` está en
+ * `currentColor` para el pie, y en este botón tendría que ser el azul de la
+ * marca.
+ */
+const LOGOS: Partial<Record<ProveedorSocial, ReactNode>> = {
+  google: <IconoGoogle />,
+};
 
 export function ProveedoresSociales({
   volver,
@@ -36,19 +48,16 @@ export function ProveedoresSociales({
 }: {
   volver?: string;
   accion: "ingreso" | "registro";
-  /**
-   * Qué proveedores tienen credenciales cargadas. Mientras no las haya
-   * (F1.7, pendiente de las consolas de Google y Meta) llega vacío.
-   */
-  disponibles?: readonly Proveedor[];
+  /** Los que GoTrue tiene prendidos, en el orden en que se muestran. */
+  disponibles: readonly ProveedorSocial[];
 }) {
   const [pendiente, iniciar] = useTransition();
-  const [yendo, setYendo] = useState<Proveedor | null>(null);
+  const [yendo, setYendo] = useState<ProveedorSocial | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const activos = disponibles ?? [];
+  if (disponibles.length === 0) return null;
 
-  const entrar = (proveedor: Proveedor) => {
+  const entrar = (proveedor: ProveedorSocial) => {
     setError(null);
     setYendo(proveedor);
     iniciar(async () => {
@@ -70,33 +79,24 @@ export function ProveedoresSociales({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid gap-2 sm:grid-cols-2">
-        {PROVEEDORES.map(({ id, nombre }) => {
-          const habilitado = activos.includes(id);
-          return (
-            <Button
-              key={id}
-              type="button"
-              variant="secondary"
-              size="lg"
-              disabled={!habilitado}
-              loading={pendiente && yendo === id}
-              loadingLabel={`Abriendo ${nombre}`}
-              onClick={() => entrar(id)}
-              title={habilitado ? undefined : `${nombre} todavía no está configurado`}
-            >
-              {accion === "registro" ? "Seguir con" : "Entrar con"} {nombre}
-            </Button>
-          );
-        })}
+      <div
+        className={cn("grid gap-2", disponibles.length > 1 && "sm:grid-cols-2")}
+      >
+        {disponibles.map((id) => (
+          <Button
+            key={id}
+            type="button"
+            variant="secondary"
+            size="lg"
+            loading={pendiente && yendo === id}
+            loadingLabel={`Abriendo ${NOMBRES[id]}`}
+            onClick={() => entrar(id)}
+          >
+            {LOGOS[id]}
+            {accion === "registro" ? "Seguir con" : "Entrar con"} {NOMBRES[id]}
+          </Button>
+        ))}
       </div>
-
-      {activos.length === 0 && (
-        <p className="text-caption text-ink-secondary">
-          Google y Facebook todavía no están disponibles. Por ahora usá tu
-          email.
-        </p>
-      )}
 
       <FieldError>{error}</FieldError>
 
