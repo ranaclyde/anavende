@@ -849,6 +849,8 @@ Color:  Negro
 
 **Las listas que crecen con el catálogo se eligen con buscador** (2026-10-27, F2.11). Marca, categoría y color pasaron del `<select>` nativo a `SelectorConBuscador`: con veinte o más opciones la rueda del teléfono no busca por una parte del nombre, y el `<select>` no puede pintar la esfera de un color al lado del nombre. El campo cerrado cumple esta misma tabla; abierto, es un globo con un buscador arriba que filtra sin tildes. Las listas cortas y cerradas —estado, rol, orden, localidad— siguen en el `<select>` nativo.
 
+**Lo que falta se crea desde el mismo selector** (2026-10-27, F2.13). En el producto y en su variante, el globo termina en un renglón «Crear…»: sin nada escrito dice «Crear una marca»; con algo escrito, «Crear la marca «Sony»». Va fijo debajo de las opciones y no al final del scroll, porque con el catálogo lleno quedaría escondido justo cuando más se busca. Abre el drawer del catálogo (§6.14.3) con el nombre puesto, y al guardar lo creado queda elegido sin perder nada de lo cargado. Desde el producto el drawer no ofrece las relacionadas: se eligen después, en Catálogo. En la variante no es otro drawer encima sino un paso adentro del mismo (§6.14.2), y Escape vuelve al formulario. Por eso «Nuevo producto» ya no pide cargar antes una marca y una categoría.
+
 **Los errores aparecen al salir del campo, no mientras se escribe**, salvo confirmación de contraseña. Validar cada tecla convierte un formulario en una regañina.
 
 ### 6.7 Precio
@@ -1087,7 +1089,7 @@ comportar igual.
 **La variante de un producto también** (2026-10-27, F2.12). «Agregar color» y
 editar un color abrían un diálogo centrado; ahora abren el mismo drawer, en dos
 secciones —qué color es; cuánto hay y si se ofrece—. Es un alta y una edición,
-y en F2.13 suma un paso adentro para crear el color sin salir. Sacar un color
+y desde F2.13 suma un paso adentro para crear el color sin salir (§6.6). Sacar un color
 sigue confirmándose en diálogo.
 
 - **A la derecha, nunca a la izquierda.** La izquierda del panel es la

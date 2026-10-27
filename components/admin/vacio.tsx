@@ -45,7 +45,7 @@ export function VacioDelPanel({
   dentro?: boolean;
   /**
    * `h2` cuando el vacío **reemplaza al contenido principal** de la pantalla
-   * —«Antes hay que cargar una marca», que está en lugar del formulario—: ahí
+   * —en lugar de un formulario, por ejemplo—: ahí
    * es la única referencia que tiene un lector de pantalla después del `h1`.
    * Un vacío que reemplaza una tabla sigue siendo `p`: la tabla tampoco tenía
    * encabezado propio.

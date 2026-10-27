@@ -246,6 +246,14 @@ export function datosDePrueba() {
     creados.productos.push(id);
   }
 
+  /** Y para lo que se creó desde un selector del panel (F2.13). */
+  function anotarDelCatalogo(
+    lista: "marcas" | "categorias" | "colores",
+    id: string,
+  ): void {
+    creados[lista].push(id);
+  }
+
   /**
    * Las fotos de un producto, en los cuatro tamaños (`modules/media`). El
    * storage no tiene carpetas de verdad: se listan las de cada variante y se
@@ -366,6 +374,7 @@ export function datosDePrueba() {
     unMedioDePagoConLogo,
     anotarUsuario,
     anotarProducto,
+    anotarDelCatalogo,
     casillaDeAvisosDePrueba,
     numeroDeWhatsApp,
     desarmar,

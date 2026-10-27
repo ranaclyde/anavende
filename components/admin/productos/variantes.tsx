@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
 import { Palette, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
 import { Seccion, Secciones } from "@/components/admin/formulario";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { VacioDelPanel } from "@/components/admin/vacio";
@@ -534,7 +535,7 @@ function EdicionDeVariante({
   productoActivo,
   variante,
   variantes,
-  colores,
+  colores: delServidor,
   alCerrar,
 }: {
   abierto: boolean;
@@ -557,6 +558,25 @@ function EdicionDeVariante({
   const [stock, setStock] = useState(String(variante?.stockTotal ?? 0));
   const [activa, setActiva] = useState(variante?.isActive ?? true);
 
+  /**
+   * Crear un color sin salir (F2.13). Es un paso adentro de este drawer y no
+   * otro drawer encima (§6.14.2): reemplaza al formulario, que vuelve con lo
+   * que tenía. `para` dice en cuál de los dos selectores queda elegido.
+   */
+  const [creando, setCreando] = useState<{
+    nombre: string;
+    para: "color" | "color2";
+  } | null>(null);
+  // Guardar el color no repinta esta pantalla: sin sumarlo acá, quedaría
+  // elegido un color que el selector no conoce.
+  const [creados, setCreados] = useState<OpcionDeColor[]>([]);
+  const colores = creados.length
+    ? [
+        ...creados.filter((c) => !delServidor.some((o) => o.id === c.id)),
+        ...delServidor,
+      ]
+    : delServidor;
+
   // Cada vez que se abre —o cambia la variante con el drawer abierto—, el
   // formulario arranca de nuevo con lo que hay guardado. Se ajusta durante el
   // render y no en un efecto: un efecto pintaría primero el drawer con los
@@ -570,8 +590,24 @@ function EdicionDeVariante({
       setColor2(variante?.secondaryColorId ?? SIN_SEGUNDO);
       setStock(String(variante?.stockTotal ?? 0));
       setActiva(variante?.isActive ?? true);
+      setCreando(null);
     }
   }
+
+  const ofrecerCrear = (para: "color" | "color2") => ({
+    nueva: "Crear un color",
+    con: (n: string) => `Crear el color «${n}»`,
+    alCrear: (n: string) => setCreando({ nombre: n, para }),
+  });
+
+  const volverDeCrear = () => {
+    const para = creando?.para ?? "color";
+    setCreando(null);
+    // El selector vuelve a existir recién en el próximo pintado.
+    requestAnimationFrame(() =>
+      document.getElementById(`${idBase}-${para}`)?.focus(),
+    );
+  };
 
   /**
    * Las combinaciones que otra variante de este producto ya se llevó. Un
@@ -672,207 +708,246 @@ function EdicionDeVariante({
 
   return (
     <Sheet open={abierto} onOpenChange={(v) => !v && alCerrar()}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>
-            {variante ? `Editar «${nombreDe(variante)}»` : "Agregar un color"}
-          </SheetTitle>
-          <SheetDescription>
-            Las fotos se cargan después, en la tarjeta del color.
-          </SheetDescription>
-        </SheetHeader>
+      <SheetContent
+        onEscapeKeyDown={(e) => {
+          // Escape en el paso de crear vuelve a la variante: cerrar todo
+          // perdería el stock y lo demás que ya se había cargado.
+          if (creando) {
+            e.preventDefault();
+            volverDeCrear();
+          }
+        }}
+      >
+        {creando ? (
+          <EdicionDeItem
+            tipo="color"
+            item={null}
+            abierto
+            incrustado
+            nombreInicial={creando.nombre}
+            alCerrar={volverDeCrear}
+            alCrear={({ id, name, hexCode }) => {
+              setCreados((antes) => [
+                { id, name, hexCode, isActive: true },
+                ...antes,
+              ]);
+              if (creando.para === "color") {
+                setColor(id);
+              } else {
+                setColor2(id);
+              }
+            }}
+          />
+        ) : (
+          <>
+            <SheetHeader>
+              <SheetTitle>
+                {variante
+                  ? `Editar «${nombreDe(variante)}»`
+                  : "Agregar un color"}
+              </SheetTitle>
+              <SheetDescription>
+                Las fotos se cargan después, en la tarjeta del color.
+              </SheetDescription>
+            </SheetHeader>
 
-        <SheetForm onSubmit={enviar} noValidate>
-          <SheetBody>
-            {/* Dos secciones, por la regla del aire (§3.4.1): qué color es,
+            <SheetForm onSubmit={enviar} noValidate>
+              <SheetBody>
+                {/* Dos secciones, por la regla del aire (§3.4.1): qué color es,
                 y cuánto hay y si se ofrece. */}
-            <Secciones>
-              <Seccion>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`${idBase}-color`}>Color</Label>
-                  <SelectorConBuscador
-                    id={`${idBase}-color`}
-                    valor={color}
-                    alCambiar={(v) => {
-                      setColor(v);
-                      // El segundo no puede repetir al primero.
-                      if (v === color2) setColor2(SIN_SEGUNDO);
-                    }}
-                    aria-invalid={!!errores.campos.colorId || undefined}
-                    aria-describedby={
-                      errores.campos.colorId
-                        ? `${idBase}-e-color`
-                        : `${idBase}-ayuda-color`
-                    }
-                    opciones={[
-                      {
-                        valor: UNICO,
-                        etiqueta: "Único — no se vende por color",
-                        nota: tomadas.has(UNICO) ? "ya cargado" : undefined,
-                        deshabilitada: tomadas.has(UNICO),
-                        muestra: <MuestraChica hex={null} />,
-                      },
-                      // Los inactivos no se ofrecen, salvo el que la variante ya
-                      // tiene puesto: si desapareciera del selector, guardar se lo
-                      // cambiaría sin que nadie lo hubiera pedido.
-                      ...ofrecidos.map((c) =>
-                        opcionDeColor(
-                          c,
-                          tomadas.has(combinacion(c.id, segundo)),
-                        ),
-                      ),
-                    ]}
-                    marcador="Elegí un color"
-                    buscar="Buscar un color…"
-                    sinResultados="No hay ningún color con ese nombre."
-                  />
-                  {errores.campos.colorId ? (
-                    <FieldError id={`${idBase}-e-color`}>
-                      {errores.campos.colorId}
-                    </FieldError>
-                  ) : (
-                    <FieldHint id={`${idBase}-ayuda-color`}>
-                      {/* Con cero colores la ayuda tiene que decir otra cosa: que
+                <Secciones>
+                  <Seccion>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor={`${idBase}-color`}>Color</Label>
+                      <SelectorConBuscador
+                        id={`${idBase}-color`}
+                        valor={color}
+                        alCambiar={(v) => {
+                          setColor(v);
+                          // El segundo no puede repetir al primero.
+                          if (v === color2) setColor2(SIN_SEGUNDO);
+                        }}
+                        aria-invalid={!!errores.campos.colorId || undefined}
+                        aria-describedby={
+                          errores.campos.colorId
+                            ? `${idBase}-e-color`
+                            : `${idBase}-ayuda-color`
+                        }
+                        opciones={[
+                          {
+                            valor: UNICO,
+                            etiqueta: "Único — no se vende por color",
+                            nota: tomadas.has(UNICO) ? "ya cargado" : undefined,
+                            deshabilitada: tomadas.has(UNICO),
+                            muestra: <MuestraChica hex={null} />,
+                          },
+                          // Los inactivos no se ofrecen, salvo el que la variante ya
+                          // tiene puesto: si desapareciera del selector, guardar se lo
+                          // cambiaría sin que nadie lo hubiera pedido.
+                          ...ofrecidos.map((c) =>
+                            opcionDeColor(
+                              c,
+                              tomadas.has(combinacion(c.id, segundo)),
+                            ),
+                          ),
+                        ]}
+                        marcador="Elegí un color"
+                        buscar="Buscar un color…"
+                        sinResultados="No hay ningún color con ese nombre."
+                        crear={ofrecerCrear("color")}
+                      />
+                      {errores.campos.colorId ? (
+                        <FieldError id={`${idBase}-e-color`}>
+                          {errores.campos.colorId}
+                        </FieldError>
+                      ) : (
+                        <FieldHint id={`${idBase}-ayuda-color`}>
+                          {/* Con cero colores la ayuda tiene que decir otra cosa: que
                     igual se puede seguir. Si no, el selector ofrece «Único» y
                     una frase sobre dónde se cargan los colores, y parece que
                     falta un paso obligatorio que en realidad es opcional
                     (RF-16: una variante sin color es un producto que no se
                     vende por color). */}
-                      {hayColores
-                        ? "Los colores se cargan en Catálogo. Cada color, o cada combinación, una sola vez por producto."
-                        : "Todavía no cargaste ningún color. Podés vender este producto sin colores, o cargarlos en Catálogo → Colores y volver."}
-                    </FieldHint>
-                  )}
-                </div>
+                          {hayColores
+                            ? "Cada color, o cada combinación, una sola vez por producto. Si no está, escribilo y crealo desde la lista."
+                            : "Todavía no cargaste ningún color. Podés vender este producto sin colores, o crear uno desde la lista."}
+                        </FieldHint>
+                      )}
+                    </div>
 
-                {conColor && (
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor={`${idBase}-color2`}>
-                      Segundo color{" "}
-                      <span className="font-normal text-ink-secondary">
-                        (opcional)
-                      </span>
-                    </Label>
-                    <SelectorConBuscador
-                      id={`${idBase}-color2`}
-                      valor={color2}
-                      alCambiar={setColor2}
-                      aria-invalid={
-                        !!errores.campos.secondaryColorId || undefined
-                      }
-                      aria-describedby={
-                        errores.campos.secondaryColorId
-                          ? `${idBase}-e-color2`
-                          : `${idBase}-ayuda-color2`
-                      }
-                      opciones={[
-                        {
-                          valor: SIN_SEGUNDO,
-                          etiqueta: "Ninguno — es de un solo color",
-                          nota: tomadas.has(combinacion(color, null))
-                            ? "ya cargado"
-                            : undefined,
-                          deshabilitada: tomadas.has(combinacion(color, null)),
-                        },
-                        ...ofrecidos
-                          .filter((c) => c.id !== color)
-                          .map((c) =>
-                            opcionDeColor(
-                              c,
-                              tomadas.has(combinacion(color, c.id)),
-                            ),
-                          ),
-                      ]}
-                      marcador="Ninguno — es de un solo color"
-                      buscar="Buscar un color…"
-                      sinResultados="No hay ningún color con ese nombre."
-                    />
-                    {errores.campos.secondaryColorId ? (
-                      <FieldError id={`${idBase}-e-color2`}>
-                        {errores.campos.secondaryColorId}
-                      </FieldError>
-                    ) : (
-                      <FieldHint id={`${idBase}-ayuda-color2`}>
-                        Para los productos de dos colores, como negro con rojo.
-                        En la tienda se ve la esfera partida en dos.
-                      </FieldHint>
+                    {conColor && (
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor={`${idBase}-color2`}>
+                          Segundo color{" "}
+                          <span className="font-normal text-ink-secondary">
+                            (opcional)
+                          </span>
+                        </Label>
+                        <SelectorConBuscador
+                          id={`${idBase}-color2`}
+                          valor={color2}
+                          alCambiar={setColor2}
+                          aria-invalid={
+                            !!errores.campos.secondaryColorId || undefined
+                          }
+                          aria-describedby={
+                            errores.campos.secondaryColorId
+                              ? `${idBase}-e-color2`
+                              : `${idBase}-ayuda-color2`
+                          }
+                          opciones={[
+                            {
+                              valor: SIN_SEGUNDO,
+                              etiqueta: "Ninguno — es de un solo color",
+                              nota: tomadas.has(combinacion(color, null))
+                                ? "ya cargado"
+                                : undefined,
+                              deshabilitada: tomadas.has(
+                                combinacion(color, null),
+                              ),
+                            },
+                            ...ofrecidos
+                              .filter((c) => c.id !== color)
+                              .map((c) =>
+                                opcionDeColor(
+                                  c,
+                                  tomadas.has(combinacion(color, c.id)),
+                                ),
+                              ),
+                          ]}
+                          marcador="Ninguno — es de un solo color"
+                          buscar="Buscar un color…"
+                          sinResultados="No hay ningún color con ese nombre."
+                          crear={ofrecerCrear("color2")}
+                        />
+                        {errores.campos.secondaryColorId ? (
+                          <FieldError id={`${idBase}-e-color2`}>
+                            {errores.campos.secondaryColorId}
+                          </FieldError>
+                        ) : (
+                          <FieldHint id={`${idBase}-ayuda-color2`}>
+                            Para los productos de dos colores, como negro con
+                            rojo. En la tienda se ve la esfera partida en dos.
+                          </FieldHint>
+                        )}
+                      </div>
                     )}
-                  </div>
-                )}
-              </Seccion>
+                  </Seccion>
 
-              <Seccion>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`${idBase}-stock`}>Stock</Label>
-                  <Input
-                    id={`${idBase}-stock`}
-                    // `inputMode` y no `type="number"`: el número del navegador sube
-                    // y baja con la rueda del mouse sobre el campo, y acá eso
-                    // cambiaría el stock sin querer.
-                    inputMode="numeric"
-                    value={stock}
-                    onChange={(e) => setStock(e.target.value)}
-                    className="tabular-nums"
-                    aria-invalid={!!errores.campos.stockTotal || undefined}
-                    aria-describedby={
-                      errores.campos.stockTotal
-                        ? `${idBase}-e-stock`
-                        : `${idBase}-ayuda-stock`
-                    }
-                  />
-                  {errores.campos.stockTotal ? (
-                    <FieldError id={`${idBase}-e-stock`}>
-                      {errores.campos.stockTotal}
-                    </FieldError>
-                  ) : (
-                    <FieldHint id={`${idBase}-ayuda-stock`}>
-                      Las unidades que hay. Cada cambio queda registrado como un
-                      ajuste.
-                      {variante && variante.reservedStock > 0
-                        ? ` Hay ${variante.reservedStock} reservadas, así que no puede bajar de ese número.`
-                        : ""}
-                    </FieldHint>
-                  )}
-                </div>
+                  <Seccion>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor={`${idBase}-stock`}>Stock</Label>
+                      <Input
+                        id={`${idBase}-stock`}
+                        // `inputMode` y no `type="number"`: el número del navegador sube
+                        // y baja con la rueda del mouse sobre el campo, y acá eso
+                        // cambiaría el stock sin querer.
+                        inputMode="numeric"
+                        value={stock}
+                        onChange={(e) => setStock(e.target.value)}
+                        className="tabular-nums"
+                        aria-invalid={!!errores.campos.stockTotal || undefined}
+                        aria-describedby={
+                          errores.campos.stockTotal
+                            ? `${idBase}-e-stock`
+                            : `${idBase}-ayuda-stock`
+                        }
+                      />
+                      {errores.campos.stockTotal ? (
+                        <FieldError id={`${idBase}-e-stock`}>
+                          {errores.campos.stockTotal}
+                        </FieldError>
+                      ) : (
+                        <FieldHint id={`${idBase}-ayuda-stock`}>
+                          Las unidades que hay. Cada cambio queda registrado
+                          como un ajuste.
+                          {variante && variante.reservedStock > 0
+                            ? ` Hay ${variante.reservedStock} reservadas, así que no puede bajar de ese número.`
+                            : ""}
+                        </FieldHint>
+                      )}
+                    </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id={`${idBase}-activa`}
-                      checked={activa}
-                      onCheckedChange={(v) => setActiva(v === true)}
-                      aria-describedby={`${idBase}-ayuda-activa`}
-                    />
-                    <Label htmlFor={`${idBase}-activa`}>
-                      Se ofrece en la tienda
-                    </Label>
-                  </div>
-                  <FieldHint id={`${idBase}-ayuda-activa`}>
-                    {productoActivo
-                      ? "Si la desactivás, el color deja de aparecer en la ficha y el resto sigue igual."
-                      : "El producto está inactivo, así que por ahora no se ve ningún color."}
-                  </FieldHint>
-                </div>
-              </Seccion>
-            </Secciones>
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`${idBase}-activa`}
+                          checked={activa}
+                          onCheckedChange={(v) => setActiva(v === true)}
+                          aria-describedby={`${idBase}-ayuda-activa`}
+                        />
+                        <Label htmlFor={`${idBase}-activa`}>
+                          Se ofrece en la tienda
+                        </Label>
+                      </div>
+                      <FieldHint id={`${idBase}-ayuda-activa`}>
+                        {productoActivo
+                          ? "Si la desactivás, el color deja de aparecer en la ficha y el resto sigue igual."
+                          : "El producto está inactivo, así que por ahora no se ve ningún color."}
+                      </FieldHint>
+                    </div>
+                  </Seccion>
+                </Secciones>
 
-            <FieldError className="mt-5">{errores.general}</FieldError>
-          </SheetBody>
+                <FieldError className="mt-5">{errores.general}</FieldError>
+              </SheetBody>
 
-          <SheetFooter>
-            <Button type="button" variant="secondary" onClick={alCerrar}>
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="brand"
-              loading={enviando}
-              loadingLabel="Guardando"
-            >
-              {variante ? "Guardar" : "Agregar"}
-            </Button>
-          </SheetFooter>
-        </SheetForm>
+              <SheetFooter>
+                <Button type="button" variant="secondary" onClick={alCerrar}>
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  variant="brand"
+                  loading={enviando}
+                  loadingLabel="Guardando"
+                >
+                  {variante ? "Guardar" : "Agregar"}
+                </Button>
+              </SheetFooter>
+            </SheetForm>
+          </>
+        )}
       </SheetContent>
     </Sheet>
   );

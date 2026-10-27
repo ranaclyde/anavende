@@ -1,7 +1,7 @@
 "use client";
 
 import { Command } from "cmdk";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { Check, ChevronDown, Plus, Search } from "lucide-react";
 import * as React from "react";
 
 import {
@@ -38,6 +38,13 @@ export type OpcionDelSelector = {
  * llegan las opciones —activas primero, de la A a la Z— y compara sin tildes,
  * igual que el buscador de la tienda.
  *
+ * **Puede ofrecer crear lo que falta** (F2.13): con `crear`, la lista
+ * termina en un renglón «Crear…» que lleva lo escrito. Está siempre, y no
+ * solo cuando la búsqueda no encuentra nada: con el catálogo vacío no hay
+ * búsqueda que hacer, y quien no sabe que se puede crear desde acá no
+ * escribe un nombre para descubrirlo. Se esconde cuando lo escrito ya
+ * existe tal cual, que sería crearlo dos veces.
+ *
  * **El popover es modal.** Dentro de un diálogo, uno que no lo es deja la
  * rueda del mouse sin efecto sobre la lista: el diálogo bloquea el scroll de
  * todo lo que no sea suyo, y el globo va por portal, afuera del diálogo.
@@ -50,6 +57,7 @@ export function SelectorConBuscador({
   marcador,
   buscar,
   sinResultados,
+  crear,
   disabled,
   className,
   ...aria
@@ -64,6 +72,13 @@ export function SelectorConBuscador({
   buscar: string;
   /** «No hay ninguna marca con ese nombre.» */
   sinResultados: string;
+  crear?: {
+    /** Sin nada escrito: «Crear una marca». */
+    nueva: string;
+    /** Con lo escrito: «Crear la marca «Sony»». */
+    con: (nombre: string) => string;
+    alCrear: (nombre: string) => void;
+  };
   disabled?: boolean;
   /** Del envoltorio, como en `Select`: para fijarle el ancho. */
   className?: string;
@@ -73,18 +88,27 @@ export function SelectorConBuscador({
 }) {
   const [abierto, setAbierto] = React.useState(false);
   const [termino, setTermino] = React.useState("");
+  // Al elegir «Crear» el foco no vuelve al selector: se lo lleva el
+  // formulario que se abre, y devolverlo acá se lo robaría.
+  const creando = React.useRef(false);
 
   const elegida = opciones.find((o) => o.valor === valor);
   const buscado = normalizar(termino);
   const visibles = buscado
     ? opciones.filter((o) => normalizar(o.etiqueta).includes(buscado))
     : opciones;
+  const nombreNuevo = termino.trim();
+  const ofrecerCrear =
+    !!crear && !opciones.some((o) => normalizar(o.etiqueta) === buscado);
 
   const abrir = (v: boolean) => {
     setAbierto(v);
     // Cada vez que se abre, la lista arranca entera: un filtro que quedó de
     // la vez anterior escondería las opciones sin que se note por qué.
-    if (v) setTermino("");
+    if (v) {
+      setTermino("");
+      creando.current = false;
+    }
   };
 
   return (
@@ -136,6 +160,9 @@ export function SelectorConBuscador({
         // El ancho del campo, con un piso: en el filtro del listado el campo
         // mide 192px y un nombre largo no entraría.
         className="w-[max(var(--radix-popover-trigger-width),16rem)] p-0"
+        onCloseAutoFocus={(e) => {
+          if (creando.current) e.preventDefault();
+        }}
       >
         <Command
           shouldFilter={false}
@@ -159,52 +186,83 @@ export function SelectorConBuscador({
               className="h-10 min-w-0 flex-1 bg-transparent text-body-sm text-ink outline-none placeholder:text-ink-secondary focus-visible:shadow-none max-md:h-11"
             />
           </div>
-          <Command.List className="max-h-72 overflow-y-auto overscroll-contain p-1">
-            <Command.Empty className="px-2 py-6 text-center text-body-sm text-ink-secondary">
-              {sinResultados}
-            </Command.Empty>
-            {visibles.map((o) => (
+          {/* El scroll va en las opciones y no en toda la lista: así «Crear»
+              queda siempre a la vista debajo, aunque haya cien marcas. Sigue
+              adentro de `Command.List` porque es un renglón más del listbox. */}
+          <Command.List className="p-1">
+            <div className="max-h-64 overflow-y-auto overscroll-contain">
+              <Command.Empty className="px-2 py-6 text-center text-body-sm text-ink-secondary">
+                {sinResultados}
+              </Command.Empty>
+              {visibles.map((o) => (
+                <Command.Item
+                  key={o.valor}
+                  value={clave(o.valor)}
+                  disabled={o.deshabilitada}
+                  onSelect={() => {
+                    alCambiar(o.valor);
+                    setAbierto(false);
+                  }}
+                  className={RENGLON}
+                >
+                  {o.muestra}
+                  <span className="min-w-0 flex-1">
+                    {o.etiqueta}
+                    {o.nota ? (
+                      <span className="text-ink-secondary"> ({o.nota})</span>
+                    ) : null}
+                    {/* `aria-selected` es de `cmdk` y marca el renglón parado,
+                      no el elegido: el tilde se dice en texto. */}
+                    {o.valor === valor ? (
+                      <span className="sr-only"> (la actual)</span>
+                    ) : null}
+                  </span>
+                  <Check
+                    aria-hidden
+                    className={cn(
+                      "size-4 shrink-0 text-ink",
+                      o.valor === valor ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                </Command.Item>
+              ))}
+            </div>
+            {crear && ofrecerCrear ? (
               <Command.Item
-                key={o.valor}
-                value={clave(o.valor)}
-                disabled={o.deshabilitada}
+                value={CLAVE_DE_CREAR}
                 onSelect={() => {
-                  alCambiar(o.valor);
+                  creando.current = true;
                   setAbierto(false);
+                  crear.alCrear(nombreNuevo);
                 }}
                 className={cn(
-                  "flex min-h-9 cursor-default select-none items-center gap-2 rounded-[6px] px-2 py-1.5 text-body-sm text-ink outline-none max-md:min-h-11",
-                  "data-[selected=true]:bg-surface-sunken",
-                  "data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50",
+                  RENGLON,
+                  // Separado de las opciones: no es una de ellas.
+                  visibles.length > 0 &&
+                    "relative mt-1 before:absolute before:inset-x-0 before:-top-0.5 before:h-px before:bg-border",
                 )}
               >
-                {o.muestra}
-                <span className="min-w-0 flex-1">
-                  {o.etiqueta}
-                  {o.nota ? (
-                    <span className="text-ink-secondary"> ({o.nota})</span>
-                  ) : null}
-                  {/* `aria-selected` es de `cmdk` y marca el renglón parado,
-                      no el elegido: el tilde se dice en texto. */}
-                  {o.valor === valor ? (
-                    <span className="sr-only"> (la actual)</span>
-                  ) : null}
+                <Plus aria-hidden className="size-4 shrink-0 text-ink" />
+                <span className="min-w-0 flex-1 font-medium">
+                  {nombreNuevo ? crear.con(nombreNuevo) : crear.nueva}
                 </span>
-                <Check
-                  aria-hidden
-                  className={cn(
-                    "size-4 shrink-0 text-ink",
-                    o.valor === valor ? "opacity-100" : "opacity-0",
-                  )}
-                />
               </Command.Item>
-            ))}
+            ) : null}
           </Command.List>
         </Command>
       </PopoverContent>
     </Popover>
   );
 }
+
+const RENGLON = cn(
+  "flex min-h-9 cursor-default select-none items-center gap-2 rounded-[6px] px-2 py-1.5 text-body-sm text-ink outline-none max-md:min-h-11",
+  "data-[selected=true]:bg-surface-sunken",
+  "data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50",
+);
+
+/** Otro prefijo que el de las opciones: ninguna puede chocar con él. */
+const CLAVE_DE_CREAR = "crear";
 
 /**
  * La clave de `cmdk` para una opción. No puede ser el valor a secas: la

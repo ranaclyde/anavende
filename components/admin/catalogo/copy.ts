@@ -29,6 +29,8 @@ export type PalabrasDeItem = {
   pronombre: string;
   /** Artículo: «**la** marca», «**el** color». Lo usan los avisos (§6.15). */
   articulo: string;
+  /** «Al crear**la**, queda **elegida**» (F2.13). */
+  elegido: string;
 };
 
 export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
@@ -44,6 +46,7 @@ export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
     demostrativo: "esta",
     pronombre: "la",
     articulo: "la",
+    elegido: "elegida",
   },
   categoria: {
     singular: "categoría",
@@ -57,6 +60,7 @@ export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
     demostrativo: "esta",
     pronombre: "la",
     articulo: "la",
+    elegido: "elegida",
   },
   color: {
     singular: "color",
@@ -69,6 +73,7 @@ export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
     demostrativo: "este",
     pronombre: "lo",
     articulo: "el",
+    elegido: "elegido",
   },
 };
 
