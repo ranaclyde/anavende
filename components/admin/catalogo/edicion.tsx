@@ -75,6 +75,7 @@ const EDITAR = {
 const HEX_POR_OMISION = "#8a8a8a";
 
 const SIN_RELACIONADAS: CategoriaRelacionada[] = [];
+const SIN_RELACIONABLES: CategoriaRelacionable[] = [];
 
 /**
  * Sube el logo de la marca, o la imagen de la categoría (FA-21), por el
@@ -127,13 +128,29 @@ const QUITAR = {
  * con los valores viejos, y volver a abrirlo ahí no dispara ningún efecto.
  * Se descubrió en F2.6, con un medio de pago que se guardó con la
  * descripción del anterior.
+ *
+ * **También se abre desde el producto** (F2.13), cuando lo que hace falta no
+ * está en el selector: llega con `nombreInicial` —lo que se escribió en el
+ * buscador— y avisa con `alCrear` para que el producto lo deje elegido. Ahí
+ * no ofrece las relacionadas: son lo único que pide recorrer el resto del
+ * catálogo, y quien está cargando un producto viene a destrabarlo, no a
+ * ordenar categorías. Se eligen después, desde Catálogo.
+ *
+ * Con `incrustado` no trae su propio drawer y se pinta adentro del de quien
+ * lo usa, como un paso (§6.14.2): la variante de color lo usa así, porque
+ * un drawer encima de otro tapa lo que se estaba cargando. El Escape de ese
+ * paso lo maneja el drawer de afuera; por eso solo lo usan los colores, que
+ * no tienen un paso propio.
  */
 export function EdicionDeItem({
   tipo,
   item,
   abierto,
   alCerrar,
-  relacionables,
+  relacionables = SIN_RELACIONABLES,
+  nombreInicial = "",
+  alCrear,
+  incrustado = false,
 }: {
   tipo: TipoDeItem;
   /** `null` = alta. */
@@ -141,7 +158,10 @@ export function EdicionDeItem({
   abierto: boolean;
   alCerrar: () => void;
   /** Solo las categorías las usan (RF-31). */
-  relacionables: CategoriaRelacionable[];
+  relacionables?: CategoriaRelacionable[];
+  nombreInicial?: string;
+  alCrear?: (creado: { id: string; name: string; hexCode: string }) => void;
+  incrustado?: boolean;
 }) {
   const palabras = PALABRAS[tipo];
   const router = useRouter();
@@ -149,7 +169,7 @@ export function EdicionDeItem({
   const [enviando, iniciar] = useTransition();
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
-  const [nombre, setNombre] = useState(item?.name ?? "");
+  const [nombre, setNombre] = useState(item?.name ?? nombreInicial);
   const [hex, setHex] = useState(item?.hexCode ?? HEX_POR_OMISION);
   // Una categoría nueva no nace destacada: destacar es elegir un puñado, y un
   // valor por omisión que destaca todo vacía la distinción.
@@ -202,6 +222,12 @@ export function EdicionDeItem({
       if (!resultado.ok) {
         setErrores(leerErrores<Campo>(resultado));
         return;
+      }
+
+      // Antes del logo: si subirlo falla, la marca ya existe y el producto
+      // tiene que poder usarla igual.
+      if (!item) {
+        alCrear?.({ id: resultado.data.id, name: nombre.trim(), hexCode: hex });
       }
 
       // El logo va después de guardar el nombre, y por dos caminos distintos:
@@ -283,6 +309,192 @@ export function EdicionDeItem({
     volverDeElegir();
   };
 
+  const contenido = (
+    <>
+      <SheetHeader>
+        <SheetTitle>
+          {eligiendo
+            ? RELACIONADAS.tituloDeEleccion
+            : item
+              ? `Editar ${palabras.singular}`
+              : palabras.nuevo}
+        </SheetTitle>
+        <SheetDescription>
+          {eligiendo
+            ? RELACIONADAS.bajadaDeEleccion(nombre.trim() || "esta categoría")
+            : item
+              ? "El nombre cambia en todo el sitio. La dirección se mantiene."
+              : alCrear
+                ? `Al crear${palabras.pronombre}, queda ${palabras.elegido}.`
+                : "Se va a poder elegir al cargar un producto."}
+        </SheetDescription>
+      </SheetHeader>
+
+      {eligiendo ? (
+        <EleccionDeRelacionadas
+          id={`${idBase}-eleccion`}
+          disponibles={disponibles}
+          elegidas={relacionadas.map((r) => r.id)}
+          alListo={aplicarEleccion}
+          alVolver={volverDeElegir}
+        />
+      ) : null}
+
+      <SheetForm
+        onSubmit={enviar}
+        noValidate
+        className={eligiendo ? "hidden" : undefined}
+      >
+        <SheetBody>
+          <Secciones>
+            <Seccion>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`${idBase}-name`}>Nombre</Label>
+                <Input
+                  id={`${idBase}-name`}
+                  name="name"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  autoFocus
+                  required
+                  maxLength={60}
+                  aria-invalid={!!errores.campos.name || undefined}
+                  aria-describedby={
+                    errores.campos.name ? `${idBase}-e-name` : `${idBase}-dir`
+                  }
+                />
+                {errores.campos.name ? (
+                  <FieldError id={`${idBase}-e-name`}>
+                    {errores.campos.name}
+                  </FieldError>
+                ) : (
+                  <FieldHint id={`${idBase}-dir`}>
+                    {direccion
+                      ? `Dirección: /${palabras.plural}/${direccion}`
+                      : "La dirección se arma con el nombre."}
+                    {item && direccion ? " · No cambia al renombrar." : ""}
+                  </FieldHint>
+                )}
+              </div>
+
+              {tipo === "color" ? (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`${idBase}-hex`}>Color</Label>
+                  <div className="flex items-center gap-2">
+                    {/* El selector nativo y el campo de texto escriben el
+                          mismo valor: se puede elegir a ojo o pegar el código
+                          exacto que vino de la marca. */}
+                    <input
+                      type="color"
+                      aria-label="Elegir el color a ojo"
+                      value={
+                        /^#[0-9a-f]{6}$/i.test(hex) ? hex : HEX_POR_OMISION
+                      }
+                      onChange={(e) => setHex(e.target.value)}
+                      className="size-10 shrink-0 cursor-pointer rounded-panel-control border border-border bg-surface p-1"
+                    />
+                    <Input
+                      id={`${idBase}-hex`}
+                      name="hexCode"
+                      value={hex}
+                      onChange={(e) => setHex(e.target.value)}
+                      spellCheck={false}
+                      className="font-mono"
+                      aria-invalid={!!errores.campos.hexCode || undefined}
+                      aria-describedby={
+                        errores.campos.hexCode ? `${idBase}-e-hex` : undefined
+                      }
+                    />
+                  </div>
+                  <FieldError id={`${idBase}-e-hex`}>
+                    {errores.campos.hexCode}
+                  </FieldError>
+                </div>
+              ) : (
+                <SelectorDeLogo
+                  id={`${idBase}-logo`}
+                  palabras={tipo === "categoria" ? IMAGEN_DE_CATEGORIA : LOGO}
+                  guardado={item?.logoUrl ?? null}
+                  logo={logo}
+                  alCambiar={setLogo}
+                  error={errorDelLogo}
+                  alError={setErrorDelLogo}
+                  deshabilitado={enviando}
+                />
+              )}
+            </Seccion>
+
+            {tipo === "categoria" ? (
+              <Seccion>
+                <div className="flex flex-col gap-1.5">
+                  {/* La casilla y su etiqueta son un solo blanco: `htmlFor`
+                        sobre el Checkbox de Radix hace que tocar el texto
+                        también marque, que en un teléfono es la diferencia
+                        entre poder y no. */}
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`${idBase}-destacada`}
+                      checked={destacada}
+                      onCheckedChange={(v) => setDestacada(v === true)}
+                      aria-describedby={`${idBase}-destacada-ayuda`}
+                    />
+                    <Label htmlFor={`${idBase}-destacada`}>
+                      {DESTACADO.etiqueta}
+                    </Label>
+                  </div>
+                  {/* Alineada con el texto de la etiqueta y no con la
+                        casilla: 16px de la casilla más 8 de separación. Sin
+                        la sangría la ayuda se lee como un párrafo suelto. */}
+                  <FieldHint id={`${idBase}-destacada-ayuda`} className="pl-6">
+                    {DESTACADO.ayuda}
+                  </FieldHint>
+                </div>
+              </Seccion>
+            ) : null}
+
+            {tipo === "categoria" && !alCrear ? (
+              <ListaDeRelacionadas
+                id={`${idBase}-relacionadas`}
+                nombre={nombre}
+                lista={relacionadas}
+                originales={originales}
+                hayParaElegir={disponibles.length > 0}
+                alCambiar={setRelacionadas}
+                alElegir={() => setEligiendo(true)}
+                deshabilitado={enviando}
+                refDelBoton={botonElegir}
+              />
+            ) : null}
+          </Secciones>
+
+          <FieldError className="mt-5">{errores.general}</FieldError>
+        </SheetBody>
+
+        <SheetFooter>
+          <Button type="button" variant="secondary" onClick={alCerrar}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            variant="brand"
+            loading={enviando}
+            loadingLabel={
+              logo.tipo !== "reemplazar"
+                ? "Guardando"
+                : tipo === "categoria"
+                  ? IMAGEN_DE_CATEGORIA.subiendo
+                  : LOGO.subiendo
+            }
+          >
+            {item ? "Guardar" : "Crear"}
+          </Button>
+        </SheetFooter>
+      </SheetForm>
+    </>
+  );
+
+  if (incrustado) return contenido;
+
   return (
     <Sheet open={abierto} onOpenChange={(v) => !v && alCerrar()}>
       <SheetContent
@@ -295,186 +507,7 @@ export function EdicionDeItem({
           }
         }}
       >
-        <SheetHeader>
-          <SheetTitle>
-            {eligiendo
-              ? RELACIONADAS.tituloDeEleccion
-              : item
-                ? `Editar ${palabras.singular}`
-                : palabras.nuevo}
-          </SheetTitle>
-          <SheetDescription>
-            {eligiendo
-              ? RELACIONADAS.bajadaDeEleccion(nombre.trim() || "esta categoría")
-              : item
-                ? "El nombre cambia en todo el sitio. La dirección se mantiene."
-                : "Se va a poder elegir al cargar un producto."}
-          </SheetDescription>
-        </SheetHeader>
-
-        {eligiendo ? (
-          <EleccionDeRelacionadas
-            id={`${idBase}-eleccion`}
-            disponibles={disponibles}
-            elegidas={relacionadas.map((r) => r.id)}
-            alListo={aplicarEleccion}
-            alVolver={volverDeElegir}
-          />
-        ) : null}
-
-        <SheetForm
-          onSubmit={enviar}
-          noValidate
-          className={eligiendo ? "hidden" : undefined}
-        >
-          <SheetBody>
-            <Secciones>
-              <Seccion>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`${idBase}-name`}>Nombre</Label>
-                  <Input
-                    id={`${idBase}-name`}
-                    name="name"
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    autoFocus
-                    required
-                    maxLength={60}
-                    aria-invalid={!!errores.campos.name || undefined}
-                    aria-describedby={
-                      errores.campos.name ? `${idBase}-e-name` : `${idBase}-dir`
-                    }
-                  />
-                  {errores.campos.name ? (
-                    <FieldError id={`${idBase}-e-name`}>
-                      {errores.campos.name}
-                    </FieldError>
-                  ) : (
-                    <FieldHint id={`${idBase}-dir`}>
-                      {direccion
-                        ? `Dirección: /${palabras.plural}/${direccion}`
-                        : "La dirección se arma con el nombre."}
-                      {item && direccion ? " · No cambia al renombrar." : ""}
-                    </FieldHint>
-                  )}
-                </div>
-
-                {tipo === "color" ? (
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor={`${idBase}-hex`}>Color</Label>
-                    <div className="flex items-center gap-2">
-                      {/* El selector nativo y el campo de texto escriben el
-                          mismo valor: se puede elegir a ojo o pegar el código
-                          exacto que vino de la marca. */}
-                      <input
-                        type="color"
-                        aria-label="Elegir el color a ojo"
-                        value={
-                          /^#[0-9a-f]{6}$/i.test(hex) ? hex : HEX_POR_OMISION
-                        }
-                        onChange={(e) => setHex(e.target.value)}
-                        className="size-10 shrink-0 cursor-pointer rounded-panel-control border border-border bg-surface p-1"
-                      />
-                      <Input
-                        id={`${idBase}-hex`}
-                        name="hexCode"
-                        value={hex}
-                        onChange={(e) => setHex(e.target.value)}
-                        spellCheck={false}
-                        className="font-mono"
-                        aria-invalid={!!errores.campos.hexCode || undefined}
-                        aria-describedby={
-                          errores.campos.hexCode ? `${idBase}-e-hex` : undefined
-                        }
-                      />
-                    </div>
-                    <FieldError id={`${idBase}-e-hex`}>
-                      {errores.campos.hexCode}
-                    </FieldError>
-                  </div>
-                ) : (
-                  <SelectorDeLogo
-                    id={`${idBase}-logo`}
-                    palabras={tipo === "categoria" ? IMAGEN_DE_CATEGORIA : LOGO}
-                    guardado={item?.logoUrl ?? null}
-                    logo={logo}
-                    alCambiar={setLogo}
-                    error={errorDelLogo}
-                    alError={setErrorDelLogo}
-                    deshabilitado={enviando}
-                  />
-                )}
-              </Seccion>
-
-              {tipo === "categoria" ? (
-                <Seccion>
-                  <div className="flex flex-col gap-1.5">
-                    {/* La casilla y su etiqueta son un solo blanco: `htmlFor`
-                        sobre el Checkbox de Radix hace que tocar el texto
-                        también marque, que en un teléfono es la diferencia
-                        entre poder y no. */}
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id={`${idBase}-destacada`}
-                        checked={destacada}
-                        onCheckedChange={(v) => setDestacada(v === true)}
-                        aria-describedby={`${idBase}-destacada-ayuda`}
-                      />
-                      <Label htmlFor={`${idBase}-destacada`}>
-                        {DESTACADO.etiqueta}
-                      </Label>
-                    </div>
-                    {/* Alineada con el texto de la etiqueta y no con la
-                        casilla: 16px de la casilla más 8 de separación. Sin
-                        la sangría la ayuda se lee como un párrafo suelto. */}
-                    <FieldHint
-                      id={`${idBase}-destacada-ayuda`}
-                      className="pl-6"
-                    >
-                      {DESTACADO.ayuda}
-                    </FieldHint>
-                  </div>
-                </Seccion>
-              ) : null}
-
-              {tipo === "categoria" ? (
-                <ListaDeRelacionadas
-                  id={`${idBase}-relacionadas`}
-                  nombre={nombre}
-                  lista={relacionadas}
-                  originales={originales}
-                  hayParaElegir={disponibles.length > 0}
-                  alCambiar={setRelacionadas}
-                  alElegir={() => setEligiendo(true)}
-                  deshabilitado={enviando}
-                  refDelBoton={botonElegir}
-                />
-              ) : null}
-            </Secciones>
-
-            <FieldError className="mt-5">{errores.general}</FieldError>
-          </SheetBody>
-
-          <SheetFooter>
-            <Button type="button" variant="secondary" onClick={alCerrar}>
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="brand"
-              loading={enviando}
-              loadingLabel={
-                logo.tipo !== "reemplazar"
-                  ? "Guardando"
-                  : tipo === "categoria"
-                    ? IMAGEN_DE_CATEGORIA.subiendo
-                    : LOGO.subiendo
-              }
-            >
-              {item ? "Guardar" : "Crear"}
-            </Button>
-          </SheetFooter>
-        </SheetForm>
+        {contenido}
       </SheetContent>
     </Sheet>
   );

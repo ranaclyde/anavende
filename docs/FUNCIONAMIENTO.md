@@ -133,11 +133,13 @@ se cancela (`modules/returns/registrar.ts`).
    (`modules/catalog/products/actions.ts`). La descripción se escribe con
    los botones del editor; pegar texto con formato lo conserva, y pegar
    Markdown escrito como texto (`**negrita**`, `- ` para viñetas) lo
-   convierte (`components/admin/productos/formato.ts`).
+   convierte (`components/admin/productos/formato.ts`). Si la marca o la
+   categoría todavía no existen, se crean desde el mismo selector, sin salir
+   del producto.
 2. **Variantes de color**, cada una con su stock
    (`modules/catalog/variants/actions.ts`). Cambiar el stock desde acá es un
    **ajuste** que queda asentado en el libro mayor como cualquier otro
-   movimiento.
+   movimiento. Un color que no está en el catálogo se crea ahí mismo.
 3. **Fotos de cada color.** Se suben por `/api/admin/upload`, se convierten
    en el momento y el original no se guarda (ver
    [Arquitectura](ARQUITECTURA.md#fotos)). Una variante puede reutilizar las

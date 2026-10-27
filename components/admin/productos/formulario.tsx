@@ -9,6 +9,7 @@ import {
   EditorDeDescripcion,
   leerMarkdown,
 } from "@/components/admin/productos/editor";
+import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
@@ -127,6 +128,21 @@ export function FormularioDeProducto({
   const [activo, setActivo] = useState(producto?.isActive ?? true);
 
   /**
+   * Crear una marca o una categoría sin salir del producto (F2.13). Lo que
+   * se crea acá se suma a las opciones que vinieron del servidor: guardarla
+   * no repinta esta pantalla, y sin esto quedaría elegida una marca que el
+   * selector no conoce.
+   */
+  const [creando, setCreando] = useState<{
+    tipo: "marca" | "categoria";
+    nombre: string;
+  } | null>(null);
+  const [creadas, setCreadas] = useState<{
+    marca: OpcionDeCatalogo[];
+    categoria: OpcionDeCatalogo[];
+  }>({ marca: [], categoria: [] });
+
+  /**
    * La descripción NO es estado de React: vive adentro del editor y se lee al
    * enviar. Guardarla acá obligaría a repintar el formulario entero con cada
    * tecla, para un valor que nadie mira hasta que se guarda.
@@ -225,202 +241,271 @@ export function FormularioDeProducto({
     });
   }
 
-  return (
-    <form onSubmit={enviar} noValidate className="flex flex-col gap-6">
-      {/* ── Qué es ────────────────────────────────────────────────── */}
-      <TarjetaDeSeccion id="datos" titulo="Datos del producto">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={campo("name").id}>Nombre</Label>
-          <Input
-            {...campo("name")}
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            maxLength={120}
-            autoComplete="off"
-            placeholder="Teclado mecánico K120 retroiluminado"
-          />
-          <FieldError id={`${idBase}-name-error`}>
-            {errores.campos.name}
-          </FieldError>
+  /** Las recién creadas van arriba: es la que se busca ahora. */
+  const conCreadas = (
+    todas: OpcionDeCatalogo[],
+    tipo: "marca" | "categoria",
+  ) =>
+    creadas[tipo].length
+      ? [
+          ...creadas[tipo].filter((c) => !todas.some((o) => o.id === c.id)),
+          ...todas,
+        ]
+      : todas;
 
-          {/* La dirección se muestra para leer, no para completar: «slug» es
+  const ofrecerCrear = (tipo: "marca" | "categoria") => ({
+    nueva: tipo === "marca" ? "Crear una marca" : "Crear una categoría",
+    con: (n: string) =>
+      tipo === "marca" ? `Crear la marca «${n}»` : `Crear la categoría «${n}»`,
+    alCrear: (n: string) => setCreando({ tipo, nombre: n }),
+  });
+
+  return (
+    <>
+      <form onSubmit={enviar} noValidate className="flex flex-col gap-6">
+        {/* ── Qué es ────────────────────────────────────────────────── */}
+        <TarjetaDeSeccion id="datos" titulo="Datos del producto">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={campo("name").id}>Nombre</Label>
+            <Input
+              {...campo("name")}
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              maxLength={120}
+              autoComplete="off"
+              placeholder="Teclado mecánico K120 retroiluminado"
+            />
+            <FieldError id={`${idBase}-name-error`}>
+              {errores.campos.name}
+            </FieldError>
+
+            {/* La dirección se muestra para leer, no para completar: «slug» es
               jerga (§10). Al renombrar no cambia, y el aviso lo dice acá en
               vez de dejar que se descubra después. */}
-          {producto ? (
-            <FieldHint>
-              Dirección:{" "}
-              <span className="text-ink">/productos/{producto.slug}</span>. No
-              cambia al renombrar, para no romper los enlaces que ya
-              compartiste.
-            </FieldHint>
-          ) : nombre.trim() ? (
-            <FieldHint>
-              Dirección:{" "}
-              <span className="text-ink">/productos/{slugificar(nombre)}</span>
-            </FieldHint>
-          ) : null}
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor={campo("brandId").id}>Marca</Label>
-            <SelectorConBuscador
-              {...campo("brandId")}
-              valor={marcaId}
-              alCambiar={setMarcaId}
-              opciones={opcionesDelSelector(marcas, marcaId)}
-              marcador="Elegí una marca"
-              buscar="Buscar una marca…"
-              sinResultados="No hay ninguna marca con ese nombre."
-            />
-            <FieldError id={`${idBase}-brandId-error`}>
-              {errores.campos.brandId}
-            </FieldError>
+            {producto ? (
+              <FieldHint>
+                Dirección:{" "}
+                <span className="text-ink">/productos/{producto.slug}</span>. No
+                cambia al renombrar, para no romper los enlaces que ya
+                compartiste.
+              </FieldHint>
+            ) : nombre.trim() ? (
+              <FieldHint>
+                Dirección:{" "}
+                <span className="text-ink">
+                  /productos/{slugificar(nombre)}
+                </span>
+              </FieldHint>
+            ) : null}
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor={campo("categoryId").id}>Categoría</Label>
-            <SelectorConBuscador
-              {...campo("categoryId")}
-              valor={categoriaId}
-              alCambiar={setCategoriaId}
-              opciones={opcionesDelSelector(categorias, categoriaId)}
-              marcador="Elegí una categoría"
-              buscar="Buscar una categoría…"
-              sinResultados="No hay ninguna categoría con ese nombre."
-            />
-            <FieldError id={`${idBase}-categoryId-error`}>
-              {errores.campos.categoryId}
-            </FieldError>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={campo("brandId").id}>Marca</Label>
+              <SelectorConBuscador
+                {...campo("brandId")}
+                valor={marcaId}
+                alCambiar={setMarcaId}
+                opciones={opcionesDelSelector(
+                  conCreadas(marcas, "marca"),
+                  marcaId,
+                )}
+                marcador="Elegí una marca"
+                buscar="Buscar una marca…"
+                sinResultados="No hay ninguna marca con ese nombre."
+                crear={ofrecerCrear("marca")}
+              />
+              <FieldError id={`${idBase}-brandId-error`}>
+                {errores.campos.brandId}
+              </FieldError>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={campo("categoryId").id}>Categoría</Label>
+              <SelectorConBuscador
+                {...campo("categoryId")}
+                valor={categoriaId}
+                alCambiar={setCategoriaId}
+                opciones={opcionesDelSelector(
+                  conCreadas(categorias, "categoria"),
+                  categoriaId,
+                )}
+                marcador="Elegí una categoría"
+                buscar="Buscar una categoría…"
+                sinResultados="No hay ninguna categoría con ese nombre."
+                crear={ofrecerCrear("categoria")}
+              />
+              <FieldError id={`${idBase}-categoryId-error`}>
+                {errores.campos.categoryId}
+              </FieldError>
+            </div>
           </div>
-        </div>
-      </TarjetaDeSeccion>
+        </TarjetaDeSeccion>
 
-      {/* ── Cuánto sale ───────────────────────────────────────────── */}
-      <TarjetaDeSeccion id="precio" titulo="Precio">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor={campo("price").id}>Precio</Label>
-            <Input
-              {...campo("price")}
-              // `inputMode` y no `type="number"`: el número del navegador
-              // sube y baja con la rueda del mouse sobre un precio, y en
-              // castellano acepta el punto como separador de miles.
-              inputMode="decimal"
-              value={precio}
-              onChange={(e) => setPrecio(e.target.value)}
-              placeholder="24500"
-              className="tabular-nums"
-            />
-            <FieldError id={`${idBase}-price-error`}>
-              {errores.campos.price}
-            </FieldError>
+        {/* ── Cuánto sale ───────────────────────────────────────────── */}
+        <TarjetaDeSeccion id="precio" titulo="Precio">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={campo("price").id}>Precio</Label>
+              <Input
+                {...campo("price")}
+                // `inputMode` y no `type="number"`: el número del navegador
+                // sube y baja con la rueda del mouse sobre un precio, y en
+                // castellano acepta el punto como separador de miles.
+                inputMode="decimal"
+                value={precio}
+                onChange={(e) => setPrecio(e.target.value)}
+                placeholder="24500"
+                className="tabular-nums"
+              />
+              <FieldError id={`${idBase}-price-error`}>
+                {errores.campos.price}
+              </FieldError>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={campo("discount").id}>
+                Descuento{" "}
+                <span className="font-normal text-ink-secondary">
+                  (opcional)
+                </span>
+              </Label>
+              <Input
+                {...campo("discount")}
+                inputMode="decimal"
+                value={descuento}
+                onChange={(e) => setDescuento(e.target.value)}
+                placeholder="0"
+                className="tabular-nums"
+              />
+              <FieldError id={`${idBase}-discount-error`}>
+                {errores.campos.discount}
+              </FieldError>
+              <FieldHint>
+                Es un monto en pesos, no un porcentaje. Dejalo vacío si no hay
+                oferta.
+              </FieldHint>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor={campo("discount").id}>
-              Descuento{" "}
-              <span className="font-normal text-ink-secondary">(opcional)</span>
-            </Label>
-            <Input
-              {...campo("discount")}
-              inputMode="decimal"
-              value={descuento}
-              onChange={(e) => setDescuento(e.target.value)}
-              placeholder="0"
-              className="tabular-nums"
-            />
-            <FieldError id={`${idBase}-discount-error`}>
-              {errores.campos.discount}
-            </FieldError>
-            <FieldHint>
-              Es un monto en pesos, no un porcentaje. Dejalo vacío si no hay
-              oferta.
-            </FieldHint>
-          </div>
-        </div>
+          <ResumenDePrecio vista={vista} />
+        </TarjetaDeSeccion>
 
-        <ResumenDePrecio vista={vista} />
-      </TarjetaDeSeccion>
-
-      {/* ── Cómo se cuenta ────────────────────────────────────────── */}
-      <TarjetaDeSeccion
-        id="descripcion"
-        titulo="Descripción"
-        ayuda="Se ve en la ficha del producto. Podés usar negrita, cursiva, listas y un subtítulo."
-      >
-        <EditorDeDescripcion
-          id={`${idBase}-description`}
-          valorInicial={producto?.description ?? ""}
-          refEditor={editor}
-          invalido={Boolean(errores.campos.description)}
-          describedBy={
-            errores.campos.description
-              ? `${idBase}-description-error`
-              : undefined
-          }
-        />
-        <FieldError id={`${idBase}-description-error`}>
-          {errores.campos.description}
-        </FieldError>
-      </TarjetaDeSeccion>
-
-      {/* ── Dónde se ve ───────────────────────────────────────────── */}
-      <TarjetaDeSeccion id="publicacion" titulo="Publicación">
-        <label className="flex items-start gap-3">
-          <Checkbox
-            checked={activo}
-            onCheckedChange={(v) => setActivo(v === true)}
-            className="mt-0.5"
+        {/* ── Cómo se cuenta ────────────────────────────────────────── */}
+        <TarjetaDeSeccion
+          id="descripcion"
+          titulo="Descripción"
+          ayuda="Se ve en la ficha del producto. Podés usar negrita, cursiva, listas y un subtítulo."
+        >
+          <EditorDeDescripcion
+            id={`${idBase}-description`}
+            valorInicial={producto?.description ?? ""}
+            refEditor={editor}
+            invalido={Boolean(errores.campos.description)}
+            describedBy={
+              errores.campos.description
+                ? `${idBase}-description-error`
+                : undefined
+            }
           />
-          <span className="flex flex-col gap-0.5">
-            <span className="text-body-sm font-medium text-ink">
-              Activo en la tienda
-            </span>
-            <span className="text-caption text-ink-secondary">
-              Si lo desactivás desaparece del sitio al instante, pero sigue acá
-              y en las órdenes que ya lo incluyen.
-            </span>
-          </span>
-        </label>
+          <FieldError id={`${idBase}-description-error`}>
+            {errores.campos.description}
+          </FieldError>
+        </TarjetaDeSeccion>
 
-        <label className="flex items-start gap-3">
-          <Checkbox
-            checked={destacado}
-            onCheckedChange={(v) => setDestacado(v === true)}
-            className="mt-0.5"
-          />
-          <span className="flex flex-col gap-0.5">
-            <span className="text-body-sm font-medium text-ink">Destacado</span>
-            <span className="text-caption text-ink-secondary">
-              Se adelanta en la portada y en el catálogo. Destacar no publica:
-              si está inactivo, sigue sin aparecer.
+        {/* ── Dónde se ve ───────────────────────────────────────────── */}
+        <TarjetaDeSeccion id="publicacion" titulo="Publicación">
+          <label className="flex items-start gap-3">
+            <Checkbox
+              checked={activo}
+              onCheckedChange={(v) => setActivo(v === true)}
+              className="mt-0.5"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-body-sm font-medium text-ink">
+                Activo en la tienda
+              </span>
+              <span className="text-caption text-ink-secondary">
+                Si lo desactivás desaparece del sitio al instante, pero sigue
+                acá y en las órdenes que ya lo incluyen.
+              </span>
             </span>
-          </span>
-        </label>
-      </TarjetaDeSeccion>
+          </label>
 
-      <div ref={errorGeneral} tabIndex={-1} className="outline-none">
-        <FieldError>{errores.general}</FieldError>
-      </div>
+          <label className="flex items-start gap-3">
+            <Checkbox
+              checked={destacado}
+              onCheckedChange={(v) => setDestacado(v === true)}
+              className="mt-0.5"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-body-sm font-medium text-ink">
+                Destacado
+              </span>
+              <span className="text-caption text-ink-secondary">
+                Se adelanta en la portada y en el catálogo. Destacar no publica:
+                si está inactivo, sigue sin aparecer.
+              </span>
+            </span>
+          </label>
+        </TarjetaDeSeccion>
 
-      {/* En el panel la acción principal va a la derecha, y el escape queda a
+        <div ref={errorGeneral} tabIndex={-1} className="outline-none">
+          <FieldError>{errores.general}</FieldError>
+        </div>
+
+        {/* En el panel la acción principal va a la derecha, y el escape queda a
           mano: cancelar es un enlace y no un botón, porque no hace nada, va a
           otro lado. */}
-      <div className="flex items-center justify-end gap-2">
-        <Button asChild variant="tertiary">
-          <Link href="/admin/productos">Cancelar</Link>
-        </Button>
-        <Button
-          type="submit"
-          variant="brand"
-          loading={enviando}
-          loadingLabel="Guardando"
-        >
-          {producto ? "Guardar cambios" : "Crear producto"}
-        </Button>
-      </div>
-    </form>
+        <div className="flex items-center justify-end gap-2">
+          <Button asChild variant="tertiary">
+            <Link href="/admin/productos">Cancelar</Link>
+          </Button>
+          <Button
+            type="submit"
+            variant="brand"
+            loading={enviando}
+            loadingLabel="Guardando"
+          >
+            {producto ? "Guardar cambios" : "Crear producto"}
+          </Button>
+        </div>
+      </form>
+
+      {/* Afuera del `<form>`, aunque el drawer vaya por portal: en React los
+        eventos suben por el árbol de componentes y no por el DOM, y el
+        «Crear» del drawer enviaría también el producto. Se monta al abrir
+        y se desmonta al cerrar, como en Catálogo, así arranca limpio. */}
+      {creando ? (
+        <EdicionDeItem
+          tipo={creando.tipo}
+          item={null}
+          abierto
+          nombreInicial={creando.nombre}
+          alCerrar={() => {
+            const tipo = creando.tipo;
+            setCreando(null);
+            // El foco vuelve al selector del que salió.
+            requestAnimationFrame(() =>
+              document
+                .getElementById(
+                  `${idBase}-${tipo === "marca" ? "brandId" : "categoryId"}`,
+                )
+                ?.focus(),
+            );
+          }}
+          alCrear={({ id, name }) => {
+            const tipo = creando.tipo;
+            setCreadas((antes) => ({
+              ...antes,
+              [tipo]: [{ id, name, isActive: true }, ...antes[tipo]],
+            }));
+            if (tipo === "marca") setMarcaId(id);
+            else setCategoriaId(id);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 
