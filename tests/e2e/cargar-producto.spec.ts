@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "./apoyo/test";
+import { expect, test, type Locator, type Page } from "./apoyo/test";
 import sharp from "sharp";
 
 import { datosDePrueba, sufijo, type Color, type Cuenta } from "./apoyo/datos";
@@ -48,9 +48,25 @@ function foto(fondo: string): Promise<Buffer> {
     .toBuffer();
 }
 
+/**
+ * Elige en un selector con buscador (`SelectorConBuscador`) como lo haría
+ * alguien: abre, escribe una parte del nombre y toca la opción. La lista va
+ * por portal, así que se busca en la página y no dentro del diálogo.
+ */
+async function elegir(page: Page, selector: Locator, opcion: string) {
+  await selector.click();
+  await page.keyboard.type(opcion.slice(0, 5));
+  await page.getByRole("option", { name: opcion }).click();
+  await expect(selector).toContainText(opcion);
+}
+
 async function agregarColor(page: Page, color: Color, stock: number) {
   const dialogo = page.getByRole("dialog", { name: "Agregar un color" });
-  await dialogo.getByLabel("Color").selectOption({ label: color.nombre });
+  await elegir(
+    page,
+    dialogo.getByRole("combobox", { name: "Color", exact: true }),
+    color.nombre,
+  );
   await dialogo.getByRole("textbox", { name: "Stock" }).fill(String(stock));
   await dialogo.getByRole("button", { name: "Agregar" }).click();
   await expect(dialogo).toBeHidden();
@@ -83,10 +99,12 @@ test("la administradora carga un producto y aparece publicado", async ({
   // El alta: datos y precio. Los colores se cargan en la pantalla siguiente.
   await page.goto("/admin/productos/nuevo");
   await page.getByRole("textbox", { name: "Nombre" }).fill(nombre);
-  await page.getByLabel("Marca").selectOption({ label: marca });
-  await page
-    .getByLabel("Categoría")
-    .selectOption({ label: `Mouses ${palabra}` });
+  await elegir(page, page.getByRole("combobox", { name: "Marca" }), marca);
+  await elegir(
+    page,
+    page.getByRole("combobox", { name: "Categoría" }),
+    `Mouses ${palabra}`,
+  );
   await page.getByRole("textbox", { name: "Precio" }).fill("15000");
   await page.getByRole("button", { name: "Crear producto" }).click();
 

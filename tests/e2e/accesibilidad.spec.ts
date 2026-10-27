@@ -479,6 +479,36 @@ for (const quien of ["compradora", "admin"] as const) {
   });
 }
 
+/**
+ * El selector con buscador (F2.11) tampoco está en la página hasta que se
+ * abre. Se mira lo mismo que en los diálogos: axe sobre la lista, el foco en
+ * el buscador al abrir y de vuelta en el campo al cerrar con Escape.
+ */
+test("el selector con buscador, abierto", async ({ browser }) => {
+  const page = await navegador(browser, "admin", "computadora");
+  await page.goto("/admin/productos/nuevo", { waitUntil: "load" });
+  await page.waitForTimeout(500);
+
+  const selector = page.getByRole("combobox", { name: "Marca" });
+  await selector.click();
+  const lista = page.locator('[data-slot="popover-content"]');
+  await expect(lista).toBeVisible();
+  await animacionesTerminadas(page);
+
+  await expect(
+    lista.getByRole("combobox"),
+    "el foco no entró al buscador",
+  ).toBeFocused();
+  expect(await hallazgosDeAxe(page, '[data-slot="popover-content"]')).toEqual(
+    [],
+  );
+
+  await page.keyboard.press("Escape");
+  await expect(lista).toBeHidden();
+  await expect(selector, "el foco no volvió").toBeFocused();
+  await page.context().close();
+});
+
 test("los filtros del catálogo y el menú del panel, en el teléfono", async ({
   browser,
 }) => {

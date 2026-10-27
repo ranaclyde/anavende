@@ -16,7 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import {
+  SelectorConBuscador,
+  type OpcionDelSelector,
+} from "@/components/ui/selector-con-buscador";
 import { compare, formatMoney, isMoney, subtract } from "@/lib/money";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { slugificar } from "@/lib/slug";
@@ -84,11 +87,17 @@ function calcularVista(precio: string, descuento: string): Vista {
  * mostraría el selector en otra marca y guardar se la cambiaría sin que nadie
  * lo hubiera pedido.
  */
-function opcionesVisibles(
+function opcionesDelSelector(
   todas: OpcionDeCatalogo[],
   elegida: string,
-): OpcionDeCatalogo[] {
-  return todas.filter((o) => o.isActive || o.id === elegida);
+): OpcionDelSelector[] {
+  return todas
+    .filter((o) => o.isActive || o.id === elegida)
+    .map((o) => ({
+      valor: o.id,
+      etiqueta: o.name,
+      nota: o.isActive ? undefined : "inactiva",
+    }));
 }
 
 export function FormularioDeProducto({
@@ -216,9 +225,6 @@ export function FormularioDeProducto({
     });
   }
 
-  const marcasVisibles = opcionesVisibles(marcas, marcaId);
-  const categoriasVisibles = opcionesVisibles(categorias, categoriaId);
-
   return (
     <form onSubmit={enviar} noValidate className="flex flex-col gap-6">
       {/* ── Qué es ────────────────────────────────────────────────── */}
@@ -258,18 +264,15 @@ export function FormularioDeProducto({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={campo("brandId").id}>Marca</Label>
-            <Select
+            <SelectorConBuscador
               {...campo("brandId")}
-              value={marcaId}
-              onChange={(e) => setMarcaId(e.target.value)}
-            >
-              <option value="">Elegí una marca</option>
-              {marcasVisibles.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.isActive ? m.name : `${m.name} (inactiva)`}
-                </option>
-              ))}
-            </Select>
+              valor={marcaId}
+              alCambiar={setMarcaId}
+              opciones={opcionesDelSelector(marcas, marcaId)}
+              marcador="Elegí una marca"
+              buscar="Buscar una marca…"
+              sinResultados="No hay ninguna marca con ese nombre."
+            />
             <FieldError id={`${idBase}-brandId-error`}>
               {errores.campos.brandId}
             </FieldError>
@@ -277,18 +280,15 @@ export function FormularioDeProducto({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={campo("categoryId").id}>Categoría</Label>
-            <Select
+            <SelectorConBuscador
               {...campo("categoryId")}
-              value={categoriaId}
-              onChange={(e) => setCategoriaId(e.target.value)}
-            >
-              <option value="">Elegí una categoría</option>
-              {categoriasVisibles.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.isActive ? c.name : `${c.name} (inactiva)`}
-                </option>
-              ))}
-            </Select>
+              valor={categoriaId}
+              alCambiar={setCategoriaId}
+              opciones={opcionesDelSelector(categorias, categoriaId)}
+              marcador="Elegí una categoría"
+              buscar="Buscar una categoría…"
+              sinResultados="No hay ninguna categoría con ese nombre."
+            />
             <FieldError id={`${idBase}-categoryId-error`}>
               {errores.campos.categoryId}
             </FieldError>

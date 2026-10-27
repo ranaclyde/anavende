@@ -509,6 +509,7 @@ fondo blanco se fundan con la página.
 - **Focus:** el borde pasa a línea marcada, más el anillo de foco global.
 - **Error:** se marca con `aria-invalid`, que pinta el borde en peligro **y** lo anuncia al lector de pantalla. El atributo es el mecanismo, no una clase.
 - **Textarea:** mismo contrato, radio de imagen en vez de píldora, y crece con el contenido (`field-sizing-content`).
+- **Selector:** dos, y se elige por lo largo de la lista. **`Select`**, el `<select>` del navegador, para las cortas y cerradas —estado, rol, orden, localidad—: en el teléfono abre la rueda nativa. **`SelectorConBuscador`** (`components/ui/selector-con-buscador.tsx`, F2.11) para las que crecen con el catálogo —marca, categoría, color—: un campo con el mismo contrato que abre un globo con buscador (`cmdk` sobre el Popover), que filtra sin tildes y respeta el orden en que llegan las opciones. Cada opción puede llevar una muestra a la izquierda —la esfera del color— y una nota en tinta secundaria —«inactiva», «ya cargado»—; la elegida lleva tilde. Dentro de un diálogo el globo es modal, o la rueda del mouse no mueve la lista. DR §6.6.
 
 ### Chips / Etiquetas de estado
 

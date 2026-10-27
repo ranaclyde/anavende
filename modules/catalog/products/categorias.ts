@@ -8,6 +8,8 @@
  * ya sea el resultado y no la lista entera que después se achica.
  */
 
+import { normalizar } from "@/lib/texto";
+
 export type CategoriaDeLaPagina = {
   id: string;
   /** Para el enlace: `?categoria=` va por slug. */
@@ -21,19 +23,6 @@ export type CategoriaDeLaPagina = {
   /** La de 600px, para la cuadrada de «Destacadas»; `null` si no tiene. */
   imagenUrl: string | null;
 };
-
-/**
- * Sin acentos y sin mayúsculas: «AURICULARES», «aurícu» y «auriculares»
- * tienen que encontrar lo mismo. Es la misma regla que el catálogo aplica en
- * la base con `immutable_unaccent(lower(…))`, escrita para el navegador.
- */
-export function normalizar(texto: string): string {
-  return texto
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
-}
 
 /** «1 producto», «14 productos». */
 export function cantidadDeProductos(cantidad: number): string {

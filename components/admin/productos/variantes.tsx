@@ -25,6 +25,10 @@ import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import {
+  SelectorConBuscador,
+  type OpcionDelSelector,
+} from "@/components/ui/selector-con-buscador";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import {
   agregarUnaVariante,
@@ -361,6 +365,33 @@ function Muestra({ hex, hex2 }: { hex: string | null; hex2: string | null }) {
 }
 
 /**
+ * Un color como opción del selector, con su esfera. Las dos notas pueden ir
+ * juntas: un color inactivo que además ya está cargado en otra variante.
+ */
+function opcionDeColor(c: OpcionDeColor, tomado: boolean): OpcionDelSelector {
+  const notas = [
+    tomado ? "ya cargado" : null,
+    c.isActive ? null : "color inactivo",
+  ].filter(Boolean);
+  return {
+    valor: c.id,
+    etiqueta: c.name,
+    nota: notas.length ? notas.join(", ") : undefined,
+    deshabilitada: tomado,
+    muestra: <MuestraChica hex={c.hexCode} />,
+  };
+}
+
+/** La muestra del renglón del selector: la del texto, no la de la tarjeta. */
+function MuestraChica({ hex }: { hex: string | null }) {
+  return hex ? (
+    <EsferaDeColor hex={hex} className="size-4 border-border-strong" />
+  ) : (
+    <Palette aria-hidden className="size-4 shrink-0 text-ink-secondary" />
+  );
+}
+
+/**
  * Reutilizar las imágenes de otra variante — RF-16, §9.5.
  *
  * Es un `<select>` y no un interruptor porque la pregunta no es «sí o no»
@@ -643,13 +674,13 @@ function DialogoDeVariante({
         <form onSubmit={enviar} className="flex flex-col gap-4" noValidate>
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${idBase}-color`}>Color</Label>
-            <Select
+            <SelectorConBuscador
               id={`${idBase}-color`}
-              value={color}
-              onChange={(e) => {
-                setColor(e.target.value);
+              valor={color}
+              alCambiar={(v) => {
+                setColor(v);
                 // El segundo no puede repetir al primero.
-                if (e.target.value === color2) setColor2(SIN_SEGUNDO);
+                if (v === color2) setColor2(SIN_SEGUNDO);
               }}
               aria-invalid={!!errores.campos.colorId || undefined}
               aria-describedby={
@@ -657,26 +688,25 @@ function DialogoDeVariante({
                   ? `${idBase}-e-color`
                   : `${idBase}-ayuda-color`
               }
-            >
-              <option value="">Elegí un color</option>
-              <option value={UNICO} disabled={tomadas.has(UNICO)}>
-                Único — no se vende por color
-                {tomadas.has(UNICO) ? " (ya cargado)" : ""}
-              </option>
-              {/* Los inactivos no se ofrecen, salvo el que la variante ya
-                  tiene puesto: si desapareciera del selector, guardar se lo
-                  cambiaría sin que nadie lo hubiera pedido. */}
-              {ofrecidos.map((c) => {
-                const tomado = tomadas.has(combinacion(c.id, segundo));
-                return (
-                  <option key={c.id} value={c.id} disabled={tomado}>
-                    {c.name}
-                    {tomado ? " (ya cargado)" : ""}
-                    {c.isActive ? "" : " (color inactivo)"}
-                  </option>
-                );
-              })}
-            </Select>
+              opciones={[
+                {
+                  valor: UNICO,
+                  etiqueta: "Único — no se vende por color",
+                  nota: tomadas.has(UNICO) ? "ya cargado" : undefined,
+                  deshabilitada: tomadas.has(UNICO),
+                  muestra: <MuestraChica hex={null} />,
+                },
+                // Los inactivos no se ofrecen, salvo el que la variante ya
+                // tiene puesto: si desapareciera del selector, guardar se lo
+                // cambiaría sin que nadie lo hubiera pedido.
+                ...ofrecidos.map((c) =>
+                  opcionDeColor(c, tomadas.has(combinacion(c.id, segundo))),
+                ),
+              ]}
+              marcador="Elegí un color"
+              buscar="Buscar un color…"
+              sinResultados="No hay ningún color con ese nombre."
+            />
             {errores.campos.colorId ? (
               <FieldError id={`${idBase}-e-color`}>
                 {errores.campos.colorId}
@@ -704,37 +734,35 @@ function DialogoDeVariante({
                   (opcional)
                 </span>
               </Label>
-              <Select
+              <SelectorConBuscador
                 id={`${idBase}-color2`}
-                value={color2}
-                onChange={(e) => setColor2(e.target.value)}
+                valor={color2}
+                alCambiar={setColor2}
                 aria-invalid={!!errores.campos.secondaryColorId || undefined}
                 aria-describedby={
                   errores.campos.secondaryColorId
                     ? `${idBase}-e-color2`
                     : `${idBase}-ayuda-color2`
                 }
-              >
-                <option
-                  value={SIN_SEGUNDO}
-                  disabled={tomadas.has(combinacion(color, null))}
-                >
-                  Ninguno — es de un solo color
-                  {tomadas.has(combinacion(color, null)) ? " (ya cargado)" : ""}
-                </option>
-                {ofrecidos
-                  .filter((c) => c.id !== color)
-                  .map((c) => {
-                    const tomado = tomadas.has(combinacion(color, c.id));
-                    return (
-                      <option key={c.id} value={c.id} disabled={tomado}>
-                        {c.name}
-                        {tomado ? " (ya cargado)" : ""}
-                        {c.isActive ? "" : " (color inactivo)"}
-                      </option>
-                    );
-                  })}
-              </Select>
+                opciones={[
+                  {
+                    valor: SIN_SEGUNDO,
+                    etiqueta: "Ninguno — es de un solo color",
+                    nota: tomadas.has(combinacion(color, null))
+                      ? "ya cargado"
+                      : undefined,
+                    deshabilitada: tomadas.has(combinacion(color, null)),
+                  },
+                  ...ofrecidos
+                    .filter((c) => c.id !== color)
+                    .map((c) =>
+                      opcionDeColor(c, tomadas.has(combinacion(color, c.id))),
+                    ),
+                ]}
+                marcador="Ninguno — es de un solo color"
+                buscar="Buscar un color…"
+                sinResultados="No hay ningún color con ese nombre."
+              />
               {errores.campos.secondaryColorId ? (
                 <FieldError id={`${idBase}-e-color2`}>
                   {errores.campos.secondaryColorId}

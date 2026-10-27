@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SheetBody, SheetFooter } from "@/components/ui/sheet";
+import { normalizar } from "@/lib/texto";
 import type {
   CategoriaRelacionable,
   CategoriaRelacionada,
@@ -211,15 +212,6 @@ export function ListaDeRelacionadas({
       ) : null}
     </Seccion>
   );
-}
-
-/** Sin tildes ni mayúsculas: «periféricos» se encuentra con «perifericos». */
-function normalizar(texto: string): string {
-  return texto
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
 }
 
 export function EleccionDeRelacionadas({
