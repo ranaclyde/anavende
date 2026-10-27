@@ -16,6 +16,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { quitarFotoDePerfil } from "@/modules/media/subir";
 import { sinDatos } from "@/modules/users/baja/schemas";
 import { coincideLaContrasena } from "@/modules/users/contrasena";
+import { importarFotoDeGoogle } from "@/modules/users/foto-de-google";
 import { actualizarDatos } from "@/modules/users/perfil";
 import {
   cambioDeContrasenaSchema,
@@ -392,6 +393,11 @@ export const completarPerfil = action
       phone: input.phone,
       role: "customer",
     });
+
+    // La foto de Google, si la vuelta de Google la dejó anotada. No lanza:
+    // sin ella, la cuenta sigue con su blobatar. El formulario refresca al
+    // terminar, así que el encabezado ya sale con la foto.
+    await importarFotoDeGoogle(claims.sub);
 
     return { yaEstaba: false };
   });

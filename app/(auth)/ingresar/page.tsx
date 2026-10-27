@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/shop/login-form";
 import { getIdentity } from "@/lib/session";
 import { numeroDeWhatsApp } from "@/modules/settings/queries";
+import { proveedoresDisponibles } from "@/modules/users/proveedores";
 
 export const metadata: Metadata = { title: "Ingresar" };
 
@@ -26,10 +27,15 @@ export default async function Ingresar({
    * estamos en el navegador. Sin número, el aviso se muestra sin el enlace:
    * un `wa.me` vacío abre WhatsApp en la nada.
    */
-  const whatsapp = await numeroDeWhatsApp().catch((error: unknown) => {
-    console.error("[ingresar] No se pudo leer el número de WhatsApp.", error);
-    return null;
-  });
+  const [whatsapp, proveedores] = await Promise.all([
+    numeroDeWhatsApp().catch((error: unknown) => {
+      console.error("[ingresar] No se pudo leer el número de WhatsApp.", error);
+      return null;
+    }),
+    proveedoresDisponibles(),
+  ]);
 
-  return <LoginForm volver={volver} whatsapp={whatsapp} />;
+  return (
+    <LoginForm volver={volver} whatsapp={whatsapp} proveedores={proveedores} />
+  );
 }

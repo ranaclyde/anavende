@@ -157,6 +157,12 @@ desactiva y se avisa. Una variante con stock reservado no se puede quitar.
   confirmar la dirección. Hasta confirmarla, la persona puede navegar pero
   no hacer pedidos. Una identidad sin perfil completo lo termina en
   `/completar-perfil` antes de poder comprar.
+- **Con Google** (`/ingresar` y `/registro`): el mismo botón crea la cuenta o
+  entra, y vuelve por `/api/auth/callback`. La primera vez pasa por
+  `/completar-perfil`, porque Google no da el teléfono. Si ya había una cuenta
+  con ese email, se vinculan solo si el email estaba confirmado. El botón
+  aparece solo si GoTrue tiene Google prendido; Facebook, igual, cuando se
+  configure.
 - **Cuentas sin confirmar:** a las 48 horas se borran solas, con una tarea
   programada (`scripts/limpiar-cuentas.mjs`), para que nadie deje tomado el
   email de otra persona. No se borran las que invitó Ana desde el panel ni
@@ -168,7 +174,10 @@ desactiva y se avisa. Una variante con stock reservado no se puede quitar.
   el alta. Se guarda al elegirla, por `/api/mi-cuenta/foto`, como una sola
   versión cuadrada de 256px (`modules/media/subir.ts`); cambiarla o quitarla
   borra el archivo anterior. Sin foto, la cuenta se ve con un **blobatar**
-  sacado de su id, siempre el mismo (`modules/users/avatar.ts`). Se ve en
+  sacado de su id, siempre el mismo (`modules/users/avatar.ts`). **Quien se
+  da de alta con Google** empieza con su foto de Google, bajada y procesada
+  como una subida al completar el perfil (`modules/users/foto-de-google.ts`);
+  si no eligió ninguna en Google, o algo falla, con su blobatar. Se ve en
   «Mi cuenta», en el encabezado, en el menú del panel y en «Usuarios», y no
   la ve ningún otro comprador.
 - **Pedir la baja** (`/mi-cuenta/baja`): la cuenta pasa a solo lectura, y el

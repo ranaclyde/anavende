@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { urlDelSitio } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { needsProfile } from "@/lib/session";
+import { anotarFotoDeGoogle } from "@/modules/users/foto-de-google";
 
 /**
  * Callback de OAuth — TECHNICAL-SPEC §4, §13.4 · RF-06.
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
     // Supabase rechaza la vinculación cuando el email de la cuenta original
@@ -41,6 +42,17 @@ export async function GET(request: NextRequest) {
   }
 
   if (await needsProfile()) {
+    // La foto de Google se averigua ahora porque el permiso para pedirla
+    // (`provider_token`) solo viene en este intercambio; se guarda al crear
+    // el perfil (`modules/users/foto-de-google.ts`).
+    const { session } = data;
+    if (
+      session.user.app_metadata.provider === "google" &&
+      session.provider_token
+    ) {
+      await anotarFotoDeGoogle(session.user.id, session.provider_token);
+    }
+
     const destino = new URL("/completar-perfil", origin);
     destino.searchParams.set("volver", volver);
     return NextResponse.redirect(destino);
