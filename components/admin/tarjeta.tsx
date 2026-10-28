@@ -66,7 +66,13 @@ export function TarjetaDeSeccion({
       >
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 id={id} className="text-body font-medium text-ink">
+            {/* El margen es para los enlaces que llevan hasta acá: en el
+                teléfono y la tablet la barra de arriba es fija y tapaba el
+                título. */}
+            <h2
+              id={id}
+              className="scroll-mt-20 text-body font-medium text-ink lg:scroll-mt-6"
+            >
               {titulo}
             </h2>
             {insignias}

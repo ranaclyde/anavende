@@ -2,13 +2,21 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useId, useMemo, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import type { LexicalEditor } from "lexical";
 
 import {
   EditorDeDescripcion,
   leerMarkdown,
 } from "@/components/admin/productos/editor";
+import { useAvisoAlSalir } from "@/components/admin/aviso-al-salir";
 import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { avisar } from "@/components/ui/aviso";
@@ -21,7 +29,14 @@ import {
   SelectorConBuscador,
   type OpcionDelSelector,
 } from "@/components/ui/selector-con-buscador";
-import { compare, formatMoney, isMoney, subtract } from "@/lib/money";
+import {
+  comoMonto,
+  compare,
+  formatMoney,
+  isMoney,
+  paraEditar,
+  subtract,
+} from "@/lib/money";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { slugificar } from "@/lib/slug";
 import {
@@ -64,9 +79,29 @@ type Vista =
   | { estado: "oferta"; precio: string; final: string }
   | { estado: "descuento-invalido" };
 
+/**
+ * El «$» adentro del campo, a la izquierda: dice que es un monto en pesos sin
+ * que haga falta escribirlo, y no se envía —es parte del dibujo, como el +54
+ * del teléfono—.
+ */
+function CampoDePesos({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-body-sm text-ink-secondary"
+      >
+        $
+      </span>
+      {children}
+    </div>
+  );
+}
+
 function calcularVista(precio: string, descuento: string): Vista {
-  const p = precio.trim().replace(",", ".");
-  const d = (descuento.trim() || "0").replace(",", ".");
+  // Lo mismo que entiende el servidor: coma decimal y punto de miles.
+  const p = comoMonto(precio);
+  const d = comoMonto(descuento.trim() || "0");
 
   if (!isMoney(p) || compare(p, "0.00") <= 0) return { estado: "incompleto" };
   if (!isMoney(d)) return { estado: "incompleto" };
@@ -120,12 +155,47 @@ export function FormularioDeProducto({
   const [nombre, setNombre] = useState(producto?.name ?? "");
   const [marcaId, setMarcaId] = useState(producto?.brandId ?? "");
   const [categoriaId, setCategoriaId] = useState(producto?.categoryId ?? "");
-  const [precio, setPrecio] = useState(producto?.price ?? "");
+  // Como se escribe y no como lo guarda la base (F2.15): «89900», no
+  // «89900.00», que en es-AR se lee como un error de tipeo.
+  const [precio, setPrecio] = useState(
+    producto ? paraEditar(producto.price) : "",
+  );
   const [descuento, setDescuento] = useState(
-    producto && compare(producto.discount, "0.00") > 0 ? producto.discount : "",
+    producto && compare(producto.discount, "0.00") > 0
+      ? paraEditar(producto.discount)
+      : "",
   );
   const [destacado, setDestacado] = useState(producto?.isFeatured ?? false);
   const [activo, setActivo] = useState(producto?.isActive ?? true);
+  const [descripcionTocada, setDescripcionTocada] = useState(false);
+  const tocarDescripcion = useCallback(() => setDescripcionTocada(true), []);
+
+  /**
+   * Si lo que hay en pantalla es lo guardado (F2.15). En la ficha conviven
+   * dos formas de guardar —los datos con este botón, cada color al
+   * instante— y sin decirlo se podía cambiar el precio, bajar a cargar
+   * fotos e irse con el precio sin guardar. Mismo patrón que Configuración:
+   * «Todo guardado.» y el botón apagado. Se calcula al pintar, sin efecto.
+   */
+  const sinCambios =
+    producto !== null &&
+    !descripcionTocada &&
+    nombre === producto.name &&
+    marcaId === producto.brandId &&
+    categoriaId === producto.categoryId &&
+    precio === paraEditar(producto.price) &&
+    descuento ===
+      (compare(producto.discount, "0.00") > 0
+        ? paraEditar(producto.discount)
+        : "") &&
+    destacado === producto.isFeatured &&
+    activo === producto.isActive;
+  const algoEscrito =
+    nombre.trim() !== "" ||
+    precio.trim() !== "" ||
+    descuento.trim() !== "" ||
+    descripcionTocada;
+  useAvisoAlSalir(!enviando && (producto ? !sinCambios : algoEscrito));
 
   /**
    * Crear una marca o una categoría sin salir del producto (F2.13). Lo que
@@ -271,7 +341,6 @@ export function FormularioDeProducto({
               onChange={(e) => setNombre(e.target.value)}
               maxLength={120}
               autoComplete="off"
-              placeholder="Teclado mecánico K120 retroiluminado"
             />
             <FieldError id={`${idBase}-name-error`}>
               {errores.campos.name}
@@ -294,7 +363,14 @@ export function FormularioDeProducto({
                   /productos/{slugificar(nombre)}
                 </span>
               </FieldHint>
-            ) : null}
+            ) : (
+              // El ejemplo va acá y no adentro del campo (F2.15): como texto
+              // de ejemplo parecía un nombre ya cargado, y con un error
+              // debajo se contradecían.
+              <FieldHint>
+                Por ejemplo: «Teclado mecánico K120 retroiluminado».
+              </FieldHint>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -345,17 +421,18 @@ export function FormularioDeProducto({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={campo("price").id}>Precio</Label>
-              <Input
-                {...campo("price")}
-                // `inputMode` y no `type="number"`: el número del navegador
-                // sube y baja con la rueda del mouse sobre un precio, y en
-                // castellano acepta el punto como separador de miles.
-                inputMode="decimal"
-                value={precio}
-                onChange={(e) => setPrecio(e.target.value)}
-                placeholder="24500"
-                className="tabular-nums"
-              />
+              <CampoDePesos>
+                <Input
+                  {...campo("price")}
+                  // `inputMode` y no `type="number"`: el número del navegador
+                  // sube y baja con la rueda del mouse sobre un precio, y en
+                  // castellano acepta el punto como separador de miles.
+                  inputMode="decimal"
+                  value={precio}
+                  onChange={(e) => setPrecio(e.target.value)}
+                  className="pl-7 tabular-nums admin:pl-7"
+                />
+              </CampoDePesos>
               <FieldError id={`${idBase}-price-error`}>
                 {errores.campos.price}
               </FieldError>
@@ -368,14 +445,15 @@ export function FormularioDeProducto({
                   (opcional)
                 </span>
               </Label>
-              <Input
-                {...campo("discount")}
-                inputMode="decimal"
-                value={descuento}
-                onChange={(e) => setDescuento(e.target.value)}
-                placeholder="0"
-                className="tabular-nums"
-              />
+              <CampoDePesos>
+                <Input
+                  {...campo("discount")}
+                  inputMode="decimal"
+                  value={descuento}
+                  onChange={(e) => setDescuento(e.target.value)}
+                  className="pl-7 tabular-nums admin:pl-7"
+                />
+              </CampoDePesos>
               <FieldError id={`${idBase}-discount-error`}>
                 {errores.campos.discount}
               </FieldError>
@@ -399,6 +477,7 @@ export function FormularioDeProducto({
             id={`${idBase}-description`}
             valorInicial={producto?.description ?? ""}
             refEditor={editor}
+            alCambiar={tocarDescripcion}
             invalido={Boolean(errores.campos.description)}
             describedBy={
               errores.campos.description
@@ -456,6 +535,13 @@ export function FormularioDeProducto({
           mano: cancelar es un enlace y no un botón, porque no hace nada, va a
           otro lado. */}
         <div className="flex items-center justify-end gap-2">
+          {/* Por qué «Guardar» está apagado, escrito y no colgado de un
+              `title` (§8), como en Configuración. */}
+          {sinCambios ? (
+            <p className="mr-auto text-body-sm text-ink-secondary sm:mr-2">
+              Todo guardado.
+            </p>
+          ) : null}
           <Button asChild variant="tertiary">
             <Link href="/admin/productos">Cancelar</Link>
           </Button>
@@ -464,6 +550,7 @@ export function FormularioDeProducto({
             variant="brand"
             loading={enviando}
             loadingLabel="Guardando"
+            disabled={sinCambios}
           >
             {producto ? "Guardar cambios" : "Crear producto"}
           </Button>

@@ -45,7 +45,26 @@ export function isMoney(valor: unknown): valor is Money {
  * mostraba $ 0 hasta que alguien pusiera un punto.
  */
 export function comoMonto(escrito: string): string {
-  return escrito.trim().replace(",", ".");
+  const limpio = escrito.trim();
+  // **Y el punto de miles también** (F2.15): «89.900» son ochenta y nueve
+  // mil novecientos, no 89,9 con un decimal de más. Solo cuando los puntos
+  // separan grupos de tres —«1.50» sigue siendo uno con cincuenta—, así que
+  // no hay forma de leer mal un monto que antes se leía bien.
+  if (/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(limpio)) {
+    return limpio.replaceAll(".", "").replace(",", ".");
+  }
+  return limpio.replace(",", ".");
+}
+
+/**
+ * Del formato del sistema a lo que se edita en un campo: «89900.00» se
+ * muestra «89900», y «89900.50», «89900,50». Con el punto de la base, en un
+ * panel que en todos lados dice «$ 89.900,00», el número se leía como un
+ * error (F2.15).
+ */
+export function paraEditar(monto: Money): string {
+  const [enteros, centavos = "00"] = money(monto).split(".");
+  return centavos === "00" ? enteros : `${enteros},${centavos}`;
 }
 
 /**

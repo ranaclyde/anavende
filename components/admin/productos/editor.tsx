@@ -355,12 +355,41 @@ function PegarMarkdown() {
 }
 
 /** Carga el Markdown guardado una sola vez, al montar. */
+/** La marca de la carga inicial, para que no cuente como un cambio. */
+const CARGA_INICIAL = "carga-inicial";
+
+/**
+ * Avisa cuando cambia el texto (F2.15): el formulario necesita saber si hay
+ * algo sin guardar, y la descripción no es estado de React. Mover el cursor
+ * no cuenta —no ensucia ningún nodo— y la carga inicial tampoco. Avisa en
+ * cada cambio y no solo en el primero: Legales guarda sin salir de la
+ * pantalla, y después de guardar tiene que volver a enterarse. Quien lo
+ * recibe pone un `true`, que no repinta si ya lo era.
+ */
+function AvisarCambio({ alCambiar }: { alCambiar: () => void }) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return editor.registerUpdateListener(
+      ({ dirtyElements, dirtyLeaves, tags }) => {
+        if (tags.has(CARGA_INICIAL)) return;
+        if (dirtyElements.size === 0 && dirtyLeaves.size === 0) return;
+        alCambiar();
+      },
+    );
+  }, [editor, alCambiar]);
+
+  return null;
+}
+
 function CargaInicial({ markdown }: { markdown: string }) {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     if (!markdown) return;
-    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMADORES));
+    editor.update(() => $convertFromMarkdownString(markdown, TRANSFORMADORES), {
+      tag: CARGA_INICIAL,
+    });
     // A propósito solo al montar: si dependiera de `markdown`, cada respuesta
     // del servidor pisaría lo que la vendedora está escribiendo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -396,6 +425,7 @@ export function EditorDeDescripcion({
   marcador = MARCADOR,
   limite = LIMITE_DE_TEXTO,
   largo = false,
+  alCambiar,
 }: {
   id: string;
   valorInicial: string;
@@ -407,6 +437,8 @@ export function EditorDeDescripcion({
   limite?: number;
   /** Para textos largos: el área crece hasta el 70% de la pantalla. */
   largo?: boolean;
+  /** Se llama la primera vez que quien escribe cambia el texto. */
+  alCambiar?: () => void;
 }) {
   return (
     <div
@@ -481,6 +513,7 @@ export function EditorDeDescripcion({
         <CargaInicial markdown={valorInicial} />
         <Contador limite={limite} />
         <EditorRefPlugin editorRef={refEditor} />
+        {alCambiar ? <AvisarCambio alCambiar={alCambiar} /> : null}
       </LexicalComposer>
     </div>
   );

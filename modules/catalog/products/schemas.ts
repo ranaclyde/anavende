@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 
-import { compare, isMoney, money } from "@/lib/money";
+import { comoMonto, compare, isMoney, money } from "@/lib/money";
 import {
   LIMITE_DE_TEXTO,
   longitudDeTexto,
@@ -55,8 +55,9 @@ const monto = (mensaje: string) =>
     .string()
     .trim()
     // Una coma decimal es lo que escribe cualquiera en Argentina, y
-    // rechazarla sería pedirle a la vendedora que escriba como la base.
-    .transform((v) => v.replace(",", "."))
+    // rechazarla sería pedirle a la vendedora que escriba como la base. Lo
+    // mismo el punto de miles: `comoMonto` entiende los dos.
+    .transform(comoMonto)
     .refine(isMoney, { message: mensaje })
     .transform(money);
 

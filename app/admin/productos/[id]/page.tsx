@@ -1,3 +1,4 @@
+import { ArrowDown } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -133,6 +134,26 @@ export default async function EditarProducto({ params, searchParams }: Props) {
           El orden de las columnas es el del DOM en los dos casos, así que el
           recorrido con teclado no se despega de lo que se ve. */}
       <div className="@container">
+        {/* Apiladas, «Colores y stock» queda al pie (F2.15): en una laptop
+            de 1366px con el menú abierto, a dos pantallas de scroll. El ancho
+            del formulario no se toca —es lo que evita el salto desde el
+            alta—, así que se ofrece el atajo, y solo cuando hace falta. */}
+        <a
+          href="#colores-y-stock"
+          className="mb-4 inline-flex items-center gap-1.5 rounded-panel-control text-body-sm text-ink-secondary transition-colors duration-150 hover:text-ink @min-[1400px]:hidden"
+        >
+          <ArrowDown aria-hidden className="size-4" />
+          Ir a colores, stock y fotos
+          {variantes.length > 0 ? (
+            <span className="tabular-nums">
+              (
+              {variantes.length === 1
+                ? "1 color"
+                : `${variantes.length} colores`}
+              )
+            </span>
+          ) : null}
+        </a>
         <div className="flex max-w-admin-form flex-col gap-4 @min-[1400px]:max-w-none @min-[1400px]:flex-row @min-[1400px]:items-start">
           <div className="min-w-0 @min-[1400px]:w-admin-form @min-[1400px]:shrink-0">
             <FormularioDeProducto
