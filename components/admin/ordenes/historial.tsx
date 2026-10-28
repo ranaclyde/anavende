@@ -26,33 +26,71 @@ export function HistorialDeLaOrden({
 }) {
   if (entradas.length === 0) return null;
 
+  // **Largo, se pliega el medio** (F2.15). Una orden con veinte cambios de
+  // cantidad era una columna de 1000px de «pasó de 2 a 3». Quedan a la vista
+  // cómo empezó y lo último que pasó, que son las dos preguntas que se le
+  // hacen; el resto, a un toque, sin perder el orden de la historia. Es un
+  // `<details>` del navegador: se abre con teclado y lo anuncia el lector,
+  // sin JavaScript.
+  const plegadas =
+    entradas.length > ANTES_DE_PLEGAR
+      ? entradas.slice(1, entradas.length - ULTIMAS)
+      : [];
+  const primera = plegadas.length ? entradas.slice(0, 1) : entradas;
+  const ultimas = plegadas.length ? entradas.slice(-ULTIMAS) : [];
+
   return (
     <TarjetaDeSeccion id="historial" titulo="Historial">
       <ol className="flex flex-col gap-3">
-        {entradas.map((e, i) => (
-          <li
-            key={`${e.cuando}-${i}`}
-            className="flex flex-col gap-0.5 border-l-2 border-border pl-3"
-          >
-            <p className="text-body-sm text-ink">{quePaso(e)}</p>
-            <p className="text-caption text-ink-secondary tabular-nums">
-              {fechaConHora(e.cuando)}
-              {e.autor ? ` · ${e.autor}` : ""}
-              {e.esElComprador ? " (el comprador)" : ""}
-            </p>
-            {/* En una edición el motivo YA ES el titular de arriba: repetirlo
-                acá bajo «Motivo:» sería decir dos veces lo mismo, y además
-                «motivo» es la palabra de RF-23 —por qué se canceló—, no la de
-                un renglón que se sacó. */}
-            {e.motivo && !esUnaEdicion(e) ? (
-              <p className="text-caption text-ink-secondary">
-                Motivo: {e.motivo}
-              </p>
-            ) : null}
+        {primera.map((e, i) => (
+          <Entrada key={`${e.cuando}-${i}`} entrada={e} />
+        ))}
+        {plegadas.length ? (
+          <li>
+            <details className="group">
+              <summary className="cursor-pointer rounded-panel-control py-1 text-body-sm text-ink-secondary hover:text-ink">
+                {plegadas.length === 1
+                  ? "Ver 1 cambio más"
+                  : `Ver ${plegadas.length} cambios más`}
+              </summary>
+              <ol className="mt-3 flex flex-col gap-3">
+                {plegadas.map((e, i) => (
+                  <Entrada key={`${e.cuando}-${i}`} entrada={e} />
+                ))}
+              </ol>
+            </details>
           </li>
+        ) : null}
+        {ultimas.map((e, i) => (
+          <Entrada key={`${e.cuando}-${i}`} entrada={e} />
         ))}
       </ol>
     </TarjetaDeSeccion>
+  );
+}
+
+/** Hasta cuántas entradas se muestran todas. */
+const ANTES_DE_PLEGAR = 6;
+/** Cuántas de las últimas quedan a la vista cuando se pliega. */
+const ULTIMAS = 4;
+
+function Entrada({ entrada: e }: { entrada: EntradaDelHistorial }) {
+  return (
+    <li className="flex flex-col gap-0.5 border-l-2 border-border pl-3">
+      <p className="text-body-sm text-ink">{quePaso(e)}</p>
+      <p className="text-caption text-ink-secondary tabular-nums">
+        {fechaConHora(e.cuando)}
+        {e.autor ? ` · ${e.autor}` : ""}
+        {e.esElComprador ? " (el comprador)" : ""}
+      </p>
+      {/* En una edición el motivo YA ES el titular de arriba: repetirlo
+          acá bajo «Motivo:» sería decir dos veces lo mismo, y además
+          «motivo» es la palabra de RF-23 —por qué se canceló—, no la de
+          un renglón que se sacó. */}
+      {e.motivo && !esUnaEdicion(e) ? (
+        <p className="text-caption text-ink-secondary">Motivo: {e.motivo}</p>
+      ) : null}
+    </li>
   );
 }
 
