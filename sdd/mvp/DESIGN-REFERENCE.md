@@ -1068,6 +1068,8 @@ Hay un caso en que abrir un diálogo no lo decide quien mira la pantalla: **el a
 
 **La regla, para el próximo diálogo que quiera abrirse solo:** si lo abre una acción de quien mira, es estado del cliente; si lo abre de dónde se viene, va en la dirección, y quien lo cierra lo limpia.
 
+**Y agregar el color lleva a sus fotos** (2026-10-28, F2.14). El drawer del color no tiene fotos —se guardan bajo el id de la variante, que no existe hasta guardarla—, así que agregarlo es otra vez media tarea. Medido el alta completa con dos colores, cerrar el drawer dejaba la página donde estaba y el foco en `<body>`: la tarjeta del color nuevo quedaba una o dos pantallas más abajo, sin nada que dijera dónde. Ahora la página la centra y deja el foco en su «Agregar» de fotos, y el drawer lo anticipa en su bajada. **Recién creado el producto, el drawer confirma también el alta** («Creaste el producto…»), en lugar del aviso flotante: el aviso caía encima del pie del drawer y tapaba «Agregar» durante sus cuatro segundos (§6.15: en su lugar cuando lo que pasó se ve).
+
 #### 6.14.2 Buscar se hace en un diálogo de alto fijo (2026-09-30)
 
 **Una búsqueda con lista de resultados no se pinta en la página.** Los buscadores de la orden —productos en la orden manual y en una orden activa, y la cuenta del comprador— dibujaban la lista debajo del campo, y cada búsqueda empujaba el resto del formulario o de la orden hacia abajo. Ahora un botón abre un diálogo con el campo arriba y los resultados abajo (`components/admin/ordenes/nueva/busqueda.tsx`).
