@@ -3,6 +3,12 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Loader2 } from "lucide-react";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 /**
@@ -132,6 +138,7 @@ function Button({
   loadingLabel = "Procesando",
   disabled,
   children,
+  title,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot : "button";
@@ -141,10 +148,43 @@ function Button({
       <Comp
         data-slot="button"
         className={cn(buttonVariants({ variant, size, emphasis, className }))}
+        title={title}
         {...props}
       >
         {children}
       </Comp>
+    );
+  }
+
+  /**
+   * **Un botón de solo ícono con `title` lleva un globo de verdad** (F2.15).
+   * El `title` del navegador tarda en aparecer, no aparece al llegar con
+   * teclado, y en el panel había 31: ojo tachado, estrella, flechas. Se
+   * resuelve acá y no en cada botón, así el próximo nace con el suyo. El
+   * proveedor va adentro porque no todas las pantallas tienen uno arriba.
+   * En el teléfono, sin hover, no aparece: el nombre sigue en el `sr-only`.
+   */
+  if (size === "icon" && typeof title === "string") {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={variant}
+              size={size}
+              emphasis={emphasis}
+              className={className}
+              loading={loading}
+              loadingLabel={loadingLabel}
+              disabled={disabled}
+              {...props}
+            >
+              {children}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{title}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 

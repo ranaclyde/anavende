@@ -110,23 +110,52 @@ export function AdminSidebar({
   // la capa, en lo que acaba de quedar tapado.
   const botonAbrir = useRef<HTMLButtonElement>(null);
   const botonCerrar = useRef<HTMLButtonElement>(null);
+  // El foco vuelve DESPUÉS de cerrar, en un efecto: mientras el menú está
+  // abierto la barra de arriba es inerte (F2.15), y un `focus()` en el mismo
+  // momento del cierre no entraba. Al cerrar por cambiar de página no vuelve:
+  // ahí el foco es de la página nueva.
+  const devolverFoco = useRef(false);
   const cerrarMenu = () => {
+    devolverFoco.current = true;
     setAbiertoEnMovil(false);
-    botonAbrir.current?.focus();
   };
+  useEffect(() => {
+    if (abiertoEnMovil || !devolverFoco.current) return;
+    devolverFoco.current = false;
+    botonAbrir.current?.focus();
+  }, [abiertoEnMovil]);
 
   // Escape cierra el panel de móvil, como cualquier capa superpuesta.
   useEffect(() => {
     if (!abiertoEnMovil) return;
     botonCerrar.current?.focus();
+    // Lo de atrás queda inerte mientras el menú está abierto (F2.15): sin
+    // esto, Tab seguía de largo desde el menú hacia la página tapada, y el
+    // lector de pantalla la leía como si estuviera a la vista. Es lo que el
+    // diálogo hace con su capa.
+    const pagina = document.querySelector("main");
+    pagina?.setAttribute("inert", "");
     const alTeclear = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      devolverFoco.current = true;
       setAbiertoEnMovil(false);
-      botonAbrir.current?.focus();
     };
     document.addEventListener("keydown", alTeclear);
-    return () => document.removeEventListener("keydown", alTeclear);
+    return () => {
+      document.removeEventListener("keydown", alTeclear);
+      pagina?.removeAttribute("inert");
+    };
   }, [abiertoEnMovil]);
+
+  // La barra de arriba dice en qué sección se está, y no «Panel» a secas
+  // (F2.15): en el teléfono y la tablet el menú está escondido, y era lo
+  // único que lo decía.
+  const seccionActual =
+    SECCIONES.find(({ href, exacto }) =>
+      exacto
+        ? pathname === href
+        : pathname === href || pathname.startsWith(`${href}/`),
+    )?.etiqueta ?? "Panel";
 
   const alternarColapso = () => {
     preferenciaDeColapso.escribir(colapsado ? "0" : "1");
@@ -135,29 +164,40 @@ export function AdminSidebar({
   return (
     <>
       {/* Barra de móvil: el menú se abre desde acá. */}
-      <div className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-surface px-4 lg:hidden">
+      <div
+        inert={abiertoEnMovil}
+        className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-surface px-4 lg:hidden"
+      >
         <button
           ref={botonAbrir}
           type="button"
+          aria-expanded={abiertoEnMovil}
+          aria-controls="menu-del-panel"
           onClick={() => setAbiertoEnMovil(true)}
           className="grid size-11 place-items-center rounded-panel-control text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink"
         >
           <Menu aria-hidden className="size-5" />
           <span className="sr-only">Abrir el menú</span>
         </button>
-        <span className="text-body-sm font-medium text-ink">Panel</span>
+        <span className="text-body-sm font-medium text-ink">
+          {seccionActual}
+        </span>
       </div>
 
       {abiertoEnMovil && (
+        // Fuera del orden de Tab y de la lectura: es para tocar afuera y
+        // cerrar, y el menú ya tiene su «Cerrar el menú» (F2.15).
         <button
           type="button"
-          aria-label="Cerrar el menú"
+          tabIndex={-1}
+          aria-hidden
           onClick={cerrarMenu}
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
         />
       )}
 
       <aside
+        id="menu-del-panel"
         aria-label="Secciones del panel"
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-surface",

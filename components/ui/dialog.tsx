@@ -84,9 +84,81 @@ export function useFocoQueVuelve({
       e.preventDefault();
       const destino = previo.current ?? fueraDeLasCapas;
       previo.current = null;
-      if (destino?.isConnected) destino.focus();
+      if (!destino) return;
+      const reemplazo = reemplazoDe(destino);
+      if (destino.isConnected) destino.focus();
+      else enfocarReemplazo(reemplazo);
+      if (destino.isConnected) vigilarQueNoSeCaiga(destino, reemplazo);
     },
   };
+}
+
+/**
+ * **Cuando lo que tenía el foco desaparece** (F2.15). Borrar una fila cierra
+ * el diálogo, el foco vuelve a su botón «Borrar» y, cuando la lista se
+ * refresca, ese botón deja de existir: el foco caía en `<body>` y con
+ * teclado o lector se volvía al principio de la página. Pasaba en todos los
+ * borrados del panel, así que se arregla acá y no en cada uno.
+ *
+ * El reemplazo se anota al cerrar, mientras la fila sigue en pantalla: la
+ * fila siguiente, o la anterior si era la última, o el título de la página.
+ * Las filas hermanas sobreviven al refresco —React las reconcilia por
+ * `key`—, así que siguen siendo las mismas cuando hacen falta.
+ */
+const FILA = "li, tr";
+const ENFOCABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+
+function reemplazoDe(destino: HTMLElement): () => HTMLElement | null {
+  const fila = destino.closest<HTMLElement>(FILA);
+  const vecinas = fila
+    ? [fila.nextElementSibling, fila.previousElementSibling]
+    : [];
+  return () => {
+    for (const vecina of vecinas) {
+      if (!(vecina instanceof HTMLElement) || !vecina.isConnected) continue;
+      const enfocable = vecina.matches(ENFOCABLE)
+        ? vecina
+        : vecina.querySelector<HTMLElement>(ENFOCABLE);
+      if (enfocable) return enfocable;
+    }
+    const titulo = document.querySelector<HTMLElement>("main h1");
+    if (titulo && !titulo.hasAttribute("tabindex")) {
+      titulo.setAttribute("tabindex", "-1");
+    }
+    return titulo;
+  };
+}
+
+function enfocarReemplazo(reemplazo: () => HTMLElement | null) {
+  reemplazo()?.focus();
+}
+
+/** Cuánto se espera a que la lista se refresque después de cerrar. */
+const VIGILANCIA_MS = 15_000;
+
+function vigilarQueNoSeCaiga(
+  destino: HTMLElement,
+  reemplazo: () => HTMLElement | null,
+) {
+  const terminar = () => {
+    observador.disconnect();
+    clearTimeout(reloj);
+    document.removeEventListener("focusin", alMoverse);
+  };
+  // Si quien usa la pantalla ya fue a otro lado, no se le mueve el foco.
+  const alMoverse = (e: FocusEvent) => {
+    if (e.target !== destino) terminar();
+  };
+  const observador = new MutationObserver(() => {
+    if (destino.isConnected) return;
+    terminar();
+    const activo = document.activeElement;
+    if (!activo || activo === document.body) enfocarReemplazo(reemplazo);
+  });
+  observador.observe(document.body, { childList: true, subtree: true });
+  document.addEventListener("focusin", alMoverse);
+  const reloj = setTimeout(terminar, VIGILANCIA_MS);
 }
 
 function DialogContent({

@@ -678,6 +678,9 @@ foco. **Una página nueva hace fallar el primer test hasta que se suma a
 2. **El foco.** Se ve en cada parada. Un diálogo lo recibe al abrirse y lo
    devuelve al botón al cerrarse. Después de una acción que hace desaparecer
    el elemento con foco, el foco cae en un lugar con sentido, no en `<body>`.
+   Un borrado desde un diálogo ya lo resuelve el diálogo: si el botón que lo
+   abrió desaparece, el foco pasa a la fila siguiente (`useFocoQueVuelve`,
+   F2.15).
 3. **El color.** Ningún estado, error ni selección se distingue solo por el
    color: lleva texto, ícono o forma. Se prueba mirando la pantalla en
    escala de grises.
@@ -685,7 +688,9 @@ foco. **Una página nueva hace fallar el primer test hasta que se suma a
    ningún texto queda cortado sin forma de leerlo entero.
 5. **El nombre.** Un botón de solo ícono tiene nombre (`sr-only` o
    `aria-label`) y tooltip. El nombre no repite el texto visible ni se pega a
-   él: «Reponer el stock de…», no «Reponerel» ni «Reponer Reponer».
+   él: «Reponer el stock de…», no «Reponerel» ni «Reponer Reponer». El
+   tooltip lo pone el `Button` solo: con `size="icon"` y `title`, dibuja un
+   globo que aparece también con teclado (F2.15).
 6. **Lo que se mueve.** Si se mueve solo más de cinco segundos, tiene un
    botón para pararlo a la vista y se queda quieto con
    `prefers-reduced-motion`.
