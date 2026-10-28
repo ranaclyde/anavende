@@ -61,9 +61,18 @@ export function ResolverLaOrden({
         Finalizar
       </Button>
 
+      {/* Contorno pizarra y no rojo (F2.15, decisión tuya del 2026-10-28).
+          Siguen juntas, como pide F7.3, pero en burdeos y rojo —a 7° de
+          matiz— eran dos acciones sin vuelta atrás que en el teléfono se
+          confundían a la altura del pulgar. Ahora se separan por color y por
+          forma: finalizar, relleno burdeos; cancelar, contorno pizarra. Es
+          el primer pizarra del panel, que hasta acá era acromático
+          (DR §2.5): va por pedido tuyo, a cuenta de «el panel necesita más
+          color» del 2026-10-19. El diálogo sigue siendo el que avisa. */}
       <Button
-        variant="destructive"
+        variant="secondary"
         size="sm"
+        className="border-accent text-accent hover:border-accent-hover hover:bg-accent-tint hover:text-accent-hover"
         onClick={() => setAbierto("cancelar")}
       >
         <X aria-hidden />
