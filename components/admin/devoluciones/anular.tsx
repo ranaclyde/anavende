@@ -154,12 +154,11 @@ function Dialogo({
             maxLength={MAXIMO_DEL_MOTIVO}
             className="min-h-16"
             rows={2}
-            placeholder="Me equivoqué de producto"
             aria-describedby={`${campo}-ayuda`}
           />
           <p id={`${campo}-ayuda`} className="text-caption text-ink-secondary">
-            Obligatorio: es lo que explica un movimiento de stock que va y
-            vuelve.
+            Por ejemplo: «me equivoqué de producto». Es obligatorio: es lo que
+            explica un movimiento de stock que va y vuelve.
           </p>
           <FieldError>{errorDelMotivo}</FieldError>
         </div>

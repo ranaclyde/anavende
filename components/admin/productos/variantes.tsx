@@ -968,7 +968,9 @@ function EdicionDeVariante({
                           Las unidades que hay. Cada cambio queda registrado
                           como un ajuste.
                           {variante && variante.reservedStock > 0
-                            ? ` Hay ${variante.reservedStock} reservadas, así que no puede bajar de ese número.`
+                            ? variante.reservedStock === 1
+                              ? " Hay 1 reservada, así que no puede bajar de ese número."
+                              : ` Hay ${variante.reservedStock} reservadas, así que no puede bajar de ese número.`
                             : ""}
                         </FieldHint>
                       )}

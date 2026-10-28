@@ -244,7 +244,6 @@ export function FormularioDeConfiguracion({
             autoComplete="off"
             value={whatsapp}
             onChange={escribir("whatsappNumber", setWhatsapp)}
-            placeholder="11 5555 5555"
             className="sm:max-w-64"
           />
           {errores.campos.whatsappNumber ? (
@@ -351,7 +350,6 @@ export function FormularioDeConfiguracion({
             autoComplete="off"
             value={email}
             onChange={escribir("adminNotificationEmail", setEmail)}
-            placeholder="ventas@anavende.com.ar"
             className="sm:max-w-80"
           />
           {errores.campos.adminNotificationEmail ? (

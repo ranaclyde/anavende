@@ -2,9 +2,10 @@
 
 import { ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useCallback, useRef, useState, useTransition } from "react";
 import type { LexicalEditor } from "lexical";
 
+import { useAvisoAlSalir } from "@/components/admin/aviso-al-salir";
 import {
   EditorDeDescripcion,
   leerMarkdown,
@@ -44,6 +45,12 @@ export function FormularioDeTextoLegal({
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
   const [enviando, iniciar] = useTransition();
+  // «Guardar» apagado hasta que se escriba algo (F2.15), como en
+  // Configuración: antes estaba siempre prendido, y guardar sin cambios
+  // movía la fecha de «Última modificación» sin que nada hubiera cambiado.
+  const [tocado, setTocado] = useState(false);
+  const tocar = useCallback(() => setTocado(true), []);
+  useAvisoAlSalir(tocado && !enviando);
 
   const idDelCampo = `legal-${slug}`;
   const idDelError = `${idDelCampo}-error`;
@@ -64,6 +71,7 @@ export function FormularioDeTextoLegal({
       }
 
       avisar(`Guardaste «${titulo}». Ya se ve así en la tienda.`);
+      setTocado(false);
       router.refresh();
     });
   }
@@ -94,6 +102,7 @@ export function FormularioDeTextoLegal({
           id={idDelCampo}
           valorInicial={contenido}
           refEditor={editor}
+          alCambiar={tocar}
           invalido={Boolean(error)}
           describedBy={error ? idDelError : undefined}
           etiqueta={`Texto de «${titulo}»`}
@@ -104,12 +113,16 @@ export function FormularioDeTextoLegal({
         <FieldError id={idDelError}>{error}</FieldError>
       </TarjetaDeSeccion>
 
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {tocado ? null : (
+          <p className="text-body-sm text-ink-secondary">Todo guardado.</p>
+        )}
         <Button
           type="submit"
           variant="brand"
           loading={enviando}
           loadingLabel="Guardando"
+          disabled={!tocado}
         >
           Guardar cambios
         </Button>

@@ -176,15 +176,23 @@ export function EdicionDeMedioDePago({
                     autoFocus
                     required
                     maxLength={60}
-                    placeholder="Transferencia bancaria"
                     aria-invalid={!!errores.campos.name || undefined}
                     aria-describedby={
-                      errores.campos.name ? `${idBase}-e-name` : undefined
+                      errores.campos.name
+                        ? `${idBase}-e-name`
+                        : `${idBase}-ayuda-name`
                     }
                   />
-                  <FieldError id={`${idBase}-e-name`}>
-                    {errores.campos.name}
-                  </FieldError>
+                  {errores.campos.name ? (
+                    <FieldError id={`${idBase}-e-name`}>
+                      {errores.campos.name}
+                    </FieldError>
+                  ) : (
+                    <FieldHint id={`${idBase}-ayuda-name`}>
+                      Como lo va a leer el comprador: «Transferencia bancaria»,
+                      «Mercado Pago».
+                    </FieldHint>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-1.5">
@@ -200,7 +208,6 @@ export function EdicionDeMedioDePago({
                     value={descripcion}
                     onChange={(e) => setDescripcion(e.target.value)}
                     maxLength={120}
-                    placeholder="10% off transfiriendo"
                     aria-invalid={!!errores.campos.description || undefined}
                     aria-describedby={
                       errores.campos.description

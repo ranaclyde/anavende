@@ -307,13 +307,12 @@ function DialogoDeCancelar({
             // lo estira solo si hace falta.
             className="min-h-16"
             rows={2}
-            placeholder="Nos quedamos sin stock del rojo"
             aria-describedby={`${campo}-ayuda`}
           />
           <p id={`${campo}-ayuda`} className="text-caption text-ink-secondary">
             {loLeeElComprador
-              ? "Queda en el historial de la orden y el comprador lo ve en su compra."
-              : "Queda en el historial de la orden. Esta orden no tiene cuenta asociada, así que nadie más lo va a ver."}
+              ? "Por ejemplo: «nos quedamos sin stock del rojo». Queda en el historial de la orden y el comprador lo ve en su compra."
+              : "Por ejemplo: «no contestó». Queda en el historial de la orden. Esta orden no tiene cuenta asociada, así que nadie más lo va a ver."}
           </p>
         </div>
 

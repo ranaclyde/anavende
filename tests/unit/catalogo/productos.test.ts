@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
 
+import { paraEditar } from "@/lib/money";
 import {
   crearProducto,
   editarProducto,
@@ -39,6 +40,23 @@ describe("el precio (RF-15)", () => {
   test("con coma decimal se acepta y se normaliza a punto", () => {
     const r = crearProducto.safeParse({ ...base, price: "1000,50" });
     expect(r.success && r.data.price).toBe("1000.50");
+  });
+
+  // F2.15: en es-AR el punto separa miles. Solo cuando agrupa de a tres:
+  // «1.50» sigue siendo uno con cincuenta.
+  test.each([
+    ["89.900", "89900.00"],
+    ["1.250.000", "1250000.00"],
+    ["89.900,50", "89900.50"],
+    ["1.50", "1.50"],
+  ])("«%s» se guarda como %s", (price, guardado) => {
+    const r = crearProducto.safeParse({ ...base, price });
+    expect(r.success && r.data.price).toBe(guardado);
+  });
+
+  test("lo guardado se edita como se escribe, sin decimales vacíos", () => {
+    expect(paraEditar("89900.00")).toBe("89900");
+    expect(paraEditar("89900.50")).toBe("89900,50");
   });
 
   test("sin descuento, el descuento es cero: no hay oferta (RN-04b)", () => {
