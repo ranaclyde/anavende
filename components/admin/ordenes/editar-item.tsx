@@ -500,7 +500,7 @@ function DialogoDeQuitar({
         )}
 
         <DialogFooter>
-          <Button variant="tertiary" disabled={enCurso} onClick={cerrar}>
+          <Button variant="secondary" disabled={enCurso} onClick={cerrar}>
             No, dejarlo
           </Button>
           <Button

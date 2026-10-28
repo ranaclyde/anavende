@@ -226,9 +226,21 @@ export async function listarDevoluciones(
   return { devoluciones: [...filas], total: conteo.total };
 }
 
-/** Si existe alguna devolución, para distinguir «vacío» de «sin resultados» (§8). */
-export async function hayAlgunaDevolucion(): Promise<boolean> {
-  const [fila] = await db.execute<{ hay: boolean }>(sql`
-    SELECT EXISTS (SELECT 1 FROM returns) AS hay`);
-  return fila.hay;
+/**
+ * Cuántas hay de cada estado, para las solapas (F2.15). Es del total y no
+ * del filtro puesto, como en órdenes: una solapa es un indicador, no un
+ * resultado más. Sirve además para distinguir «vacío» de «sin resultados»
+ * (§8): sin ninguna de las dos, no hay ninguna.
+ */
+export async function contarDevolucionesPorEstado(): Promise<{
+  registradas: number;
+  anuladas: number;
+}> {
+  const [fila] = await db.execute<{ registradas: number; anuladas: number }>(
+    sql`
+    SELECT count(*) FILTER (WHERE status = 'registrada')::int AS registradas,
+           count(*) FILTER (WHERE status = 'anulada')::int    AS anuladas
+      FROM returns`,
+  );
+  return fila;
 }

@@ -46,11 +46,12 @@ export function AnularLaDevolucion({
 
   return (
     <>
-      {/* Contorno y no ghost: éste lleva rótulo y vive solo al pie de una
-          tarjeta, no en una columna de acciones. Es el mismo caso que
-          «Cancelar la orden» (§6.3). */}
+      {/* Terciario y no contorno rojo (F2.15): va en cada tarjeta del
+          listado, y once contornos rojos seguidos eran la columna de alertas
+          que el panel quiere evitar. Pide confirmación, y el diálogo dice qué
+          le pasa al stock: el peso lo pone ahí, no acá. */}
       <Button
-        variant="destructive"
+        variant="tertiary"
         size="sm"
         onClick={() => {
           setAperturas((n) => n + 1);
@@ -170,7 +171,7 @@ function Dialogo({
         )}
 
         <DialogFooter>
-          <Button variant="tertiary" disabled={enCurso} onClick={cerrar}>
+          <Button variant="secondary" disabled={enCurso} onClick={cerrar}>
             No, dejarla
           </Button>
           <Button

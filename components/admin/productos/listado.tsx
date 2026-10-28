@@ -279,7 +279,7 @@ export function ListadoDeProductos({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="tertiary" onClick={() => setPorBorrar(null)}>
+            <Button variant="secondary" onClick={() => setPorBorrar(null)}>
               Cancelar
             </Button>
             <Button
@@ -359,13 +359,11 @@ function Cabecera({
 function Nombre({ producto }: { producto: ProductoDelListado }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
+      {/* Sin estrella al lado del nombre (F2.15): lo dice la de la columna
+          de acciones, rellena y con `aria-pressed`, alineada fila tras fila.
+          Con las dos, «destacado» se marcaba de dos maneras en la misma fila
+          y de una tercera en categorías. */}
       <div className="flex min-w-0 items-center gap-1.5">
-        {producto.isFeatured ? (
-          <Star
-            aria-label="Destacado"
-            className="size-3.5 shrink-0 fill-brand text-brand"
-          />
-        ) : null}
         <Link
           href={`/admin/productos/${producto.id}`}
           className="truncate font-medium text-ink hover:text-brand"
@@ -531,12 +529,10 @@ function Acciones({
         aria-pressed={producto.isFeatured}
         title={producto.isFeatured ? "Quitar de destacados" : "Destacar"}
       >
-        {/* Acá la estrella es un INTERRUPTOR, y lo que tiene que decir es
+        {/* La estrella es un INTERRUPTOR, y lo que tiene que decir es
             encendido o apagado: eso ya lo dice el relleno. El color sobra, y
             en burdeos quedaba a siete grados del tacho rojo de al lado (§2.2).
-            La insignia «Destacada» y la estrellita del nombre sí van en
-            burdeos: ahí el burdeos significa identidad, no estado de un
-            control. */}
+            Es la única marca de «destacado» del listado (F2.15). */}
         <Star
           aria-hidden
           className={producto.isFeatured ? "fill-ink text-ink" : ""}

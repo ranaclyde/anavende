@@ -258,7 +258,7 @@ export function BloqueoDeLaCuenta({
 
           <DialogFooter>
             <Button
-              variant="tertiary"
+              variant="secondary"
               disabled={enCurso}
               onClick={() => setAbierto(false)}
             >

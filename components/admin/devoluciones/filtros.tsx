@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
-  ESTADOS,
   FILTROS_VACIOS,
   REPOSICIONES,
   hayFiltros,
@@ -19,8 +18,8 @@ import {
 } from "@/modules/returns/filtros";
 
 /**
- * Estado, reposición y rango de fechas del listado de devoluciones — RF-25,
- * §10.2. Tarea F7.5.
+ * Reposición y rango de fechas del listado de devoluciones — RF-25, §10.2.
+ * Tarea F7.5. El estado va en solapas, arriba, como en órdenes (F2.15).
  *
  * Todo se escribe en la URL, como en el listado de órdenes: la barra no guarda
  * nada, compartir la pantalla es copiar el enlace y el botón atrás deshace un
@@ -52,23 +51,6 @@ export function BarraDeFiltros({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-        <Select
-          aria-label="Filtrar por estado"
-          value={filtros.estado}
-          onChange={(e) =>
-            aplicar({
-              estado: e.target.value as FiltrosDeDevoluciones["estado"],
-            })
-          }
-          className="md:w-56"
-        >
-          {ESTADOS.map((o) => (
-            <option key={o.valor} value={o.valor}>
-              {o.etiqueta}
-            </option>
-          ))}
-        </Select>
-
         <Select
           aria-label="Filtrar por reposición de stock"
           value={filtros.reposicion}

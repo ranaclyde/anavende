@@ -343,7 +343,7 @@ export function VariantesDelProducto({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="tertiary" onClick={() => setPorBorrar(null)}>
+            <Button variant="secondary" onClick={() => setPorBorrar(null)}>
               Cancelar
             </Button>
             <Button
@@ -382,7 +382,9 @@ function Stock({ variante }: { variante: VarianteDelPanel }) {
       <span>{reservedStock} reservadas</span>
       <span aria-hidden>·</span>
       <span
-        className={disponible <= 0 ? "font-medium text-warning" : "text-ink"}
+        // Rojo y no ámbar, como en el listado (F2.15): cero disponible es
+        // «Sin stock» allá, y la misma cifra no puede alarmar distinto acá.
+        className={disponible <= 0 ? "font-medium text-danger" : "text-ink"}
       >
         {disponible} disponibles
       </span>

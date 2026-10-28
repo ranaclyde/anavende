@@ -28,9 +28,9 @@ export type { ParametrosDeBusqueda };
  * encuentre para entender qué pasó. Va etiquetada, que es lo que la distingue.
  */
 export const ESTADOS = [
-  { valor: "todas", etiqueta: "Registradas y anuladas" },
-  { valor: "registradas", etiqueta: "Solo registradas" },
-  { valor: "anuladas", etiqueta: "Solo anuladas" },
+  { valor: "todas", etiqueta: "Todas" },
+  { valor: "registradas", etiqueta: "Registradas" },
+  { valor: "anuladas", etiqueta: "Anuladas" },
 ] as const;
 
 export type FiltroDeEstado = (typeof ESTADOS)[number]["valor"];

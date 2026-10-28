@@ -260,7 +260,7 @@ export function ListadoDeMediosDePago({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="tertiary" onClick={() => setPorBorrar(null)}>
+            <Button variant="secondary" onClick={() => setPorBorrar(null)}>
               Cancelar
             </Button>
             {porBorrar?.isActive ? (
@@ -291,15 +291,20 @@ function Nombre({ medio }: { medio: MedioDePagoDelPanel }) {
           de Mercado Pago o el de Visa vienen sobre transparente y no son
           nuestros para repintarlos. El hueco se reserva SIEMPRE, con o sin
           logo: acá la mayoría va a tener uno, y una fila sin él que corre el
-          nombre 32px a la izquierda rompe la columna. */}
-      <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-[6px] border border-border bg-logo-chip">
+          nombre a la izquierda rompe la columna.
+          **Apaisado y no cuadrado** (F2.15): los logos de pago son anchos
+          —Visa, Mercado Pago— y en un cuadrado de 32px no se leían. */}
+      <span className="relative grid h-8 w-14 shrink-0 place-items-center overflow-hidden rounded-[6px] border border-border bg-logo-chip">
         {medio.logoUrl ? (
+          // Absoluta: en la celda de la grilla, la altura al 100% no se
+          // resolvía contra los 32px del recuadro, y un logo más alto que
+          // ancho —GoCuotas— salía cortado en vez de achicarse.
           <Image
             src={medio.logoUrl}
             alt=""
-            width={32}
-            height={32}
-            className="size-full object-contain p-[3px]"
+            width={112}
+            height={64}
+            className="absolute inset-0 size-full object-contain p-[3px]"
           />
         ) : (
           <CreditCard aria-hidden className="size-4 text-logo-chip-ink" />

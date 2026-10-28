@@ -347,14 +347,9 @@ function Nombre({ item, tipo }: { item: ItemDeCatalogo; tipo: TipoDeItem }) {
         />
       )}
       <span className="font-medium text-ink">{item.name}</span>
-      {item.isFeatured && (
-        // Tono `brand`: §6.4 lo reserva para identidad —destacado, oferta—.
-        // Con texto y no solo con el ícono: el Badge no admite otra cosa (§9).
-        <Badge tone="brand">
-          <Star aria-hidden className="fill-current" />
-          {DESTACADO.etiqueta}
-        </Badge>
-      )}
+      {/* Sin insignia «Destacada» (F2.15): lo dice la estrella de las
+          acciones, rellena y con `aria-pressed`. Eran ocho insignias burdeos
+          por pantalla para repetir lo que ya estaba en la misma fila. */}
       {tipo === "color" && item.hexCode && (
         // El código va escrito, no solo pintado: la muestra sola no sirve a
         // quien no distingue ese matiz (§9).
@@ -467,8 +462,8 @@ function Acciones({
           }
           className={
             // Interruptor: el estado lo dice el relleno, no el color. En
-            // burdeos quedaba a siete grados del tacho de al lado (§2.2). La
-            // insignia «Destacada» sí va en burdeos: ahí significa identidad.
+            // burdeos quedaba a siete grados del tacho de al lado (§2.2). Es
+            // la única marca de «destacada» de la lista (F2.15).
             item.isFeatured ? "text-ink hover:text-ink" : undefined
           }
         >
