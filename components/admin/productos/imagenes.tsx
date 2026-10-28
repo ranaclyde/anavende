@@ -501,6 +501,8 @@ export function ImagenesDeVariante({
           <li className="w-28 sm:w-24">
             <button
               type="button"
+              // Adonde lleva el foco agregar un color (F2.14).
+              data-agregar-fotos
               onClick={() => campoDeArchivo.current?.click()}
               className="grid aspect-square w-full place-items-center gap-1 rounded-panel-image border border-dashed border-border-strong text-ink-secondary transition-colors hover:border-brand hover:text-brand"
             >

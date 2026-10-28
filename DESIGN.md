@@ -424,7 +424,9 @@ sin colores no tiene stock ni fotos y no se puede vender, así que crearlo es
 media tarea. En la URL y no en memoria, el enlace se puede pegar en cualquier
 lado, el atrás funciona, y dos pantallas no tienen que ponerse de acuerdo sobre
 algo invisible. Si el parámetro no se sacara al cerrar, recargar volvería a
-abrir el alta sobre un color ya cargado.
+abrir el alta sobre un color ya cargado. Y agregar el color sigue solo hasta
+sus fotos: la página centra la tarjeta nueva y deja el foco en su «Agregar»
+(F2.14).
 
 **La regla del aire.** Un formulario del panel separa con tres intervalos y no
 con uno: **6px dentro de un campo** (etiqueta, control, ayuda), **20px entre

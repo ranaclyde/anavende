@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useId, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { Palette, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
@@ -121,6 +121,38 @@ export function VariantesDelProducto({
   const router = useRouter();
   const pathname = usePathname();
 
+  /**
+   * El color recién agregado, hasta que su tarjeta aparezca (F2.14). Agregar
+   * un color es la mitad del trabajo: faltan sus fotos, y su tarjeta queda
+   * una o dos pantallas más abajo. Medido en laptop y tablet, cerrar el
+   * drawer dejaba la página donde estaba —arriba de todo, en el primero— y el
+   * foco en ningún lado, así que había que adivinar dónde seguir.
+   */
+  const paraFotos = useRef<string | null>(null);
+
+  // En un efecto y no al cerrar: la tarjeta no existe hasta que llegan los
+  // datos nuevos, y desplazar la página es tocar el DOM, no estado. En un
+  // ref y no en estado: no se pinta, sólo espera a que `variantes` cambie.
+  useEffect(() => {
+    const id = paraFotos.current;
+    if (!id || !variantes.some((v) => v.id === id)) return;
+    paraFotos.current = null;
+
+    const tarjeta = document.getElementById(`color-${id}`);
+    if (!tarjeta) return;
+    const quieto = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    tarjeta.scrollIntoView({
+      block: "center",
+      behavior: quieto ? "auto" : "smooth",
+    });
+    // `preventScroll`: el foco no pelea con el desplazamiento de arriba.
+    tarjeta
+      .querySelector<HTMLElement>("[data-agregar-fotos]")
+      ?.focus({ preventScroll: true });
+  }, [variantes]);
+
   // El estado arranca con lo que diga la dirección, y además la sigue. Con
   // sólo el valor inicial alcanza HOY, porque se llega desde `/nuevo`, que es
   // otro segmento y monta este componente de cero. Pero el día que algo
@@ -217,6 +249,7 @@ export function VariantesDelProducto({
           {variantes.map((v) => (
             <li
               key={v.id}
+              id={`color-${v.id}`}
               className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface-sunken p-3"
             >
               <div className="flex items-start justify-between gap-2">
@@ -282,6 +315,10 @@ export function VariantesDelProducto({
         variante={enEdicion}
         variantes={variantes}
         colores={colores}
+        desdeElAlta={abrirAlta && variantes.length === 0}
+        alAgregar={(id) => {
+          paraFotos.current = id;
+        }}
         alCerrar={cerrarEdicion}
       />
 
@@ -536,6 +573,8 @@ function EdicionDeVariante({
   variante,
   variantes,
   colores: delServidor,
+  desdeElAlta,
+  alAgregar,
   alCerrar,
 }: {
   abierto: boolean;
@@ -545,9 +584,19 @@ function EdicionDeVariante({
   variante: VarianteDelPanel | null;
   variantes: VarianteDelPanel[];
   colores: OpcionDeColor[];
+  /** Se llegó recién creado el producto, y todavía no tiene ningún color. */
+  desdeElAlta: boolean;
+  /** El id del color que se acaba de agregar, para llevar a sus fotos. */
+  alAgregar: (id: string) => void;
   alCerrar: () => void;
 }) {
   const idBase = useId();
+  /**
+   * Agregar un color se lleva el foco a sus fotos. Sin esto, el drawer lo
+   * devolvería a «Agregar color» al cerrarse, y la página saltaría hasta ese
+   * botón antes de bajar a la tarjeta nueva.
+   */
+  const focoALasFotos = useRef(false);
   const [enviando, iniciar] = useTransition();
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
@@ -702,6 +751,10 @@ function EdicionDeVariante({
           ? `«${comoSeLlama}» quedó con ${unidades(datos.stockTotal)} en total.`
           : `Agregaste «${comoSeLlama}» con ${unidades(datos.stockTotal)}.`,
       );
+      if (!variante && "id" in r.data) {
+        focoALasFotos.current = true;
+        alAgregar(r.data.id);
+      }
       alCerrar();
     });
   };
@@ -709,6 +762,11 @@ function EdicionDeVariante({
   return (
     <Sheet open={abierto} onOpenChange={(v) => !v && alCerrar()}>
       <SheetContent
+        onCloseAutoFocus={(e) => {
+          if (!focoALasFotos.current) return;
+          focoALasFotos.current = false;
+          e.preventDefault();
+        }}
         onEscapeKeyDown={(e) => {
           // Escape en el paso de crear vuelve a la variante: cerrar todo
           // perdería el stock y lo demás que ya se había cargado.
@@ -746,8 +804,16 @@ function EdicionDeVariante({
                   ? `Editar «${nombreDe(variante)}»`
                   : "Agregar un color"}
               </SheetTitle>
+              {/* Dice adónde se sigue, porque el drawer no tiene fotos: se
+                  suben a una ruta con el id del color, que todavía no existe.
+                  Recién creado el producto, además, confirma el alta: el
+                  aviso flotante de antes caía justo encima de «Agregar». */}
               <SheetDescription>
-                Las fotos se cargan después, en la tarjeta del color.
+                {variante
+                  ? "Las fotos se cambian en la tarjeta del color."
+                  : desdeElAlta
+                    ? "Creaste el producto. Cargale un color para poder venderlo, y después te llevamos a sus fotos."
+                    : "Al agregarlo te llevamos a su tarjeta, para que le sumes las fotos."}
               </SheetDescription>
             </SheetHeader>
 

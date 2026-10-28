@@ -70,6 +70,16 @@ async function agregarColor(page: Page, color: Color, stock: number) {
   await dialogo.getByRole("textbox", { name: "Stock" }).fill(String(stock));
   await dialogo.getByRole("button", { name: "Agregar" }).click();
   await expect(dialogo).toBeHidden();
+
+  // F2.14: agregar un color lleva a sus fotos, que es lo que le falta.
+  const fotos = page
+    .getByRole("region", { name: "Colores y stock" })
+    .getByRole("listitem")
+    .filter({ hasText: `${color.nombre} ` })
+    .first()
+    .getByRole("button", { name: /imágenes a/ });
+  await expect(fotos).toBeFocused();
+  await expect(fotos).toBeInViewport();
 }
 
 async function subirFoto(page: Page, color: Color, fondo: string) {

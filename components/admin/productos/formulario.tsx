@@ -221,16 +221,14 @@ export function FormularioDeProducto({
       // al crearlo»— y hasta hoy no era cierto: se aterrizaba en la ficha con
       // la tarjeta de colores abajo de todo, que es la mitad del trabajo
       // escondida al pie de la página.
-      // El aviso va ANTES de empujar y no después: las dos pantallas a las
-      // que se llega no muestran lo que acaba de pasar —el listado no
-      // distingue el producto nuevo, y la ficha se abre con el diálogo del
-      // color encima—, así que sin esto guardar no confirma nada. Es
-      // exactamente el caso que DR §6.15 llama flotante.
-      avisar(
-        producto
-          ? `Guardaste los cambios de «${nombre.trim()}».`
-          : `Creaste «${nombre.trim()}». Cargale un color para poder venderlo.`,
-      );
+      // Al editar, el aviso va ANTES de empujar y no después: el listado no
+      // distingue el producto que se acaba de guardar, así que sin esto
+      // guardar no confirma nada. Es el caso que DR §6.15 llama flotante.
+      //
+      // Al crear, no lleva: lo confirma el drawer del primer color, en su
+      // lugar (F2.14). El aviso flotante caía justo encima del pie del
+      // drawer y tapaba «Agregar» los cuatro segundos en que más se lo busca.
+      if (producto) avisar(`Guardaste los cambios de «${nombre.trim()}».`);
 
       router.push(
         producto
