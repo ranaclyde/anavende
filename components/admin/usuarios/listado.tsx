@@ -50,10 +50,14 @@ export function ListadoDeUsuarios({
         <Table className="table-fixed">
           <TableHeader>
             <TableRow className="hover:bg-surface-sunken">
+              {/* Las fijas, al ancho de lo que llevan (F2.15): un teléfono
+                  con código de país entra en 160px, y rol y estado se apilan
+                  si no entran juntos. En una tablet de 820px, con 64px más,
+                  el nombre y el email dejan de cortarse a la mitad. */}
               <TableHead>Nombre</TableHead>
-              <TableHead className="w-44">Teléfono</TableHead>
-              <TableHead className="w-52">Rol y estado</TableHead>
-              <TableHead data-align="right" className="w-24">
+              <TableHead className="w-40">Teléfono</TableHead>
+              <TableHead className="w-44">Rol y estado</TableHead>
+              <TableHead data-align="right" className="w-20">
                 Órdenes
               </TableHead>
               <TableHead className="w-28">Alta</TableHead>
@@ -69,10 +73,14 @@ export function ListadoDeUsuarios({
                       <Link
                         href={`/admin/usuarios/${usuario.id}`}
                         className="truncate font-medium text-ink hover:text-brand"
+                        title={usuario.nombre}
                       >
                         {usuario.nombre}
                       </Link>
-                      <span className="truncate text-caption text-ink-secondary">
+                      <span
+                        className="truncate text-caption text-ink-secondary"
+                        title={usuario.email}
+                      >
                         {usuario.email}
                       </span>
                     </div>

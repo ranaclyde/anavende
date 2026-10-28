@@ -92,7 +92,7 @@ export function BuscadorDelPanel({
         placeholder={marcador}
         className={cn(
           "pl-9 admin:pl-9",
-          texto ? "pr-10 admin:pr-10" : "",
+          texto ? "pr-10 admin:pr-10 max-md:pr-12 admin:max-md:pr-12" : "",
           "[&::-webkit-search-cancel-button]:appearance-none",
         )}
       />
@@ -109,7 +109,9 @@ export function BuscadorDelPanel({
             alBuscar("");
           }}
           className={cn(
-            "absolute top-1/2 right-1 grid size-8 -translate-y-1/2 place-items-center",
+            // 44px en el teléfono (F2.15): está en la barra de órdenes, que
+            // es lo que el panel garantiza ahí.
+            "absolute top-1/2 right-1 grid size-8 -translate-y-1/2 place-items-center max-md:right-0 max-md:size-11",
             "rounded-panel-control text-ink-tertiary transition-colors duration-150",
             "hover:bg-surface-sunken hover:text-ink",
           )}
@@ -160,7 +162,9 @@ export function RangoDeFechas({
   const id = useId();
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    // En el teléfono, las dos fechas lado a lado y no apiladas (F2.15): eran
+    // dos renglones enteros antes de la primera orden.
+    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:items-center">
       <Campo
         id={`${id}-desde`}
         etiqueta="Desde"
@@ -176,7 +180,7 @@ export function RangoDeFechas({
       />
 
       {porQueFecha ? (
-        <p className="text-caption text-ink-secondary sm:ml-1">
+        <p className="col-span-2 text-caption text-ink-secondary sm:ml-1">
           Por {porQueFecha}
         </p>
       ) : null}
@@ -198,7 +202,7 @@ function Campo({
   alCambiar: (valor: string) => void;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
       <label
         htmlFor={id}
         title={ayuda ? `Por ${ayuda}` : undefined}
@@ -211,7 +215,7 @@ function Campo({
         type="date"
         value={valor}
         onChange={(e) => alCambiar(e.target.value)}
-        className="min-w-0 flex-1 sm:w-40 sm:flex-none"
+        className="min-w-0 sm:w-40"
       />
     </div>
   );

@@ -128,7 +128,7 @@ export function ListadoDeProductos({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="@container flex flex-col gap-4">
       {error === null ? null : (
         <p role="alert" className="text-body-sm text-danger">
           {error}
@@ -138,8 +138,13 @@ export function ListadoDeProductos({
         <SinResultados filtros={filtros} />
       ) : (
         <>
-          {/* Escritorio */}
-          <div className="hidden overflow-hidden rounded-panel-card border border-border bg-surface md:block">
+          {/* La tabla, cuando entra (F2.15). Las columnas fijas suman 784px y
+              «Producto» se queda con lo que sobra: en una tablet de 820px eso
+              eran 4px, y las filas se veían sin nombre. 62rem le dejan unos
+              200px, que alcanzan para nombre y marca en dos renglones. Es de
+              contenedor y no de ventana por lo mismo que la ficha: contraer
+              el menú lateral es justo lo que se hace para ganar ancho. */}
+          <div className="hidden overflow-hidden rounded-panel-card border border-border bg-surface @min-[62rem]:block">
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-surface-sunken">
@@ -194,7 +199,12 @@ export function ListadoDeProductos({
                           nombre={p.name}
                           variantes={p.variantes}
                         />
-                        <Stock producto={p} umbral={umbral} />
+                        {/* Con ancho mínimo, «Reponer» queda en la misma
+                            vertical en todas las filas: sin él se corría
+                            según lo largo de «de 17 · 1 reservada». */}
+                        <div className="min-w-32">
+                          <Stock producto={p} umbral={umbral} />
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -215,8 +225,9 @@ export function ListadoDeProductos({
             </Table>
           </div>
 
-          {/* Móvil */}
-          <ul className="flex flex-col gap-2 md:hidden">
+          {/* Tarjetas: el teléfono y la tablet. De a dos cuando hay ancho,
+              que es la tablet parada: una sola de 790px estira cada fila. */}
+          <ul className="grid gap-2 @min-[40rem]:grid-cols-2 @min-[62rem]:hidden">
             {items.map((p) => (
               <li
                 key={p.id}

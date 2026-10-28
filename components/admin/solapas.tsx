@@ -58,17 +58,20 @@ export function SolapasDelPanel({
   const segmentado = variante === "segmentado";
 
   return (
-    <nav aria-label={etiqueta}>
+    // En el teléfono, una sola tira que se desliza (F2.15): partidas en dos
+    // renglones, la última quedaba sola abajo y la barra de órdenes ocupaba
+    // media pantalla antes de la primera orden.
+    <nav aria-label={etiqueta} className="max-w-full max-md:overflow-x-auto">
       <ul
         className={cn(
-          "flex flex-wrap gap-1",
+          "flex flex-wrap gap-1 max-md:flex-nowrap",
           segmentado
             ? "inline-flex rounded-panel-control bg-surface-sunken p-1"
             : "border-b border-border",
         )}
       >
         {solapas.map((solapa) => (
-          <li key={solapa.href}>
+          <li key={solapa.href} className="shrink-0">
             <Link
               href={solapa.href}
               aria-current={solapa.activa ? "page" : undefined}
