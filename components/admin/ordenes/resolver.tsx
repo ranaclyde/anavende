@@ -218,7 +218,7 @@ function DialogoDeFinalizar({
         )}
 
         <DialogFooter>
-          <Button variant="tertiary" disabled={enCurso} onClick={cerrar}>
+          <Button variant="secondary" disabled={enCurso} onClick={cerrar}>
             Todavía no
           </Button>
           <Button
@@ -323,7 +323,7 @@ function DialogoDeCancelar({
         )}
 
         <DialogFooter>
-          <Button variant="tertiary" disabled={enCurso} onClick={cerrar}>
+          <Button variant="secondary" disabled={enCurso} onClick={cerrar}>
             No, dejarla activa
           </Button>
           <Button

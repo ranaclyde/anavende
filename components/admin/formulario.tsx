@@ -36,7 +36,10 @@ export function Opcion({
       className={cn(
         "flex cursor-pointer gap-2.5 rounded-panel-control border border-border bg-surface p-3",
         "transition-colors duration-150",
-        "has-checked:border-brand has-checked:bg-brand-tint",
+        // Lo elegido es pizarra, como la casilla marcada (F2.15): en burdeos,
+        // «Nueva orden» quedaba con tres cosas del color de la acción, y en
+        // oscuro el borde rosado se leía como un campo con error.
+        "has-checked:border-accent has-checked:bg-accent-tint",
         "has-focus-visible:shadow-focus",
       )}
     >
@@ -46,7 +49,7 @@ export function Opcion({
         name={nombre}
         checked={elegida}
         onChange={alElegir}
-        className="mt-0.5 size-4 shrink-0 accent-brand"
+        className="mt-0.5 size-4 shrink-0 accent-accent"
       />
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="text-body-sm font-medium text-ink">{titulo}</span>

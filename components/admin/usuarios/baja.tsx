@@ -170,7 +170,7 @@ export function BajaDeLaCuenta({
 
           <DialogFooter>
             <Button
-              variant="tertiary"
+              variant="secondary"
               disabled={enCurso}
               onClick={() => setAbierto(false)}
             >

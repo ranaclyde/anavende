@@ -8,15 +8,17 @@ import {
   SinDevoluciones,
 } from "@/components/admin/devoluciones/listado";
 import { PaginacionDelPanel } from "@/components/admin/paginacion";
+import { SolapasDelPanel } from "@/components/admin/solapas";
 import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
 import {
+  ESTADOS,
   POR_PAGINA,
   leerFiltros,
   urlDeFiltros,
   type ParametrosDeBusqueda,
 } from "@/modules/returns/filtros";
 import {
-  hayAlgunaDevolucion,
+  contarDevolucionesPorEstado,
   listarDevoluciones,
 } from "@/modules/returns/queries";
 import { exigirAdmin } from "@/lib/session";
@@ -73,10 +75,16 @@ export default async function DevolucionesDelPanel({
   const filtros = leerFiltros(await searchParams);
 
   // Independientes: encadenarlas agregaría una ida a la base por carga.
-  const [{ devoluciones, total }, hayAlguna] = await Promise.all([
+  const [{ devoluciones, total }, conteo] = await Promise.all([
     listarDevoluciones(filtros),
-    hayAlgunaDevolucion(),
+    contarDevolucionesPorEstado(),
   ]);
+  const hayAlguna = conteo.registradas + conteo.anuladas > 0;
+  const cuantasDe = {
+    todas: conteo.registradas + conteo.anuladas,
+    registradas: conteo.registradas,
+    anuladas: conteo.anuladas,
+  };
 
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
   // Una página que ya no existe —un enlace viejo, o filtrar estando en la 3—
@@ -108,6 +116,23 @@ export default async function DevolucionesDelPanel({
         <SinDevoluciones />
       ) : (
         <>
+          {/* El estado en solapas con su número, como órdenes y usuarios
+              (F2.15): antes era un selector, el único listado del panel que
+              lo resolvía distinto. «Todas» sigue siendo la de fábrica —que
+              las anuladas se vean es una decisión de F7.5, `filtros.ts`—. */}
+          <SolapasDelPanel
+            etiqueta="Filtrar por estado"
+            variante="segmentado"
+            nombraElConteo={(n) =>
+              n === 1 ? "1 devolución" : `${n} devoluciones`
+            }
+            solapas={ESTADOS.map(({ valor, etiqueta }) => ({
+              href: urlDeFiltros({ ...filtros, estado: valor, pagina: 1 }),
+              etiqueta,
+              activa: filtros.estado === valor,
+              cuantos: cuantasDe[valor],
+            }))}
+          />
           <BarraDeFiltros filtros={filtros} total={total} />
           <ListadoDeDevoluciones devoluciones={devoluciones} />
           <PaginacionDelPanel

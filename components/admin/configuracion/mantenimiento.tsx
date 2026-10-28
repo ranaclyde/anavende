@@ -220,7 +220,7 @@ function InterruptorDeLaTienda({ activo }: { activo: boolean | null }) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="tertiary" onClick={() => setConfirmando(false)}>
+            <Button variant="secondary" onClick={() => setConfirmando(false)}>
               Cancelar
             </Button>
             {/* `destructive-solid`, como todo confirmar de algo que saca

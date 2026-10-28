@@ -72,7 +72,10 @@ export function EncabezadoDePanel({
           bajada ? "items-start" : "items-center"
         }`}
       >
-        <div className="flex min-w-0 items-center gap-4">
+        {/* Crece y parte su texto en vez de empujar las acciones abajo
+            (F2.15): con una bajada larga, «Ver la guía» de Nueva orden caía
+            al renglón siguiente y quedaba en otro lugar que en el resto. */}
+        <div className="flex min-w-0 flex-1 basis-80 items-center gap-4">
           {retrato}
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-3">
@@ -138,7 +141,7 @@ export function EsqueletoDeEncabezado({
           bajada ? "items-start" : "items-center"
         }`}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 flex-1 basis-80 items-center gap-4">
           {retrato ? (
             <Skeleton className={`shrink-0 rounded-pill ${retrato}`} />
           ) : null}
