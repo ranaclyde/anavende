@@ -546,6 +546,17 @@ test("los filtros del catálogo y el menú del panel, en el teléfono", async ({
   expect
     .soft(await hallazgosDeAxe(panel, "aside"), "menú del panel")
     .toEqual([]);
+  // Abierto, Tab no se va a la página tapada (F2.15): queda inerte.
+  await expect(abrir).toHaveAttribute("aria-expanded", "true");
+  for (let i = 0; i < 20; i++) {
+    await panel.keyboard.press("Tab");
+    expect
+      .soft(
+        await panel.evaluate(() => !!document.activeElement?.closest("main")),
+        "Tab llegó a la página tapada por el menú",
+      )
+      .toBe(false);
+  }
   await panel.keyboard.press("Escape");
   await expect(menu).toBeHidden();
   await expect.soft(abrir, "el foco no volvió al menú").toBeFocused();
