@@ -64,7 +64,9 @@ export function EditarElRenglon({
     // ancho la guía resaltaba un recuadro vacío a su izquierda.
     <div
       data-ayuda="ajustar-renglon"
-      className="ml-auto flex w-fit items-center gap-0.5"
+      // Separados en la tablet (F2.15): a 2px, el «+» y el tacho se tocaban
+      // con el mismo dedo.
+      className="ml-auto flex w-fit items-center gap-0.5 max-lg:gap-2"
     >
       {/* **Subir está siempre, aunque no haya stock.** Al revés que bajar, acá
           la razón por la que no se puede no se ve en la pantalla —el

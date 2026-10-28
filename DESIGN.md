@@ -548,6 +548,15 @@ envoltorio lleva `max-h-[calc(100svh-20rem)]` y es el ancestro scrolleable
 dentro del cual `sticky` se ancla. Sin ese tope el `sticky` no hacía nada, y la
 página medía 1760px con 40 filas. DR §6.9.
 
+**Una tabla con columnas fijas pasa a tarjetas según su contenedor, no según
+la ventana** (F2.15). Las columnas fijas suman un ancho, y la que queda libre
+—el nombre— se lleva lo que sobra: si el corte es `md`, en una tablet de 820px
+le quedaban 4px y las filas de productos se veían sin nombre. El corte es la
+suma de las fijas más lo que necesita el nombre (`@min-[62rem]` en productos),
+y por debajo van las tarjetas del teléfono, de a dos cuando hay ancho. En la
+tablet, además, los botones de ícono miden 44px (`admin:max-lg:size-11`): se
+tocan con el dedo.
+
 ### Diálogos
 
 Tope de alto `max-h-[85svh]` en el primitivo, no en cada diálogo: sin él, una

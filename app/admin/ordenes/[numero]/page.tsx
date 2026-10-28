@@ -356,15 +356,18 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
       <Table className="hidden md:table">
         <TableHeader>
           <TableRow className="hover:bg-surface-sunken">
+            {/* El color va debajo del nombre y no en su columna (F2.15),
+                como en el teléfono. Con la columna lateral de 22rem, a 1366px
+                «Producto» se quedaba con 100px y el nombre se partía en tres
+                renglones al lado de dos columnas casi vacías. */}
             <TableHead>Producto</TableHead>
-            <TableHead className="w-32">Color</TableHead>
             <TableHead data-align="right" className="w-24">
               Cantidad
             </TableHead>
-            <TableHead data-align="right" className="w-36">
+            <TableHead data-align="right" className="w-32">
               Precio
             </TableHead>
-            <TableHead data-align="right" className="w-36">
+            <TableHead data-align="right" className="w-32">
               Subtotal
             </TableHead>
             {editable ? (
@@ -378,11 +381,13 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
           {orden.items.map((item) => (
             <TableRow key={item.id}>
               <TableCell>
-                <span className="font-medium text-ink">{item.nombre}</span>{" "}
-                <span className="text-ink-secondary">{item.marca}</span>
-              </TableCell>
-              <TableCell className="text-ink-secondary">
-                {item.color ?? "—"}
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium text-ink">{item.nombre}</span>
+                  <span className="text-caption text-ink-secondary">
+                    {item.marca}
+                    {item.color ? ` · ${item.color}` : ""}
+                  </span>
+                </div>
               </TableCell>
               <TableCell data-align="right">{item.cantidad}</TableCell>
               <TableCell data-align="right" className="text-ink-secondary">

@@ -90,8 +90,10 @@ const buttonVariants = cva(
         // (§9) — y **también en el panel**, que hasta el 2026-09-22 se quedaba
         // en los 36px de `admin:size-9` a cualquier ancho: son los cuatro
         // iconos de cada fila del listado de productos, 109 en una pantalla,
-        // el lugar donde más caro sale errarle al de al lado.
-        icon: "size-11 rounded-pill admin:size-9 admin:max-md:size-11 admin:rounded-panel-control",
+        // el lugar donde más caro sale errarle al de al lado. Hasta `lg` y
+        // no hasta `md` desde F2.15: la tablet también se toca con el dedo,
+        // y es uno de los dos aparatos de la vendedora.
+        icon: "size-11 rounded-pill admin:size-9 admin:max-lg:size-11 admin:rounded-panel-control",
       },
       emphasis: {
         // --shadow-brand: solo el envío del buscador y el principal del hero (§3.6).
