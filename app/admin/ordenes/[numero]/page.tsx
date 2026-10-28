@@ -223,10 +223,13 @@ export default async function DetalleDeLaOrden({ params }: Props) {
             : ""}
       </p>
 
+      {/* Fondo hundido y no borde punteado (F2.15): en el panel, el punteado
+          dice «soltá archivos acá». Y «de abajo» y no «la tabla»: en el
+          teléfono los renglones son tarjetas. */}
       {orden.estado === "activa" ? (
-        <p className="rounded-panel-card border border-dashed border-border bg-surface px-4 py-3 text-body-sm text-ink-secondary">
-          Podés ajustar el pedido desde la tabla: quitar, bajar o sumar
-          cantidades y agregar productos. Lo que saques vuelve al stock
+        <p className="rounded-panel-card bg-surface-sunken px-4 py-3 text-body-sm text-ink-secondary">
+          Podés ajustar el pedido desde los renglones de abajo: quitar, bajar o
+          sumar cantidades y agregar productos. Lo que saques vuelve al stock
           enseguida y lo que sumes se reserva, si hay. Cuando la entregues,
           finalizala: ahí se descuenta el stock de verdad. Ni finalizarla ni
           cancelarla tienen vuelta atrás.
@@ -234,16 +237,21 @@ export default async function DetalleDeLaOrden({ params }: Props) {
       ) : null}
 
       {/* Dos columnas en escritorio: los ítems mandan y ocupan el ancho, y
-          los datos del comprador acompañan al costado. Apilados, la
-          dirección quedaría tres pantallas abajo del pedido. */}
-      <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
-        <div className="flex flex-col gap-4">
+          los datos del comprador acompañan al costado.
+          **Apilados, el historial va al final** (F2.15): estaba entre el
+          pedido y el comprador, y con veinte cambios de cantidad la dirección
+          quedaba a 1500px en el teléfono, que es donde el panel garantiza
+          atender órdenes. El orden del DOM es el de la columna única —pedido,
+          entrega, historial—, así el teclado y el lector siguen lo que se ve
+          en el teléfono; en escritorio la grilla sube el historial a la
+          izquierda, debajo del pedido. */}
+      <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:grid-rows-[auto_1fr] xl:items-start">
+        <div className="flex flex-col gap-4 xl:col-start-1 xl:row-start-1">
           <Renglones orden={orden} />
           <Devoluciones devoluciones={devoluciones} />
-          <HistorialDeLaOrden entradas={orden.historial} />
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 xl:col-start-2 xl:row-span-2 xl:row-start-1">
           <Ficha id="comprador" titulo="Comprador">
             <Dato titulo="A nombre de" valor={orden.customerName} />
             <Dato titulo="Teléfono" valor={orden.customerPhone} />
@@ -306,6 +314,10 @@ export default async function DetalleDeLaOrden({ params }: Props) {
               </p>
             </Ficha>
           ) : null}
+        </div>
+
+        <div className="xl:col-start-1 xl:row-start-2">
+          <HistorialDeLaOrden entradas={orden.historial} />
         </div>
       </div>
     </div>
