@@ -3,7 +3,7 @@
 Estado tarea por tarea de `sdd/mvp/DEVELOPMENT-PLAN.md`. Los IDs son los del
 plan. Se actualiza al cerrar cada tarea, en el mismo commit que la cierra.
 
-Última actualización: 2026-10-27.
+Última actualización: 2026-10-29.
 
 **Qué significa cada estado**
 
@@ -2617,8 +2617,14 @@ este punto; sin punto que cerrar, la compuerta vuelve a depender sólo de F10.1.
      SPF en la raíz, y **`admin@anavende.com.ar`** reenvía a tu Gmail. Es una
      dirección que no se publica: la de la cuenta de Google de la tienda (punto
      8). Los registros de Resend no se tocaron, verificado con `dig`.
-   - **Un registro DMARC**, aunque sea `p=none`. Hoy no hay ninguno, y Gmail y
-     Yahoo lo piden cada vez más para no mandar a spam.
+   - ✅ **Un registro DMARC, desde el 2026-10-29**, cargado por vos con
+     *DMARC Management* de Cloudflare: `_dmarc` con `v=DMARC1; p=none;
+     rua=mailto:…@dmarc-reports.cloudflare.net`. Los reportes van al panel de
+     Cloudflare (*Email → DMARC Management*) y no al Gmail. Verificado con
+     `dig`. Los envíos de la tienda pasan porque Resend firma con la clave de
+     `anavende.com.ar` (`resend._domainkey`). **Lo que queda:** en un par de
+     semanas mirar los reportes y, si solo aparecen Resend y Cloudflare,
+     pasar a `p=quarantine`.
    - **El logo como avatar en Gmail.** El avatar no se configura en Resend: lo
      elige el cliente de correo. BIMI, el estándar, necesita DMARC estricto y
      un certificado pago para que Gmail lo muestre; no vale el costo. La salida
