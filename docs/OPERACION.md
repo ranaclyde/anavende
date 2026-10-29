@@ -170,6 +170,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://anavende.com.ar/api/salud
 | El despliegue no termina            | Los logs de construcción en Coolify. Un corte sin error suele ser falta de memoria: revisar que no haya dos construcciones a la vez |
 | Una pantalla da error               | Sentry. Los errores de negocio, como «sin stock», no van ahí: llegan al usuario como un mensaje                                     |
 | No llegan los emails de la cuenta   | Los logs de GoTrue en el servidor de datos, y el panel de Resend                                                                    |
+| Los emails llegan a spam            | Los reportes de DMARC en Cloudflare (_Email → DMARC Management_): ahí se ve si los envíos de Resend fallan la firma                 |
 | No llega el aviso de orden (E4)     | Sentry: un envío fallido se registra ahí y la orden queda igual                                                                     |
 | No se puede ingresar ni registrarse | Turnstile y los límites de GoTrue. Un `429` es el límite de intentos                                                                |
 | Las fotos no cargan                 | Storage, en el servidor de datos. Las fotos no pasan por la tienda                                                                  |
