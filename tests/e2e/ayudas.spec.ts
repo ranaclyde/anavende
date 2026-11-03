@@ -159,6 +159,24 @@ test("la ficha: aparece la primera vez, se recorre con teclado y no vuelve", asy
   await expect(globo(page)).toBeHidden();
 });
 
+test("sin stock, la ficha no ofrece la guía", async ({ page }) => {
+  const palabra = sufijo();
+  const marca = `Agotada ${palabra}`;
+  const agotado = await datos.unProducto({
+    nombre: `Agotado ${palabra}`,
+    marca,
+    marcaId: await datos.unaMarca(marca),
+    categoriaId: await datos.unaCategoria(`Agotados ${palabra}`),
+    precio: "24500.00",
+    colores: [await datos.unColor(`Gris ${palabra}`, "#888888")],
+    stock: 0,
+  });
+
+  await page.goto(`/productos/${agotado.slug}`);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ver la guía" })).toBeHidden();
+});
+
 test("el globo entra a 320px sin desbordar", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto(`/productos/${slug}`);

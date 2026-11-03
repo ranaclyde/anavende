@@ -148,6 +148,7 @@ export function AyudaGuiada({
   id,
   pasos,
   tamano = "md",
+  soloIcono = false,
   className,
 }: {
   /** Una por pantalla: es lo que se anota como vista. */
@@ -155,6 +156,8 @@ export function AyudaGuiada({
   pasos: PasoDeAyuda[];
   /** `sm` en el encabezado del panel, al lado de sus otras acciones. */
   tamano?: "sm" | "md";
+  /** Sin el texto, cuando el lugar es angosto. El nombre se sigue anunciando. */
+  soloIcono?: boolean;
   className?: string;
 }) {
   const escala = useDataScale();
@@ -239,13 +242,18 @@ export function AyudaGuiada({
       ref={boton}
       type="button"
       onClick={() => void abrir()}
+      aria-label={soloIcono ? "Ver la guía" : undefined}
+      title={soloIcono ? "Ver la guía" : undefined}
       className={cn(
-        buttonVariants({ variant: "tertiary", size: tamano }),
+        buttonVariants({
+          variant: "tertiary",
+          size: soloIcono ? "icon" : tamano,
+        }),
         className,
       )}
     >
       <CircleHelp aria-hidden />
-      Ver la guía
+      {soloIcono ? null : "Ver la guía"}
     </button>
   );
 }

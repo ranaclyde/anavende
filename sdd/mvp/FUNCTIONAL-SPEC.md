@@ -175,7 +175,7 @@ Ver detalle en §12 (Fuera de alcance).
 - Selector de cantidad, limitado por el stock disponible de la variante.
 - Descripción del producto, **con el formato que le dio la vendedora** (RF-15).
 - Bloques de recomendados: «También te puede interesar», «Productos similares» y «Vistos recientemente» (RF-32, RF-33).
-- **Tres datos**, un renglón cada uno: que los productos son nuevos y en su caja original, la zona de entrega (RN-10) y que el pago se coordina al confirmar el pedido, nombrando los medios aceptados (RF-19).
+- **Dos datos debajo del precio**, un renglón cada uno: que el producto es nuevo, resaltado, y viene en su caja original, y la zona de entrega (RN-10). El pago se explica en «¿Cómo sigue después de comprar?» (cambiado el 2026-11-02).
 - **Bloque «¿Cómo sigue después de comprar?»** con los tres pasos —armar el pedido o escribir por WhatsApp; confirmación de stock, precio y forma de pago; coordinación de la entrega o el retiro— y el enlace a Legales (garantías y devoluciones) adentro.
 - **Guardar** (favoritos, RF-10) y **Compartir**, juntos debajo de las acciones de compra.
 
