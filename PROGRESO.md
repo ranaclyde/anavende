@@ -838,7 +838,7 @@ grupo, «ver más», otro reparto de columnas) es una decisión de diseño y **n
 se hace por mi cuenta**. Queda anotado para decidirlo.
 
 **Pendiente: cinco ajustes de UX pedidos por vos** (2026-11-03, después de
-cargar productos reales en producción). Está hecho el último, el del espacio.
+cargar productos reales en producción). Están hechos los dos de la ficha.
 
 En el panel:
 
@@ -862,12 +862,16 @@ En el panel:
 
 En la tienda, en la ficha del producto:
 
-- **La descripción se puede expandir.** Hoy «Sobre el producto»
-  (`components/shop/ficha/descripcion.tsx`) se muestra entera, y mucha gente
-  no la lee y la tiene que pasar para llegar a lo de abajo. Se muestra una
-  parte, con «Mostrar más» y «Mostrar menos». Ojo: hoy es un Server Component
-  porque el Markdown es `server-only`. El botón necesita una parte cliente
-  que envuelva el contenido ya pintado.
+- ~~**La descripción se puede expandir**~~ — hecho el 2026-11-03. «Sobre el
+  producto» se mostraba entera, y mucha gente no la lee y la tenía que pasar
+  para llegar a lo de abajo. Ahora, si pasa de unos doce renglones, se ven los
+  primeros ocho (160px) con un fundido y «Mostrar más» / «Mostrar menos». Con
+  menos que eso se ve entera y sin botón: destapar uno o dos renglones sería
+  un toque para nada. El Markdown se sigue pintando en el servidor, y
+  `components/shop/ficha/descripcion-plegable.tsx` solo mide y recorta. El
+  texto escondido sigue en la página, así que un lector de pantalla lo lee
+  entero. Al plegar, si el comienzo ya salió de la pantalla, se vuelve a él.
+  Lo cubre `tests/e2e/descripcion-plegable.spec.ts`, con axe a 320px.
 - ~~**El espacio debajo de los botones es desparejo**~~ — arreglado el
   2026-11-03 (captura tuya). Debajo de «Guardar / Compartir» había una línea
   con 32px arriba y 56px abajo. Se sumaban dos rellenos: el `pt-6` de

@@ -1,3 +1,4 @@
+import { DescripcionPlegable } from "@/components/shop/ficha/descripcion-plegable";
 import { BloquesDeTexto } from "@/components/shop/texto-con-formato";
 import { nodosDeMarkdown } from "@/modules/content/markdown";
 
@@ -31,8 +32,9 @@ export function Descripcion({ markdown }: { markdown: string }) {
   if (nodos.length === 0) return null;
 
   return (
-    // Sin margen propio: el aire lo pone quien la contiene.
-    <section aria-labelledby="descripcion">
+    // Sin margen propio: el aire lo pone quien la contiene. `scroll-mt-24`:
+    // al plegarla se vuelve acá, y el encabezado fijo taparía el título.
+    <section aria-labelledby="descripcion" className="scroll-mt-24">
       {/*
         «Sobre el producto» y no «Descripción» (2026-09-08): el rótulo
         anterior nombraba el campo de la base, no lo que la persona va a leer.
@@ -46,16 +48,24 @@ export function Descripcion({ markdown }: { markdown: string }) {
         1200px son renglones de 160 caracteres donde el ojo se pierde al
         volver al margen izquierdo.
       */}
-      <div className="mt-3 flex max-w-prose flex-col gap-4 text-body-sm text-ink-secondary">
-        <BloquesDeTexto
-          nodos={nodos}
-          // `h3` (RF-15, DR §6.11): el nombre del producto es el `h1` y
-          // «Sobre el producto» el `h2`.
-          subtitulo={{
-            nivel: "h3",
-            className: "text-body font-medium text-ink",
-          }}
-        />
+      {/*
+        Larga, se pliega con «Mostrar más» (2026-11-03): mucha gente no la lee
+        y tenía que pasarla entera para llegar a lo de abajo.
+      */}
+      <div className="mt-3 flex flex-col">
+        <DescripcionPlegable>
+          <div className="flex max-w-prose flex-col gap-4 text-body-sm text-ink-secondary">
+            <BloquesDeTexto
+              nodos={nodos}
+              // `h3` (RF-15, DR §6.11): el nombre del producto es el `h1` y
+              // «Sobre el producto» el `h2`.
+              subtitulo={{
+                nivel: "h3",
+                className: "text-body font-medium text-ink",
+              }}
+            />
+          </div>
+        </DescripcionPlegable>
       </div>
     </section>
   );

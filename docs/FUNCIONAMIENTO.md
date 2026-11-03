@@ -24,7 +24,10 @@ categorías y la ficha de cada producto.
   mandar por WhatsApp tal como se está viendo (`modules/catalog/products/tienda.ts`).
 - **La ficha** (`/productos/[slug]`) cambia de foto, stock y mensaje al
   elegir otro color, sin recargar. El slug no cambia al renombrar un
-  producto, para no romper los enlaces ya compartidos.
+  producto, para no romper los enlaces ya compartidos. Si la descripción
+  pasa de unos doce renglones, se ven los primeros ocho y un «Mostrar más»
+  (`components/shop/ficha/descripcion-plegable.tsx`). El texto completo
+  viene igual desde el servidor: solo se recorta.
 - **«Consultar por WhatsApp»** arma un enlace `wa.me` con el producto, el
   color y la cantidad que se están mirando (`lib/whatsapp.ts`). Es la forma
   de comprar sin cuenta.
