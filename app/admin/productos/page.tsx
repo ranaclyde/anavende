@@ -122,6 +122,9 @@ export default async function ProductosDelPanel({
           <PaginacionDelPanel
             pagina={filtros.pagina}
             paginas={paginas}
+            total={coincidencias}
+            porPagina={POR_PAGINA}
+            cosa={{ singular: "producto", plural: "productos" }}
             href={(n) => urlDeFiltros({ ...filtros, pagina: n })}
           />
         </>

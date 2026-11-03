@@ -36,7 +36,7 @@ import {
   cambiarEstado,
   eliminar,
 } from "@/modules/catalog/actions";
-import { urlDePagina } from "@/modules/catalog/filtros-panel";
+import { POR_PAGINA, urlDePagina } from "@/modules/catalog/filtros-panel";
 import type {
   CategoriaRelacionable,
   ItemDeCatalogo,
@@ -272,6 +272,9 @@ export function PanelDeCatalogo({
           <PaginacionDelPanel
             pagina={pagina}
             paginas={paginas}
+            total={total}
+            porPagina={POR_PAGINA}
+            cosa={palabras}
             href={(n) => urlDePagina(base, n)}
           />
         </>

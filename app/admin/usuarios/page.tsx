@@ -73,6 +73,9 @@ export default async function UsuariosDelPanel({
       <PaginacionDelPanel
         pagina={filtros.pagina}
         paginas={paginas}
+        total={total}
+        porPagina={POR_PAGINA}
+        cosa={{ singular: "persona", plural: "personas" }}
         href={(n) => urlDeFiltros({ ...filtros, pagina: n })}
       />
     </div>
