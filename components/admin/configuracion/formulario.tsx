@@ -1,8 +1,8 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
 import { useId, useRef, useState, useTransition } from "react";
 
+import { EstadoDeGuardado } from "@/components/admin/estado-de-guardado";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -147,7 +147,7 @@ export function FormularioDeConfiguracion({
    * Sin esto la pantalla se contradice, y no es una hipótesis: se vio.
    * Después de un envío rechazado, corregir el número hasta dejarlo igual al
    * guardado apaga el botón —no hay nada que guardar— y el aviso rojo se
-   * queda al lado de un «Todo guardado.», señalando un problema que ya no
+   * queda al lado de un «Guardado», señalando un problema que ya no
    * existe y que no hay forma de sacar de la pantalla.
    *
    * No es validar mientras se escribe, que §6.6 no quiere: es dejar de
@@ -415,23 +415,17 @@ export function FormularioDeConfiguracion({
       </div>
 
       <div className="flex items-center justify-end gap-3">
-        {/* El motivo por el que «Guardar» está apagado, escrito y no colgado
-            de un `title`: §8 pide que lo deshabilitado diga por qué, y un
-            tooltip sobre un botón deshabilitado no siempre llega a aparecer.
-            Son dos motivos distintos y se dicen distinto: recién guardado es
-            algo que pasó —verde, con ícono—; llegar con todo guardado no es
-            un logro, es el estado normal. `polite` para que el lector de
-            pantalla anuncie el primero sin interrumpir. */}
-        <p aria-live="polite" className="text-body-sm">
-          {seGuardoRecien && sinCambios ? (
-            <span className="flex items-center gap-1.5 text-success">
-              <CheckCircle2 aria-hidden className="size-4" />
-              Listo, se guardó.
-            </span>
-          ) : sinCambios ? (
-            <span className="text-ink-secondary">Todo guardado.</span>
-          ) : null}
-        </p>
+        {/* Por qué «Guardar» está apagado, o que hay algo por guardar,
+            escrito y no colgado de un `title` (§8). */}
+        <EstadoDeGuardado
+          estado={
+            !sinCambios
+              ? "sin-guardar"
+              : seGuardoRecien
+                ? "actualizado"
+                : "guardado"
+          }
+        />
 
         <Button
           type="submit"

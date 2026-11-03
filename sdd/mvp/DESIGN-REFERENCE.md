@@ -1139,7 +1139,7 @@ un diálogo.
 |---|---|
 | **Flotante** | El lugar donde pasó la cosa **desapareció** —un diálogo que se cerró, una fila que se borró, un globo que se fue— o la pantalla **no cambia de forma visible** |
 | **En su lugar** | Lo que pasó **se ve**: subir una foto la hace aparecer, destacar un producto rellena su estrella, desactivarlo le cambia la insignia. Un cartel que repita lo que ya está a la vista es ruido |
-| **Tampoco** | Guardar y quedarse en la misma pantalla, que ya tiene su «Listo, se guardó» en línea (Configuración) |
+| **Tampoco** | Guardar y quedarse en la misma pantalla, que ya tiene su «Actualizado» en línea (Configuración; antes «Listo, se guardó», unificado el 2026-11-03) |
 
 Tres decisiones de integración, las tres con motivo:
 
@@ -1155,7 +1155,7 @@ Tres decisiones de integración, las tres con motivo:
 
 | Dónde | Por qué no |
 |---|---|
-| Configuración | Ya tiene su «Listo, se guardó» en línea, y la pantalla no se va |
+| Configuración | Ya tiene su «Actualizado» en línea, y la pantalla no se va |
 | Modo mantenimiento | La insignia pasa de «Abierta» a «Cerrada al público» ahí mismo |
 | Datos de un usuario | Guarda en su lugar, los campos quedan a la vista con lo guardado |
 | Restablecer contraseña | El diálogo **no se cierra**: se da vuelta y muestra «Listo». Un flotante encima sería decir dos veces lo mismo |

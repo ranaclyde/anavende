@@ -28,11 +28,11 @@ export default function CargandoConfiguracion() {
           ninguno. */}
       <Tarjeta campos={["sm:max-w-80", "w-20"]} lineasDeAyuda={1} />
 
-      {/* La barra real lleva el «Todo guardado.» a la izquierda del botón, y
+      {/* La barra real lleva el estado de guardado a la izquierda de todo, y
           `items-center gap-3`. Sin el texto, el botón quedaba solo y el
           renglón cambiaba de alto al llegar los datos. */}
       <div className="flex items-center justify-end gap-3">
-        <Skeleton className="h-5 w-28" />
+        <Skeleton className="mr-auto h-5 w-28" />
         <Skeleton className="h-9 w-36 rounded-panel-control" />
       </div>
 
