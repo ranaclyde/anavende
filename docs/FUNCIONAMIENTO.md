@@ -142,7 +142,10 @@ se cancela (`modules/returns/registrar.ts`).
 2. **Variantes de color**, cada una con su stock
    (`modules/catalog/variants/actions.ts`). Cambiar el stock desde acá es un
    **ajuste** que queda asentado en el libro mayor como cualquier otro
-   movimiento. Un color que no está en el catálogo se crea ahí mismo.
+   movimiento. Un color que no está en el catálogo se crea ahí mismo. Con
+   más de tres colores, cada uno se pliega: cerrado muestra nombre, stock y
+   estado, y se abre de a uno, con sus fotos y sus botones. Arranca abierto
+   el primero.
 3. **Fotos de cada color.** Se suben por `/api/admin/upload`, se convierten
    en el momento y el original no se guarda (ver
    [Arquitectura](ARQUITECTURA.md#fotos)). Una variante puede reutilizar las
