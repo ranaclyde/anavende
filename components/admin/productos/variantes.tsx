@@ -11,6 +11,13 @@ import { VacioDelPanel } from "@/components/admin/vacio";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { ImagenesDeVariante } from "@/components/admin/productos/imagenes";
 import { avisar, avisarConPero } from "@/components/ui/aviso";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionHeader,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -67,6 +74,16 @@ import type {
  * acá: crear un producto lleva a su pantalla de edición, que es donde sigue
  * el trabajo.
  */
+
+/**
+ * Hasta cuántos colores se muestran enteros. Del cuarto en adelante se
+ * pliegan y se abre uno por vez (pedido del 2026-11-03).
+ */
+const HASTA_SIN_PLEGAR = 3;
+
+/** La tarjeta de un color, plegable o no. */
+const TARJETA =
+  "flex flex-col gap-3 rounded-panel-card border border-border bg-surface-sunken p-3";
 
 /** El valor del `<select>` para la variante sin color (RF-16). */
 const UNICO = "unico";
@@ -130,12 +147,25 @@ export function VariantesDelProducto({
    */
   const paraFotos = useRef<string | null>(null);
 
+  /**
+   * El color abierto, cuando hay más de tres y se pliegan. Arranca abierto el
+   * primero: la guía del producto señala su «Editar» y, con todos cerrados,
+   * no tendría dónde apoyarse. Vacío es que están todos cerrados.
+   */
+  const [abierto, setAbierto] = useState(variantes[0]?.id ?? "");
+
   // En un efecto y no al cerrar: la tarjeta no existe hasta que llegan los
   // datos nuevos, y desplazar la página es tocar el DOM, no estado. En un
   // ref y no en estado: no se pinta, sólo espera a que `variantes` cambie.
   useEffect(() => {
     const id = paraFotos.current;
     if (!id || !variantes.some((v) => v.id === id)) return;
+    // Plegados, el color nuevo llega cerrado y su «Agregar» está escondido:
+    // primero se abre, y el efecto vuelve a correr cuando cambia `abierto`.
+    if (variantes.length > HASTA_SIN_PLEGAR && abierto !== id) {
+      setAbierto(id);
+      return;
+    }
     paraFotos.current = null;
 
     const tarjeta = document.getElementById(`color-${id}`);
@@ -151,7 +181,7 @@ export function VariantesDelProducto({
     tarjeta
       .querySelector<HTMLElement>("[data-agregar-fotos]")
       ?.focus({ preventScroll: true });
-  }, [variantes]);
+  }, [variantes, abierto]);
 
   // El estado arranca con lo que diga la dirección, y además la sigue. Con
   // sólo el valor inicial alcanza HOY, porque se llega desde `/nuevo`, que es
@@ -244,65 +274,87 @@ export function VariantesDelProducto({
       )}
       {variantes.length === 0 ? (
         <Vacio alAgregar={() => setAgregando(true)} />
+      ) : variantes.length > HASTA_SIN_PLEGAR ? (
+        // Más de tres colores: cada uno se pliega y se abre de a uno
+        // (2026-11-03). Con seis cargados en producción la lista era
+        // interminable para corregir algo. `type="single"`: abrir uno cierra
+        // el anterior.
+        <Accordion
+          type="single"
+          collapsible
+          value={abierto}
+          onValueChange={setAbierto}
+          asChild
+        >
+          <ul className="flex flex-col gap-3">
+            {variantes.map((v) => (
+              <AccordionItem key={v.id} value={v.id} asChild>
+                <li
+                  id={`color-${v.id}`}
+                  className={TARJETA}
+                  // Las fotos se arrastran a la fila del color: si está
+                  // cerrado, se abre al pasar por encima.
+                  onDragEnter={() => {
+                    if (abierto !== v.id) setAbierto(v.id);
+                  }}
+                >
+                  <AccordionHeader className="items-center gap-2">
+                    {/* `-m-1.5 p-1.5`: el área que se toca crece hasta el
+                        borde de la tarjeta sin correr nada de lugar. */}
+                    <AccordionTrigger className="-m-1.5 min-h-11 min-w-0 rounded-panel-control p-1.5 hover:bg-canvas">
+                      <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                        <Identidad variante={v} />
+                        <Estados variante={v} />
+                      </span>
+                    </AccordionTrigger>
+                    {abierto === v.id ? (
+                      <Acciones
+                        variante={v}
+                        enCurso={enCurso}
+                        alEditar={setEnEdicion}
+                        alSacar={setPorBorrar}
+                      />
+                    ) : null}
+                  </AccordionHeader>
+                  {/* `forceMount`: cerrado queda montado y escondido. Si se
+                      desmontara, cerrar un color cortaría una subida de fotos
+                      en curso. */}
+                  <AccordionContent
+                    forceMount
+                    className="flex flex-col gap-3 data-[state=closed]:hidden"
+                  >
+                    <Cuerpo
+                      productId={productId}
+                      variante={v}
+                      variantes={variantes}
+                    />
+                  </AccordionContent>
+                </li>
+              </AccordionItem>
+            ))}
+          </ul>
+        </Accordion>
       ) : (
         <ul className="flex flex-col gap-3">
           {variantes.map((v) => (
-            <li
-              key={v.id}
-              id={`color-${v.id}`}
-              className="flex flex-col gap-3 rounded-panel-card border border-border bg-surface-sunken p-3"
-            >
+            <li key={v.id} id={`color-${v.id}`} className={TARJETA}>
               <div className="flex items-start justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <Muestra hex={v.colorHex} hex2={v.colorHex2} />
-                  <div className="flex min-w-0 flex-col">
-                    <span className="truncate font-medium text-ink">
-                      {nombreDe(v)}
-                    </span>
-                    <Stock variante={v} />
-                  </div>
-                </div>
-
+                <Identidad variante={v} />
                 <div className="flex shrink-0 items-center gap-1">
-                  {v.isActive ? null : <Badge tone="neutral">Inactiva</Badge>}
-                  {v.colorIsActive === false ? (
-                    <Badge tone="warning">Color inactivo</Badge>
-                  ) : null}
-                  <Button
-                    variant="tertiary"
-                    size="icon"
-                    onClick={() => setEnEdicion(v)}
-                    disabled={enCurso}
-                    title="Editar"
-                    data-ayuda="corregir-stock"
-                  >
-                    <Pencil aria-hidden />
-                    <span className="sr-only">Editar {nombreDe(v)}</span>
-                  </Button>
-                  <Button
-                    variant="destructive-ghost"
-                    size="icon"
-                    onClick={() => setPorBorrar(v)}
-                    disabled={enCurso}
-                    title="Sacar"
-                  >
-                    <Trash2 aria-hidden />
-                    <span className="sr-only">Sacar {nombreDe(v)}</span>
-                  </Button>
+                  <Estados variante={v} />
+                  <Acciones
+                    variante={v}
+                    enCurso={enCurso}
+                    alEditar={setEnEdicion}
+                    alSacar={setPorBorrar}
+                  />
                 </div>
               </div>
-
-              <ImagenesDeVariante
+              <Cuerpo
                 productId={productId}
-                variantId={v.id}
-                imagenes={v.imagenes}
-                soloLectura={v.imagesSourceId !== null}
-                etiqueta={nombreDe(v)}
+                variante={v}
+                variantes={variantes}
               />
-
-              {variantes.length > 1 ? (
-                <Reutilizar variante={v} variantes={variantes} />
-              ) : null}
             </li>
           ))}
         </ul>
@@ -367,6 +419,97 @@ export function VariantesDelProducto({
  * total NEGATIVO también, y por otro motivo — es la señal de discrepancia de
  * §5.4, que se corrige con un ajuste.
  */
+/** La muestra, el nombre y el stock: lo que se ve con el color cerrado. */
+function Identidad({ variante: v }: { variante: VarianteDelPanel }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <Muestra hex={v.colorHex} hex2={v.colorHex2} />
+      <span className="flex min-w-0 flex-col">
+        <span className="truncate font-medium text-ink">{nombreDe(v)}</span>
+        <Stock variante={v} />
+      </span>
+    </span>
+  );
+}
+
+/** Las etiquetas de estado. También se ven con el color cerrado. */
+function Estados({ variante: v }: { variante: VarianteDelPanel }) {
+  if (v.isActive && v.colorIsActive !== false) return null;
+  return (
+    <span className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+      {v.isActive ? null : <Badge tone="neutral">Inactiva</Badge>}
+      {v.colorIsActive === false ? (
+        <Badge tone="warning">Color inactivo</Badge>
+      ) : null}
+    </span>
+  );
+}
+
+/** Editar y sacar. Con el color cerrado no están. */
+function Acciones({
+  variante: v,
+  enCurso,
+  alEditar,
+  alSacar,
+}: {
+  variante: VarianteDelPanel;
+  enCurso: boolean;
+  alEditar: (v: VarianteDelPanel) => void;
+  alSacar: (v: VarianteDelPanel) => void;
+}) {
+  return (
+    <span className="flex shrink-0 items-center gap-1">
+      <Button
+        variant="tertiary"
+        size="icon"
+        onClick={() => alEditar(v)}
+        disabled={enCurso}
+        title="Editar"
+        data-ayuda="corregir-stock"
+      >
+        <Pencil aria-hidden />
+        <span className="sr-only">Editar {nombreDe(v)}</span>
+      </Button>
+      <Button
+        variant="destructive-ghost"
+        size="icon"
+        onClick={() => alSacar(v)}
+        disabled={enCurso}
+        title="Sacar"
+      >
+        <Trash2 aria-hidden />
+        <span className="sr-only">Sacar {nombreDe(v)}</span>
+      </Button>
+    </span>
+  );
+}
+
+/** Las fotos y «Reutilizar»: lo que se esconde con el color cerrado. */
+function Cuerpo({
+  productId,
+  variante: v,
+  variantes,
+}: {
+  productId: string;
+  variante: VarianteDelPanel;
+  variantes: VarianteDelPanel[];
+}) {
+  return (
+    <>
+      <ImagenesDeVariante
+        productId={productId}
+        variantId={v.id}
+        imagenes={v.imagenes}
+        soloLectura={v.imagesSourceId !== null}
+        etiqueta={nombreDe(v)}
+      />
+      {variantes.length > 1 ? (
+        <Reutilizar variante={v} variantes={variantes} />
+      ) : null}
+    </>
+  );
+}
+
 function Stock({ variante }: { variante: VarianteDelPanel }) {
   const { stockTotal, reservedStock, disponible } = variante;
 

@@ -838,7 +838,7 @@ grupo, «ver más», otro reparto de columnas) es una decisión de diseño y **n
 se hace por mi cuenta**. Queda anotado para decidirlo.
 
 **Pendiente: cinco ajustes de UX pedidos por vos** (2026-11-03, después de
-cargar productos reales en producción). Están hechos los dos de la ficha.
+cargar productos reales en producción). Están hechos los dos de la ficha y el de los colores.
 
 En el panel:
 
@@ -847,14 +847,30 @@ En el panel:
   botón que abra la ficha publicada para ver cómo quedó ese producto. Ya hay un
   «Ver en la tienda» en `components/admin/legales/formulario.tsx` que sirve
   de modelo.
-- **Los colores se colapsan cuando son más de 3.** Con 6 colores cargados, la
-  lista de variantes (`components/admin/productos/variantes.tsx`) se vuelve
-  interminable para cambiar algo. Pasados los 3, cada color se colapsa y
-  muestra solo lo más importante. **Se abre uno solo por vez**: abrir uno
-  cierra el anterior. **Cerrado, muestra la parte de arriba de la variante
-  tal como está hoy** (decisión tuya del 2026-11-03). Se esconden las fotos,
-  que son lo que más espacio ocupa, y los botones de editar y eliminar,
-  cuando los hay.
+- ~~**Los colores se colapsan cuando son más de 3**~~ — hecho el 2026-11-03.
+  Con 6 colores cargados, la lista de variantes
+  (`components/admin/productos/variantes.tsx`) era interminable para cambiar
+  algo. Ahora, con 4 o más, cada color se pliega y **se abre uno solo por
+  vez**. Cerrado muestra la parte de arriba tal como estaba: la muestra, el
+  nombre, el stock y las etiquetas de estado (decisión tuya). Se esconden las
+  fotos, «Reutilizar» y los botones de editar y sacar. Con 3 o menos no
+  cambia nada. Detalles:
+  - **Es el `Accordion` de shadcn** (`components/ui/accordion.tsx`, nuevo),
+    con tres cambios anotados en el archivo. El encabezado va aparte del
+    disparador, para que editar y sacar queden al lado sin anidar botones.
+    Usa los tokens del proyecto y no anima el alto, que recortaría el foco.
+    La CLI de shadcn quiso instalar el paquete `radix-ui` entero y un paquete
+    `cn` ajeno, con el npm local: se descartó. Va
+    `@radix-ui/react-accordion`, instalado con npm 11.
+  - **Arranca abierto el primero.** La guía del producto señala su «Editar»,
+    y con todos cerrados no tendría dónde apoyarse.
+  - **Cerrado, el color sigue montado** (`forceMount`). Si se desmontara,
+    abrir otro mientras sube una foto cortaría la subida.
+  - **Agregar un color lo abre**, y sigue llevando el foco a «Agregar» de
+    sus fotos, como antes. Arrastrar fotos sobre un color cerrado lo abre.
+  - Lo cubre `tests/e2e/colores-plegables.spec.ts`: uno por vez, cerrar el
+    abierto, las flechas del teclado, los tres colores sin plegar, y axe en
+    computadora y a 390px en oscuro.
 - **Los listados dicen qué tramo se está viendo**, por ejemplo «del 1 al 40
   de 80 productos», para no perder la ubicación. Hoy
   `components/admin/paginacion.tsx` dice solo «Página N de M». Va en todos los
