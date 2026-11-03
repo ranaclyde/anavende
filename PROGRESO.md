@@ -838,15 +838,19 @@ grupo, «ver más», otro reparto de columnas) es una decisión de diseño y **n
 se hace por mi cuenta**. Queda anotado para decidirlo.
 
 **Pendiente: cinco ajustes de UX pedidos por vos** (2026-11-03, después de
-cargar productos reales en producción). Están hechos los dos de la ficha y el de los colores.
+cargar productos reales en producción). Falta solo el de los listados.
 
 En el panel:
 
-- **Abrir el producto en la tienda.** En el detalle del producto
-  (`app/admin/productos/[id]/page.tsx`) hoy solo está `CopiarEnlace`. Falta un
-  botón que abra la ficha publicada para ver cómo quedó ese producto. Ya hay un
-  «Ver en la tienda» en `components/admin/legales/formulario.tsx` que sirve
-  de modelo.
+- ~~**Abrir el producto en la tienda**~~ — hecho el 2026-11-03. En el
+  encabezado del detalle del producto (`app/admin/productos/[id]/page.tsx`),
+  al lado de «Copiar enlace», está «Ver en la tienda». Es el mismo botón que
+  el de las páginas legales y abre la ficha en otra pestaña, para no perder
+  lo que se está editando. **Solo con el producto activo**, como «Copiar
+  enlace»: uno inactivo da 404 en la tienda también para quien administra
+  (RN-05). Verlo antes de activarlo sería otra tarea, y no la decido yo. Con
+  tres acciones, a 390px no entraban en un renglón y la página se ensanchaba
+  23px: ahora bajan de renglón. Lo cubre `tests/e2e/copiar-enlace.spec.ts`.
 - ~~**Los colores se colapsan cuando son más de 3**~~ — hecho el 2026-11-03.
   Con 6 colores cargados, la lista de variantes
   (`components/admin/productos/variantes.tsx`) era interminable para cambiar

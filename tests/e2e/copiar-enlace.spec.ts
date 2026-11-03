@@ -3,7 +3,10 @@ import { expect, test } from "./apoyo/test";
 import { datosDePrueba, sufijo, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
-/** El enlace de un producto activo se copia desde el panel; el inactivo no lo ofrece. */
+/**
+ * El producto activo se abre en la tienda y su enlace se copia desde el
+ * panel; el inactivo no ofrece ninguno de los dos.
+ */
 
 const datos = datosDePrueba();
 const palabra = sufijo();
@@ -44,6 +47,20 @@ test("copia el enlace del producto activo y lo oculta si está inactivo", async 
   await ingresar(page, admin);
   await page.goto(`/admin/productos/${producto.id}`);
 
+  // «Ver en la tienda» abre la ficha en otra pestaña.
+  const ver = page.getByRole("link", { name: "Ver en la tienda" });
+  await expect(ver).toHaveAttribute("href", `/productos/${producto.slug}`);
+  const [pestana] = await Promise.all([
+    context.waitForEvent("page"),
+    ver.click(),
+  ]);
+  await pestana.waitForLoadState();
+  await expect(pestana).toHaveURL(new RegExp(`/productos/${producto.slug}$`));
+  await expect(
+    pestana.getByRole("heading", { level: 1, name: `Teclado ${palabra}` }),
+  ).toBeVisible();
+  await pestana.close();
+
   await page.getByRole("button", { name: "Copiar enlace" }).click();
   await expect(page.getByText("Copiaste el enlace")).toBeVisible();
   const copiado = await page.evaluate(() => navigator.clipboard.readText());
@@ -61,5 +78,8 @@ test("copia el enlace del producto activo y lo oculta si está inactivo", async 
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Copiar enlace" }),
+  ).toBeHidden();
+  await expect(
+    page.getByRole("link", { name: "Ver en la tienda" }),
   ).toBeHidden();
 });
