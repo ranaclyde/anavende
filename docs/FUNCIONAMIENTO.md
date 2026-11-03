@@ -153,7 +153,10 @@ se cancela (`modules/returns/registrar.ts`).
 4. **Activarlo.** No se puede activar un producto con la marca, la categoría
    o un color desactivados, y no se puede desactivar una marca, una
    categoría o un color mientras haya un producto activo que lo use. Así,
-   `products.is_active` es lo único que decide si un producto se ve.
+   `products.is_active` es lo único que decide si un producto se ve. Ya
+   activo, «Ver en la tienda» abre su ficha en otra pestaña y «Copiar
+   enlace» copia la dirección. Inactivo no ofrece ninguno de los dos: la
+   ficha da 404 también para quien administra.
 
 **Borrar puede terminar en desactivar:** un producto o una variante que
 alguna orden nombra no se borra, porque la orden lo sigue mostrando. Se

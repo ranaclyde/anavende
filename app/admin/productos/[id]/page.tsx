@@ -1,4 +1,4 @@
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -7,6 +7,7 @@ import { CopiarEnlace } from "@/components/admin/productos/copiar-enlace";
 import { FormularioDeProducto } from "@/components/admin/productos/formulario";
 import { VariantesDelProducto } from "@/components/admin/productos/variantes";
 import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
+import { Button } from "@/components/ui/button";
 import {
   obtenerProducto,
   opcionesDeProducto,
@@ -100,7 +101,10 @@ export default async function EditarProducto({ params, searchParams }: Props) {
         titulo={producto.name}
         volver={{ href: "/admin/productos", etiqueta: "Productos" }}
         acciones={
-          <div className="flex items-center gap-2">
+          // `flex-wrap`: con «Ver en la tienda» son tres, y a 390px no entran
+          // en un renglón. Sin esto, «Copiar enlace» quedaba cortado y la
+          // página se ensanchaba 23px.
+          <div className="flex flex-wrap items-center gap-2">
             {/* Sin colores no hay stock que explicar: el estado vacío ya dice
                 qué hacer. */}
             {variantes.length > 0 ? (
@@ -110,8 +114,27 @@ export default async function EditarProducto({ params, searchParams }: Props) {
                 tamano="sm"
               />
             ) : null}
+            {/* Los dos, solo con el producto activo: uno inactivo da 404 en
+                la tienda también para quien administra (RN-05). */}
             {producto.isActive ? (
-              <CopiarEnlace url={urlAbsoluta(`/productos/${producto.slug}`)} />
+              <>
+                {/* Ver cómo quedó cargado, en otra pestaña para no perder lo
+                    que se está editando (pedido del 2026-11-03). El mismo
+                    botón que el de las páginas legales. */}
+                <Button asChild variant="tertiary" size="sm">
+                  <a
+                    href={`/productos/${producto.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Ver en la tienda
+                    <ExternalLink aria-hidden />
+                  </a>
+                </Button>
+                <CopiarEnlace
+                  url={urlAbsoluta(`/productos/${producto.slug}`)}
+                />
+              </>
             ) : null}
           </div>
         }
