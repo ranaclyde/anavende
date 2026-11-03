@@ -791,6 +791,19 @@ cámara del celular con una librería. Serviría para encontrar un producto al
 reponer stock o armar una orden, evitar duplicados y, como extra, precargar
 el alta con revisión de Ana.
 
+**Pendiente detectado: un corte de red al guardar borra lo cargado** (2026-11-02,
+ANAVENDE-NEXTJS-4 en Sentry). Le pasó a Ana creando un producto: el pedido no
+llegó (`Failed to fetch`), el rechazo subió a `app/admin/error.tsx` y el
+formulario se desmontó con todo lo escrito; «Probar de nuevo» no lo devolvió.
+`lib/action.ts` atrapa lo que falla en el servidor, pero no un pedido que no
+sale del navegador. Afecta a unos 42 componentes que llaman acciones dentro de
+una transición sin `catch`: 24 del panel en 13 pantallas, y 18 de la tienda.
+**Se probó un arreglo y se descartó por ahora, decisión tuya**: un reemplazo de
+`useTransition` que atrapaba el rechazo y mostraba un aviso flotante rojo,
+dejando el formulario intacto. Funcionaba, pero queda para pensarlo de otra
+forma. Si se retoma, lo que tiene que resolver es que lo escrito no se pierda
+y se pueda reintentar.
+
 **Pendiente detectado: las categorías no tienen dirección propia.** El filtro
 ES la dirección (§10.2) y lleva el UUID adentro —`/productos?categoria=f9e2…`—,
 así que la página de «Teclados» no existe como tal y, con la regla de arriba,
@@ -798,6 +811,31 @@ tampoco se indexa. Para vender por buscador eso es lo que más se nota: «teclad
 en Viedma» no tiene a dónde llegar. Cambiarlo es de otra tarea —tocaría la
 lectura de filtros, la consulta, la barra y la home— y **no se hace por mi
 cuenta**. Queda anotado para decidirlo.
+
+**Pendiente detectado: con el catálogo real, las listas largas no se pueden
+recorrer** (2026-11-03, captura tuya de producción con ~50 productos, ~20
+categorías y ~20 marcas). Se ve en dos lugares:
+
+- **Los filtros del catálogo** (`components/shop/filtros-catalogo.tsx`). En
+  computadora el panel mide como máximo `min(70vh, 32rem)` y scrollea por
+  dentro. La columna «Categoría» sola ya pasa ese alto y queda cortada sin
+  ninguna señal, mientras «Color» ocupa dos renglones y deja la columna vacía.
+  La barra de scroll apenas se ve, y lo que queda abajo (el descuento y «Ver N
+  productos») queda escondido. Es el mismo problema que se arregló en el
+  teléfono con la hoja a pantalla completa, ahora en computadora. Filtrar se
+  vuelve casi imposible. («Joysticks» va primero a propósito: es una categoría
+  destacada.)
+- **El selector con buscador del panel** (`components/ui/selector-con-buscador.tsx`,
+  marca, categoría y color en el producto). La lista tiene un máximo de 256px
+  (`max-h-64`) y, pasadas unas 7 opciones, scrollea. axe lo marca
+  (`scrollable-region-focusable`) y por eso falla «el selector con buscador,
+  abierto» en `tests/e2e/accesibilidad.spec.ts`. Falta verificar que con las
+  flechas se llega a la última opción y que se ve. Si se llega, el arreglo es
+  del test. Si no, es del selector.
+
+Cómo mostrar muchas categorías y marcas en los filtros (buscador dentro del
+grupo, «ver más», otro reparto de columnas) es una decisión de diseño y **no
+se hace por mi cuenta**. Queda anotado para decidirlo.
 
 ### El rediseño de la tienda (F3.8)
 

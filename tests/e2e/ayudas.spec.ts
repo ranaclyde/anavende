@@ -11,7 +11,7 @@ import { ingresar } from "./apoyo/sesion";
  *
  * Lo que se prueba es lo que hace que una guía no moleste: **aparece sola la
  * primera vez y nunca más**, se cierra de cualquier forma, el foco entra al
- * globo y vuelve a «Ver la guía» al cerrarla, y ese botón la reabre. Más axe
+ * globo y vuelve a «Ayuda» al cerrarla, y ese botón la reabre. Más axe
  * sobre el globo abierto, que es un diálogo que no está en `accesibilidad.spec`.
  *
  * Los demás E2E arrancan con las guías vistas (`apoyo/test.ts`); este no.
@@ -105,8 +105,15 @@ const globo = (page: Page) => page.getByRole("dialog");
  * través, que no es lo que lee nadie.
  */
 async function axeDelGlobo(page: Page): Promise<string[]> {
-  await page.waitForFunction(() =>
-    document.getAnimations().every((a) => a.playState !== "running"),
+  // Solo las del globo: con sesión, la cara de la cuenta del encabezado se
+  // anima para siempre y esperar a todas las de la página no terminaba nunca.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .querySelector(".driver-popover")!
+        .getAnimations()
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
   );
   return hallazgosDeAxe(page, ".driver-popover");
 }
@@ -118,7 +125,7 @@ async function axeDelGlobo(page: Page): Promise<string[]> {
  * abrirse. Un segundo cubre de sobra ese margen en `next dev` ya compilado.
  */
 async function sinGuia(page: Page): Promise<void> {
-  await expect(page.getByRole("button", { name: "Ver la guía" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ayuda" })).toBeVisible();
   await page.waitForTimeout(1000);
   await expect(globo(page)).toBeHidden();
 }
@@ -139,13 +146,13 @@ test("la ficha: aparece la primera vez, se recorre con teclado y no vuelve", asy
   // Esc la cierra, cuenta como vista y devuelve el foco a quien la reabre.
   await page.keyboard.press("Escape");
   await expect(globo(page)).toBeHidden();
-  await expect(page.getByRole("button", { name: "Ver la guía" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Ayuda" })).toBeFocused();
 
   await page.reload();
   await sinGuia(page);
 
-  // «Ver la guía» la vuelve a abrir desde el principio.
-  await page.getByRole("button", { name: "Ver la guía" }).click();
+  // «Ayuda» la vuelve a abrir desde el principio.
+  await page.getByRole("button", { name: "Ayuda" }).click();
   await expect(globo(page)).toHaveAccessibleName("Elegí tu color");
 
   // Hasta el final con «Siguiente» y «Listo».
@@ -174,7 +181,7 @@ test("sin stock, la ficha no ofrece la guía", async ({ page }) => {
 
   await page.goto(`/productos/${agotado.slug}`);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Ver la guía" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Ayuda" })).toBeHidden();
 });
 
 test("el globo entra a 320px sin desbordar", async ({ page }) => {
@@ -243,7 +250,7 @@ test("el panel: la orden activa, con teclado, y una vez cada pantalla", async ({
   }
   await page.keyboard.press("Escape");
   await expect(globo(page)).toBeHidden();
-  await expect(page.getByRole("button", { name: "Ver la guía" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Ayuda" })).toBeFocused();
 
   await page.goto("/admin/ordenes/nueva");
   await expect(globo(page)).toHaveAccessibleName("Lo que vendiste");

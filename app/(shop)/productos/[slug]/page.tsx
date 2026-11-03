@@ -271,10 +271,9 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         <AyudaGuiada
           id="ficha"
           pasos={pasosDeLaFicha(identidad !== null)}
-          soloIcono
           // Con CSS y no con el stock del servidor: el stock depende del
           // color elegido, que cambia en el navegador. Sin el botón del
-          // carrito la guía no se puede armar y tocar el ícono no haría nada.
+          // carrito la guía no se puede armar y tocar el botón no haría nada.
           className="-my-2 -mr-2 hidden shrink-0 group-has-[[data-ayuda=comprar-carrito]]/ficha:inline-flex"
         />
       </div>

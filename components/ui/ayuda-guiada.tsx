@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  *
  * Un recorrido corto con Driver.js: oscurece la página, resalta un elemento y
  * explica en un globo qué es. **Aparece solo la primera vez** que se entra a
- * la pantalla y después se reabre con «Ver la guía», que es este mismo botón.
+ * la pantalla y después se reabre con «Ayuda», que es este mismo botón.
  *
  * **Lo visto se anota en el navegador y no en la base** (decisión del
  * 2026-10-22, anotada en `sdd/ayudas-guiadas/DEFINICION.md`): la ficha la mira
@@ -148,7 +148,6 @@ export function AyudaGuiada({
   id,
   pasos,
   tamano = "md",
-  soloIcono = false,
   className,
 }: {
   /** Una por pantalla: es lo que se anota como vista. */
@@ -156,8 +155,6 @@ export function AyudaGuiada({
   pasos: PasoDeAyuda[];
   /** `sm` en el encabezado del panel, al lado de sus otras acciones. */
   tamano?: "sm" | "md";
-  /** Sin el texto, cuando el lugar es angosto. El nombre se sigue anunciando. */
-  soloIcono?: boolean;
   className?: string;
 }) {
   const escala = useDataScale();
@@ -242,18 +239,13 @@ export function AyudaGuiada({
       ref={boton}
       type="button"
       onClick={() => void abrir()}
-      aria-label={soloIcono ? "Ver la guía" : undefined}
-      title={soloIcono ? "Ver la guía" : undefined}
       className={cn(
-        buttonVariants({
-          variant: "tertiary",
-          size: soloIcono ? "icon" : tamano,
-        }),
+        buttonVariants({ variant: "tertiary", size: tamano }),
         className,
       )}
     >
       <CircleHelp aria-hidden />
-      {soloIcono ? null : "Ver la guía"}
+      Ayuda
     </button>
   );
 }

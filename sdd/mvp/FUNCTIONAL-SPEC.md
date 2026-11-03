@@ -512,10 +512,10 @@ resalta un elemento y lo explica en un globo. Hay uno por pantalla:
 
 **Criterios de aceptación:**
 - [ ] Cada guía **aparece sola la primera vez** que se entra a su pantalla, y no vuelve a aparecer sola. Lo visto se anota en el navegador, así que vale para visitantes y compradores por igual.
-- [ ] **Se reabre** con «Ver la guía», a la vista en cada pantalla que tiene una.
+- [ ] **Se reabre** con «Ayuda», a la vista en cada pantalla que tiene una.
 - [ ] Se cierra en cualquier paso: «Listo», la cruz, Esc o un toque afuera.
 - [ ] Una guía **no arranca si falta un elemento que necesita**: la de la ficha, sin stock (no hay carrito que señalar); la del detalle, con el pedido entregado o cancelado (no hay qué cancelar); la de «Mis compras», sin compras. Los pasos opcionales —el color con un solo color, WhatsApp sin número configurado, los medios de pago sin ninguno— se saltean.
-- [ ] El globo es un diálogo: el foco entra a «Siguiente» al abrirse y **vuelve a «Ver la guía» al cerrarse**; el teclado lo recorre entero (Tab, flechas, Enter, Esc).
+- [ ] El globo es un diálogo: el foco entra a «Siguiente» al abrirse y **vuelve a «Ayuda» al cerrarse**; el teclado lo recorre entero (Tab, flechas, Enter, Esc).
 - [ ] Respeta `prefers-reduced-motion`: sin fundidos ni desplazamientos.
 - [ ] Entra a 320px sin desbordar, y pasa axe (WCAG 2.2 AA) abierto.
 
@@ -866,7 +866,7 @@ una acción mueve el stock o no se puede deshacer:
 | Devoluciones | Que se cargan desde la orden; que las dos clases restan de las ventas; que se anulan en vez de editarse |
 
 **Criterios de aceptación:**
-- [ ] Los de RF-36 —aparece sola la primera vez, se reabre con «Ver la guía», se cierra en cualquier paso, foco, teclado y movimiento reducido— valen igual.
+- [ ] Los de RF-36 —aparece sola la primera vez, se reabre con «Ayuda», se cierra en cualquier paso, foco, teclado y movimiento reducido— valen igual.
 - [ ] **Lo visto se anota en el navegador**, como en la tienda (decisión del 2026-10-23).
 - [ ] Una guía **no arranca si falta un elemento que necesita**: la de la orden, si no está activa; la del producto, sin colores; la de devoluciones, sin ninguna.
 - [ ] Pasa axe (WCAG 2.2 AA) abierta, **en el tema claro y en el oscuro**, y toma las medidas del panel y no las de la tienda.
