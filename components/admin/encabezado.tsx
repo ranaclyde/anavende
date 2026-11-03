@@ -73,7 +73,7 @@ export function EncabezadoDePanel({
         }`}
       >
         {/* Crece y parte su texto en vez de empujar las acciones abajo
-            (F2.15): con una bajada larga, «Ver la guía» de Nueva orden caía
+            (F2.15): con una bajada larga, «Ayuda» de Nueva orden caía
             al renglón siguiente y quedaba en otro lugar que en el resto. */}
         <div className="flex min-w-0 flex-1 basis-80 items-center gap-4">
           {retrato}

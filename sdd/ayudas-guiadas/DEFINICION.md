@@ -46,8 +46,10 @@ WhatsApp, y es una pantalla que se ve una sola vez y con el sello animado
   bloqueado): sin poder anotarla aparecería en cada visita.
 - **Si falta un paso obligatorio, no arranca ni se anota**, y espera a una
   visita en la que esté.
-- **Se reabre** con «Ver la guía», un botón terciario en el encabezado de cada
-  pantalla. En la ficha está en el recuadro «¿Cómo sigue después de comprar?».
+- **Se reabre** con «Ayuda», un botón terciario en el encabezado de cada
+  pantalla. En la ficha está arriba a la derecha, a la altura de las migas
+  (2026-11-02). Se llamaba «Ver la guía»; desde el 2026-11-03 dice «Ayuda»,
+  más corto y con texto también en la ficha, donde había quedado como ícono.
 
 ## 3. Los recorridos
 
@@ -103,7 +105,7 @@ dónde se cancela, y eso entró en el primero.
 ### Detalle (`/mi-cuenta/compras/[numero]`) — id `detalle-compra`
 
 **Solo con el pedido en preparación** (`activa` en la base), que es cuando
-existen las dos acciones. El botón «Ver la guía» tampoco se dibuja en los
+existen las dos acciones. El botón «Ayuda» tampoco se dibuja en los
 demás estados.
 
 | # | Señala | Título | Texto |
@@ -128,7 +130,7 @@ había salido cuatro días antes.
 
 | Problema | Corrección |
 |---|---|
-| Al cerrar, el foco quedaba en el último elemento resaltado | En `onDestroyed` vuelve a «Ver la guía», diferido: la librería mueve el foco después del gancho |
+| Al cerrar, el foco quedaba en el último elemento resaltado | En `onDestroyed` vuelve a «Ayuda», diferido: la librería mueve el foco después del gancho |
 | Al abrir, el foco caía en la cruz | Va a «Siguiente», también diferido |
 | No se marcaba como modal | `aria-modal="true"` |
 | El título y el pie son `<header>` y `<footer>`, y se anunciaban como regiones «banner» y «contentinfo» de la página | `role="heading"` con nivel 2 en el título, `role="none"` en el pie |
@@ -158,7 +160,7 @@ La tienda no tiene modo oscuro, así que el globo tampoco.
 
 - **`tests/e2e/ayudas.spec.ts`:**
   - Que aparece la primera vez y no la segunda.
-  - Que se recorre con teclado, que Esc la cierra y el foco vuelve a «Ver la guía», y que ese botón la reabre.
+  - Que se recorre con teclado, que Esc la cierra y el foco vuelve a «Ayuda», y que ese botón la reabre.
   - Que entra a 320px.
   - Que tiene axe sin hallazgos con el globo abierto, medido después del fundido: a mitad, el globo es semitransparente y axe mide contra lo que se ve a través.
 - **El resto de los E2E arrancan con las guías vistas** (`tests/e2e/apoyo/test.ts`). Si no, cada recorrido que pasa por esas pantallas tendría que cerrar un globo primero. La opción es del worker y no del test, porque la fixture `context` de Playwright también nace de `browser.newContext`.
@@ -214,7 +216,7 @@ hace el sistema se dice en impersonal.
 
 **Detalle de una orden (`/admin/ordenes/[numero]`) — id `panel-orden`.**
 Arranca **solo con la orden activa**, que es cuando existen las acciones. En
-los otros estados el botón «Ver la guía» no se dibuja, como en el detalle de
+los otros estados el botón «Ayuda» no se dibuja, como en el detalle de
 la tienda.
 
 | # | Señala | Título | Texto |
@@ -278,7 +280,7 @@ que no quede ninguna vigente en la página.
   botones tomaban las medidas de la tienda. El componente lee la escala con
   `useDataScale()`, como los diálogos, y se la pone al globo. Con ella, el
   globo toma el radio de los diálogos del panel (8px) y lo resaltado, 12px.
-- **«Ver la guía»** va en las acciones de `EncabezadoDePanel`, como botón
+- **«Ayuda»** va en las acciones de `EncabezadoDePanel`, como botón
   terciario `sm` y al final, después de las acciones de la pantalla.
 - **Cada paso señala el primer elemento visible** con su `data-ayuda`. En el
   panel el atributo va en todas las copias —cada renglón, cada color, cada
