@@ -94,6 +94,9 @@ export default async function OrdenesDelPanel({
           <PaginacionDelPanel
             pagina={filtros.pagina}
             paginas={paginas}
+            total={total}
+            porPagina={POR_PAGINA}
+            cosa={{ singular: "orden", plural: "órdenes" }}
             href={(n) => urlDeFiltros({ ...filtros, pagina: n })}
           />
         </>

@@ -226,8 +226,11 @@ export function ListadoDeProductos({
           </div>
 
           {/* Tarjetas: el teléfono y la tablet. De a dos cuando hay ancho,
-              que es la tablet parada: una sola de 790px estira cada fila. */}
-          <ul className="grid gap-2 @min-[40rem]:grid-cols-2 @min-[62rem]:hidden">
+              que es la tablet parada: una sola de 790px estira cada fila.
+              `grid-cols-1` y no la columna automática: esa crece hasta el
+              texto más largo que no se parte —un nombre truncado— y a 320px
+              la tarjeta se salía 4px de la pantalla. */}
+          <ul className="grid grid-cols-1 gap-2 @min-[40rem]:grid-cols-2 @min-[62rem]:hidden">
             {items.map((p) => (
               <li
                 key={p.id}
@@ -245,19 +248,26 @@ export function ListadoDeProductos({
                   <Precio producto={p} />
                   <Stock producto={p} umbral={umbral} />
                 </div>
-                <div className="flex items-center justify-between gap-3">
+                {/* `flex-wrap`: «Reponer» y los cuatro íconos de 44px suman
+                    unos 300px, y a 320 la tarjeta deja 262 adentro. Sin esto
+                    la fila ensanchaba la tarjeta y se cortaban el borrar y
+                    las reservadas (2026-11-03). Ahí los íconos bajan a un
+                    renglón propio, a la derecha como siempre (`ml-auto`). */}
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                   <ReponerStock
                     productId={p.id}
                     nombre={p.name}
                     variantes={p.variantes}
                   />
-                  <Acciones
-                    producto={p}
-                    ocupado={enCurso}
-                    alDestacar={() => alternarDestacado(p)}
-                    alAlternar={() => alternarEstado(p)}
-                    alBorrar={() => setPorBorrar(p)}
-                  />
+                  <div className="ml-auto">
+                    <Acciones
+                      producto={p}
+                      ocupado={enCurso}
+                      alDestacar={() => alternarDestacado(p)}
+                      alAlternar={() => alternarEstado(p)}
+                      alBorrar={() => setPorBorrar(p)}
+                    />
+                  </div>
                 </div>
               </li>
             ))}

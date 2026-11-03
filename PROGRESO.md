@@ -838,7 +838,7 @@ grupo, «ver más», otro reparto de columnas) es una decisión de diseño y **n
 se hace por mi cuenta**. Queda anotado para decidirlo.
 
 **Pendiente: cinco ajustes de UX pedidos por vos** (2026-11-03, después de
-cargar productos reales en producción). Falta solo el de los listados.
+cargar productos reales en producción). Están hechos los cinco.
 
 En el panel:
 
@@ -875,10 +875,35 @@ En el panel:
   - Lo cubre `tests/e2e/colores-plegables.spec.ts`: uno por vez, cerrar el
     abierto, las flechas del teclado, los tres colores sin plegar, y axe en
     computadora y a 390px en oscuro.
-- **Los listados dicen qué tramo se está viendo**, por ejemplo «del 1 al 40
-  de 80 productos», para no perder la ubicación. Hoy
-  `components/admin/paginacion.tsx` dice solo «Página N de M». Va en todos los
-  listados del panel.
+- ~~**Los listados dicen qué tramo se está viendo**~~ — hecho el 2026-11-03.
+  `PaginacionDelPanel` (`components/admin/paginacion.tsx`) dice «Del 41 al 80
+  de 95 órdenes» en los ocho listados que la usan: productos, órdenes,
+  devoluciones, usuarios («personas», como el contador de arriba), marcas,
+  categorías, colores y medios de pago. Con un total de 1, en singular.
+  Detalles:
+  - **Reemplaza a «Página N de M»**, no va al lado. El tramo ya dice si hay
+    más, porque el «al» llega o no al total. Las dos juntas no entraban a
+    390px sin partirse en varios renglones.
+  - **El texto va primero y «Anterior» y «Siguiente» juntos a la derecha.**
+    A 1280px entran en un renglón. En el teléfono los botones bajan al
+    siguiente, sin apretar el texto. A 320px no ensancha la página.
+  - **Con una sola página sigue sin dibujarse**, como antes.
+  - El total y el tamaño de página ya los tenía cada pantalla para calcular
+    las páginas: no se sumó ninguna consulta.
+  - **De paso, las tarjetas de productos a 320px** (pedido tuyo, en el mismo
+    PR). Se salían de la pantalla y se cortaban el borrar y «reservadas»,
+    por dos motivos en `components/admin/productos/listado.tsx`. Uno:
+    «Reponer» y los cuatro íconos suman unos 300px y la tarjeta deja 262
+    adentro; ahora, si no entran, los íconos bajan a su renglón, a la
+    derecha. Dos: la lista tenía una columna automática, que crecía hasta el
+    nombre truncado más largo; ahora es `grid-cols-1`. A 360px o más se ve
+    igual que antes. No lo veía nadie porque `accesibilidad.spec.ts` mide los
+    320px solo en la tienda: lo cubre `tests/e2e/rango-en-listados.spec.ts`,
+    que falla sin el arreglo.
+  - Lo cubre `tests/e2e/rango-en-listados.spec.ts`: 45 productos de una marca
+    del test, «Del 1 al 40» y «Del 41 al 45 de 45 productos», axe sobre la
+    paginación, y sin paginación con un solo producto. Pasa también
+    `accesibilidad.spec.ts -g "el panel"`.
 
 En la tienda, en la ficha del producto:
 

@@ -40,7 +40,7 @@ import {
   eliminarUnMedioDePago,
   moverMedioDePago,
 } from "@/modules/settings/actions";
-import { urlDePagina } from "@/modules/catalog/filtros-panel";
+import { POR_PAGINA, urlDePagina } from "@/modules/catalog/filtros-panel";
 import type { MedioDePagoDelPanel } from "@/modules/settings/queries";
 
 /**
@@ -219,6 +219,9 @@ export function ListadoDeMediosDePago({
           <PaginacionDelPanel
             pagina={pagina}
             paginas={paginas}
+            total={total}
+            porPagina={POR_PAGINA}
+            cosa={{ singular: "medio de pago", plural: "medios de pago" }}
             href={(n) => urlDePagina(base, n)}
           />
         </>
