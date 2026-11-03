@@ -31,7 +31,8 @@ export function Descripcion({ markdown }: { markdown: string }) {
   if (nodos.length === 0) return null;
 
   return (
-    <section aria-labelledby="descripcion" className="pt-8">
+    // Sin margen propio: el aire lo pone quien la contiene.
+    <section aria-labelledby="descripcion">
       {/*
         «Sobre el producto» y no «Descripción» (2026-09-08): el rótulo
         anterior nombraba el campo de la base, no lo que la persona va a leer.

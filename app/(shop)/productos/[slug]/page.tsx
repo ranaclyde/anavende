@@ -418,8 +418,13 @@ function Migas({
  * quien compra no es el nombre del cadete sino hasta dónde llegamos.
  */
 function Informacion({ descripcion }: { descripcion: string }) {
+  // La línea queda con el mismo aire arriba y abajo: `mt-8` y `pt-8`. Los
+  // bloques de adentro no traen margen propio y los separa el `gap`. Antes la
+  // descripción sumaba su `pt-8` al `pt-6` de acá y quedaban 32px sobre la
+  // línea y 56 debajo (2026-11-03). Sin descripción pasaba lo mismo con el
+  // `mt-10` de «¿Cómo sigue?».
   return (
-    <div className="mt-8 border-t border-border pt-6">
+    <div className="mt-8 flex flex-col gap-10 border-t border-border pt-8">
       <Descripcion markdown={descripcion} />
       <ComoSigue />
     </div>
@@ -505,7 +510,7 @@ function ComoSigue() {
   return (
     <section
       aria-labelledby="como-sigue"
-      className="mt-10 rounded-card bg-surface p-5 shadow-md"
+      className="rounded-card bg-surface p-5 shadow-md"
       data-ayuda="como-sigue"
     >
       <h2 id="como-sigue" className="text-body-lg font-medium text-ink">

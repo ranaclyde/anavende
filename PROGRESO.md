@@ -837,6 +837,47 @@ Cómo mostrar muchas categorías y marcas en los filtros (buscador dentro del
 grupo, «ver más», otro reparto de columnas) es una decisión de diseño y **no
 se hace por mi cuenta**. Queda anotado para decidirlo.
 
+**Pendiente: cinco ajustes de UX pedidos por vos** (2026-11-03, después de
+cargar productos reales en producción). Está hecho el último, el del espacio.
+
+En el panel:
+
+- **Abrir el producto en la tienda.** En el detalle del producto
+  (`app/admin/productos/[id]/page.tsx`) hoy solo está `CopiarEnlace`. Falta un
+  botón que abra la ficha publicada para ver cómo quedó ese producto. Ya hay un
+  «Ver en la tienda» en `components/admin/legales/formulario.tsx` que sirve
+  de modelo.
+- **Los colores se colapsan cuando son más de 3.** Con 6 colores cargados, la
+  lista de variantes (`components/admin/productos/variantes.tsx`) se vuelve
+  interminable para cambiar algo. Pasados los 3, cada color se colapsa y
+  muestra solo lo más importante. **Se abre uno solo por vez**: abrir uno
+  cierra el anterior. **Cerrado, muestra la parte de arriba de la variante
+  tal como está hoy** (decisión tuya del 2026-11-03). Se esconden las fotos,
+  que son lo que más espacio ocupa, y los botones de editar y eliminar,
+  cuando los hay.
+- **Los listados dicen qué tramo se está viendo**, por ejemplo «del 1 al 40
+  de 80 productos», para no perder la ubicación. Hoy
+  `components/admin/paginacion.tsx` dice solo «Página N de M». Va en todos los
+  listados del panel.
+
+En la tienda, en la ficha del producto:
+
+- **La descripción se puede expandir.** Hoy «Sobre el producto»
+  (`components/shop/ficha/descripcion.tsx`) se muestra entera, y mucha gente
+  no la lee y la tiene que pasar para llegar a lo de abajo. Se muestra una
+  parte, con «Mostrar más» y «Mostrar menos». Ojo: hoy es un Server Component
+  porque el Markdown es `server-only`. El botón necesita una parte cliente
+  que envuelva el contenido ya pintado.
+- ~~**El espacio debajo de los botones es desparejo**~~ — arreglado el
+  2026-11-03 (captura tuya). Debajo de «Guardar / Compartir» había una línea
+  con 32px arriba y 56px abajo. Se sumaban dos rellenos: el `pt-6` de
+  `Informacion`, en `app/(shop)/productos/[slug]/page.tsx`, y el `pt-8` de la
+  `<section>` de `Descripcion`. Sin descripción quedaban 85px, por el `mt-10`
+  de «¿Cómo sigue?». Ahora la caja pone `pt-8` y separa sus bloques con
+  `gap-10`, y los bloques no traen margen propio. Medido con Playwright a 390
+  y a 1280, con y sin descripción: 32px arriba y 32 abajo. Entre la
+  descripción y «¿Cómo sigue?» siguen los 40 de antes.
+
 ### El rediseño de la tienda (F3.8)
 
 Sale de un canvas de Claude Design aprobado por vos, **`Rediseño UI AnaVende`**
