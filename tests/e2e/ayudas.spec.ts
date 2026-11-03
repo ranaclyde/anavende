@@ -105,8 +105,15 @@ const globo = (page: Page) => page.getByRole("dialog");
  * través, que no es lo que lee nadie.
  */
 async function axeDelGlobo(page: Page): Promise<string[]> {
-  await page.waitForFunction(() =>
-    document.getAnimations().every((a) => a.playState !== "running"),
+  // Solo las del globo: con sesión, la cara de la cuenta del encabezado se
+  // anima para siempre y esperar a todas las de la página no terminaba nunca.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .querySelector(".driver-popover")!
+        .getAnimations()
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
   );
   return hallazgosDeAxe(page, ".driver-popover");
 }
