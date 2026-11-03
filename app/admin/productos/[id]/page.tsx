@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
+import { CopiarEnlace } from "@/components/admin/productos/copiar-enlace";
 import { FormularioDeProducto } from "@/components/admin/productos/formulario";
 import { VariantesDelProducto } from "@/components/admin/productos/variantes";
 import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
@@ -14,6 +15,7 @@ import {
   opcionesDeColor,
   variantesDelProducto,
 } from "@/modules/catalog/variants/queries";
+import { urlAbsoluta } from "@/lib/seo";
 import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Editar producto" };
@@ -98,15 +100,20 @@ export default async function EditarProducto({ params, searchParams }: Props) {
         titulo={producto.name}
         volver={{ href: "/admin/productos", etiqueta: "Productos" }}
         acciones={
-          // Sin colores no hay stock que explicar: el estado vacío ya dice
-          // qué hacer.
-          variantes.length > 0 ? (
-            <AyudaGuiada
-              id="panel-producto"
-              pasos={PASOS_DEL_PRODUCTO}
-              tamano="sm"
-            />
-          ) : null
+          <div className="flex items-center gap-2">
+            {/* Sin colores no hay stock que explicar: el estado vacío ya dice
+                qué hacer. */}
+            {variantes.length > 0 ? (
+              <AyudaGuiada
+                id="panel-producto"
+                pasos={PASOS_DEL_PRODUCTO}
+                tamano="sm"
+              />
+            ) : null}
+            {producto.isActive ? (
+              <CopiarEnlace url={urlAbsoluta(`/productos/${producto.slug}`)} />
+            ) : null}
+          </div>
         }
       />
 
