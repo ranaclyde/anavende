@@ -186,13 +186,13 @@ Ver detalle en §12 (Fuera de alcance).
 | Agregar al carrito | Botón «Iniciá sesión para comprar» → login y vuelve a la acción | Sí |
 | Comprar ahora | Abre WhatsApp con el detalle del producto | Va al checkout con ese único ítem |
 | Consultar por WhatsApp | Sí | Sí |
-| **Preguntar si va a haber** (sólo sin stock) | Sí | Sí |
+| **Consultar disponibilidad** (sólo sin stock) | Sí | Sí |
 | Agregar a favoritos | Invita a iniciar sesión | Sí |
 
 **Criterios de aceptación:**
 - [ ] Al cambiar de color, cambian imágenes, stock y disponibilidad sin recargar la página, y la URL refleja la variante.
 - [ ] Si una variante no tiene imágenes propias, se muestran las imágenes designadas como respaldo (ver RF-16).
-- [ ] Si la variante no tiene stock disponible, la ficha **lo dice con palabras** —no sólo con un color o un botón apagado—, las acciones de compra quedan deshabilitadas y el botón **principal** pasa a ser **«Preguntá si va a haber»**, que abre WhatsApp con el mensaje de consulta de disponibilidad (RF-04). Es la única acción que le queda a quien llegó hasta acá, así que no puede ser la secundaria.
+- [ ] Si la variante no tiene stock disponible, la ficha **lo dice con palabras** —no sólo con un color o un botón apagado—, las acciones de compra quedan deshabilitadas y el botón **principal** pasa a ser **«Consultar disponibilidad»**, que abre WhatsApp con el mensaje de consulta de disponibilidad (RF-04). Es la única acción que le queda a quien llegó hasta acá, así que no puede ser la secundaria.
 - [ ] Esa consulta **sale del sitio**: no crea orden, no reserva, no agenda ningún aviso. La ficha no promete que le vayan a avisar — la respuesta llega por WhatsApp y la da la vendedora.
 - [ ] El corazón de favoritos está en la ficha además de en la tarjeta, **siempre a la vista**, y se ve relleno cuando el producto ya está marcado (RF-10).
 - [ ] Un producto con `isActive = false` devuelve 404.

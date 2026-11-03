@@ -247,7 +247,7 @@ que los logos de los medios de pago, y solo aparece pegado a su logo.
 | En el modo oscuro del panel | `#25d366` | 8,38:1 sobre la superficie; la tinta inversa encima, 9,28:1 |
 
 **Dónde va relleno** (variante `whatsapp`, §6.3): los tres estados de compra
-de la ficha —«Comprá ya por WhatsApp», «Preguntá si va a haber», «Consultá
+de la ficha —«Comprá ya por WhatsApp», «Consultar disponibilidad», «Consultá
 por WhatsApp»—, «Coordinar pago por WhatsApp» de la orden y de «Mis compras»,
 y la página de mantenimiento.
 
@@ -830,7 +830,7 @@ Color:  Negro
 - Los colores claros llevan un borde `--border` de 1px para no desaparecer sobre el blanco.
 - **Una variante de dos colores** («Negro/Rojo», 2026-10-05) lleva la muestra **partida en diagonal**, con corte neto y sin degradé: el primer color arriba a la izquierda y el segundo abajo a la derecha. El corte va de abajo a la izquierda a arriba a la derecha, la diagonal **opuesta** a la barra de «sin stock», así que las dos se cruzan en X y no se confunden. Es una sola pieza, `EsferaDeColor`, la misma en la ficha, la tarjeta y el panel.
 - **El nombre del color se muestra siempre** junto al selector: no se depende del color para identificar la opción.
-- **Un color sin stock SÍ se puede elegir**, con la barra diagonal y el 40% puestos. Decía lo contrario hasta el 2026-09-08, y el cambio tiene un motivo concreto: elegir el color agotado es lo que arma el mensaje de «Preguntá si va a haber» (§7.3, RF-03). Con el color bloqueado, ese estado no se alcanzaba desde ninguna parte de la pantalla. Lo que queda deshabilitado son las acciones de **compra**, no la elección.
+- **Un color sin stock SÍ se puede elegir**, con la barra diagonal y el 40% puestos. Decía lo contrario hasta el 2026-09-08, y el cambio tiene un motivo concreto: elegir el color agotado es lo que arma el mensaje de «Consultar disponibilidad» (§7.3, RF-03). Con el color bloqueado, ese estado no se alcanzaba desde ninguna parte de la pantalla. Lo que queda deshabilitado son las acciones de **compra**, no la elección.
 - El 40% va sobre el **relleno del color**, no sobre la muestra entera: con la opacidad afuera, el anillo burdeos del color elegido se destiñe con ella y un producto agotado en su único color se ve sin marcar.
 - Son `<input type="radio">` de verdad, escondidos bajo la muestra: el recorrido con flechas, el anuncio de «2 de 4» y el agrupado los da el navegador.
 
@@ -1458,18 +1458,14 @@ Es un estado de la **variante elegida**, no del producto: con el negro agotado y
 │  Cantidad  [− 1 +]          │  deshabilitado, atenuado
 │  ⊘ Sin stock en negro       │  --danger, con ícono
 │                             │
-│  [ Preguntá si va a haber ] │  PRINCIPAL, abre WhatsApp
-│                             │
-│  Te contestamos por         │  caption, --ink-secondary
-│  WhatsApp. No lo reservamos │
-│  ni te avisamos solos.      │
+│ [ Consultar disponibilidad ]│  PRINCIPAL, abre WhatsApp
 ```
 
 Tres cosas que este estado hace a propósito:
 
 - **Lo dice con palabras**, no con un botón apagado. Un botón gris sin explicación se lee como una falla del sitio, no como una falta de stock (§8, §9: nada se comunica sólo con color).
 - **La consulta por WhatsApp sube a principal.** Es la única acción que le queda a quien llegó hasta acá; dejarla de secundaria mientras el principal está apagado deja la pantalla sin ninguna salida a la vista.
-- **La aclaración de abajo no es letra chica, es la promesa que no hacemos.** «Preguntá si va a haber» suena a que el sitio va a avisar, y no hay ningún aviso: la respuesta la da la vendedora por WhatsApp, y decirlo acá evita que alguien se quede esperando.
+- **Sin aclaración debajo del botón.** Hasta el 2026-11-03 el botón decía «Preguntá si va a haber» y llevaba abajo «Te contestamos por WhatsApp. No lo reservamos ni te avisamos solos.». Por decisión del usuario del 2026-11-03, el botón pasó a decir «Consultar disponibilidad» y la aclaración se sacó: el botón queda solo, con el mismo aire hasta «Guardar / Compartir» que en el caso con stock.
 
 **El corazón sigue disponible sin stock**, y es de las pocas cosas que sí siguen andando: marcar favorito algo agotado es precisamente para qué sirven los favoritos.
 
@@ -1821,7 +1817,7 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | **La vista previa del panel también pierde el «Ahorrás»** | No es que RN-04c alcance al panel: es que esa vista previa dice literalmente «Se muestra», así que tiene que mostrar lo que el comprador ve. Y repetía el descuento que Ana acababa de tipear tres campos más arriba |
 | **El corazón de favoritos se rellena con `--brand`, y no entra un rosa nuevo** | §1.2 decidió **un solo color saturado** y el canvas de F3.8 lo confirmó. Un rosa para el corazón sería el segundo, puesto por un ícono de 20px: el burdeos ya es el color de lo accionable y de lo elegido, y relleno sobre blanco lee exactamente como se espera que lea un corazón marcado |
 | **El corazón está siempre a la vista, en la tarjeta y en la ficha** | Revelarlo al pasar el mouse lo deja inalcanzable en un teléfono, que es donde va a estar la mayoría. Y va **encima** del enlace, nunca adentro: un `<a>` que envuelva la tarjeta entera se lleva el botón adentro, que es HTML inválido y lo saca del recorrido de teclado |
-| **Sin stock, «Preguntá si va a haber» es el botón principal de la ficha** | Es la única acción que le queda a quien llegó hasta ahí. De secundaria, al lado de un principal apagado, la pantalla queda sin ninguna salida a la vista y el botón gris se lee como una falla del sitio |
+| **Sin stock, «Consultar disponibilidad» es el botón principal de la ficha** | Es la única acción que le queda a quien llegó hasta ahí. De secundaria, al lado de un principal apagado, la pantalla queda sin ninguna salida a la vista y el botón gris se lee como una falla del sitio |
 | **Un color agotado se puede elegir; §6.5 decía que no** | Sin eso, el estado sin stock de §7.3 —el que acabábamos de especificar— no se alcanzaba desde la pantalla: había que llegarle escribiendo el `?color=` a mano. Lo que se deshabilita es comprar, no elegir |
 | **El color viaja en la dirección como `?color=negro`, no como identificador** | El catálogo filtra por `?color=<uuid>` porque ahí el valor sale de una lista y no lo lee nadie. En la ficha el enlace se manda por WhatsApp (§10.2 es exactamente eso), y `?color=negro` sobrevive a que alguien lo lea en voz alta |
 | **El color cambia con `replaceState`, no con `pushState` ni con una navegación** | Con una navegación —aunque sea blanda— se vuelve al servidor a buscar lo que ya está en memoria y se pierde la transición de 150ms de §6.8. Con `pushState`, mirar tres colores deja tres entradas y el botón atrás recorre colores en vez de volver al catálogo |
@@ -1838,6 +1834,6 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | **Compartir funciona hoy y Guardar no** | No es una inconsistencia: los favoritos necesitan cuenta (F5.4) y compartir no necesita servidor. Dibujar los dos apagados habría escondido el único que ya se puede probar |
 | **El fallo de «Compartir» se dice en pantalla** | El portapapeles necesita contexto seguro, y la tienda se abre a propósito por IP de la LAN para probarla desde el teléfono: ahí no existe. Un botón que se aprieta y no hace nada parece un sitio colgado |
 | **El visor usa `<img>` y no `next/image`, única excepción del proyecto** | El zoom es «el tamaño real del archivo», y el optimizador devuelve el ancho que él elige. Sin ese ancho conocido no hay con qué calcular la escala |
-| **La ficha sin stock aclara que nadie va a avisar** | «Preguntá si va a haber» suena a que el sitio agenda un aviso, y no hay ninguno: la respuesta la da la vendedora por WhatsApp. Prometer de menos y por escrito cuesta un renglón; alguien esperando un mail que no existe cuesta la venta |
+| **La ficha sin stock ya no lleva aclaración debajo del botón** | Decisión del usuario del 2026-11-03. Hasta entonces el botón decía «Preguntá si va a haber» y abajo aclaraba «Te contestamos por WhatsApp. No lo reservamos ni te avisamos solos.»; ahora dice «Consultar disponibilidad» y la aclaración se sacó |
 | **El catálogo da de alta y edita en un drawer a la derecha (§6.14.3)** | Pedido tuyo del 2026-10-14. La categoría pasó a tener tres secciones y una lista que crece, y el diálogo centrado con tope de alto la cortaba. A la derecha porque la izquierda es la navegación. Las cuatro solapas van igual para que la misma pantalla no se comporte de dos maneras |
 | **Tres intervalos en los formularios del panel: 6, 20 y línea con 24 (§3.4.1)** | Pedido tuyo del 2026-10-14, mirando el diálogo de categoría. Con 16px entre todo, ningún grupo se distinguía de otro. `impeccable` y `ui-ux-pro-max` piden lo mismo: lo relacionado junto y apretado, lo distinto separado, sin cajas que compensen la falta de aire |
