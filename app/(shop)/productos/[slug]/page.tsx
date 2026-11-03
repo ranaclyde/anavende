@@ -248,7 +248,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
       : varianteInicial(ficha.variantes, color);
 
   return (
-    <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+    <div className="group/ficha mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
       {/*
         F3.9 — el producto y su rastro de migas, para quien lee el HTML sin
         ojos. No se ve ni ocupa lugar: es el mismo contenido de la pantalla,
@@ -272,7 +272,10 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
           id="ficha"
           pasos={pasosDeLaFicha(identidad !== null)}
           soloIcono
-          className="-my-2 -mr-2 shrink-0"
+          // Con CSS y no con el stock del servidor: el stock depende del
+          // color elegido, que cambia en el navegador. Sin el botón del
+          // carrito la guía no se puede armar y tocar el ícono no haría nada.
+          className="-my-2 -mr-2 hidden shrink-0 group-has-[[data-ayuda=comprar-carrito]]/ficha:inline-flex"
         />
       </div>
 
