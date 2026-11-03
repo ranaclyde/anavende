@@ -55,6 +55,7 @@ import type {
  */
 const CAMPOS = [
   "name",
+  "model",
   "brandId",
   "categoryId",
   "price",
@@ -153,6 +154,7 @@ export function FormularioDeProducto({
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
 
   const [nombre, setNombre] = useState(producto?.name ?? "");
+  const [modelo, setModelo] = useState(producto?.model ?? "");
   const [marcaId, setMarcaId] = useState(producto?.brandId ?? "");
   const [categoriaId, setCategoriaId] = useState(producto?.categoryId ?? "");
   // Como se escribe y no como lo guarda la base (F2.15): «89900», no
@@ -181,6 +183,7 @@ export function FormularioDeProducto({
     producto !== null &&
     !descripcionTocada &&
     nombre === producto.name &&
+    modelo === (producto.model ?? "") &&
     marcaId === producto.brandId &&
     categoriaId === producto.categoryId &&
     precio === paraEditar(producto.price) &&
@@ -192,6 +195,7 @@ export function FormularioDeProducto({
     activo === producto.isActive;
   const algoEscrito =
     nombre.trim() !== "" ||
+    modelo.trim() !== "" ||
     precio.trim() !== "" ||
     descuento.trim() !== "" ||
     descripcionTocada;
@@ -259,6 +263,7 @@ export function FormularioDeProducto({
 
     const datos = {
       name: nombre,
+      model: modelo,
       description: leerMarkdown(editor.current),
       brandId: marcaId,
       categoryId: categoriaId,
@@ -371,6 +376,26 @@ export function FormularioDeProducto({
                 Por ejemplo: «Teclado mecánico K120 retroiluminado».
               </FieldHint>
             )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={campo("model").id}>
+              Modelo{" "}
+              <span className="font-normal text-ink-secondary">(opcional)</span>
+            </Label>
+            <Input
+              {...campo("model")}
+              value={modelo}
+              onChange={(e) => setModelo(e.target.value)}
+              maxLength={120}
+              autoComplete="off"
+            />
+            <FieldError id={`${idBase}-model-error`}>
+              {errores.campos.model}
+            </FieldError>
+            <FieldHint>
+              Es una referencia para vos: no se muestra en la tienda.
+            </FieldHint>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

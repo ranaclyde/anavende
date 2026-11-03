@@ -430,6 +430,7 @@ CREATE TABLE products (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name         text NOT NULL,
   slug         text NOT NULL UNIQUE,
+  model       text,                 -- 2026-11-02: referencia del panel, no se muestra en la tienda
   description  text NOT NULL DEFAULT '',           -- RF-15: Markdown acotado
   -- Proyección en texto plano, SOLO para buscar (§10.1). Ver la nota.
   description_text text GENERATED ALWAYS AS (
