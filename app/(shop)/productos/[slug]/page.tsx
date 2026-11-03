@@ -37,11 +37,7 @@ import {
   type Ficha,
 } from "@/modules/catalog/products/ficha";
 import { esFavorito } from "@/modules/users/favoritos/queries";
-import {
-  mediosDePagoDeLaTienda,
-  numeroDeWhatsApp,
-  type MedioDePagoDeLaTienda,
-} from "@/modules/settings/queries";
+import { numeroDeWhatsApp } from "@/modules/settings/queries";
 
 /**
  * Ficha de producto — F3.5, RF-03, DESIGN-REFERENCE §6.5, §6.8, §7.3.
@@ -205,14 +201,12 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
   // —«Agregá al carrito» o «Iniciá sesión para comprar» (RF-08)—, y
   // `getIdentity` verifica el token sin ir a la base. Quien decide si puede
   // agregar es la acción, con el perfil fresco (§6.2).
-  const [ficha, whatsapp, mediosDePago, consulta, identidad] =
-    await Promise.all([
-      leerFicha(slug),
-      numeroDeWhatsApp(),
-      mediosDePagoDeLaTienda(),
-      searchParams,
-      getIdentity(),
-    ]);
+  const [ficha, whatsapp, consulta, identidad] = await Promise.all([
+    leerFicha(slug),
+    numeroDeWhatsApp(),
+    searchParams,
+    getIdentity(),
+  ]);
 
   // RN-05: un producto inactivo no existe para el sitio público, y da el
   // mismo 404 que uno que nunca existió.
@@ -267,7 +261,20 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         ]}
       />
 
-      <Migas categoria={ficha.categoria} categoriaSlug={ficha.categoriaSlug} />
+      {/* Arriba y a la derecha, a la altura de las migas (2026-11-02): al pie,
+          dentro de «¿Cómo sigue?», no la encontraba nadie. */}
+      <div className="flex items-center justify-between gap-4 pb-6">
+        <Migas
+          categoria={ficha.categoria}
+          categoriaSlug={ficha.categoriaSlug}
+        />
+        <AyudaGuiada
+          id="ficha"
+          pasos={pasosDeLaFicha(identidad !== null)}
+          soloIcono
+          className="-my-2 -mr-2 shrink-0"
+        />
+      </div>
 
       {/*
         `encabezado` e `informacion` se arman acá y `Compra` los pone junto a
@@ -314,15 +321,11 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
               descuento={ficha.descuento}
               precioFinal={ficha.precioFinal}
             />
+            <Datos />
           </header>
         }
         informacion={
-          <Informacion
-            key="informacion"
-            mediosDePago={mediosDePago}
-            descripcion={ficha.descripcion}
-            conSesion={identidad !== null}
-          />
+          <Informacion key="informacion" descripcion={ficha.descripcion} />
         }
       />
 
@@ -363,7 +366,7 @@ function Migas({
   categoriaSlug: string;
 }) {
   return (
-    <nav aria-label="Miga de pan" className="pb-6">
+    <nav aria-label="Miga de pan">
       <ol className="flex flex-wrap items-center gap-1 text-body-sm text-ink-secondary">
         <li>
           {/*
@@ -398,10 +401,9 @@ function Migas({
  * Todo lo que va debajo de las acciones — F3.5, RF-03, RF-15, RF-19, RN-10,
  * DR §7.3 (reescrito el 2026-09-08).
  *
- * Antes eran tres renglones sueltos —envío, medios de pago, garantías— y
- * ahora son tres bloques con jerarquía: **los datos** que se leen de un
- * vistazo, **la descripción** que escribió la vendedora, y **el recuadro**
- * que explica qué pasa después de apretar el botón.
+ * Son dos bloques con jerarquía: **la descripción** que escribió la vendedora
+ * y **el recuadro** que explica qué pasa después de apretar el botón. Los
+ * datos de un vistazo subieron debajo del precio (2026-11-02).
  *
  * Ese último es el que faltaba. La tienda no cobra ni despacha sola (RN-08,
  * RN-10): el pedido termina en una conversación de WhatsApp, y quien no lo
@@ -413,51 +415,29 @@ function Migas({
  * una empresa concreta: la mensajería puede cambiar, y el dato que le sirve a
  * quien compra no es el nombre del cadete sino hasta dónde llegamos.
  */
-function Informacion({
-  mediosDePago,
-  descripcion,
-  conSesion,
-}: {
-  mediosDePago: MedioDePagoDeLaTienda[];
-  descripcion: string;
-  conSesion: boolean;
-}) {
+function Informacion({ descripcion }: { descripcion: string }) {
   return (
     <div className="mt-8 border-t border-border pt-6">
-      <Datos mediosDePago={mediosDePago} />
       <Descripcion markdown={descripcion} />
-      <ComoSigue conSesion={conSesion} />
+      <ComoSigue />
     </div>
   );
 }
 
 /**
- * Las tres cosas que alguien quiere saber antes de escribir, en tres
- * renglones y sin adornos.
- *
- * **Los medios de pago se nombran, ya no se dibujan.** Estaban como una tira
- * de logos, que en una página de venta se lee como «pagá acá» — y acá no se
- * paga: no hay checkout con tarjeta y no va a haberlo en el MVP (FA-04,
- * RN-08). La tira sigue en el pie y en el home, donde es una señal de
- * confianza y no una promesa de un botón. Los nombres salen igual de lo que
- * cargó la vendedora (RF-19), así que agregar un medio sigue siendo cargar
- * una fila.
+ * Las dos cosas que alguien quiere saber junto al precio: que es nuevo y hasta
+ * dónde llegamos (2026-11-02). «Nuevo» va resaltado porque es lo que distingue
+ * a la tienda (no se venden reacondicionados). El pago ya no se dice acá: lo
+ * explica «¿Cómo sigue después de comprar?».
  */
-function Datos({ mediosDePago }: { mediosDePago: MedioDePagoDeLaTienda[] }) {
-  const nombres = mediosDePago.map((m) => m.nombre);
-  const lista =
-    nombres.length > 1
-      ? `${nombres.slice(0, -1).join(", ")} y ${nombres.at(-1)}`
-      : nombres[0];
-
+function Datos() {
   return (
-    <ul className="flex flex-col gap-1.5 text-body-sm text-ink-secondary">
-      <li>Productos nuevos y en su caja original.</li>
-      <li>Entrega en Viedma, Carmen de Patagones y alrededores.</li>
+    <ul className="flex flex-col gap-1.5 pt-2 text-body-sm text-ink-secondary">
       <li>
-        Coordinamos el pago al confirmar el pedido
-        {lista ? <>: {lista}</> : null}.
+        <strong className="font-semibold text-ink">Producto nuevo</strong>, en
+        su caja original.
       </li>
+      <li>Entrega en Viedma, Carmen de Patagones y alrededores.</li>
     </ul>
   );
 }
@@ -519,23 +499,16 @@ function pasosDeLaFicha(conSesion: boolean): PasoDeAyuda[] {
   ];
 }
 
-function ComoSigue({ conSesion }: { conSesion: boolean }) {
+function ComoSigue() {
   return (
     <section
       aria-labelledby="como-sigue"
       className="mt-10 rounded-card bg-surface p-5 shadow-md"
       data-ayuda="como-sigue"
     >
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h2 id="como-sigue" className="text-body-lg font-medium text-ink">
-          ¿Cómo sigue después de comprar?
-        </h2>
-        <AyudaGuiada
-          id="ficha"
-          pasos={pasosDeLaFicha(conSesion)}
-          className="-mr-2"
-        />
-      </div>
+      <h2 id="como-sigue" className="text-body-lg font-medium text-ink">
+        ¿Cómo sigue después de comprar?
+      </h2>
 
       <ol className="mt-4 flex flex-col gap-3 text-body-sm text-ink-secondary">
         {PASOS.map((paso, i) => (
