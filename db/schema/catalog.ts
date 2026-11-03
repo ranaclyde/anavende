@@ -97,10 +97,7 @@ export const categoryRelations = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.categoryId, t.relatedCategoryId] }),
-    check(
-      "no_self_relation",
-      sql`${t.categoryId} <> ${t.relatedCategoryId}`,
-    ),
+    check("no_self_relation", sql`${t.categoryId} <> ${t.relatedCategoryId}`),
   ],
 ).enableRLS();
 
@@ -125,6 +122,12 @@ export const products = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
+    /**
+     * Referencia de la administradora, opcional. No se muestra en la tienda ni
+     * entra en su búsqueda (2026-11-02). El código de barras, si llega, va en
+     * la variante: cada color suele tener el suyo.
+     */
+    model: text("model"),
     /** RF-15: Markdown acotado. La vendedora nunca ve la sintaxis (§5.4). */
     description: text("description").notNull().default(""),
     /**
@@ -159,8 +162,10 @@ export const products = pgTable(
      * un índice y no un cálculo por fila, y es imposible que la vista y la
      * consulta discrepen.
      */
-    finalPrice: numeric("final_price", { precision: 12, scale: 2 })
-      .generatedAlwaysAs(sql`price - discount`),
+    finalPrice: numeric("final_price", {
+      precision: 12,
+      scale: 2,
+    }).generatedAlwaysAs(sql`price - discount`),
     isFeatured: boolean("is_featured").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -194,7 +199,9 @@ export const products = pgTable(
     index("products_active_category_idx")
       .on(t.categoryId)
       .where(sql`is_active`),
-    index("products_active_brand_idx").on(t.brandId).where(sql`is_active`),
+    index("products_active_brand_idx")
+      .on(t.brandId)
+      .where(sql`is_active`),
     index("products_final_price_idx")
       .on(t.finalPrice)
       .where(sql`is_active`),
@@ -302,9 +309,7 @@ export const variantImages = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [
-    index("variant_images_variant_idx").on(t.variantId, t.sortOrder),
-  ],
+  (t) => [index("variant_images_variant_idx").on(t.variantId, t.sortOrder)],
 ).enableRLS();
 
 export type Brand = typeof brands.$inferSelect;
