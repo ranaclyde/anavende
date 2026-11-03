@@ -79,7 +79,7 @@ pasa por la ficha, el checkout, «Mis compras» y el detalle de un pedido en
 preparación: un globo que resalta cada parte, hecho con Driver.js
 (`components/ui/ayuda-guiada.tsx`). Lo visto se anota en el navegador, no
 en la base, así que vale igual con o sin cuenta. «Ver la guía» la vuelve a
-abrir. Los pasos señalan elementos con `data-ayuda`: si se renombra uno, su
+abrir; en la ficha es solo el ícono, a la derecha de las migas. Los pasos señalan elementos con `data-ayuda`: si se renombra uno, su
 paso deja de aparecer.
 
 ## Lo que hace Ana con una orden
