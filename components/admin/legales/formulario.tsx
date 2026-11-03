@@ -6,6 +6,7 @@ import { useCallback, useRef, useState, useTransition } from "react";
 import type { LexicalEditor } from "lexical";
 
 import { useAvisoAlSalir } from "@/components/admin/aviso-al-salir";
+import { EstadoDeGuardado } from "@/components/admin/estado-de-guardado";
 import {
   EditorDeDescripcion,
   leerMarkdown,
@@ -50,6 +51,9 @@ export function FormularioDeTextoLegal({
   // movía la fecha de «Última modificación» sin que nada hubiera cambiado.
   const [tocado, setTocado] = useState(false);
   const tocar = useCallback(() => setTocado(true), []);
+  // Guardar se queda en la pantalla: la barra dice «Actualizado» hasta que
+  // se vuelva a escribir.
+  const [seGuardoRecien, setSeGuardoRecien] = useState(false);
   useAvisoAlSalir(tocado && !enviando);
 
   const idDelCampo = `legal-${slug}`;
@@ -72,6 +76,7 @@ export function FormularioDeTextoLegal({
 
       avisar(`Guardaste «${titulo}». Ya se ve así en la tienda.`);
       setTocado(false);
+      setSeGuardoRecien(true);
       router.refresh();
     });
   }
@@ -114,9 +119,11 @@ export function FormularioDeTextoLegal({
       </TarjetaDeSeccion>
 
       <div className="flex items-center justify-end gap-3">
-        {tocado ? null : (
-          <p className="text-body-sm text-ink-secondary">Todo guardado.</p>
-        )}
+        <EstadoDeGuardado
+          estado={
+            tocado ? "sin-guardar" : seGuardoRecien ? "actualizado" : "guardado"
+          }
+        />
         <Button
           type="submit"
           variant="brand"

@@ -18,6 +18,7 @@ import {
 } from "@/components/admin/productos/editor";
 import { useAvisoAlSalir } from "@/components/admin/aviso-al-salir";
 import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
+import { EstadoDeGuardado } from "@/components/admin/estado-de-guardado";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
@@ -177,7 +178,7 @@ export function FormularioDeProducto({
    * dos formas de guardar —los datos con este botón, cada color al
    * instante— y sin decirlo se podía cambiar el precio, bajar a cargar
    * fotos e irse con el precio sin guardar. Mismo patrón que Configuración:
-   * «Todo guardado.» y el botón apagado. Se calcula al pintar, sin efecto.
+   * «Guardado» y el botón apagado. Se calcula al pintar, sin efecto.
    */
   const sinCambios =
     producto !== null &&
@@ -559,14 +560,21 @@ export function FormularioDeProducto({
         {/* En el panel la acción principal va a la derecha, y el escape queda a
           mano: cancelar es un enlace y no un botón, porque no hace nada, va a
           otro lado. */}
-        <div className="flex items-center justify-end gap-2">
-          {/* Por qué «Guardar» está apagado, escrito y no colgado de un
-              `title` (§8), como en Configuración. */}
-          {sinCambios ? (
-            <p className="mr-auto text-body-sm text-ink-secondary sm:mr-2">
-              Todo guardado.
-            </p>
-          ) : null}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {/* Por qué «Guardar» está apagado, o que hay algo por guardar
+              (§8), como en Configuración. Un producto nuevo no lleva: no
+              hay nada guardado de qué hablar.
+
+              En el teléfono va en su propio renglón, arriba de los botones:
+              en uno solo con «Cancelar» y «Guardar cambios», «Cambios sin
+              guardar» se partía en tres y «Guardado» volvía a quedar pegado a
+              «Cancelar». Vacía, en el alta, no deja un renglón en blanco. */}
+          <EstadoDeGuardado
+            estado={
+              producto === null ? null : sinCambios ? "guardado" : "sin-guardar"
+            }
+            className="max-sm:basis-full max-sm:empty:hidden"
+          />
           <Button asChild variant="tertiary">
             <Link href="/admin/productos">Cancelar</Link>
           </Button>
