@@ -890,6 +890,16 @@ En el panel:
   - **Con una sola página sigue sin dibujarse**, como antes.
   - El total y el tamaño de página ya los tenía cada pantalla para calcular
     las páginas: no se sumó ninguna consulta.
+  - **De paso, las tarjetas de productos a 320px** (pedido tuyo, en el mismo
+    PR). Se salían de la pantalla y se cortaban el borrar y «reservadas»,
+    por dos motivos en `components/admin/productos/listado.tsx`. Uno:
+    «Reponer» y los cuatro íconos suman unos 300px y la tarjeta deja 262
+    adentro; ahora, si no entran, los íconos bajan a su renglón, a la
+    derecha. Dos: la lista tenía una columna automática, que crecía hasta el
+    nombre truncado más largo; ahora es `grid-cols-1`. A 360px o más se ve
+    igual que antes. No lo veía nadie porque `accesibilidad.spec.ts` mide los
+    320px solo en la tienda: lo cubre `tests/e2e/rango-en-listados.spec.ts`,
+    que falla sin el arreglo.
   - Lo cubre `tests/e2e/rango-en-listados.spec.ts`: 45 productos de una marca
     del test, «Del 1 al 40» y «Del 41 al 45 de 45 productos», axe sobre la
     paginación, y sin paginación con un solo producto. Pasa también

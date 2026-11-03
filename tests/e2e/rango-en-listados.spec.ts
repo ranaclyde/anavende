@@ -98,3 +98,31 @@ test("la paginación dice qué tramo se ve y de cuántos", async ({ page }) => {
     page.getByRole("navigation", { name: "Paginación" }),
   ).toHaveCount(0);
 });
+
+test("a 320px, las tarjetas y la paginación no ensanchan la página", async ({
+  page,
+}) => {
+  // `accesibilidad.spec.ts` mide los 320px solo en la tienda. En el panel, la
+  // fila de «Reponer» y los cuatro íconos ensanchaba cada tarjeta y se cortaba
+  // el borrar (2026-11-03).
+  await page.setViewportSize({ width: 390, height: 800 });
+  await ingresar(page, admin);
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto(`/admin/productos?marca=${marcaId}`);
+  const tarjeta = page.locator("li.rounded-panel-card").first();
+  await expect(tarjeta).toBeVisible();
+
+  const medida = await tarjeta.evaluate((li) => {
+    const caja = li.getBoundingClientRect();
+    return {
+      sobra: document.documentElement.scrollWidth - window.innerWidth,
+      afuera: [...li.querySelectorAll("*")].filter(
+        (e) => e.getBoundingClientRect().right > caja.right + 0.5,
+      ).length,
+    };
+  });
+  expect(medida).toEqual({ sobra: 0, afuera: 0 });
+  await expect(
+    tarjeta.getByRole("button", { name: /^Borrar/ }),
+  ).toBeInViewport();
+});
