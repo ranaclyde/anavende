@@ -741,12 +741,15 @@ function AgregarAlCarrito({
 /**
  * Sin stock — RF-03, DR §7.3.
  *
- * Tres cosas a propósito: **lo dice con palabras** y no solo con un botón
+ * Dos cosas a propósito: **lo dice con palabras** y no solo con un botón
  * apagado —un botón gris sin explicación se lee como una falla del sitio—;
- * la consulta por WhatsApp es el botón **principal**, porque es la única
- * acción que le queda a quien llegó hasta acá; y la aclaración de abajo es la
- * promesa que NO hacemos: «preguntá si va a haber» suena a que el sitio va a
- * avisar, y no hay ningún aviso.
+ * y la consulta por WhatsApp es el botón **principal**, porque es la única
+ * acción que le queda a quien llegó hasta acá.
+ *
+ * **Sin aclaración debajo del botón**: hasta el 2026-11-03 había una («Te
+ * contestamos por WhatsApp. No lo reservamos ni te avisamos solos.») y el
+ * botón decía «Preguntá si va a haber». Las dos cosas cambiaron por decisión
+ * del usuario; el botón queda solo, con el mismo aire que el caso con stock.
  *
  * **El `aviso` es de F5.7**, y casi siempre está vacío: es el lugar donde se
  * cuenta que la compra que había quedado pendiente no se pudo retomar porque
@@ -780,16 +783,11 @@ function SinStock({
       {aviso}
 
       {whatsapp ? (
-        <div className="flex flex-col gap-2">
-          <BotonDeWhatsApp
-            href={enlaceDeWhatsApp(whatsapp, mensajeDeDisponibilidad(mensaje))}
-          >
-            Preguntá si va a haber
-          </BotonDeWhatsApp>
-          <p className="text-caption text-ink-secondary">
-            Te contestamos por WhatsApp. No lo reservamos ni te avisamos solos.
-          </p>
-        </div>
+        <BotonDeWhatsApp
+          href={enlaceDeWhatsApp(whatsapp, mensajeDeDisponibilidad(mensaje))}
+        >
+          Consultar disponibilidad
+        </BotonDeWhatsApp>
       ) : (
         <p className="text-body-sm text-ink-secondary">
           Probá con otro color, o volvé más adelante.

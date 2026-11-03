@@ -77,7 +77,7 @@ export default async function Mantenimiento() {
       </div>
 
       {/* La única salida que hay, así que es la principal (§7.3, el mismo
-          criterio que «Preguntá si va a haber»). Sin número cargado no se
+          criterio que «Consultar disponibilidad»). Sin número cargado no se
           dibuja: un `wa.me` sin número abre WhatsApp en la nada. */}
       {numero ? (
         <div className="flex flex-col items-center gap-2">
