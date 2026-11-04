@@ -22,6 +22,10 @@ categorías y la ficha de cada producto.
 - **El catálogo** (`/productos`) guarda todo su estado en la dirección:
   filtros, orden y página. El botón atrás funciona, y el enlace se puede
   mandar por WhatsApp tal como se está viendo (`modules/catalog/products/tienda.ts`).
+  Los filtros se abren en un drawer a la derecha, y en el teléfono a
+  pantalla completa (`components/shop/filtros-catalogo.tsx`). Cada grupo
+  muestra sus 8 opciones con más productos y un «Ver las N» para el resto,
+  con buscador cuando son más de 12 (`components/shop/grupo-de-filtro.tsx`).
 - **La ficha** (`/productos/[slug]`) cambia de foto, stock y mensaje al
   elegir otro color, sin recargar. El slug no cambia al renombrar un
   producto, para no romper los enlaces ya compartidos. Si la descripción

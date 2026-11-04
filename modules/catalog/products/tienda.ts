@@ -303,6 +303,12 @@ export type OpcionDeColor = OpcionDeFiltro & { hex: string };
  * vacío es una promesa incumplida, y con el catálogo real de Ana —donde va a
  * haber marcas cargadas antes que sus productos— eso pasaría el primer día.
  * El número al lado es lo que evita el clic a ciegas.
+ *
+ * **Las que más productos tienen, primero** (2026-11-03). El drawer de
+ * filtros muestra las 8 primeras de cada grupo y esconde el resto detrás de
+ * «Ver todas», así que el orden decide qué se ve sin abrir nada. Las
+ * categorías destacadas van antes que todo, como en la home; a igual número,
+ * por nombre.
  */
 export async function leerOpcionesDeFiltro(): Promise<{
   categorias: OpcionDeFiltro[];
@@ -315,14 +321,14 @@ export async function leerOpcionesDeFiltro(): Promise<{
         FROM categories c
         JOIN products p ON p.category_id = c.id AND p.is_active
        GROUP BY c.id
-       ORDER BY c.is_featured DESC, immutable_unaccent(lower(c.name))`),
+       ORDER BY c.is_featured DESC, cuantos DESC, immutable_unaccent(lower(c.name))`),
 
     db.execute<OpcionDeFiltro>(sql`
       SELECT b.slug, b.name AS nombre, count(p.id)::int AS cuantos
         FROM brands b
         JOIN products p ON p.brand_id = b.id AND p.is_active
        GROUP BY b.id
-       ORDER BY immutable_unaccent(lower(b.name))`),
+       ORDER BY cuantos DESC, immutable_unaccent(lower(b.name))`),
 
     // `count(DISTINCT p.id)`, no `count(p.id)`: un producto con dos variantes
     // negras se contaría dos veces y el número al lado del color mentiría.
@@ -340,7 +346,7 @@ export async function leerOpcionesDeFiltro(): Promise<{
           ON co.id IN (v.color_id, v.secondary_color_id) AND v.is_active
         JOIN products p ON p.id = v.product_id AND p.is_active
        GROUP BY co.id
-       ORDER BY immutable_unaccent(lower(co.name))`),
+       ORDER BY cuantos DESC, immutable_unaccent(lower(co.name))`),
   ]);
 
   return {

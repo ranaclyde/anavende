@@ -804,13 +804,59 @@ dejando el formulario intacto. Funcionaba, pero queda para pensarlo de otra
 forma. Si se retoma, lo que tiene que resolver es que lo escrito no se pierda
 y se pueda reintentar.
 
-**Pendiente detectado: las categorías no tienen dirección propia.** El filtro
-ES la dirección (§10.2) y lleva el UUID adentro —`/productos?categoria=f9e2…`—,
-así que la página de «Teclados» no existe como tal y, con la regla de arriba,
-tampoco se indexa. Para vender por buscador eso es lo que más se nota: «teclados
-en Viedma» no tiene a dónde llegar. Cambiarlo es de otra tarea —tocaría la
-lectura de filtros, la consulta, la barra y la home— y **no se hace por mi
-cuenta**. Queda anotado para decidirlo.
+**Para hacer: cada categoría tiene su página** (decisión tuya del 2026-11-03;
+sin número de tarea en el plan todavía). Hoy la categoría es un filtro del
+catálogo: el filtro ES la dirección (§10.2), `/productos?categoria=teclados`.
+(Esta nota decía que llevaba el UUID adentro; ya lleva el slug, corregido el
+2026-11-03.) Con la regla de arriba, todo lo filtrado va con `noindex` y no
+entra en `sitemap.xml`, así que la página de «Teclados» no existe para un
+buscador: «teclados en Viedma» no tiene a dónde llegar. El `noindex` del
+filtrado está bien y se queda: cada combinación de filtros es una dirección
+casi igual a otra.
+
+Lo que se va a hacer:
+
+- Una página por categoría, por ejemplo `/categorias/teclados`, con los mismos
+  productos y filtros que hoy.
+- Título y descripción propios para el buscador, por ejemplo «Teclados en
+  Viedma y Patagones | AnaVende».
+- Indexable, con `canonical` propio, y en `sitemap.xml`.
+- Si se le suma otro filtro, esa combinación sigue con `noindex`, como ahora.
+- Los enlaces a una categoría pasan a la página nueva: la tarjeta de
+  categoría de la home y de `/categorias`, y las migas de la ficha.
+
+- **Sin redirección desde `/productos?categoria=…`** (decisión tuya del
+  2026-11-03). La tienda sigue en mantenimiento y no se lanzó: Ana no mandó
+  enlaces de categorías y el buscador no tiene nada guardado. Los enlaces del
+  sitio pasan a la página nueva y la dirección vieja deja de usarse.
+- **Texto propio opcional por categoría**, cargado desde el panel (decisión
+  tuya del 2026-11-03): dos o tres renglones sobre qué hay ahí. Sin texto, la
+  página muestra solo los productos.
+- **Las combinaciones de filtros siguen sin indexarse.** Abrir algunas para el
+  buscador, como «teclados logitech», queda para cuando Search Console muestre
+  búsquedas reales que lo pidan, con la tienda ya abierta.
+
+**El diseño, aprobado por vos el 2026-11-03**, en un boceto de Claude Design
+(«Página de categoría», https://claude.ai/artifact/XfruVeyjrYKcUvX3LEfDAU, con
+computadora, teléfono y cómo aparece en un buscador). Es el catálogo de hoy
+con cuatro cambios:
+
+- **Migas «Categorías › Auriculares»** en lugar de la etiqueta «CATÁLOGO».
+- **El texto de Ana debajo del título**; sin texto, la frase genérica de hoy.
+- **Sin el chip de la categoría.** Es la página, no un filtro: «Filtros»
+  arranca en cero y «Limpiar todo» deja en la misma categoría.
+- **En el menú se marca «Categorías»**, y el título de la pestaña y del
+  buscador es «Auriculares en Viedma y Patagones · AnaVende».
+
+Dentro de «Filtros», el grupo de categoría pasa a **«Otras categorías»**:
+enlaces a las demás, con la actual marcada. En computadora es una columna del
+panel; en el teléfono, pastillas en la hoja. Marca y precio quedan igual.
+
+Es lo que hacen Venex (`/perifericos/teclados`, con `canonical` propio) y
+Mexx (`/productos-rubro/teclados/`), revisado el 2026-11-03; también es lo
+que traen por defecto Tiendanube y Shopify. Toca la lectura de filtros, la
+consulta del catálogo, la barra de filtros, esos enlaces, y el panel de
+categorías por el texto, que necesita una columna nueva y su migración.
 
 **Pendiente detectado: con el catálogo real, las listas largas no se pueden
 recorrer** (2026-11-03, captura tuya de producción con ~50 productos, ~20
@@ -833,9 +879,76 @@ categorías y ~20 marcas). Se ve en dos lugares:
   flechas se llega a la última opción y que se ve. Si se llega, el arreglo es
   del test. Si no, es del selector.
 
-Cómo mostrar muchas categorías y marcas en los filtros (buscador dentro del
-grupo, «ver más», otro reparto de columnas) es una decisión de diseño y **no
-se hace por mi cuenta**. Queda anotado para decidirlo.
+**Decidido para los filtros del catálogo: un drawer a la derecha** (decisión
+tuya del 2026-11-03; sin número de tarea en el plan todavía). Se compararon
+cinco formas con maquetas: el panel de hoy recortado con «ver más», los grupos
+a la izquierda con un grupo por vez, un desplegable por filtro, el drawer y
+la columna fija de Compra Gamer y Mercado Libre. **Hecho el 2026-11-04**
+(rama `feat/filtros-en-drawer`); abajo, cómo quedó. Lo decidido:
+
+- **En computadora**, «Filtros» abre un drawer a la derecha, de arriba abajo
+  de la pantalla, de unos 420px. Título y pie fijos, y el medio scrollea: «Ver
+  N productos» y «Limpiar filtros» se ven siempre. Es la regla de los drawers
+  de `DESIGN.md`, la misma del catálogo del panel, y va a la derecha por lo
+  mismo: la izquierda es el menú ☰ del teléfono.
+- **En el teléfono** sigue la hoja a pantalla completa de hoy. Es el mismo
+  panel con otro ancho, así que queda un solo diseño para las dos pantallas.
+- **Adentro, los grupos en una sola columna**: Categoría, Marca, Color, y
+  abajo Precio y «Solo con descuento». Siguen siendo chips.
+- **Cada grupo muestra las 8 opciones con más productos**, y las destacadas
+  (como Joysticks) van siempre primero. Un «Ver las 20 categorías» abre el
+  resto en el mismo lugar. Lo elegido se ve siempre, aunque esté entre las
+  ocultas. Con más de 12 opciones, al abrirse aparece un buscador arriba del
+  grupo, que es lo único que necesita JavaScript: sin él, la lista se ve
+  entera.
+- **No cambia la arquitectura**: los filtros siguen siendo enlaces con todo en
+  la dirección (§10.2), y el panel sigue siendo el `<details>` de hoy. (Lo
+  del `<details>` cambió al hacerlo: abajo.)
+
+**Lo que no se eligió, y por qué:** la columna fija de la izquierda revertía lo
+decidido en F3.8 (DR §7.2, el 22% del ancho) y le sacaba una columna a la
+grilla. El desplegable por filtro obligaba a tener un diseño para computadora y
+otro para el teléfono. Los grupos de a uno obligaban a ir y volver para cruzar
+categoría y marca.
+
+**Cómo quedó:**
+
+- **Es el `Sheet` de los drawers del panel** (`components/shop/drawer-de-filtros.tsx`).
+  La primera versión estiraba el `<details>` de antes a drawer, y al probarla
+  dijiste que se sentía peor: aparecía y se iba de golpe, sin la animación
+  de los del panel. Se pasó al `Sheet` (decisión tuya del 2026-11-04). Con
+  eso vienen solos el fondo, el foco atrapado, la página quieta, Escape y la
+  vuelta del foco a «Filtros». Mide 420px (`sm:max-w-[26.25rem]`), y en el
+  teléfono ocupa la pantalla entera, como todo `Sheet`. El `Sheet` suma
+  `SheetClose` y `overlayClassName`, para nombrar el fondo en las View
+  Transitions.
+- **Desviación de DR §7.2, anotada:** el panel ya no abre sin JavaScript,
+  porque el `<details>` era lo que lo permitía. Los filtros siguen siendo
+  enlaces con todo en la dirección (§10.2), así que el atrás y el enlace por
+  WhatsApp no cambian. Se borraron `boton-cerrar-filtros.tsx`,
+  `boton-ver-resultados.tsx` y el cierre a mano de `filtros-cliente.tsx`, que
+  existían para el `<details>`.
+- `components/shop/grupo-de-filtro.tsx` (nuevo) es una isla por grupo:
+  recorta a 8, «Ver las N» y buscador sin tildes con más de 12. Los enlaces
+  se siguen armando en el servidor. Lo abierto y lo buscado sobreviven al
+  tocar un chip, y al cerrar el drawer vuelve a arrancar recortado.
+- **El orden de las opciones cambió** (`leerOpcionesDeFiltro`): de más a menos
+  productos, y a igual número por nombre. Las categorías destacadas siguen
+  primero. Antes marcas y colores iban por nombre. Lo cubren dos tests
+  nuevos en `tests/unit/catalogo/catalogo.test.ts`.
+- **Probado** con Playwright a 1440: entra deslizándose, «Ver las 13
+  categorías», buscar «mous», elegir Mouses (el drawer y la búsqueda siguen
+  ahí), cerrar tocando el fondo, y «Limpiar filtros» limpia y cierra.
+  `accesibilidad.spec.ts` suma «el drawer de filtros, en la computadora»
+  (axe con el drawer abierto y con un grupo abierto, más Escape y el foco).
+  Pasan `accesibilidad.spec.ts` entero, `teclado.spec.ts` y `buscar.spec.ts`,
+  salvo «el selector con buscador, abierto», que ya fallaba por el segundo
+  punto de arriba. También pasan `catalogo.test.ts` y
+  `filtros-tienda.test.ts`, y `next build` sin base termina.
+- No pasó por `impeccable`: el diseño salió de las maquetas que comparaste.
+
+Esto resuelve los filtros del catálogo. El selector con buscador del panel, el
+segundo punto de arriba, es otro problema y sigue pendiente.
 
 **Pendiente: cinco ajustes de UX pedidos por vos** (2026-11-03, después de
 cargar productos reales en producción). Están hechos los cinco.

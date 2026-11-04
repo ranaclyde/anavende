@@ -570,22 +570,24 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
 }
 
 /* Lo que tiene que quedar quieto y ARRIBA durante una View Transition: el
-   encabezado y el panel de filtros. El navegador dibuja lo que se anima en
-   una capa propia, por encima de toda la página, y sin esto las tarjetas que
-   se reacomodan al filtrar le pasaban por encima al panel abierto —y le
-   pasarían al encabezado al subir—. Nombrados, entran a esa capa con su
-   propia foto; la nueva se muestra tal cual y la vieja no, así que no se
-   mueven ni se funden. El orden es el de la página: en escritorio el panel
-   es un desplegable debajo del encabezado, y en el teléfono es una hoja a
-   pantalla completa que lo tapa. */
+   encabezado y el drawer de filtros con su fondo. El navegador dibuja lo que
+   se anima en una capa propia, por encima de toda la página, y sin esto las
+   tarjetas que se reacomodan al filtrar le pasaban por encima al panel
+   abierto —y le pasarían al encabezado al subir—. Nombrados, entran a esa
+   capa con su propia foto; la nueva se muestra tal cual y la vieja no, así
+   que no se mueven ni se funden. El orden es el de la página: el drawer y su
+   fondo tapan el encabezado, en computadora y en el teléfono. */
 ::view-transition-group(encabezado),
+::view-transition-group(fondo-filtros),
 ::view-transition-group(panel-filtros),
 ::view-transition-new(encabezado),
+::view-transition-new(fondo-filtros),
 ::view-transition-new(panel-filtros) {
   animation: none;
 }
 
 ::view-transition-old(encabezado),
+::view-transition-old(fondo-filtros),
 ::view-transition-old(panel-filtros) {
   display: none;
 }
@@ -594,14 +596,12 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   z-index: 100;
 }
 
-::view-transition-group(panel-filtros) {
-  z-index: 90;
+::view-transition-group(fondo-filtros) {
+  z-index: 105;
 }
 
-@media (max-width: 767px) {
-  ::view-transition-group(panel-filtros) {
-    z-index: 110;
-  }
+::view-transition-group(panel-filtros) {
+  z-index: 110;
 }
 
 /* La foto que viaja de la tarjeta a la ficha (2026-10-20,

@@ -8,7 +8,10 @@ import {
   FILTROS_DE_TIENDA_VACIOS,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
-import { leerPaginaDelCatalogo } from "@/modules/catalog/products/tienda";
+import {
+  leerOpcionesDeFiltro,
+  leerPaginaDelCatalogo,
+} from "@/modules/catalog/products/tienda";
 import { slugificar } from "@/lib/slug";
 
 /**
@@ -298,5 +301,92 @@ describe("una variante de dos colores", () => {
     expect(pagina.productos[0].colores).toEqual([
       { nombre: `Azul ${T}/Amarillo ${T}`, hex: "#1c1e21", hex2: "#1c1e21" },
     ]);
+  });
+});
+
+/**
+ * El drawer de filtros muestra las 8 primeras opciones de cada grupo y
+ * esconde el resto detrás de «Ver todas» (2026-11-03), así que el orden decide
+ * qué se ve sin abrir nada: las que más productos tienen, primero, y las
+ * categorías destacadas antes que todo.
+ *
+ * Con un token propio y no `T`: estos productos no pueden aparecer en las
+ * búsquedas de arriba, que cuentan exactamente cuatro.
+ */
+describe("el orden de las opciones del filtro", () => {
+  const T2 = `zzo${randomUUID().slice(0, 8)}`;
+  const de = (nombres: { nombre: string }[]) =>
+    nombres
+      .filter((o) => o.nombre.endsWith(T2))
+      .map((o) => o.nombre.split(" ")[0]);
+
+  beforeAll(async () => {
+    const id = async (
+      tabla: "brands" | "categories",
+      nombre: string,
+      destacada = false,
+    ) => {
+      const [fila] =
+        tabla === "brands"
+          ? await db.execute<{ id: string }>(sql`
+              INSERT INTO brands (name, slug)
+              VALUES (${`${nombre} ${T2}`}, ${slugificar(`${nombre}-${T2}`)})
+              RETURNING id`)
+          : await db.execute<{ id: string }>(sql`
+              INSERT INTO categories (name, slug, is_featured)
+              VALUES (${`${nombre} ${T2}`}, ${slugificar(`${nombre}-${T2}`)}, ${destacada})
+              RETURNING id`);
+      (tabla === "brands" ? creados.marcas : creados.categorias).push(fila.id);
+      return fila.id;
+    };
+    const color = async (nombre: string) => {
+      const [fila] = await db.execute<{ id: string }>(sql`
+        INSERT INTO colors (name, slug, hex_code)
+        VALUES (${`${nombre} ${T2}`}, ${slugificar(`${nombre}-${T2}`)}, '#1c1e21')
+        RETURNING id`);
+      creados.colores.push(fila.id);
+      return fila.id;
+    };
+
+    // Por nombre irían al revés: el orden tiene que salir de la cantidad.
+    const [pocas, muchas] = [
+      await id("brands", "Aaa"),
+      await id("brands", "Zzz"),
+    ];
+    const [destacada, comun, llena] = [
+      await id("categories", "Zzz", true),
+      await id("categories", "Aaa"),
+      await id("categories", "Mmm"),
+    ];
+    const [claro, oscuro] = [await color("Aaa"), await color("Zzz")];
+
+    const productos: [string, string, string][] = [
+      [pocas, destacada, claro],
+      [muchas, comun, oscuro],
+      [muchas, llena, oscuro],
+      [muchas, llena, oscuro],
+      [muchas, llena, claro],
+    ];
+    for (const [i, [marca, categoria, colorId]] of productos.entries()) {
+      const [fila] = await db.execute<{ id: string }>(sql`
+        INSERT INTO products (name, slug, brand_id, category_id, price)
+        VALUES (${`${T2} ${i}`}, ${`${T2}-${i}`}, ${marca}, ${categoria}, '1000.00')
+        RETURNING id`);
+      creados.productos.push(fila.id);
+      await db.execute(sql`
+        INSERT INTO product_variants (product_id, color_id, stock_total)
+        VALUES (${fila.id}, ${colorId}, 5)`);
+    }
+  });
+
+  test("las marcas y los colores, de más a menos productos", async () => {
+    const { marcas, colores } = await leerOpcionesDeFiltro();
+    expect(de(marcas)).toEqual(["Zzz", "Aaa"]);
+    expect(de(colores)).toEqual(["Zzz", "Aaa"]);
+  });
+
+  test("las categorías destacadas primero, aunque tengan menos", async () => {
+    const { categorias } = await leerOpcionesDeFiltro();
+    expect(de(categorias)).toEqual(["Zzz", "Mmm", "Aaa"]);
   });
 });

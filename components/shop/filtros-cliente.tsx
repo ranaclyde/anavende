@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
@@ -8,91 +7,16 @@ import {
   urlCambiando,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
-import {
-  EsperaDelFiltro,
-  useAvisarFiltrando,
-} from "@/components/shop/filtrando";
+import { useAvisarFiltrando } from "@/components/shop/filtrando";
 import { TIPO_FILTRO } from "@/lib/transiciones";
 import { cn } from "@/lib/utils";
 
 /**
- * Las tres piezas del panel de filtros que necesitan JavaScript — pedido del
- * 2026-10-14. El panel sigue siendo un `<details>` nativo y de servidor
- * (`filtros-catalogo.tsx`): esto se monta adentro y lo encuentra con
- * `closest("details")`, igual que `BotonCerrarFiltros` y `BotonVerResultados`.
- * Sin JavaScript el panel abre, cierra y filtra como antes.
+ * El precio, la pieza del panel de filtros que necesita estado. El resto del
+ * panel se arma en el servidor (`filtros-catalogo.tsx`) y se abre en el
+ * drawer de `drawer-de-filtros.tsx`, que trae el cierre con Escape, tocando
+ * afuera y con «Limpiar filtros».
  */
-
-/** Cerrar el `<details>` que contiene a `elemento`. */
-function cerrarPanel(elemento: Element | null) {
-  elemento?.closest("details")?.removeAttribute("open");
-}
-
-/**
- * Cierra el panel al tocar afuera y con Escape, que un `<details>` no hace
- * solo. No dibuja nada: es un marcador para encontrar su panel.
- *
- * Tocar ADENTRO no lo cierra, y es el punto: los chips son enlaces que
- * navegan sin recargar, y el panel se queda abierto para elegir otro. En el
- * teléfono la hoja ocupa toda la pantalla, así que no hay afuera.
- *
- * `pointerdown` y no `click`: con `click`, arrastrar el dedo para desplazar
- * la página y soltarlo afuera contaría como tocar afuera recién al soltar.
- */
-export function CierreDelPanel() {
-  const marcador = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const panel = marcador.current?.closest("details");
-    if (!panel) return;
-
-    const alTocar = (e: PointerEvent) => {
-      if (panel.open && !panel.contains(e.target as Node)) {
-        panel.removeAttribute("open");
-      }
-    };
-    const alTeclear = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || !panel.open) return;
-      panel.removeAttribute("open");
-      // El foco vuelve al botón que lo abrió: si se queda en un chip que ya
-      // no se ve, el siguiente Tab arranca desde ningún lado.
-      panel.querySelector("summary")?.focus();
-    };
-
-    document.addEventListener("pointerdown", alTocar);
-    document.addEventListener("keydown", alTeclear);
-    return () => {
-      document.removeEventListener("pointerdown", alTocar);
-      document.removeEventListener("keydown", alTeclear);
-    };
-  }, []);
-
-  return <span ref={marcador} hidden />;
-}
-
-/**
- * «Limpiar filtros»: navega a la lista sin filtros y cierra el panel. Antes
- * lo dejaba abierto con todo desmarcado, que se lee como «no pasó nada».
- */
-export function LimpiarFiltros({
-  href,
-  className,
-}: {
-  href: string;
-  className?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={(e) => cerrarPanel(e.currentTarget)}
-      transitionTypes={TIPO_FILTRO}
-      className={className}
-    >
-      Limpiar filtros
-      <EsperaDelFiltro />
-    </Link>
-  );
-}
 
 /** Lo que espera el debounce antes de aplicar lo que se está escribiendo. */
 const ESPERA = 700;

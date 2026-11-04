@@ -90,14 +90,14 @@ test("visitante busca, filtra, abre la ficha y arma el WhatsApp", async ({
   ).toEqual([auricular.nombre, parlante.nombre].sort());
 
   // Filtrar por el color que tiene uno solo.
-  await page.locator("summary", { hasText: "Filtros" }).click();
+  await page.getByRole("button", { name: /^Filtros/ }).click();
   await page
     .getByRole("link", { name: `${coral.nombre} 1 — aplicar este filtro` })
     .click();
   await expect(page).toHaveURL(new RegExp(`color=${coral.slug}`));
-  // El panel queda abierto al tocar un filtro, a propósito
-  // (`filtros-catalogo.tsx`): se cierra con el botón que dice cuántos quedan.
-  await page.getByRole("link", { name: "Ver 1 producto" }).click();
+  // El drawer queda abierto al tocar un filtro, a propósito
+  // (`drawer-de-filtros.tsx`): se cierra con el botón que dice cuántos quedan.
+  await page.getByRole("button", { name: "Ver 1 producto" }).click();
   await expect(page.getByRole("status")).toHaveText("1 producto");
   await expect(resultados.getByRole("heading", { level: 3 })).toHaveText([
     parlante.nombre,
