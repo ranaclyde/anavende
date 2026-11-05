@@ -28,7 +28,8 @@ categorías y la ficha de cada producto.
   con buscador cuando son más de 12 (`components/shop/grupo-de-filtro.tsx`).
   Las opciones se ajustan a lo elegido: cada grupo ofrece solo lo que tiene
   productos con los filtros de los otros grupos, y lo ya elegido sigue a la
-  vista para poder sacarlo (`leerOpcionesDeFiltro`).
+  vista para poder sacarlo (`leerOpcionesDeFiltro`). La casilla de ofertas
+  también: si no hay nada en oferta con lo elegido, no aparece.
 - **Cada categoría tiene su página** (`/categorias/[slug]`): es el mismo
   catálogo con la categoría fija (`components/shop/vista-del-catalogo.tsx`),
   con su texto opcional cargado desde el panel. Sin filtros se indexa y va

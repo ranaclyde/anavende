@@ -509,6 +509,15 @@ describe("las opciones se ajustan a lo elegido", () => {
     expect(slugs(r.categorias)).toEqual(de(catA));
   });
 
+  test("las ofertas se cuentan con los demás filtros", async () => {
+    // Las únicas en oferta son «dos» y «c-dos», las dos de Y.
+    expect((await opciones({ marca: [marcaX] })).enOferta).toBe(0);
+    expect((await opciones({ marca: [marcaY] })).enOferta).toBe(2);
+    expect(
+      (await opciones({ marca: [marcaY], categoria: [catA] })).enOferta,
+    ).toBe(1);
+  });
+
   test("lo elegido sigue aunque quede en cero, para poder sacarlo", async () => {
     // Ningún producto de Y es rojo.
     const r = await opciones({ marca: [marcaY], color: [rojo] });
