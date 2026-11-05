@@ -9,6 +9,7 @@ import {
   contarFiltrosDeTienda,
   hayFiltrosDeTienda,
   leerFiltrosDeTienda,
+  parametrosDeLaDireccion,
   urlCambiando,
   urlDeCategoria,
   urlDePagina,
@@ -271,5 +272,32 @@ describe("la página de una categoría", () => {
     expect(f.seccion).toBeNull();
     expect(urlDeTienda(f)).toBe("/productos?categoria=teclados");
     expect(urlSinFiltros(f)).toBe("/productos");
+  });
+});
+
+/**
+ * El buscador del catálogo relee la dirección del navegador para conservar
+ * los filtros. Con `Object.fromEntries` se quedaba con el último valor de cada
+ * parámetro repetido: buscar con dos marcas, dos categorías o dos colores
+ * puestos borraba uno.
+ */
+describe("leer la dirección del navegador", () => {
+  test("los parámetros repetidos llegan enteros", () => {
+    const params = new URLSearchParams(
+      "?categoria=teclados&categoria=mouses&marca=a&marca=b&color=negro&color=rojo&q=x",
+    );
+    const f = leerFiltrosDeTienda(parametrosDeLaDireccion(params));
+    expect(f.categoria).toEqual(["teclados", "mouses"]);
+    expect(f.marca).toEqual(["a", "b"]);
+    expect(f.color).toEqual(["negro", "rojo"]);
+    expect(f.q).toBe("x");
+  });
+
+  test("buscar conserva todos los filtros puestos", () => {
+    const params = new URLSearchParams("?marca=a&marca=b&color=negro");
+    const f = leerFiltrosDeTienda(parametrosDeLaDireccion(params));
+    expect(urlCambiando(f, { q: "teclado" })).toBe(
+      "/productos?q=teclado&marca=a&marca=b&color=negro",
+    );
   });
 });
