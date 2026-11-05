@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { BotonFavorito } from "@/components/shop/favorito";
 import { BotonDeVista } from "@/components/shop/favoritos/boton-de-vista";
 import { RenglonDeFavorito } from "@/components/shop/favoritos/renglon";
-import { Paginacion } from "@/components/shop/paginacion";
+import { Paginacion } from "@/components/ui/paginacion";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
 import { Button } from "@/components/ui/button";
 import { getIdentity, getSession } from "@/lib/session";

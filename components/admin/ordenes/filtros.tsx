@@ -8,6 +8,7 @@ import {
   RangoDeFechas,
   ContadorDeResultados,
 } from "@/components/admin/filtros";
+import { tramo } from "@/components/admin/paginacion";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
@@ -48,10 +49,13 @@ const FECHA_DE_LA_SOLAPA: Record<Solapa, string> = {
 export function BarraDeFiltros({
   filtros,
   total,
+  porPagina,
 }: {
   filtros: FiltrosDeOrdenes;
   /** Cuántas hay con estos filtros, no cuántas entran en esta página. */
   total: number;
+  /** Para el tramo: «Del 41 al 80 de 95». */
+  porPagina: number;
 }) {
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
@@ -112,7 +116,12 @@ export function BarraDeFiltros({
         {/* El resultado se anuncia: quien no ve la tabla tiene que enterarse
             igual de cuántas quedaron (§9). */}
         <ContadorDeResultados pendiente={pendiente}>
-          {cuantas(total)}
+          {tramo({
+            pagina: filtros.pagina,
+            porPagina,
+            total,
+            cosa: { singular: "orden", plural: "órdenes" },
+          })}
         </ContadorDeResultados>
         {filtrado ? (
           <Button variant="tertiary" size="sm" onClick={limpiarTodo}>
@@ -122,8 +131,4 @@ export function BarraDeFiltros({
       </div>
     </div>
   );
-}
-
-function cuantas(n: number): string {
-  return n === 1 ? "1 orden" : `${n} órdenes`;
 }

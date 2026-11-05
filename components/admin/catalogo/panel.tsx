@@ -11,7 +11,7 @@ import {
 } from "@/components/admin/catalogo/copy";
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
-import { PaginacionDelPanel } from "@/components/admin/paginacion";
+import { PaginacionDelPanel, tramo } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
@@ -148,9 +148,12 @@ export function PanelDeCatalogo({
         <p className="text-body-sm text-ink-secondary">
           {total === 0
             ? `Sin ${palabras.plural}`
-            : total === 1
-              ? `1 ${palabras.singular}`
-              : `${total} ${palabras.plural}`}
+            : tramo({
+                pagina,
+                porPagina: POR_PAGINA,
+                total,
+                cosa: palabras,
+              })}
         </p>
         {/* Con la lista vacía este botón no está: el estado vacío ya ofrece
             el mismo primer paso en el medio de la pantalla, y dos botones de
@@ -272,9 +275,6 @@ export function PanelDeCatalogo({
           <PaginacionDelPanel
             pagina={pagina}
             paginas={paginas}
-            total={total}
-            porPagina={POR_PAGINA}
-            cosa={palabras}
             href={(n) => urlDePagina(base, n)}
           />
         </>

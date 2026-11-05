@@ -1084,6 +1084,17 @@ En el panel:
     del test, «Del 1 al 40» y «Del 41 al 45 de 45 productos», axe sobre la
     paginación, y sin paginación con un solo producto. Pasa también
     `accesibilidad.spec.ts -g "el panel"`.
+  - **Cambiado el 2026-11-05 (pedido tuyo): el tramo sube al contador y
+    abajo va la paginación de la tienda.** El total se decía dos veces —«52
+    productos» arriba, «Del 1 al 40 de 52 productos» abajo—. Ahora el
+    contador de los seis listados dice el tramo cuando hay más de una página
+    (`tramo`, en `lib/paginacion.ts`), y abajo va `components/ui/paginacion.tsx`,
+    la de la tienda, que suma un recorte con «…» pasadas las 7 páginas
+    (`paginasALaVista`): era el motivo para que el panel tuviera la suya.
+    Queda **una sola paginación** en todo el sitio. En productos filtrado y
+    con una sola página sigue «3 de 52 productos». 7 tests nuevos en
+    `tests/unit/paginacion.test.ts`, y `rango-en-listados.spec.ts` busca el
+    tramo arriba y los números abajo.
 
 En la tienda, en la ficha del producto:
 

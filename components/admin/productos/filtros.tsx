@@ -8,6 +8,7 @@ import {
   BuscadorDelPanel,
   ContadorDeResultados,
 } from "@/components/admin/filtros";
+import { tramo } from "@/components/admin/paginacion";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
@@ -45,12 +46,15 @@ export function BarraDeFiltros({
   categorias,
   mostrados,
   total,
+  porPagina,
 }: {
   filtros: FiltrosDeProductos;
   marcas: OpcionDeCatalogo[];
   categorias: OpcionDeCatalogo[];
   mostrados: number;
   total: number;
+  /** Para el tramo: «Del 41 al 80 de 95». */
+  porPagina: number;
 }) {
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
@@ -155,7 +159,19 @@ export function BarraDeFiltros({
           {/* El resultado se anuncia: quien no ve la tabla tiene que
               enterarse igual de cuántos quedaron (§9). */}
           <ContadorDeResultados pendiente={pendiente}>
-            {filtrado ? `${mostrados} de ${cuantos(total)}` : cuantos(total)}
+            {/* Con más de una página, el tramo (2026-11-05): «Del 1 al 40
+                de 52 productos». Con una sola, cuántos, y filtrado «3 de
+                52 productos». */}
+            {mostrados > porPagina
+              ? tramo({
+                  pagina: filtros.pagina,
+                  porPagina,
+                  total: mostrados,
+                  cosa: { singular: "producto", plural: "productos" },
+                })
+              : filtrado
+                ? `${mostrados} de ${cuantos(total)}`
+                : cuantos(total)}
           </ContadorDeResultados>
           {filtrado ? (
             <Button variant="tertiary" size="sm" onClick={limpiarTodo}>

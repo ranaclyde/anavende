@@ -133,14 +133,15 @@ export default async function DevolucionesDelPanel({
               cuantos: cuantasDe[valor],
             }))}
           />
-          <BarraDeFiltros filtros={filtros} total={total} />
+          <BarraDeFiltros
+            filtros={filtros}
+            total={total}
+            porPagina={POR_PAGINA}
+          />
           <ListadoDeDevoluciones devoluciones={devoluciones} />
           <PaginacionDelPanel
             pagina={filtros.pagina}
             paginas={paginas}
-            total={total}
-            porPagina={POR_PAGINA}
-            cosa={{ singular: "devolución", plural: "devoluciones" }}
             href={(n) => urlDeFiltros({ ...filtros, pagina: n })}
           />
         </>
