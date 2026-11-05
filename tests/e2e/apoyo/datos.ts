@@ -86,6 +86,13 @@ export function datosDePrueba() {
     return fila.id;
   }
 
+  /** Una variante «Único», sin color (RF-16). */
+  async function unaVarianteUnica(productoId: string, stock = 1) {
+    await sql`
+      INSERT INTO product_variants (product_id, color_id, stock_total)
+      VALUES (${productoId}, NULL, ${stock})`;
+  }
+
   /** La dirección de su página (F3.11) va por slug, y el slug lo pone esto. */
   async function slugDeCategoria(id: string): Promise<string> {
     const [fila] = await sql<{ slug: string }[]>`
@@ -375,6 +382,7 @@ export function datosDePrueba() {
     unaMarca,
     unaCategoria,
     slugDeCategoria,
+    unaVarianteUnica,
     unColor,
     unProducto,
     unaCuenta,

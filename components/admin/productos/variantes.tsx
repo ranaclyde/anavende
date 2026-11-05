@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
-import { Palette, Pencil, Plus, Trash2 } from "lucide-react";
+import { Palette, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 
 import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
 import { Seccion, Secciones } from "@/components/admin/formulario";
@@ -121,12 +121,18 @@ export function VariantesDelProducto({
   productoActivo,
   variantes,
   colores,
+  categoriaConColor = null,
   abrirAlta = false,
 }: {
   productId: string;
   productoActivo: boolean;
   variantes: VarianteDelPanel[];
   colores: OpcionDeColor[];
+  /**
+   * La categoría del producto, si en ella se vende por color
+   * (`categoriaQueSeVendePorColor`). Con una variante «Único», avisa.
+   */
+  categoriaConColor?: string | null;
   /** Llegó `?agregar=color`: el alta termina acá y sigue sola. */
   abrirAlta?: boolean;
 }) {
@@ -272,6 +278,18 @@ export function VariantesDelProducto({
           {error}
         </p>
       )}
+      {/* 2026-11-05: una variante «Único» no aparece al filtrar por color.
+          En una categoría donde casi todo tiene color, suele ser un error de
+          carga. Avisa y no frena: puede ser un caso que sí lo necesita. */}
+      {categoriaConColor && variantes.some((v) => v.colorId === null) ? (
+        <p className="flex items-start gap-2 rounded-panel-control bg-warning-tint px-3 py-2 text-body-sm text-warning">
+          <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+          <span>
+            Casi todo en {categoriaConColor} tiene color. Con «Único», este
+            producto no aparece al filtrar por color.
+          </span>
+        </p>
+      ) : null}
       {variantes.length === 0 ? (
         <Vacio alAgregar={() => setAgregando(true)} />
       ) : variantes.length > HASTA_SIN_PLEGAR ? (
@@ -1019,9 +1037,13 @@ function EdicionDeVariante({
                     falta un paso obligatorio que en realidad es opcional
                     (RF-16: una variante sin color es un producto que no se
                     vende por color). */}
-                          {hayColores
-                            ? "Cada color, o cada combinación, una sola vez por producto. Si no está, escribilo y crealo desde la lista."
-                            : "Todavía no cargaste ningún color. Podés vender este producto sin colores, o crear uno desde la lista."}
+                          {!hayColores
+                            ? "Todavía no cargaste ningún color. Podés vender este producto sin colores, o crear uno desde la lista."
+                            : color === UNICO
+                              ? // 2026-11-05: corta a propósito. «Único» deja
+                                // al producto afuera del filtro de color.
+                                "Solo si el color no importa, como en un cable. Si viene en un solo color, elegí ese color."
+                              : "Cada color, o cada combinación, una sola vez por producto. Si no está, escribilo y crealo desde la lista."}
                         </FieldHint>
                       )}
                     </div>

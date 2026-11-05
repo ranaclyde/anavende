@@ -13,6 +13,7 @@ import {
   opcionesDeProducto,
 } from "@/modules/catalog/products/queries";
 import {
+  categoriaQueSeVendePorColor,
   opcionesDeColor,
   variantesDelProducto,
 } from "@/modules/catalog/variants/queries";
@@ -84,14 +85,16 @@ export default async function EditarProducto({ params, searchParams }: Props) {
 
   if (!ES_UUID.test(id)) notFound();
 
-  // Las cuatro consultas no dependen unas de otras: en serie, la página
-  // tardaría la suma de las cuatro por nada.
-  const [producto, opciones, variantes, colores] = await Promise.all([
-    obtenerProducto(id),
-    opcionesDeProducto(),
-    variantesDelProducto(id),
-    opcionesDeColor(),
-  ]);
+  // Las cinco consultas no dependen unas de otras: en serie, la página
+  // tardaría la suma de las cinco por nada.
+  const [producto, opciones, variantes, colores, categoriaConColor] =
+    await Promise.all([
+      obtenerProducto(id),
+      opcionesDeProducto(),
+      variantesDelProducto(id),
+      opcionesDeColor(),
+      categoriaQueSeVendePorColor(id),
+    ]);
 
   if (!producto) notFound();
 
@@ -206,6 +209,7 @@ export default async function EditarProducto({ params, searchParams }: Props) {
               productoActivo={producto.isActive}
               variantes={variantes}
               colores={colores}
+              categoriaConColor={categoriaConColor}
               abrirAlta={consulta.agregar === ABRIR_ALTA_DE_COLOR}
             />
           </div>
