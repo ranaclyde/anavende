@@ -395,7 +395,7 @@ export function FormularioDeProducto({
               {errores.campos.model}
             </FieldError>
             <FieldHint>
-              Es una referencia para vos: no se muestra en la tienda.
+              Se muestra en la tienda junto a la marca, arriba del nombre.
             </FieldHint>
           </div>
 

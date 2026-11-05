@@ -414,8 +414,16 @@ function SelectorDeColor({
   const actual = variantes[elegida];
 
   // Un producto de un solo color sin nombre no tiene nada que elegir: el
-  // selector sería una muestra sola, marcada, que no hace nada.
-  if (variantes.length === 1 && !actual?.colorNombre) return null;
+  // selector sería una muestra sola, marcada, que no hace nada. Pero el dato
+  // se dice igual (2026-11-05): sin la línea, quien compra no sabe si hay
+  // otros colores o si la ficha se olvidó de contarlo.
+  if (variantes.length === 1 && !actual?.colorNombre) {
+    return (
+      <p className="mt-8 text-body-sm text-ink-secondary">
+        Color: <span className="font-medium text-ink">Único</span>
+      </p>
+    );
+  }
 
   return (
     // MARGEN y no relleno, y esto se midió: un `<legend>` se pinta sobre el
@@ -431,7 +439,7 @@ function SelectorDeColor({
       <legend className="text-body-sm text-ink-secondary">
         Color:{" "}
         <span className="font-medium text-ink">
-          {actual?.colorNombre ?? "único"}
+          {actual?.colorNombre ?? "Único"}
         </span>
       </legend>
 

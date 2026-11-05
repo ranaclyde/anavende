@@ -306,9 +306,18 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         encabezado={
           <header key="encabezado" className="flex flex-col gap-2">
             {/* Sin versalitas y pegada al nombre, igual que en la tarjeta
-                (2026-10-20): en mayúsculas parecía más importante que él. */}
+                (2026-10-20): en mayúsculas parecía más importante que él.
+                El modelo va en la misma línea (2026-11-05): es otro dato para
+                reconocer el producto exacto, y en letra chica no le compite
+                al nombre. */}
             <p className="-mb-1 text-caption text-ink-secondary">
               {ficha.marca}
+              {ficha.modelo ? (
+                <>
+                  <span aria-hidden> · </span>
+                  {ficha.modelo}
+                </>
+              ) : null}
             </p>
             {/*
               El `h1` de la página es el nombre del producto. De ahí sale que

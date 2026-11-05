@@ -75,6 +75,8 @@ export type Ficha = {
    */
   descripcionTexto: string;
   marca: string;
+  /** Opcional (2026-11-05): va junto a la marca, arriba del nombre. */
+  modelo: string | null;
   categoria: string;
   /** Para la miga y el «Ver todo»: la página de la categoría va por slug. */
   categoriaSlug: string;
@@ -120,6 +122,7 @@ export const leerFicha = cache(async function leerFicha(
            p.discount         AS descuento,
            p.final_price      AS "precioFinal",
            b.name             AS marca,
+           p.model            AS modelo,
            c.name             AS categoria,
            c.slug             AS "categoriaSlug",
            vs.lista           AS variantes
