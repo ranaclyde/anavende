@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { useAvisarFiltrando } from "@/components/shop/filtrando";
 import {
   leerFiltrosDeTienda,
+  parametrosDeLaDireccion,
   urlCambiando,
 } from "@/modules/catalog/products/filtros-tienda";
 import { TIPO_FILTRO } from "@/lib/transiciones";
@@ -113,7 +114,7 @@ export function SearchBox({
     // copia que se puede desincronizar. `urlCambiando` vuelve a la página 1,
     // que es justo lo que corresponde al cambiar la búsqueda.
     const actuales = leerFiltrosDeTienda(
-      Object.fromEntries(params.entries()),
+      parametrosDeLaDireccion(params),
       seccion,
     );
     // Buscar dentro del catálogo es filtrarlo: la grilla se atenúa mientras

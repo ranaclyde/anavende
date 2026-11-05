@@ -94,6 +94,26 @@ export type ParametrosDeBusqueda = Record<
 >;
 
 /**
+ * Los parámetros de una dirección, con la forma de `searchParams` de Next:
+ * **un parámetro repetido llega como lista**.
+ *
+ * Para el cliente, que tiene un `URLSearchParams` y no lo que entrega Next.
+ * `Object.fromEntries(params.entries())` parece lo mismo y no lo es: de
+ * `?marca=a&marca=b` se queda con la última, y buscar con dos marcas
+ * puestas borraba una sin avisar.
+ */
+export function parametrosDeLaDireccion(
+  params: URLSearchParams,
+): ParametrosDeBusqueda {
+  const salida: ParametrosDeBusqueda = {};
+  for (const clave of new Set(params.keys())) {
+    const valores = params.getAll(clave);
+    salida[clave] = valores.length > 1 ? valores : valores[0];
+  }
+  return salida;
+}
+
+/**
  * La forma de un slug, la que produce `slugificar` (`lib/slug.ts`):
  * minúsculas, números y guiones simples, hasta 60.
  */
