@@ -544,7 +544,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 
 **Descripción:** ABM completo de productos.
 
-**Campos del producto:** nombre, modelo (opcional; la ficha lo muestra junto a la marca, y lo encuentran la búsqueda del panel y la de la tienda), slug (autogenerado y editable), descripción **con formato**, marca, categoría, **precio**, **descuento** (monto absoluto en ARS; `0` = sin oferta), destacado (sí/no), activo (`isActive`).
+**Campos del producto:** nombre, SKU (opcional y único dentro de la marca; la ficha lo muestra entre el nombre y el precio con un botón para copiarlo, y lo encuentran la búsqueda del panel y la de la tienda), slug (autogenerado y editable), descripción **con formato**, marca, categoría, **precio**, **descuento** (monto absoluto en ARS; `0` = sin oferta), destacado (sí/no), activo (`isActive`).
 
 **Criterios de aceptación:**
 - [ ] Listado con búsqueda, filtro por categoría/marca/estado, y orden por nombre, precio, stock y fecha.

@@ -15,6 +15,7 @@ import {
 import { VistosRecientemente } from "@/components/shop/vistos";
 import { RegistrarVista } from "@/components/shop/vistos-cliente";
 import { Precio } from "@/components/shop/precio";
+import { Sku } from "@/components/shop/ficha/sku";
 import { Button } from "@/components/ui/button";
 import {
   migas,
@@ -306,18 +307,9 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         encabezado={
           <header key="encabezado" className="flex flex-col gap-2">
             {/* Sin versalitas y pegada al nombre, igual que en la tarjeta
-                (2026-10-20): en mayúsculas parecía más importante que él.
-                El modelo va en la misma línea (2026-11-05): es otro dato para
-                reconocer el producto exacto, y en letra chica no le compite
-                al nombre. */}
+                (2026-10-20): en mayúsculas parecía más importante que él. */}
             <p className="-mb-1 text-caption text-ink-secondary">
               {ficha.marca}
-              {ficha.modelo ? (
-                <>
-                  <span aria-hidden> · </span>
-                  {ficha.modelo}
-                </>
-              ) : null}
             </p>
             {/*
               El `h1` de la página es el nombre del producto. De ahí sale que
@@ -325,6 +317,8 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
               (RF-15, DR §6.11): la jerarquía de la ficha se decide acá.
             */}
             <h1 className="text-title text-ink">{ficha.nombre}</h1>
+            {/* Entre el nombre y el precio, con «Copiar» (2026-11-05). */}
+            {ficha.sku ? <Sku sku={ficha.sku} /> : null}
             <Precio
               className="pt-2"
               tamano="ficha"

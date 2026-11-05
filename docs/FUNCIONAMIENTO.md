@@ -39,7 +39,10 @@ categorías y la ficha de cada producto.
   de la página lleva a `/productos` con el resto. Una categoría desactivada
   da 404.
 - **La ficha** (`/productos/[slug]`) cambia de foto, stock y mensaje al
-  elegir otro color, sin recargar. El slug no cambia al renombrar un
+  elegir otro color, sin recargar. Si el producto tiene SKU, va entre el
+  nombre y el precio con un botón para copiarlo
+  (`components/shop/ficha/sku.tsx`); un producto sin color muestra
+  «Color: Único». El slug no cambia al renombrar un
   producto, para no romper los enlaces ya compartidos. Si la descripción
   pasa de unos doce renglones, se ven los primeros ocho y un «Mostrar más»
   (`components/shop/ficha/descripcion-plegable.tsx`). El texto completo

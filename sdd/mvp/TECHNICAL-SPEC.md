@@ -430,7 +430,8 @@ CREATE TABLE products (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name         text NOT NULL,
   slug         text NOT NULL UNIQUE,
-  model       text,                 -- 2026-11-02; desde 2026-11-05 la ficha lo muestra
+  sku          text,                -- 2026-11-05; único por marca (products_sku_key)
+  model        text,                -- SIN USO desde 2026-11-05; se borra en otro cambio
   description  text NOT NULL DEFAULT '',           -- RF-15: Markdown acotado
   -- Proyección en texto plano, SOLO para buscar (§10.1). Ver la nota.
   description_text text GENERATED ALWAYS AS (
@@ -448,7 +449,10 @@ CREATE TABLE products (
   CONSTRAINT price_positive     CHECK (price > 0),
   CONSTRAINT discount_valid     CHECK (discount >= 0 AND discount < price)
 );
+CREATE UNIQUE INDEX products_sku_key ON products (brand_id, lower(sku));
 ```
+
+> **El SKU es único dentro de la marca, no en toda la tienda** (2026-11-05). Dos marcas pueden usar el mismo código; una misma marca no lo repite, sin distinguir mayúsculas. Es opcional y los `NULL` no chocan. Nació como `model` el 2026-11-02 (migración `0026`), solo para el panel. La `0028` **no la renombra**: agrega `sku`, copia lo cargado y crea el índice, porque el contenedor viejo sigue leyendo `model` mientras el nuevo migra (§18.2, agregar antes de borrar). `model` queda sin uso y se borra en otro cambio. La ficha lo muestra entre el nombre y el precio, con un botón para copiarlo, y lo encuentran las dos búsquedas.
 
 > **La descripción se guarda en Markdown, y se busca por una proyección aparte.** RF-15 pide formato —negrita, cursiva, listas, un subtítulo—, y §16 ya había elegido Markdown sanitizado para las páginas legales: reusar esa tubería deja **un** formato, **un** sanitizador y **un** renderizador en todo el proyecto, en vez de abrir una segunda para el mismo problema. La vendedora nunca ve la sintaxis: el editor es visual (RF-15) y serializa a Markdown.
 >
@@ -1146,7 +1150,7 @@ SELECT p.*, GREATEST(
   CROSS JOIN q
  WHERE p.is_active
    AND ( immutable_unaccent(lower(p.name)) ILIKE '%' || q.term || '%'
-      OR immutable_unaccent(lower(p.model)) ILIKE '%' || q.term || '%'
+      OR immutable_unaccent(lower(p.sku)) ILIKE '%' || q.term || '%'
       OR immutable_unaccent(lower(b.name)) ILIKE '%' || q.term || '%'
       OR immutable_unaccent(lower(p.description_text)) ILIKE '%' || q.term || '%'
       OR immutable_unaccent(lower(p.name)) % q.term
@@ -1154,7 +1158,7 @@ SELECT p.*, GREATEST(
  ORDER BY score DESC, p.is_featured DESC, p.created_at DESC;
 ```
 
-El **modelo** entra en la subcadena desde el 2026-11-05, cuando empezó a mostrarse en la ficha: lo que se ve se tiene que poder buscar.
+El **SKU** entra en la subcadena desde el 2026-11-05, cuando empezó a mostrarse en la ficha: lo que se ve se tiene que poder buscar.
 
 El umbral de similitud se fija con `pg_trgm.similarity_threshold` (arranca en `0.3` y se calibra con el catálogo real). Se elige trigramas por sobre `tsvector` porque el problema aquí son **nombres cortos con acentos y errores de tipeo**, no texto largo con semántica: la búsqueda de texto completo no tolera errores de tipeo, que es justamente lo que hay que resolver.
 
@@ -1173,7 +1177,7 @@ Comparte con §10.2 la decisión de fondo —el estado vive en la URL— y se se
 
 | Punto | Qué hace el panel | Por qué |
 |---|---|---|
-| **Búsqueda** | Solo la mitad por **subcadena** de §10.1 —nombre, modelo, marca y `description_text`, sin acentos—; **sin** la similitud por trigramas | Son dos preguntas distintas. El comprador tantea y agradece que le acerquen algo; la vendedora busca lo que sabe que existe, y un parecido traído por un umbral todavía sin calibrar (F3.3) le esconde el producto que fue a buscar. Los comodines `%` y `_` del término se **escapan**: si no, «50%» traería todo |
+| **Búsqueda** | Solo la mitad por **subcadena** de §10.1 —nombre, SKU, marca y `description_text`, sin acentos—; **sin** la similitud por trigramas | Son dos preguntas distintas. El comprador tantea y agradece que le acerquen algo; la vendedora busca lo que sabe que existe, y un parecido traído por un umbral todavía sin calibrar (F3.3) le esconde el producto que fue a buscar. Los comodines `%` y `_` del término se **escapan**: si no, «50%» traería todo |
 | **Filtro de stock** | En `HAVING`, no en `WHERE` | Mira la **suma** de las variantes. En `WHERE` se evalúa variante por variante, y un producto con un color en cero y otro con diez aparecería como «sin stock» |
 | **Discrepancia de stock** | Se cuenta por variante (`count(*) FILTER (WHERE stock_total < 0)`), no por la suma | Un color en −3 y otro en +10 suman 7: en el total, el negativo de RF-24 desaparece |
 

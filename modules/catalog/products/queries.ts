@@ -73,7 +73,7 @@ function condicionDeBusqueda(q: string): SQL {
   const termino = sql`immutable_unaccent(lower(${escaparComodines(q)}))`;
   return sql`(
        immutable_unaccent(lower(p.name))             ILIKE '%' || ${termino} || '%'
-    OR immutable_unaccent(lower(p.model))            ILIKE '%' || ${termino} || '%'
+    OR immutable_unaccent(lower(p.sku))              ILIKE '%' || ${termino} || '%'
     OR immutable_unaccent(lower(b.name))             ILIKE '%' || ${termino} || '%'
     OR immutable_unaccent(lower(p.description_text)) ILIKE '%' || ${termino} || '%'
   )`;
@@ -213,7 +213,7 @@ export async function contarPorEstado(): Promise<
 export type ProductoParaEditar = {
   id: string;
   name: string;
-  model: string | null;
+  sku: string | null;
   slug: string;
   description: string;
   brandId: string;
@@ -228,7 +228,7 @@ export async function obtenerProducto(
   id: string,
 ): Promise<ProductoParaEditar | null> {
   const [fila] = await db.execute<ProductoParaEditar>(sql`
-    SELECT id, name, model, slug, description,
+    SELECT id, name, sku, slug, description,
            brand_id    AS "brandId",
            category_id AS "categoryId",
            price, discount,
