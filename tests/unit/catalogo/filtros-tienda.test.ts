@@ -6,6 +6,7 @@ import {
   FILTROS_DE_TIENDA_VACIOS,
   MAXIMO_POR_FILTRO,
   alternar,
+  comoFiltroDeCategoria,
   contarFiltrosDeTienda,
   hayFiltrosDeTienda,
   leerFiltrosDeTienda,
@@ -299,5 +300,44 @@ describe("leer la dirección del navegador", () => {
     expect(urlCambiando(f, { q: "teclado" })).toBe(
       "/productos?q=teclado&marca=a&marca=b&color=negro",
     );
+  });
+});
+
+/**
+ * F3.11, decisión del 2026-11-05: en la página de una categoría, el grupo
+ * «Categoría» del drawer suma y saca como en `/productos`, con la categoría de
+ * la página como un chip marcado más.
+ */
+describe("el grupo «Categoría» en la página de una categoría", () => {
+  const enAuriculares = leerFiltrosDeTienda(
+    { marca: A, orden: "nombre", pagina: "2" },
+    "auriculares",
+  );
+  const base = comoFiltroDeCategoria(enAuriculares);
+
+  test("la de la página es una categoría elegida, y se sale de la página", () => {
+    expect(base.seccion).toBeNull();
+    expect(base.categoria).toEqual(["auriculares"]);
+  });
+
+  test("elegir otra la suma y lleva a /productos con todo lo demás", () => {
+    expect(
+      urlCambiando(base, { categoria: alternar(base.categoria, "teclados") }),
+    ).toBe(
+      "/productos?categoria=auriculares&categoria=teclados&marca=logitech&orden=nombre",
+    );
+  });
+
+  test("destildar la de la página lleva a /productos con el resto", () => {
+    expect(
+      urlCambiando(base, {
+        categoria: alternar(base.categoria, "auriculares"),
+      }),
+    ).toBe("/productos?marca=logitech&orden=nombre");
+  });
+
+  test("en /productos no cambia nada", () => {
+    const f = leerFiltrosDeTienda({ categoria: "teclados" });
+    expect(comoFiltroDeCategoria(f)).toBe(f);
   });
 });

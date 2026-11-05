@@ -275,6 +275,23 @@ export function urlCambiando(
   return urlDeTienda({ ...filtros, ...cambio, pagina: 1 });
 }
 
+/**
+ * Los mismos filtros, con la categoría de la página convertida en un filtro
+ * de `/productos` — F3.11, decisión tuya del 2026-11-05.
+ *
+ * Es lo que arma el grupo «Categoría» del drawer en la página de una
+ * categoría: elegir otra la SUMA y lleva a `/productos` con las dos y con todo
+ * lo demás puesto, y destildar la de la página lleva a `/productos` con el
+ * resto. Sumar una categoría amplía el resultado, así que los filtros que
+ * vienen puestos nunca dejan un vacío.
+ *
+ * En `/productos` devuelve lo mismo que recibe.
+ */
+export function comoFiltroDeCategoria(f: FiltrosDeTienda): FiltrosDeTienda {
+  if (!f.seccion) return f;
+  return { ...f, seccion: null, categoria: [f.seccion, ...f.categoria] };
+}
+
 /** Ir a otra página conserva todo lo demás. */
 export function urlDePagina(filtros: FiltrosDeTienda, pagina: number): string {
   return urlDeTienda({ ...filtros, pagina });

@@ -328,8 +328,8 @@ export type OpcionDeColor = OpcionDeFiltro & { hex: string };
  * **En la página de una categoría** (F3.11, `seccion`), marcas, colores y
  * puntas del precio salen de los productos de ESA categoría: una marca que no
  * tiene auriculares, ofrecida en «Auriculares», es otra vez el filtro que
- * lleva a un vacío. Las categorías siguen siendo todas, porque ahí son
- * «Otras categorías»: enlaces a sus páginas.
+ * lleva a un vacío. Las categorías siguen siendo todas: ahí son los
+ * chips para sumar otra y pasar a `/productos`.
  */
 export async function leerOpcionesDeFiltro(
   seccion: string | null = null,

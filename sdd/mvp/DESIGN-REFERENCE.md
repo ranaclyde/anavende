@@ -1402,7 +1402,7 @@ El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del con
 - **La categoría no es un filtro**: no tiene chip, no cuenta en «Filtros», y «Limpiar todo» deja en la misma categoría.
 - **En el menú se marca «Categorías».**
 
-Dentro del drawer, el grupo «Categoría» pasa a **«Otras categorías»**: chips que llevan a las páginas de las demás, con la actual marcada (`aria-current="page"`). Al cambiar de categoría se conserva solo el orden. Marca, color y precio ofrecen solo lo que hay en esa categoría. El buscador busca dentro de ella («Buscá en auriculares»).
+Dentro del drawer, **el grupo «Categoría» es el de siempre, con la de la página marcada** (cambiado el 2026-11-05; el boceto decía «Otras categorías», enlaces a sus páginas). Elegir otra la **suma** y lleva a `/productos` con las dos y con el resto de los filtros puestos; destildar la de la página lleva a `/productos` con el resto. Sumar una categoría amplía el resultado, así que los filtros puestos nunca dejan un vacío. La página es para entrar desde Google; combinar se hace en el catálogo. Marca, color y precio ofrecen solo lo que hay en esa categoría. El buscador busca dentro de ella («Buscá en auriculares»).
 
 Sin filtros se indexa, con `canonical` propio y en `sitemap.xml`; con cualquier filtro, `noindex, follow`, como el catálogo. El título es «Auriculares en Viedma y Patagones · AnaVende», y la descripción, el texto de la categoría o una frase con la zona.
 

@@ -14,10 +14,10 @@ import {
 
 import {
   alternar,
+  comoFiltroDeCategoria,
   contarFiltrosDeTienda,
   hayFiltrosDeTienda,
   urlCambiando,
-  urlDeTienda,
   urlSinFiltros,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
@@ -63,6 +63,8 @@ export function PanelDeFiltros({
   precios = null,
   total,
 }: Props & { total: number }) {
+  const categoriasElegidas = comoFiltroDeCategoria(filtros);
+
   return (
     <DrawerDeFiltros
       puestos={contarFiltrosDeTienda(filtros)}
@@ -92,34 +94,20 @@ export function PanelDeFiltros({
         />
       </section>
       {/*
-        En la página de una categoría (F3.11) el grupo pasa a ser «Otras
-        categorías»: enlaces a sus páginas, con la actual marcada. Llevan solo
-        el orden: una marca elegida en «Auriculares» puede no tener nada en
-        «Teclados», y llegar a una página nueva con un vacío es peor que
-        llegar sin filtros.
+        En la página de una categoría (F3.11) la categoría de la página es un
+        chip marcado más: elegir otra la suma y lleva a `/productos` con las
+        dos, y destildarla lleva a `/productos` con el resto de los filtros
+        (`comoFiltroDeCategoria`).
       */}
-      {filtros.seccion ? (
-        <GrupoDeFiltro
-          titulo="Otras categorías"
-          plural="categorías"
-          navega
-          opciones={resolver(categorias, [filtros.seccion], (slug) =>
-            slug === filtros.seccion
-              ? urlDeTienda(filtros)
-              : urlDeTienda({ seccion: slug, orden: filtros.orden }),
-          )}
-        />
-      ) : (
-        <GrupoDeFiltro
-          titulo="Categoría"
-          plural="categorías"
-          opciones={resolver(categorias, filtros.categoria, (slug) =>
-            urlCambiando(filtros, {
-              categoria: alternar(filtros.categoria, slug),
-            }),
-          )}
-        />
-      )}
+      <GrupoDeFiltro
+        titulo="Categoría"
+        plural="categorías"
+        opciones={resolver(categorias, categoriasElegidas.categoria, (slug) =>
+          urlCambiando(categoriasElegidas, {
+            categoria: alternar(categoriasElegidas.categoria, slug),
+          }),
+        )}
+      />
       <GrupoDeFiltro
         titulo="Marca"
         plural="marcas"
