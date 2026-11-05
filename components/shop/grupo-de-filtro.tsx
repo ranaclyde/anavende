@@ -56,17 +56,10 @@ export function GrupoDeFiltro({
   titulo,
   plural,
   opciones,
-  navega = false,
 }: {
   titulo: string;
   plural: string;
   opciones: OpcionDelGrupo[];
-  /**
-   * Los chips llevan a otra página en vez de filtrar: «Otras categorías» en
-   * la página de una categoría (F3.11). Se ven igual, pero no se dicen igual:
-   * el elegido es «estás acá» y no «quitar este filtro», que sería mentira.
-   */
-  navega?: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -107,8 +100,8 @@ export function GrupoDeFiltro({
           type="search"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          // Con el plural y no con el título: «Buscar otras categorías» no
-          // dice nada que «Buscar categorías» no diga (F3.11).
+          // Con el plural y no con el título: «Buscar categorías» y no
+          // «Buscar categoría».
           aria-label={`Buscar ${plural}`}
           placeholder={`Buscar ${plural}`}
           className={cn(
@@ -130,7 +123,7 @@ export function GrupoDeFiltro({
         <ul id={idLista} className="flex flex-wrap gap-2">
           {visibles.map((o) => (
             <li key={o.slug}>
-              <Chip opcion={o} navega={navega} />
+              <Chip opcion={o} />
             </li>
           ))}
         </ul>
@@ -171,24 +164,17 @@ export function GrupoDeFiltro({
   );
 }
 
-function Chip({
-  opcion: o,
-  navega,
-}: {
-  opcion: OpcionDelGrupo;
-  navega: boolean;
-}) {
+function Chip({ opcion: o }: { opcion: OpcionDelGrupo }) {
   return (
     <Link
       // Volver a tocar el chip encendido lo apaga: lo resuelve `alternar`,
       // y es el gesto que la gente prueba primero.
       href={o.href}
-      // Las tarjetas se reacomodan al llegar (`lib/transiciones.ts`). Ir a
-      // otra categoría es cambiar de página, no filtrar: sin transición.
-      transitionTypes={navega ? undefined : TIPO_FILTRO}
+      // Las tarjetas se reacomodan al llegar (`lib/transiciones.ts`).
+      transitionTypes={TIPO_FILTRO}
       // §9: el color nunca es el único portador del estado. Un lector de
       // pantalla no ve el relleno burdeos.
-      aria-current={o.activo ? (navega ? "page" : "true") : undefined}
+      aria-current={o.activo ? "true" : undefined}
       className={cn(
         "relative flex items-center gap-2 rounded-full border py-2 pr-3 pl-3",
         "text-body-sm whitespace-nowrap transition-colors duration-150",
@@ -230,12 +216,10 @@ function Chip({
           strokeWidth={3}
         />
       ) : null}
-      {navega ? null : (
-        <span className="sr-only">
-          {o.activo ? " — quitar este filtro" : " — aplicar este filtro"}
-        </span>
-      )}
-      {navega ? null : <EsperaDelFiltro />}
+      <span className="sr-only">
+        {o.activo ? " — quitar este filtro" : " — aplicar este filtro"}
+      </span>
+      <EsperaDelFiltro />
     </Link>
   );
 }

@@ -447,7 +447,7 @@ describe("la página de una categoría", () => {
     expect(nuestros(colores)).toEqual([slugDe.get(rojo)]);
     expect(precios).toEqual({ min: 3000, max: 8000 });
 
-    // Todas siguen: en la página son «Otras categorías».
+    // Todas siguen: en la página se pueden sumar otras.
     expect(nuestros(categorias)).toEqual(
       expect.arrayContaining([
         slugDe.get(catA),

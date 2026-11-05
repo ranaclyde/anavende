@@ -30,8 +30,10 @@ categorías y la ficha de cada producto.
   catálogo con la categoría fija (`components/shop/vista-del-catalogo.tsx`),
   con su texto opcional cargado desde el panel. Sin filtros se indexa y va
   en `sitemap.xml`; con filtros, no. La home, `/categorias`, la ficha y los
-  recomendados llevan ahí, y en el drawer las demás aparecen como «Otras
-  categorías». Una categoría desactivada da 404.
+  recomendados llevan ahí. En el drawer, elegir otra categoría la suma y
+  lleva a `/productos` con las dos y el resto de los filtros; destildar la
+  de la página lleva a `/productos` con el resto. Una categoría desactivada
+  da 404.
 - **La ficha** (`/productos/[slug]`) cambia de foto, stock y mensaje al
   elegir otro color, sin recargar. El slug no cambia al renombrar un
   producto, para no romper los enlaces ya compartidos. Si la descripción
