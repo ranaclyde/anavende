@@ -71,17 +71,17 @@ const descuento = monto("Poné un descuento, con hasta dos decimales.").refine(
   { message: "El descuento no puede ser negativo." },
 );
 
-/** Vacío se guarda como `NULL`: el modelo es una referencia opcional. */
-const modelo = z
+/** Vacío se guarda como `NULL`: el SKU es opcional. */
+const sku = z
   .string()
   .trim()
-  .max(120, "El modelo no puede pasar de 120 caracteres.")
+  .max(120, "El SKU no puede pasar de 120 caracteres.")
   .default("")
   .transform((v) => v || null);
 
 const campos = {
   name: nombre,
-  model: modelo,
+  sku,
   description: descripcion,
   brandId: z.uuid("Elegí una marca."),
   categoryId: z.uuid("Elegí una categoría."),

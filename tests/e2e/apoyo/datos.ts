@@ -118,6 +118,7 @@ export function datosDePrueba() {
     precio,
     colores,
     stock,
+    sku = null,
   }: {
     nombre: string;
     marca: string;
@@ -126,11 +127,13 @@ export function datosDePrueba() {
     precio: string;
     colores: Color[];
     stock: number;
+    sku?: string | null;
   }): Promise<ProductoDePrueba> {
     const slug = `e2e-${sufijo()}`;
     const [producto] = await sql<{ id: string }[]>`
-      INSERT INTO products (name, slug, brand_id, category_id, price)
-      VALUES (${nombre}, ${slug}, ${marcaId}, ${categoriaId}, ${precio})
+      INSERT INTO products (name, slug, brand_id, category_id, price, sku)
+      VALUES (${nombre}, ${slug}, ${marcaId}, ${categoriaId}, ${precio},
+              ${sku})
       RETURNING id`;
     creados.productos.push(producto.id);
 

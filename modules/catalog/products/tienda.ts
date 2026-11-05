@@ -39,8 +39,11 @@ function escaparComodines(termino: string): string {
  */
 function condicionDeBusqueda(q: string): SQL {
   const termino = sql`immutable_unaccent(lower(${escaparComodines(q)}))`;
+  // El SKU se busca desde el 2026-11-05, cuando empezó a verse en la
+  // ficha: si se muestra, quien lo copia tiene que poder encontrarlo.
   return sql`(
        immutable_unaccent(lower(p.name))             ILIKE '%' || ${termino} || '%'
+    OR immutable_unaccent(lower(p.sku))              ILIKE '%' || ${termino} || '%'
     OR immutable_unaccent(lower(b.name))             ILIKE '%' || ${termino} || '%'
     OR immutable_unaccent(lower(p.description_text)) ILIKE '%' || ${termino} || '%'
   )`;

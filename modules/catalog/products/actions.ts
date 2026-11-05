@@ -41,8 +41,12 @@ function refrescar() {
   revalidatePath("/admin/productos", "layout");
 }
 
-/** Igual que en RF-18: Postgres devuelve 23505 y Drizzle envuelve el error. */
-function esDuplicado(e: unknown): boolean {
+/**
+ * Igual que en RF-18: Postgres devuelve 23505 y Drizzle envuelve el error.
+ * Devuelve el índice que chocó —el slug o el SKU—, o `null` si no fue un
+ * duplicado.
+ */
+function indiceDuplicado(e: unknown): string | null {
   let actual: unknown = e;
   for (let i = 0; i < 5 && actual; i++) {
     if (
@@ -50,11 +54,12 @@ function esDuplicado(e: unknown): boolean {
       "code" in actual &&
       (actual as { code?: unknown }).code === "23505"
     ) {
-      return true;
+      const indice = (actual as { constraint_name?: unknown }).constraint_name;
+      return typeof indice === "string" ? indice : "";
     }
     actual = (actual as { cause?: unknown }).cause;
   }
-  return false;
+  return null;
 }
 
 /**
@@ -64,7 +69,19 @@ function esDuplicado(e: unknown): boolean {
  * ella ve, y sugiere qué agregarle.
  */
 function siEsDuplicado(e: unknown): never {
-  if (esDuplicado(e)) {
+  const indice = indiceDuplicado(e);
+  // El SKU es único dentro de la marca (`products_sku_key`, 2026-11-05).
+  if (indice === "products_sku_key") {
+    throw domainError("VALIDATION", {
+      message: "Ya hay un producto de esa marca con ese SKU.",
+      fields: {
+        properties: {
+          sku: { errors: ["Ya hay un producto de esa marca con ese SKU."] },
+        },
+      },
+    });
+  }
+  if (indice !== null) {
     throw domainError("VALIDATION", {
       message: "Ya hay un producto con ese nombre.",
       fields: {

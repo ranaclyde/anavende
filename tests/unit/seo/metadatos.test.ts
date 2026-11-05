@@ -37,6 +37,7 @@ function unaFicha(cambios: Partial<Ficha> = {}): Ficha {
     descripcion: "Un **teclado** mecánico.",
     descripcionTexto: "Un teclado mecánico.",
     marca: "Logitech",
+    sku: null,
     categoria: "Teclados",
     categoriaSlug: "teclados",
     precio: "50000.00",

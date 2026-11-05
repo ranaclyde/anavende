@@ -156,6 +156,7 @@ export function producto(ficha: Ficha, imagenes: readonly string[]): Jsonld {
     ...(descripcion ? { description: descripcion } : {}),
     ...(imagenes.length > 0 ? { image: [...imagenes] } : {}),
     brand: { "@type": "Brand", name: ficha.marca },
+    ...(ficha.sku ? { sku: ficha.sku } : {}),
     category: ficha.categoria,
     offers: {
       "@type": "Offer",

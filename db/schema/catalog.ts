@@ -130,9 +130,18 @@ export const products = pgTable(
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
     /**
-     * Referencia de la administradora, opcional. No se muestra en la tienda ni
-     * entra en su búsqueda (2026-11-02). El código de barras, si llega, va en
-     * la variante: cada color suele tener el suyo.
+     * SKU del producto, opcional y único dentro de cada marca, sin distinguir
+     * mayúsculas (`products_sku_key`). Reemplaza a `model`, de abajo.
+     * La ficha lo muestra entre el nombre y el precio, y lo encuentran las dos
+     * búsquedas. El código de barras, si llega, va en la variante: cada color
+     * suele tener el suyo.
+     */
+    sku: text("sku"),
+    /**
+     * SIN USO desde el 2026-11-05: era el SKU con otro nombre, y la 0028 lo
+     * copió a `sku`. Queda hasta que el código que la leía no corra en
+     * ningún contenedor; se borra en otro cambio (TS §18.2, agregar antes de
+     * borrar). Nada la lee ni la escribe.
      */
     model: text("model"),
     /** RF-15: Markdown acotado. La vendedora nunca ve la sintaxis (§5.4). */
@@ -215,6 +224,9 @@ export const products = pgTable(
     index("products_created_idx")
       .on(t.createdAt.desc())
       .where(sql`is_active`),
+    // Único DENTRO DE LA MARCA: dos marcas pueden usar el mismo código.
+    // «abc-1» y «ABC-1» son el mismo. Los NULL no chocan entre sí.
+    uniqueIndex("products_sku_key").on(t.brandId, sql`lower(${t.sku})`),
   ],
 ).enableRLS();
 
