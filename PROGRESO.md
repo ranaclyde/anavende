@@ -3784,6 +3784,21 @@ con `overrides` también se descartó: arriesga romper drizzle-kit por algo que
 no alcanza al proyecto. El día que drizzle-kit deje de traer `@esbuild-kit`,
 la alerta deja de aplicar sola.
 
+**Tres alertas de noviembre se resolvieron, dos con `overrides` (2026-11-04).**
+Las tres llegan de rebote. **deepmerge** 4.3.1 (#27, baja) no tiene versión
+corregida, pero `react-email` 6.11.6 trae `@react-email/render` 2.2 y con él
+`html-to-text` 10, que la cambió por `deepmerge-ts`: subir `react-email` la
+saca del árbol. **glob** 13 (#28) la piden `@sentry/bundler-plugins` y
+`react-email` con `^13`, y **minimatch** 10 (#30) la piden glob 13 y
+`@typescript-eslint/typescript-estree`; ninguno publicó todavía una versión que
+pida las corregidas, así que van forzadas: glob `^14.0.2` y minimatch
+`^11.0.1`, cada una solo debajo de quien la pedía vieja. A diferencia de
+esbuild, acá forzar sí se probó y no rompe nada: lint completo, `tsc`, el build
+sin base, el mail del pedido renderizado en HTML y en texto plano, y los E2E de
+las guías. `npm audit` quedó en cero —las otras trece eran la misma cadena de
+minimatch—. **El día que Sentry, React Email y typescript-eslint pidan las
+versiones nuevas, esos tres `overrides` se borran.**
+
 **Las *security updates* de Dependabot quedaron apagadas a propósito.** Abren
 un PR contra `main`, y hacer el merge desde la web despliega sin pasar por
 `DATABASE_URL= npx next build`. Mientras no haya un check que compile antes del
