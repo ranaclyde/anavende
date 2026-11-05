@@ -989,6 +989,26 @@ categoría y marca.
   arriba lleva a `?precioMax=…` al soltar. Pasan los mismos tests de antes,
   con el mismo único fallo, y `next build` sin base termina.
 
+**La paginación de la tienda, de paso** (2026-11-04, pedido tuyo después de
+revisar qué dicen los skills; `components/shop/paginacion.tsx`, que usan el
+catálogo y «Favoritos»):
+
+- **Cada número se lee «Página 2».** Antes el texto oculto decía «2 Ir a la
+  página 2», con el número dos veces, y la actual «1 (página actual)», que
+  `aria-current="page"` ya anuncia solo.
+- **«Página anterior» y «Página siguiente»**, con flechas (`ChevronLeft` y
+  `ChevronRight`) y `rel="prev"`/`rel="next"`. En la primera y la última
+  página se ven apagadas en vez de desaparecer, para que los números no se
+  corran; apagadas no son enlace, no se recorren con Tab y el lector no las
+  anuncia.
+- **La actual va con tinte y no con relleno burdeos**, por lo mismo que los
+  chips: el relleno es la cara del botón principal.
+- **El scroll no se tocó** (decisión tuya): cambiar de página sigue subiendo
+  al principio.
+- **Probado**: axe sobre la paginación en las páginas 1, 2 y 3 sin hallazgos,
+  «Página siguiente» lleva a `?pagina=2`, y `accesibilidad.spec.ts` y
+  `teclado.spec.ts` pasan con el mismo único fallo de antes.
+
 Esto resuelve los filtros del catálogo. El selector con buscador del panel, el
 segundo punto de arriba, es otro problema y sigue pendiente.
 
