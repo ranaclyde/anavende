@@ -92,7 +92,7 @@ test("visitante busca, filtra, abre la ficha y arma el WhatsApp", async ({
   // Filtrar por el color que tiene uno solo.
   await page.getByRole("button", { name: /^Filtros/ }).click();
   await page
-    .getByRole("link", { name: `${coral.nombre} 1 — aplicar este filtro` })
+    .getByRole("link", { name: `${coral.nombre} — aplicar este filtro` })
     .click();
   await expect(page).toHaveURL(new RegExp(`color=${coral.slug}`));
   // El drawer queda abierto al tocar un filtro, a propósito

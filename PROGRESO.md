@@ -918,8 +918,9 @@ categoría y marca.
   dijiste que se sentía peor: aparecía y se iba de golpe, sin la animación
   de los del panel. Se pasó al `Sheet` (decisión tuya del 2026-11-04). Con
   eso vienen solos el fondo, el foco atrapado, la página quieta, Escape y la
-  vuelta del foco a «Filtros». Mide 420px (`sm:max-w-[26.25rem]`), y en el
-  teléfono ocupa la pantalla entera, como todo `Sheet`. El `Sheet` suma
+  vuelta del foco a «Filtros». Mide 512px, como los del panel (al principio
+  eran 420; los igualaste el 2026-11-04), y en el teléfono ocupa la pantalla
+  entera, como todo `Sheet`. El `Sheet` suma
   `SheetClose` y `overlayClassName`, para nombrar el fondo en las View
   Transitions.
 - **Desviación de DR §7.2, anotada:** el panel ya no abre sin JavaScript,
@@ -946,6 +947,46 @@ categoría y marca.
   punto de arriba. También pasan `catalogo.test.ts` y
   `filtros-tienda.test.ts`, y `next build` sin base termina.
 - No pasó por `impeccable`: el diseño salió de las maquetas que comparaste.
+
+**Ajustes pedidos por vos el 2026-11-04, al probarlo:**
+
+- **El título «Filtros» queda a la altura de la ×**: el título mide 32px, lo
+  mismo que la × del `Sheet`, y va centrado.
+- **Las opciones ya no llevan el número de productos.** Con el total en «Ver
+  N productos», dos números para lo mismo confundían. El número sigue
+  ordenándolas.
+- **«Ofertas» va primero**, como sección propia con la casilla «Solo
+  productos en oferta». El chip de arriba de la grilla pasó de «Con
+  descuento» a «En oferta».
+- **El precio tiene slider**, y los dos campos ocupan el ancho con un «–» en
+  el medio. Es el Slider de shadcn (`components/ui/slider.tsx`), con
+  **dependencia nueva: `@radix-ui/react-slider`**, instalada con npm 11. Las
+  puntas son el precio final más bajo y el más alto del catálogo
+  (`leerOpcionesDeFiltro` devuelve `precios`), redondeadas a un paso de
+  unos cien tramos. Con una manija en su punta, ese borde queda sin límite.
+  Mientras se arrastra solo cambian los campos, y se filtra al soltar. Con
+  el catálogo vacío o todo a un precio no hay slider.
+- **Excepción a §8, anotada:** los campos del precio ya no muestran «Desde» y
+  «Hasta» al lado, porque así lo pedía la referencia. El marcador muestra la
+  punta («2.000», «344.000+») y el lector de pantalla los sigue leyendo como
+  «Desde» y «Hasta».
+- **Una línea entre sección y sección**, como la de la ficha: `divide-y`
+  dentro del margen del cuerpo, así no toca los bordes.
+- **El buscador está desde el principio** en todo grupo con «Ver las N», y
+  busca en la lista entera aunque el grupo esté cerrado. Antes aparecía al
+  abrir, y el salto quedaba mal.
+- **Al abrir, el foco va al drawer y no al buscador.** Radix saltea los
+  enlaces al elegir dónde ponerlo, y caía en «Buscar categoría»: en el
+  teléfono eso abría el teclado.
+- **El drawer mide 512px**, lo mismo que los del panel.
+- **El chip elegido pasó a tinte con ✓.** Relleno burdeos con texto blanco
+  era la cara de «Ver N productos», y un estado se leía como una acción.
+  Ahora lleva el tinte de marca, borde y texto burdeos y una ✓ adelante. Es
+  el mismo tinte de los chips de «aplicado» de arriba de la grilla, que
+  dicen lo mismo, y los distingue el ícono (✓ acá, × allá).
+- **Probado** con Playwright a 1440 y 390. Con el teclado, la manija de
+  arriba lleva a `?precioMax=…` al soltar. Pasan los mismos tests de antes,
+  con el mismo único fallo, y `next build` sin base termina.
 
 Esto resuelve los filtros del catálogo. El selector con buscador del panel, el
 segundo punto de arriba, es otro problema y sigue pendiente.

@@ -587,9 +587,11 @@ diálogo.** DR §6.14.3.
 (`components/shop/filtros-catalogo.tsx`, 2026-11-03), con el mismo contrato:
 alto entero, título y pie fijos, «Ver N productos» siempre a la vista. Es el
 mismo `Sheet` (`drawer-de-filtros.tsx`), así que entra y sale igual que los
-del panel. Mide 420px y no 512, porque lo de adentro son chips. Los filtros
+del panel, y mide lo mismo: 512px. Los filtros
 siguen siendo enlaces con todo en la dirección. Los grupos van en una
 columna, y cada uno muestra 8 opciones y un «Ver las N» (`grupo-de-filtro.tsx`).
+El chip elegido va con tinte de marca, borde burdeos y una ✓, nunca relleno
+sólido: el relleno burdeos es del botón principal, «Ver N productos».
 
 ### Solapas del panel
 

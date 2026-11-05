@@ -7,7 +7,10 @@ import {
   GrupoDeFiltro,
   type OpcionDelGrupo,
 } from "@/components/shop/grupo-de-filtro";
-import { RangoDePrecio } from "@/components/shop/filtros-cliente";
+import {
+  RangoDePrecio,
+  type LimitesDePrecio,
+} from "@/components/shop/filtros-cliente";
 
 import {
   alternar,
@@ -48,6 +51,7 @@ type Props = {
   categorias: OpcionDeFiltro[];
   marcas: OpcionDeFiltro[];
   colores: OpcionDeColor[];
+  precios?: LimitesDePrecio | null;
 };
 
 export function PanelDeFiltros({
@@ -55,6 +59,7 @@ export function PanelDeFiltros({
   categorias,
   marcas,
   colores,
+  precios = null,
   total,
 }: Props & { total: number }) {
   return (
@@ -68,13 +73,27 @@ export function PanelDeFiltros({
       }
     >
       {/*
-        **Los grupos en una sola columna.** Con 420px no entran dos, y en una
-        columna el orden es el de importancia: lo que más se filtra arriba, el
-        precio y el descuento al final. Que «Color» quedara abajo de todo y
-        nadie llegara a verlo —lo que antes resolvían las columnas— lo
-        resuelve ahora el recorte de cada grupo: con 8 opciones por grupo,
-        «Color» está en la primera pantalla.
+        **Una sola columna, con una línea entre sección y sección**
+        (2026-11-04). Con 512px no entran dos. Las ofertas van primero: es el
+        filtro que más se busca y el único de sí o no. El precio va al final,
+        con su slider.
       */}
+      <section
+        className="flex flex-col gap-2.5"
+        aria-labelledby="filtro-ofertas"
+      >
+        <h3
+          id="filtro-ofertas"
+          className="text-caption font-medium tracking-wide text-ink-secondary uppercase"
+        >
+          Ofertas
+        </h3>
+        <Casilla
+          href={urlCambiando(filtros, { oferta: !filtros.oferta })}
+          activa={filtros.oferta}
+          etiqueta="Solo productos en oferta"
+        />
+      </section>
       <GrupoDeFiltro
         titulo="Categoría"
         plural="categorías"
@@ -98,15 +117,7 @@ export function PanelDeFiltros({
           urlCambiando(filtros, { color: alternar(filtros.color, slug) }),
         )}
       />
-
-      <div className="flex flex-col gap-5">
-        <RangoDePrecio filtros={filtros} />
-        <Casilla
-          href={urlCambiando(filtros, { oferta: !filtros.oferta })}
-          activa={filtros.oferta}
-          etiqueta="Solo con descuento"
-        />
-      </div>
+      <RangoDePrecio filtros={filtros} limites={precios} />
     </DrawerDeFiltros>
   );
 }
@@ -124,7 +135,6 @@ function resolver(
   return opciones.map((o) => ({
     slug: o.slug,
     nombre: o.nombre,
-    cuantos: o.cuantos,
     hex: "hex" in o ? o.hex : null,
     href: urlDe(o.slug),
     activo: seleccionados.includes(o.slug),
@@ -251,7 +261,7 @@ export function ChipsDeFiltros({
   if (filtros.oferta) {
     puestos.push({
       clave: "oferta",
-      etiqueta: "Con descuento",
+      etiqueta: "En oferta",
       href: urlCambiando(filtros, { oferta: false }),
     });
   }

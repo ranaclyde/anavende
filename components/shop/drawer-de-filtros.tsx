@@ -29,8 +29,8 @@ import { AREA_TACTIL, cn } from "@/lib/utils";
  * JavaScript; los filtros de adentro siguen siendo enlaces con todo en la
  * dirección (§10.2), así que el atrás y el enlace compartido no cambian.
  *
- * Mide 420px y no los 512 del panel: lo de adentro son chips, y más ancho los
- * deja en renglones largos que se leen peor. En el teléfono, como todo
+ * Mide lo mismo que los del panel, 512px (decisión tuya del 2026-11-04: al
+ * principio eran 420 y se notaba la diferencia). En el teléfono, como todo
  * `Sheet`, ocupa la pantalla entera.
  *
  * **Se queda abierto al filtrar.** Cada chip navega sin recargar y el drawer
@@ -83,13 +83,26 @@ export function DrawerDeFiltros({
 
       <SheetContent
         closeLabel="Cerrar los filtros"
-        className="[view-transition-name:panel-filtros] sm:max-w-[26.25rem]"
+        className="[view-transition-name:panel-filtros] focus:outline-none"
         overlayClassName="[view-transition-name:fondo-filtros]"
         // El título alcanza: no hay una bajada que anunciar.
         aria-describedby={undefined}
+        // El foco va al drawer y no al primer campo. Radix saltea los
+        // enlaces al elegir dónde ponerlo, así que caía en el buscador de
+        // categorías, y en el teléfono eso abre el teclado y tapa la mitad
+        // de los filtros apenas se abren.
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          (e.currentTarget as HTMLElement).focus();
+        }}
       >
+        {/*
+          `min-h-8` en el título: la × del `Sheet` mide 32px y está a 20px del
+          borde, igual que el encabezado. Con el título del mismo alto y
+          centrado, los dos quedan en la misma línea.
+        */}
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
+          <SheetTitle className="flex min-h-8 items-center gap-2">
             Filtros
             <Contador puestos={puestos} />
           </SheetTitle>
@@ -98,8 +111,11 @@ export function DrawerDeFiltros({
         {/*
           Lo ÚNICO que scrollea. `overscroll-contain`: sin él, llegar al final
           de la lista sigue arrastrando la página de atrás.
+
+          Una línea entre sección y sección, como la de la ficha: `divide-y`
+          dentro del margen del cuerpo, así no toca los bordes del drawer.
         */}
-        <SheetBody className="flex flex-col gap-7 overscroll-contain">
+        <SheetBody className="flex flex-col divide-y divide-border overscroll-contain *:py-6 *:first:pt-0 *:last:pb-0">
           {children}
         </SheetBody>
 
