@@ -168,7 +168,10 @@ se cancela (`modules/returns/registrar.ts`).
 3. **Fotos de cada color.** Se suben por `/api/admin/upload`, se convierten
    en el momento y el original no se guarda (ver
    [Arquitectura](ARQUITECTURA.md#fotos)). Una variante puede reutilizar las
-   fotos de otra del mismo producto.
+   fotos de otra del mismo producto. Tocar una miniatura, o «Ver más grande»
+   en su menú, la abre en el mismo visor de la ficha
+   (`components/ui/visor-de-fotos.tsx`), con las fotos de ese color y el
+   zoom sobre la versión `detail`.
 4. **Activarlo.** No se puede activar un producto con la marca, la categoría
    o un color desactivados, y no se puede desactivar una marca, una
    categoría o un color mientras haya un producto activo que lo use. Así,
