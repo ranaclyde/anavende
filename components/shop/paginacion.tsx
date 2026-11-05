@@ -31,12 +31,11 @@ export function Paginacion({
   return (
     <nav aria-label="Paginación" className="flex justify-center pt-10">
       <ul className="flex flex-wrap items-center gap-1.5">
-        <li>
-          <Flecha
-            direccion="anterior"
-            href={pagina > 1 ? href(pagina - 1) : null}
-          />
-        </li>
+        {pagina > 1 ? (
+          <li>
+            <Flecha direccion="anterior" href={href(pagina - 1)} />
+          </li>
+        ) : null}
         {numeros.map((n) => {
           const actual = n === pagina;
           return (
@@ -72,52 +71,51 @@ export function Paginacion({
             </li>
           );
         })}
-        <li>
-          <Flecha
-            direccion="siguiente"
-            href={pagina < paginas ? href(pagina + 1) : null}
-          />
-        </li>
+        {pagina < paginas ? (
+          <li>
+            <Flecha direccion="siguiente" href={href(pagina + 1)} />
+          </li>
+        ) : null}
       </ul>
     </nav>
   );
 }
 
 /**
- * «Página anterior» y «Página siguiente», para avanzar de a una sin buscar el
- * número. En la primera y en la última se dibujan apagadas en vez de
- * desaparecer: si no, los números se corren al cambiar de página. Apagadas
- * no son un enlace ni se recorren con Tab, y el lector no las anuncia:
- * llevar a ningún lado no es una opción.
+ * «Anterior» y «Siguiente», para avanzar de a una sin buscar el número.
+ * Con la palabra al lado de la flecha (2026-11-04, pedido tuyo): una flecha
+ * sola junto a una fila de números se confunde con un número más. En la
+ * primera página no está «Anterior», y en la última no está «Siguiente»:
+ * apagadas en gris parecían rotas.
+ *
+ * **En el teléfono queda solo la flecha**, con la palabra para el lector de
+ * pantalla. Con las dos palabras, a 390px «Siguiente» bajaba sola a un
+ * segundo renglón con apenas tres páginas.
  */
 function Flecha({
   direccion,
   href,
 }: {
   direccion: "anterior" | "siguiente";
-  href: string | null;
+  href: string;
 }) {
-  const Icono = direccion === "anterior" ? ChevronLeft : ChevronRight;
-  const icono = <Icono aria-hidden className="size-5" />;
-
-  if (href === null) {
-    return (
-      <span
-        aria-hidden="true"
-        className="grid size-11 place-items-center text-ink-secondary opacity-40"
-      >
-        {icono}
-      </span>
-    );
-  }
+  const anterior = direccion === "anterior";
+  const Icono = anterior ? ChevronLeft : ChevronRight;
 
   return (
-    <Button asChild size="icon" variant="tertiary">
-      <Link href={href} rel={direccion === "anterior" ? "prev" : "next"}>
-        {icono}
-        <span className="sr-only">
-          {direccion === "anterior" ? "Página anterior" : "Página siguiente"}
+    <Button
+      asChild
+      variant="tertiary"
+      // 44px de alto, como los números (§9). La tinta plena y no la
+      // secundaria del terciario: es la acción de la fila.
+      className="h-11 gap-1 px-3 text-ink max-sm:w-11 max-sm:px-0"
+    >
+      <Link href={href} rel={anterior ? "prev" : "next"}>
+        {anterior ? <Icono aria-hidden className="size-4" /> : null}
+        <span className="max-sm:sr-only">
+          {anterior ? "Anterior" : "Siguiente"}
         </span>
+        {anterior ? null : <Icono aria-hidden className="size-4" />}
       </Link>
     </Button>
   );
