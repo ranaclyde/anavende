@@ -348,6 +348,11 @@ export async function leerOpcionesDeFiltro(
   marcas: OpcionDeFiltro[];
   colores: OpcionDeColor[];
   precios: { min: number; max: number } | null;
+  /**
+   * Cuántos productos en oferta hay con los demás filtros. Con cero, la
+   * casilla «Solo productos en oferta» llevaría a un vacío.
+   */
+  enOferta: number;
 }> {
   const f = comoFiltroDeCategoria(filtros);
 
@@ -362,8 +367,9 @@ export async function leerOpcionesDeFiltro(
   const elegido = (columna: SQL, slugs: readonly string[]) =>
     slugs.length ? losSlugs(columna, slugs) : sql`false`;
 
-  const [categorias, marcas, colores, [precios]] = await Promise.all([
-    db.execute<OpcionDeFiltro>(sql`
+  const [categorias, marcas, colores, [precios], [ofertas]] = await Promise.all(
+    [
+      db.execute<OpcionDeFiltro>(sql`
       WITH x AS (${coincidentes({ categoria: [] })})
       SELECT c.slug, c.name AS nombre, count(x.id)::int AS cuantos
         FROM categories c
@@ -375,7 +381,7 @@ export async function leerOpcionesDeFiltro(
                   WHERE t.category_id = c.id AND t.is_active) DESC,
                 immutable_unaccent(lower(c.name))`),
 
-    db.execute<OpcionDeFiltro>(sql`
+      db.execute<OpcionDeFiltro>(sql`
       WITH x AS (${coincidentes({ marca: [] })})
       SELECT b.slug, b.name AS nombre, count(x.id)::int AS cuantos
         FROM brands b
@@ -386,13 +392,13 @@ export async function leerOpcionesDeFiltro(
                   WHERE t.brand_id = b.id AND t.is_active) DESC,
                 immutable_unaccent(lower(b.name))`),
 
-    // `count(DISTINCT x.id)`, no `count(x.id)`: un producto con dos variantes
-    // negras se contaría dos veces.
-    //
-    // El filtro ofrece los colores SUELTOS, nunca «Negro/Rojo»: una variante
-    // de dos colores suma en los dos, igual que el filtro la encuentra por
-    // cualquiera (arriba, en `condiciones`).
-    db.execute<OpcionDeColor>(sql`
+      // `count(DISTINCT x.id)`, no `count(x.id)`: un producto con dos variantes
+      // negras se contaría dos veces.
+      //
+      // El filtro ofrece los colores SUELTOS, nunca «Negro/Rojo»: una variante
+      // de dos colores suma en los dos, igual que el filtro la encuentra por
+      // cualquiera (arriba, en `condiciones`).
+      db.execute<OpcionDeColor>(sql`
       WITH x AS (${coincidentes({ color: [] })})
       SELECT co.slug,
              co.name     AS nombre,
@@ -412,14 +418,23 @@ export async function leerOpcionesDeFiltro(
                     AND co.id IN (tv.color_id, tv.secondary_color_id)) DESC,
                 immutable_unaccent(lower(co.name))`),
 
-    // El precio FINAL, el mismo que mira el filtro, en pesos enteros hacia
-    // afuera: así lo más barato y lo más caro siempre quedan adentro.
-    db.execute<{ min: number | null; max: number | null }>(sql`
+      // El precio FINAL, el mismo que mira el filtro, en pesos enteros hacia
+      // afuera: así lo más barato y lo más caro siempre quedan adentro.
+      db.execute<{ min: number | null; max: number | null }>(sql`
       WITH x AS (${coincidentes({ precioMin: null, precioMax: null })})
       SELECT floor(min(final_price))::int AS min,
              ceil(max(final_price))::int  AS max
         FROM x`),
-  ]);
+
+      // La oferta, como un grupo más (2026-11-05): con los demás filtros y
+      // la oferta puesta. Es lo que la casilla mostraría si se la tocara.
+      db.execute<{ n: number }>(sql`
+      SELECT count(*)::int AS n
+        FROM products p
+        JOIN brands b ON b.id = p.brand_id
+       WHERE ${condiciones({ ...f, oferta: true })}`),
+    ],
+  );
 
   return {
     categorias: [...categorias],
@@ -433,5 +448,6 @@ export async function leerOpcionesDeFiltro(
       precios.max > precios.min
         ? { min: precios.min, max: precios.max }
         : null,
+    enOferta: ofertas.n,
   };
 }

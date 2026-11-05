@@ -53,6 +53,8 @@ type Props = {
   marcas: OpcionDeFiltro[];
   colores: OpcionDeColor[];
   precios?: LimitesDePrecio | null;
+  /** Productos en oferta con los demás filtros (`leerOpcionesDeFiltro`). */
+  enOferta?: number;
 };
 
 export function PanelDeFiltros({
@@ -61,6 +63,7 @@ export function PanelDeFiltros({
   marcas,
   colores,
   precios = null,
+  enOferta = 0,
   total,
 }: Props & { total: number }) {
   const categoriasElegidas = comoFiltroDeCategoria(filtros);
@@ -77,22 +80,29 @@ export function PanelDeFiltros({
         filtro que más se busca y el único de sí o no. El precio va al final,
         con su slider.
       */}
-      <section
-        className="flex flex-col gap-2.5"
-        aria-labelledby="filtro-ofertas"
-      >
-        <h3
-          id="filtro-ofertas"
-          className="text-caption font-medium tracking-wide text-ink-secondary uppercase"
+      {/*
+        Sin nada en oferta con los demás filtros, la casilla llevaría a un
+        vacío y no se ofrece (2026-11-05), como una marca sin productos. Si ya
+        está puesta, se ve igual, para poder sacarla.
+      */}
+      {filtros.oferta || enOferta > 0 ? (
+        <section
+          className="flex flex-col gap-2.5"
+          aria-labelledby="filtro-ofertas"
         >
-          Ofertas
-        </h3>
-        <Casilla
-          href={urlCambiando(filtros, { oferta: !filtros.oferta })}
-          activa={filtros.oferta}
-          etiqueta="Solo productos en oferta"
-        />
-      </section>
+          <h3
+            id="filtro-ofertas"
+            className="text-caption font-medium tracking-wide text-ink-secondary uppercase"
+          >
+            Ofertas
+          </h3>
+          <Casilla
+            href={urlCambiando(filtros, { oferta: !filtros.oferta })}
+            activa={filtros.oferta}
+            etiqueta="Solo productos en oferta"
+          />
+        </section>
+      ) : null}
       {/*
         En la página de una categoría (F3.11) la categoría de la página es un
         chip marcado más: elegir otra la suma y lleva a `/productos` con las
