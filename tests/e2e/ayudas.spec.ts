@@ -194,7 +194,19 @@ test("el globo entra a 320px sin desbordar", async ({ page }) => {
   expect((caja?.x ?? 0) + (caja?.width ?? 0)).toBeLessThanOrEqual(320);
   expect(await axeDelGlobo(page)).toEqual([]);
 
-  await page.getByRole("button", { name: "Cerrar la guía" }).click();
+  // La cruz, centrada en su círculo: Driver.js le escribe `display: block` en
+  // línea y, si le gana al `inline-flex`, el ícono se va arriba a la izquierda.
+  const cerrar = page.getByRole("button", { name: "Cerrar la guía" });
+  const circulo = await cerrar.boundingBox();
+  const cruz = await cerrar.locator("svg").boundingBox();
+  const centro = (c: typeof cruz) =>
+    c ? [c.x + c.width / 2, c.y + c.height / 2] : [];
+  const [cx, cy] = centro(circulo);
+  const [ix, iy] = centro(cruz);
+  expect(Math.abs(cx - ix)).toBeLessThanOrEqual(1);
+  expect(Math.abs(cy - iy)).toBeLessThanOrEqual(1);
+
+  await cerrar.click();
   await expect(globo(page)).toBeHidden();
 });
 
