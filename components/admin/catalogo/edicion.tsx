@@ -6,6 +6,7 @@ import { useId, useRef, useState, useTransition } from "react";
 import {
   DESTACADO,
   IMAGEN_DE_CATEGORIA,
+  TEXTO_DE_CATEGORIA,
   LOGO,
   PALABRAS,
   RELACIONADAS,
@@ -34,7 +35,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { FieldError } from "@/components/ui/field-error";
-import { Input } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { slugificar } from "@/lib/slug";
@@ -56,9 +57,12 @@ import {
   quitarLaImagenDeCategoria,
 } from "@/modules/catalog/actions";
 import { subirImagen } from "@/modules/media/cliente";
-import type { TipoDeItem } from "@/modules/catalog/schemas";
+import {
+  TOPE_DEL_TEXTO_DE_CATEGORIA,
+  type TipoDeItem,
+} from "@/modules/catalog/schemas";
 
-type Campo = "name" | "hexCode";
+type Campo = "name" | "hexCode" | "description";
 
 const CREAR = {
   marca: crearUnaMarca,
@@ -174,6 +178,7 @@ export function EdicionDeItem({
   // Una categoría nueva no nace destacada: destacar es elegir un puñado, y un
   // valor por omisión que destaca todo vacía la distinción.
   const [destacada, setDestacada] = useState(item?.isFeatured ?? false);
+  const [texto, setTexto] = useState(item?.description ?? "");
   const originales = item?.relacionadas ?? SIN_RELACIONADAS;
   const [relacionadas, setRelacionadas] = useState(originales);
   // El paso de elegir relacionadas (RF-31) va adentro del mismo drawer
@@ -206,6 +211,7 @@ export function EdicionDeItem({
                 id: item.id,
                 name: nombre,
                 isFeatured: destacada,
+                description: texto,
                 relacionadas: pedidas,
               })
             : await EDITAR.marca({ id: item.id, name: nombre })
@@ -215,6 +221,7 @@ export function EdicionDeItem({
             ? await CREAR.categoria({
                 name: nombre,
                 isFeatured: destacada,
+                description: texto,
                 relacionadas: pedidas,
               })
             : await CREAR.marca({ name: nombre });
@@ -426,6 +433,33 @@ export function EdicionDeItem({
 
             {tipo === "categoria" ? (
               <Seccion>
+                {/* F3.11: el texto de la página de la categoría. Va antes
+                      de «Destacada» porque es contenido, como el nombre y la
+                      imagen; destacar es una decisión de orden. */}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`${idBase}-texto`}>
+                    {TEXTO_DE_CATEGORIA.etiqueta}
+                  </Label>
+                  <Textarea
+                    id={`${idBase}-texto`}
+                    name="description"
+                    rows={3}
+                    maxLength={TOPE_DEL_TEXTO_DE_CATEGORIA}
+                    value={texto}
+                    onChange={(e) => setTexto(e.target.value)}
+                    aria-invalid={!!errores.campos.description || undefined}
+                    aria-describedby={`${idBase}-texto-ayuda`}
+                  />
+                  {errores.campos.description ? (
+                    <FieldError id={`${idBase}-texto-ayuda`}>
+                      {errores.campos.description}
+                    </FieldError>
+                  ) : (
+                    <FieldHint id={`${idBase}-texto-ayuda`}>
+                      {TEXTO_DE_CATEGORIA.ayuda(TOPE_DEL_TEXTO_DE_CATEGORIA)}
+                    </FieldHint>
+                  )}
+                </div>
                 <div className="flex flex-col gap-1.5">
                   {/* La casilla y su etiqueta son un solo blanco: `htmlFor`
                         sobre el Checkbox de Radix hace que tocar el texto

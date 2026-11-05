@@ -30,7 +30,7 @@ import {
 import { getIdentity } from "@/lib/session";
 import { AREA_TACTIL, cn } from "@/lib/utils";
 import { mirar } from "@/modules/cart/pendiente";
-import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
+import { urlDeCategoria } from "@/modules/catalog/products/filtros-tienda";
 import {
   leerFicha,
   varianteInicial,
@@ -357,8 +357,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
  * Dónde está parado el producto. RF-03 pide mostrar la categoría, y como
  * enlace además resuelve la pregunta que sigue: «mostrame más de esto».
  *
- * Apunta al catálogo filtrado —`/productos?categoria=…`— y no a una pantalla
- * de categoría, que no existe: §10.2 dice que el filtro ES la dirección.
+ * La categoría lleva a su página, `/categorias/<slug>` (F3.11).
  */
 function Migas({
   categoria,
@@ -388,7 +387,7 @@ function Migas({
         </li>
         <li>
           <Link
-            href={urlDeTienda({ categoria: [categoriaSlug] })}
+            href={urlDeCategoria(categoriaSlug)}
             className={cn("relative rounded-pill hover:text-ink", AREA_TACTIL)}
           >
             {categoria}

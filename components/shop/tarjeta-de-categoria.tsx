@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { cantidadDeProductos } from "@/modules/catalog/products/categorias";
-import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
+import { urlDeCategoria } from "@/modules/catalog/products/filtros-tienda";
 
 /**
  * Las tarjetas de categoría — DR §7.1 y §7.6.
@@ -48,7 +48,7 @@ export function TarjetaCuadradaDeCategoria({
 }) {
   return (
     <Link
-      href={urlDeTienda({ categoria: [categoria.slug] })}
+      href={urlDeCategoria(categoria.slug)}
       className="group flex h-full flex-col gap-2 rounded-card bg-surface p-2 shadow-md transition-shadow duration-200 hover:shadow-lg focus-visible:shadow-focus focus-visible:outline-none"
     >
       {/* Cuadrada siempre, con imagen o sin ella: el aspecto lo
@@ -138,7 +138,7 @@ export function TarjetaEnFilaDeCategoria({
 }) {
   return (
     <Link
-      href={urlDeTienda({ categoria: [categoria.slug] })}
+      href={urlDeCategoria(categoria.slug)}
       className="group flex h-full min-h-18 items-center gap-4 rounded-card bg-surface p-2 pr-4 shadow-md transition-shadow duration-200 hover:shadow-lg focus-visible:shadow-focus focus-visible:outline-none"
     >
       <span className="relative grid size-14 shrink-0 place-items-center overflow-hidden rounded-image bg-surface-sunken">

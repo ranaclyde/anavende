@@ -9,7 +9,10 @@ import {
   type ProductoEnTarjeta,
 } from "@/components/shop/tarjeta-producto";
 import { Skeleton } from "@/components/ui/skeleton";
-import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
+import {
+  urlDeCategoria,
+  urlDeTienda,
+} from "@/modules/catalog/products/filtros-tienda";
 import {
   leerCompletaTuSetup,
   leerRecomendados,
@@ -80,7 +83,7 @@ export async function Recomendados({
         <SeccionDeLaHome
           titulo="Productos similares"
           enlace={{
-            href: urlDeTienda({ categoria: [categoria.slug] }),
+            href: urlDeCategoria(categoria.slug),
             etiqueta: `Ver todo en ${categoria.nombre}`,
           }}
         >
@@ -178,7 +181,12 @@ function BloqueDeComplementos({
       enlace={
         categorias.length > 0
           ? {
-              href: urlDeTienda({ categoria: categorias.map((c) => c.slug) }),
+              // Una sola categoría tiene su página (F3.11); varias son el
+              // catálogo filtrado por todas.
+              href:
+                categorias.length === 1
+                  ? urlDeCategoria(categorias[0].slug)
+                  : urlDeTienda({ categoria: categorias.map((c) => c.slug) }),
               etiqueta: `Ver todo en ${enumerar(categorias.map((c) => c.nombre))}`,
             }
           : undefined

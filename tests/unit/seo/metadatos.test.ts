@@ -11,6 +11,7 @@ import { resumenDeMetadatos, urlAbsoluta } from "@/lib/seo";
 import {
   catalogoIndexable,
   FILTROS_DE_TIENDA_VACIOS,
+  urlDeCategoria,
   urlDeTienda,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
@@ -135,6 +136,17 @@ describe("catalogoIndexable", () => {
   test("otro orden tampoco: son los mismos productos dados vuelta", () => {
     expect(catalogoIndexable(con({ orden: "precio-asc" }))).toBe(false);
   });
+
+  // F3.11: la categoría de la página no es un filtro.
+  test("la página de una categoría sin filtrar sí; con un filtro, no", () => {
+    expect(catalogoIndexable(con({ seccion: "teclados" }))).toBe(true);
+    expect(catalogoIndexable(con({ seccion: "teclados", pagina: 2 }))).toBe(
+      true,
+    );
+    expect(
+      catalogoIndexable(con({ seccion: "teclados", marca: ["logitech"] })),
+    ).toBe(false);
+  });
 });
 
 describe("datos estructurados del producto", () => {
@@ -217,7 +229,7 @@ describe("migas", () => {
     const datos = migas(ficha) as { itemListElement: { item: string }[] };
 
     expect(datos.itemListElement[1].item).toBe(
-      urlAbsoluta(urlDeTienda({ categoria: [ficha.categoriaSlug] })),
+      urlAbsoluta(urlDeCategoria(ficha.categoriaSlug)),
     );
   });
 });

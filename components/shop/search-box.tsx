@@ -25,6 +25,7 @@ export function SearchBox({
   autoFocus,
   placeholder = "Buscar productos...",
   conservarFiltros = false,
+  seccion = null,
   principal = false,
   tamano = "normal",
 }: {
@@ -56,6 +57,12 @@ export function SearchBox({
    * cliente y quien lo usa es de servidor: una función no cruza ese borde.
    */
   conservarFiltros?: boolean;
+  /**
+   * La categoría de la página (F3.11), para que buscar en «Auriculares» busque
+   * en auriculares. La ruta la tiene, pero leerla de `usePathname` sería
+   * repetir acá cómo se arma esa ruta.
+   */
+  seccion?: string | null;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -105,7 +112,10 @@ export function SearchBox({
     // que la pantalla ya leyó, y una segunda copia viajando como prop es una
     // copia que se puede desincronizar. `urlCambiando` vuelve a la página 1,
     // que es justo lo que corresponde al cambiar la búsqueda.
-    const actuales = leerFiltrosDeTienda(Object.fromEntries(params.entries()));
+    const actuales = leerFiltrosDeTienda(
+      Object.fromEntries(params.entries()),
+      seccion,
+    );
     // Buscar dentro del catálogo es filtrarlo: la grilla se atenúa mientras
     // espera y las tarjetas se reacomodan al llegar (`filtrando.tsx`).
     iniciar(() => {

@@ -81,9 +81,13 @@ function condiciones(f: FiltrosDeTienda): SQL {
   // Los filtros llegan como slugs (`filtros-tienda.ts`) y se cruzan por
   // slug, que es único en las tres tablas. Una subconsulta y no un JOIN: el
   // de categoría y el de color no agregan columnas, solo recortan.
-  if (f.categoria.length) {
+  //
+  // La categoría de la página (F3.11) recorta igual que el filtro: es la
+  // misma condición con otro origen.
+  const categorias = f.seccion ? [f.seccion] : f.categoria;
+  if (categorias.length) {
     partes.push(sql`p.category_id IN (
-      SELECT id FROM categories WHERE ${losSlugs(sql`slug`, f.categoria)})`);
+      SELECT id FROM categories WHERE ${losSlugs(sql`slug`, categorias)})`);
   }
   if (f.marca.length) partes.push(losSlugs(sql`b.slug`, f.marca));
 
@@ -236,7 +240,10 @@ export type PaginaDelCatalogo = {
   productos: ProductoEnTarjeta[];
   /** Cuántos hay con ESTOS filtros. Decide la paginación y el conteo. */
   total: number;
-  /** Cuántos hay en total, sin filtros. Ver `catalogoVacio`. */
+  /**
+   * Cuántos hay en total, sin filtros: en la tienda, o en la categoría de la
+   * página. Ver `leerPaginaDelCatalogo`.
+   */
   totalSinFiltros: number;
 };
 
@@ -275,9 +282,16 @@ export async function leerPaginaDelCatalogo(
         JOIN brands b ON b.id = p.brand_id
        WHERE ${donde}`),
 
-    db.execute<{ n: number }>(
-      sql`SELECT count(*)::int AS n FROM products p WHERE p.is_active`,
-    ),
+    // En la página de una categoría (F3.11), «sin filtros» es la categoría
+    // entera: «todavía no hay productos» tiene que hablar de esa categoría,
+    // no de la tienda.
+    db.execute<{ n: number }>(sql`
+      SELECT count(*)::int AS n FROM products p
+       WHERE p.is_active ${
+         f.seccion
+           ? sql`AND p.category_id IN (SELECT id FROM categories WHERE slug = ${f.seccion})`
+           : sql``
+       }`),
   ]);
 
   return {
@@ -310,13 +324,27 @@ export type OpcionDeColor = OpcionDeFiltro & { hex: string };
  * «Ver todas», así que el orden decide qué se ve sin abrir nada. Las
  * categorías destacadas van antes que todo, como en la home; a igual número,
  * por nombre.
+ *
+ * **En la página de una categoría** (F3.11, `seccion`), marcas, colores y
+ * puntas del precio salen de los productos de ESA categoría: una marca que no
+ * tiene auriculares, ofrecida en «Auriculares», es otra vez el filtro que
+ * lleva a un vacío. Las categorías siguen siendo todas, porque ahí son
+ * «Otras categorías»: enlaces a sus páginas.
  */
-export async function leerOpcionesDeFiltro(): Promise<{
+export async function leerOpcionesDeFiltro(
+  seccion: string | null = null,
+): Promise<{
   categorias: OpcionDeFiltro[];
   marcas: OpcionDeFiltro[];
   colores: OpcionDeColor[];
   precios: { min: number; max: number } | null;
 }> {
+  // Los productos que cuentan: todos los activos, o los de la categoría de
+  // la página.
+  const enLaSeccion = seccion
+    ? sql`AND p.category_id IN (SELECT id FROM categories WHERE slug = ${seccion})`
+    : sql``;
+
   const [categorias, marcas, colores, [precios]] = await Promise.all([
     db.execute<OpcionDeFiltro>(sql`
       SELECT c.slug, c.name AS nombre, count(p.id)::int AS cuantos
@@ -328,7 +356,7 @@ export async function leerOpcionesDeFiltro(): Promise<{
     db.execute<OpcionDeFiltro>(sql`
       SELECT b.slug, b.name AS nombre, count(p.id)::int AS cuantos
         FROM brands b
-        JOIN products p ON p.brand_id = b.id AND p.is_active
+        JOIN products p ON p.brand_id = b.id AND p.is_active ${enLaSeccion}
        GROUP BY b.id
        ORDER BY cuantos DESC, immutable_unaccent(lower(b.name))`),
 
@@ -346,7 +374,7 @@ export async function leerOpcionesDeFiltro(): Promise<{
         FROM colors co
         JOIN product_variants v
           ON co.id IN (v.color_id, v.secondary_color_id) AND v.is_active
-        JOIN products p ON p.id = v.product_id AND p.is_active
+        JOIN products p ON p.id = v.product_id AND p.is_active ${enLaSeccion}
        GROUP BY co.id
        ORDER BY cuantos DESC, immutable_unaccent(lower(co.name))`),
 
@@ -354,10 +382,10 @@ export async function leerOpcionesDeFiltro(): Promise<{
     // mismo que mira el filtro, en pesos enteros hacia afuera: así el
     // producto más barato y el más caro siempre quedan adentro.
     db.execute<{ min: number | null; max: number | null }>(sql`
-      SELECT floor(min(final_price))::int AS min,
-             ceil(max(final_price))::int  AS max
-        FROM products
-       WHERE is_active`),
+      SELECT floor(min(p.final_price))::int AS min,
+             ceil(max(p.final_price))::int  AS max
+        FROM products p
+       WHERE p.is_active ${enLaSeccion}`),
   ]);
 
   return {

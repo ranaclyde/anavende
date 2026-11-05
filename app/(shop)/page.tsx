@@ -24,7 +24,10 @@ import { organizacion, sitio } from "@/lib/datos-estructurados";
 import { escenaDeHoy } from "@/lib/escenas";
 import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE } from "@/lib/seo";
 import { getIdentity } from "@/lib/session";
-import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
+import {
+  urlDeCategoria,
+  urlDeTienda,
+} from "@/modules/catalog/products/filtros-tienda";
 import { leerHome } from "@/modules/catalog/products/home";
 import { configuracionDeLaTienda } from "@/modules/settings/queries";
 import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
@@ -161,7 +164,7 @@ export default async function Home() {
               {datos.destacadas.map((categoria) => (
                 <li key={categoria.id}>
                   <Link
-                    href={urlDeTienda({ categoria: [categoria.slug] })}
+                    href={urlDeCategoria(categoria.slug)}
                     className="flex h-11 items-center gap-2 rounded-pill border border-border bg-surface px-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand sm:pl-2 sm:pr-4"
                   >
                     {/*
@@ -236,7 +239,7 @@ export default async function Home() {
               key={categoria.id}
               titulo={categoria.nombre}
               enlace={{
-                href: urlDeTienda({ categoria: [categoria.slug] }),
+                href: urlDeCategoria(categoria.slug),
                 etiqueta: `Ver todo en ${categoria.nombre}`,
               }}
             >

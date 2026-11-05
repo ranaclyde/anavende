@@ -390,3 +390,70 @@ describe("el orden de las opciones del filtro", () => {
     expect(de(categorias)).toEqual(["Zzz", "Mmm", "Aaa"]);
   });
 });
+
+/**
+ * F3.11: la página de una categoría recorta la grilla igual que el filtro, y
+ * además recorta lo que ofrece el drawer. Una marca que no tiene nada en la
+ * categoría, ofrecida ahí, lleva a un vacío.
+ */
+describe("la página de una categoría", () => {
+  // Una categoría propia: las de arriba ganan productos en otros casos.
+  let catC: string;
+
+  beforeAll(async () => {
+    catC = await unaCategoria("Rubro C");
+    // Precio FINAL 3000 y 8000.
+    await unProducto({
+      slug: "c-uno",
+      marca: marcaX,
+      categoria: catC,
+      precio: "3000.00",
+      colores: [rojo],
+    });
+    await unProducto({
+      slug: "c-dos",
+      marca: marcaY,
+      categoria: catC,
+      precio: "9000.00",
+      descuento: "1000.00",
+    });
+  });
+
+  test("muestra solo su categoría, y se cruza con los filtros", async () => {
+    const seccion = slugDe.get(catC)!;
+    expect(await buscar({ seccion })).toEqual(["c-dos", "c-uno"]);
+    expect(await buscar({ seccion, marca: [marcaX] })).toEqual(["c-uno"]);
+  });
+
+  test("«sin filtros» es la categoría entera, no la tienda", async () => {
+    const pagina = await leerPaginaDelCatalogo({
+      ...FILTROS_DE_TIENDA_VACIOS,
+      seccion: slugDe.get(catC)!,
+    });
+    expect(pagina.totalSinFiltros).toBe(2);
+  });
+
+  test("marcas, colores y precio salen de su categoría; las categorías, de todas", async () => {
+    const { categorias, marcas, colores, precios } = await leerOpcionesDeFiltro(
+      slugDe.get(catC)!,
+    );
+
+    const nuestros = (o: { slug: string }[]) =>
+      o.filter((x) => x.slug.endsWith(T)).map((x) => x.slug);
+    expect(nuestros(marcas).sort()).toEqual(
+      [slugDe.get(marcaX), slugDe.get(marcaY)].sort(),
+    );
+    // Solo rojo: el verde está en otras categorías, no en esta.
+    expect(nuestros(colores)).toEqual([slugDe.get(rojo)]);
+    expect(precios).toEqual({ min: 3000, max: 8000 });
+
+    // Todas siguen: en la página son «Otras categorías».
+    expect(nuestros(categorias)).toEqual(
+      expect.arrayContaining([
+        slugDe.get(catA),
+        slugDe.get(catB),
+        slugDe.get(catC),
+      ]),
+    );
+  });
+});

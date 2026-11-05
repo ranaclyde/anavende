@@ -1,34 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ViewTransition } from "react";
 
 import {
-  ChipsDeFiltros,
-  PanelDeFiltros,
-} from "@/components/shop/filtros-catalogo";
-import { BotonFavorito } from "@/components/shop/favorito";
-import { GrillaQueEspera } from "@/components/shop/filtrando";
-import { Paginacion } from "@/components/shop/paginacion";
-import { SearchBox } from "@/components/shop/search-box";
-import { SelectorDeOrden } from "@/components/shop/selector-de-orden";
-import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
-import { Button } from "@/components/ui/button";
+  leerElCatalogo,
+  VistaDelCatalogo,
+} from "@/components/shop/vista-del-catalogo";
 import {
   catalogoIndexable,
-  hayFiltrosDeTienda,
   leerFiltrosDeTienda,
-  POR_PAGINA,
-  urlDePagina,
   urlDeTienda,
   type ParametrosDeBusqueda,
 } from "@/modules/catalog/products/filtros-tienda";
-import {
-  leerOpcionesDeFiltro,
-  leerPaginaDelCatalogo,
-} from "@/modules/catalog/products/tienda";
-import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
 import { OPEN_GRAPH_BASE, ZONA_DE_ENTREGA } from "@/lib/seo";
-import { getIdentity } from "@/lib/session";
 
 const TITULO = "Catálogo";
 const DESCRIPCION = `Teclados, mouses, auriculares y cables. ${ZONA_DE_ENTREGA}`;
@@ -92,24 +74,7 @@ export default async function Catalogo({
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
   const filtros = leerFiltrosDeTienda(await searchParams);
-
-  // Independientes: no tiene sentido esperar una para pedir la otra.
-  //
-  // Los favoritos van con la identidad y no con la sesión entera (F5.4): son
-  // una lectura de datos propios, que se filtra por el id del token sin ir a
-  // buscar el perfil (§13.3). `null` es que no hay nadie adentro.
-  const [pagina, opciones, favoritos] = await Promise.all([
-    leerPaginaDelCatalogo(filtros),
-    leerOpcionesDeFiltro(),
-    getIdentity().then((i) => (i ? idsDeFavoritos(i.userId) : null)),
-  ]);
-
-  const guardados = new Set(favoritos ?? []);
-  // El corazón de un visitante lleva a ingresar y vuelve acá, con los mismos
-  // filtros y en la misma página (RF-10: «sin perder la navegación»).
-  const volver = urlDePagina(filtros, filtros.pagina);
-
-  const paginas = Math.max(1, Math.ceil(pagina.total / POR_PAGINA));
+  const datos = await leerElCatalogo(filtros);
 
   /*
    * El título dice qué se está mirando, no siempre «Catálogo».
@@ -125,7 +90,7 @@ export default async function Catalogo({
   // para eso están los chips, que los muestran todos.
   const unicaCategoria =
     filtros.categoria.length === 1
-      ? opciones.categorias.find((c) => c.slug === filtros.categoria[0])
+      ? datos.opciones.categorias.find((c) => c.slug === filtros.categoria[0])
       : undefined;
   const titulo = filtros.q
     ? `Resultados para «${filtros.q}»`
@@ -144,182 +109,15 @@ export default async function Catalogo({
         </p>
       </header>
 
-      {/*
-        `relative` acá y no en el `<details>`: el panel se posiciona contra
-        ESTA fila, y así se estira de lado a lado por debajo de los tres
-        controles en vez de quedar del ancho del botón que lo abre.
-      */}
-      <div className="relative flex flex-wrap items-center gap-3">
-        {/*
-          `conservarFiltros`: buscar teniendo puesta una marca no puede
-          borrarla — el chip está a la vista y se espera que siga valiendo.
-        */}
-        {/*
-          `principal`: mientras este buscador se ve, el del encabezado no se
-          dibuja (§5.1). Vuelve solo al scrollear más abajo.
-        */}
-        <SearchBox
-          className="min-w-60 flex-1"
-          conservarFiltros
-          principal
-          placeholder="Buscá por producto, marca o categoría"
-        />
-        {/*
-          `total` es para el botón «Ver N productos» del pie del panel: dice
-          cuántos quedan con los filtros que se están tocando, antes de
-          cerrarlo.
-        */}
-        <PanelDeFiltros filtros={filtros} {...opciones} total={pagina.total} />
-        <SelectorDeOrden filtros={filtros} />
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pt-5 pb-6">
-        <ChipsDeFiltros filtros={filtros} {...opciones} />
-        <p
-          className="ml-auto text-body-sm text-ink-secondary"
-          // El conteo cambia al filtrar sin que se mueva el foco: sin esto,
-          // quien usa lector de pantalla no se entera de que la lista cambió.
-          //
-          // `role="status"` además de `aria-live`, y `aria-atomic` para que se
-          // lea «9 productos» entero y no el número suelto: un «9» sin sustantivo
-          // no dice qué cambió, y es exactamente lo que se anuncia cuando el
-          // lector reporta solo el nodo de texto que se modificó.
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {pagina.total === 1 ? "1 producto" : `${pagina.total} productos`}
-        </p>
-      </div>
-
-      {/*
-        `<section>` y no `<main>`: el layout de la tienda ya abre uno, y dos
-        landmarks `main` anidados son HTML inválido — un lector de pantalla
-        ofrece «saltar al contenido principal» y hay dos destinos.
-      */}
-      <section id="resultados" aria-label="Resultados">
-        {/*
-          §8 pide tres pantallas distintas, y confundirlas es el error que se
-          ve todo el tiempo: «no hay nada» y «no encontramos nada para esto»
-          dicen cosas opuestas sobre el negocio.
-        */}
-        {pagina.productos.length > 0 ? (
-          <>
-            {/*
-              Al filtrar, ordenar o buscar (2026-10-20), las tarjetas que
-              siguen en el resultado se deslizan a su lugar nuevo, las que se
-              van se apagan y las nuevas aparecen (`globals.css`, `.tarjeta`).
-              Solo con el tipo `filtro` (`lib/transiciones.ts`): la página 2
-              cambia todas las tarjetas y además scrollea, y al tocar una la
-              que vuela es la foto (`foto-viajera.tsx`), que una transición de
-              React acá cortaría. Mientras espera, la grilla se atenúa.
-            */}
-            <GrillaQueEspera className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {pagina.productos.map((producto, i) => (
-                <ViewTransition
-                  key={producto.slug}
-                  enter={{ filtro: "tarjeta-entra", default: "none" }}
-                  exit={{ filtro: "tarjeta-sale", default: "none" }}
-                  update={{ filtro: "tarjeta", default: "none" }}
-                  default="none"
-                >
-                  <li>
-                    <TarjetaProducto
-                      producto={producto}
-                      // La primera fila está arriba del pliegue: diferirla
-                      // penaliza el LCP. Cuatro es el ancho de la grilla.
-                      inmediata={i < 4}
-                      accionFavorito={
-                        <BotonFavorito
-                          forma="corazon"
-                          productId={producto.id}
-                          nombre={producto.nombre}
-                          marcado={guardados.has(producto.id)}
-                          conSesion={favoritos !== null}
-                          volver={volver}
-                        />
-                      }
-                    />
-                  </li>
-                </ViewTransition>
-              ))}
-            </GrillaQueEspera>
-
-            <Paginacion
-              pagina={filtros.pagina}
-              paginas={paginas}
-              href={(n) => urlDePagina(filtros, n)}
-            />
-          </>
-        ) : pagina.totalSinFiltros === 0 ? (
-          <Vacio
-            titulo="Todavía no hay productos"
-            detalle="Estamos cargando el catálogo. Volvé en un rato."
-          />
-        ) : pagina.total > 0 ? (
-          /*
-           * Hay resultados, pero no en ESTA página: alguien editó `?pagina`
-           * a mano o volvió a un enlace viejo de cuando el catálogo era más
-           * grande. Sin este caso caía en «no hay productos con estos
-           * filtros» ofreciendo «Limpiar todo» sin ningún filtro puesto —
-           * una instrucción imposible de obedecer, que es exactamente el
-           * callejón sin salida que el panel ya tuvo una vez.
-           */
-          <Vacio
-            titulo="Esa página no existe"
-            detalle={`El catálogo llega hasta la página ${paginas}.`}
-            accion={{
-              texto: `Ir a la página ${paginas}`,
-              href: urlDePagina(filtros, paginas),
-            }}
-          />
-        ) : (
-          <Vacio
-            titulo={
-              filtros.q
-                ? `No encontramos nada para «${filtros.q}»`
-                : "No hay productos con estos filtros"
-            }
-            detalle="Probá con menos filtros o buscando otra cosa."
-            // Sin filtros puestos no se ofrece limpiarlos: un botón que no
-            // puede cambiar nada es peor que ningún botón (§8).
-            accion={
-              hayFiltrosDeTienda(filtros)
-                ? {
-                    texto: "Limpiar todo",
-                    href: urlDeTienda({ orden: filtros.orden }),
-                  }
-                : undefined
-            }
-          />
-        )}
-      </section>
-    </div>
-  );
-}
-
-/**
- * §8: un estado vacío explica qué falta **y ofrece la acción**. Nunca un
- * espacio en blanco, y nunca «Sin registros».
- */
-function Vacio({
-  titulo,
-  detalle,
-  accion,
-}: {
-  titulo: string;
-  detalle: string;
-  accion?: { texto: string; href: string };
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 rounded-card bg-surface px-6 py-20 text-center shadow-md">
-      <h2 className="text-heading text-ink">{titulo}</h2>
-      <p className="max-w-prose text-body text-ink-secondary">{detalle}</p>
-      {accion ? (
-        <Button asChild variant="brand" size="lg" className="mt-2">
-          <Link href={accion.href}>{accion.texto}</Link>
-        </Button>
-      ) : null}
+      <VistaDelCatalogo
+        filtros={filtros}
+        datos={datos}
+        placeholder="Buscá por producto, marca o categoría"
+        vacio={{
+          titulo: "Todavía no hay productos",
+          detalle: "Estamos cargando el catálogo. Volvé en un rato.",
+        }}
+      />
     </div>
   );
 }

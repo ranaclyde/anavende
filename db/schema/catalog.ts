@@ -67,6 +67,13 @@ export const categories = pgTable(
      * tiene que quedar prolijo con categorías sin imagen mezcladas.
      */
     imageKey: text("image_key"),
+    /**
+     * F3.11: dos o tres renglones sobre qué hay en la categoría, debajo del
+     * título de su página y en su resultado de Google. Opcional: sin texto,
+     * la página dice la frase de siempre. Texto plano, sin formato, y con
+     * tope en el esquema del panel (`modules/catalog/schemas.ts`).
+     */
+    description: text("description"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

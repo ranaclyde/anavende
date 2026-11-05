@@ -1,6 +1,7 @@
 import "server-only";
 
 import { sql } from "drizzle-orm";
+import { cache } from "react";
 
 import { db } from "@/db";
 import type { CategoriaDeLaPagina } from "@/modules/catalog/products/categorias";
@@ -54,3 +55,33 @@ export async function leerCategoriasDeLaTienda(): Promise<
     imagenUrl: urlDeLogo(imageKey, "card"),
   }));
 }
+
+/** Lo que la página de una categoría dice de ella — F3.11. */
+export type CategoriaConPagina = {
+  slug: string;
+  nombre: string;
+  /** El texto que escribió la vendedora; `null` si no escribió nada. */
+  texto: string | null;
+};
+
+/**
+ * La categoría de `/categorias/[slug]`, o `null` si no tiene página.
+ *
+ * **Solo las activas**: una desactivada da 404, igual que un producto
+ * desactivado (RN-05). Una activa sin productos sí tiene página —con el vacío
+ * de «todavía no hay productos»—, porque el enlace pudo haberse compartido
+ * antes de que se vendiera el último.
+ *
+ * Con `cache` de React: la piden `generateMetadata` y la página en el mismo
+ * pedido, y sin esto serían dos viajes a la base por la misma fila.
+ */
+export const leerCategoriaConPagina = cache(
+  async (slug: string): Promise<CategoriaConPagina | null> => {
+    const [fila] = await db.execute<CategoriaConPagina>(sql`
+      SELECT slug, name AS nombre, description AS texto
+        FROM categories
+       WHERE slug = ${slug} AND is_active
+       LIMIT 1`);
+    return fila ?? null;
+  },
+);

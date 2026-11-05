@@ -29,6 +29,16 @@ export const ORDENES_DE_TIENDA = [
 export type OrdenDeTienda = (typeof ORDENES_DE_TIENDA)[number]["valor"];
 
 export type FiltrosDeTienda = {
+  /**
+   * La categoría de la página, en `/categorias/[slug]` (F3.11). `null` en
+   * `/productos`.
+   *
+   * **No es un filtro, es dónde se está parado**: no va en la dirección
+   * —la lleva la ruta—, no tiene chip, no cuenta en el botón «Filtros» y
+   * «Limpiar todo» la conserva. Por eso es un campo aparte y no un valor
+   * más de `categoria`, que en la página de una categoría queda vacío.
+   */
+  seccion: string | null;
   q: string;
   /** Slugs de categorías (`?categoria=teclados`). Vacío = todas. */
   categoria: readonly string[];
@@ -66,6 +76,7 @@ export const MAXIMO_POR_FILTRO = 20;
 const TOPE_DE_PRECIO = 9_999_999_999;
 
 export const FILTROS_DE_TIENDA_VACIOS: FiltrosDeTienda = {
+  seccion: null,
   q: "",
   categoria: [],
   marca: [],
@@ -154,6 +165,8 @@ function pesos(valor: string | string[] | undefined): number | null {
  */
 export function leerFiltrosDeTienda(
   params: ParametrosDeBusqueda,
+  /** El slug de la ruta en `/categorias/[slug]`; `null` en `/productos`. */
+  seccion: string | null = null,
 ): FiltrosDeTienda {
   const orden = texto(params.orden);
   const pagina = Number.parseInt(texto(params.pagina), 10);
@@ -168,8 +181,12 @@ export function leerFiltrosDeTienda(
   }
 
   return {
+    seccion,
     q: texto(params.q),
-    categoria: lista(params.categoria),
+    // En la página de una categoría, `?categoria=` no se lee: la categoría
+    // ya la dice la ruta, y las demás son otras páginas («Otras
+    // categorías»), no un filtro que se suma.
+    categoria: seccion ? [] : lista(params.categoria),
     marca: lista(params.marca),
     color: lista(params.color),
     precioMin,
@@ -189,12 +206,15 @@ export function leerFiltrosDeTienda(
  * `/productos` a secas. Y **la página se cae al cambiar cualquier filtro**, que
  * es la trampa clásica: estar en la página 3 de «todo», filtrar por una marca
  * con nueve productos y caer en un «sin resultados» que no es cierto.
+ *
+ * Con `seccion`, la base es la página de esa categoría (F3.11). Todo lo que
+ * arma direcciones del catálogo pasa por acá, así que los chips, la
+ * paginación, el orden, el precio y el buscador se quedan en la categoría sin
+ * saber que existe.
  */
-export function urlDeTienda(
-  filtros: Partial<FiltrosDeTienda>,
-  base = "/productos",
-): string {
+export function urlDeTienda(filtros: Partial<FiltrosDeTienda>): string {
   const f = { ...FILTROS_DE_TIENDA_VACIOS, ...filtros };
+  const base = rutaDeTienda(f.seccion);
   const params = new URLSearchParams();
 
   if (f.q) params.set("q", f.q);
@@ -209,6 +229,22 @@ export function urlDeTienda(
 
   const cadena = params.toString();
   return cadena ? `${base}?${cadena}` : base;
+}
+
+/**
+ * La página de una categoría — F3.11.
+ *
+ * La única forma de escribirla: la home, `/categorias`, la ficha, los
+ * recomendados y los datos estructurados la piden acá, y el día que cambie la
+ * ruta cambia en un solo lugar.
+ */
+export function urlDeCategoria(slug: string): string {
+  return `/categorias/${slug}`;
+}
+
+/** Sin filtros: `/productos`, o la página de la categoría. */
+export function rutaDeTienda(seccion: string | null): string {
+  return seccion ? urlDeCategoria(seccion) : "/productos";
 }
 
 /** Cambiar un filtro vuelve a la página 1. Ver `urlDeTienda`. */
@@ -266,9 +302,18 @@ export function contarFiltrosDeTienda(f: FiltrosDeTienda): number {
   );
 }
 
-/** Limpia búsqueda y filtros; conserva el orden elegido (§10.2). */
+/**
+ * Limpia búsqueda y filtros; conserva el orden elegido (§10.2) y la
+ * categoría de la página: «Limpiar todo» en «Auriculares» deja en
+ * «Auriculares» (F3.11).
+ */
 export function sinFiltrosDeTienda(f: FiltrosDeTienda): FiltrosDeTienda {
-  return { ...FILTROS_DE_TIENDA_VACIOS, orden: f.orden };
+  return { ...FILTROS_DE_TIENDA_VACIOS, orden: f.orden, seccion: f.seccion };
+}
+
+/** La dirección de «Limpiar todo». Ver `sinFiltrosDeTienda`. */
+export function urlSinFiltros(f: FiltrosDeTienda): string {
+  return urlDeTienda(sinFiltrosDeTienda(f));
 }
 
 /**
@@ -287,6 +332,10 @@ export function sinFiltrosDeTienda(f: FiltrosDeTienda): FiltrosDeTienda {
  * `noindex, follow`: no entran al índice, pero los enlaces a las fichas que
  * tienen adentro sí se siguen. Es lo contrario de un `Disallow`, que cerraría
  * el camino.
+ *
+ * **La página de una categoría sin filtrar sí se indexa** (F3.11): la
+ * categoría no es un filtro (`seccion`), así que `/categorias/teclados` es tan
+ * indexable como `/productos`, y le suma cualquier filtro y deja de serlo.
  *
  * **La paginación sí se indexa**, con su propia dirección. Es lo que Google
  * recomienda desde que dejó de existir `rel=next`: la página 2 es contenido

@@ -12,7 +12,7 @@ import { normalizar } from "@/lib/texto";
 
 export type CategoriaDeLaPagina = {
   id: string;
-  /** Para el enlace: `?categoria=` va por slug. */
+  /** Para el enlace a su página, `/categorias/<slug>` (F3.11). */
   slug: string;
   nombre: string;
   /** Productos activos, con o sin stock: lo que muestra el catálogo (RN-05). */

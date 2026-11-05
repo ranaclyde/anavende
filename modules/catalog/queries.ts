@@ -36,6 +36,11 @@ export type ItemDeCatalogo = {
    */
   isFeatured: boolean | null;
   /**
+   * El texto de la página de la categoría (F3.11). `null` = no tiene, o el
+   * tipo no lleva texto: marcas y colores.
+   */
+  description: string | null;
+  /**
    * La URL del logo, ya resuelta: el de la marca o la imagen de la
    * categoría (FA-21), que se sube igual. `null` = no tiene, o el tipo no
    * lleva imagen. La vista recibe una URL y no una clave a propósito: armarla
@@ -83,6 +88,7 @@ export async function listarMarcas(
   >(sql`
     SELECT b.id, b.name, b.slug, NULL::text AS "hexCode",
            NULL::boolean AS "isFeatured",
+           NULL::text AS description,
            NULL::json AS relacionadas,
            b.logo_key AS "logoKey",
            b.is_active AS "isActive",
@@ -122,6 +128,7 @@ export async function listarCategorias(
   >(sql`
     SELECT c.id, c.name, c.slug, NULL::text AS "hexCode",
            c.is_featured AS "isFeatured",
+           c.description,
            -- RF-31. Subconsulta y no JOIN: con el JOIN de productos de abajo,
            -- cada relación se multiplicaría por los productos de la fila.
            (SELECT COALESCE(json_agg(json_build_object(
@@ -196,6 +203,7 @@ export async function listarColores(
   const filas = await db.execute<ItemDeCatalogo>(sql`
     SELECT c.id, c.name, c.slug, c.hex_code AS "hexCode",
            NULL::boolean AS "isFeatured",
+           NULL::text AS description,
            NULL::json AS relacionadas,
            NULL::text AS "logoUrl",
            c.is_active AS "isActive",

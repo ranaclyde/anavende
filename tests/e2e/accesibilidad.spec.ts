@@ -37,6 +37,7 @@ let compradora: Cuenta;
 let sinPerfil: Cuenta;
 let orden: Orden;
 let producto: { id: string; slug: string };
+let categoria: string;
 let direccion: string;
 
 type Quien = "visitante" | "compradora" | "admin" | "sinPerfil";
@@ -58,6 +59,11 @@ const PANTALLAS: Pantalla[] = [
   { ruta: "/", quien: "visitante" },
   { ruta: "/productos", quien: "visitante" },
   { ruta: "/categorias", quien: "visitante" },
+  {
+    ruta: "/categorias/[slug]",
+    quien: "visitante",
+    url: () => `/categorias/${categoria}`,
+  },
   {
     ruta: "/productos/[slug]",
     quien: "visitante",
@@ -183,6 +189,7 @@ test.beforeAll(async () => {
     stock: 5,
   });
   producto = teclado;
+  categoria = await datos.slugDeCategoria(categoriaId);
 
   // La hilera de la portada solo aparece con un medio de pago con logo.
   await datos.unMedioDePagoConLogo(`Tarjeta ${palabra}`);

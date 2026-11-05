@@ -1,15 +1,20 @@
 import type { MetadataRoute } from "next";
 
 import { urlAbsoluta } from "@/lib/seo";
-import { productosDelMapa } from "@/modules/catalog/products/mapa-del-sitio";
+import { urlDeCategoria } from "@/modules/catalog/products/filtros-tienda";
+import {
+  categoriasDelMapa,
+  productosDelMapa,
+} from "@/modules/catalog/products/mapa-del-sitio";
 import { PAGINAS_LEGALES } from "@/modules/content/paginas";
 
 /**
  * `sitemap.xml` — F3.9, RNF-04.
  *
  * **Solo las direcciones que se indexan**: la home, el catálogo sin filtrar,
- * las categorías y cada ficha activa. Los filtros no entran —son `?categoria=<slug>` y salen
- * marcados `noindex` (ver `productos/page.tsx`)—, y las páginas de sesión
+ * `/categorias`, la página de cada categoría con productos (F3.11) y cada
+ * ficha activa. Los filtros no entran —salen marcados `noindex` (ver
+ * `catalogoIndexable`)—, y las páginas de sesión
  * tampoco. Un mapa del sitio no es el índice de todo lo que responde 200: es
  * la lista de lo que pedimos que se indexe, y meter ahí algo que la misma
  * página marca como no indexable es mandar dos instrucciones opuestas.
@@ -30,7 +35,10 @@ import { PAGINAS_LEGALES } from "@/modules/content/paginas";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const productos = await productosDelMapa();
+  const [productos, categorias] = await Promise.all([
+    productosDelMapa(),
+    categoriasDelMapa(),
+  ]);
 
   // Lo más nuevo del catálogo fecha también a la home y al catálogo: las dos
   // cambian cuando cambia un producto. La consulta ya viene ordenada por
@@ -43,6 +51,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // F3.10: cambia cuando cambia un producto —las cantidades— igual que el
     // catálogo.
     { url: urlAbsoluta("/categorias"), lastModified: ultimoCambio },
+    ...categorias.map((c) => ({
+      url: urlAbsoluta(urlDeCategoria(c.slug)),
+      lastModified: c.actualizado,
+    })),
     ...productos.map((p) => ({
       url: urlAbsoluta(`/productos/${p.slug}`),
       lastModified: p.actualizado,
