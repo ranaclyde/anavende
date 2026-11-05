@@ -141,6 +141,17 @@ function vestir(globo: PopoverDOM, escala: "admin" | undefined): void {
     "absolute top-2 right-2",
   );
   globo.closeButton.innerHTML = CRUZ;
+  // Driver.js les escribe `style="display: block"` a los tres botones en cada
+  // paso, y el estilo en línea le gana al `inline-flex` de `buttonVariants`:
+  // la cruz quedaba arriba a la izquierda de su círculo. Solo se borra el
+  // `block`; el `none` de un botón que no va se respeta.
+  for (const boton of [
+    globo.closeButton,
+    globo.nextButton,
+    globo.previousButton,
+  ]) {
+    if (boton.style.display === "block") boton.style.removeProperty("display");
+  }
   setTimeout(() => globo.nextButton.focus());
 }
 
