@@ -506,9 +506,30 @@ test("el selector con buscador, abierto", async ({ browser }) => {
     lista.getByRole("combobox"),
     "el foco no entró al buscador",
   ).toBeFocused();
-  expect(await hallazgosDeAxe(page, '[data-slot="popover-content"]')).toEqual(
-    [],
+  /*
+   * `scrollable-region-focusable` no aplica acá (revisado el 2026-11-05).
+   * La regla pide que una zona con scroll se pueda enfocar para recorrerla
+   * con el teclado. Este es un combobox con `aria-activedescendant`: el foco
+   * se queda en el buscador, las flechas mueven la opción marcada y `cmdk` la
+   * trae a la vista. Hacer enfocable la lista sumaría un Tab que no lleva a
+   * nada nuevo. Lo que la regla quiere asegurar se comprueba abajo: con las
+   * flechas se llega a la última opción, y se ve.
+   */
+  expect(
+    await hallazgosDeAxe(page, '[data-slot="popover-content"]', [
+      "scrollable-region-focusable",
+    ]),
+  ).toEqual([]);
+
+  const opciones = lista.locator(".max-h-64 [cmdk-item]");
+  const cuantas = await opciones.count();
+  for (let i = 1; i < cuantas; i++) await page.keyboard.press("ArrowDown");
+  const ultima = opciones.last();
+  await expect(ultima, "las flechas no llegan a la última").toHaveAttribute(
+    "aria-selected",
+    "true",
   );
+  await expect(ultima, "la última no se trae a la vista").toBeInViewport();
 
   await page.keyboard.press("Escape");
   await expect(lista).toBeHidden();
