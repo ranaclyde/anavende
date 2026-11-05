@@ -235,7 +235,7 @@ export const MINIMO_CON_COLOR = 3;
  * **Se deduce de lo cargado, no se configura** (decisión tuya): la mayoría de
  * los productos activos de la categoría, sin contar este, tienen alguna
  * variante con color, y son al menos `MINIMO_CON_COLOR`. En una categoría de
- * cables, casi todos «Único», no avisa nunca. Una categoría nueva no avisa
+ * memorias RAM, casi todas «Único», no avisa nunca. Una categoría nueva no avisa
  * hasta tener con qué comparar.
  *
  * Devuelve el nombre, para decirlo en el aviso, o `null`.

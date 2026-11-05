@@ -1042,7 +1042,7 @@ function EdicionDeVariante({
                             : color === UNICO
                               ? // 2026-11-05: corta a propósito. «Único» deja
                                 // al producto afuera del filtro de color.
-                                "Solo si el color no importa, como en un cable. Si viene en un solo color, elegí ese color."
+                                "Solo si el color no importa, como en una memoria RAM. Si viene en un solo color, elegí ese color."
                               : "Cada color, o cada combinación, una sola vez por producto. Si no está, escribilo y crealo desde la lista."}
                         </FieldHint>
                       )}

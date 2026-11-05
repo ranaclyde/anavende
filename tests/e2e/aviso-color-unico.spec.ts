@@ -69,7 +69,7 @@ test("un «Único» entre productos con color avisa, y la ayuda dice cuándo usa
   await page.getByRole("button", { name: "Editar Único" }).click();
   await expect(
     page.getByText(
-      "Solo si el color no importa, como en un cable. Si viene en un solo color, elegí ese color.",
+      "Solo si el color no importa, como en una memoria RAM. Si viene en un solo color, elegí ese color.",
     ),
   ).toBeVisible();
 });

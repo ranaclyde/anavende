@@ -74,7 +74,7 @@ describe("la categoría que se vende por color", () => {
     expect(await categoriaQueSeVendePorColor(unico)).toBe(`Rubro 0 ${T}`);
   });
 
-  test("con la mayoría «Único», como unos cables, no", async () => {
+  test("con la mayoría «Único», como unas memorias RAM, no", async () => {
     const cat = await unaCategoria();
     for (let i = 0; i < MINIMO_CON_COLOR; i++) await unProducto(cat, true);
     for (let i = 0; i < MINIMO_CON_COLOR + 1; i++) await unProducto(cat, false);
