@@ -1,13 +1,15 @@
 import Link from "next/link";
-import { Check, SlidersHorizontal, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
-import { BotonCerrarFiltros } from "@/components/shop/boton-cerrar-filtros";
-import { BotonVerResultados } from "@/components/shop/boton-ver-resultados";
+import { DrawerDeFiltros } from "@/components/shop/drawer-de-filtros";
 import { EsperaDelFiltro } from "@/components/shop/filtrando";
 import {
-  CierreDelPanel,
-  LimpiarFiltros,
+  GrupoDeFiltro,
+  type OpcionDelGrupo,
+} from "@/components/shop/grupo-de-filtro";
+import {
   RangoDePrecio,
+  type LimitesDePrecio,
 } from "@/components/shop/filtros-cliente";
 
 import {
@@ -35,15 +37,13 @@ import { AREA_TACTIL, cn } from "@/lib/utils";
  * persona espera. Con casillas y estado de cliente habría que reimplementar
  * las cuatro cosas, y la cuarta nunca queda bien.
  *
- * **Y el panel tampoco es una isla de cliente.** Abre y cierra con un
- * `<details>` nativo: sin JavaScript, con teclado, y con el foco donde debe
- * estar. No lleva `open` a propósito — así el navegador conserva el estado
- * entre navegaciones y el panel no se cierra solo cada vez que se toca un
- * chip, que es lo que pasaría si React se lo reescribiera en cada render.
- *
- * **Lo que el `<details>` no hace solo lo agregan tres islas chicas**
- * (`filtros-cliente.tsx`, 2026-10-14): cerrarse al tocar afuera y con Escape,
- * cerrarse con «Limpiar filtros», y el precio que se aplica sin «Aplicar».
+ * **El panel es el `Sheet` de los drawers del panel** (`drawer-de-filtros.tsx`,
+ * 2026-11-04): un drawer a la derecha, y en el teléfono a pantalla completa.
+ * Hasta entonces era un `<details>` nativo, que abría sin JavaScript pero no
+ * se animaba y obligaba a reimplementar el foco, Escape y el fondo. Lo de
+ * adentro sigue armándose acá, en el servidor; las islas son el precio
+ * (`filtros-cliente.tsx`) y cada grupo (`grupo-de-filtro.tsx`), que recorta
+ * las listas largas y les pone un buscador.
  */
 
 type Props = {
@@ -51,6 +51,7 @@ type Props = {
   categorias: OpcionDeFiltro[];
   marcas: OpcionDeFiltro[];
   colores: OpcionDeColor[];
+  precios?: LimitesDePrecio | null;
 };
 
 export function PanelDeFiltros({
@@ -58,326 +59,86 @@ export function PanelDeFiltros({
   categorias,
   marcas,
   colores,
+  precios = null,
   total,
 }: Props & { total: number }) {
-  const puestos = contarFiltrosDeTienda(filtros);
-
   return (
-    <details className="group">
-      <summary
-        className={cn(
-          // `list-none` + el pseudo de WebKit: el triangulito nativo no entra
-          // en el sistema, y la píldora ya dice que esto se abre.
-          "flex h-12 cursor-pointer list-none items-center gap-2 rounded-pill",
-          "border px-5 text-body shadow-sm",
-          "transition-colors duration-150",
-          "focus-visible:shadow-focus focus-visible:outline-none",
-          "[&::-webkit-details-marker]:hidden",
-          // Con filtros puestos el botón se tiñe. Antes solo cambiaba el
-          // circulito del contador, y en una barra de tres controles blancos
-          // ese punto pasa desapercibido: la persona no ve que la lista que
-          // está mirando está recortada.
-          puestos > 0
-            ? "border-brand-tint-border bg-brand-tint font-medium text-brand"
-            : "border-border bg-surface text-ink hover:border-border-strong",
-        )}
-      >
-        <SlidersHorizontal className="size-4 shrink-0" aria-hidden="true" />
-        Filtros
-        {puestos > 0 ? (
-          <span
-            className="grid size-5 shrink-0 place-items-center rounded-full bg-brand text-caption font-medium text-ink-inverse tabular-nums"
-            // Un «2» suelto no dice nada leído en voz alta. El número visible
-            // queda oculto al lector y el texto de al lado dice qué son.
-            aria-hidden="true"
-          >
-            {puestos}
-          </span>
-        ) : null}
-        <span className="sr-only">
-          {puestos === 0
-            ? "Ninguno aplicado"
-            : puestos === 1
-              ? "1 filtro aplicado"
-              : `${puestos} filtros aplicados`}
-        </span>
-      </summary>
-
-      {/* Tocar afuera o Escape lo cierran: ver filtros-cliente.tsx. */}
-      <CierreDelPanel />
-
+    <DrawerDeFiltros
+      puestos={contarFiltrosDeTienda(filtros)}
+      total={total}
+      hrefLimpiar={
+        hayFiltrosDeTienda(filtros)
+          ? urlDeTienda({ orden: filtros.orden })
+          : null
+      }
+    >
       {/*
-        **Dos formas para la misma pantalla, y no es capricho responsivo.**
-
-        En escritorio es el desplegable de §7.2: se posiciona contra la BARRA
-        y no contra el `<details>` —el ancestro posicionado es la fila entera,
-        así que `inset-x-0 top-full` lo estira por debajo de los tres
-        controles—, se apoya sobre la grilla sin empujarla, y su `max-h` con
-        scroll propio existe porque la lista de marcas crece con el catálogo.
-
-        En teléfono ese mismo `max-h` era el problema (2026-09-08). Con 512px
-        de ventana y 708 de contenido, el campo «Hasta», su «Aplicar», la
-        casilla del descuento y **«Ver N productos» —la acción principal—**
-        quedaban detrás de un scroll interno sin ninguna señal: el corte caía
-        a la mitad de un campo y el borde redondeado se leía como el final del
-        panel. Encima el mismo gesto hacía dos cosas según dónde cayera el
-        dedo: sobre el panel movía el panel, dos centímetros más abajo movía
-        la página.
-
-        Debajo de `md` pasa a ser una **hoja a pantalla completa**: la lista
-        scrollea sola y de arriba abajo, y las dos salidas —la × y «Ver N
-        productos»— están fijas y siempre a la vista. Se van el radio, la
-        sombra y el tope de alto, que son de una tarjeta apoyada sobre algo y
-        acá no hay nada debajo.
-
-        `h-dvh` y no `inset-0` a secas: en Safari la barra de direcciones
-        entra y sale, y con la altura del viewport fija el pie de la hoja se
-        va abajo del borde justo cuando aparece. `z-50` porque tiene que tapar
-        el encabezado, que es `z-40`.
-
-        El nombre de View Transition es para que las tarjetas no le pasen
-        por encima al filtrar con el panel abierto (`globals.css`).
+        **Una sola columna, con una línea entre sección y sección**
+        (2026-11-04). Con 512px no entran dos. Las ofertas van primero: es el
+        filtro que más se busca y el único de sí o no. El precio va al final,
+        con su slider.
       */}
-      <div
-        className={cn(
-          "absolute inset-x-0 top-full z-20 mt-3 flex flex-col gap-6",
-          "[view-transition-name:panel-filtros]",
-          "max-h-[min(70vh,32rem)] overflow-y-auto overscroll-contain",
-          "rounded-card bg-surface p-5 shadow-lg sm:p-6",
-          "max-md:fixed max-md:inset-0 max-md:z-50 max-md:mt-0 max-md:h-dvh",
-          "max-md:max-h-none max-md:gap-0 max-md:overflow-hidden",
-          "max-md:rounded-none max-md:p-0 max-md:shadow-none",
-        )}
+      <section
+        className="flex flex-col gap-2.5"
+        aria-labelledby="filtro-ofertas"
       >
-        {/*
-          Encabezado de la hoja, solo en teléfono. Repite el rótulo y el
-          contador del botón que quedó tapado: al abrirse a pantalla completa
-          se pierde el marco que decía qué es esto, y una pantalla de chips sin
-          título no dice si son filtros o categorías.
-        */}
-        <div className="hidden items-center justify-between gap-2 border-b border-border px-4 py-2 max-md:flex">
-          <h2 className="flex items-center gap-2 pl-1 text-body font-medium text-ink">
-            Filtros
-            {puestos > 0 ? (
-              <span
-                className="grid size-5 shrink-0 place-items-center rounded-full bg-brand text-caption font-medium text-ink-inverse tabular-nums"
-                aria-hidden="true"
-              >
-                {puestos}
-              </span>
-            ) : null}
-          </h2>
-          <BotonCerrarFiltros />
-        </div>
-
-        {/*
-          El cuerpo. En teléfono es lo ÚNICO que scrollea, y por eso se lleva
-          el `overscroll-contain`: sin él, llegar al final de la lista sigue
-          arrastrando la página de atrás y la hoja parece que se despega.
-        */}
-        <div
-          className={cn(
-            "flex flex-col gap-6",
-            "max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto",
-            "max-md:overscroll-contain max-md:p-5",
-          )}
+        <h3
+          id="filtro-ofertas"
+          className="text-caption font-medium tracking-wide text-ink-secondary uppercase"
         >
-          {/*
-          Los tres grupos en columnas, no apilados. Apilados, el panel medía
-          más de 500px de alto y «Color» quedaba abajo de todo: se elegía
-          categoría, se elegía marca y nadie llegaba a ver que había colores.
-          En un teléfono vuelven a una sola columna, que ahí es lo correcto.
-        */}
-          <div className="grid gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-            <GrupoDeChips
-              titulo="Categoría"
-              opciones={categorias}
-              seleccionados={filtros.categoria}
-              urlDe={(slug) =>
-                urlCambiando(filtros, {
-                  categoria: alternar(filtros.categoria, slug),
-                })
-              }
-            />
-            <GrupoDeChips
-              titulo="Marca"
-              opciones={marcas}
-              seleccionados={filtros.marca}
-              urlDe={(slug) =>
-                urlCambiando(filtros, { marca: alternar(filtros.marca, slug) })
-              }
-            />
-            <GrupoDeChips
-              titulo="Color"
-              opciones={colores}
-              seleccionados={filtros.color}
-              urlDe={(slug) =>
-                urlCambiando(filtros, { color: alternar(filtros.color, slug) })
-              }
-            />
-          </div>
-
-          <div className="flex flex-wrap items-end gap-x-8 gap-y-5">
-            <RangoDePrecio filtros={filtros} />
-            <Casilla
-              href={urlCambiando(filtros, { oferta: !filtros.oferta })}
-              activa={filtros.oferta}
-              etiqueta="Solo con descuento"
-            />
-          </div>
-        </div>
-
-        {/*
-          El pie que cierra el trato (§7.2). En teléfono deja de ser el último
-          renglón de una lista larga y pasa a estar **fijo abajo**: es donde
-          está la acción principal, y su problema era justamente que había que
-          descubrir que existía. `shrink-0` para que no lo aplaste el cuerpo, y
-          el área segura porque en un iPhone sin marco la franja del indicador
-          se come el botón.
-        */}
-        <div
-          className={cn(
-            "flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5",
-            "max-md:shrink-0 max-md:flex-nowrap max-md:bg-surface max-md:px-5",
-            "max-md:pt-4 max-md:pb-[calc(1rem+env(safe-area-inset-bottom))]",
-          )}
-        >
-          {/*
-            «Limpiar» solo si hay algo que limpiar, pero el hueco se conserva
-            con el `justify-between`: sin esto «Ver productos» salta de la
-            derecha al centro según haya filtros o no.
-          */}
-          {hayFiltrosDeTienda(filtros) ? (
-            <LimpiarFiltros
-              href={urlDeTienda({ orden: filtros.orden })}
-              className={cn(
-                "relative rounded-pill px-1 py-1.5 text-body-sm text-ink-secondary underline underline-offset-2",
-                "transition-colors duration-150 hover:text-brand",
-                "focus-visible:shadow-focus focus-visible:outline-none",
-                AREA_TACTIL,
-              )}
-            />
-          ) : (
-            <span />
-          )}
-
-          <BotonVerResultados
-            etiqueta={total === 1 ? "Ver 1 producto" : `Ver ${total} productos`}
-          />
-        </div>
-      </div>
-    </details>
+          Ofertas
+        </h3>
+        <Casilla
+          href={urlCambiando(filtros, { oferta: !filtros.oferta })}
+          activa={filtros.oferta}
+          etiqueta="Solo productos en oferta"
+        />
+      </section>
+      <GrupoDeFiltro
+        titulo="Categoría"
+        plural="categorías"
+        opciones={resolver(categorias, filtros.categoria, (slug) =>
+          urlCambiando(filtros, {
+            categoria: alternar(filtros.categoria, slug),
+          }),
+        )}
+      />
+      <GrupoDeFiltro
+        titulo="Marca"
+        plural="marcas"
+        opciones={resolver(marcas, filtros.marca, (slug) =>
+          urlCambiando(filtros, { marca: alternar(filtros.marca, slug) }),
+        )}
+      />
+      <GrupoDeFiltro
+        titulo="Color"
+        plural="colores"
+        opciones={resolver(colores, filtros.color, (slug) =>
+          urlCambiando(filtros, { color: alternar(filtros.color, slug) }),
+        )}
+      />
+      <RangoDePrecio filtros={filtros} limites={precios} />
+    </DrawerDeFiltros>
   );
 }
 
 /**
- * Un grupo de chips con su conteo — categoría, marca y color usan el mismo.
- *
- * **Los tres son multiselección desde el 2026-09-08** (RF-02). Dentro del
- * grupo las opciones se suman y entre grupos se cruzan: «(Teclados o Mouses) y
- * Logitech». Cruzarlas dentro del grupo daría cero siempre, porque ningún
- * producto es de dos categorías a la vez.
- *
- * No hay señal visual nueva para «podés elegir varios»: se descubre eligiendo
- * el segundo, y hasta ahí el chip se comporta igual que antes. Un rótulo
- * «elegí uno o más» arriba de cada grupo sería texto en tres lugares para algo
- * que se aprende en un clic.
+ * Las opciones de un grupo con su enlace y su estado ya armados, para que la
+ * isla del grupo (`grupo-de-filtro.tsx`) reciba datos y no funciones: lo que
+ * cruza al cliente tiene que poder serializarse.
  */
-function GrupoDeChips({
-  titulo,
-  opciones,
-  seleccionados,
-  urlDe,
-}: {
-  titulo: string;
-  opciones: (OpcionDeFiltro | OpcionDeColor)[];
-  seleccionados: readonly string[];
-  urlDe: (slug: string) => string;
-}) {
-  // Sin opciones no se dibuja el título: un encabezado con nada debajo parece
-  // que la pantalla falló al cargar (§8).
-  if (opciones.length === 0) return null;
-
-  return (
-    <div className="flex flex-col gap-2.5">
-      <h3 className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
-        {titulo}
-      </h3>
-      {/*
-        `flex-wrap`: los chips no se recortan ni se meten a la fuerza en una
-        fila. Con quince marcas en un teléfono, una fila sola esconde las
-        últimas y esas dejan de poder elegirse.
-      */}
-      <ul className="flex flex-wrap gap-2">
-        {opciones.map((o) => {
-          const activo = seleccionados.includes(o.slug);
-          const hex = "hex" in o ? o.hex : null;
-
-          return (
-            <li key={o.slug}>
-              <Link
-                // Volver a tocar el chip encendido lo apaga: lo resuelve
-                // `alternar`, y es el gesto que la gente prueba primero.
-                href={urlDe(o.slug)}
-                // Las tarjetas se reacomodan al llegar (`lib/transiciones.ts`).
-                transitionTypes={TIPO_FILTRO}
-                // §9: el color nunca es el único portador del estado. Un
-                // lector de pantalla no ve el relleno burdeos.
-                aria-current={activo ? "true" : undefined}
-                className={cn(
-                  "relative flex items-center gap-2 rounded-full border py-2 pr-3 pl-3",
-                  "text-body-sm whitespace-nowrap transition-colors duration-150",
-                  "focus-visible:shadow-focus focus-visible:outline-none",
-                  // §9 pide 44px de área táctil y la píldora mide 38. Se
-                  // estira el ÁREA y no el dibujo: agrandar el chip cambiaría
-                  // la composición de §7.2, y lo que está chico no es el chip
-                  // sino el blanco. Los 3px que sobresalen de cada lado caben
-                  // en el `gap-2` de la lista, así que dos filas de chips no
-                  // se pisan el blanco entre sí.
-                  AREA_TACTIL,
-                  // Relleno sólido y no tinte: el tinte claro es lo que usan
-                  // los chips de «filtro aplicado» de abajo, y dos estados
-                  // distintos con el mismo color se confunden.
-                  activo
-                    ? "border-brand bg-brand font-medium text-ink-inverse"
-                    : "border-border bg-surface text-ink-secondary hover:border-border-strong hover:text-ink",
-                )}
-              >
-                {hex ? (
-                  // El punto es decorativo: el nombre del color está al lado,
-                  // así que no necesita texto alternativo propio.
-                  <span
-                    className="size-3.5 shrink-0 rounded-full border border-border"
-                    style={{ backgroundColor: hex }}
-                    aria-hidden="true"
-                  />
-                ) : null}
-                <span className="min-w-0">{o.nombre}</span>
-                {/*
-                  `--ink-secondary` y no `--ink-tertiary`: §3.1 admite el
-                  terciario «solo texto ≥ 24px o elementos decorativos», y esto
-                  son 12px que dicen cuántos productos hay — información, y a
-                  3,37:1 sobre la superficie. Medido, no estimado.
-                */}
-                <span
-                  className={cn(
-                    "shrink-0 text-caption tabular-nums",
-                    activo ? "text-ink-inverse/70" : "text-ink-secondary",
-                  )}
-                >
-                  {o.cuantos}
-                </span>
-                <span className="sr-only">
-                  {activo ? " — quitar este filtro" : " — aplicar este filtro"}
-                </span>
-                <EsperaDelFiltro />
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
+function resolver(
+  opciones: (OpcionDeFiltro | OpcionDeColor)[],
+  seleccionados: readonly string[],
+  urlDe: (slug: string) => string,
+): OpcionDelGrupo[] {
+  return opciones.map((o) => ({
+    slug: o.slug,
+    nombre: o.nombre,
+    hex: "hex" in o ? o.hex : null,
+    href: urlDe(o.slug),
+    activo: seleccionados.includes(o.slug),
+  }));
 }
 
 /**
@@ -500,7 +261,7 @@ export function ChipsDeFiltros({
   if (filtros.oferta) {
     puestos.push({
       clave: "oferta",
-      etiqueta: "Con descuento",
+      etiqueta: "En oferta",
       href: urlCambiando(filtros, { oferta: false }),
     });
   }

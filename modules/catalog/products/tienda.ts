@@ -302,27 +302,35 @@ export type OpcionDeColor = OpcionDeFiltro & { hex: string };
  * **Solo las que tienen productos activos.** Un filtro que lleva a un listado
  * vacío es una promesa incumplida, y con el catálogo real de Ana —donde va a
  * haber marcas cargadas antes que sus productos— eso pasaría el primer día.
- * El número al lado es lo que evita el clic a ciegas.
+ * El número ya no se muestra al lado de cada opción (2026-11-04): se usa para
+ * ordenarlas.
+ *
+ * **Las que más productos tienen, primero** (2026-11-03). El drawer de
+ * filtros muestra las 8 primeras de cada grupo y esconde el resto detrás de
+ * «Ver todas», así que el orden decide qué se ve sin abrir nada. Las
+ * categorías destacadas van antes que todo, como en la home; a igual número,
+ * por nombre.
  */
 export async function leerOpcionesDeFiltro(): Promise<{
   categorias: OpcionDeFiltro[];
   marcas: OpcionDeFiltro[];
   colores: OpcionDeColor[];
+  precios: { min: number; max: number } | null;
 }> {
-  const [categorias, marcas, colores] = await Promise.all([
+  const [categorias, marcas, colores, [precios]] = await Promise.all([
     db.execute<OpcionDeFiltro>(sql`
       SELECT c.slug, c.name AS nombre, count(p.id)::int AS cuantos
         FROM categories c
         JOIN products p ON p.category_id = c.id AND p.is_active
        GROUP BY c.id
-       ORDER BY c.is_featured DESC, immutable_unaccent(lower(c.name))`),
+       ORDER BY c.is_featured DESC, cuantos DESC, immutable_unaccent(lower(c.name))`),
 
     db.execute<OpcionDeFiltro>(sql`
       SELECT b.slug, b.name AS nombre, count(p.id)::int AS cuantos
         FROM brands b
         JOIN products p ON p.brand_id = b.id AND p.is_active
        GROUP BY b.id
-       ORDER BY immutable_unaccent(lower(b.name))`),
+       ORDER BY cuantos DESC, immutable_unaccent(lower(b.name))`),
 
     // `count(DISTINCT p.id)`, no `count(p.id)`: un producto con dos variantes
     // negras se contaría dos veces y el número al lado del color mentiría.
@@ -340,12 +348,29 @@ export async function leerOpcionesDeFiltro(): Promise<{
           ON co.id IN (v.color_id, v.secondary_color_id) AND v.is_active
         JOIN products p ON p.id = v.product_id AND p.is_active
        GROUP BY co.id
-       ORDER BY immutable_unaccent(lower(co.name))`),
+       ORDER BY cuantos DESC, immutable_unaccent(lower(co.name))`),
+
+    // Las puntas del slider de precio (2026-11-04). El precio FINAL, el
+    // mismo que mira el filtro, en pesos enteros hacia afuera: así el
+    // producto más barato y el más caro siempre quedan adentro.
+    db.execute<{ min: number | null; max: number | null }>(sql`
+      SELECT floor(min(final_price))::int AS min,
+             ceil(max(final_price))::int  AS max
+        FROM products
+       WHERE is_active`),
   ]);
 
   return {
     categorias: [...categorias],
     marcas: [...marcas],
     colores: [...colores],
+    // Con el catálogo vacío o todo al mismo precio no hay nada que deslizar.
+    precios:
+      precios &&
+      precios.min !== null &&
+      precios.max !== null &&
+      precios.max > precios.min
+        ? { min: precios.min, max: precios.max }
+        : null,
   };
 }

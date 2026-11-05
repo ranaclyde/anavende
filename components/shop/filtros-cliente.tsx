@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
@@ -8,91 +7,17 @@ import {
   urlCambiando,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
-import {
-  EsperaDelFiltro,
-  useAvisarFiltrando,
-} from "@/components/shop/filtrando";
+import { useAvisarFiltrando } from "@/components/shop/filtrando";
+import { Slider } from "@/components/ui/slider";
 import { TIPO_FILTRO } from "@/lib/transiciones";
 import { cn } from "@/lib/utils";
 
 /**
- * Las tres piezas del panel de filtros que necesitan JavaScript — pedido del
- * 2026-10-14. El panel sigue siendo un `<details>` nativo y de servidor
- * (`filtros-catalogo.tsx`): esto se monta adentro y lo encuentra con
- * `closest("details")`, igual que `BotonCerrarFiltros` y `BotonVerResultados`.
- * Sin JavaScript el panel abre, cierra y filtra como antes.
+ * El precio, la pieza del panel de filtros que necesita estado. El resto del
+ * panel se arma en el servidor (`filtros-catalogo.tsx`) y se abre en el
+ * drawer de `drawer-de-filtros.tsx`, que trae el cierre con Escape, tocando
+ * afuera y con «Limpiar filtros».
  */
-
-/** Cerrar el `<details>` que contiene a `elemento`. */
-function cerrarPanel(elemento: Element | null) {
-  elemento?.closest("details")?.removeAttribute("open");
-}
-
-/**
- * Cierra el panel al tocar afuera y con Escape, que un `<details>` no hace
- * solo. No dibuja nada: es un marcador para encontrar su panel.
- *
- * Tocar ADENTRO no lo cierra, y es el punto: los chips son enlaces que
- * navegan sin recargar, y el panel se queda abierto para elegir otro. En el
- * teléfono la hoja ocupa toda la pantalla, así que no hay afuera.
- *
- * `pointerdown` y no `click`: con `click`, arrastrar el dedo para desplazar
- * la página y soltarlo afuera contaría como tocar afuera recién al soltar.
- */
-export function CierreDelPanel() {
-  const marcador = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const panel = marcador.current?.closest("details");
-    if (!panel) return;
-
-    const alTocar = (e: PointerEvent) => {
-      if (panel.open && !panel.contains(e.target as Node)) {
-        panel.removeAttribute("open");
-      }
-    };
-    const alTeclear = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || !panel.open) return;
-      panel.removeAttribute("open");
-      // El foco vuelve al botón que lo abrió: si se queda en un chip que ya
-      // no se ve, el siguiente Tab arranca desde ningún lado.
-      panel.querySelector("summary")?.focus();
-    };
-
-    document.addEventListener("pointerdown", alTocar);
-    document.addEventListener("keydown", alTeclear);
-    return () => {
-      document.removeEventListener("pointerdown", alTocar);
-      document.removeEventListener("keydown", alTeclear);
-    };
-  }, []);
-
-  return <span ref={marcador} hidden />;
-}
-
-/**
- * «Limpiar filtros»: navega a la lista sin filtros y cierra el panel. Antes
- * lo dejaba abierto con todo desmarcado, que se lee como «no pasó nada».
- */
-export function LimpiarFiltros({
-  href,
-  className,
-}: {
-  href: string;
-  className?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={(e) => cerrarPanel(e.currentTarget)}
-      transitionTypes={TIPO_FILTRO}
-      className={className}
-    >
-      Limpiar filtros
-      <EsperaDelFiltro />
-    </Link>
-  );
-}
 
 /** Lo que espera el debounce antes de aplicar lo que se está escribiendo. */
 const ESPERA = 700;
@@ -105,6 +30,22 @@ function aPesos(texto: string): number | null {
 }
 
 const aTexto = (n: number | null) => (n === null ? "" : String(n));
+
+/** Los precios finales más bajo y más alto del catálogo, en pesos enteros. */
+export type LimitesDePrecio = { min: number; max: number };
+
+/**
+ * El paso del slider: unos cien pasos entre punta y punta, redondo. Con un
+ * catálogo de $ 3.000 a $ 160.000 son $ 1.000; de a $ 1 la manija no se
+ * puede dejar en un número que se lea.
+ */
+function pasoPara({ min, max }: LimitesDePrecio): number {
+  const rango = max - min;
+  if (rango <= 100) return 1;
+  return 10 ** (Math.floor(Math.log10(rango)) - 2);
+}
+
+const pesos = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
 
 /**
  * El rango de precio (RF-02), **sin «Aplicar»** desde el 2026-10-14.
@@ -124,7 +65,14 @@ const aTexto = (n: number | null) => (n === null ? "" : String(n));
  * oculto, porque sin ninguno un formulario de dos campos no se envía con
  * Enter.
  */
-export function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
+export function RangoDePrecio({
+  filtros,
+  limites,
+}: {
+  filtros: FiltrosDeTienda;
+  /** `null` con el catálogo vacío o un solo precio: no hay nada que deslizar. */
+  limites: LimitesDePrecio | null;
+}) {
   const router = useRouter();
   // La transición es para enterarse de cuándo termina: mientras tanto, la
   // grilla se atenúa (`filtrando.tsx`).
@@ -174,6 +122,29 @@ export function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
     espera.current = setTimeout(() => aplicar(d, h, false), ESPERA);
   };
 
+  /*
+   * El slider y los campos dicen lo mismo. Las puntas del slider son los
+   * precios del catálogo redondeados al paso, y **una manija en su punta es
+   * «sin límite»**: el campo queda vacío y la dirección no lleva ese borde.
+   * Si no, mover solo la de abajo dejaría puesto un «hasta $ 160.000» que
+   * nadie eligió, y un producto nuevo más caro quedaría afuera.
+   */
+  const paso = limites ? pasoPara(limites) : 1;
+  const punta = limites
+    ? {
+        min: Math.floor(limites.min / paso) * paso,
+        max: Math.ceil(limites.max / paso) * paso,
+      }
+    : null;
+  const aManija = (v: number) =>
+    v <= (punta?.min ?? 0) ? "" : v >= (punta?.max ?? 0) ? "" : String(v);
+  const valor = punta
+    ? [
+        Math.min(Math.max(aPesos(desde) ?? punta.min, punta.min), punta.max),
+        Math.min(Math.max(aPesos(hasta) ?? punta.max, punta.min), punta.max),
+      ]
+    : null;
+
   return (
     <div className="flex flex-col gap-2.5">
       <h3
@@ -188,11 +159,30 @@ export function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
         dejaría a este grupo fuera del recorrido por encabezados mientras los
         otros tres son `h3`.
       */}
+      {punta && valor ? (
+        <Slider
+          min={punta.min}
+          max={punta.max}
+          step={paso}
+          minStepsBetweenThumbs={1}
+          value={valor}
+          etiquetas={["Precio mínimo", "Precio máximo"]}
+          // Mientras se arrastra solo cambian los campos; se filtra al
+          // soltar, como con Enter en los campos.
+          onValueChange={([a, b]) => {
+            clearTimeout(espera.current);
+            setDesde(aManija(a));
+            setHasta(aManija(b));
+          }}
+          onValueCommit={([a, b]) => aplicar(aManija(a), aManija(b), true)}
+        />
+      ) : null}
+
       <form
         method="get"
         action="/productos"
         aria-labelledby="filtro-precio"
-        className="flex flex-wrap items-center gap-2"
+        className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           aplicar(desde, hasta, true);
@@ -202,6 +192,7 @@ export function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
         <CampoDePrecio
           nombre="precioMin"
           etiqueta="Desde"
+          ayuda={punta ? pesos.format(punta.min) : ""}
           valor={desde}
           alCambiar={(v) => {
             setDesde(v);
@@ -209,9 +200,13 @@ export function RangoDePrecio({ filtros }: { filtros: FiltrosDeTienda }) {
           }}
           alSalir={() => aplicar(desde, hasta, true)}
         />
+        <span aria-hidden className="text-body-sm text-ink-secondary">
+          –
+        </span>
         <CampoDePrecio
           nombre="precioMax"
           etiqueta="Hasta"
+          ayuda={punta ? `${pesos.format(punta.max)}+` : ""}
           valor={hasta}
           alCambiar={(v) => {
             setHasta(v);
@@ -256,55 +251,60 @@ function Conservados({ filtros }: { filtros: FiltrosDeTienda }) {
 }
 
 /**
- * Etiqueta VISIBLE y no un marcador de posición (§8): «Desde» y «Hasta» son la
- * única diferencia entre los dos campos, y un marcador desaparece justo cuando
- * se está escribiendo, que es cuando hace falta saber en cuál se está.
+ * Un borde del precio, a todo el ancho de su columna (2026-11-04, pedido tuyo
+ * con una referencia). **La etiqueta ya no se ve**: el «–» entre los dos
+ * campos y el slider de arriba dicen cuál es cuál, y el marcador muestra la
+ * punta del catálogo («3.000», «160.000+»). Para el lector de pantalla sigue
+ * siendo «Desde» y «Hasta». Es una excepción a la regla de §8 de etiquetas
+ * visibles, anotada en PROGRESO.md.
  */
 function CampoDePrecio({
   nombre,
   etiqueta,
+  ayuda,
   valor,
   alCambiar,
   alSalir,
 }: {
   nombre: string;
   etiqueta: string;
+  ayuda: string;
   valor: string;
   alCambiar: (valor: string) => void;
   alSalir: () => void;
 }) {
   return (
-    <label className="flex items-center gap-2 text-body-sm text-ink-secondary">
-      {etiqueta}
-      <span className="relative">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-body-sm text-ink-secondary"
-        >
-          $
-        </span>
-        <input
-          type="number"
-          name={nombre}
-          min={0}
-          step={1}
-          inputMode="numeric"
-          value={valor}
-          onChange={(e) => alCambiar(e.target.value)}
-          onBlur={alSalir}
-          className={cn(
-            // 44px, que es el mínimo táctil de §9.
-            "h-11 w-28 rounded-pill border border-border bg-surface",
-            // 16px en teléfono: con menos, iOS Safari amplía la página al
-            // enfocar el campo y no vuelve. Ver `search-box.tsx`.
-            "pr-3 pl-7 text-body-sm max-md:text-body text-ink tabular-nums",
-            "focus-visible:shadow-focus focus-visible:outline-none",
-            // Las flechitas nativas de `number` no entran en el sistema y
-            // encima empujan el texto contra el borde.
-            "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
-          )}
-        />
+    <label className="relative block min-w-0">
+      <span className="sr-only">{etiqueta}</span>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-body-sm text-ink-secondary"
+      >
+        $
       </span>
+      <input
+        type="number"
+        name={nombre}
+        min={0}
+        step={1}
+        inputMode="numeric"
+        value={valor}
+        placeholder={ayuda}
+        onChange={(e) => alCambiar(e.target.value)}
+        onBlur={alSalir}
+        className={cn(
+          // 44px, que es el mínimo táctil de §9.
+          "h-11 w-full rounded-pill border border-border bg-surface",
+          // 16px en teléfono: con menos, iOS Safari amplía la página al
+          // enfocar el campo y no vuelve. Ver `search-box.tsx`.
+          "pr-3 pl-7 text-body-sm max-md:text-body text-ink tabular-nums",
+          "placeholder:text-ink-secondary",
+          "focus-visible:shadow-focus focus-visible:outline-none",
+          // Las flechitas nativas de `number` no entran en el sistema y
+          // encima empujan el texto contra el borde.
+          "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+        )}
+      />
     </label>
   );
 }

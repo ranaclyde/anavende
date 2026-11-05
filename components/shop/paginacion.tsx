@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,33 +31,92 @@ export function Paginacion({
   return (
     <nav aria-label="Paginación" className="flex justify-center pt-10">
       <ul className="flex flex-wrap items-center gap-1.5">
-        {numeros.map((n) => (
-          <li key={n}>
-            <Button
-              asChild
-              // `size="icon"` ya son los 44px de área táctil de §9: en un
-              // teléfono, números de 28px uno al lado del otro se tocan mal y
-              // se erra de página.
-              size="icon"
-              variant={n === pagina ? "brand" : "tertiary"}
-              className={cn(
-                "tabular-nums",
-                n === pagina ? "font-medium" : "hover:bg-surface-sunken",
-              )}
-            >
-              <Link
-                href={href(n)}
-                aria-current={n === pagina ? "page" : undefined}
-              >
-                {n}
-                <span className="sr-only">
-                  {n === pagina ? " (página actual)" : ` Ir a la página ${n}`}
-                </span>
-              </Link>
-            </Button>
+        {pagina > 1 ? (
+          <li>
+            <Flecha direccion="anterior" href={href(pagina - 1)} />
           </li>
-        ))}
+        ) : null}
+        {numeros.map((n) => {
+          const actual = n === pagina;
+          return (
+            <li key={n}>
+              <Button
+                asChild
+                // `size="icon"` ya son los 44px de área táctil de §9: en un
+                // teléfono, números de 28px uno al lado del otro se tocan mal
+                // y se erra de página.
+                size="icon"
+                variant="tertiary"
+                className={cn(
+                  "tabular-nums",
+                  // **La actual va con tinte y no con relleno de marca**
+                  // (2026-11-04, pedido tuyo). El relleno burdeos es la cara
+                  // del botón principal, y un estado con esa cara se lee como
+                  // una acción. Es el mismo tinte de los chips elegidos de los
+                  // filtros: «acá estás».
+                  actual &&
+                    "border border-brand-tint-border bg-brand-tint font-medium text-brand hover:bg-brand-tint hover:text-brand",
+                )}
+              >
+                <Link href={href(n)} aria-current={actual ? "page" : undefined}>
+                  {/*
+                    Se lee «Página 2». Antes decía «2 Ir a la página 2», con el
+                    número dos veces, y la actual «1 (página actual)», que
+                    `aria-current` ya anuncia por su cuenta.
+                  */}
+                  <span className="sr-only">Página </span>
+                  {n}
+                </Link>
+              </Button>
+            </li>
+          );
+        })}
+        {pagina < paginas ? (
+          <li>
+            <Flecha direccion="siguiente" href={href(pagina + 1)} />
+          </li>
+        ) : null}
       </ul>
     </nav>
+  );
+}
+
+/**
+ * «Anterior» y «Siguiente», para avanzar de a una sin buscar el número.
+ * Con la palabra al lado de la flecha (2026-11-04, pedido tuyo): una flecha
+ * sola junto a una fila de números se confunde con un número más. En la
+ * primera página no está «Anterior», y en la última no está «Siguiente»:
+ * apagadas en gris parecían rotas.
+ *
+ * **En el teléfono queda solo la flecha**, con la palabra para el lector de
+ * pantalla. Con las dos palabras, a 390px «Siguiente» bajaba sola a un
+ * segundo renglón con apenas tres páginas.
+ */
+function Flecha({
+  direccion,
+  href,
+}: {
+  direccion: "anterior" | "siguiente";
+  href: string;
+}) {
+  const anterior = direccion === "anterior";
+  const Icono = anterior ? ChevronLeft : ChevronRight;
+
+  return (
+    <Button
+      asChild
+      variant="tertiary"
+      // 44px de alto, como los números (§9). La tinta plena y no la
+      // secundaria del terciario: es la acción de la fila.
+      className="h-11 gap-1 px-3 text-ink max-sm:w-11 max-sm:px-0"
+    >
+      <Link href={href} rel={anterior ? "prev" : "next"}>
+        {anterior ? <Icono aria-hidden className="size-4" /> : null}
+        <span className="max-sm:sr-only">
+          {anterior ? "Anterior" : "Siguiente"}
+        </span>
+        {anterior ? null : <Icono aria-hidden className="size-4" />}
+      </Link>
+    </Button>
   );
 }

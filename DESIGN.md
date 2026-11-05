@@ -583,6 +583,16 @@ confirmaciones siguen en diálogo. La regla para lo que venga: **alta o edición
 con secciones o con una lista que crece → drawer; confirmar o decidir →
 diálogo.** DR §6.14.3.
 
+**Los filtros del catálogo de la tienda también son un drawer a la derecha**
+(`components/shop/filtros-catalogo.tsx`, 2026-11-03), con el mismo contrato:
+alto entero, título y pie fijos, «Ver N productos» siempre a la vista. Es el
+mismo `Sheet` (`drawer-de-filtros.tsx`), así que entra y sale igual que los
+del panel, y mide lo mismo: 512px. Los filtros
+siguen siendo enlaces con todo en la dirección. Los grupos van en una
+columna, y cada uno muestra 8 opciones y un «Ver las N» (`grupo-de-filtro.tsx`).
+El chip elegido va con tinte de marca, borde burdeos y una ✓ a la derecha, nunca relleno
+sólido: el relleno burdeos es del botón principal, «Ver N productos».
+
 ### Solapas del panel
 
 Dos formas, y la diferencia significa algo (`SolapasDelPanel`). **Segmentado**

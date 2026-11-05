@@ -28,12 +28,14 @@ import { cn } from "@/lib/utils";
  */
 const Sheet = DialogPrimitive.Root;
 const SheetTrigger = DialogPrimitive.Trigger;
+const SheetClose = DialogPrimitive.Close;
 
 function SheetContent({
   className,
   children,
   closeLabel = "Cerrar",
   lado = "derecha",
+  overlayClassName,
   onOpenAutoFocus,
   onCloseAutoFocus,
   ...props
@@ -44,6 +46,11 @@ function SheetContent({
    * Un formulario sale siempre por la derecha (arriba, por qué).
    */
   lado?: "derecha" | "izquierda";
+  /**
+   * Para el fondo atenuado. Lo usan los filtros del catálogo para nombrarlo
+   * en las View Transitions (`globals.css`).
+   */
+  overlayClassName?: string;
 }) {
   const foco = useFocoQueVuelve({ onOpenAutoFocus, onCloseAutoFocus });
   // La misma razón que en `DialogContent`: el portal saca la caja de
@@ -52,7 +59,7 @@ function SheetContent({
 
   return (
     <DialogPrimitive.Portal>
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         data-slot="sheet-content"
         data-scale={escala}
@@ -168,6 +175,7 @@ function SheetDescription({
 export {
   Sheet,
   SheetTrigger,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetForm,

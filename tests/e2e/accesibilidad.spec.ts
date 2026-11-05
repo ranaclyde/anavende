@@ -509,12 +509,41 @@ test("el selector con buscador, abierto", async ({ browser }) => {
   await page.context().close();
 });
 
+test("el drawer de filtros, en la computadora", async ({ browser }) => {
+  const page = await navegador(browser, "visitante", "computadora");
+  await page.goto("/productos", { waitUntil: "load" });
+  const abrir = page.getByRole("button", { name: /^Filtros/ });
+  const filtros = page.getByRole("dialog", { name: "Filtros" });
+  await abrir.click();
+  await animacionesTerminadas(page);
+  expect.soft(await hallazgosDeAxe(page), "drawer abierto").toEqual([]);
+
+  // Con la lista larga abierta y su buscador a la vista, si el grupo tiene
+  // más de 8 opciones. Con menos no hay «Ver las…» y no hay nada más que
+  // mirar.
+  const verTodas = filtros.getByRole("button", { name: /^Ver las/ }).first();
+  if (await verTodas.isVisible()) {
+    await verTodas.click();
+    // Abierto, el mismo botón pasa a decir «Ver menos».
+    await expect(
+      filtros.getByRole("button", { name: "Ver menos" }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect.soft(await hallazgosDeAxe(page), "grupo abierto").toEqual([]);
+  }
+
+  // Escape cierra y el foco vuelve a «Filtros».
+  await page.keyboard.press("Escape");
+  await expect(filtros).toBeHidden();
+  await expect(abrir).toBeFocused();
+  await page.context().close();
+});
+
 test("los filtros del catálogo y el menú del panel, en el teléfono", async ({
   browser,
 }) => {
   const tienda = await navegador(browser, "visitante", "telefono");
   await tienda.goto("/productos", { waitUntil: "load" });
-  await tienda.locator("summary").first().click();
+  await tienda.getByRole("button", { name: /^Filtros/ }).click();
   await tienda.waitForTimeout(300);
   expect.soft(await hallazgosDeAxe(tienda), "filtros abiertos").toEqual([]);
   await tienda.context().close();
