@@ -26,6 +26,12 @@ categorías y la ficha de cada producto.
   pantalla completa (`components/shop/filtros-catalogo.tsx`). Cada grupo
   muestra sus 8 opciones con más productos y un «Ver las N» para el resto,
   con buscador cuando son más de 12 (`components/shop/grupo-de-filtro.tsx`).
+- **Cada categoría tiene su página** (`/categorias/[slug]`): es el mismo
+  catálogo con la categoría fija (`components/shop/vista-del-catalogo.tsx`),
+  con su texto opcional cargado desde el panel. Sin filtros se indexa y va
+  en `sitemap.xml`; con filtros, no. La home, `/categorias`, la ficha y los
+  recomendados llevan ahí, y en el drawer las demás aparecen como «Otras
+  categorías». Una categoría desactivada da 404.
 - **La ficha** (`/productos/[slug]`) cambia de foto, stock y mensaje al
   elegir otro color, sin recargar. El slug no cambia al renombrar un
   producto, para no romper los enlaces ya compartidos. Si la descripción

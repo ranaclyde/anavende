@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import {
+  rutaDeTienda,
   urlCambiando,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
@@ -180,7 +181,9 @@ export function RangoDePrecio({
 
       <form
         method="get"
-        action="/productos"
+        // La página de la categoría, si se está en una (F3.11): sin
+        // JavaScript, el envío tiene que volver al mismo lugar.
+        action={rutaDeTienda(filtros.seccion)}
         aria-labelledby="filtro-precio"
         className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2"
         onSubmit={(e) => {

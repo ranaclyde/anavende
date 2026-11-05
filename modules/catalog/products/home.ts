@@ -46,7 +46,7 @@ export const MAS_CATEGORIAS = 8;
 
 export type CategoriaDeLaHome = {
   id: string;
-  /** Para los enlaces: `?categoria=` va por slug. */
+  /** Para los enlaces a su página, `/categorias/<slug>` (F3.11). */
   slug: string;
   nombre: string;
   productos: ProductoEnTarjeta[];

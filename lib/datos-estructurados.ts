@@ -1,5 +1,5 @@
 import { NOMBRE_DEL_SITIO, urlAbsoluta, resumenDeMetadatos } from "@/lib/seo";
-import { urlDeTienda } from "@/modules/catalog/products/filtros-tienda";
+import { urlDeCategoria } from "@/modules/catalog/products/filtros-tienda";
 import type { Ficha } from "@/modules/catalog/products/ficha";
 
 /**
@@ -87,24 +87,39 @@ export function sitio(): Jsonld {
  * enlace: acá va igual, porque la lista tiene que terminar en la página
  * donde está parada.
  *
- * **La categoría apunta al catálogo filtrado**, que es `noindex, follow`: se
- * puede rastrear —por eso el `follow`— y por ahí se llega a los productos.
- * Es la misma dirección del enlace de la miga, y tiene que serlo.
+ * **La categoría apunta a su página** (F3.11), `/categorias/<slug>`, que se
+ * indexa. Hasta entonces era el catálogo filtrado, `noindex`. Es la misma
+ * dirección del enlace de la miga, y tiene que serlo.
  */
 export function migas(ficha: Ficha): Jsonld {
+  return rastro([
+    { nombre: "Catálogo", ruta: "/productos" },
+    // La misma que el enlace de la miga, armada con la misma función: dos
+    // formas de escribir la misma dirección es cómo se separan.
+    { nombre: ficha.categoria, ruta: urlDeCategoria(ficha.categoriaSlug) },
+    { nombre: ficha.nombre, ruta: `/productos/${ficha.slug}` },
+  ]);
+}
+
+/**
+ * Las migas de la página de una categoría — F3.11. «Categorías › Auriculares»,
+ * el mismo camino que la pantalla.
+ */
+export function migasDeCategoria(categoria: {
+  slug: string;
+  nombre: string;
+}): Jsonld {
+  return rastro([
+    { nombre: "Categorías", ruta: "/categorias" },
+    { nombre: categoria.nombre, ruta: urlDeCategoria(categoria.slug) },
+  ]);
+}
+
+function rastro(pasos: { nombre: string; ruta: string }[]): Jsonld {
   return {
     "@context": SCHEMA,
     "@type": "BreadcrumbList",
-    itemListElement: [
-      { nombre: "Catálogo", ruta: "/productos" },
-      // La misma que el enlace de la miga, armada con la misma función: dos
-      // formas de escribir la misma dirección es cómo se separan.
-      {
-        nombre: ficha.categoria,
-        ruta: urlDeTienda({ categoria: [ficha.categoriaSlug] }),
-      },
-      { nombre: ficha.nombre, ruta: `/productos/${ficha.slug}` },
-    ].map((paso, i) => ({
+    itemListElement: pasos.map((paso, i) => ({
       "@type": "ListItem",
       position: i + 1,
       name: paso.nombre,

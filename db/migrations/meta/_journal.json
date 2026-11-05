@@ -190,6 +190,13 @@
       "when": 1793666215072,
       "tag": "0026_modelo_del_producto",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793895455559,
+      "tag": "0027_texto_de_categoria",
+      "breakpoints": true
     }
   ]
 }

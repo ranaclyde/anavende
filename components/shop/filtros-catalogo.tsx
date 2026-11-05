@@ -18,6 +18,7 @@ import {
   hayFiltrosDeTienda,
   urlCambiando,
   urlDeTienda,
+  urlSinFiltros,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
 import { formatMoney } from "@/lib/money";
@@ -66,11 +67,7 @@ export function PanelDeFiltros({
     <DrawerDeFiltros
       puestos={contarFiltrosDeTienda(filtros)}
       total={total}
-      hrefLimpiar={
-        hayFiltrosDeTienda(filtros)
-          ? urlDeTienda({ orden: filtros.orden })
-          : null
-      }
+      hrefLimpiar={hayFiltrosDeTienda(filtros) ? urlSinFiltros(filtros) : null}
     >
       {/*
         **Una sola columna, con una línea entre sección y sección**
@@ -94,15 +91,35 @@ export function PanelDeFiltros({
           etiqueta="Solo productos en oferta"
         />
       </section>
-      <GrupoDeFiltro
-        titulo="Categoría"
-        plural="categorías"
-        opciones={resolver(categorias, filtros.categoria, (slug) =>
-          urlCambiando(filtros, {
-            categoria: alternar(filtros.categoria, slug),
-          }),
-        )}
-      />
+      {/*
+        En la página de una categoría (F3.11) el grupo pasa a ser «Otras
+        categorías»: enlaces a sus páginas, con la actual marcada. Llevan solo
+        el orden: una marca elegida en «Auriculares» puede no tener nada en
+        «Teclados», y llegar a una página nueva con un vacío es peor que
+        llegar sin filtros.
+      */}
+      {filtros.seccion ? (
+        <GrupoDeFiltro
+          titulo="Otras categorías"
+          plural="categorías"
+          navega
+          opciones={resolver(categorias, [filtros.seccion], (slug) =>
+            slug === filtros.seccion
+              ? urlDeTienda(filtros)
+              : urlDeTienda({ seccion: slug, orden: filtros.orden }),
+          )}
+        />
+      ) : (
+        <GrupoDeFiltro
+          titulo="Categoría"
+          plural="categorías"
+          opciones={resolver(categorias, filtros.categoria, (slug) =>
+            urlCambiando(filtros, {
+              categoria: alternar(filtros.categoria, slug),
+            }),
+          )}
+        />
+      )}
       <GrupoDeFiltro
         titulo="Marca"
         plural="marcas"
@@ -300,7 +317,7 @@ export function ChipsDeFiltros({
 
       <li>
         <Link
-          href={urlDeTienda({ orden: filtros.orden })}
+          href={urlSinFiltros(filtros)}
           transitionTypes={TIPO_FILTRO}
           className={cn(
             "relative rounded-full px-2 py-1.5 text-caption font-medium text-ink-secondary underline underline-offset-2",

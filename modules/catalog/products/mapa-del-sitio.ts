@@ -62,3 +62,30 @@ export async function productosDelMapa(): Promise<ProductoDelMapa[]> {
 
   return [...filas];
 }
+
+/**
+ * Las páginas de categoría que van en el mapa — F3.11.
+ *
+ * **Solo las activas con algún producto activo**, el mismo criterio que
+ * `/categorias`: una categoría vacía tiene página, pero es un «todavía no hay
+ * productos» y no algo que pedirle a Google que indexe.
+ *
+ * La fecha es la del producto más reciente de la categoría: la página cambia
+ * cuando cambia lo que muestra.
+ */
+export type CategoriaDelMapa = { slug: string; actualizado: string };
+
+export async function categoriasDelMapa(): Promise<CategoriaDelMapa[]> {
+  const filas = await db.execute<CategoriaDelMapa>(sql`
+    SELECT c.slug,
+           to_char(max(p.updated_at) AT TIME ZONE 'UTC',
+                   'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS actualizado
+      FROM categories c
+      JOIN products p ON p.category_id = c.id AND p.is_active
+     WHERE c.is_active
+     GROUP BY c.id
+     ORDER BY c.slug
+  `);
+
+  return [...filas];
+}

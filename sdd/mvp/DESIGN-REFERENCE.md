@@ -1393,6 +1393,19 @@ El botón «Filtros» **tiene que teñirse**, no alcanza con el círculo del con
 
 **Un chip por VALOR aplicado, no por grupo.** Con dos marcas puestas hay dos chips y cada uno saca la suya; el del precio es uno solo y se lleva los dos bordes. Un chip «2 marcas» diría cuántas hay y obligaría a abrir el panel para saber cuáles, que es justo lo que los chips existen para evitar. **«Limpiar todo» no es opcional**: un identificador que ya no está en la lista de opciones —una categoría cuyo último producto se desactivó— filtra sin dibujar chip, y ese enlace es la única salida.
 
+#### 7.2.1 Página de una categoría (F3.11, 2026-11-05)
+
+`/categorias/<slug>` es **el catálogo con la categoría fija**: la misma barra, el mismo drawer y la misma grilla. Existe para los buscadores: todo lo filtrado es `noindex`, así que con la categoría como filtro «teclados en Viedma» no tenía a dónde llegar. Cambia cuatro cosas del catálogo, las del boceto aprobado el 2026-11-03:
+
+- **Migas «Categorías › Auriculares»** en lugar de la etiqueta «CATÁLOGO». El último escalón no es enlace y lleva `aria-current`.
+- **Debajo del `<h1>`, el texto de la categoría** que se carga desde el panel (opcional, hasta 300 caracteres, `max-w-prose`); sin texto, la frase de siempre.
+- **La categoría no es un filtro**: no tiene chip, no cuenta en «Filtros», y «Limpiar todo» deja en la misma categoría.
+- **En el menú se marca «Categorías».**
+
+Dentro del drawer, el grupo «Categoría» pasa a **«Otras categorías»**: chips que llevan a las páginas de las demás, con la actual marcada (`aria-current="page"`). Al cambiar de categoría se conserva solo el orden. Marca, color y precio ofrecen solo lo que hay en esa categoría. El buscador busca dentro de ella («Buscá en auriculares»).
+
+Sin filtros se indexa, con `canonical` propio y en `sitemap.xml`; con cualquier filtro, `noindex, follow`, como el catálogo. El título es «Auriculares en Viedma y Patagones · AnaVende», y la descripción, el texto de la categoría o una frase con la zona.
+
 ### 7.3 Ficha de producto
 
 ```
@@ -1562,7 +1575,7 @@ abajo, que es como se lee una fila.
 | Nombre | body 16px/500, ink, **sin tope de renglones**: con el ancho de la fila, 60 caracteres son dos o tres |
 | Cantidad | body-sm 14px, secundario, debajo del nombre. «1 producto», «14 productos» |
 | Flecha | `›` a la derecha, decorativa (`aria-hidden`) |
-| Enlace | **La tarjeta entera**, al catálogo filtrado por esa categoría (§7.2) |
+| Enlace | **La tarjeta entera**, a la página de esa categoría, `/categorias/<slug>` (§7.2.1, desde F3.11) |
 | Superficie | La de la tarjeta de producto: radio de tarjeta, sombra, y el mismo hover y foco (§6.1). Alto mínimo 72px |
 
 Una por fila en el teléfono, dos en tableta y tres en escritorio. El orden es

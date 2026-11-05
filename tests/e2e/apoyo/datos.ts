@@ -86,6 +86,13 @@ export function datosDePrueba() {
     return fila.id;
   }
 
+  /** La dirección de su página (F3.11) va por slug, y el slug lo pone esto. */
+  async function slugDeCategoria(id: string): Promise<string> {
+    const [fila] = await sql<{ slug: string }[]>`
+      SELECT slug FROM categories WHERE id = ${id}`;
+    return fila.slug;
+  }
+
   async function unColor(nombre: string, hex: string): Promise<Color> {
     const slug = `color-${sufijo()}`;
     const [fila] = await sql<{ id: string }[]>`
@@ -367,6 +374,7 @@ export function datosDePrueba() {
     sql,
     unaMarca,
     unaCategoria,
+    slugDeCategoria,
     unColor,
     unProducto,
     unaCuenta,

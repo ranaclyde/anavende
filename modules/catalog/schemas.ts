@@ -64,10 +64,32 @@ const relacionadas = z
   })
   .optional();
 
+/**
+ * F3.11: el texto de la página de la categoría. Opcional, y vacío es «sin
+ * texto» (`null`), no una cadena vacía guardada: así la página pregunta por
+ * un solo caso.
+ *
+ * **300 caracteres**: «dos o tres renglones», que es lo que pide la página,
+ * y unos dos resultados de Google de largo (se recorta a 155 ahí). El tope
+ * está para que el texto no empuje la grilla fuera de la pantalla, no para
+ * cuidar la base.
+ */
+export const TOPE_DEL_TEXTO_DE_CATEGORIA = 300;
+const textoDeCategoria = z
+  .string()
+  .trim()
+  .max(
+    TOPE_DEL_TEXTO_DE_CATEGORIA,
+    `El texto no puede pasar de ${TOPE_DEL_TEXTO_DE_CATEGORIA} caracteres.`,
+  )
+  .transform((v) => (v === "" ? null : v))
+  .optional();
+
 export const crearMarca = z.object({ name: nombre });
 export const crearCategoria = z.object({
   name: nombre,
   isFeatured: destacada.default(false),
+  description: textoDeCategoria,
   relacionadas,
 });
 export const crearColor = z.object({ name: nombre, hexCode: hex });
@@ -77,6 +99,8 @@ export const editarCategoria = z.object({
   id: z.uuid(),
   name: nombre,
   isFeatured: destacada,
+  // Sin el campo, el texto no se toca (como las relacionadas).
+  description: textoDeCategoria,
   relacionadas,
 });
 export const editarColor = z.object({

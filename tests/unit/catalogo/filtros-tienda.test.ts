@@ -10,8 +10,10 @@ import {
   hayFiltrosDeTienda,
   leerFiltrosDeTienda,
   urlCambiando,
+  urlDeCategoria,
   urlDePagina,
   urlDeTienda,
+  urlSinFiltros,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
 
@@ -153,6 +155,7 @@ describe("la dirección", () => {
 
   test("ida y vuelta: lo que se escribe es lo que se lee", () => {
     const original: FiltrosDeTienda = {
+      seccion: null,
       q: "teclado mecánico",
       categoria: [A],
       marca: [B, C],
@@ -216,5 +219,57 @@ describe("el contador del botón «Filtros»", () => {
   test("sin nada puesto no hay nada que limpiar", () => {
     expect(hayFiltrosDeTienda(FILTROS_DE_TIENDA_VACIOS)).toBe(false);
     expect(hayFiltrosDeTienda(con({ precioMax: 1 }))).toBe(true);
+  });
+});
+
+/**
+ * F3.11: la página de una categoría es el catálogo con la categoría fija. Lo
+ * que no se ve leyendo el módulo es que esa categoría **no es un filtro**: si
+ * se colara en la dirección o en el contador, la página aparecería filtrada
+ * por sí misma, con un chip para sacarse y `noindex`.
+ */
+describe("la página de una categoría", () => {
+  test("todo lo que se arma desde ahí se queda en la categoría", () => {
+    const f = leerFiltrosDeTienda({ marca: A }, "auriculares");
+    expect(urlDeTienda(f)).toBe("/categorias/auriculares?marca=logitech");
+    expect(urlCambiando(f, { orden: "nombre" })).toBe(
+      "/categorias/auriculares?marca=logitech&orden=nombre",
+    );
+    expect(urlDePagina(f, 2)).toBe(
+      "/categorias/auriculares?marca=logitech&pagina=2",
+    );
+  });
+
+  test("la categoría no va en la dirección: la dice la ruta", () => {
+    expect(urlDeTienda({ seccion: "auriculares" })).toBe(
+      urlDeCategoria("auriculares"),
+    );
+  });
+
+  test("un ?categoria= en la dirección no se suma a la de la página", () => {
+    const f = leerFiltrosDeTienda({ categoria: "teclados" }, "auriculares");
+    expect(f.categoria).toEqual([]);
+    expect(f.seccion).toBe("auriculares");
+  });
+
+  test("no cuenta como filtro, no hay nada que limpiar", () => {
+    const f = leerFiltrosDeTienda({}, "auriculares");
+    expect(contarFiltrosDeTienda(f)).toBe(0);
+    expect(hayFiltrosDeTienda(f)).toBe(false);
+  });
+
+  test("«Limpiar todo» deja en la categoría, con el orden elegido", () => {
+    const f = leerFiltrosDeTienda(
+      { marca: [A, B], q: "inalámbrico", orden: "precio-asc", pagina: "3" },
+      "auriculares",
+    );
+    expect(urlSinFiltros(f)).toBe("/categorias/auriculares?orden=precio-asc");
+  });
+
+  test("en /productos todo sigue como antes", () => {
+    const f = leerFiltrosDeTienda({ categoria: "teclados" });
+    expect(f.seccion).toBeNull();
+    expect(urlDeTienda(f)).toBe("/productos?categoria=teclados");
+    expect(urlSinFiltros(f)).toBe("/productos");
   });
 });

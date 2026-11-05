@@ -165,6 +165,7 @@ export const crearUnaCategoria = action
             name: input.name,
             slug: slugificar(input.name),
             isFeatured: input.isFeatured,
+            description: input.description ?? null,
           })
           .returning({ id: categories.id });
         if (input.relacionadas) {
@@ -234,6 +235,9 @@ export const editarUnaCategoria = action
           .set({
             name: input.name,
             isFeatured: input.isFeatured,
+            ...(input.description !== undefined
+              ? { description: input.description }
+              : {}),
             updatedAt: new Date(),
           })
           .where(eq(categories.id, input.id))

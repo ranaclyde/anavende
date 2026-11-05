@@ -76,7 +76,7 @@ export type Ficha = {
   descripcionTexto: string;
   marca: string;
   categoria: string;
-  /** Para la miga y el «Ver todo»: `?categoria=` va por slug. */
+  /** Para la miga y el «Ver todo»: la página de la categoría va por slug. */
   categoriaSlug: string;
   precio: Money;
   descuento: Money;

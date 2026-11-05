@@ -39,7 +39,9 @@ const ENLACES = [
   {
     href: "/categorias",
     etiqueta: "Categorías",
-    activo: (ruta: string) => ruta === "/categorias",
+    // La página de cada categoría también (F3.11): se llega desde ahí.
+    activo: (ruta: string) =>
+      ruta === "/categorias" || ruta.startsWith("/categorias/"),
   },
   {
     href: "/productos?oferta=1",
@@ -296,7 +298,10 @@ export function MenuDelTelefono({
             {userCara ? (
               <span className="-ml-1.5 flex">{userCara}</span>
             ) : (
-              <User aria-hidden className="size-5 shrink-0 text-ink-secondary" />
+              <User
+                aria-hidden
+                className="size-5 shrink-0 text-ink-secondary"
+              />
             )}
             <span className="truncate">{userName ?? "Ingresar"}</span>
           </Link>

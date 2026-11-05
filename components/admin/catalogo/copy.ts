@@ -82,6 +82,17 @@ export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
  * entran en `PALABRAS`: un campo que es `null` para dos de los tres tipos
  * invita a olvidarse de comprobarlo.
  */
+/**
+ * F3.11: el texto opcional de la página de la categoría. La ayuda dice dónde
+ * se ve y qué pasa si queda vacío, que es lo que decide si vale la pena
+ * escribirlo.
+ */
+export const TEXTO_DE_CATEGORIA = {
+  etiqueta: "Texto de la página (opcional)",
+  ayuda: (tope: number) =>
+    `Dos o tres renglones sobre qué hay en esta categoría. Se ve debajo del título y en Google. Sin texto, va la frase general de la tienda. Hasta ${tope} caracteres.`,
+} as const;
+
 export const DESTACADO = {
   etiqueta: "Destacada",
   /** Qué hace, dicho antes de hacerlo. */
