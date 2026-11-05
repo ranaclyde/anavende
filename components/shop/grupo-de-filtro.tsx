@@ -16,7 +16,8 @@ import { AREA_TACTIL, cn } from "@/lib/utils";
  * Con ~20 categorías y ~20 marcas, el grupo entero no entraba: el panel
  * quedaba cortado sin ninguna señal. Ocho son dos o tres renglones de chips
  * en el drawer, y alcanzan para lo que más se busca porque las opciones
- * llegan ordenadas por cuántos productos tienen (`leerOpcionesDeFiltro`).
+ * llegan ordenadas por cuántos productos tienen en toda la tienda, y solo
+ * las que tienen algo con los otros filtros (`leerOpcionesDeFiltro`).
  */
 const VISIBLES = 8;
 

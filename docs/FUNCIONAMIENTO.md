@@ -26,6 +26,9 @@ categorías y la ficha de cada producto.
   pantalla completa (`components/shop/filtros-catalogo.tsx`). Cada grupo
   muestra sus 8 opciones con más productos y un «Ver las N» para el resto,
   con buscador cuando son más de 12 (`components/shop/grupo-de-filtro.tsx`).
+  Las opciones se ajustan a lo elegido: cada grupo ofrece solo lo que tiene
+  productos con los filtros de los otros grupos, y lo ya elegido sigue a la
+  vista para poder sacarlo (`leerOpcionesDeFiltro`).
 - **Cada categoría tiene su página** (`/categorias/[slug]`): es el mismo
   catálogo con la categoría fija (`components/shop/vista-del-catalogo.tsx`),
   con su texto opcional cargado desde el panel. Sin filtros se indexa y va

@@ -5,6 +5,8 @@ import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import type { ProductoEnTarjeta } from "@/components/shop/tarjeta-producto";
 import {
+  comoFiltroDeCategoria,
+  FILTROS_DE_TIENDA_VACIOS,
   POR_PAGINA,
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
@@ -311,88 +313,119 @@ export type OpcionDeFiltro = { slug: string; nombre: string; cuantos: number };
 export type OpcionDeColor = OpcionDeFiltro & { hex: string };
 
 /**
- * Las marcas y categorías que tienen algo que mostrar, con cuántos.
+ * Las opciones de cada grupo del drawer, con cuántos — RF-02.
  *
- * **Solo las que tienen productos activos.** Un filtro que lleva a un listado
- * vacío es una promesa incumplida, y con el catálogo real de Ana —donde va a
- * haber marcas cargadas antes que sus productos— eso pasaría el primer día.
- * El número ya no se muestra al lado de cada opción (2026-11-04): se usa para
- * ordenarlas.
+ * **Cada grupo se calcula con los filtros de los OTROS grupos, no con los
+ * suyos** (2026-11-05, decisión tuya). Con «Teclados» elegido, Marca ofrece
+ * solo las marcas que tienen teclados; Categoría sigue ofreciendo todas las
+ * que tienen algo con el resto de los filtros, porque dentro del grupo las
+ * opciones se suman y ofrecer otra categoría amplía, no recorta. Así ningún
+ * chip lleva a un listado vacío. La búsqueda, el precio y la oferta cuentan
+ * para todos los grupos.
  *
- * **Las que más productos tienen, primero** (2026-11-03). El drawer de
- * filtros muestra las 8 primeras de cada grupo y esconde el resto detrás de
- * «Ver todas», así que el orden decide qué se ve sin abrir nada. Las
- * categorías destacadas van antes que todo, como en la home; a igual número,
- * por nombre.
+ * **Lo elegido se ofrece siempre, aunque quede en cero**: una marca elegida
+ * que deja de tener productos al sumar un color tiene que seguir en el drawer
+ * —y en los chips de arriba de la grilla, que salen de acá— para poder
+ * sacarla.
  *
- * **En la página de una categoría** (F3.11, `seccion`), marcas, colores y
- * puntas del precio salen de los productos de ESA categoría: una marca que no
- * tiene auriculares, ofrecida en «Auriculares», es otra vez el filtro que
- * lleva a un vacío. Las categorías siguen siendo todas: ahí son los
- * chips para sumar otra y pasar a `/productos`.
+ * **El orden no cambia al filtrar**: las que más productos activos tienen en
+ * toda la tienda primero (2026-11-03), las categorías destacadas antes que
+ * todo, y a igual número por nombre. Ordenar por el número del momento haría
+ * que los chips salten de lugar con cada toque. El drawer muestra las 8
+ * primeras de cada grupo, así que el orden decide qué se ve sin abrir nada.
+ *
+ * **Las puntas del precio** salen con todos los filtros menos el precio:
+ * el slider va de lo más barato a lo más caro de lo que se está mirando.
+ *
+ * **En la página de una categoría** (F3.11) la categoría de la página es un
+ * filtro más (`comoFiltroDeCategoria`): recorta marcas, colores y precio, y
+ * en el grupo Categoría aparece elegida.
  */
 export async function leerOpcionesDeFiltro(
-  seccion: string | null = null,
+  filtros: FiltrosDeTienda = FILTROS_DE_TIENDA_VACIOS,
 ): Promise<{
   categorias: OpcionDeFiltro[];
   marcas: OpcionDeFiltro[];
   colores: OpcionDeColor[];
   precios: { min: number; max: number } | null;
 }> {
-  // Los productos que cuentan: todos los activos, o los de la categoría de
-  // la página.
-  const enLaSeccion = seccion
-    ? sql`AND p.category_id IN (SELECT id FROM categories WHERE slug = ${seccion})`
-    : sql``;
+  const f = comoFiltroDeCategoria(filtros);
+
+  /** Los productos que cuentan para un grupo: los filtros de los demás. */
+  const coincidentes = (sinElGrupo: Partial<FiltrosDeTienda>) => sql`
+    SELECT p.id, p.category_id, p.brand_id, p.final_price
+      FROM products p
+      JOIN brands b ON b.id = p.brand_id
+     WHERE ${condiciones({ ...f, ...sinElGrupo })}`;
+
+  /** `slug IN (...)` con lo elegido, o falso si no hay nada elegido. */
+  const elegido = (columna: SQL, slugs: readonly string[]) =>
+    slugs.length ? losSlugs(columna, slugs) : sql`false`;
 
   const [categorias, marcas, colores, [precios]] = await Promise.all([
     db.execute<OpcionDeFiltro>(sql`
-      SELECT c.slug, c.name AS nombre, count(p.id)::int AS cuantos
+      WITH x AS (${coincidentes({ categoria: [] })})
+      SELECT c.slug, c.name AS nombre, count(x.id)::int AS cuantos
         FROM categories c
-        JOIN products p ON p.category_id = c.id AND p.is_active
+        LEFT JOIN x ON x.category_id = c.id
        GROUP BY c.id
-       ORDER BY c.is_featured DESC, cuantos DESC, immutable_unaccent(lower(c.name))`),
+      HAVING count(x.id) > 0 OR ${elegido(sql`c.slug`, f.categoria)}
+       ORDER BY c.is_featured DESC,
+                (SELECT count(*) FROM products t
+                  WHERE t.category_id = c.id AND t.is_active) DESC,
+                immutable_unaccent(lower(c.name))`),
 
     db.execute<OpcionDeFiltro>(sql`
-      SELECT b.slug, b.name AS nombre, count(p.id)::int AS cuantos
+      WITH x AS (${coincidentes({ marca: [] })})
+      SELECT b.slug, b.name AS nombre, count(x.id)::int AS cuantos
         FROM brands b
-        JOIN products p ON p.brand_id = b.id AND p.is_active ${enLaSeccion}
+        LEFT JOIN x ON x.brand_id = b.id
        GROUP BY b.id
-       ORDER BY cuantos DESC, immutable_unaccent(lower(b.name))`),
+      HAVING count(x.id) > 0 OR ${elegido(sql`b.slug`, f.marca)}
+       ORDER BY (SELECT count(*) FROM products t
+                  WHERE t.brand_id = b.id AND t.is_active) DESC,
+                immutable_unaccent(lower(b.name))`),
 
-    // `count(DISTINCT p.id)`, no `count(p.id)`: un producto con dos variantes
-    // negras se contaría dos veces y el número al lado del color mentiría.
+    // `count(DISTINCT x.id)`, no `count(x.id)`: un producto con dos variantes
+    // negras se contaría dos veces.
     //
     // El filtro ofrece los colores SUELTOS, nunca «Negro/Rojo»: una variante
     // de dos colores suma en los dos, igual que el filtro la encuentra por
     // cualquiera (arriba, en `condiciones`).
     db.execute<OpcionDeColor>(sql`
+      WITH x AS (${coincidentes({ color: [] })})
       SELECT co.slug,
-             co.name              AS nombre,
-             co.hex_code          AS hex,
-             count(DISTINCT p.id)::int AS cuantos
+             co.name     AS nombre,
+             co.hex_code AS hex,
+             count(DISTINCT x.id)::int AS cuantos
         FROM colors co
-        JOIN product_variants v
+        LEFT JOIN product_variants v
           ON co.id IN (v.color_id, v.secondary_color_id) AND v.is_active
-        JOIN products p ON p.id = v.product_id AND p.is_active ${enLaSeccion}
+        LEFT JOIN x ON x.id = v.product_id
        GROUP BY co.id
-       ORDER BY cuantos DESC, immutable_unaccent(lower(co.name))`),
+      HAVING count(x.id) > 0 OR ${elegido(sql`co.slug`, f.color)}
+       ORDER BY (SELECT count(DISTINCT t.id)
+                   FROM products t
+                   JOIN product_variants tv
+                     ON tv.product_id = t.id AND tv.is_active
+                  WHERE t.is_active
+                    AND co.id IN (tv.color_id, tv.secondary_color_id)) DESC,
+                immutable_unaccent(lower(co.name))`),
 
-    // Las puntas del slider de precio (2026-11-04). El precio FINAL, el
-    // mismo que mira el filtro, en pesos enteros hacia afuera: así el
-    // producto más barato y el más caro siempre quedan adentro.
+    // El precio FINAL, el mismo que mira el filtro, en pesos enteros hacia
+    // afuera: así lo más barato y lo más caro siempre quedan adentro.
     db.execute<{ min: number | null; max: number | null }>(sql`
-      SELECT floor(min(p.final_price))::int AS min,
-             ceil(max(p.final_price))::int  AS max
-        FROM products p
-       WHERE p.is_active ${enLaSeccion}`),
+      WITH x AS (${coincidentes({ precioMin: null, precioMax: null })})
+      SELECT floor(min(final_price))::int AS min,
+             ceil(max(final_price))::int  AS max
+        FROM x`),
   ]);
 
   return {
     categorias: [...categorias],
     marcas: [...marcas],
     colores: [...colores],
-    // Con el catálogo vacío o todo al mismo precio no hay nada que deslizar.
+    // Sin productos o todo al mismo precio no hay nada que deslizar.
     precios:
       precios &&
       precios.min !== null &&
