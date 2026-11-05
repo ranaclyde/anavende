@@ -71,6 +71,17 @@ test("el modelo se guarda, se busca en el panel y sale en la ficha", async ({
 
   await page.goto(`/productos/${producto.slug}`);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+  // La tienda lo encuentra por el modelo, aunque no esté en el nombre.
+  await page.goto(`/productos?q=${modelo}`);
+  await expect(page.getByRole("status")).toHaveText("1 producto");
+  await expect(
+    page
+      .getByRole("region", { name: "Resultados" })
+      .getByRole("heading", { level: 3, name: `Teclado ${palabra}` }),
+  ).toBeVisible();
+
+  await page.goto(`/productos/${producto.slug}`);
   await expect(
     page.getByText(`${marca} · ${modelo}`).filter({ visible: true }),
   ).toBeVisible();
