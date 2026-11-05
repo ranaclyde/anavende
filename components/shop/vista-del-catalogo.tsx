@@ -40,7 +40,7 @@ import { getIdentity } from "@/lib/session";
 export async function leerElCatalogo(filtros: FiltrosDeTienda) {
   const [pagina, opciones, favoritos] = await Promise.all([
     leerPaginaDelCatalogo(filtros),
-    leerOpcionesDeFiltro(filtros.seccion),
+    leerOpcionesDeFiltro(filtros),
     getIdentity().then((i) => (i ? idsDeFavoritos(i.userId) : null)),
   ]);
   return { pagina, opciones, favoritos };

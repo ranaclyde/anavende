@@ -435,7 +435,7 @@ describe("la página de una categoría", () => {
 
   test("marcas, colores y precio salen de su categoría; las categorías, de todas", async () => {
     const { categorias, marcas, colores, precios } = await leerOpcionesDeFiltro(
-      slugDe.get(catC)!,
+      { ...FILTROS_DE_TIENDA_VACIOS, seccion: slugDe.get(catC)! },
     );
 
     const nuestros = (o: { slug: string }[]) =>
@@ -455,5 +455,65 @@ describe("la página de una categoría", () => {
         slugDe.get(catC),
       ]),
     );
+  });
+});
+
+/**
+ * Las opciones se ajustan a lo elegido (2026-11-05): cada grupo se calcula con
+ * los filtros de los otros. Acá están los productos de los casos de arriba:
+ *
+ *   A: uno (X, rojo, 1000) · dos (Y, verde, 4000) · cinco (X, azul/amarillo, 3000)
+ *   B: tres (X, rojo y verde, 20000) · cuatro (Y, sin variantes, 50000)
+ *   C: c-uno (X, rojo, 3000) · c-dos (Y, sin variantes, 8000)
+ *
+ * Todo con la búsqueda por el token, para no contar el catálogo sembrado.
+ */
+describe("las opciones se ajustan a lo elegido", () => {
+  // Un id creado acá, o un slug tal cual: el azul y la categoría C se
+  // crearon en otros bloques y se nombran por slug.
+  const aSlug = (x: string) => slugDe.get(x) ?? x;
+  const opciones = (cambio: Partial<FiltrosDeTienda>) =>
+    leerOpcionesDeFiltro({
+      ...FILTROS_DE_TIENDA_VACIOS,
+      q: T,
+      ...cambio,
+      categoria: (cambio.categoria ?? []).map(aSlug),
+      marca: (cambio.marca ?? []).map(aSlug),
+      color: (cambio.color ?? []).map(aSlug),
+    });
+  const slugs = (o: { slug: string }[]) => o.map((x) => x.slug).sort();
+  const de = (...ids: string[]) => ids.map(aSlug).sort();
+  const cuantos = (o: { slug: string; cuantos: number }[], id: string) =>
+    o.find((x) => x.slug === aSlug(id))?.cuantos;
+
+  test("con una categoría, marcas, colores y precio salen de ella", async () => {
+    const r = await opciones({ categoria: [catB] });
+    expect(slugs(r.marcas)).toEqual(de(marcaX, marcaY));
+    expect(slugs(r.colores)).toEqual(de(rojo, verde));
+    expect(r.precios).toEqual({ min: 20000, max: 50000 });
+  });
+
+  test("el grupo propio no se recorta: las otras categorías se pueden sumar", async () => {
+    const r = await opciones({ categoria: [catB] });
+    expect(slugs(r.categorias)).toEqual(de(catA, catB, slug("Rubro C")));
+  });
+
+  test("con una marca, solo las categorías y colores que tiene", async () => {
+    const r = await opciones({ marca: [marcaY] });
+    expect(slugs(r.colores)).toEqual(de(verde));
+    expect(cuantos(r.categorias, catA)).toBe(1);
+  });
+
+  test("con un color, solo las categorías que lo tienen", async () => {
+    const r = await opciones({ color: [slug("Azul")] });
+    expect(slugs(r.categorias)).toEqual(de(catA));
+  });
+
+  test("lo elegido sigue aunque quede en cero, para poder sacarlo", async () => {
+    // Ningún producto de Y es rojo.
+    const r = await opciones({ marca: [marcaY], color: [rojo] });
+    expect(cuantos(r.marcas, marcaY)).toBe(0);
+    expect(cuantos(r.colores, rojo)).toBe(0);
+    expect(cuantos(r.marcas, marcaX)).toBeGreaterThan(0);
   });
 });
