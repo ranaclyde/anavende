@@ -216,3 +216,55 @@ export async function opcionesDeColor(): Promise<OpcionDeColor[]> {
       FROM colors
      ORDER BY is_active DESC, immutable_unaccent(lower(name))`);
 }
+
+/**
+ * Cuántos productos con color hacen falta en una categoría para que avisar
+ * tenga sentido. Con dos o tres productos cargados, «la mayoría» es una
+ * casualidad.
+ */
+export const MINIMO_CON_COLOR = 3;
+
+/**
+ * La categoría del producto, si en ella **se vende por color** — 2026-11-05.
+ *
+ * Es para el aviso de «Único» (`variantes.tsx`): una variante sin color no
+ * aparece cuando alguien filtra por color, y en una categoría donde los
+ * demás productos tienen color eso suele ser un error de carga —un teclado
+ * que viene solo en negro, cargado como «Único»—.
+ *
+ * **Se deduce de lo cargado, no se configura** (decisión tuya): la mayoría de
+ * los productos activos de la categoría, sin contar este, tienen alguna
+ * variante con color, y son al menos `MINIMO_CON_COLOR`. En una categoría de
+ * memorias RAM, casi todas «Único», no avisa nunca. Una categoría nueva no avisa
+ * hasta tener con qué comparar.
+ *
+ * Devuelve el nombre, para decirlo en el aviso, o `null`.
+ */
+export async function categoriaQueSeVendePorColor(
+  productId: string,
+): Promise<string | null> {
+  const [fila] = await db.execute<{
+    nombre: string;
+    conColor: number;
+    total: number;
+  }>(sql`
+    SELECT c.name AS nombre,
+           count(p.id) FILTER (WHERE EXISTS (
+             SELECT 1 FROM product_variants v
+              WHERE v.product_id = p.id AND v.is_active
+                AND v.color_id IS NOT NULL))::int AS "conColor",
+           count(p.id)::int AS total
+      FROM products yo
+      JOIN categories c ON c.id = yo.category_id
+      LEFT JOIN products p
+        ON p.category_id = yo.category_id AND p.is_active AND p.id <> yo.id
+       AND EXISTS (SELECT 1 FROM product_variants v
+                    WHERE v.product_id = p.id AND v.is_active)
+     WHERE yo.id = ${productId}
+     GROUP BY c.name`);
+
+  if (!fila) return null;
+  return fila.conColor >= MINIMO_CON_COLOR && fila.conColor * 2 > fila.total
+    ? fila.nombre
+    : null;
+}

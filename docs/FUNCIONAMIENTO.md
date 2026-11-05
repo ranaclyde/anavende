@@ -160,7 +160,10 @@ se cancela (`modules/returns/registrar.ts`).
    movimiento. Un color que no está en el catálogo se crea ahí mismo. Con
    más de tres colores, cada uno se pliega: cerrado muestra nombre, stock y
    estado, y se abre de a uno, con sus fotos y sus botones. Arranca abierto
-   el primero.
+   el primero. «Único» es la variante sin color, para lo que no se elige
+   por color: no aparece al filtrar por color. Si en la categoría la mayoría
+   de los productos tiene color, el panel avisa
+   (`categoriaQueSeVendePorColor`).
 3. **Fotos de cada color.** Se suben por `/api/admin/upload`, se convierten
    en el momento y el original no se guarda (ver
    [Arquitectura](ARQUITECTURA.md#fotos)). Una variante puede reutilizar las
