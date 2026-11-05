@@ -7,6 +7,7 @@ import {
   BuscadorDelPanel,
   ContadorDeResultados,
 } from "@/components/admin/filtros";
+import { tramo } from "@/components/admin/paginacion";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
@@ -31,10 +32,13 @@ import {
 export function BarraDeFiltros({
   filtros,
   total,
+  porPagina,
 }: {
   filtros: FiltrosDeUsuarios;
   /** Cuántos hay con estos filtros, no cuántos entran en esta página. */
   total: number;
+  /** Para el tramo: «Del 41 al 80 de 95». */
+  porPagina: number;
 }) {
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
@@ -79,7 +83,12 @@ export function BarraDeFiltros({
 
       <div className="flex flex-wrap items-center gap-3">
         <ContadorDeResultados pendiente={pendiente}>
-          {cuantos(total)}
+          {tramo({
+            pagina: filtros.pagina,
+            porPagina,
+            total,
+            cosa: { singular: "persona", plural: "personas" },
+          })}
         </ContadorDeResultados>
         {hayFiltros(filtros) ? (
           <Button
@@ -96,8 +105,4 @@ export function BarraDeFiltros({
       </div>
     </div>
   );
-}
-
-function cuantos(n: number): string {
-  return n === 1 ? "1 persona" : `${n} personas`;
 }

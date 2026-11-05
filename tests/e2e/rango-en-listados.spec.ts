@@ -6,8 +6,9 @@ import { ingresar } from "./apoyo/sesion";
 
 /**
  * Los listados del panel dicen qué tramo se está viendo: «Del 1 al 40 de 45
- * productos» (pedido del 2026-11-03). Con una sola página la paginación no se
- * dibuja, y eso no cambió.
+ * productos» (pedido del 2026-11-03). Desde el 2026-11-05 lo dice el contador
+ * de arriba, y abajo va la paginación de la tienda, con un número por página.
+ * Con una sola página la paginación no se dibuja, y eso no cambió.
  *
  * Se prueba en productos, filtrado por una marca propia del test, para que el
  * total sea exacto aunque la base tenga otros productos.
@@ -56,13 +57,24 @@ test.afterAll(async () => {
   await datos.desarmar();
 });
 
-test("la paginación dice qué tramo se ve y de cuántos", async ({ page }) => {
+test("el contador dice qué tramo se ve, y la paginación lleva a cada página", async ({
+  page,
+}) => {
   await ingresar(page, admin);
   await page.goto(`/admin/productos?marca=${marcaId}`);
 
   const paginacion = page.getByRole("navigation", { name: "Paginación" });
-  await expect(paginacion).toContainText(`Del 1 al 40 de ${CUANTOS} productos`);
-  await expect(paginacion).not.toContainText("Página 1 de");
+  await expect(
+    page.getByText(`Del 1 al 40 de ${CUANTOS} productos`, { exact: true }),
+  ).toBeVisible();
+  // El tramo no se repite abajo.
+  await expect(paginacion).not.toContainText("Del ");
+  await expect(
+    paginacion.getByRole("link", { name: "Página 1" }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(
+    paginacion.getByRole("link", { name: "Página 2" }),
+  ).toBeVisible();
   // En la primera no hay «Anterior»: el tramo ya dice que es el principio.
   await expect(paginacion.getByRole("link", { name: /Anterior/ })).toHaveCount(
     0,
@@ -74,9 +86,11 @@ test("la paginación dice qué tramo se ve y de cuántos", async ({ page }) => {
 
   await paginacion.getByRole("link", { name: /Siguiente/ }).click();
   await expect(page).toHaveURL(/pagina=2/);
-  await expect(paginacion).toContainText(
-    `Del 41 al ${CUANTOS} de ${CUANTOS} productos`,
-  );
+  await expect(
+    page.getByText(`Del 41 al ${CUANTOS} de ${CUANTOS} productos`, {
+      exact: true,
+    }),
+  ).toBeVisible();
   await expect(paginacion.getByRole("link", { name: /Siguiente/ })).toHaveCount(
     0,
   );

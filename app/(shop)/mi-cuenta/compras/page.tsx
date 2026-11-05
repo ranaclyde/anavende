@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
 import { EstadoDeLaOrden } from "@/components/shop/compras/estado";
-import { Paginacion } from "@/components/shop/paginacion";
+import { Paginacion } from "@/components/ui/paginacion";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
 import { getIdentity, getSession } from "@/lib/session";

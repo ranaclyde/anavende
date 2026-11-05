@@ -89,14 +89,15 @@ export default async function OrdenesDelPanel({
       ) : (
         <>
           <SolapasDeEstado filtros={filtros} conteo={conteo} />
-          <BarraDeFiltros filtros={filtros} total={total} />
+          <BarraDeFiltros
+            filtros={filtros}
+            total={total}
+            porPagina={POR_PAGINA}
+          />
           <ListadoDeOrdenes ordenes={ordenes} filtros={filtros} />
           <PaginacionDelPanel
             pagina={filtros.pagina}
             paginas={paginas}
-            total={total}
-            porPagina={POR_PAGINA}
-            cosa={{ singular: "orden", plural: "órdenes" }}
             href={(n) => urlDeFiltros({ ...filtros, pagina: n })}
           />
         </>

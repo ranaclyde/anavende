@@ -7,7 +7,7 @@ import {
 } from "@/components/shop/filtros-catalogo";
 import { BotonFavorito } from "@/components/shop/favorito";
 import { GrillaQueEspera } from "@/components/shop/filtrando";
-import { Paginacion } from "@/components/shop/paginacion";
+import { Paginacion } from "@/components/ui/paginacion";
 import { SearchBox } from "@/components/shop/search-box";
 import { SelectorDeOrden } from "@/components/shop/selector-de-orden";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";

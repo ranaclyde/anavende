@@ -2,11 +2,14 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { paginasALaVista } from "@/lib/paginacion";
 import { cn } from "@/lib/utils";
 
 /**
- * Paginación por enlaces — §10.2. Nació en el catálogo (F3.8) y se comparte
- * con «Favoritos» desde F5.4.
+ * Paginación por enlaces — §10.2. Nació en el catálogo (F3.8), se comparte
+ * con «Favoritos» desde F5.4, y desde el 2026-11-05 es **la única**: el panel
+ * dejó la suya («Del 1 al 40 de 52» con anterior y siguiente) y usa esta. El
+ * tramo pasó al contador de arriba de cada listado.
  *
  * Enlaces y no botones: cada página tiene su propia dirección, así que se
  * comparte, se abre en otra pestaña y el atrás vuelve a la anterior. Con
@@ -19,24 +22,42 @@ export function Paginacion({
   pagina,
   paginas,
   href,
+  className = "pt-10",
 }: {
   pagina: number;
   paginas: number;
   href: (n: number) => string;
+  /** El aire de arriba: la tienda deja 40px, el panel menos. */
+  className?: string;
 }) {
   if (paginas <= 1) return null;
 
-  const numeros = Array.from({ length: paginas }, (_, i) => i + 1);
+  const numeros = paginasALaVista(pagina, paginas);
 
   return (
-    <nav aria-label="Paginación" className="flex justify-center pt-10">
+    <nav
+      aria-label="Paginación"
+      className={cn("flex justify-center", className)}
+    >
       <ul className="flex flex-wrap items-center gap-1.5">
         {pagina > 1 ? (
           <li>
             <Flecha direccion="anterior" href={href(pagina - 1)} />
           </li>
         ) : null}
-        {numeros.map((n) => {
+        {numeros.map((n, i) => {
+          if (n === null) {
+            return (
+              // Decorativo: el lector ya oye «Página 1» y «Página 9».
+              <li
+                key={`salto-${i}`}
+                aria-hidden
+                className="grid size-11 place-items-center text-body-sm text-ink-secondary"
+              >
+                …
+              </li>
+            );
+          }
           const actual = n === pagina;
           return (
             <li key={n}>

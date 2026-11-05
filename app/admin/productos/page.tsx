@@ -111,6 +111,7 @@ export default async function ProductosDelPanel({
             // del catálogo entero: en «Inactivos», «3 de 47 productos» sería
             // contar contra un listado que no se está mirando.
             total={conteo[filtros.estado]}
+            porPagina={POR_PAGINA}
           />
 
           <ListadoDeProductos
@@ -122,9 +123,6 @@ export default async function ProductosDelPanel({
           <PaginacionDelPanel
             pagina={filtros.pagina}
             paginas={paginas}
-            total={coincidencias}
-            porPagina={POR_PAGINA}
-            cosa={{ singular: "producto", plural: "productos" }}
             href={(n) => urlDeFiltros({ ...filtros, pagina: n })}
           />
         </>

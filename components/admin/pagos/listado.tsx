@@ -15,7 +15,7 @@ import {
 
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { EdicionDeMedioDePago } from "@/components/admin/pagos/edicion";
-import { PaginacionDelPanel } from "@/components/admin/paginacion";
+import { PaginacionDelPanel, tramo } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
@@ -120,9 +120,12 @@ export function ListadoDeMediosDePago({
         <p className="text-body-sm text-ink-secondary">
           {total === 0
             ? "Sin medios de pago"
-            : total === 1
-              ? "1 medio de pago"
-              : `${total} medios de pago`}
+            : tramo({
+                pagina,
+                porPagina: POR_PAGINA,
+                total,
+                cosa: { singular: "medio de pago", plural: "medios de pago" },
+              })}
         </p>
         {/* Con la lista vacía este botón no está: el estado vacío ya ofrece
             el mismo primer paso en el medio de la pantalla, y dos botones de
@@ -219,9 +222,6 @@ export function ListadoDeMediosDePago({
           <PaginacionDelPanel
             pagina={pagina}
             paginas={paginas}
-            total={total}
-            porPagina={POR_PAGINA}
-            cosa={{ singular: "medio de pago", plural: "medios de pago" }}
             href={(n) => urlDePagina(base, n)}
           />
         </>
