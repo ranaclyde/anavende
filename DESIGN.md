@@ -590,7 +590,7 @@ mismo `Sheet` (`drawer-de-filtros.tsx`), así que entra y sale igual que los
 del panel, y mide lo mismo: 512px. Los filtros
 siguen siendo enlaces con todo en la dirección. Los grupos van en una
 columna, y cada uno muestra 8 opciones y un «Ver las N» (`grupo-de-filtro.tsx`).
-El chip elegido va con tinte de marca, borde burdeos y una ✓, nunca relleno
+El chip elegido va con tinte de marca, borde burdeos y una ✓ a la derecha, nunca relleno
 sólido: el relleno burdeos es del botón principal, «Ver N productos».
 
 ### Solapas del panel

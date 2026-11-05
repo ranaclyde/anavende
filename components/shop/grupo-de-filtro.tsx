@@ -193,15 +193,6 @@ function Chip({ opcion: o }: { opcion: OpcionDelGrupo }) {
           : "border-border bg-surface text-ink-secondary hover:border-border-strong hover:text-ink",
       )}
     >
-      {o.activo ? (
-        // §9: el color nunca es el único portador del estado. La tilde dice
-        // «elegido» también en gris, y el texto del lector lo dice abajo.
-        <Check
-          aria-hidden
-          className="-ml-0.5 size-3.5 shrink-0"
-          strokeWidth={3}
-        />
-      ) : null}
       {o.hex ? (
         // El punto es decorativo: el nombre del color está al lado, así que
         // no necesita texto alternativo propio.
@@ -212,6 +203,17 @@ function Chip({ opcion: o }: { opcion: OpcionDelGrupo }) {
         />
       ) : null}
       <span className="min-w-0">{o.nombre}</span>
+      {o.activo ? (
+        // §9: el color nunca es el único portador del estado. La tilde dice
+        // «elegido» también en gris, y el texto del lector lo dice abajo.
+        // Va a la derecha, donde está la × de los chips de «aplicado» de
+        // arriba de la grilla: el mismo lugar para el ícono del estado.
+        <Check
+          aria-hidden
+          className="-mr-0.5 size-3.5 shrink-0"
+          strokeWidth={3}
+        />
+      ) : null}
       <span className="sr-only">
         {o.activo ? " — quitar este filtro" : " — aplicar este filtro"}
       </span>

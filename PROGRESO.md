@@ -981,7 +981,8 @@ categoría y marca.
 - **El drawer mide 512px**, lo mismo que los del panel.
 - **El chip elegido pasó a tinte con ✓.** Relleno burdeos con texto blanco
   era la cara de «Ver N productos», y un estado se leía como una acción.
-  Ahora lleva el tinte de marca, borde y texto burdeos y una ✓ adelante. Es
+  Ahora lleva el tinte de marca, borde y texto burdeos y una ✓ a la derecha,
+  donde los chips de «aplicado» llevan la ×. Es
   el mismo tinte de los chips de «aplicado» de arriba de la grilla, que
   dicen lo mismo, y los distingue el ícono (✓ acá, × allá).
 - **Probado** con Playwright a 1440 y 390. Con el teclado, la manija de
