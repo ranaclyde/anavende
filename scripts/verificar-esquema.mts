@@ -136,11 +136,13 @@ for (const indice of [
   "products_active_category_idx",
   "products_created_idx",
   "products_final_price_idx",
+  // F2.10 (migración 0019): el segundo color de una variante de dos colores.
+  "variant_secondary_color_idx",
 ]) {
   ok(parciales.includes(indice), `Índice parcial ${indice}`);
 }
 ok(
-  parciales.length === 6,
+  parciales.length === 7,
   `No hay índices parciales de más: ${parciales.join(", ")}`,
 );
 
