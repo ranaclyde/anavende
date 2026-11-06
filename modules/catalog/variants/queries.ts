@@ -19,6 +19,8 @@ export type ImagenDeVariante = {
   id: string;
   /** Ya resuelta: la vista recibe una URL, nunca una clave (§9.4). */
   url: string;
+  /** La versión `detail` (1400px), para verla en grande en el visor. */
+  grande: string;
   altText: string | null;
   sortOrder: number;
   width: number;
@@ -130,6 +132,8 @@ export async function variantesDelProducto(
       // una pantalla del doble de densidad. `-card` pesaría tres veces más
       // para mostrarse a 96px (§9.2).
       url: urlDeImagen(i.storageKey, "thumb"),
+      // Solo se descarga si se abre el visor: es una URL, no una foto.
+      grande: urlDeImagen(i.storageKey, "detail"),
       altText: i.altText,
       sortOrder: i.sortOrder,
       width: i.width,

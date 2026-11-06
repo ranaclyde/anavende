@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
   ImagePlus,
+  Maximize2,
   MoreVertical,
   Star,
   Trash2,
@@ -21,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FieldError } from "@/components/ui/field-error";
+import { Visor } from "@/components/ui/visor-de-fotos";
 import { cn } from "@/lib/utils";
 import {
   borrarUnaImagen,
@@ -83,6 +85,8 @@ export function ImagenesDeVariante({
   const [subiendo, setSubiendo] = useState<Subida[]>([]);
   const [sobreLaZona, setSobreLaZona] = useState(false);
   const campoDeArchivo = useRef<HTMLInputElement>(null);
+  /** La foto abierta en el visor, por su posición; `null` = cerrado. */
+  const [ampliada, setAmpliada] = useState<number | null>(null);
 
   /**
    * El orden que se está viendo, que durante un arrastre no es todavía el de
@@ -327,6 +331,28 @@ export function ImagenesDeVariante({
     arrastrada.current === null &&
     Array.from(e.dataTransfer.types).includes("Files");
 
+  /*
+   * Ver las fotos en grande (2026-11-05), con el mismo visor de la ficha:
+   * flechas, teclado y zoom 1:1 sobre la versión `detail`. Muestra todas las
+   * de este color, empezando por la que se tocó.
+   */
+  const visor = (
+    <Visor
+      imagenes={visibles.map((v) => ({
+        grande: v.grande,
+        miniatura: v.url,
+        alt: v.altText,
+      }))}
+      actual={Math.min(ampliada ?? 0, Math.max(0, visibles.length - 1))}
+      descripcion={etiqueta}
+      abierta={ampliada !== null && visibles.length > 0}
+      onAbrir={(v) => {
+        if (!v) setAmpliada(null);
+      }}
+      onElegir={setAmpliada}
+    />
+  );
+
   if (soloLectura) {
     // El aviso va FUERA de la lista: un `<p>` suelto dentro de un `<ul>` no es
     // HTML válido, y un lector de pantalla lo anuncia como una lista rota.
@@ -335,16 +361,30 @@ export function ImagenesDeVariante({
         El color del que reutiliza las fotos todavía no tiene ninguna.
       </p>
     ) : (
-      <Galeria>
-        {visibles.map((imagen, i) => (
-          <li key={imagen.id} className="w-28 sm:w-24">
-            <Recuadro>
-              <Foto imagen={imagen} etiqueta={etiqueta} />
-            </Recuadro>
-            <Posicion i={i} />
-          </li>
-        ))}
-      </Galeria>
+      <>
+        <Galeria>
+          {visibles.map((imagen, i) => (
+            <li key={imagen.id} className="w-28 sm:w-24">
+              <Recuadro>
+                <Foto imagen={imagen} etiqueta={etiqueta} />
+                {/* Acá no hay arrastre, así que va un botón de verdad: entra
+                    en el recorrido del teclado y dice qué hace. */}
+                <button
+                  type="button"
+                  onClick={() => setAmpliada(i)}
+                  className="absolute inset-0 cursor-zoom-in rounded-panel-image focus-visible:shadow-focus focus-visible:outline-none"
+                >
+                  <span className="sr-only">
+                    Ver más grande la imagen {i + 1} de {etiqueta}
+                  </span>
+                </button>
+              </Recuadro>
+              <Posicion i={i} />
+            </li>
+          ))}
+        </Galeria>
+        {visor}
+      </>
     );
   }
 
@@ -403,7 +443,25 @@ export function ImagenesDeVariante({
             {/* El navegador ya dibuja la imagen «fantasma» que sigue al
                 cursor: pintar acá cuál se está arrastrando sería un estado
                 más que mantener para decir lo mismo dos veces. */}
-            <Recuadro className="cursor-grab active:cursor-grabbing">
+            {/*
+              Tocar la foto la abre en grande. Es un `onClick` del recuadro y
+              no un `<button>` encima porque Firefox no arranca un arrastre
+              desde un botón, y reordenar arrastrando dejaría de andar. Soltar
+              después de arrastrar no dispara el clic. Para el teclado está
+              «Ver más grande» en el menú.
+            */}
+            <Recuadro
+              className="cursor-zoom-in active:cursor-grabbing"
+              onClick={(e) => {
+                // El menú vive adentro del recuadro, y sus clics —también los
+                // de sus opciones, que React hace burbujear aunque se dibujen
+                // en un portal— no son «ver la foto».
+                if ((e.target as Element).closest("button, [role='menu']")) {
+                  return;
+                }
+                setAmpliada(i);
+              }}
+            >
               <Foto imagen={imagen} etiqueta={etiqueta} />
 
               {/* El menú va ENCIMA de su miniatura y no debajo. Debajo, con
@@ -427,6 +485,11 @@ export function ImagenesDeVariante({
                   </span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => setAmpliada(i)}>
+                    <Maximize2 aria-hidden />
+                    Ver más grande
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     disabled={i === 0}
                     onSelect={() => hacerPrincipal(imagen.id)}
@@ -540,6 +603,8 @@ export function ImagenesDeVariante({
           la sección: repetida en cada color son dos renglones por tarjeta que
           nadie vuelve a leer y que empujan las fotos fuera de la pantalla. */}
       <FieldError>{error}</FieldError>
+
+      {visor}
     </div>
   );
 }
@@ -576,12 +641,15 @@ function Posicion({ i }: { i: number }) {
 function Recuadro({
   children,
   className,
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
+  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
 }) {
   return (
     <div
+      onClick={onClick}
       className={cn(
         "relative aspect-square w-full overflow-hidden rounded-panel-image border border-border bg-logo-chip",
         className,

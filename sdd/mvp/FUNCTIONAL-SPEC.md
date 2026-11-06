@@ -618,6 +618,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] Un archivo mayor a 10 MB o de formato no aceptado se rechaza con mensaje claro **antes** de subirse.
 - [ ] El resultado publicado siempre es WEBP; el original no se sirve al público.
 - [ ] Reordenar imágenes por arrastre y elegir la principal.
+- [ ] Ver cada imagen en grande desde el panel, con el mismo visor de la ficha: tocando la miniatura o con «Ver más grande» en su menú (2026-11-05).
 - [ ] Eliminar una imagen la quita del almacenamiento.
 - [ ] Si la optimización falla, la imagen no se publica a medias y se informa el error.
 
