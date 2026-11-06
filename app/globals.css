@@ -320,6 +320,22 @@
     }
   }
 
+  /* El tilde de «Copiado» se dibuja de un extremo al otro (2026-11-05). El
+     trazo del `Check` de lucide mide unos 23 de su caja de 24, así que con
+     `stroke-dasharray: 24` arranca oculto y termina entero. 300ms, el techo
+     de §8, saliendo rápido y frenando al final. Con `prefers-reduced-motion`
+     la regla global lo muestra entero de una. */
+  --animate-tilde: tilde 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes tilde {
+    from {
+      stroke-dashoffset: 24;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
   /* El vaiven de los bloques del hero (§7.1): 8px de recorrido en cinco
      segundos, que es menos de lo que se mueve una hoja. Arranca arriba y baja,
      y cada bloque entra con su propio retraso y su propia duracion: en

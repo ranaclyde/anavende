@@ -544,7 +544,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 
 **Descripción:** ABM completo de productos.
 
-**Campos del producto:** nombre, modelo (opcional; referencia del panel, no se muestra en la tienda), slug (autogenerado y editable), descripción **con formato**, marca, categoría, **precio**, **descuento** (monto absoluto en ARS; `0` = sin oferta), destacado (sí/no), activo (`isActive`).
+**Campos del producto:** nombre, SKU (opcional y único dentro de la marca; la ficha lo muestra entre el nombre y el precio con un botón para copiarlo, y lo encuentran la búsqueda del panel y la de la tienda), slug (autogenerado y editable), descripción **con formato**, marca, categoría, **precio**, **descuento** (monto absoluto en ARS; `0` = sin oferta), destacado (sí/no), activo (`isActive`).
 
 **Criterios de aceptación:**
 - [ ] Listado con búsqueda, filtro por categoría/marca/estado, y orden por nombre, precio, stock y fecha.
@@ -589,7 +589,7 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 - [ ] Cada variante tiene su propio **stock total** editable.
 - [ ] Cada variante admite **hasta 5 imágenes**, con orden definible y una marcada como principal.
 - [ ] Una variante puede configurarse para **reutilizar las imágenes de otra variante** del mismo producto, en lugar de tener las propias. Se ofrecen las variantes que tienen imágenes de verdad —no las que a su vez están reutilizando— y hay que borrar las propias antes: si no, quedarían guardadas sin verse en ninguna parte.
-- [ ] Un producto sin color relevante se carga con una única variante («Único»), y el selector de color no se muestra en la ficha pública.
+- [ ] Un producto sin color relevante se carga con una única variante («Único»): la ficha pública no muestra el selector de color, pero dice «Color: Único».
 - [ ] No se puede quitar una variante con stock reservado por órdenes activas; el sistema lo impide e indica qué órdenes la usan.
 - [ ] **Sin reservas, quitar una variante que alguna orden nombra o que está en algún carrito la desactiva en vez de borrarla** (RN-11), y se informa cuál de los dos pasó. La orden histórica la sigue mostrando, así que borrarla le rompería el enlace al producto; y en un carrito tiene que quedar apartada, a la vista (RF-08). Una variante que ninguna orden ni ningún carrito nombra se borra de verdad, con sus imágenes.
 - [ ] El panel muestra siempre stock total, reservado y disponible por variante.
