@@ -511,6 +511,7 @@ CREATE TABLE variant_images (
   height      integer NOT NULL,
   bytes       integer NOT NULL,
   sort_order  integer NOT NULL DEFAULT 0,
+  has_watermark boolean NOT NULL DEFAULT false,  -- RF-39: se subió con la marca puesta
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX variant_images_variant_idx ON variant_images (variant_id, sort_order);
@@ -749,6 +750,37 @@ CREATE TABLE site_settings (
   easter_scene          boolean NOT NULL DEFAULT true,  -- la Semana Santa, calculada cada año
   updated_at            timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT singleton CHECK (id = 1)
+);
+
+-- RF-39, F2.16. Tabla propia y no una columna de site_settings: esa fila
+-- la crea la configuración con dos datos que el interruptor no tiene (§5.9).
+CREATE TABLE watermark_settings (
+  id          integer PRIMARY KEY DEFAULT 1,
+  enabled     boolean NOT NULL DEFAULT false,
+  updated_at  timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT singleton CHECK (id = 1)
+);
+
+-- La biblioteca: una imagen por fila, guardada una sola vez (§9.6).
+CREATE TABLE watermark_images (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  storage_key text NOT NULL,                       -- CLAVE en Storage, no URL
+  name        text NOT NULL,                       -- el nombre del archivo subido
+  width       integer NOT NULL,
+  height      integer NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- Las capas de la marca, en orden: la primera queda abajo.
+CREATE TABLE watermark_layers (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  image_id    uuid NOT NULL REFERENCES watermark_images(id) ON DELETE CASCADE,
+  mode        text NOT NULL CHECK (mode IN ('posicion','cubrir','estirar','mosaico')),
+  anchor      text NOT NULL DEFAULT 'abajo-derecha',   -- solo 'posicion'; las nueve de §9.6
+  size_pct    integer NOT NULL DEFAULT 20 CHECK (size_pct BETWEEN 5 AND 100),
+  margin_pct  integer NOT NULL DEFAULT 3  CHECK (margin_pct BETWEEN 0 AND 20),
+  opacity_pct integer NOT NULL DEFAULT 50 CHECK (opacity_pct BETWEEN 5 AND 100),
+  sort_order  integer NOT NULL DEFAULT 0
 );
 
 CREATE TABLE payment_methods (
@@ -1091,6 +1123,7 @@ El backend es **Supabase Storage** en el servidor DATA, pero se accede tras una 
 ```ts
 interface ObjectStorage {
   put(key: string, body: Buffer, contentType: string): Promise<void>;
+  get(key: string): Promise<Buffer>;   // RF-39: leer la marca de agua al procesar
   delete(key: string): Promise<void>;
   publicUrl(key: string): string;
 }
@@ -1128,6 +1161,46 @@ Borrar la variante fuente pone `images_source_id` en NULL en las que la reutiliz
 
 ---
 
+
+### 9.6 Marca de agua (RF-39)
+
+La marca se pone **al procesar**, dentro de `procesarImagen` (§9.1), y en ningún otro lado: sobre la versión ya redimensionada, antes de codificarla. Es la misma función la que arma la vista previa del panel, así que lo que Ana ve es exactamente lo que se va a guardar.
+
+```
+original ──▶ autoOrient + resize (por tamaño) ──▶ ¿tamaño con marca? ──sí──▶ composite(capas) ──▶ WEBP
+                                                         └──no──────────────────────────────────▶ WEBP
+```
+
+| Decisión | Valor | Por qué |
+|---|---|---|
+| Tamaños con marca | `-card` y `-detail` | `-thumb` mide 200px: una plantilla que cubre todo es una mancha. `-og` queda limpia, como pidió el usuario |
+| Cuándo se lee la configuración | Al subir cada foto, de la base | Activar o cambiar la marca surte efecto en la próxima subida, sin caché que invalidar |
+| Sin capas o desactivada | Se procesa como siempre | La subida no depende de la marca para funcionar |
+| Fotos ya subidas | No se tocan | El original no se guarda (§9.1): no hay de dónde rehacerlas. `variant_images.has_watermark` dice cuáles la llevan |
+| Tamaño de cada capa | Porcentaje del **ancho** de la versión | La misma capa se ve igual en `-card` y en `-detail`, y en fotos verticales y apaisadas |
+
+**Las cuatro formas de ubicar una capa**, sobre una versión de `W × H`:
+
+| `mode` | Qué hace |
+|---|---|
+| `posicion` | La capa se achica a `size_pct`% de `W` (sin pasar de `H`) y se pega en `anchor` —una de nueve: `arriba-izquierda`, `arriba`, `arriba-derecha`, `izquierda`, `centro`, `derecha`, `abajo-izquierda`, `abajo`, `abajo-derecha`— separada `margin_pct`% de `W` del borde |
+| `cubrir` | `resize(W, H, fit: cover)`: tapa todo y recorta lo que sobra |
+| `estirar` | `resize(W, H, fit: fill)`: se deforma hasta ocupar la versión exacta |
+| `mosaico` | La capa se achica a `size_pct`% de `W` y se repite (`composite` con `tile: true`) |
+
+La opacidad se aplica multiplicando el canal alfa de la capa (`opacity_pct / 100`) antes de pegarla.
+
+**La biblioteca** guarda cada imagen **una sola vez**, en WEBP **sin pérdida** y con transparencia, a 2000px de ancho como mucho:
+
+```
+marcas-de-agua/{imageId}-marca.webp
+```
+
+WEBP y no PNG porque el bucket ya acepta `image/webp` y no hace falta tocarlo. Sin pérdida porque la capa se vuelve a escalar en cada subida: comprimirla dos veces ensucia los bordes del texto. Al procesar se lee de Storage con `get` (§9.4), que se suma a la interfaz para esto.
+
+**La vista previa** es un Route Handler (`/api/admin/marca-de-agua/vista-previa`) que recibe la foto de prueba y las capas **sin guardar** —las que están en pantalla— y devuelve la versión `-detail` con la marca. La foto de prueba no se guarda en ningún lado. El navegador la achica a 1400px antes de mandarla, una sola vez, así cada cambio de un control no vuelve a subir 8 MB.
+
+---
 ## 10. Búsqueda y catálogo
 
 ### 10.1 Búsqueda tolerante (RF-02)

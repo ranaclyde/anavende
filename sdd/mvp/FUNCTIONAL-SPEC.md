@@ -624,6 +624,45 @@ Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente accede
 
 ---
 
+### RF-39 — Marca de agua en las fotos de productos
+
+> **El número es el siguiente libre, no la posición** (ver RF-34). Va acá
+> porque es parte de subir una foto (RF-17).
+
+**Origen:** pedido del 2026-11-11. Agregada como F2.16. Hay quien copia las
+fotos de la tienda para publicar productos parecidos; hasta ahora Ana les
+ponía la marca a mano, de a una, con una página externa.
+
+**Descripción:** La vendedora arma una **marca de agua** —una o más imágenes
+con fondo transparente, cada una con su lugar, su tamaño y su opacidad— y la
+**activa o desactiva** desde el panel. Mientras está activa, **toda foto de
+producto que se sube** queda con la marca puesta. Es para las cargas nuevas:
+lo que ya estaba subido no cambia.
+
+**Reglas:**
+
+| Regla | Valor |
+|---|---|
+| A qué fotos se aplica | Solo a las de productos (RF-16). Logos de marca y de medio de pago, imágenes de categoría y fotos de perfil, nunca |
+| A qué tamaños | Tarjeta y detalle. La miniatura queda limpia: a 200px la marca es una mancha |
+| Formatos aceptados para la marca | PNG o WEBP, que son los que guardan la transparencia. Un JPG se rechaza: saldría un recuadro blanco tapando la foto |
+| Cuántas capas | Hasta 4 |
+| Formas de ubicar una capa | **En una posición** (nueve: las cuatro esquinas, el centro de cada borde y el centro), con tamaño y margen como porcentaje del ancho de la foto; **cubrir** (tapa toda la foto, recortando lo que sobra); **estirar** (se deforma hasta ocupar la foto exacta); **mosaico** (se repite como patrón, con el tamaño de cada repetición como porcentaje del ancho) |
+| Opacidad | Por capa, del 5 al 100% |
+| Activa por defecto | No |
+
+**Criterios de aceptación:**
+- [ ] Se suben imágenes a una **biblioteca de marcas de agua**, que queda guardada hasta que se borran a mano. Activar o desactivar no borra ninguna ni cambia cómo está armada la marca.
+- [ ] La marca se arma con **capas**: cada una elige una imagen de la biblioteca, su forma de ubicarse, su tamaño y su opacidad. Borrar de la biblioteca una imagen que usa una capa avisa antes y se lleva la capa.
+- [ ] Una **vista previa** muestra cómo queda sobre una foto que se elige del equipo —que no se guarda— y la arma **la misma función que se usa al subir**: lo que se ve es lo que va a quedar.
+- [ ] Un interruptor activa o desactiva la marca y surte efecto en la próxima subida. Con la marca activa y **ninguna capa armada**, no se puede activar: no habría nada que poner.
+- [ ] Donde se suben las fotos de un producto se ve si la marca está **activada o desactivada**, con un enlace a donde se arma. **No bloquea la subida**: avisa.
+- [ ] Es **todo o nada**: con la marca activa no hay forma de subir una foto suelta sin ella. Para tener una foto sin marca se desactiva, se sube y se vuelve a activar.
+- [ ] **La marca no se puede sacar de una foto ya subida**: el original no se guarda (RF-17). Para cambiarla, se vuelve a subir la foto.
+- [ ] Cada foto recuerda si se subió con marca de agua.
+
+---
+
 ### RF-18 — Gestión de categorías, marcas y colores
 
 **Criterios de aceptación:**
@@ -1267,3 +1306,4 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-10-23 | Guías de uso en el panel (RF-37), en el MVP | Pedido tuyo: en la orden activa, la orden manual, el producto y las devoluciones, donde una acción mueve el stock o no tiene vuelta atrás. Lo visto se anota en el navegador, como en la tienda: guardarlo por usuario no vale un segundo mecanismo |
 | 2026-10-23 | Escenas por fecha (RF-38), en el MVP: Halloween y Navidad | Pedido tuyo. Se encienden solas y se apagan desde la configuración, una por una. Los períodos están en el código y no en el panel: cada fecha nueva trae sus dibujos, así que sumar una sin desplegar no tendría con qué verse |
 | 2026-10-23 | Pascua se suma a las escenas por fecha (RF-38): la Semana Santa | Pedido tuyo, en el mismo día. Va del Domingo de Ramos al de Pascua, y como se mueve se calcula cada año en vez de cargar una tabla |
+| 2026-11-11 | Marca de agua en las fotos de productos (RF-39), en el MVP | Pedido tuyo: copian las fotos de la tienda. Capas de imágenes subidas —no un generador de texto, que queda para si esto no alcanza—, solo en fotos nuevas, en tarjeta y detalle, y todo o nada |
