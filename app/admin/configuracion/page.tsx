@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { FormularioDeConfiguracion } from "@/components/admin/configuracion/formulario";
 import { ModoMantenimiento } from "@/components/admin/configuracion/mantenimiento";
+import { MarcaDeAguaEnConfiguracion } from "@/components/admin/configuracion/marca-de-agua";
+import { laMarcaDeAguaEstaActiva } from "@/modules/marca-de-agua/queries";
 import {
   elModoMantenimiento,
   leerLaConfiguracion,
@@ -25,12 +27,13 @@ export const metadata: Metadata = { title: "Configuración" };
 export default async function ConfiguracionDelSitio() {
   await exigirAdmin();
 
-  // En paralelo: son dos lecturas de la misma fila que no se esperan una a
+  // En paralelo: son lecturas que no se esperan una a
   // la otra. El interruptor se lee de la base y no de la memoria del proxy
   // (`elModoMantenimiento`): recién cambiado, tiene que decir lo que quedó.
-  const [configuracion, mantenimiento] = await Promise.all([
+  const [configuracion, mantenimiento, marcaDeAgua] = await Promise.all([
     leerLaConfiguracion(),
     elModoMantenimiento(),
+    laMarcaDeAguaEstaActiva(),
   ]);
 
   return (
@@ -54,6 +57,9 @@ export default async function ConfiguracionDelSitio() {
           tienda no es un valor más que se guarda con «Guardar cambios», es
           una acción que se confirma y surte efecto en el acto. */}
       <ModoMantenimiento activo={mantenimiento} />
+
+      {/* RF-39. Se arma en su propia pantalla, con vista previa. */}
+      <MarcaDeAguaEnConfiguracion activa={marcaDeAgua} />
     </div>
   );
 }

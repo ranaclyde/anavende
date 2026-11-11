@@ -174,7 +174,9 @@ se cancela (`modules/returns/registrar.ts`).
    fotos de otra del mismo producto. Tocar una miniatura, o «Ver más grande»
    en su menú, la abre en el mismo visor de la ficha
    (`components/ui/visor-de-fotos.tsx`), con las fotos de ese color y el
-   zoom sobre la versión `detail`.
+   zoom sobre la versión `detail`. Arriba de los colores se ve si la
+   **marca de agua** está activada o desactivada, con un enlace a donde se
+   arma; avisa y no frena la subida (abajo).
 4. **Activarlo.** No se puede activar un producto con la marca, la categoría
    o un color desactivados, y no se puede desactivar una marca, una
    categoría o un color mientras haya un producto activo que lo use. Así,
@@ -182,6 +184,20 @@ se cancela (`modules/returns/registrar.ts`).
    activo, «Ver en la tienda» abre su ficha en otra pestaña y «Copiar
    enlace» copia la dirección. Inactivo no ofrece ninguno de los dos: la
    ficha da 404 también para quien administra.
+
+**La marca de agua** (RF-39, F2.16) se arma en
+`/admin/configuracion/marca-de-agua`, enlazada desde Configuración. Tiene
+tres partes. La **biblioteca** guarda imágenes PNG o WEBP con fondo
+transparente hasta que se borran a mano. Las **capas**, hasta cuatro, eligen
+cada una una imagen, una forma (en un lugar, repetida, cubrir o estirar), un
+tamaño y una opacidad, y se guardan juntas. La **vista previa** prueba las
+capas en pantalla, todavía sin guardar, sobre una foto del equipo que no se
+guarda. El interruptor la activa solo con capas guardadas y sin cambios
+pendientes. Mientras está activa, cada foto de producto que se sube la lleva
+en `card` y `detail` (la miniatura queda limpia) y queda anotada en
+`variant_images.has_watermark`. Las fotos que ya estaban no cambian nunca:
+para sacarle la marca a una foto se desactiva, se vuelve a subir y se
+reactiva. Borrar la imagen de la única capa la desactiva sola.
 
 **Borrar puede terminar en desactivar:** un producto o una variante que
 alguna orden nombra no se borra, porque la orden lo sigue mostrando. Se

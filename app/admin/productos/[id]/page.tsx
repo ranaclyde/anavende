@@ -17,6 +17,7 @@ import {
   opcionesDeColor,
   variantesDelProducto,
 } from "@/modules/catalog/variants/queries";
+import { laMarcaDeAguaEstaActiva } from "@/modules/marca-de-agua/queries";
 import { urlAbsoluta } from "@/lib/seo";
 import { exigirAdmin } from "@/lib/session";
 
@@ -85,15 +86,16 @@ export default async function EditarProducto({ params, searchParams }: Props) {
 
   if (!ES_UUID.test(id)) notFound();
 
-  // Las cinco consultas no dependen unas de otras: en serie, la página
-  // tardaría la suma de las cinco por nada.
-  const [producto, opciones, variantes, colores, categoriaConColor] =
+  // Las seis consultas no dependen unas de otras: en serie, la página
+  // tardaría la suma de las seis por nada.
+  const [producto, opciones, variantes, colores, categoriaConColor, marca] =
     await Promise.all([
       obtenerProducto(id),
       opcionesDeProducto(),
       variantesDelProducto(id),
       opcionesDeColor(),
       categoriaQueSeVendePorColor(id),
+      laMarcaDeAguaEstaActiva(),
     ]);
 
   if (!producto) notFound();
@@ -210,6 +212,7 @@ export default async function EditarProducto({ params, searchParams }: Props) {
               variantes={variantes}
               colores={colores}
               categoriaConColor={categoriaConColor}
+              marcaDeAgua={marca}
               abrirAlta={consulta.agregar === ABRIR_ALTA_DE_COLOR}
             />
           </div>

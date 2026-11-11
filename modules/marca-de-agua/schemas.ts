@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { ANCLAS, MAXIMO_DE_CAPAS, MODOS } from "@/modules/media/marca-de-agua";
+import { ANCLAS, MAXIMO_DE_CAPAS, MODOS } from "@/modules/media/capas-de-marca";
 
 /**
  * Las capas que llegan del panel — RF-39. Los topes son los mismos CHECK de

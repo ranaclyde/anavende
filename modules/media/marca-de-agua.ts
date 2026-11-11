@@ -15,32 +15,15 @@ import sharp, { type OverlayOptions, type Sharp } from "sharp";
  * `-card` y en `-detail`, y en una foto vertical y en una apaisada.
  */
 
-export const MODOS = ["posicion", "cubrir", "estirar", "mosaico"] as const;
-export type Modo = (typeof MODOS)[number];
-
-export const ANCLAS = [
-  "arriba-izquierda",
-  "arriba",
-  "arriba-derecha",
-  "izquierda",
-  "centro",
-  "derecha",
-  "abajo-izquierda",
-  "abajo",
-  "abajo-derecha",
-] as const;
-export type Ancla = (typeof ANCLAS)[number];
-
-/** Hasta cuántas capas se pueden armar (RF-39). */
-export const MAXIMO_DE_CAPAS = 4;
-
-export type Capa = {
-  mode: Modo;
-  anchor: Ancla;
-  sizePct: number;
-  marginPct: number;
-  opacityPct: number;
-};
+export {
+  ANCLAS,
+  MAXIMO_DE_CAPAS,
+  MODOS,
+  type Ancla,
+  type Capa,
+  type Modo,
+} from "@/modules/media/capas-de-marca";
+import type { Ancla, Capa } from "@/modules/media/capas-de-marca";
 
 /** Una capa con los bytes de su imagen ya leídos de Storage. */
 export type CapaLista = Capa & { imagen: Buffer };
