@@ -170,7 +170,9 @@ export function VistaPrevia({ capas }: { capas: CapaGuardable[] }) {
             <img
               src={resultado}
               alt="La foto de prueba con la marca de agua puesta"
-              className="block h-auto w-full"
+              // Pegada arriba y ancha, una foto vertical pasaría el alto de
+              // la pantalla y se cortaría el pie, justo donde va el logo.
+              className="mx-auto block h-auto max-h-[calc(100dvh-12rem)] w-auto max-w-full"
             />
           ) : (
             <div className="aspect-[4/3]" />

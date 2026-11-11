@@ -97,16 +97,18 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
   const sinBiblioteca = marca.biblioteca.length === 0;
 
   return (
-    // La vista previa al lado desde que entran las dos: 1024 del formulario
-    // no alcanzan para una columna de controles y una foto que se lea.
+    // En el orden en que se usa: el estado, la biblioteca —primero se sube
+    // la imagen— y las capas, con su «Guardar» adentro y al pie: guarda las
+    // capas y nada más, y lo de abajo no queda colgando de un botón que no
+    // lo guarda (2026-11-11).
     //
-    // Apiladas, la vista previa va después de las capas y antes de la
-    // biblioteca: es lo que se mira al mover un control, y al final de todo
-    // quedaba a tres pantallas de los deslizadores en el teléfono. Al lado,
-    // ocupa la segunda columna en las tres filas y se queda pegada arriba.
-    <div className="@container w-full max-w-admin-form">
-      <div className="grid items-start gap-4 @min-[52rem]:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-        <div className="min-w-0 @min-[52rem]:col-start-1">
+    // Al lado, la vista previa se queda con todo el ancho que sobra: es una
+    // foto, y cuanto más grande mejor se juzga una marca suave. Los
+    // controles no necesitan más de 36rem. Apiladas, va después de las
+    // capas: es lo que se mira al mover un control.
+    <div className="@container w-full">
+      <div className="grid max-w-admin-form items-start gap-4 @min-[60rem]:max-w-none @min-[60rem]:grid-cols-[minmax(0,36rem)_minmax(0,1fr)]">
+        <div className="min-w-0 @min-[60rem]:col-start-1">
           <Interruptor
             activa={marca.activa}
             hayCapasGuardadas={marca.capas.length > 0}
@@ -114,7 +116,11 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
           />
         </div>
 
-        <div className="flex min-w-0 flex-col gap-4 @min-[52rem]:col-start-1">
+        <div className="min-w-0 @min-[60rem]:col-start-1">
+          <BibliotecaDeMarcas biblioteca={marca.biblioteca} usadaEn={usadaEn} />
+        </div>
+
+        <div className="min-w-0 @min-[60rem]:col-start-1">
           <TarjetaDeSeccion
             id="marca-capas"
             titulo="Capas"
@@ -140,7 +146,7 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
                 }
               >
                 {sinBiblioteca
-                  ? "Primero subí una imagen a la biblioteca, acá abajo: cada capa usa una."
+                  ? "Primero subí una imagen a la biblioteca, acá arriba: cada capa usa una."
                   : "Cada capa usa una imagen de la biblioteca, con su lugar, su tamaño y su opacidad."}
               </VacioDelPanel>
             ) : (
@@ -189,42 +195,38 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
                 )}
               </>
             )}
+
+            {error === null ? null : (
+              <p role="alert" className="text-body-sm text-danger">
+                {error}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
+              <EstadoDeGuardado
+                estado={
+                  hayCambios
+                    ? "sin-guardar"
+                    : recienGuardado
+                      ? "actualizado"
+                      : "guardado"
+                }
+              />
+              <Button
+                variant="brand"
+                loading={guardando}
+                loadingLabel="Guardando"
+                disabled={!hayCambios}
+                onClick={guardar}
+              >
+                Guardar capas
+              </Button>
+            </div>
           </TarjetaDeSeccion>
-
-          {error === null ? null : (
-            <p role="alert" className="text-body-sm text-danger">
-              {error}
-            </p>
-          )}
-
-          <div className="flex items-center justify-end gap-3">
-            <EstadoDeGuardado
-              estado={
-                hayCambios
-                  ? "sin-guardar"
-                  : recienGuardado
-                    ? "actualizado"
-                    : "guardado"
-              }
-            />
-            <Button
-              variant="brand"
-              loading={guardando}
-              loadingLabel="Guardando"
-              disabled={!hayCambios}
-              onClick={guardar}
-            >
-              Guardar capas
-            </Button>
-          </div>
         </div>
 
-        <div className="min-w-0 @min-[52rem]:sticky @min-[52rem]:top-4 @min-[52rem]:col-start-2 @min-[52rem]:row-span-3 @min-[52rem]:row-start-1">
+        <div className="min-w-0 @min-[60rem]:sticky @min-[60rem]:top-4 @min-[60rem]:col-start-2 @min-[60rem]:row-span-3 @min-[60rem]:row-start-1">
           <VistaPrevia capas={enPantalla} />
-        </div>
-
-        <div className="min-w-0 @min-[52rem]:col-start-1">
-          <BibliotecaDeMarcas biblioteca={marca.biblioteca} usadaEn={usadaEn} />
         </div>
       </div>
     </div>
