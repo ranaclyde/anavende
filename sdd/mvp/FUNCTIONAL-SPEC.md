@@ -654,7 +654,7 @@ lo que ya estaba subido no cambia.
 **Criterios de aceptación:**
 - [ ] Se suben imágenes a una **biblioteca de marcas de agua**, que queda guardada hasta que se borran a mano. Activar o desactivar no borra ninguna ni cambia cómo está armada la marca.
 - [ ] La marca se arma con **capas**: cada una elige una imagen de la biblioteca, su forma de ubicarse, su tamaño y su opacidad. Borrar de la biblioteca una imagen que usa una capa avisa antes y se lleva la capa.
-- [ ] Una **vista previa** muestra cómo queda sobre una foto que se elige del equipo —que no se guarda— y la arma **la misma función que se usa al subir**: lo que se ve es lo que va a quedar.
+- [ ] Una **vista previa** muestra cómo queda sobre la última foto de producto subida sin marca, o sobre una que se elige del equipo —que no se guarda—, y la arma **la misma función que se usa al subir**: lo que se ve es lo que va a quedar.
 - [ ] Un interruptor activa o desactiva la marca y surte efecto en la próxima subida. Con la marca activa y **ninguna capa armada**, no se puede activar: no habría nada que poner.
 - [ ] Donde se suben las fotos de un producto se ve si la marca está **activada o desactivada**, con un enlace a donde se arma. **No bloquea la subida**: avisa.
 - [ ] Es **todo o nada**: con la marca activa no hay forma de subir una foto suelta sin ella. Para tener una foto sin marca se desactiva, se sube y se vuelve a activar.

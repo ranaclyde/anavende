@@ -113,14 +113,14 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   await ingresar(page, admin);
   await page.goto("/admin/configuracion/marca-de-agua");
 
-  const estado = page.getByRole("region", { name: "Estado" });
-  await expect(estado.getByText("Desactivada")).toBeVisible();
-  await expect(
-    estado.getByRole("button", { name: "Activar la marca de agua" }),
-  ).toBeDisabled();
+  // El estado y su botón están en el encabezado, y solo si hay imágenes:
+  // sin ninguna, la pantalla es solo «subí tu marca».
+  const activar = page.getByRole("button", {
+    name: "Activar la marca de agua",
+  });
 
   // Un JPG no entra: no tiene transparencia.
-  const biblioteca = page.getByRole("region", { name: "Biblioteca" });
+  const biblioteca = page.getByRole("region", { name: "Imágenes" });
   const archivo = biblioteca.locator("input[type=file]");
   await archivo.setInputFiles({
     name: "foto.jpg",
@@ -138,6 +138,8 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   await expect(biblioteca.getByText(nombre, { exact: true })).toBeVisible({
     timeout: 30_000,
   });
+  await expect(page.getByText("Desactivada", { exact: true })).toBeVisible();
+  await expect(activar).toBeDisabled();
 
   // Una capa en la esquina, al 30% y sin transparencia de más.
   const capas = page.getByRole("region", { name: "Capas" });
@@ -163,16 +165,18 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
 
   // Con cambios sin guardar no se activa: activaría otra cosa.
   await expect(page.getByText("Cambios sin guardar")).toBeVisible();
-  await expect(
-    estado.getByRole("button", { name: "Activar la marca de agua" }),
-  ).toBeDisabled();
+  await expect(activar).toBeDisabled();
 
   if (CAPTURAS) {
     await expect(previa.getByText("Actualizando")).toBeHidden();
-    await page.screenshot({
-      path: `${CAPTURAS}/marca-1280.png`,
-      fullPage: true,
-    });
+    for (const ancho of [1280, 1497]) {
+      await page.setViewportSize({ width: ancho, height: 900 });
+      await expect(previa.getByText("Actualizando")).toBeHidden();
+      await page.screenshot({
+        path: `${CAPTURAS}/marca-${ancho}.png`,
+        fullPage: true,
+      });
+    }
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({
       path: `${CAPTURAS}/marca-390.png`,
@@ -184,10 +188,8 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   await page.getByRole("button", { name: "Guardar capas" }).click();
   await expect(page.getByText("Actualizado")).toBeVisible();
 
-  await estado
-    .getByRole("button", { name: "Activar la marca de agua" })
-    .click();
-  await expect(estado.getByText("Activada", { exact: true })).toBeVisible();
+  await activar.click();
+  await expect(page.getByText("Activada", { exact: true })).toBeVisible();
 
   expect(await hallazgosDeAxe(page)).toEqual([]);
 
@@ -222,12 +224,22 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   // Borrar la imagen de la única capa la apaga.
   await page.goto("/admin/configuracion/marca-de-agua");
   await page
-    .getByRole("region", { name: "Biblioteca" })
+    .getByRole("region", { name: "Imágenes" })
     .getByRole("button", { name: `Borrar «${nombre}»` })
     .click();
   const dialogo = page.getByRole("dialog");
   await expect(dialogo).toContainText("La usa la capa 1");
   await dialogo.getByRole("button", { name: "Borrar" }).click();
-  await expect(estado.getByText("Desactivada")).toBeVisible();
-  await expect(page.getByText(nombre, { exact: true })).toBeHidden();
+  // Con el diálogo abierto lo de atrás no cuenta como visible: se espera a
+  // la base, que es lo que dice que se borró y se apagó.
+  await expect
+    .poll(async () => {
+      const [fila] = await datos.sql<{ enabled: boolean }[]>`
+        SELECT enabled FROM watermark_settings WHERE id = 1`;
+      return fila.enabled;
+    })
+    .toBe(false);
+  await expect(
+    page.getByRole("button", { name: `Borrar «${nombre}»` }),
+  ).toHaveCount(0);
 });

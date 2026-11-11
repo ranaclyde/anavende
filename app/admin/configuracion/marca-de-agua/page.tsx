@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { EditorDeMarcaDeAgua } from "@/components/admin/marca-de-agua/editor";
 import { leerLaMarcaDeAgua } from "@/modules/marca-de-agua/queries";
 import { exigirAdmin } from "@/lib/session";
@@ -18,14 +17,7 @@ export default async function MarcaDeAgua() {
   await exigirAdmin();
   const marca = await leerLaMarcaDeAgua();
 
-  return (
-    <div className="flex w-full flex-col gap-4">
-      <EncabezadoDePanel
-        titulo="Marca de agua"
-        volver={{ href: "/admin/configuracion", etiqueta: "Configuración" }}
-        bajada="Lo que se pone sobre las fotos de productos que subís mientras está activada, para que no se puedan usar en otro lado."
-      />
-      <EditorDeMarcaDeAgua marca={marca} />
-    </div>
-  );
+  // El encabezado lo pinta el editor: lleva el interruptor, que tiene que
+  // saber si hay cambios sin guardar.
+  return <EditorDeMarcaDeAgua marca={marca} />;
 }

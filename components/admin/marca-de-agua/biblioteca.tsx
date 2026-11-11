@@ -6,7 +6,6 @@ import { ImagePlus, Images, Trash2 } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 
 import { CUADRICULA } from "@/components/admin/marca-de-agua/tipos";
-import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { avisar, avisarConPero } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
@@ -28,6 +27,9 @@ import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
  *
  * Las imágenes quedan hasta que se borran a mano: activar, desactivar o
  * cambiar las capas no las toca.
+ *
+ * Con imágenes es una tira de miniaturas chicas, arriba de las capas y en la
+ * misma tarjeta: se elige de ahí. Sin ninguna es lo único de la pantalla.
  */
 
 /** Solo las que guardan transparencia: un JPG sería un recuadro blanco. */
@@ -83,6 +85,7 @@ export function BibliotecaDeMarcas({
     router.refresh();
   }
 
+  const vacia = biblioteca.length === 0;
   const capasDe = porBorrar ? (usadaEn.get(porBorrar.id) ?? []) : [];
 
   function borrar(imagen: ImagenDeLaBiblioteca) {
@@ -103,111 +106,124 @@ export function BibliotecaDeMarcas({
     });
   }
 
-  return (
-    <TarjetaDeSeccion
-      id="marca-biblioteca"
-      titulo="Biblioteca"
-      ayuda="Las imágenes que podés usar en las capas. PNG o WEBP con fondo transparente, de hasta 10 MB. Quedan guardadas hasta que las borres."
-      acciones={
-        biblioteca.length === 0 ? null : (
-          <Button
-            variant="secondary"
-            size="sm"
-            loading={subiendo}
-            loadingLabel="Subiendo"
-            onClick={() => campo.current?.click()}
-          >
-            <ImagePlus aria-hidden />
-            Subir imagen
-          </Button>
-        )
-      }
+  const subirBoton = (
+    <Button
+      variant="secondary"
+      size={vacia ? "md" : "sm"}
+      loading={subiendo}
+      loadingLabel="Subiendo"
+      onClick={() => campo.current?.click()}
     >
-      <input
-        ref={campo}
-        type="file"
-        accept={ACEPTADAS.join(",")}
-        multiple
-        hidden
-        onChange={(e) => {
-          const archivos = Array.from(e.target.files ?? []);
-          e.target.value = "";
-          if (archivos.length > 0) void subir(archivos);
-        }}
-      />
+      <ImagePlus aria-hidden />
+      Subir imagen
+    </Button>
+  );
 
-      {error === null ? null : (
-        <p role="alert" className="text-body-sm text-danger">
-          {error}
-        </p>
-      )}
+  const entrada = (
+    <input
+      ref={campo}
+      type="file"
+      accept={ACEPTADAS.join(",")}
+      multiple
+      hidden
+      onChange={(e) => {
+        const archivos = Array.from(e.target.files ?? []);
+        e.target.value = "";
+        if (archivos.length > 0) void subir(archivos);
+      }}
+    />
+  );
 
-      {biblioteca.length === 0 ? (
+  const aviso =
+    error === null ? null : (
+      <p role="alert" className="text-body-sm text-danger">
+        {error}
+      </p>
+    );
+
+  // Sin ninguna imagen, la pantalla es solo esto: lo demás —capas,
+  // vista previa, el interruptor— no tiene con qué funcionar todavía.
+  if (vacia) {
+    return (
+      <section aria-label="Imágenes" className="flex flex-col gap-3">
+        {entrada}
         <VacioDelPanel
-          dentro
+          como="h2"
           icono={Images}
-          titulo="Todavía no subiste ninguna"
-          accion={
-            <Button
-              variant="secondary"
-              loading={subiendo}
-              loadingLabel="Subiendo"
-              onClick={() => campo.current?.click()}
-            >
-              <ImagePlus aria-hidden />
-              Subir imagen
-            </Button>
-          }
+          titulo="Empezá por subir tu marca"
+          accion={subirBoton}
         >
-          Tu logo, o la plantilla con el nombre de la tienda repetido. Tienen
-          que tener fondo transparente: lo que no es transparente tapa la foto.
+          Tu logo, o la plantilla con el nombre de la tienda repetido, en PNG o
+          WEBP con fondo transparente: lo que no es transparente tapa la foto.
         </VacioDelPanel>
-      ) : (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-3">
-          {biblioteca.map((imagen) => {
-            const usada = usadaEn.get(imagen.id);
-            return (
-              <li key={imagen.id} className="flex flex-col gap-1.5">
-                <div
-                  className="relative grid aspect-square place-items-center overflow-hidden rounded-panel-image border border-border p-3"
-                  style={CUADRICULA}
-                >
-                  <Image
-                    src={imagen.url}
-                    alt=""
-                    width={imagen.ancho}
-                    height={imagen.alto}
-                    sizes="136px"
-                    className="max-h-full w-auto object-contain"
-                  />
-                  <Button
-                    variant="destructive-ghost"
-                    size="icon"
-                    disabled={borrando}
-                    onClick={() => setPorBorrar(imagen)}
-                    title="Borrar"
-                    className="absolute right-1 top-1 bg-surface/90 shadow-sm"
-                  >
-                    <Trash2 aria-hidden />
-                    <span className="sr-only">Borrar «{imagen.nombre}»</span>
-                  </Button>
-                </div>
-                <p className="flex min-w-0 flex-col">
+        {aviso}
+      </section>
+    );
+  }
+
+  return (
+    <section aria-labelledby="marca-imagenes" className="flex flex-col gap-3">
+      {entrada}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 id="marca-imagenes" className="text-body font-medium text-ink">
+            Imágenes
+          </h2>
+          <p className="text-body-sm text-ink-secondary">
+            PNG o WEBP con fondo transparente. Quedan hasta que las borres.
+          </p>
+        </div>
+        {subirBoton}
+      </div>
+
+      {aviso}
+
+      <ul className="flex flex-wrap gap-3">
+        {biblioteca.map((imagen) => {
+          const usada = usadaEn.get(imagen.id);
+          return (
+            <li key={imagen.id} className="flex w-24 flex-col gap-1">
+              <div
+                className="relative grid aspect-square place-items-center overflow-hidden rounded-panel-image border border-border p-2"
+                style={CUADRICULA}
+              >
+                <Image
+                  src={imagen.url}
+                  alt=""
+                  width={imagen.ancho}
+                  height={imagen.alto}
+                  sizes="96px"
+                  className="max-h-full w-auto object-contain"
+                />
+              </div>
+              <div className="flex items-start gap-0.5">
+                <p className="flex min-w-0 flex-1 flex-col">
                   <span
-                    className="truncate text-body-sm text-ink"
+                    className="truncate text-caption text-ink"
                     title={imagen.nombre}
                   >
                     {imagen.nombre}
                   </span>
                   <span className="text-caption text-ink-secondary">
-                    {usada ? `En la capa ${usada.join(" y ")}` : "Sin usar"}
+                    {usada ? `Capa ${usada.join(" y ")}` : "Sin usar"}
                   </span>
                 </p>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                <Button
+                  variant="destructive-ghost"
+                  size="icon"
+                  disabled={borrando}
+                  onClick={() => setPorBorrar(imagen)}
+                  title="Borrar"
+                  className="-mr-2 -mt-1 shrink-0"
+                >
+                  <Trash2 aria-hidden />
+                  <span className="sr-only">Borrar «{imagen.nombre}»</span>
+                </Button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
 
       <Dialog
         open={porBorrar !== null}
@@ -235,6 +251,6 @@ export function BibliotecaDeMarcas({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </TarjetaDeSeccion>
+    </section>
   );
 }

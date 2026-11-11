@@ -4,6 +4,7 @@ import { ImageUp, LoaderCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import type { CapaGuardable } from "@/components/admin/marca-de-agua/tipos";
+import type { FotoDeMuestra } from "@/modules/marca-de-agua/queries";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Button } from "@/components/ui/button";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
@@ -19,6 +20,11 @@ import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
  * **La foto se achica una vez, acá, a 1400px** —el ancho de `-detail`—,
  * antes de mandarla: cada movimiento de un control pide una vista nueva, y
  * mandar 8 MB por cada una haría que el deslizador se sintiera pegajoso.
+ *
+ * **Arranca con la última foto de producto que se subió sin marca**, que el
+ * servidor lee por su id: una vista previa vacía era media pantalla de caja
+ * punteada que no decía nada (2026-11-11). Se cambia por una propia cuando
+ * se quiere.
  */
 
 /** Cuánto se espera a que se deje de mover un control antes de pedir. */
@@ -42,7 +48,13 @@ async function achicar(archivo: File): Promise<Blob> {
   );
 }
 
-export function VistaPrevia({ capas }: { capas: CapaGuardable[] }) {
+export function VistaPrevia({
+  capas,
+  muestra,
+}: {
+  capas: CapaGuardable[];
+  muestra: FotoDeMuestra | null;
+}) {
   const campo = useRef<HTMLInputElement>(null);
   const [foto, setFoto] = useState<Blob | null>(null);
   const [resultado, setResultado] = useState<string | null>(null);
@@ -53,14 +65,18 @@ export function VistaPrevia({ capas }: { capas: CapaGuardable[] }) {
   // por un arreglo nuevo con los mismos valores.
   const pedido = JSON.stringify(capas);
 
+  const muestraId = muestra?.id ?? null;
+  const hayFoto = foto !== null || muestraId !== null;
+
   useEffect(() => {
-    if (!foto) return;
+    if (!foto && !muestraId) return;
     const corte = new AbortController();
 
     const reloj = setTimeout(async () => {
       setCargando(true);
       const cuerpo = new FormData();
-      cuerpo.set("foto", foto, "prueba.jpg");
+      if (foto) cuerpo.set("foto", foto, "prueba.jpg");
+      else if (muestraId) cuerpo.set("muestra", muestraId);
       cuerpo.set("capas", pedido);
       try {
         const r = await fetch("/api/admin/marca-de-agua/vista-previa", {
@@ -91,7 +107,7 @@ export function VistaPrevia({ capas }: { capas: CapaGuardable[] }) {
       clearTimeout(reloj);
       corte.abort();
     };
-  }, [foto, pedido]);
+  }, [foto, muestraId, pedido]);
 
   // Cada vista se suelta cuando llega la siguiente, y la última al irse de
   // la pantalla: es la limpieza del efecto que depende de ella.
@@ -118,9 +134,15 @@ export function VistaPrevia({ capas }: { capas: CapaGuardable[] }) {
     <TarjetaDeSeccion
       id="marca-vista-previa"
       titulo="Vista previa"
-      ayuda="Así queda en la ficha del producto. Probala con una foto tuya: no se guarda."
+      ayuda={
+        foto
+          ? "Así queda en la ficha del producto, con la foto que elegiste. No se guarda."
+          : muestra
+            ? `Así queda en la ficha del producto, con la última foto que subiste: «${muestra.producto}».`
+            : "Así queda en la ficha del producto. Probala con una foto tuya: no se guarda."
+      }
       acciones={
-        foto ? (
+        hayFoto ? (
           <Button
             variant="secondary"
             size="sm"
@@ -144,11 +166,11 @@ export function VistaPrevia({ capas }: { capas: CapaGuardable[] }) {
         }}
       />
 
-      {foto === null ? (
+      {!hayFoto ? (
         <button
           type="button"
           onClick={() => campo.current?.click()}
-          className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-panel-image border border-dashed border-border-strong bg-surface-sunken px-6 text-center transition-colors duration-150 hover:border-accent hover:bg-accent-tint focus-visible:shadow-focus focus-visible:outline-none"
+          className="flex flex-col items-center justify-center gap-2 rounded-panel-image border border-dashed border-border-strong bg-surface-sunken px-6 py-8 text-center transition-colors duration-150 hover:border-accent hover:bg-accent-tint focus-visible:shadow-focus focus-visible:outline-none"
         >
           <ImageUp aria-hidden className="size-6 text-ink-secondary" />
           <span className="text-body-sm font-medium text-ink">
@@ -198,7 +220,7 @@ export function VistaPrevia({ capas }: { capas: CapaGuardable[] }) {
         </p>
       )}
 
-      {foto && capas.length === 0 ? (
+      {hayFoto && capas.length === 0 ? (
         <p className="text-caption text-ink-secondary">
           Sin capas, la foto sale como la subiste.
         </p>

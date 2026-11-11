@@ -45,11 +45,10 @@ export default async function ConfiguracionDelSitio() {
 
       {/* Lo que se guarda con un botón a la izquierda, y al lado lo que
           surte efecto solo —abrir o cerrar la tienda, la marca de agua—,
-          como la ficha del producto con su stock. Apiladas por debajo de
-          64rem de contenedor: el formulario necesita unos 36rem y cada
-          tarjeta de al lado, 22. */}
+          en dos mitades iguales desde 1100px de contenido, como
+          Reportes. Apiladas por debajo, topeadas en el ancho del formulario. */}
       <div className="@container">
-        <div className="grid max-w-admin-form items-start gap-4 @min-[64rem]:max-w-none @min-[64rem]:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+        <div className="grid max-w-admin-form items-start gap-4 @min-[56rem]:max-w-none @min-[56rem]:grid-cols-2">
           <FormularioDeConfiguracion
             configuracion={configuracion}
             umbralPorDefecto={UMBRAL_DE_STOCK_BAJO_POR_DEFECTO}

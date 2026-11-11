@@ -1,13 +1,17 @@
 import * as Sentry from "@sentry/nextjs";
+import { and, eq } from "drizzle-orm";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { db } from "@/db";
+import { variantImages } from "@/db/schema/catalog";
 import { isDomainError } from "@/lib/errors";
 import { consumir } from "@/lib/limite";
 import { getSession } from "@/lib/session";
+import { almacenamiento } from "@/lib/storage";
 import { prepararCapas } from "@/modules/marca-de-agua/service";
 import { capas as esquemaDeCapas } from "@/modules/marca-de-agua/schemas";
 import { procesarImagen } from "@/modules/media/procesar";
-import { TAMANO_MAXIMO, TAMANOS } from "@/modules/media/tamanos";
+import { clave, TAMANO_MAXIMO, TAMANOS } from "@/modules/media/tamanos";
 
 /**
  * Vista previa de la marca de agua — RF-39, TECHNICAL-SPEC §9.6.
@@ -16,6 +20,10 @@ import { TAMANO_MAXIMO, TAMANOS } from "@/modules/media/tamanos";
  * y devuelve la versión `-detail` con la marca, armada por `procesarImagen`:
  * la misma función, con los mismos números, que la subida de verdad. La foto
  * no se guarda en ningún lado.
+ *
+ * En vez de la foto puede venir `muestra`, el id de una foto de producto ya
+ * subida y sin marca: con ella arranca la pantalla, para que la vista previa
+ * no aparezca vacía. Se lee su `-detail`, que ya mide lo que va a medir.
  *
  * Route Handler y no Server Action por lo mismo que la subida: entra un
  * binario y sale otro.
@@ -31,8 +39,23 @@ const VISTAS = { tope: 120, ventanaMs: 60_000 };
 
 const DETALLE = TAMANOS.filter((t) => t.sufijo === "detail");
 
+const ES_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function error(message: string, status: number) {
   return NextResponse.json({ ok: false, message }, { status });
+}
+
+/** Los bytes de la foto de muestra, o `null` si no es una sin marca. */
+async function bytesDeMuestra(id: string): Promise<Buffer | null> {
+  if (!ES_UUID.test(id)) return null;
+  const [fila] = await db
+    .select({ storageKey: variantImages.storageKey })
+    .from(variantImages)
+    .where(and(eq(variantImages.id, id), eq(variantImages.hasWatermark, false)))
+    .limit(1);
+  if (!fila) return null;
+  return almacenamiento().get(clave(fila.storageKey, "detail"));
 }
 
 export async function POST(request: NextRequest) {
@@ -58,11 +81,12 @@ export async function POST(request: NextRequest) {
   }
 
   const foto = form.get("foto");
-  if (!(foto instanceof File)) {
-    return error("Elegí una foto para probar.", 400);
-  }
-  if (foto.size > TAMANO_MAXIMO) {
+  const muestra = form.get("muestra");
+  if (foto instanceof File && foto.size > TAMANO_MAXIMO) {
     return error("La foto pesa más de 10 MB. Probá con una más chica.", 413);
+  }
+  if (!(foto instanceof File) && typeof muestra !== "string") {
+    return error("Elegí una foto para probar.", 400);
   }
 
   let crudas: unknown;
@@ -77,12 +101,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const original =
+      foto instanceof File
+        ? Buffer.from(await foto.arrayBuffer())
+        : await bytesDeMuestra(String(muestra));
+    if (!original) {
+      return error("Esa foto ya no está. Elegí otra para probar.", 400);
+    }
     const listas = await prepararCapas(capas.data);
-    const { versiones } = await procesarImagen(
-      Buffer.from(await foto.arrayBuffer()),
-      DETALLE,
-      listas,
-    );
+    const { versiones } = await procesarImagen(original, DETALLE, listas);
     const [detalle] = versiones;
 
     return new NextResponse(new Uint8Array(detalle.cuerpo), {

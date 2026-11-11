@@ -290,7 +290,9 @@ function Deslizador({
   alCambiar: (v: number) => void;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    // El tope va en el renglón entero y no en el deslizador: así el valor
+    // de la derecha termina donde termina la barra.
+    <div className="flex max-w-md flex-col gap-1.5">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-body-sm font-medium text-ink">{etiqueta}</span>
         <span className="text-caption tabular-nums text-ink-secondary">
@@ -304,7 +306,6 @@ function Deslizador({
         step={1}
         etiquetas={[etiqueta]}
         onValueChange={([v]) => alCambiar(v)}
-        className="max-w-md"
       />
     </div>
   );

@@ -1198,7 +1198,7 @@ marcas-de-agua/{imageId}-marca.webp
 
 WEBP y no PNG porque el bucket ya acepta `image/webp` y no hace falta tocarlo. Sin pérdida porque la capa se vuelve a escalar en cada subida: comprimirla dos veces ensucia los bordes del texto. Al procesar se lee de Storage con `get` (§9.4), que se suma a la interfaz para esto.
 
-**La vista previa** es un Route Handler (`/api/admin/marca-de-agua/vista-previa`) que recibe la foto de prueba y las capas **sin guardar** —las que están en pantalla— y devuelve la versión `-detail` con la marca. La foto de prueba no se guarda en ningún lado. El navegador la achica a 1400px antes de mandarla, una sola vez, así cada cambio de un control no vuelve a subir 8 MB.
+**La vista previa** es un Route Handler (`/api/admin/marca-de-agua/vista-previa`) que recibe la foto de prueba y las capas **sin guardar** —las que están en pantalla— y devuelve la versión `-detail` con la marca. La foto de prueba no se guarda en ningún lado. En vez de la foto puede recibir `muestra`, el id de una foto de producto **sin marca**: el servidor lee su `-detail` de Storage, y con la última de ésas arranca la pantalla, para que la vista previa no aparezca vacía. El navegador la achica a 1400px antes de mandarla, una sola vez, así cada cambio de un control no vuelve a subir 8 MB.
 
 ---
 ## 10. Búsqueda y catálogo

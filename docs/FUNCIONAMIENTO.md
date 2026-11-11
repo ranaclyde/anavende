@@ -186,13 +186,16 @@ se cancela (`modules/returns/registrar.ts`).
    ficha da 404 también para quien administra.
 
 **La marca de agua** (RF-39, F2.16) se arma en
-`/admin/configuracion/marca-de-agua`, enlazada desde Configuración. Tiene
-tres partes. La **biblioteca** guarda imágenes PNG o WEBP con fondo
+`/admin/configuracion/marca-de-agua`, enlazada desde Configuración. Sin
+imágenes, la pantalla es solo «subí tu marca». Con imágenes se parte en dos
+mitades: a la izquierda se arma y a la derecha se mira, y el estado con su
+botón va en el encabezado. La **biblioteca** guarda imágenes PNG o WEBP con fondo
 transparente hasta que se borran a mano. Las **capas**, hasta cuatro, eligen
 cada una una imagen, una forma (en un lugar, repetida, cubrir o estirar), un
 tamaño y una opacidad, y se guardan juntas. La **vista previa** prueba las
-capas en pantalla, todavía sin guardar, sobre una foto del equipo que no se
-guarda. El interruptor la activa solo con capas guardadas y sin cambios
+capas en pantalla, todavía sin guardar. Arranca con la última foto de
+producto que se subió sin marca, y se puede cambiar por una del equipo, que
+no se guarda. El interruptor la activa solo con capas guardadas y sin cambios
 pendientes. Mientras está activa, cada foto de producto que se sube la lleva
 en `card` y `detail` (la miniatura queda limpia) y queda anotada en
 `variant_images.has_watermark`. Las fotos que ya estaban no cambian nunca:
