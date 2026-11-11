@@ -62,6 +62,17 @@ export function tipoDe(sufijo: string): string {
 }
 
 /**
+ * Las versiones que llevan la marca de agua cuando está activa — RF-39, §9.6.
+ *
+ * `-thumb` no: mide 200px y una plantilla que cubre todo es una mancha. `-og`
+ * tampoco, por decisión del usuario del 2026-11-11.
+ */
+export const SUFIJOS_CON_MARCA: ReadonlySet<string> = new Set([
+  "card",
+  "detail",
+]);
+
+/**
  * Los logos —de marca (RF-18) y de medio de pago (RF-19)— usan la misma
  * convención con DOS tamaños.
  *
