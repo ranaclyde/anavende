@@ -3,7 +3,7 @@
 import { useId, useRef, useState, useTransition } from "react";
 
 import { EstadoDeGuardado } from "@/components/admin/estado-de-guardado";
-import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import { Apartado, TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError } from "@/components/ui/field-error";
@@ -449,45 +449,6 @@ export function FormularioDeConfiguracion({
         </div>
       </TarjetaDeSeccion>
     </form>
-  );
-}
-
-/**
- * Una parte de la tarjeta: título, una frase y sus campos, separada de la
- * anterior por una línea. Es un grupo con nombre y no una región: las
- * regiones son las tarjetas, y ésta es una sola.
- */
-function Apartado({
-  primero = false,
-  id,
-  titulo,
-  ayuda,
-  children,
-}: {
-  /** El primero va pegado al título de la tarjeta, sin línea de por medio. */
-  primero?: boolean;
-  id: string;
-  titulo: string;
-  ayuda: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      role="group"
-      aria-labelledby={id}
-      className={`flex flex-col gap-4 ${primero ? "" : "border-t border-border pt-4"}`}
-    >
-      <div className="flex flex-col gap-1">
-        <h3
-          id={id}
-          className="scroll-mt-20 text-body-sm font-medium text-ink lg:scroll-mt-6"
-        >
-          {titulo}
-        </h3>
-        <p className="text-body-sm text-ink-secondary">{ayuda}</p>
-      </div>
-      {children}
-    </div>
   );
 }
 

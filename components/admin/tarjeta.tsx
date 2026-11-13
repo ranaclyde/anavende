@@ -88,3 +88,65 @@ export function TarjetaDeSeccion({
     </section>
   );
 }
+
+/**
+ * Una parte de una tarjeta que se guarda con un botón: título, una frase y
+ * sus campos, separada de la anterior por una línea. Es un grupo con nombre
+ * y no una región: las regiones son las tarjetas, y ésta es una sola.
+ *
+ * Nació en Configuración (2026-11-11) y pasó acá cuando la regla de DESIGN.md
+ * —lo que se guarda con un botón es una tarjeta, con el botón adentro y al
+ * pie— se llevó al producto, la orden nueva, el usuario nuevo y Legales
+ * (2026-11-13).
+ */
+export function Apartado({
+  primero = false,
+  id,
+  titulo,
+  ayuda,
+  "data-ayuda": guia,
+  children,
+}: {
+  /** El primero va pegado al título de la tarjeta, sin línea de por medio. */
+  primero?: boolean;
+  id: string;
+  titulo: string;
+  ayuda?: string;
+  /** El paso de una guía de uso que señala este apartado (F6.7). */
+  "data-ayuda"?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      role="group"
+      aria-labelledby={id}
+      data-ayuda={guia}
+      className={`flex flex-col gap-4 ${primero ? "" : "border-t border-border pt-4"}`}
+    >
+      <div className="flex flex-col gap-1">
+        <h3
+          id={id}
+          className="scroll-mt-20 text-body-sm font-medium text-ink lg:scroll-mt-6"
+        >
+          {titulo}
+        </h3>
+        {ayuda ? (
+          <p className="text-body-sm text-ink-secondary">{ayuda}</p>
+        ) : null}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * El pie de una tarjeta que se guarda con un botón: la línea, el error
+ * general, el estado y los botones, a la derecha.
+ */
+export function PieDeGuardado({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
+      {children}
+    </div>
+  );
+}

@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState, useTransition } from "react";
 
-import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import {
+  Apartado,
+  PieDeGuardado,
+  TarjetaDeSeccion,
+} from "@/components/admin/tarjeta";
 import { Campo, Opcion } from "@/components/admin/formulario";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
@@ -95,7 +99,9 @@ export function AltaDeUsuario() {
   const e = errores.campos;
 
   return (
-    <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
+    // Una sola tarjeta con el botón al pie (DESIGN.md, 2026-11-13): eran dos
+    // con la barra afuera.
+    <form onSubmit={enviar} noValidate className="min-w-0">
       <TarjetaDeSeccion id="datos-persona" titulo="Datos de la persona">
         <div className="grid gap-3 sm:grid-cols-2">
           <Campo
@@ -137,49 +143,49 @@ export function AltaDeUsuario() {
           ayuda="Con característica, por ejemplo 11 5555 5555."
           autoComplete="off"
         />
-      </TarjetaDeSeccion>
 
-      <TarjetaDeSeccion
-        id="rol"
-        titulo="Rol"
-        ayuda="Define a qué puede entrar. Se puede cambiar después desde su ficha."
-      >
-        <div className="grid gap-2 sm:grid-cols-2">
-          {ROLES_ASIGNABLES.map((opcion, i) => (
-            <Opcion
-              key={opcion.valor}
-              id={i === 0 ? `${idBase}-rol` : undefined}
-              nombre="rol"
-              elegida={rol === opcion.valor}
-              alElegir={() => setRol(opcion.valor)}
-              titulo={opcion.etiqueta}
-              detalle={opcion.ayuda}
-            />
-          ))}
+        <Apartado
+          id="rol"
+          titulo="Rol"
+          ayuda="Define a qué puede entrar. Se puede cambiar después desde su ficha."
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            {ROLES_ASIGNABLES.map((opcion, i) => (
+              <Opcion
+                key={opcion.valor}
+                id={i === 0 ? `${idBase}-rol` : undefined}
+                nombre="rol"
+                elegida={rol === opcion.valor}
+                alElegir={() => setRol(opcion.valor)}
+                titulo={opcion.etiqueta}
+                detalle={opcion.ayuda}
+              />
+            ))}
+          </div>
+          <FieldError id={`${idBase}-rol-error`}>{e.rol}</FieldError>
+        </Apartado>
+
+        <div ref={errorGeneral} tabIndex={-1} className="outline-none">
+          <FieldError>{errores.general}</FieldError>
         </div>
-        <FieldError id={`${idBase}-rol-error`}>{e.rol}</FieldError>
-      </TarjetaDeSeccion>
 
-      <div ref={errorGeneral} tabIndex={-1} className="outline-none">
-        <FieldError>{errores.general}</FieldError>
-      </div>
-
-      {/* En el panel la acción principal va a la derecha, y el escape queda a
+        {/* En el panel la acción principal va a la derecha, y el escape queda a
           mano: cancelar es un enlace y no un botón, porque no hace nada, va a
           otro lado. */}
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button asChild variant="tertiary">
-          <Link href="/admin/usuarios">Cancelar</Link>
-        </Button>
-        <Button
-          type="submit"
-          variant="brand"
-          loading={guardando}
-          loadingLabel="Creando"
-        >
-          Crear cuenta y mandar el email
-        </Button>
-      </div>
+        <PieDeGuardado>
+          <Button asChild variant="tertiary">
+            <Link href="/admin/usuarios">Cancelar</Link>
+          </Button>
+          <Button
+            type="submit"
+            variant="brand"
+            loading={guardando}
+            loadingLabel="Creando"
+          >
+            Crear cuenta y mandar el email
+          </Button>
+        </PieDeGuardado>
+      </TarjetaDeSeccion>
     </form>
   );
 }
