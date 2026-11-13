@@ -6,6 +6,7 @@ import { z } from "zod";
 import { isDomainError } from "@/lib/errors";
 import { consumir } from "@/lib/limite";
 import { getSession } from "@/lib/session";
+import { subirImagenDeMarca } from "@/modules/marca-de-agua/service";
 import { publicarImagenDeVariante, publicarLogo } from "@/modules/media/subir";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
 
@@ -54,6 +55,10 @@ const entrada = z.discriminatedUnion("destino", [
   z.object({
     destino: z.literal("categoria"),
     categoryId: z.uuid(),
+  }),
+  // RF-39: una imagen para la biblioteca de marcas de agua.
+  z.object({
+    destino: z.literal("marca-de-agua"),
   }),
 ]);
 
@@ -151,30 +156,32 @@ export async function POST(request: NextRequest) {
     const bytes = Buffer.from(await archivo.arrayBuffer());
 
     const data =
-      campos.data.destino === "marca"
-        ? await publicarLogo({
-            destino: "marca",
-            id: campos.data.brandId,
-            archivo: bytes,
-          })
-        : campos.data.destino === "medio-de-pago"
+      campos.data.destino === "marca-de-agua"
+        ? await subirImagenDeMarca(bytes, archivo.name)
+        : campos.data.destino === "marca"
           ? await publicarLogo({
-              destino: "medio-de-pago",
-              id: campos.data.paymentMethodId,
+              destino: "marca",
+              id: campos.data.brandId,
               archivo: bytes,
             })
-          : campos.data.destino === "categoria"
+          : campos.data.destino === "medio-de-pago"
             ? await publicarLogo({
-                destino: "categoria",
-                id: campos.data.categoryId,
+                destino: "medio-de-pago",
+                id: campos.data.paymentMethodId,
                 archivo: bytes,
               })
-            : await publicarImagenDeVariante({
-                productId: campos.data.productId,
-                variantId: campos.data.variantId,
-                archivo: bytes,
-                altText: campos.data.altText,
-              });
+            : campos.data.destino === "categoria"
+              ? await publicarLogo({
+                  destino: "categoria",
+                  id: campos.data.categoryId,
+                  archivo: bytes,
+                })
+              : await publicarImagenDeVariante({
+                  productId: campos.data.productId,
+                  variantId: campos.data.variantId,
+                  archivo: bytes,
+                  altText: campos.data.altText,
+                });
 
     // Invalidar acá es la mitad del trabajo: una Server Action refresca al
     // cliente con su respuesta, pero un `fetch` a un Route Handler no. La
@@ -182,7 +189,9 @@ export async function POST(request: NextRequest) {
     revalidatePath(
       campos.data.destino === "variante"
         ? "/admin/productos"
-        : "/admin/catalogo",
+        : campos.data.destino === "marca-de-agua"
+          ? "/admin/configuracion"
+          : "/admin/catalogo",
       "layout",
     );
 

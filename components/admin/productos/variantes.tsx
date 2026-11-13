@@ -2,7 +2,16 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
-import { Palette, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
+import {
+  DropletOff,
+  Droplets,
+  Palette,
+  Pencil,
+  Plus,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
+import Link from "next/link";
 
 import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
 import { Seccion, Secciones } from "@/components/admin/formulario";
@@ -122,6 +131,7 @@ export function VariantesDelProducto({
   variantes,
   colores,
   categoriaConColor = null,
+  marcaDeAgua = false,
   abrirAlta = false,
 }: {
   productId: string;
@@ -133,6 +143,11 @@ export function VariantesDelProducto({
    * (`categoriaQueSeVendePorColor`). Con una variante «Único», avisa.
    */
   categoriaConColor?: string | null;
+  /**
+   * Si las fotos que se suban ahora salen con marca de agua (RF-39). Se
+   * avisa una vez para toda la sección y no bloquea nada.
+   */
+  marcaDeAgua?: boolean;
   /** Llegó `?agregar=color`: el alta termina acá y sigue sola. */
   abrirAlta?: boolean;
 }) {
@@ -247,6 +262,7 @@ export function VariantesDelProducto({
     <TarjetaDeSeccion
       id="colores-y-stock"
       titulo="Colores y stock"
+      insignias={<AvisoDeMarcaDeAgua activa={marcaDeAgua} />}
       ayuda="Cada color lleva su stock y sus fotos. Si el producto no se vende por color, alcanza con uno solo."
       acciones={
         variantes.length === 0 ? null : (
@@ -1185,5 +1201,32 @@ function EdicionDeVariante({
         )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+/**
+ * Si las fotos que se suban ahora salen con marca de agua — RF-39.
+ *
+ * **Avisa, no bloquea**: es todo o nada, y para subir una sin marca se apaga
+ * desde su pantalla, que es a donde lleva. Es un enlace con forma de
+ * insignia y no una insignia suelta, porque lo siguiente que se quiere hacer
+ * al leerla es cambiarla o ver cómo queda. El estado va escrito y con un
+ * ícono distinto, no solo en otro color (§9). Verde y rojo, para que se
+ * note de un vistazo (2026-11-13).
+ */
+function AvisoDeMarcaDeAgua({ activa }: { activa: boolean }) {
+  return (
+    <Link
+      href="/admin/configuracion/marca-de-agua"
+      className="rounded-pill outline-none focus-visible:shadow-focus"
+    >
+      <Badge
+        tone={activa ? "success" : "danger"}
+        className="underline-offset-2 hover:underline"
+      >
+        {activa ? <Droplets aria-hidden /> : <DropletOff aria-hidden />}
+        {activa ? "Marca de agua activada" : "Marca de agua desactivada"}
+      </Badge>
+    </Link>
   );
 }

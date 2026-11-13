@@ -182,6 +182,17 @@ Las fotos se convierten **al subirlas**, no al mostrarlas (TS §9).
    de la tienda (`app/vista-previa/`) porque desde el de Storage WhatsApp no
    la mostraba.
 
+**La marca de agua** (RF-39, TS §9.6) se pone dentro de `procesarImagen`,
+sobre cada versión ya redimensionada y antes de codificarla
+(`modules/media/marca-de-agua.ts`). Solo la piden las fotos de producto, y
+solo en `card` y `detail`. La configuración se lee en cada subida
+(`modules/marca-de-agua/service.ts`), sin caché que invalidar. Las imágenes
+de la biblioteca se guardan una vez en `marcas-de-agua/`, en WEBP sin
+pérdida, y se leen de Storage con `get`, con una memoria chica en el
+proceso: la clave no cambia nunca. La vista previa del panel
+(`app/api/admin/marca-de-agua/vista-previa`) llama a la misma función, así
+que lo que se ve es lo que se guarda.
+
 **La foto de perfil** (F5.9) usa la misma canalización con otra puerta:
 `app/api/mi-cuenta/foto`, que acepta a cualquier cuenta pero solo sobre sí
 misma, con un tope de 10 subidas cada 10 minutos. Sale **una sola versión**,

@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState, useTransition } from "react";
 
-import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import {
+  Apartado,
+  PieDeGuardado,
+  TarjetaDeSeccion,
+} from "@/components/admin/tarjeta";
 import {
   CAMPOS_DE_DIRECCION,
   CamposDeDireccion,
@@ -221,221 +225,225 @@ export function AltaDeOrdenManual() {
   const e = errores.campos;
 
   return (
-    <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
-      <TarjetaDeSeccion id="productos" titulo="Productos">
-        {renglones.length === 0 ? (
-          <p className="rounded-panel-card border border-dashed border-border px-3 py-6 text-center text-body-sm text-ink-secondary">
-            Agregá los productos de la venta. Podés cambiarles el precio: lo que
-            se guarda es lo que se cobró.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {renglones.map((r) => (
-              <RenglonDeLaOrden
-                key={r.key}
-                renglon={r}
-                estado={estado}
-                alCambiar={(cambios) =>
-                  setRenglones((previos) =>
-                    previos.map((otro) =>
-                      otro.key === r.key ? { ...otro, ...cambios } : otro,
-                    ),
-                  )
-                }
-                alQuitar={() =>
-                  setRenglones((previos) =>
-                    previos.filter((otro) => otro.key !== r.key),
-                  )
-                }
-              />
-            ))}
-          </ul>
-        )}
-
-        {/* Debajo de la lista y no arriba: los renglones son lo que se
-            revisa, y el botón queda donde termina lo que ya se cargó. */}
-        <AgregarProductos
-          id={`${idBase}-items`}
-          renglones={renglones.length}
-          enLaOrden={enLaOrden}
-          alElegir={agregar}
-        />
-
-        <FieldError id={`${idBase}-items-error`}>{e.items}</FieldError>
-
-        {renglones.length > 0 ? (
-          <div className="flex items-baseline justify-between border-t border-border pt-3">
-            <span className="text-body-sm text-ink">Total</span>
-            <span className="text-body-lg font-medium text-ink tabular-nums">
-              {formatMoney(total)}
-            </span>
-          </div>
-        ) : null}
-      </TarjetaDeSeccion>
-
-      <TarjetaDeSeccion
-        id="comprador"
-        titulo="Comprador"
-        ayuda="Los datos son de este pedido. Si tiene cuenta, asociala para que le aparezca en «Mis compras»."
-      >
-        <BuscadorDeComprador
-          elegido={cuenta}
-          alElegir={elegirCuenta}
-          alQuitar={quitarCuenta}
-        />
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Campo
-            id={`${idBase}-nombre`}
-            etiqueta="A nombre de"
-            valor={nombre}
-            alCambiar={setNombre}
-            error={e.nombre}
-            autoComplete="off"
-          />
-          <Campo
-            id={`${idBase}-telefono`}
-            etiqueta="Teléfono"
-            valor={telefono}
-            alCambiar={setTelefono}
-            error={e.telefono}
-            type="tel"
-            ayuda="Con característica, por ejemplo 2920 55 5555."
-          />
-        </div>
-        <Campo
-          id={`${idBase}-email`}
-          etiqueta="Email (opcional)"
-          valor={email}
-          alCambiar={setEmail}
-          error={e.email}
-          type="email"
-        />
-      </TarjetaDeSeccion>
-
-      <TarjetaDeSeccion id="entrega" titulo="Entrega">
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Opcion
-            id={`${idBase}-entrega`}
-            nombre="entrega"
-            elegida={entrega === "retiro"}
-            alElegir={() => setEntrega("retiro")}
-            titulo="Retira"
-            detalle="Lo pasa a buscar por el punto de entrega."
-          />
-          <Opcion
-            nombre="entrega"
-            elegida={entrega === "envio"}
-            alElegir={() => setEntrega("envio")}
-            titulo="Envío"
-            detalle="Hace falta la dirección: sin ella la orden se lee como retiro."
-          />
-        </div>
-
-        {entrega === "envio" ? (
-          <div className="flex flex-col gap-3">
-            {cuenta && cuenta.direcciones.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {cuenta.direcciones.map((d) => (
-                  <Opcion
-                    key={d.id}
-                    nombre="direccion"
-                    elegida={direccionGuardada === d.id}
-                    alElegir={() => setDireccionGuardada(d.id)}
-                    titulo={d.label}
-                    detalle={`${d.street} ${d.number}${
-                      d.apartment ? `, ${d.apartment}` : ""
-                    } — ${d.city}`}
-                  />
-                ))}
-                <Opcion
-                  nombre="direccion"
-                  elegida={direccionGuardada === null}
-                  alElegir={() => setDireccionGuardada(null)}
-                  titulo="Otra dirección"
-                  detalle="Se escribe acá y no se guarda en su libreta."
+    // Una sola tarjeta con «Cargar la orden» al pie (DESIGN.md, 2026-11-13):
+    // eran cinco con la barra afuera, y parecían cinco cosas sueltas.
+    <form onSubmit={enviar} noValidate className="min-w-0">
+      <TarjetaDeSeccion id="datos-de-la-orden" titulo="Datos de la orden">
+        <Apartado primero id="productos" titulo="Productos">
+          {renglones.length === 0 ? (
+            <p className="rounded-panel-card border border-dashed border-border px-3 py-6 text-center text-body-sm text-ink-secondary">
+              Agregá los productos de la venta. Podés cambiarles el precio: lo
+              que se guarda es lo que se cobró.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {renglones.map((r) => (
+                <RenglonDeLaOrden
+                  key={r.key}
+                  renglon={r}
+                  estado={estado}
+                  alCambiar={(cambios) =>
+                    setRenglones((previos) =>
+                      previos.map((otro) =>
+                        otro.key === r.key ? { ...otro, ...cambios } : otro,
+                      ),
+                    )
+                  }
+                  alQuitar={() =>
+                    setRenglones((previos) =>
+                      previos.filter((otro) => otro.key !== r.key),
+                    )
+                  }
                 />
-              </div>
-            ) : null}
+              ))}
+            </ul>
+          )}
 
-            {direccionGuardada === null ? (
-              <CamposDeDireccion
-                idBase={`${idBase}-direccion`}
-                valores={direccion}
-                alCambiar={(cambios) =>
-                  setDireccion((previa) => ({ ...previa, ...cambios }))
-                }
-                errores={erroresDeDireccion}
-              />
-            ) : null}
+          {/* Debajo de la lista y no arriba: los renglones son lo que se
+            revisa, y el botón queda donde termina lo que ya se cargó. */}
+          <AgregarProductos
+            id={`${idBase}-items`}
+            renglones={renglones.length}
+            enLaOrden={enLaOrden}
+            alElegir={agregar}
+          />
 
-            <FieldError id={`${idBase}-direccion-error`}>
-              {e.direccion}
-            </FieldError>
+          <FieldError id={`${idBase}-items-error`}>{e.items}</FieldError>
+
+          {renglones.length > 0 ? (
+            <div className="flex items-baseline justify-between border-t border-border pt-3">
+              <span className="text-body-sm text-ink">Total</span>
+              <span className="text-body-lg font-medium text-ink tabular-nums">
+                {formatMoney(total)}
+              </span>
+            </div>
+          ) : null}
+        </Apartado>
+
+        <Apartado
+          id="comprador"
+          titulo="Comprador"
+          ayuda="Los datos son de este pedido. Si tiene cuenta, asociala para que le aparezca en «Mis compras»."
+        >
+          <BuscadorDeComprador
+            elegido={cuenta}
+            alElegir={elegirCuenta}
+            alQuitar={quitarCuenta}
+          />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Campo
+              id={`${idBase}-nombre`}
+              etiqueta="A nombre de"
+              valor={nombre}
+              alCambiar={setNombre}
+              error={e.nombre}
+              autoComplete="off"
+            />
+            <Campo
+              id={`${idBase}-telefono`}
+              etiqueta="Teléfono"
+              valor={telefono}
+              alCambiar={setTelefono}
+              error={e.telefono}
+              type="tel"
+              ayuda="Con característica, por ejemplo 2920 55 5555."
+            />
           </div>
-        ) : null}
-      </TarjetaDeSeccion>
+          <Campo
+            id={`${idBase}-email`}
+            etiqueta="Email (opcional)"
+            valor={email}
+            alCambiar={setEmail}
+            error={e.email}
+            type="email"
+          />
+        </Apartado>
 
-      <TarjetaDeSeccion
-        id="como-queda"
-        titulo="Cómo queda la orden"
-        ayuda="De esto depende qué pasa con el stock."
-        data-ayuda="como-queda"
-      >
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Opcion
-            id={`${idBase}-estado`}
-            nombre="estado"
-            elegida={estado === "finalizada"}
-            alElegir={() => setEstado("finalizada")}
-            titulo="Finalizada"
-            detalle="Ya se entregó y se cobró: descuenta el stock de una."
+        <Apartado id="entrega" titulo="Entrega">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Opcion
+              id={`${idBase}-entrega`}
+              nombre="entrega"
+              elegida={entrega === "retiro"}
+              alElegir={() => setEntrega("retiro")}
+              titulo="Retira"
+              detalle="Lo pasa a buscar por el punto de entrega."
+            />
+            <Opcion
+              nombre="entrega"
+              elegida={entrega === "envio"}
+              alElegir={() => setEntrega("envio")}
+              titulo="Envío"
+              detalle="Hace falta la dirección: sin ella la orden se lee como retiro."
+            />
+          </div>
+
+          {entrega === "envio" ? (
+            <div className="flex flex-col gap-3">
+              {cuenta && cuenta.direcciones.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {cuenta.direcciones.map((d) => (
+                    <Opcion
+                      key={d.id}
+                      nombre="direccion"
+                      elegida={direccionGuardada === d.id}
+                      alElegir={() => setDireccionGuardada(d.id)}
+                      titulo={d.label}
+                      detalle={`${d.street} ${d.number}${
+                        d.apartment ? `, ${d.apartment}` : ""
+                      } — ${d.city}`}
+                    />
+                  ))}
+                  <Opcion
+                    nombre="direccion"
+                    elegida={direccionGuardada === null}
+                    alElegir={() => setDireccionGuardada(null)}
+                    titulo="Otra dirección"
+                    detalle="Se escribe acá y no se guarda en su libreta."
+                  />
+                </div>
+              ) : null}
+
+              {direccionGuardada === null ? (
+                <CamposDeDireccion
+                  idBase={`${idBase}-direccion`}
+                  valores={direccion}
+                  alCambiar={(cambios) =>
+                    setDireccion((previa) => ({ ...previa, ...cambios }))
+                  }
+                  errores={erroresDeDireccion}
+                />
+              ) : null}
+
+              <FieldError id={`${idBase}-direccion-error`}>
+                {e.direccion}
+              </FieldError>
+            </div>
+          ) : null}
+        </Apartado>
+
+        <Apartado
+          id="como-queda"
+          titulo="Cómo queda la orden"
+          ayuda="De esto depende qué pasa con el stock."
+          data-ayuda="como-queda"
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Opcion
+              id={`${idBase}-estado`}
+              nombre="estado"
+              elegida={estado === "finalizada"}
+              alElegir={() => setEstado("finalizada")}
+              titulo="Finalizada"
+              detalle="Ya se entregó y se cobró: descuenta el stock de una."
+            />
+            <Opcion
+              nombre="estado"
+              elegida={estado === "activa"}
+              alElegir={() => setEstado("activa")}
+              titulo="Activa"
+              detalle="Falta entregarla: reserva el stock hasta que la finalices."
+            />
+          </div>
+          <FieldError id={`${idBase}-estado-error`}>{e.estado}</FieldError>
+        </Apartado>
+
+        <Apartado id="notas" titulo="Notas (opcional)">
+          <Textarea
+            id={`${idBase}-notas`}
+            value={notas}
+            aria-invalid={e.notas ? true : undefined}
+            aria-describedby={e.notas ? `${idBase}-notas-error` : undefined}
+            onChange={(ev) => setNotas(ev.target.value)}
+            maxLength={MAXIMO_DE_NOTAS}
+            className="min-h-16"
+            placeholder="Lo que haga falta recordar de esta venta."
           />
-          <Opcion
-            nombre="estado"
-            elegida={estado === "activa"}
-            alElegir={() => setEstado("activa")}
-            titulo="Activa"
-            detalle="Falta entregarla: reserva el stock hasta que la finalices."
-          />
+          <FieldError id={`${idBase}-notas-error`}>{e.notas}</FieldError>
+        </Apartado>
+
+        <div ref={errorGeneral} tabIndex={-1} className="outline-none">
+          <FieldError>{errores.general}</FieldError>
         </div>
-        <FieldError id={`${idBase}-estado-error`}>{e.estado}</FieldError>
-      </TarjetaDeSeccion>
 
-      <TarjetaDeSeccion id="notas" titulo="Notas (opcional)">
-        <Textarea
-          id={`${idBase}-notas`}
-          value={notas}
-          aria-invalid={e.notas ? true : undefined}
-          aria-describedby={e.notas ? `${idBase}-notas-error` : undefined}
-          onChange={(ev) => setNotas(ev.target.value)}
-          maxLength={MAXIMO_DE_NOTAS}
-          className="min-h-16"
-          placeholder="Lo que haga falta recordar de esta venta."
-        />
-        <FieldError id={`${idBase}-notas-error`}>{e.notas}</FieldError>
-      </TarjetaDeSeccion>
-
-      <div ref={errorGeneral} tabIndex={-1} className="outline-none">
-        <FieldError>{errores.general}</FieldError>
-      </div>
-
-      {/* En el panel la acción principal va a la derecha, y el escape queda a
+        {/* En el panel la acción principal va a la derecha, y el escape queda a
           mano: cancelar es un enlace y no un botón, porque no hace nada, va a
           otro lado. */}
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button asChild variant="tertiary">
-          <Link href="/admin/ordenes">Cancelar</Link>
-        </Button>
-        <Button
-          type="submit"
-          variant="brand"
-          loading={guardando}
-          loadingLabel="Guardando"
-        >
-          Cargar la orden
-        </Button>
-      </div>
+        <PieDeGuardado>
+          <Button asChild variant="tertiary">
+            <Link href="/admin/ordenes">Cancelar</Link>
+          </Button>
+          <Button
+            type="submit"
+            variant="brand"
+            loading={guardando}
+            loadingLabel="Guardando"
+          >
+            Cargar la orden
+          </Button>
+        </PieDeGuardado>
+      </TarjetaDeSeccion>
     </form>
   );
 }

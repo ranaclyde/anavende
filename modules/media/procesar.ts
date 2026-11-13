@@ -3,7 +3,12 @@ import "server-only";
 import sharp from "sharp";
 
 import { domainError } from "@/lib/errors";
-import { TAMANOS, type Tamano } from "@/modules/media/tamanos";
+import { ponerMarca, type CapaLista } from "@/modules/media/marca-de-agua";
+import {
+  SUFIJOS_CON_MARCA,
+  TAMANOS,
+  type Tamano,
+} from "@/modules/media/tamanos";
 import { validarArchivo } from "@/modules/media/validar";
 
 /**
@@ -69,6 +74,11 @@ export type ImagenProcesada = {
 export async function procesarImagen(
   entrada: Buffer,
   tamanos: readonly Tamano[] = TAMANOS,
+  /**
+   * Las capas de la marca de agua (RF-39, §9.6), o nada. Solo las fotos de
+   * producto la pasan; se aplica a las versiones de `SUFIJOS_CON_MARCA`.
+   */
+  marca: readonly CapaLista[] = [],
 ): Promise<ImagenProcesada> {
   validarArchivo(entrada);
 
@@ -133,12 +143,24 @@ export async function procesarImagen(
             : { width: ancho, fit: "inside", withoutEnlargement: true },
       );
 
+    // Con marca, la versión se redimensiona primero a píxeles crudos y la
+    // marca se pega encima: el tamaño de cada capa sale del tamaño final, que
+    // recién se conoce acá (`ponerMarca`).
+    const conMarca =
+      marca.length > 0 && formato !== "jpeg" && SUFIJOS_CON_MARCA.has(sufijo);
+    const lista = conMarca
+      ? await ponerMarca(
+          await recortada.raw().toBuffer({ resolveWithObject: true }),
+          marca,
+        )
+      : recortada;
+
     const { data, info } = await (
       formato === "jpeg"
         ? // Sin canal alfa: un PNG con fondo transparente sale sobre el
           // burdeos y no sobre negro, que es a lo que cae JPEG solo.
-          recortada.flatten({ background: FONDO_OG }).jpeg({ quality: calidad })
-        : recortada.webp({ quality: calidad })
+          lista.flatten({ background: FONDO_OG }).jpeg({ quality: calidad })
+        : lista.webp({ quality: calidad })
     ).toBuffer({ resolveWithObject: true });
 
     versiones.push({

@@ -13,6 +13,7 @@ import { paymentMethods } from "@/db/schema/settings";
 import { userProfiles } from "@/db/schema/users";
 import { domainError } from "@/lib/errors";
 import { almacenamiento } from "@/lib/storage";
+import { marcaParaSubir } from "@/modules/marca-de-agua/service";
 import { procesarImagen } from "@/modules/media/procesar";
 import {
   claveBase,
@@ -154,7 +155,11 @@ export async function publicarImagenDeVariante({
     });
   }
 
-  const procesada = await procesarImagen(archivo);
+  // La marca de agua se lee en cada subida (RF-39, §9.6): prenderla o
+  // cambiarla vale desde la próxima foto. Solo las fotos de producto la
+  // piden; logos, categorías y perfiles no pasan por acá.
+  const marca = await marcaParaSubir();
+  const procesada = await procesarImagen(archivo, undefined, marca);
 
   // El id se genera acá y no lo devuelve la base: la clave de Storage lo
   // necesita antes de que exista la fila, y pedirle a Postgres un UUID suelto
@@ -177,6 +182,7 @@ export async function publicarImagenDeVariante({
         // Se agrega al final. Reordenar es una acción aparte (RF-17), no un
         // efecto de subir.
         sortOrder: estado.n,
+        hasWatermark: marca.length > 0,
       })
       .returning();
 

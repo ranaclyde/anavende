@@ -14,6 +14,11 @@ import { crearAlmacenamientoSupabase } from "@/lib/storage/supabase";
  */
 export interface ObjectStorage {
   put(key: string, body: Buffer, contentType: string): Promise<void>;
+  /**
+   * Lee un objeto entero. Lo agregó la marca de agua (RF-39, §9.6): es la
+   * única imagen que el servidor vuelve a leer después de guardarla.
+   */
+  get(key: string): Promise<Buffer>;
   delete(key: string): Promise<void>;
   publicUrl(key: string): string;
 }

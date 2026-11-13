@@ -11,7 +11,7 @@ import {
   EditorDeDescripcion,
   leerMarkdown,
 } from "@/components/admin/productos/editor";
-import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import { PieDeGuardado, TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
@@ -82,7 +82,8 @@ export function FormularioDeTextoLegal({
   }
 
   return (
-    <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
+    // «Guardar» adentro de la tarjeta y al pie (DESIGN.md, 2026-11-13).
+    <form onSubmit={enviar} noValidate className="min-w-0">
       <TarjetaDeSeccion
         id={`${idDelCampo}-titulo`}
         titulo={titulo}
@@ -116,24 +117,28 @@ export function FormularioDeTextoLegal({
           largo
         />
         <FieldError id={idDelError}>{error}</FieldError>
-      </TarjetaDeSeccion>
 
-      <div className="flex items-center justify-end gap-3">
-        <EstadoDeGuardado
-          estado={
-            tocado ? "sin-guardar" : seGuardoRecien ? "actualizado" : "guardado"
-          }
-        />
-        <Button
-          type="submit"
-          variant="brand"
-          loading={enviando}
-          loadingLabel="Guardando"
-          disabled={!tocado}
-        >
-          Guardar cambios
-        </Button>
-      </div>
+        <PieDeGuardado>
+          <EstadoDeGuardado
+            estado={
+              tocado
+                ? "sin-guardar"
+                : seGuardoRecien
+                  ? "actualizado"
+                  : "guardado"
+            }
+          />
+          <Button
+            type="submit"
+            variant="brand"
+            loading={enviando}
+            loadingLabel="Guardando"
+            disabled={!tocado}
+          >
+            Guardar cambios
+          </Button>
+        </PieDeGuardado>
+      </TarjetaDeSeccion>
     </form>
   );
 }

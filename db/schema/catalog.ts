@@ -324,6 +324,8 @@ export const variantImages = pgTable(
     height: integer("height").notNull(),
     bytes: integer("bytes").notNull(),
     sortOrder: integer("sort_order").notNull().default(0),
+    /** Se subió con la marca de agua puesta (RF-39). No se puede sacar. */
+    hasWatermark: boolean("has_watermark").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

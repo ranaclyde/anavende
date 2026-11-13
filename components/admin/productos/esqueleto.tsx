@@ -8,20 +8,20 @@ import { Skeleton } from "@/components/ui/skeleton";
  * (`FormularioDeProducto`). Con una copia por pantalla, el día que el
  * formulario suma una sección hay que acordarse de dos lugares.
  *
- * Son las cuatro secciones de `formulario.tsx` —datos, precio, descripción y
- * publicación— con su alto real, más la barra de acciones al pie.
+ * Es la tarjeta de `formulario.tsx` —datos, y los apartados de precio,
+ * descripción y publicación— con su alto real, y la barra de acciones al pie
+ * y adentro, como el formulario desde el 2026-11-13.
  */
 export function EsqueletoDeFormularioDeProducto() {
   return (
-    <div className="flex flex-col gap-6">
+    <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
       {/* Datos del producto: nombre, y marca y categoría en dos columnas. */}
-      <Seccion titulo="w-40">
+      <Skeleton className="h-6 w-40" />
+      <Campo etiqueta="w-20" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Campo etiqueta="w-16" />
         <Campo etiqueta="w-20" />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Campo etiqueta="w-16" />
-          <Campo etiqueta="w-20" />
-        </div>
-      </Seccion>
+      </div>
 
       {/* Precio y descuento, también en dos columnas. */}
       <Seccion titulo="w-20">
@@ -54,14 +54,15 @@ export function EsqueletoDeFormularioDeProducto() {
         ))}
       </Seccion>
 
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
         <Skeleton className="h-10 w-24 rounded-panel-control" />
         <Skeleton className="h-10 w-36 rounded-panel-control" />
       </div>
-    </div>
+    </section>
   );
 }
 
+/** Un apartado: la línea, su título en chico y sus campos. */
 function Seccion({
   titulo,
   ayuda,
@@ -73,13 +74,13 @@ function Seccion({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
+    <div className="flex flex-col gap-4 border-t border-border pt-4">
       <div className="flex flex-col gap-1">
-        <Skeleton className={`h-6 ${titulo}`} />
+        <Skeleton className={`h-5 ${titulo}`} />
         {ayuda ? <Skeleton className="h-5 w-full max-w-96" /> : null}
       </div>
       {children}
-    </section>
+    </div>
   );
 }
 

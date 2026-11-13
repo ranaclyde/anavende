@@ -3,7 +3,7 @@
 import { useId, useRef, useState, useTransition } from "react";
 
 import { EstadoDeGuardado } from "@/components/admin/estado-de-guardado";
-import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import { Apartado, TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError } from "@/components/ui/field-error";
@@ -226,217 +226,228 @@ export function FormularioDeConfiguracion({
   }
 
   return (
-    <form onSubmit={enviar} noValidate className="flex flex-col gap-4">
-      {guardado === null ? <SinConfigurar umbral={umbralPorDefecto} /> : null}
+    // **Una tarjeta, con «Guardar» adentro y al pie**: lo que se guarda con
+    // un botón se ve como una sola cosa. Eran tres tarjetas con la barra
+    // afuera, y debajo dos más que surten efecto solas; parecían cinco
+    // secciones sueltas y no se sabía qué guardaba el botón (2026-11-11).
+    <form onSubmit={enviar} noValidate className="min-w-0">
+      <TarjetaDeSeccion id="datos-de-la-tienda" titulo="Datos de la tienda">
+        {guardado === null ? <SinConfigurar umbral={umbralPorDefecto} /> : null}
 
-      {/* ── Lo que ve el comprador ───────────────────────────────────── */}
-      <TarjetaDeSeccion
-        id="contacto"
-        titulo="Contacto"
-        ayuda="Es lo único de esta pantalla que ve el comprador."
-      >
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={campo("whatsappNumber").id}>Número de WhatsApp</Label>
-          <Input
-            {...campo("whatsappNumber")}
-            type="tel"
-            inputMode="tel"
-            autoComplete="off"
-            value={whatsapp}
-            onChange={escribir("whatsappNumber", setWhatsapp)}
-            className="sm:max-w-64"
-          />
-          {errores.campos.whatsappNumber ? (
-            <FieldError id={`${idBase}-whatsappNumber-error`}>
-              {errores.campos.whatsappNumber}
-            </FieldError>
-          ) : (
-            <FieldHint id={`${idBase}-whatsappNumber-ayuda`}>
-              Es el número al que llegan las consultas y las compras por
-              WhatsApp. Escribilo como te salga: se guarda siempre igual.
-            </FieldHint>
-          )}
-        </div>
-
-        {/* Las dos redes van al pie de la tienda, debajo del logo. Mismo
-            criterio que el WhatsApp: se pega como venga y vuelve normalizado. */}
-        {(
-          [
-            ["instagramUrl", "Instagram", instagram, setInstagram],
-            ["facebookUrl", "Facebook", facebook, setFacebook],
-          ] as const
-        ).map(([nombre, red, valor, poner]) => (
-          <div key={nombre} className="flex flex-col gap-1.5">
-            <Label htmlFor={campo(nombre).id}>
-              {red}
-              <span className="font-normal text-ink-secondary">(opcional)</span>
+        {/* ── Lo que ve el comprador ───────────────────────────────────── */}
+        <Apartado
+          primero
+          id="contacto"
+          titulo="Contacto"
+          ayuda="Es lo único de esta pantalla que ve el comprador."
+        >
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={campo("whatsappNumber").id}>
+              Número de WhatsApp
             </Label>
             <Input
-              {...campo(nombre)}
-              type="text"
-              inputMode="url"
+              {...campo("whatsappNumber")}
+              type="tel"
+              inputMode="tel"
               autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              value={valor}
-              onChange={escribir(nombre, poner)}
-              placeholder={`${red.toLowerCase()}.com/anavende`}
-              className="sm:max-w-96"
+              value={whatsapp}
+              onChange={escribir("whatsappNumber", setWhatsapp)}
+              className="sm:max-w-64"
             />
-            {errores.campos[nombre] ? (
-              <FieldError id={`${idBase}-${nombre}-error`}>
-                {errores.campos[nombre]}
+            {errores.campos.whatsappNumber ? (
+              <FieldError id={`${idBase}-whatsappNumber-error`}>
+                {errores.campos.whatsappNumber}
               </FieldError>
             ) : (
-              <FieldHint id={`${idBase}-${nombre}-ayuda`}>
-                Pegá el enlace de tu perfil o escribí tu usuario. Aparece en el
-                pie de la tienda; vacío, no se muestra.
+              <FieldHint id={`${idBase}-whatsappNumber-ayuda`}>
+                Es el número al que llegan las consultas y las compras por
+                WhatsApp. Escribilo como te salga: se guarda siempre igual.
               </FieldHint>
             )}
           </div>
-        ))}
-      </TarjetaDeSeccion>
 
-      {/* ── Las escenas por fecha (F9.5) ──────────────────────────────── */}
-      <TarjetaDeSeccion
-        id="fechas"
-        titulo="Fechas especiales"
-        ayuda="En estas fechas la tienda se decora sola: cambian los dibujos de la portada y el logo lleva un adorno."
-      >
-        <ul className="flex flex-col gap-1">
-          {FECHAS.map(({ escena, nombre, columna }) => (
-            <li key={escena} className="flex min-h-11 items-start gap-3 py-1">
-              <Checkbox
-                id={`${idBase}-${columna}`}
-                checked={escenas[columna]}
-                onCheckedChange={(v) =>
-                  setEscenas((previas) => ({
-                    ...previas,
-                    [columna]: v === true,
-                  }))
-                }
-                aria-describedby={`${idBase}-${columna}-ayuda`}
-                className="mt-0.5"
+          {/* Las dos redes van al pie de la tienda, debajo del logo. Mismo
+            criterio que el WhatsApp: se pega como venga y vuelve normalizado. */}
+          {(
+            [
+              ["instagramUrl", "Instagram", instagram, setInstagram],
+              ["facebookUrl", "Facebook", facebook, setFacebook],
+            ] as const
+          ).map(([nombre, red, valor, poner]) => (
+            <div key={nombre} className="flex flex-col gap-1.5">
+              <Label htmlFor={campo(nombre).id}>
+                {red}
+                <span className="font-normal text-ink-secondary">
+                  (opcional)
+                </span>
+              </Label>
+              <Input
+                {...campo(nombre)}
+                type="text"
+                inputMode="url"
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                value={valor}
+                onChange={escribir(nombre, poner)}
+                placeholder={`${red.toLowerCase()}.com/anavende`}
+                className="sm:max-w-96"
               />
-              <div className="flex flex-col gap-0.5">
-                <label
-                  htmlFor={`${idBase}-${columna}`}
-                  className="text-body-sm font-medium text-ink"
-                >
-                  {nombre}
-                </label>
-                <FieldHint id={`${idBase}-${columna}-ayuda`}>
-                  {periodos[escena]}
+              {errores.campos[nombre] ? (
+                <FieldError id={`${idBase}-${nombre}-error`}>
+                  {errores.campos[nombre]}
+                </FieldError>
+              ) : (
+                <FieldHint id={`${idBase}-${nombre}-ayuda`}>
+                  Pegá el enlace de tu perfil o escribí tu usuario. Aparece en
+                  el pie de la tienda; vacío, no se muestra.
                 </FieldHint>
-              </div>
-            </li>
+              )}
+            </div>
           ))}
-        </ul>
-      </TarjetaDeSeccion>
+        </Apartado>
 
-      {/* ── Lo que ve solo la vendedora ──────────────────────────────── */}
-      <TarjetaDeSeccion
-        id="avisos"
-        titulo="Avisos"
-        ayuda="Nada de esto se muestra en la tienda."
-      >
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={campo("adminNotificationEmail").id}>
-            Email para los avisos
-          </Label>
-          <Input
-            {...campo("adminNotificationEmail")}
-            type="email"
-            autoComplete="off"
-            value={email}
-            onChange={escribir("adminNotificationEmail", setEmail)}
-            className="sm:max-w-80"
-          />
-          {errores.campos.adminNotificationEmail ? (
-            <FieldError id={`${idBase}-adminNotificationEmail-error`}>
-              {errores.campos.adminNotificationEmail}
-            </FieldError>
-          ) : (
-            <FieldHint id={`${idBase}-adminNotificationEmail-ayuda`}>
-              Acá te llegan las órdenes nuevas. Puede ser distinto del email con
-              el que entrás al panel.
-            </FieldHint>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={campo("lowStockThreshold").id}>
-            Avisar «stock bajo» a partir de
-          </Label>
-          <div className="flex items-center gap-2">
-            <Input
-              {...campo("lowStockThreshold")}
-              // La unidad está al lado del campo y no en la etiqueta, así que
-              // sin esto un lector de pantalla lee «avisar stock bajo a partir
-              // de: 3» y nunca dice de qué. Se suma a lo que ya describe al
-              // campo en vez de reemplazarlo.
-              aria-describedby={`${
-                errores.campos.lowStockThreshold
-                  ? `${idBase}-lowStockThreshold-error`
-                  : `${idBase}-lowStockThreshold-ayuda`
-              } ${idBase}-unidades`}
-              // `inputMode` y no `type="number"`, por lo mismo que el stock de
-              // una variante: el campo numérico del navegador sube y baja con
-              // la rueda del mouse encima, y acá eso cambiaría el umbral de
-              // todo el catálogo mientras alguien baja la página.
-              inputMode="numeric"
-              autoComplete="off"
-              maxLength={3}
-              value={umbral}
-              onChange={escribir("lowStockThreshold", setUmbral)}
-              className="w-20 tabular-nums"
-            />
-            <span
-              id={`${idBase}-unidades`}
-              className="text-body-sm text-ink-secondary"
-            >
-              unidades
-            </span>
-          </div>
-          {errores.campos.lowStockThreshold ? (
-            <FieldError id={`${idBase}-lowStockThreshold-error`}>
-              {errores.campos.lowStockThreshold}
-            </FieldError>
-          ) : (
-            <FieldHint id={`${idBase}-lowStockThreshold-ayuda`}>
-              <Ejemplo umbral={umbral} />
-            </FieldHint>
-          )}
-        </div>
-      </TarjetaDeSeccion>
-
-      <div ref={errorGeneral} tabIndex={-1} className="outline-none">
-        <FieldError>{errores.general}</FieldError>
-      </div>
-
-      <div className="flex items-center justify-end gap-3">
-        {/* Por qué «Guardar» está apagado, o que hay algo por guardar,
-            escrito y no colgado de un `title` (§8). */}
-        <EstadoDeGuardado
-          estado={
-            !sinCambios
-              ? "sin-guardar"
-              : seGuardoRecien
-                ? "actualizado"
-                : "guardado"
-          }
-        />
-
-        <Button
-          type="submit"
-          variant="brand"
-          loading={enviando}
-          loadingLabel="Guardando"
-          disabled={sinCambios}
+        {/* ── Las escenas por fecha (F9.5) ──────────────────────────────── */}
+        <Apartado
+          id="fechas"
+          titulo="Fechas especiales"
+          ayuda="En estas fechas la tienda se decora sola: cambian los dibujos de la portada y el logo lleva un adorno."
         >
-          Guardar cambios
-        </Button>
-      </div>
+          <ul className="flex flex-col gap-1">
+            {FECHAS.map(({ escena, nombre, columna }) => (
+              <li key={escena} className="flex min-h-11 items-start gap-3 py-1">
+                <Checkbox
+                  id={`${idBase}-${columna}`}
+                  checked={escenas[columna]}
+                  onCheckedChange={(v) =>
+                    setEscenas((previas) => ({
+                      ...previas,
+                      [columna]: v === true,
+                    }))
+                  }
+                  aria-describedby={`${idBase}-${columna}-ayuda`}
+                  className="mt-0.5"
+                />
+                <div className="flex flex-col gap-0.5">
+                  <label
+                    htmlFor={`${idBase}-${columna}`}
+                    className="text-body-sm font-medium text-ink"
+                  >
+                    {nombre}
+                  </label>
+                  <FieldHint id={`${idBase}-${columna}-ayuda`}>
+                    {periodos[escena]}
+                  </FieldHint>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Apartado>
+
+        {/* ── Lo que ve solo la vendedora ──────────────────────────────── */}
+        <Apartado
+          id="avisos"
+          titulo="Avisos"
+          ayuda="Nada de esto se muestra en la tienda."
+        >
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={campo("adminNotificationEmail").id}>
+              Email para los avisos
+            </Label>
+            <Input
+              {...campo("adminNotificationEmail")}
+              type="email"
+              autoComplete="off"
+              value={email}
+              onChange={escribir("adminNotificationEmail", setEmail)}
+              className="sm:max-w-80"
+            />
+            {errores.campos.adminNotificationEmail ? (
+              <FieldError id={`${idBase}-adminNotificationEmail-error`}>
+                {errores.campos.adminNotificationEmail}
+              </FieldError>
+            ) : (
+              <FieldHint id={`${idBase}-adminNotificationEmail-ayuda`}>
+                Acá te llegan las órdenes nuevas. Puede ser distinto del email
+                con el que entrás al panel.
+              </FieldHint>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={campo("lowStockThreshold").id}>
+              Avisar «stock bajo» a partir de
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input
+                {...campo("lowStockThreshold")}
+                // La unidad está al lado del campo y no en la etiqueta, así que
+                // sin esto un lector de pantalla lee «avisar stock bajo a partir
+                // de: 3» y nunca dice de qué. Se suma a lo que ya describe al
+                // campo en vez de reemplazarlo.
+                aria-describedby={`${
+                  errores.campos.lowStockThreshold
+                    ? `${idBase}-lowStockThreshold-error`
+                    : `${idBase}-lowStockThreshold-ayuda`
+                } ${idBase}-unidades`}
+                // `inputMode` y no `type="number"`, por lo mismo que el stock de
+                // una variante: el campo numérico del navegador sube y baja con
+                // la rueda del mouse encima, y acá eso cambiaría el umbral de
+                // todo el catálogo mientras alguien baja la página.
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={3}
+                value={umbral}
+                onChange={escribir("lowStockThreshold", setUmbral)}
+                className="w-20 tabular-nums"
+              />
+              <span
+                id={`${idBase}-unidades`}
+                className="text-body-sm text-ink-secondary"
+              >
+                unidades
+              </span>
+            </div>
+            {errores.campos.lowStockThreshold ? (
+              <FieldError id={`${idBase}-lowStockThreshold-error`}>
+                {errores.campos.lowStockThreshold}
+              </FieldError>
+            ) : (
+              <FieldHint id={`${idBase}-lowStockThreshold-ayuda`}>
+                <Ejemplo umbral={umbral} />
+              </FieldHint>
+            )}
+          </div>
+        </Apartado>
+
+        <div ref={errorGeneral} tabIndex={-1} className="outline-none">
+          <FieldError>{errores.general}</FieldError>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
+          {/* Por qué «Guardar» está apagado, o que hay algo por guardar,
+            escrito y no colgado de un `title` (§8). */}
+          <EstadoDeGuardado
+            estado={
+              !sinCambios
+                ? "sin-guardar"
+                : seGuardoRecien
+                  ? "actualizado"
+                  : "guardado"
+            }
+          />
+
+          <Button
+            type="submit"
+            variant="brand"
+            loading={enviando}
+            loadingLabel="Guardando"
+            disabled={sinCambios}
+          >
+            Guardar cambios
+          </Button>
+        </div>
+      </TarjetaDeSeccion>
     </form>
   );
 }

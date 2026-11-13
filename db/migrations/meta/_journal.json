@@ -204,6 +204,13 @@
       "when": 1793912275967,
       "tag": "0028_sku_del_producto",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794421645293,
+      "tag": "0029_marca_de_agua",
+      "breakpoints": true
     }
   ]
 }

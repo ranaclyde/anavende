@@ -335,6 +335,12 @@ export function datosDePrueba() {
     return fila.numero.replace(/\D/g, "");
   }
 
+  /** Borra un archivo suelto del bucket (la marca de agua, F2.16). */
+  async function borrarArchivo(clave: string): Promise<void> {
+    const { error } = await bucket.remove([clave]);
+    if (error) throw error;
+  }
+
   /**
    * Las órdenes antes que las cuentas, por el CHECK `web_order_has_user`, y
    * antes que los productos, porque sus renglones apuntan a las variantes.
@@ -396,6 +402,7 @@ export function datosDePrueba() {
     anotarDelCatalogo,
     casillaDeAvisosDePrueba,
     numeroDeWhatsApp,
+    borrarArchivo,
     desarmar,
   };
 }

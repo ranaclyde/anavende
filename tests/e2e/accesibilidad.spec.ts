@@ -122,6 +122,7 @@ const PANTALLAS: Pantalla[] = [
   { ruta: "/admin/catalogo/marcas", quien: "admin" },
   { ruta: "/admin/catalogo/medios-de-pago", quien: "admin" },
   { ruta: "/admin/configuracion", quien: "admin" },
+  { ruta: "/admin/configuracion/marca-de-agua", quien: "admin" },
   { ruta: "/admin/devoluciones", quien: "admin" },
   {
     ruta: "/admin/legales/[slug]",

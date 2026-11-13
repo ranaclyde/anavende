@@ -39,6 +39,16 @@ export function crearAlmacenamientoSupabase(): ObjectStorage {
       }
     },
 
+    async get(key) {
+      const { data, error } = await cliente.download(key);
+      if (error) {
+        throw new Error(`No se pudo leer «${key}»: ${error.message}`, {
+          cause: error,
+        });
+      }
+      return Buffer.from(await data.arrayBuffer());
+    },
+
     async delete(key) {
       const { error } = await cliente.remove([key]);
       if (error) {

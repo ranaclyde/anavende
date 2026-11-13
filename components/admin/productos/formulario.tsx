@@ -19,7 +19,11 @@ import {
 import { useAvisoAlSalir } from "@/components/admin/aviso-al-salir";
 import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
 import { EstadoDeGuardado } from "@/components/admin/estado-de-guardado";
-import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
+import {
+  Apartado,
+  PieDeGuardado,
+  TarjetaDeSeccion,
+} from "@/components/admin/tarjeta";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -336,7 +340,10 @@ export function FormularioDeProducto({
 
   return (
     <>
-      <form onSubmit={enviar} noValidate className="flex flex-col gap-6">
+      {/* Una sola tarjeta con «Guardar» al pie (DESIGN.md, 2026-11-13): eran
+          cuatro con la barra afuera, y al lado está «Colores y stock», que
+          se guarda solo. Con el botón suelto no se sabía qué guardaba. */}
+      <form onSubmit={enviar} noValidate className="min-w-0">
         {/* ── Qué es ────────────────────────────────────────────────── */}
         <TarjetaDeSeccion id="datos" titulo="Datos del producto">
           <div className="flex flex-col gap-1.5">
@@ -441,128 +448,127 @@ export function FormularioDeProducto({
               </FieldError>
             </div>
           </div>
-        </TarjetaDeSeccion>
 
-        {/* ── Cuánto sale ───────────────────────────────────────────── */}
-        <TarjetaDeSeccion id="precio" titulo="Precio">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor={campo("price").id}>Precio</Label>
-              <CampoDePesos>
-                <Input
-                  {...campo("price")}
-                  // `inputMode` y no `type="number"`: el número del navegador
-                  // sube y baja con la rueda del mouse sobre un precio, y en
-                  // castellano acepta el punto como separador de miles.
-                  inputMode="decimal"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  className="pl-7 tabular-nums admin:pl-7"
-                />
-              </CampoDePesos>
-              <FieldError id={`${idBase}-price-error`}>
-                {errores.campos.price}
-              </FieldError>
+          {/* ── Cuánto sale ─────────────────────────────────────────── */}
+          <Apartado id="precio" titulo="Precio y oferta">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={campo("price").id}>Precio</Label>
+                <CampoDePesos>
+                  <Input
+                    {...campo("price")}
+                    // `inputMode` y no `type="number"`: el número del navegador
+                    // sube y baja con la rueda del mouse sobre un precio, y en
+                    // castellano acepta el punto como separador de miles.
+                    inputMode="decimal"
+                    value={precio}
+                    onChange={(e) => setPrecio(e.target.value)}
+                    className="pl-7 tabular-nums admin:pl-7"
+                  />
+                </CampoDePesos>
+                <FieldError id={`${idBase}-price-error`}>
+                  {errores.campos.price}
+                </FieldError>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={campo("discount").id}>
+                  Descuento{" "}
+                  <span className="font-normal text-ink-secondary">
+                    (opcional)
+                  </span>
+                </Label>
+                <CampoDePesos>
+                  <Input
+                    {...campo("discount")}
+                    inputMode="decimal"
+                    value={descuento}
+                    onChange={(e) => setDescuento(e.target.value)}
+                    className="pl-7 tabular-nums admin:pl-7"
+                  />
+                </CampoDePesos>
+                <FieldError id={`${idBase}-discount-error`}>
+                  {errores.campos.discount}
+                </FieldError>
+                <FieldHint>
+                  Es un monto en pesos, no un porcentaje. Dejalo vacío si no hay
+                  oferta.
+                </FieldHint>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor={campo("discount").id}>
-                Descuento{" "}
-                <span className="font-normal text-ink-secondary">
-                  (opcional)
+            <ResumenDePrecio vista={vista} />
+          </Apartado>
+
+          {/* ── Cómo se cuenta ──────────────────────────────────────── */}
+          <Apartado
+            id="descripcion"
+            titulo="Descripción"
+            ayuda="Se ve en la ficha del producto. Podés usar negrita, cursiva, listas y un subtítulo."
+          >
+            <EditorDeDescripcion
+              id={`${idBase}-description`}
+              valorInicial={producto?.description ?? ""}
+              refEditor={editor}
+              alCambiar={tocarDescripcion}
+              invalido={Boolean(errores.campos.description)}
+              describedBy={
+                errores.campos.description
+                  ? `${idBase}-description-error`
+                  : undefined
+              }
+            />
+            <FieldError id={`${idBase}-description-error`}>
+              {errores.campos.description}
+            </FieldError>
+          </Apartado>
+
+          {/* ── Dónde se ve ─────────────────────────────────────────── */}
+          <Apartado id="publicacion" titulo="Publicación">
+            <label className="flex items-start gap-3">
+              <Checkbox
+                checked={activo}
+                onCheckedChange={(v) => setActivo(v === true)}
+                className="mt-0.5"
+              />
+              <span className="flex flex-col gap-0.5">
+                <span className="text-body-sm font-medium text-ink">
+                  Activo en la tienda
                 </span>
-              </Label>
-              <CampoDePesos>
-                <Input
-                  {...campo("discount")}
-                  inputMode="decimal"
-                  value={descuento}
-                  onChange={(e) => setDescuento(e.target.value)}
-                  className="pl-7 tabular-nums admin:pl-7"
-                />
-              </CampoDePesos>
-              <FieldError id={`${idBase}-discount-error`}>
-                {errores.campos.discount}
-              </FieldError>
-              <FieldHint>
-                Es un monto en pesos, no un porcentaje. Dejalo vacío si no hay
-                oferta.
-              </FieldHint>
-            </div>
+                <span className="text-caption text-ink-secondary">
+                  Si lo desactivás desaparece del sitio al instante, pero sigue
+                  acá y en las órdenes que ya lo incluyen.
+                </span>
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3">
+              <Checkbox
+                checked={destacado}
+                onCheckedChange={(v) => setDestacado(v === true)}
+                className="mt-0.5"
+              />
+              <span className="flex flex-col gap-0.5">
+                <span className="text-body-sm font-medium text-ink">
+                  Destacado
+                </span>
+                <span className="text-caption text-ink-secondary">
+                  Se adelanta en la portada y en el catálogo. Destacar no
+                  publica: si está inactivo, sigue sin aparecer.
+                </span>
+              </span>
+            </label>
+          </Apartado>
+
+          <div ref={errorGeneral} tabIndex={-1} className="outline-none">
+            <FieldError>{errores.general}</FieldError>
           </div>
 
-          <ResumenDePrecio vista={vista} />
-        </TarjetaDeSeccion>
-
-        {/* ── Cómo se cuenta ────────────────────────────────────────── */}
-        <TarjetaDeSeccion
-          id="descripcion"
-          titulo="Descripción"
-          ayuda="Se ve en la ficha del producto. Podés usar negrita, cursiva, listas y un subtítulo."
-        >
-          <EditorDeDescripcion
-            id={`${idBase}-description`}
-            valorInicial={producto?.description ?? ""}
-            refEditor={editor}
-            alCambiar={tocarDescripcion}
-            invalido={Boolean(errores.campos.description)}
-            describedBy={
-              errores.campos.description
-                ? `${idBase}-description-error`
-                : undefined
-            }
-          />
-          <FieldError id={`${idBase}-description-error`}>
-            {errores.campos.description}
-          </FieldError>
-        </TarjetaDeSeccion>
-
-        {/* ── Dónde se ve ───────────────────────────────────────────── */}
-        <TarjetaDeSeccion id="publicacion" titulo="Publicación">
-          <label className="flex items-start gap-3">
-            <Checkbox
-              checked={activo}
-              onCheckedChange={(v) => setActivo(v === true)}
-              className="mt-0.5"
-            />
-            <span className="flex flex-col gap-0.5">
-              <span className="text-body-sm font-medium text-ink">
-                Activo en la tienda
-              </span>
-              <span className="text-caption text-ink-secondary">
-                Si lo desactivás desaparece del sitio al instante, pero sigue
-                acá y en las órdenes que ya lo incluyen.
-              </span>
-            </span>
-          </label>
-
-          <label className="flex items-start gap-3">
-            <Checkbox
-              checked={destacado}
-              onCheckedChange={(v) => setDestacado(v === true)}
-              className="mt-0.5"
-            />
-            <span className="flex flex-col gap-0.5">
-              <span className="text-body-sm font-medium text-ink">
-                Destacado
-              </span>
-              <span className="text-caption text-ink-secondary">
-                Se adelanta en la portada y en el catálogo. Destacar no publica:
-                si está inactivo, sigue sin aparecer.
-              </span>
-            </span>
-          </label>
-        </TarjetaDeSeccion>
-
-        <div ref={errorGeneral} tabIndex={-1} className="outline-none">
-          <FieldError>{errores.general}</FieldError>
-        </div>
-
-        {/* En el panel la acción principal va a la derecha, y el escape queda a
+          {/* En el panel la acción principal va a la derecha, y el escape queda a
           mano: cancelar es un enlace y no un botón, porque no hace nada, va a
           otro lado. */}
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {/* Por qué «Guardar» está apagado, o que hay algo por guardar
+          <PieDeGuardado>
+            {/* Por qué «Guardar» está apagado, o que hay algo por guardar
               (§8), como en Configuración. Un producto nuevo no lleva: no
               hay nada guardado de qué hablar.
 
@@ -570,25 +576,30 @@ export function FormularioDeProducto({
               en uno solo con «Cancelar» y «Guardar cambios», «Cambios sin
               guardar» se partía en tres y «Guardado» volvía a quedar pegado a
               «Cancelar». Vacía, en el alta, no deja un renglón en blanco. */}
-          <EstadoDeGuardado
-            estado={
-              producto === null ? null : sinCambios ? "guardado" : "sin-guardar"
-            }
-            className="max-sm:basis-full max-sm:empty:hidden"
-          />
-          <Button asChild variant="tertiary">
-            <Link href="/admin/productos">Cancelar</Link>
-          </Button>
-          <Button
-            type="submit"
-            variant="brand"
-            loading={enviando}
-            loadingLabel="Guardando"
-            disabled={sinCambios}
-          >
-            {producto ? "Guardar cambios" : "Crear producto"}
-          </Button>
-        </div>
+            <EstadoDeGuardado
+              estado={
+                producto === null
+                  ? null
+                  : sinCambios
+                    ? "guardado"
+                    : "sin-guardar"
+              }
+              className="max-sm:basis-full max-sm:empty:hidden"
+            />
+            <Button asChild variant="tertiary">
+              <Link href="/admin/productos">Cancelar</Link>
+            </Button>
+            <Button
+              type="submit"
+              variant="brand"
+              loading={enviando}
+              loadingLabel="Guardando"
+              disabled={sinCambios}
+            >
+              {producto ? "Guardar cambios" : "Crear producto"}
+            </Button>
+          </PieDeGuardado>
+        </TarjetaDeSeccion>
       </form>
 
       {/* Afuera del `<form>`, aunque el drawer vaya por portal: en React los
