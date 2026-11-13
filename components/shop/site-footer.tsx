@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Isotipo } from "@/components/shop/logo";
+import { LogoHorizontal } from "@/components/shop/logo";
 import { IconoFacebook, IconoInstagram } from "@/components/ui/iconos-de-redes";
 import { PAGINAS_LEGALES } from "@/modules/content/paginas";
 import type { RedesSociales } from "@/modules/settings/queries";
@@ -94,12 +94,9 @@ export function SiteFooter({
         <div className="flex flex-col gap-8 md:flex-row md:justify-between md:gap-10">
           <div className="flex max-w-sm flex-col gap-3">
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2.5">
-                {/* Versión clara: el burdeos del original no se lee sobre
-                    esta superficie (§2.3). */}
-                <Isotipo claro />
-                <span className="text-heading">AnaVende</span>
-              </div>
+              {/* Versión clara: el burdeos no se lee sobre esta superficie
+                  (§2.3). */}
+              <LogoHorizontal claro className="self-start" />
               {/*
                 El eslogan en su forma canónica (§2.4): el pie se ve una vez y
                 tiene que decir de qué se trata, así que acá no rota. Ocupa el

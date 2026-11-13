@@ -27,7 +27,7 @@ import {
 } from "react";
 
 import { ThemeToggle } from "@/components/admin/theme";
-import { IsotipoSegunTema } from "@/components/shop/logo";
+import { Isotipo, LogoHorizontal } from "@/components/shop/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { crearPreferencia } from "@/lib/preferencia-local";
 import { cn } from "@/lib/utils";
@@ -228,12 +228,7 @@ export function AdminSidebar({
             className="inline-flex h-8 max-md:h-11 items-center gap-2.5 rounded-panel-control"
             aria-label="AnaVende, inicio del panel"
           >
-            <IsotipoSegunTema />
-            {(!colapsado || abiertoEnMovil) && (
-              <span aria-hidden className="text-body font-medium text-ink">
-                AnaVende
-              </span>
-            )}
+            {!colapsado || abiertoEnMovil ? <LogoHorizontal /> : <Isotipo />}
           </Link>
 
           <button

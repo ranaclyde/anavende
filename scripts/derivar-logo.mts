@@ -1,37 +1,69 @@
 /**
- * Genera la versión clara del logo a partir del original.
+ * Saca del logo en trazos (`lib/marca.ts`) los archivos que no pueden
+ * dibujarlo en línea — DESIGN-REFERENCE §2.3, F10.7c.
  *
- * `logo.png` es burdeos sobre transparente. Sobre el pie del sitio, que es
- * casi negro (`--ink`), eso queda ilegible: DESIGN-REFERENCE §2.3 pide una
- * versión de fondo oscuro. Se deriva del original en vez de mantenerse a
- * mano, para que las dos no se separen si el logo cambia.
+ *   public/marca/isotipo.svg         el isotipo, burdeos sobre transparente
+ *   public/marca/logo.png            el mismo, 512×512 (datos estructurados)
+ *   public/marca/logo-horizontal.png isotipo y palabra, para los correos
+ *   app/favicon.ico                  16, 32 y 48 px
  *
- * Se conserva el canal alfa del original —los bordes suavizados incluidos— y
- * se reemplaza el color por blanco.
+ * La pestaña, los correos y Google no dibujan un componente de React: por eso
+ * existen estos archivos. Se derivan en vez de mantenerse a mano para que no
+ * se separen del logo si cambia. Después de correrlo, `derivar-og.mts`.
  *
  *   npx tsx scripts/derivar-logo.mts
  */
+import { writeFile } from "node:fs/promises";
+
 import sharp from "sharp";
 
-const ORIGEN = "public/marca/logo.png";
-const DESTINO = "public/marca/logo-claro.png";
+import { svgDelIsotipo, svgHorizontal } from "../lib/marca";
 
-const { data, info } = await sharp(ORIGEN)
-  .ensureAlpha()
-  .raw()
-  .toBuffer({ resolveWithObject: true });
+/** `--brand` de DESIGN-REFERENCE §3.1. */
+const BURDEOS = "#832833";
 
-for (let i = 0; i < data.length; i += 4) {
-  data[i] = 255;
-  data[i + 1] = 255;
-  data[i + 2] = 255;
-  // El alfa queda como estaba: la forma es la misma, cambia el color.
+/** Un .ico con PNG adentro: lo aceptan todos los navegadores desde 2010. */
+async function ico(lados: number[]) {
+  const pngs = await Promise.all(
+    lados.map((lado) =>
+      sharp(Buffer.from(svgDelIsotipo(BURDEOS)), { density: 600 })
+        .resize(lado, lado)
+        .png()
+        .toBuffer(),
+    ),
+  );
+  const cabecera = Buffer.alloc(6 + 16 * lados.length);
+  cabecera.writeUInt16LE(0, 0);
+  cabecera.writeUInt16LE(1, 2);
+  cabecera.writeUInt16LE(lados.length, 4);
+  let desplazamiento = cabecera.length;
+  lados.forEach((lado, i) => {
+    const o = 6 + 16 * i;
+    cabecera.writeUInt8(lado % 256, o);
+    cabecera.writeUInt8(lado % 256, o + 1);
+    cabecera.writeUInt16LE(1, o + 4);
+    cabecera.writeUInt16LE(32, o + 6);
+    cabecera.writeUInt32LE(pngs[i].length, o + 8);
+    cabecera.writeUInt32LE(desplazamiento, o + 12);
+    desplazamiento += pngs[i].length;
+  });
+  return Buffer.concat([cabecera, ...pngs]);
 }
 
-await sharp(data, {
-  raw: { width: info.width, height: info.height, channels: 4 },
-})
-  .png({ compressionLevel: 9 })
-  .toFile(DESTINO);
+await writeFile("public/marca/isotipo.svg", svgDelIsotipo(BURDEOS));
 
-console.log(`${DESTINO} — ${info.width}x${info.height}`);
+await sharp(Buffer.from(svgDelIsotipo(BURDEOS)), { density: 300 })
+  .resize(512, 512)
+  .png({ compressionLevel: 9 })
+  .toFile("public/marca/logo.png");
+
+// El correo la muestra a 40 px de alto: se guarda al doble para pantallas
+// de alta densidad.
+await sharp(Buffer.from(svgHorizontal(BURDEOS)), { density: 300 })
+  .resize({ height: 80 })
+  .png({ compressionLevel: 9 })
+  .toFile("public/marca/logo-horizontal.png");
+
+await writeFile("app/favicon.ico", await ico([16, 32, 48]));
+
+console.log("isotipo.svg, logo.png, logo-horizontal.png y favicon.ico listos");

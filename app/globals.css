@@ -47,6 +47,9 @@
   --brand-tint-border: #f2dcdf;
   --brand-shadow: rgb(131 40 51 / 0.34);
   --shadow-focus-raw: 0 0 0 3px #f7edef, 0 0 0 1px #832833;
+  /* El logo: burdeos en claro, blanco en oscuro. No sigue a --brand, que en
+     oscuro se aclara a un rosa: §2.3 pide el trazo blanco. */
+  --logo: #832833;
 
   /*
    * Segundo color: azul pizarra. Hoy marca LO ELEGIDO, como el checkbox
@@ -127,6 +130,7 @@
   --brand-tint-border: #3d2429;
   --brand-shadow: rgb(212 105 122 / 0.2);
   --shadow-focus-raw: 0 0 0 3px #2a1a1d, 0 0 0 1px #d4697a;
+  --logo: #ffffff;
 
   /* ACLARADO: #2f4a6d da 1,84:1 sobre la superficie oscura, ilegible. */
   --accent: #7d9dc4;
@@ -171,6 +175,7 @@
   --color-brand-active: var(--brand-active);
   --color-brand-tint: var(--brand-tint);
   --color-brand-tint-border: var(--brand-tint-border);
+  --color-logo: var(--logo);
 
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);

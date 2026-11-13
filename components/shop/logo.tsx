@@ -1,36 +1,112 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { AdornoDeTemporada } from "@/components/shop/adorno-de-temporada";
 import type { Escena } from "@/lib/escenas";
-import isotipo from "@/public/marca/logo.png";
-import isotipoClaro from "@/public/marca/logo-claro.png";
+import { LADO_DEL_ISOTIPO, PALABRA, PIEZAS } from "@/lib/marca";
 import { AREA_TACTIL_CUADRADA, cn } from "@/lib/utils";
 
 /**
- * Isotipo y logo — DESIGN-REFERENCE §2.3.
+ * Isotipo, palabra y logo — DESIGN-REFERENCE §2.3, F10.7c.
  *
  * El isotipo es la cuadrícula de cuatro celdas —A, joystick, auriculares, V—
- * en burdeos sobre transparente. Sobre fondo oscuro se usa la versión clara,
- * derivada del original con `scripts/derivar-logo.mts`: el burdeos sobre el
- * pie casi negro no se lee.
+ * y la palabra es «AnaVende» en la misma letra que la A y la V. Los dos se
+ * dibujan en línea desde `lib/marca.ts`, con el color del texto: burdeos
+ * (`text-logo`), blanco en el panel oscuro —el mismo token cambia— y blanco
+ * sobre el pie (`claro`). Sin imagen que pedir ni dos versiones en el árbol.
  *
- * Nunca se deforma, ni cambia de color, ni lleva sombra. Por eso la imagen va
- * en una caja cuadrada con `object-contain` y no estirada: el original no es
- * exactamente cuadrado (1180×1128).
+ * Nunca se deforma, ni cambia de color, ni lleva sombra.
  */
+
+const VISTA_DEL_ISOTIPO = `0 0 ${LADO_DEL_ISOTIPO} ${LADO_DEL_ISOTIPO}`;
+const VISTA_DE_LA_PALABRA = PALABRA.caja.join(" ");
+const TRAZOS = Object.values(PIEZAS);
+
+/**
+ * El isotipo solo, sin enlace. 32px es el tamaño de uso (§2.3); se cambia
+ * con `className`.
+ */
+export function Isotipo({
+  claro = false,
+  className,
+}: {
+  /** Sobre fondo oscuro de la tienda: el pie. */
+  claro?: boolean;
+  className?: string;
+}) {
+  return (
+    <svg
+      aria-hidden
+      focusable="false"
+      viewBox={VISTA_DEL_ISOTIPO}
+      className={cn(
+        "size-8 shrink-0",
+        claro ? "text-ink-inverse" : "text-logo",
+        className,
+      )}
+    >
+      <g fill="currentColor" fillRule="evenodd">
+        {TRAZOS.map((d, i) => (
+          <path key={i} d={d} />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * «AnaVende» en trazo. Su mayúscula mide el 45 % del isotipo y la separación
+ * es el 30 % (`HORIZONTAL` en `lib/marca.ts`): las dos salen de `--isotipo`,
+ * el lado del isotipo que la acompaña.
+ */
+function Palabra({ claro = false }: { claro?: boolean }) {
+  return (
+    <svg
+      aria-hidden
+      focusable="false"
+      viewBox={VISTA_DE_LA_PALABRA}
+      // 0,45 de mayúscula por 1,018: la caja incluye lo que la «e» y la «d»
+      // bajan de la línea de base.
+      className={cn(
+        "h-[calc(var(--isotipo)*0.458)] w-auto shrink-0",
+        claro ? "text-ink-inverse" : "text-logo",
+      )}
+    >
+      <path fill="currentColor" d={PALABRA.d} />
+    </svg>
+  );
+}
+
+/**
+ * La versión horizontal: isotipo y palabra, sin enlace. Para donde la marca
+ * va con su nombre siempre a la vista —ingreso, mantenimiento, pie, panel—.
+ */
+export function LogoHorizontal({
+  claro = false,
+  className,
+}: {
+  claro?: boolean;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-[calc(var(--isotipo)*0.3)] [--isotipo:2rem]",
+        className,
+      )}
+    >
+      <Isotipo claro={claro} className="size-(--isotipo)" />
+      <Palabra claro={claro} />
+    </span>
+  );
+}
+
+/** El logo del encabezado de la tienda, con su enlace al inicio. */
 export function Logo({
   href = "/",
-  wordmark = true,
-  claro = false,
   escena = null,
   className,
 }: {
   href?: string;
-  /** En móvil va solo el isotipo (§2.3). */
-  wordmark?: boolean;
-  /** Sobre fondo oscuro: pie del sitio. */
-  claro?: boolean;
   /** La de hoy, si hay (F9.5): el isotipo lleva su adorno encima. */
   escena?: Escena | null;
   className?: string;
@@ -39,8 +115,8 @@ export function Logo({
     <Link
       href={href}
       className={cn(
-        "relative inline-flex shrink-0 items-center gap-2.5 rounded-pill",
-        // Con el wordmark oculto queda un enlace de 32×32, por debajo de los
+        "relative inline-flex shrink-0 items-center gap-[calc(var(--isotipo)*0.3)] rounded-pill [--isotipo:2rem]",
+        // Con la palabra oculta queda un enlace de 32×32, por debajo de los
         // 44 de §9. La marca no se agranda —§2.3 fija ese tamaño de uso—, así
         // que lo que crece es la zona que responde al dedo.
         AREA_TACTIL_CUADRADA,
@@ -49,70 +125,13 @@ export function Logo({
       aria-label="AnaVende, ir al inicio"
     >
       <span className="relative grid shrink-0">
-        <Isotipo claro={claro} inmediato />
+        <Isotipo />
         {escena ? <AdornoDeTemporada escena={escena} /> : null}
       </span>
-      {wordmark && (
-        <span
-          aria-hidden
-          className={cn(
-            "hidden text-heading sm:inline",
-            claro ? "text-ink-inverse" : "text-ink",
-          )}
-        >
-          AnaVende
-        </span>
-      )}
+      {/* En el teléfono va solo el isotipo (§2.3). */}
+      <span className="hidden sm:contents">
+        <Palabra />
+      </span>
     </Link>
-  );
-}
-
-/**
- * El isotipo solo, sin enlace. Lo usan el pie y el menú del panel, que ya
- * tienen su propio enlace alrededor.
- */
-export function Isotipo({
-  claro = false,
-  inmediato = false,
-  className,
-}: {
-  claro?: boolean;
-  /**
-   * Arriba del pliegue: el encabezado, el ingreso, el menú del panel. Sin
-   * diferir. Con `priority` se precargaban los dos logos en todas las
-   * páginas, también el claro del pie, que está abajo (F10.4).
-   */
-  inmediato?: boolean;
-  className?: string;
-}) {
-  return (
-    <Image
-      src={claro ? isotipoClaro : isotipo}
-      alt=""
-      aria-hidden
-      // 32px es el tamaño de uso (§2.3); `sizes` evita que Next sirva el
-      // original de 1180px para pintarlo a 32.
-      sizes="32px"
-      loading={inmediato ? "eager" : undefined}
-      className={cn("size-8 shrink-0 object-contain", className)}
-    />
-  );
-}
-
-/**
- * El isotipo que sigue al tema del panel.
- *
- * El burdeos del original da 1,83:1 sobre la superficie oscura —el propio
- * §3.2 lo dice al aclarar `--brand` para modo oscuro—, así que ahí va la
- * versión clara. El cambio lo hace CSS con las dos imágenes en el árbol: el
- * tema es un atributo que se resuelve en el navegador, y elegir en el
- * servidor produciría el logo equivocado durante el primer pintado.
- */
-export function IsotipoSegunTema({ className }: { className?: string }) {
-  return (
-    <>
-      <Isotipo inmediato className={cn("dark:hidden", className)} />
-      <Isotipo claro inmediato className={cn("hidden dark:block", className)} />
-    </>
   );
 }

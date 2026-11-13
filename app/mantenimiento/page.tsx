@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { Isotipo } from "@/components/shop/logo";
+import { LogoHorizontal } from "@/components/shop/logo";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { FUERA_DEL_INDICE } from "@/lib/seo";
@@ -52,7 +52,10 @@ export default async function Mantenimiento() {
     // se ve cuando algo no anda: no puede ser la que se cae con un 500 porque
     // la base tardó en contestar.
     numeroDeWhatsApp().catch((error: unknown) => {
-      console.error("[mantenimiento] No se pudo leer el número de WhatsApp.", error);
+      console.error(
+        "[mantenimiento] No se pudo leer el número de WhatsApp.",
+        error,
+      );
       return null;
     }),
   ]);
@@ -61,10 +64,7 @@ export default async function Mantenimiento() {
 
   return (
     <main className="mx-auto flex min-h-svh max-w-shop flex-col items-center justify-center gap-8 px-4 py-16 text-center">
-      <div className="inline-flex items-center gap-2.5">
-        <Isotipo inmediato />
-        <span className="text-heading text-ink">AnaVende</span>
-      </div>
+      <LogoHorizontal />
 
       <div className="flex flex-col items-center gap-3">
         <h1 className="text-title text-balance text-ink">
@@ -83,7 +83,10 @@ export default async function Mantenimiento() {
         <div className="flex flex-col items-center gap-2">
           <Button asChild variant="whatsapp" size="lg">
             <a
-              href={enlaceDeWhatsApp(numero, "Hola, quería hacer una consulta.")}
+              href={enlaceDeWhatsApp(
+                numero,
+                "Hola, quería hacer una consulta.",
+              )}
               target="_blank"
               rel="noopener noreferrer"
             >

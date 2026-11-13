@@ -135,21 +135,26 @@ Una cuadrícula de cuatro celdas —**A**, un joystick, unos auriculares y una *
 
 > **Corregido en F2.1, al recibir el archivo.** Esta sección describía «un cuadrado de esquinas redondeadas, fondo burdeos, letras blancas», que era lo que había implementado como marcador de posición mientras no estaba el logo. El logo real es lo contrario: trazo burdeos sobre fondo transparente. El color medido en el archivo es `#822733`, a un punto por canal del `#832833` que §3.1 fija como token — se conserva el token, la diferencia no es visible.
 
+> **Redibujado en F10.7c (2026-11-13).** El original era un PNG de 1180×1128 sin versión horizontal, y la palabra iba en Inter, que no tiene nada que ver con la A y la V del dibujo. Se rehízo sobre el mismo dibujo: caja cuadrada con medidas exactas, la A y la V en **Figtree ExtraBold** —la fuente de Google Fonts que mejor calza con las originales: 90,7 % de superposición a igual alto—, el joystick y los auriculares simétricos, y la palabra «AnaVende» en la misma letra. Cómo se construyó y con qué medidas está en `docs/MARCA.md`. **Figtree es la letra del logo, no de la interfaz**: los textos siguen en Inter (§1.2), y la palabra va convertida en trazo, así que no se carga ninguna fuente.
+
+La fuente de verdad son los trazos de `lib/marca.ts`. Los componentes los dibujan en línea (`components/shop/logo.tsx`); lo que no puede dibujarlos —la pestaña, los correos, Google, la vista previa al compartir— usa archivos que `scripts/derivar-logo.mts` y `derivar-og.mts` sacan de ahí.
+
 | Uso | Tamaño | Tratamiento |
 |---|---|---|
-| Encabezado | 32px | Isotipo + palabra «AnaVende» a la derecha |
+| Encabezado | 32px | Horizontal: isotipo + palabra |
 | Encabezado móvil | 32px | Solo isotipo |
-| Favicon | 32 / 16px | Solo isotipo |
-| Emails | 40px | Isotipo + palabra, centrado |
-| Fondo oscuro | — | Versión de trazo **blanco**, mismo dibujo |
+| Ingreso, mantenimiento, pie, panel | 32px | Horizontal |
+| Favicon | 16 / 32 / 48px | Solo isotipo |
+| Emails | 40px | Horizontal, en una imagen (`logo-horizontal.png`), centrado |
+| Fondo oscuro | — | Versión **blanca**, mismo dibujo |
 
-**La versión clara no es opcional.** El burdeos sobre la superficie oscura da 1,83:1 —el mismo motivo por el que §3.2 aclara `--brand` en modo oscuro—, así que el pie del sitio y el panel en modo oscuro usan el trazo blanco. Se deriva del original con `scripts/derivar-logo.mts` en vez de mantenerse a mano: si el logo cambia, las dos versiones cambian juntas.
+**La versión horizontal tiene proporciones fijas.** La mayúscula de la palabra mide el 45 % del lado del isotipo y va centrada en él; la separación es el 30 %. A 32px: mayúscula de 14,4px y separación de 9,6px. La palabra va siempre en el color del isotipo, nunca en el del texto.
 
-**El original no es cuadrado** (1180×1128). Va siempre dentro de una caja cuadrada con `object-contain`, nunca estirado.
+**La versión clara no es opcional.** El burdeos sobre la superficie oscura da 1,83:1 —el mismo motivo por el que §3.2 aclara `--brand` en modo oscuro—, así que el pie del sitio y el panel en modo oscuro usan el trazo blanco. No es otro archivo: el logo se pinta con el token `--logo`, burdeos en claro y blanco en el panel oscuro (no sigue a `--brand`, que ahí se vuelve rosa), y el pie lo pide blanco.
 
 **A 16px la cuadrícula no se lee**: las cuatro celdas se funden. Es aceptable en el favicon, donde de todos modos se reconoce por color y silueta, pero **no** se usa el isotipo por debajo de 24px en ningún otro lado.
 
-**Nunca:** deformar la proporción, cambiarle el color —salvo la versión clara de esta tabla—, ponerle sombra, rotarlo, ni apoyarlo sobre una foto sin una superficie sólida debajo.
+**Nunca:** deformar la proporción, cambiarle el color —salvo la versión clara de esta tabla—, ponerle sombra, rotarlo, ni apoyarlo sobre una foto sin una superficie sólida debajo. **Separar las piezas** —el marco, la A, el joystick, los auriculares y la V— queda reservado a la animación de la primera carga (F10.7c, segunda parte): se mueven, pero ninguna rota ni se estira.
 
 **La única cosa que se le pone encima es el adorno de una fecha** (F9.5,
 RF-38, 2026-10-23): una guirnalda de luces en Navidad, una telaraña con una
