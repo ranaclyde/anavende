@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ImagePlus, Images, Trash2 } from "lucide-react";
+import { ImagePlus, Images, Plus, Trash2 } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 
 import { CUADRICULA } from "@/components/admin/marca-de-agua/tipos";
@@ -51,10 +51,18 @@ function motivoDeRechazo(archivo: File): string | null {
 export function BibliotecaDeMarcas({
   biblioteca,
   usadaEn,
+  alAgregarCapa,
+  entranMasCapas = true,
 }: {
   biblioteca: ImagenDeLaBiblioteca[];
   /** Qué capas GUARDADAS usa cada imagen, por id: «1, 3». */
   usadaEn: Map<string, number[]>;
+  /**
+   * Arma una capa con esa imagen (2026-11-13). La capa queda ligada a la
+   * imagen con la que se armó: para cambiarla, se quita y se arma otra.
+   */
+  alAgregarCapa?: (imageId: string) => void;
+  entranMasCapas?: boolean;
 }) {
   const router = useRouter();
   const campo = useRef<HTMLInputElement>(null);
@@ -220,6 +228,22 @@ export function BibliotecaDeMarcas({
                   <span className="sr-only">Borrar «{imagen.nombre}»</span>
                 </Button>
               </div>
+              {alAgregarCapa ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={!entranMasCapas}
+                  onClick={() => alAgregarCapa(imagen.id)}
+                  className="w-full"
+                >
+                  <Plus aria-hidden />
+                  <span>
+                    <span className="sr-only">Agregar una </span>
+                    Capa
+                    <span className="sr-only"> con «{imagen.nombre}»</span>
+                  </span>
+                </Button>
+              ) : null}
             </li>
           );
         })}

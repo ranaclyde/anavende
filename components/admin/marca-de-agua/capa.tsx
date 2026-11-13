@@ -110,9 +110,7 @@ export function EditorDeCapa({
       alQuitar={alQuitar}
     />
   );
-  const cuerpo = (
-    <Cuerpo id={id} capa={capa} biblioteca={biblioteca} alCambiar={alCambiar} />
-  );
+  const cuerpo = <Cuerpo id={id} capa={capa} alCambiar={alCambiar} />;
 
   // Plegada, la cabecera dice lo justo para reconocerla sin abrirla:
   // la imagen, el número y dónde va. Mover y quitar quedan a mano igual.
@@ -263,55 +261,16 @@ function Acciones({
 function Cuerpo({
   id,
   capa,
-  biblioteca,
   alCambiar,
 }: {
   id: string;
   capa: CapaEnPantalla;
-  biblioteca: ImagenDeLaBiblioteca[];
   alCambiar: (cambios: Partial<CapaEnPantalla>) => void;
 }) {
   const usaTamano = capa.mode === "posicion" || capa.mode === "mosaico";
 
   return (
     <div className="flex flex-col gap-5">
-      <fieldset className="flex flex-col gap-1.5">
-        <legend className="mb-1.5 text-body-sm font-medium text-ink">
-          Imagen
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {biblioteca.map((imagen) => (
-            <label
-              key={imagen.id}
-              title={imagen.nombre}
-              className={cn(
-                "relative grid size-16 cursor-pointer place-items-center overflow-hidden rounded-panel-image border-2 border-border p-1",
-                "transition-colors duration-150 hover:border-border-strong",
-                "has-checked:border-accent has-focus-visible:shadow-focus",
-              )}
-              style={CUADRICULA}
-            >
-              <input
-                type="radio"
-                name={`${id}-imagen`}
-                checked={capa.imageId === imagen.id}
-                onChange={() => alCambiar({ imageId: imagen.id })}
-                className="sr-only"
-              />
-              <Image
-                src={imagen.url}
-                alt=""
-                width={imagen.ancho}
-                height={imagen.alto}
-                sizes="64px"
-                className="max-h-full w-auto object-contain"
-              />
-              <span className="sr-only">{imagen.nombre}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
       <fieldset className="flex flex-col gap-1.5">
         <legend className="mb-1.5 text-body-sm font-medium text-ink">
           Forma

@@ -146,8 +146,12 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
 
   // Una capa en la esquina, al 30% y sin transparencia de más.
   const capas = page.getByRole("region", { name: "Capas" });
-  await capas.getByRole("button", { name: "Agregar capa" }).click();
-  await capas.getByRole("radio", { name: nombre }).check();
+  // La capa se arma desde la imagen, y queda ligada a ella.
+  const agregarCapa = biblioteca.getByRole("button", {
+    name: `Agregar una Capa con «${nombre}»`,
+  });
+  await agregarCapa.click();
+  await expect(capas.getByRole("radio", { name: nombre })).toHaveCount(0);
   await capas.getByRole("radio", { name: "Abajo a la derecha" }).check();
   const opacidad = capas.getByRole("slider", { name: "Opacidad" });
   await opacidad.focus();
@@ -172,7 +176,7 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
 
   // Con dos capas se pliegan y se abre una por vez: la nueva se abre, y la
   // primera queda cerrada y resumida en su cabecera.
-  await capas.getByRole("button", { name: "Agregar capa" }).click();
+  await agregarCapa.click();
   const primera = capas.getByRole("button", { name: /^Capa 1/ });
   await expect(primera).toHaveAttribute("aria-expanded", "false");
   await expect(primera).toContainText(

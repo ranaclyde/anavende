@@ -190,8 +190,9 @@ se cancela (`modules/returns/registrar.ts`).
 imágenes, la pantalla es solo «subí tu marca». Con imágenes se parte en dos
 mitades: a la izquierda se arma y a la derecha se mira, y el estado con su
 botón va en el encabezado. La **biblioteca** guarda imágenes PNG o WEBP con fondo
-transparente hasta que se borran a mano. Las **capas**, hasta cuatro, eligen
-cada una una imagen, una forma (en un lugar, repetida, cubrir o estirar), un
+transparente hasta que se borran a mano. Las **capas**, hasta cuatro, se arman
+desde la imagen —«Capa» debajo de cada una— y quedan ligadas a ella: para
+cambiarla se quita la capa y se arma otra. Cada una elige una forma (en un lugar, repetida, cubrir o estirar), un
 tamaño y una opacidad, y se guardan juntas. Con dos o más se pliegan y se
 abre una por vez, como los colores del producto: cerrada, cada una muestra su
 imagen, su número y un resumen de dónde va. La **vista previa** prueba las

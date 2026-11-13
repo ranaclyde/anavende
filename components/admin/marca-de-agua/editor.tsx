@@ -1,6 +1,6 @@
 "use client";
 
-import { Droplets, DropletOff, Plus } from "lucide-react";
+import { Droplets, DropletOff } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { useAvisoAlSalir } from "@/components/admin/aviso-al-salir";
@@ -67,8 +67,9 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
     );
   }
 
-  function agregar() {
-    const nueva = capaNueva(marca.biblioteca[0].id);
+  function agregar(imageId: string) {
+    if (capas.length >= MAXIMO_DE_CAPAS) return;
+    const nueva = capaNueva(imageId);
     setRecienGuardado(false);
     setCapas((actuales) => [...actuales, nueva]);
     setAbierta(nueva.clave);
@@ -168,6 +169,8 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
             <BibliotecaDeMarcas
               biblioteca={marca.biblioteca}
               usadaEn={usadaEn}
+              alAgregarCapa={agregar}
+              entranMasCapas={capas.length < MAXIMO_DE_CAPAS}
             />
 
             <section
@@ -188,10 +191,10 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
               {capas.length === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-panel-image bg-surface-sunken p-4">
                   <p className="text-body-sm text-ink-secondary">
-                    Todavía no armaste ninguna. Cada capa usa una de las
-                    imágenes de arriba, con su lugar, su tamaño y su opacidad.
+                    Todavía no armaste ninguna. Tocá «Capa» debajo de una de las
+                    imágenes de arriba y elegí su lugar, su tamaño y su
+                    opacidad.
                   </p>
-                  <AgregarCapa alAgregar={agregar} />
                 </div>
               ) : (
                 <>
@@ -233,9 +236,7 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
                       </ul>
                     </Accordion>
                   )}
-                  {capas.length < MAXIMO_DE_CAPAS ? (
-                    <AgregarCapa alAgregar={agregar} />
-                  ) : (
+                  {capas.length < MAXIMO_DE_CAPAS ? null : (
                     <p className="text-caption text-ink-secondary">
                       Entran hasta {MAXIMO_DE_CAPAS} capas.
                     </p>
@@ -283,20 +284,6 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
 
 function conClave(capas: MarcaDeAguaDelPanel["capas"]): CapaEnPantalla[] {
   return capas.map((c) => ({ ...c, clave: crypto.randomUUID() }));
-}
-
-function AgregarCapa({ alAgregar }: { alAgregar: () => void }) {
-  return (
-    <Button
-      variant="secondary"
-      size="sm"
-      className="self-start"
-      onClick={alAgregar}
-    >
-      <Plus aria-hidden />
-      Agregar capa
-    </Button>
-  );
 }
 
 /**
