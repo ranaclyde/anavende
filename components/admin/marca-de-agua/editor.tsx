@@ -1,7 +1,7 @@
 "use client";
 
 import { Droplets, DropletOff, Plus } from "lucide-react";
-import { Fragment, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { useAvisoAlSalir } from "@/components/admin/aviso-al-salir";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
@@ -14,6 +14,7 @@ import {
   type CapaEnPantalla,
 } from "@/components/admin/marca-de-agua/tipos";
 import { VistaPrevia } from "@/components/admin/marca-de-agua/vista-previa";
+import { Accordion } from "@/components/ui/accordion";
 import { avisar, avisarConPero } from "@/components/ui/aviso";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,15 +36,21 @@ import { MAXIMO_DE_CAPAS } from "@/modules/media/capas-de-marca";
 export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
   const guardadas = JSON.stringify(marca.capas);
   const [capas, setCapas] = useState<CapaEnPantalla[]>(() =>
-    marca.capas.map((c) => ({ ...c, clave: crypto.randomUUID() })),
+    conClave(marca.capas),
   );
+  // Con dos capas o más se pliegan y se abre una por vez, como los colores
+  // del producto (2026-11-13): abiertas todas, la lista era larga y costaba
+  // ver cuál era cuál. Arranca abierta la primera.
+  const [abierta, setAbierta] = useState(() => capas[0]?.clave ?? "");
   // Lo del servidor cambió —se guardó, o borrar una imagen se llevó su
   // capa—: la pantalla pasa a mostrar eso. Durante el render y no en un
   // efecto, para no pintar primero lo viejo.
   const [ultimasVistas, setUltimasVistas] = useState(guardadas);
   if (ultimasVistas !== guardadas) {
     setUltimasVistas(guardadas);
-    setCapas(marca.capas.map((c) => ({ ...c, clave: crypto.randomUUID() })));
+    const nuevas = conClave(marca.capas);
+    setCapas(nuevas);
+    setAbierta(nuevas[0]?.clave ?? "");
   }
 
   const enPantalla = capas.map(sinClave);
@@ -60,6 +67,13 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
     );
   }
 
+  function agregar() {
+    const nueva = capaNueva(marca.biblioteca[0].id);
+    setRecienGuardado(false);
+    setCapas((actuales) => [...actuales, nueva]);
+    setAbierta(nueva.clave);
+  }
+
   function mover(indice: number, direccion: -1 | 1) {
     setRecienGuardado(false);
     setCapas((actuales) => {
@@ -69,6 +83,11 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
       [nuevas[indice], nuevas[otra]] = [nuevas[otra], nuevas[indice]];
       return nuevas;
     });
+  }
+
+  function quitar(clave: string) {
+    setRecienGuardado(false);
+    setCapas((actuales) => actuales.filter((c) => c.clave !== clave));
   }
 
   function guardar() {
@@ -172,46 +191,50 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
                     Todavía no armaste ninguna. Cada capa usa una de las
                     imágenes de arriba, con su lugar, su tamaño y su opacidad.
                   </p>
-                  <AgregarCapa
-                    alAgregar={() => {
-                      setRecienGuardado(false);
-                      setCapas([capaNueva(marca.biblioteca[0].id)]);
-                    }}
-                  />
+                  <AgregarCapa alAgregar={agregar} />
                 </div>
               ) : (
                 <>
-                  <div className="flex flex-col">
-                    {capas.map((capa, i) => (
-                      <Fragment key={capa.clave}>
-                        {i > 0 ? <hr className="my-6 border-border" /> : null}
-                        <EditorDeCapa
-                          capa={capa}
-                          numero={i + 1}
-                          total={capas.length}
-                          biblioteca={marca.biblioteca}
-                          alCambiar={(cambios) => cambiar(capa.clave, cambios)}
-                          alMover={(d) => mover(i, d)}
-                          alQuitar={() => {
-                            setRecienGuardado(false);
-                            setCapas((actuales) =>
-                              actuales.filter((c) => c.clave !== capa.clave),
-                            );
-                          }}
-                        />
-                      </Fragment>
-                    ))}
-                  </div>
-                  {capas.length < MAXIMO_DE_CAPAS ? (
-                    <AgregarCapa
-                      alAgregar={() => {
-                        setRecienGuardado(false);
-                        setCapas((actuales) => [
-                          ...actuales,
-                          capaNueva(marca.biblioteca[0].id),
-                        ]);
-                      }}
+                  {capas.length === 1 ? (
+                    <EditorDeCapa
+                      capa={capas[0]}
+                      numero={1}
+                      total={1}
+                      biblioteca={marca.biblioteca}
+                      plegable={false}
+                      alCambiar={(cambios) => cambiar(capas[0].clave, cambios)}
+                      alMover={(d) => mover(0, d)}
+                      alQuitar={() => quitar(capas[0].clave)}
                     />
+                  ) : (
+                    <Accordion
+                      type="single"
+                      collapsible
+                      value={abierta}
+                      onValueChange={setAbierta}
+                      asChild
+                    >
+                      <ul className="flex flex-col divide-y divide-border">
+                        {capas.map((capa, i) => (
+                          <EditorDeCapa
+                            key={capa.clave}
+                            capa={capa}
+                            numero={i + 1}
+                            total={capas.length}
+                            biblioteca={marca.biblioteca}
+                            plegable
+                            alCambiar={(cambios) =>
+                              cambiar(capa.clave, cambios)
+                            }
+                            alMover={(d) => mover(i, d)}
+                            alQuitar={() => quitar(capa.clave)}
+                          />
+                        ))}
+                      </ul>
+                    </Accordion>
+                  )}
+                  {capas.length < MAXIMO_DE_CAPAS ? (
+                    <AgregarCapa alAgregar={agregar} />
                   ) : (
                     <p className="text-caption text-ink-secondary">
                       Entran hasta {MAXIMO_DE_CAPAS} capas.
@@ -256,6 +279,10 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
       </div>
     </div>
   );
+}
+
+function conClave(capas: MarcaDeAguaDelPanel["capas"]): CapaEnPantalla[] {
+  return capas.map((c) => ({ ...c, clave: crypto.randomUUID() }));
 }
 
 function AgregarCapa({ alAgregar }: { alAgregar: () => void }) {

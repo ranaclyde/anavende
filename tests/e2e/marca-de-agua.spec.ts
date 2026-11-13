@@ -110,6 +110,9 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
       JSON.stringify(["panel-producto", "ficha"]),
     ),
   );
+  // Sin animaciones: axe mide el contraste en el momento, y un aviso a
+  // mitad de aparecer tiene el texto a medio color.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await ingresar(page, admin);
   await page.goto("/admin/configuracion/marca-de-agua");
 
@@ -167,6 +170,21 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   await expect(page.getByText("Cambios sin guardar")).toBeVisible();
   await expect(activar).toBeDisabled();
 
+  // Con dos capas se pliegan y se abre una por vez: la nueva se abre, y la
+  // primera queda cerrada y resumida en su cabecera.
+  await capas.getByRole("button", { name: "Agregar capa" }).click();
+  const primera = capas.getByRole("button", { name: /^Capa 1/ });
+  await expect(primera).toHaveAttribute("aria-expanded", "false");
+  await expect(primera).toContainText(
+    "Abajo a la derecha · tamaño 20% · opacidad 100%",
+  );
+  await expect(capas.getByRole("button", { name: /^Capa 2/ })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  await expect(capas.getByRole("slider", { name: "Opacidad" })).toHaveCount(1);
+  expect(await hallazgosDeAxe(page)).toEqual([]);
+
   if (CAPTURAS) {
     await expect(previa.getByText("Actualizando")).toBeHidden();
     for (const ancho of [1280, 1497]) {
@@ -184,6 +202,11 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
     });
     await page.setViewportSize({ width: 1280, height: 800 });
   }
+
+  // Se quita la segunda y la que queda vuelve a estar abierta, sin plegar.
+  await capas.getByRole("button", { name: "Quitar la capa 2" }).click();
+  await expect(capas.getByRole("slider", { name: "Opacidad" })).toHaveCount(1);
+  await expect(capas.getByRole("button", { name: /^Capa 1/ })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Guardar capas" }).click();
   await expect(page.getByText("Actualizado")).toBeVisible();

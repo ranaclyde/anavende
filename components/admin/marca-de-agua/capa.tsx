@@ -9,6 +9,12 @@ import {
   CUADRICULA,
   type CapaEnPantalla,
 } from "@/components/admin/marca-de-agua/tipos";
+import {
+  AccordionContent,
+  AccordionHeader,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -76,6 +82,7 @@ export function EditorDeCapa({
   numero,
   total,
   biblioteca,
+  plegable,
   alCambiar,
   alMover,
   alQuitar,
@@ -84,65 +91,190 @@ export function EditorDeCapa({
   numero: number;
   total: number;
   biblioteca: ImagenDeLaBiblioteca[];
+  /** Con dos capas o más, cada una se pliega y se abre de a una. */
+  plegable: boolean;
   alCambiar: (cambios: Partial<CapaEnPantalla>) => void;
   alMover: (direccion: -1 | 1) => void;
   alQuitar: () => void;
 }) {
   const id = useId();
-  const usaTamano = capa.mode === "posicion" || capa.mode === "mosaico";
+  const imagen = biblioteca.find((i) => i.id === capa.imageId);
+  const identidad = (
+    <Identidad capa={capa} numero={numero} total={total} imagen={imagen} />
+  );
+  const acciones = (
+    <Acciones
+      numero={numero}
+      total={total}
+      alMover={alMover}
+      alQuitar={alQuitar}
+    />
+  );
+  const cuerpo = (
+    <Cuerpo id={id} capa={capa} biblioteca={biblioteca} alCambiar={alCambiar} />
+  );
+
+  // Plegada, la cabecera dice lo justo para reconocerla sin abrirla:
+  // la imagen, el número y dónde va. Mover y quitar quedan a mano igual.
+  if (plegable) {
+    return (
+      <AccordionItem value={capa.clave} asChild>
+        <li className="flex flex-col py-3 first:pt-0 last:pb-0">
+          <AccordionHeader className="items-center gap-2">
+            {/* `-m-1.5 p-1.5`: el área que se toca crece sin correr nada. */}
+            <AccordionTrigger className="-m-1.5 min-h-11 min-w-0 rounded-panel-control p-1.5 hover:bg-canvas">
+              {identidad}
+            </AccordionTrigger>
+            {acciones}
+          </AccordionHeader>
+          <AccordionContent className="pt-5 pb-3">{cuerpo}</AccordionContent>
+        </li>
+      </AccordionItem>
+    );
+  }
 
   return (
     <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-5">
-      <div className="-mb-1 flex min-h-8 items-center justify-between gap-3">
-        <h3 id={`${id}-titulo`} className="text-body-sm font-semibold text-ink">
-          Capa {numero}
-          {total > 1 ? (
-            <span className="font-normal text-ink-secondary">
-              {numero === 1
-                ? " · queda abajo"
-                : numero === total
-                  ? " · queda arriba"
-                  : ""}
+      <div className="flex items-center justify-between gap-3">
+        <h3 id={`${id}-titulo`} className="flex min-w-0 flex-1">
+          {identidad}
+        </h3>
+        {acciones}
+      </div>
+      {cuerpo}
+    </section>
+  );
+}
+
+/** Qué hace la capa, en un renglón: lo que se lee con la capa cerrada. */
+function resumen(capa: CapaEnPantalla): string {
+  const opacidad = `opacidad ${capa.opacityPct}%`;
+  switch (capa.mode) {
+    case "posicion":
+      return `${NOMBRE_DEL_LUGAR[capa.anchor]} · tamaño ${capa.sizePct}% · ${opacidad}`;
+    case "mosaico":
+      return `Repetida · tamaño ${capa.sizePct}% · ${opacidad}`;
+    case "cubrir":
+      return `Cubre la foto · ${opacidad}`;
+    case "estirar":
+      return `Estirada sobre la foto · ${opacidad}`;
+  }
+}
+
+function Identidad({
+  capa,
+  numero,
+  total,
+  imagen,
+}: {
+  capa: CapaEnPantalla;
+  numero: number;
+  total: number;
+  imagen: ImagenDeLaBiblioteca | undefined;
+}) {
+  return (
+    <span className="flex min-w-0 items-center gap-3">
+      <span
+        aria-hidden
+        title={imagen?.nombre}
+        className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-panel-control border border-border p-0.5"
+        style={CUADRICULA}
+      >
+        {imagen ? (
+          <Image
+            src={imagen.url}
+            alt=""
+            width={imagen.ancho}
+            height={imagen.alto}
+            sizes="40px"
+            className="max-h-full w-auto object-contain"
+          />
+        ) : null}
+      </span>
+      <span className="flex min-w-0 flex-col">
+        {/* Cada pedazo entero: en angosto baja «queda abajo» y no el número. */}
+        <span className="flex flex-wrap gap-x-1 text-body-sm font-semibold text-ink">
+          <span className="whitespace-nowrap">Capa {numero}</span>
+          {total > 1 && (numero === 1 || numero === total) ? (
+            <span className="font-normal whitespace-nowrap text-ink-secondary">
+              · queda {numero === 1 ? "abajo" : "arriba"}
             </span>
           ) : null}
-        </h3>
-        <div className="flex items-center gap-1">
-          {total > 1 ? (
-            <>
-              <Button
-                variant="tertiary"
-                size="icon"
-                disabled={numero === 1}
-                onClick={() => alMover(-1)}
-                title="Mover abajo"
-              >
-                <ArrowDown aria-hidden />
-                <span className="sr-only">Mover la capa {numero} abajo</span>
-              </Button>
-              <Button
-                variant="tertiary"
-                size="icon"
-                disabled={numero === total}
-                onClick={() => alMover(1)}
-                title="Mover arriba"
-              >
-                <ArrowUp aria-hidden />
-                <span className="sr-only">Mover la capa {numero} arriba</span>
-              </Button>
-            </>
-          ) : null}
-          <Button
-            variant="destructive-ghost"
-            size="icon"
-            onClick={alQuitar}
-            title="Quitar"
-          >
-            <Trash2 aria-hidden />
-            <span className="sr-only">Quitar la capa {numero}</span>
-          </Button>
-        </div>
-      </div>
+        </span>
+        <span className="text-caption font-normal text-pretty text-ink-secondary">
+          {resumen(capa)}
+        </span>
+      </span>
+    </span>
+  );
+}
 
+function Acciones({
+  numero,
+  total,
+  alMover,
+  alQuitar,
+}: {
+  numero: number;
+  total: number;
+  alMover: (direccion: -1 | 1) => void;
+  alQuitar: () => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      {total > 1 ? (
+        <>
+          <Button
+            variant="tertiary"
+            size="icon"
+            disabled={numero === 1}
+            onClick={() => alMover(-1)}
+            title="Mover abajo"
+          >
+            <ArrowDown aria-hidden />
+            <span className="sr-only">Mover la capa {numero} abajo</span>
+          </Button>
+          <Button
+            variant="tertiary"
+            size="icon"
+            disabled={numero === total}
+            onClick={() => alMover(1)}
+            title="Mover arriba"
+          >
+            <ArrowUp aria-hidden />
+            <span className="sr-only">Mover la capa {numero} arriba</span>
+          </Button>
+        </>
+      ) : null}
+      <Button
+        variant="destructive-ghost"
+        size="icon"
+        onClick={alQuitar}
+        title="Quitar"
+      >
+        <Trash2 aria-hidden />
+        <span className="sr-only">Quitar la capa {numero}</span>
+      </Button>
+    </div>
+  );
+}
+
+/** Los controles de la capa. */
+function Cuerpo({
+  id,
+  capa,
+  biblioteca,
+  alCambiar,
+}: {
+  id: string;
+  capa: CapaEnPantalla;
+  biblioteca: ImagenDeLaBiblioteca[];
+  alCambiar: (cambios: Partial<CapaEnPantalla>) => void;
+}) {
+  const usaTamano = capa.mode === "posicion" || capa.mode === "mosaico";
+
+  return (
+    <div className="flex flex-col gap-5">
       <fieldset className="flex flex-col gap-1.5">
         <legend className="mb-1.5 text-body-sm font-medium text-ink">
           Imagen
@@ -270,7 +402,7 @@ export function EditorDeCapa({
         leyenda={`${capa.opacityPct}%${capa.opacityPct === 100 ? ", como está la imagen" : ""}`}
         alCambiar={(v) => alCambiar({ opacityPct: v })}
       />
-    </section>
+    </div>
   );
 }
 
