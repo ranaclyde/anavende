@@ -450,7 +450,7 @@ export function FormularioDeProducto({
           </div>
 
           {/* ── Cuánto sale ─────────────────────────────────────────── */}
-          <Apartado id="precio" titulo="Precio">
+          <Apartado id="precio" titulo="Precio y oferta">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={campo("price").id}>Precio</Label>
