@@ -86,26 +86,15 @@ export function Marco({ sitio, adelanto, children, pie }: MarcoProps) {
           }}
         >
           <Section style={{ textAlign: "center", paddingBottom: "28px" }}>
+            {/* El logo horizontal en una sola imagen (§2.3): la palabra va en
+                la letra del logo, que un cliente de correo no tiene. */}
             <Img
-              src={`${sitio}/marca/logo.png`}
-              width="40"
-              height="38"
+              src={`${sitio}/marca/logo-horizontal.png`}
+              width="176"
+              height="40"
               alt="AnaVende"
-              style={{ display: "inline-block", verticalAlign: "middle" }}
+              style={{ display: "inline-block" }}
             />
-            <span
-              style={{
-                display: "inline-block",
-                verticalAlign: "middle",
-                paddingLeft: "10px",
-                fontSize: "20px",
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-                color: COLOR.texto,
-              }}
-            >
-              AnaVende
-            </span>
           </Section>
 
           {children}
@@ -165,7 +154,13 @@ export function Parrafo({ children }: { children: ReactNode }) {
  *
  * DESIGN-REFERENCE §10: dice la acción concreta, nunca «Aceptar».
  */
-export function Boton({ href, children }: { href: string; children: ReactNode }) {
+export function Boton({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) {
   return (
     <Section style={{ padding: "8px 0 24px" }}>
       <a
@@ -190,7 +185,13 @@ export function Boton({ href, children }: { href: string; children: ReactNode })
 
 /** Enlace dentro de un párrafo. Existe para que las cuatro plantillas no
  *  repitan el estilo: en email no hay hoja de estilos donde ponerlo una vez. */
-export function Enlace({ href, children }: { href: string; children: ReactNode }) {
+export function Enlace({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) {
   return (
     <a href={href} style={{ color: COLOR.marca, textDecoration: "underline" }}>
       {children}

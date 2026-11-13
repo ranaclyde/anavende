@@ -26,21 +26,25 @@ import { stat } from "node:fs/promises";
 
 import sharp from "sharp";
 
+import { svgDelIsotipo } from "../lib/marca";
+
 /** Lo que pide Open Graph: 1200×630, la proporción que recortan todos igual. */
 const ANCHO = 1200;
 const ALTO = 630;
 
-/** `--brand` de DESIGN-REFERENCE §3.1. El logo claro da 9,07:1 encima. */
+/** `--brand` de DESIGN-REFERENCE §3.1. El isotipo blanco da 9,07:1 encima. */
 const BURDEOS = { r: 0x83, g: 0x28, b: 0x33, alpha: 1 };
 
 /** Poco menos de la mitad del alto: deja aire y sobrevive a la miniatura. */
 const ALTO_DEL_LOGO = 280;
 
-const ORIGEN = "public/marca/logo-claro.png";
 const DESTINO = "public/marca/og.png";
 
-const logo = await sharp(ORIGEN)
-  .resize({ height: ALTO_DEL_LOGO, withoutEnlargement: true })
+// El isotipo en blanco, el tratamiento de fondo oscuro de §2.3.
+const logo = await sharp(Buffer.from(svgDelIsotipo("#ffffff")), {
+  density: 300,
+})
+  .resize({ height: ALTO_DEL_LOGO })
   .toBuffer();
 
 await sharp({

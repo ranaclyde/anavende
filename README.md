@@ -29,6 +29,8 @@ Tiene dos lados:
   de commitear.
 - [Diseño](DESIGN.md): tokens, componentes y la lista de accesibilidad de
   cada pantalla.
+- [Marca](docs/MARCA.md): el logo, sus versiones, cuándo va cada una y cómo
+  se regeneran los archivos.
 - [Versiones](VERSIONS.md): las versiones exactas del stack, que son las que
   se consultan en la documentación de cada biblioteca.
 

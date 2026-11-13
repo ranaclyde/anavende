@@ -3,6 +3,7 @@ import "./globals.css";
 
 import { urlDelSitio } from "@/lib/env";
 import { inter } from "@/lib/fuente";
+import { SCRIPT_MARCA_VISTA } from "@/lib/marca";
 import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE, ZONA_DE_ENTREGA } from "@/lib/seo";
 
 const siteUrl = urlDelSitio();
@@ -45,7 +46,13 @@ export default function RootLayout({
     // cliente difieren a propósito. Sin esto, cada visita al panel deja una
     // advertencia en la consola que después tapa las de verdad.
     <html lang="es-AR" className={inter.variable} suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        {/* La animación del hero se ve una vez por visita: si ya se vio en
+            esta pestaña, el atributo va antes del primer pintado y una
+            recarga no la repite (`marca-del-hero.tsx`). */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_MARCA_VISTA }} />
+        {children}
+      </body>
     </html>
   );
 }
