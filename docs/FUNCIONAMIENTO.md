@@ -186,7 +186,8 @@ se cancela (`modules/returns/registrar.ts`).
    ficha da 404 también para quien administra.
 
 **La marca de agua** (RF-39, F2.16) se arma en
-`/admin/configuracion/marca-de-agua`, enlazada desde Configuración. Sin
+`/admin/configuracion/marca-de-agua`, enlazada desde Configuración y desde
+el inicio del panel, que muestra si está activada (verde) o no (rojo). Sin
 imágenes, la pantalla es solo «subí tu marca». Con imágenes se parte en dos
 mitades: a la izquierda se arma y a la derecha se mira, y el estado con su
 botón va en el encabezado. La **biblioteca** guarda imágenes PNG o WEBP con fondo

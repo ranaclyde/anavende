@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { TiendaEnElInicio } from "@/components/admin/configuracion/mantenimiento";
+import { MarcaDeAguaEnElInicio } from "@/components/admin/configuracion/marca-de-agua";
 import { GraficoDeVentas } from "@/components/admin/reportes/graficos";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { Button } from "@/components/ui/button";
 import { mesEnCurso } from "@/lib/fechas";
 import { formatMoney, isZero } from "@/lib/money";
+import { laMarcaDeAguaEstaActiva } from "@/modules/marca-de-agua/queries";
 import { comoVieneElMes, loQueHayParaHacer } from "@/modules/panel/tablero";
 import { elMesEntero, hoyEnLaZona } from "@/modules/reports/periodo";
 import {
@@ -38,6 +40,9 @@ export const metadata: Metadata = { title: "Panel" };
  * 2026-10-14): es el mismo interruptor de Configuración, y va primero porque
  * con la tienda cerrada nada de lo de abajo importa tanto.
  *
+ * **Debajo, la marca de agua activada o desactivada** (pedido tuyo del
+ * 2026-11-13), con el camino a su pantalla.
+ *
  * **Sin notificaciones**, como RF-14 pide: esto se ve al abrir el panel y no
  * persigue a nadie.
  *
@@ -63,12 +68,14 @@ export default async function PanelInicio() {
   // atienda si ese otro falla primero: su rechazo sale como no manejado. Pasó
   // en el build, que intenta pintar esta página sin base.
   const hoy = hoyEnLaZona();
-  const [paraHacer, mes, mantenimiento, porDia] = await Promise.all([
-    umbralDeStockBajo().then(loQueHayParaHacer),
-    comoVieneElMes(),
-    elModoMantenimiento(),
-    ventasEnElTiempo(elMesEntero(hoy), "dia"),
-  ]);
+  const [paraHacer, mes, mantenimiento, porDia, marcaDeAgua] =
+    await Promise.all([
+      umbralDeStockBajo().then(loQueHayParaHacer),
+      comoVieneElMes(),
+      elModoMantenimiento(),
+      ventasEnElTiempo(elMesEntero(hoy), "dia"),
+      laMarcaDeAguaEstaActiva(),
+    ]);
 
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
@@ -78,6 +85,7 @@ export default async function PanelInicio() {
       />
 
       <TiendaEnElInicio activo={mantenimiento} />
+      <MarcaDeAguaEnElInicio activa={marcaDeAgua} />
       <ParaHacer datos={paraHacer} />
       <EsteMes datos={mes} porDia={porDia} hoy={hoy} />
     </div>

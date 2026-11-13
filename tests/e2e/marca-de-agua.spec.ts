@@ -220,6 +220,25 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
 
   expect(await hallazgosDeAxe(page)).toEqual([]);
 
+  // El inicio del panel también lo dice, y lleva a la pantalla.
+  await page.goto("/admin");
+  const enElInicio = page.getByRole("region", {
+    name: "La marca de agua está activada",
+  });
+  await expect(enElInicio).toBeVisible();
+  if (CAPTURAS) {
+    for (const ancho of [1280, 390]) {
+      await page.setViewportSize({ width: ancho, height: 900 });
+      await page.screenshot({ path: `${CAPTURAS}/inicio-${ancho}.png` });
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
+  }
+  expect(await hallazgosDeAxe(page)).toEqual([]);
+  await enElInicio
+    .getByRole("link", { name: "Cambiar la marca de agua" })
+    .click();
+  await expect(page).toHaveURL(/\/admin\/configuracion\/marca-de-agua$/);
+
   // En la ficha del producto se avisa, y la foto sube marcada.
   await page.goto(`/admin/productos/${producto.id}`);
   const seccion = page.getByRole("region", { name: "Colores y stock" });
