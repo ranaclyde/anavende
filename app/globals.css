@@ -858,3 +858,71 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
     transform: translateY(-1.5px) scale(1.04);
   }
 }
+
+/* La palabra del hero y la animación de la primera carga (F10.7c, §2.3,
+   `components/shop/home/marca-del-hero.tsx`). Lo que se ve quieto es el
+   estado final —la palabra—, y la animación lo recorre desde el isotipo: el
+   marco, el joystick y los auriculares se apagan, la A y la V crecen hasta su
+   lugar, y de cada una sale el resto. Una vez por visita (`data-marca-vista`
+   en <html>) y nunca con «reducir movimiento». Ninguna pieza rota ni se
+   estira: solo se mueven y cambian de tamaño entero. */
+.marca-del-hero-grilla {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.marca-del-hero-letra,
+.marca-del-hero-resto {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-marca-vista]) .marca-del-hero-grilla {
+    animation: marca-del-hero-grilla 450ms cubic-bezier(0.4, 0, 1, 1) 350ms both;
+  }
+  :root:not([data-marca-vista]) .marca-del-hero-letra {
+    animation: marca-del-hero-letra 750ms cubic-bezier(0.65, 0, 0.35, 1) 350ms
+      both;
+  }
+  :root:not([data-marca-vista]) .marca-del-hero-v {
+    animation-delay: 400ms;
+  }
+  :root:not([data-marca-vista]) .marca-del-hero-resto {
+    animation: marca-del-hero-resto 650ms cubic-bezier(0.16, 1, 0.3, 1) 950ms
+      both;
+  }
+  :root:not([data-marca-vista]) .marca-del-hero-ende {
+    animation-delay: 1000ms;
+  }
+}
+
+@keyframes marca-del-hero-grilla {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+/* `--desde` lo calcula el componente para cada letra: el lugar y el tamaño
+   que tiene en su celda de la grilla. */
+@keyframes marca-del-hero-letra {
+  from {
+    transform: var(--desde);
+  }
+}
+
+@keyframes marca-del-hero-resto {
+  from {
+    clip-path: inset(-10% 100% -10% 0);
+    transform: translateX(-120px);
+  }
+  to {
+    clip-path: inset(-10% -2% -10% 0);
+    transform: none;
+  }
+}

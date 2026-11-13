@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { ESCENA_BASE, type PiezaDelHero } from "./escena-del-hero";
+import { MarcaDelHero } from "./marca-del-hero";
 import { cn } from "@/lib/utils";
 
 /**
@@ -205,13 +206,13 @@ export function HeroDeLaHome({
       <div className="relative z-10 mx-auto flex max-w-lg flex-col items-center gap-5 text-center">
         {/*
           La marca, en burdeos y escrita como se escribe: «AnaVende», con las
-          dos mayúsculas. Hasta el 2026-10-19 iba en minúsculas (§2.3, desvío
-          del 2026-09-22); se volvió a la forma del nombre a pedido tuyo.
+          dos mayúsculas. Desde F10.7c va en la letra del logo y en trazo, y
+          en la primera carga sale del isotipo (`MarcaDelHero`); el nombre lo
+          lee el lector de pantalla del `sr-only`.
         */}
         <h1 className="flex flex-col items-center gap-1">
-          <span className="text-display text-brand sm:text-marca">
-            AnaVende
-          </span>
+          <MarcaDelHero />
+          <span className="sr-only">AnaVende</span>
           {/* El lector de pantalla oye la forma canónica una vez, y no una
               categoría nueva cada pocos segundos. */}
           <span className="sr-only">: vos elegís la tecnología.</span>

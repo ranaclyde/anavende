@@ -154,7 +154,7 @@ La fuente de verdad son los trazos de `lib/marca.ts`. Los componentes los dibuja
 
 **A 16px la cuadrícula no se lee**: las cuatro celdas se funden. Es aceptable en el favicon, donde de todos modos se reconoce por color y silueta, pero **no** se usa el isotipo por debajo de 24px en ningún otro lado.
 
-**Nunca:** deformar la proporción, cambiarle el color —salvo la versión clara de esta tabla—, ponerle sombra, rotarlo, ni apoyarlo sobre una foto sin una superficie sólida debajo. **Separar las piezas** —el marco, la A, el joystick, los auriculares y la V— queda reservado a la animación de la primera carga (F10.7c, segunda parte): se mueven, pero ninguna rota ni se estira.
+**Nunca:** deformar la proporción, cambiarle el color —salvo la versión clara de esta tabla—, ponerle sombra, rotarlo, ni apoyarlo sobre una foto sin una superficie sólida debajo. **Separar las piezas** —el marco, la A, el joystick, los auriculares y la V— queda reservado a la animación de la primera carga del hero, más abajo.
 
 **La única cosa que se le pone encima es el adorno de una fecha** (F9.5,
 RF-38, 2026-10-23): una guirnalda de luces en Navidad, una telaraña con una
@@ -170,9 +170,18 @@ En el pie, los emails y el panel no va nunca.
 el hero de la home** (§7.1, agregado el 2026-09-22). Ahí no acompaña a la
 navegación —**es** la pantalla—, así que va en burdeos y por encima de la
 escala tipográfica, escrita como el nombre: «AnaVende». Hasta el 2026-10-19
-iba en minúsculas; se volvió a la forma del nombre con el hero nuevo. El
-isotipo no la acompaña y no cambia de tamaño ni de color en ningún caso: lo de
-esta tabla sigue valiendo tal cual.
+iba en minúsculas; se volvió a la forma del nombre con el hero nuevo. **Desde
+F10.7c es la palabra del logo** —Figtree, en trazo—, con la misma mayúscula que
+tenía en Inter: 26px en el teléfono y 41px desde `sm`.
+
+**La animación de la primera carga** (F10.7c, 2026-11-13) es el único lugar
+donde el isotipo y la palabra se tocan: la palabra arranca siendo el isotipo,
+el marco, el joystick y los auriculares se apagan, la A y la V crecen hasta su
+lugar y de cada una sale el resto. Dura 1,6 segundos, **una vez por visita**
+(la pestaña: volver al inicio o recargar no la repite) y nunca con «reducir
+movimiento». Las piezas se mueven y cambian de tamaño entero; ninguna rota ni
+se estira. Lo que se ve quieto es la palabra, y el nombre accesible del título
+no cambia.
 
 ### 2.4 El eslogan
 
