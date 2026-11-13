@@ -18,7 +18,7 @@ import {
  * que alguien abre la home en una visita, la palabra arranca siendo el
  * isotipo: el marco, el joystick y los auriculares se apagan, la A y la V
  * crecen hasta su lugar en la palabra, y de cada una sale el resto, «na» y
- * «ende». Dura 1,6 segundos y no se repite.
+ * «ende». Dura 2,9 segundos y no se repite.
  *
  * **Todo es CSS** (`marca-del-hero` en `globals.css`): arranca con el primer
  * pintado, sin esperar a que React hidrate, y no vuelve a dibujar nada. Lo

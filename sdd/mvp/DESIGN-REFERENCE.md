@@ -177,7 +177,7 @@ tenía en Inter: 26px en el teléfono y 41px desde `sm`.
 **La animación de la primera carga** (F10.7c, 2026-11-13) es el único lugar
 donde el isotipo y la palabra se tocan: la palabra arranca siendo el isotipo,
 el marco, el joystick y los auriculares se apagan, la A y la V crecen hasta su
-lugar y de cada una sale el resto. Dura 1,6 segundos, **una vez por visita**
+lugar y de cada una sale el resto. Dura 2,9 segundos (1,6 hasta el 2026-11-13: no se distinguía), **una vez por visita**
 (la pestaña: volver al inicio o recargar no la repite) y nunca con «reducir
 movimiento». Las piezas se mueven y cambian de tamaño entero; ninguna rota ni
 se estira. Lo que se ve quieto es la palabra, y el nombre accesible del título
