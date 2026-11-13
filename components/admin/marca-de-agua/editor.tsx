@@ -139,12 +139,12 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
         {...encabezado}
         insignias={
           marca.activa ? (
-            <Badge tone="info">
+            <Badge tone="success">
               <Droplets aria-hidden />
               Activada
             </Badge>
           ) : (
-            <Badge tone="neutral">
+            <Badge tone="danger">
               <DropletOff aria-hidden />
               Desactivada
             </Badge>

@@ -1211,7 +1211,8 @@ function EdicionDeVariante({
  * desde su pantalla, que es a donde lleva. Es un enlace con forma de
  * insignia y no una insignia suelta, porque lo siguiente que se quiere hacer
  * al leerla es cambiarla o ver cómo queda. El estado va escrito y con un
- * ícono distinto, no solo en otro color (§9).
+ * ícono distinto, no solo en otro color (§9). Verde y rojo, para que se
+ * note de un vistazo (2026-11-13).
  */
 function AvisoDeMarcaDeAgua({ activa }: { activa: boolean }) {
   return (
@@ -1220,7 +1221,7 @@ function AvisoDeMarcaDeAgua({ activa }: { activa: boolean }) {
       className="rounded-pill outline-none focus-visible:shadow-focus"
     >
       <Badge
-        tone={activa ? "info" : "neutral"}
+        tone={activa ? "success" : "danger"}
         className="underline-offset-2 hover:underline"
       >
         {activa ? <Droplets aria-hidden /> : <DropletOff aria-hidden />}

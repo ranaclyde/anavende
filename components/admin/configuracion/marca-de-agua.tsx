@@ -16,12 +16,12 @@ export function MarcaDeAguaEnConfiguracion({ activa }: { activa: boolean }) {
       titulo="Marca de agua"
       insignias={
         activa ? (
-          <Badge tone="info">
+          <Badge tone="success">
             <Droplets aria-hidden />
             Activada
           </Badge>
         ) : (
-          <Badge tone="neutral">
+          <Badge tone="danger">
             <DropletOff aria-hidden />
             Desactivada
           </Badge>
