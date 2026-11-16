@@ -1,5 +1,3 @@
-import { CreditCard } from "lucide-react";
-
 import {
   OtrasOpcionesDeCuotas,
   type OpcionDeCuotas,
@@ -20,9 +18,10 @@ import {
  * 2026-11-16).
  *
  * Con recargo, en gris y con la cuota en tinta. **Sin interés, el renglón
- * entero va en verde**, ícono y texto (pedidos del 2026-11-16): el verde de
- * éxito y no el de WhatsApp, que es solo de lo que abre WhatsApp (§2.6) y
- * está justo debajo.
+ * entero va en verde** (pedidos del 2026-11-16): el verde de éxito y no el
+ * de WhatsApp, que es solo de lo que abre WhatsApp (§2.6) y está justo
+ * debajo. **Sin ícono y en `caption`**: informa, y no pesa más que el texto
+ * de abajo (2026-11-16).
  */
 export function CuotasDeLaFicha({
   promociones,
@@ -33,41 +32,31 @@ export function CuotasDeLaFicha({
   if (!p) return null;
 
   return (
-    <div className="flex flex-col gap-1 pt-1 text-body-sm text-ink-secondary">
-      <p
-        className={cn(
-          "flex items-start gap-2",
-          p.sinRecargo ? "text-success" : null,
-        )}
-      >
-        <CreditCard aria-hidden className="mt-[3px] size-4 shrink-0" />
-        <span>
-          {p.sinRecargo ? "Mismo precio en " : null}
-          <strong
-            className={cn(
-              "font-semibold tabular-nums",
-              p.sinRecargo ? null : "text-ink",
-            )}
-          >
-            {p.cuotas} cuotas de {formatMoney(p.cuota)}
-          </strong>{" "}
-          con {conQuien(p)}
-        </span>
+    <div className="flex flex-col gap-1 pt-1 text-caption text-ink-secondary">
+      <p className={p.sinRecargo ? "text-success" : undefined}>
+        {p.sinRecargo ? "Mismo precio en " : null}
+        <strong
+          className={cn(
+            "font-semibold tabular-nums",
+            p.sinRecargo ? null : "text-ink",
+          )}
+        >
+          {p.cuotas} cuotas de {formatMoney(p.cuota)}
+        </strong>{" "}
+        con {conQuien(p)}
       </p>
 
       {todas.length < 2 ? null : (
-        <div className="pl-6">
-          <OtrasOpcionesDeCuotas
-            opciones={todas.map((o): OpcionDeCuotas => ({
-              id: o.id,
-              quien: conQuien(o),
-              logoUrl: o.logoUrl,
-              cuotas: o.cuotas,
-              cuota: formatMoney(o.cuota),
-              sinRecargo: o.sinRecargo,
-            }))}
-          />
-        </div>
+        <OtrasOpcionesDeCuotas
+          opciones={todas.map((o): OpcionDeCuotas => ({
+            id: o.id,
+            quien: conQuien(o),
+            logoUrl: o.logoUrl,
+            cuotas: o.cuotas,
+            cuota: formatMoney(o.cuota),
+            sinRecargo: o.sinRecargo,
+          }))}
+        />
       )}
     </div>
   );

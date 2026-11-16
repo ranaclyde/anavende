@@ -1430,9 +1430,9 @@ Sin filtros se indexa, con `canonical` propio y en `sitemap.xml`; con cualquier 
 │ ┌──┐    imagen       │                             │
 │ └──┘  principal   ›  │  $ 24.500,00                │  burdeos, 28px/500
 │ ┌──┐                 │  $ 27.500,00                │  tachado, secundario, 12px
-│ └──┘                 │  ▭ Mismo precio en 3 cuotas │  RF-40: body-sm, secundario;
-│                      │    de $ 8.166,67 con …      │  la cuota en tinta y semibold
-│                      │    Ver otras opciones       │  modal, solo con dos o más
+│ └──┘                 │  Mismo precio en 3 cuotas   │  RF-40: caption, sin ícono;
+│                      │  de $ 8.166,67 con …        │  verde sin interés, la cuota semibold
+│                      │  Ver otras opciones         │  burdeos; modal, con dos o más
 │                      │                             │
 │                      │  Color: Negro               │
 │    ↑ pegada          │  ● ○ ○ ⊘                    │
@@ -1468,7 +1468,7 @@ Sin filtros se indexa, con `canonical` propio y en `sitemap.xml`; con cualquier 
    Productos similares               → 4 tarjetas
 ```
 
-**Las cuotas van debajo del precio, porque dividen ese número** (RF-40, F2.17). Una sola a la vista —la de más cuotas sin interés o, si no hay, la de cuota más baja—. Con recargo, en gris y con la cuota en tinta: el burdeos es de la oferta y de lo accionable (§6.7), y esto informa. **Sin interés, el renglón entero va en verde**, ícono y texto (2026-11-16): el verde de éxito, no el de WhatsApp, que es solo de lo que abre WhatsApp (§2.6) y está justo debajo. Sin recargo dice «Mismo precio en…»; con recargo, solo «3 cuotas de $ X con …», nunca «sin interés». Con plan, «con Plan Z de NaranjaX».
+**Las cuotas van debajo del precio, porque dividen ese número** (RF-40, F2.17). Una sola a la vista —la de más cuotas sin interés o, si no hay, la de cuota más baja—. Con recargo, en gris y con la cuota en tinta: el burdeos es de la oferta y de lo accionable (§6.7), y esto informa. En `caption` y sin ícono (2026-11-16): informa, y no pesa más que el texto de abajo. **Sin interés, el renglón entero va en verde** (2026-11-16): el verde de éxito, no el de WhatsApp, que es solo de lo que abre WhatsApp (§2.6) y está justo debajo. Sin recargo dice «Mismo precio en…»; con recargo, solo «3 cuotas de $ X con …», nunca «sin interés». Con plan, «con Plan Z de NaranjaX».
 
 **«Ver otras opciones» abre un modal**, solo con dos o más promociones. Va en burdeos, subrayado y en peso medio, como «Ver todas» del listado: es accionable (§6.7), y en gris se confundía con el renglón de arriba. El modal: «Cuotas para este producto», todas las que aplican, la destacada incluida. **Filas y no una grilla de logos** como la de MercadoLibre, que muestra solo «12 cuotas» porque tiene decenas de bancos: acá son pocos medios y entra el monto de la cuota, que es lo que se compara. Cada fila lleva el logo del medio en el chip claro de §6.10, la cuota (verde si es mismo precio) y «con …» debajo. Dos grupos, «Mismo precio» y «Con recargo», cada uno de menos a más cuotas, y sin el total con recargo. La bajada dice que las cuotas se eligen al coordinar el pago (RN-01).
 
