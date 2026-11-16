@@ -2,7 +2,10 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
+  index,
   integer,
+  numeric,
   pgTable,
   text,
   timestamp,
@@ -62,6 +65,75 @@ export const paymentMethods = pgTable("payment_methods", {
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
 }).enableRLS();
+
+/**
+ * Promociones de cuotas de un medio de pago — RF-40, F2.17.
+ *
+ * Tan informativas como el medio de pago (RN-01): no cambian el precio, no
+ * cobran y ninguna orden las nombra. Por eso borrar el medio se las lleva
+ * (`cascade`) sin preguntar por nadie más.
+ *
+ * **El recargo es fijo y en porcentaje** (decisión del 2026-11-13): el que el
+ * medio de pago aplica siempre a ese plan. Un plan cuyo recargo depende de la
+ * tarjeta no se carga, para no mostrar una cuota que no coincide con la que
+ * se termina pagando.
+ *
+ * **Las fechas son `date` y se comparan contra el día de Argentina**, no
+ * contra un instante: «hasta el 30 de noviembre» incluye todo el 30 acá,
+ * aunque en UTC ya sea 1 de diciembre. Sin `ends_on`, no vence (el plan Z de
+ * Naranja X no tiene fecha de fin).
+ */
+export const paymentPromotions = pgTable(
+  "payment_promotions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    paymentMethodId: uuid("payment_method_id")
+      .notNull()
+      .references(() => paymentMethods.id, { onDelete: "cascade" }),
+    /**
+     * El plan del medio de pago, cuando no es el medio entero: «Plan Z» de
+     * Naranja X, que es de una de sus tarjetas. La ficha dice «con Plan Z de
+     * NaranjaX». `null` = la promoción es del medio, sin aclaración.
+     */
+    planName: text("plan_name"),
+    installments: integer("installments").notNull(),
+    /** `0` = sin interés. Texto con dos decimales, como los montos (§7.2). */
+    surchargePct: numeric("surcharge_pct", { precision: 5, scale: 2 })
+      .notNull()
+      .default("0"),
+    startsOn: date("starts_on").notNull(),
+    endsOn: date("ends_on"),
+    /** Sobre el precio final, con el descuento aplicado. `null` = sin mínimo. */
+    minAmount: numeric("min_amount", { precision: 12, scale: 2 }),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("payment_promotions_method_idx").on(t.paymentMethodId),
+    check(
+      "payment_promotions_installments",
+      sql`${t.installments} BETWEEN 2 AND 48`,
+    ),
+    check(
+      "payment_promotions_surcharge",
+      sql`${t.surchargePct} >= 0 AND ${t.surchargePct} <= 200`,
+    ),
+    check(
+      "payment_promotions_dates",
+      sql`${t.endsOn} IS NULL OR ${t.endsOn} >= ${t.startsOn}`,
+    ),
+    check(
+      "payment_promotions_plan_name",
+      sql`${t.planName} IS NULL OR char_length(${t.planName}) BETWEEN 1 AND 40`,
+    ),
+    check(
+      "payment_promotions_min_amount",
+      sql`${t.minAmount} IS NULL OR ${t.minAmount} > 0`,
+    ),
+  ],
+).enableRLS();
 
 /** Garantías, términos, privacidad y cómo comprar (RF-29). Markdown. */
 export const legalPages = pgTable("legal_pages", {
@@ -165,4 +237,5 @@ export type SiteSettings = typeof siteSettings.$inferSelect;
 export type WatermarkImage = typeof watermarkImages.$inferSelect;
 export type WatermarkLayer = typeof watermarkLayers.$inferSelect;
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type PaymentPromotion = typeof paymentPromotions.$inferSelect;
 export type LegalPage = typeof legalPages.$inferSelect;

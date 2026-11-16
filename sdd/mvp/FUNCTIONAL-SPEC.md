@@ -711,6 +711,27 @@ lo que ya estaba subido no cambia.
 
 ---
 
+### RF-40 — Promociones de cuotas por medio de pago
+
+**Descripción:** Un medio de pago (RF-19) puede tener promociones de cuotas —«3 cuotas sin interés con Go Cuotas», «plan Z de Naranja X»— que la ficha muestra debajo del precio. Son tan informativas como el medio de pago (RN-01): no cambian el precio, no generan un cobro y la orden no las guarda. No son FA-09: no hay cupón ni descuento, solo una forma de pagar el mismo precio.
+
+**Campos, por promoción:** medio de pago, plan opcional (cuando la promoción es de una tarjeta o un plan del medio y no del medio entero: «Plan Z»), cantidad de cuotas (2 o más), recargo en % (0 = sin interés), vigencia desde y hasta (fechas inclusive, día de Argentina; **sin fecha de fin no vence**, como el plan Z de Naranja X), monto mínimo opcional, activa.
+
+**Criterios de aceptación:**
+- [ ] Se cargan, editan, desactivan y borran desde el medio de pago en el panel. Un medio de pago puede tener varias, y el panel dice de cada una si está vigente, programada, vencida o desactivada.
+- [ ] Al cargarla, el panel muestra cómo se va a ver en la ficha, con la cuota calculada sobre el monto mínimo o, sin mínimo, sobre un precio de ejemplo.
+- [ ] **Solo se cargan recargos fijos**: el porcentaje es el que el medio de pago aplica siempre a ese plan. Un plan cuyo recargo depende de la tarjeta o del banco no se carga; el panel lo dice junto al campo.
+- [ ] Una promoción aparece en la ficha **solo si** está activa, su medio de pago está activo, hoy está dentro de la vigencia y el precio final (con el descuento ya aplicado, RF-15) alcanza el monto mínimo. Fuera de eso no aparece, sin que nadie la apague.
+- [ ] La cuota se calcula sobre el **precio final**: `precio final × (1 + recargo / 100) / cuotas`, redondeada al centavo hacia arriba y con el formato de RN-02.
+- [ ] Sin recargo dice **«Mismo precio en 3 cuotas de $ 12.333,34 con Go Cuotas»**, en verde hasta la cuota y «con …» en gris; con recargo, **«3 cuotas de $ 14.183,34 con Naranja X»**. Nunca «sin interés» si el recargo no es 0. Con plan, **«… con Plan Z de NaranjaX»**.
+- [ ] Con varias vigentes, se ve **una**: la de más cuotas sin recargo; si ninguna es sin recargo, la de cuota más baja.
+- [ ] Con dos o más, **«Ver otras opciones»** abre un modal con todas las que aplican al producto, la destacada incluida, cada una con el logo de su medio: primero **«Mismo precio»** y después **«Con recargo»**, cada grupo **de menos a más cuotas** (los empates, en el orden de los medios). Sin el total con recargo: lo calcula quien compra. Con una sola, no hay enlace.
+- [ ] Va **solo en la ficha**, debajo del precio. La tarjeta, el catálogo, el carrito y el checkout no la muestran.
+- [ ] El texto no promete cobro ni pide datos de tarjeta (RN-01): las cuotas se eligen al coordinar el pago.
+- [ ] Borrar un medio de pago borra sus promociones.
+
+---
+
 ### RF-20 — Configuración del sitio
 
 **Criterios de aceptación:**
@@ -1307,3 +1328,5 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-10-23 | Escenas por fecha (RF-38), en el MVP: Halloween y Navidad | Pedido tuyo. Se encienden solas y se apagan desde la configuración, una por una. Los períodos están en el código y no en el panel: cada fecha nueva trae sus dibujos, así que sumar una sin desplegar no tendría con qué verse |
 | 2026-10-23 | Pascua se suma a las escenas por fecha (RF-38): la Semana Santa | Pedido tuyo, en el mismo día. Va del Domingo de Ramos al de Pascua, y como se mueve se calcula cada año en vez de cargar una tabla |
 | 2026-11-11 | Marca de agua en las fotos de productos (RF-39), en el MVP | Pedido tuyo: copian las fotos de la tienda. Capas de imágenes subidas —no un generador de texto, que queda para si esto no alcanza—, solo en fotos nuevas, en tarjeta y detalle, y todo o nada |
+| 2026-11-16 | Promociones de cuotas (RF-40): plan opcional, renglón en verde sin interés y modal «Ver otras opciones» | Pedido tuyo, sobre el modal de MercadoLibre: filas con el monto de la cuota en vez de una grilla de logos, porque son pocos medios; ordenado por cantidad de cuotas; sin total con recargo; sin enlace con una sola promoción. El plan es por «Plan Z», de una tarjeta de NaranjaX |
+| 2026-11-13 | Promociones de cuotas por medio de pago (RF-40), en el MVP | Pedido tuyo: Go Cuotas y Naranja X ofrecen cuotas sin interés por temporada y la tienda no lo decía. No es FA-09: el precio no cambia. Solo recargos fijos, solo en la ficha y para todo producto que alcance el monto mínimo |

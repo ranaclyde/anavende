@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import {
   ArrowDown,
   ArrowUp,
+  BadgePercent,
   CreditCard,
   Eye,
   EyeOff,
@@ -15,6 +16,7 @@ import {
 
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { EdicionDeMedioDePago } from "@/components/admin/pagos/edicion";
+import { PromocionesDeMedioDePago } from "@/components/admin/pagos/promociones";
 import { PaginacionDelPanel, tramo } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
 import { avisar } from "@/components/ui/aviso";
@@ -80,6 +82,11 @@ export function ListadoDeMediosDePago({
   const [creando, setCreando] = useState(false);
   const [editando, setEditando] = useState<MedioDePagoDelPanel | null>(null);
   const [porBorrar, setPorBorrar] = useState<MedioDePagoDelPanel | null>(null);
+  // El id y no el medio: la fila se busca en `items` en cada render, así el
+  // drawer muestra las promociones que trajo la última revalidación.
+  const [conPromociones, setConPromociones] = useState<string | null>(null);
+  const medioConPromociones =
+    items.find((m) => m.id === conPromociones) ?? null;
 
   const correr = (fn: () => Promise<{ ok: boolean; message?: string }>) => {
     setError(null);
@@ -156,9 +163,9 @@ export function ListadoDeMediosDePago({
                 <TableRow className="hover:bg-surface-sunken">
                   <TableHead>Medio de pago</TableHead>
                   <TableHead className="w-28">Estado</TableHead>
-                  {/* Cinco botones de 36px con 4px entre ellos piden 196px de
-                      contenido; con el padding de la celda, `w-56`. */}
-                  <TableHead className="w-56 text-right">
+                  {/* Seis botones de 36px y el separador piden unos 240px de
+                      contenido; con el padding de la celda, `w-64`. */}
+                  <TableHead className="w-64 text-right">
                     <span className="sr-only">Acciones</span>
                   </TableHead>
                 </TableRow>
@@ -181,6 +188,7 @@ export function ListadoDeMediosDePago({
                         alSubir={() => mover(medio, "arriba")}
                         alBajar={() => mover(medio, "abajo")}
                         alEditar={() => setEditando(medio)}
+                        alPromociones={() => setConPromociones(medio.id)}
                         alAlternar={() => alternarEstado(medio)}
                         alBorrar={() => setPorBorrar(medio)}
                       />
@@ -211,6 +219,7 @@ export function ListadoDeMediosDePago({
                     alSubir={() => mover(medio, "arriba")}
                     alBajar={() => mover(medio, "abajo")}
                     alEditar={() => setEditando(medio)}
+                    alPromociones={() => setConPromociones(medio.id)}
                     alAlternar={() => alternarEstado(medio)}
                     alBorrar={() => setPorBorrar(medio)}
                   />
@@ -242,6 +251,13 @@ export function ListadoDeMediosDePago({
           medio={editando}
           abierto
           alCerrar={() => setEditando(null)}
+        />
+      ) : null}
+
+      {medioConPromociones ? (
+        <PromocionesDeMedioDePago
+          medio={medioConPromociones}
+          alCerrar={() => setConPromociones(null)}
         />
       ) : null}
 
@@ -320,8 +336,26 @@ function Nombre({ medio }: { medio: MedioDePagoDelPanel }) {
             {medio.description}
           </span>
         ) : null}
+        <Vigentes medio={medio} />
       </span>
     </div>
+  );
+}
+
+/**
+ * Cuántas promociones de cuotas se ven hoy (RF-40). Sin ninguna vigente no
+ * dice nada: «0 promociones» en cada fila es ruido para el medio que no las
+ * usa.
+ */
+function Vigentes({ medio }: { medio: MedioDePagoDelPanel }) {
+  const n = medio.promociones.filter(
+    (p) => p.activa && p.estado === "vigente",
+  ).length;
+  if (n === 0) return null;
+  return (
+    <span className="text-caption text-success">
+      {n === 1 ? "1 promoción vigente" : `${n} promociones vigentes`}
+    </span>
   );
 }
 
@@ -341,6 +375,7 @@ function Acciones({
   alSubir,
   alBajar,
   alEditar,
+  alPromociones,
   alAlternar,
   alBorrar,
 }: {
@@ -351,6 +386,7 @@ function Acciones({
   alSubir: () => void;
   alBajar: () => void;
   alEditar: () => void;
+  alPromociones: () => void;
   alAlternar: () => void;
   alBorrar: () => void;
 }) {
@@ -392,6 +428,16 @@ function Acciones({
       >
         <Pencil aria-hidden />
         <span className="sr-only">Editar {medio.name}</span>
+      </Button>
+      <Button
+        variant="tertiary"
+        size="icon"
+        disabled={ocupado}
+        onClick={alPromociones}
+        title="Promociones de cuotas"
+      >
+        <BadgePercent aria-hidden />
+        <span className="sr-only">Promociones de cuotas de {medio.name}</span>
       </Button>
       <Button
         variant="tertiary"

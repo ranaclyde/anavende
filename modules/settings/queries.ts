@@ -7,6 +7,14 @@ import { db } from "@/db";
 import { TODAS_PERMITIDAS, type EscenasPermitidas } from "@/lib/escenas";
 import { POR_PAGINA } from "@/modules/catalog/filtros-panel";
 import { urlDeLogo } from "@/modules/media/subir";
+import type { PromocionVigente } from "@/modules/settings/promociones";
+
+/**
+ * El día de hoy en Argentina, para comparar contra columnas `date` (RF-40).
+ * La sesión de Postgres está en UTC: sin esto, de 21 a 24 una promoción que
+ * vence hoy ya se daría por vencida.
+ */
+const HOY_EN_ARGENTINA = sql`(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date`;
 
 /**
  * Configuración del sitio — RF-20, §5.9.
@@ -117,6 +125,29 @@ export type MedioDePagoDelPanel = {
   logoUrl: string | null;
   sortOrder: number;
   isActive: boolean;
+  /** Sus promociones de cuotas (RF-40), las vencidas al final. */
+  promociones: PromocionDelPanel[];
+};
+
+/**
+ * Una promoción de cuotas en el panel — RF-40.
+ *
+ * Los montos y el recargo como los guarda la base (§7.2); las fechas,
+ * `AAAA-MM-DD`. `estado` lo calcula la base contra el día de Argentina, el
+ * mismo criterio que usa la tienda, para que el panel no diga «vigente» de
+ * una que la ficha ya no muestra.
+ */
+export type PromocionDelPanel = {
+  id: string;
+  /** «Plan Z». `null` = la promoción es del medio, sin aclaración. */
+  plan: string | null;
+  cuotas: number;
+  recargo: string;
+  desde: string;
+  hasta: string | null;
+  montoMinimo: string | null;
+  activa: boolean;
+  estado: "vigente" | "programada" | "vencida";
 };
 
 /**
@@ -130,12 +161,35 @@ export async function listarMediosDePago(
   pagina = 1,
 ): Promise<{ items: MedioDePagoDelPanel[]; total: number }> {
   const [filas, [conteo]] = await Promise.all([
-    db.execute<Omit<MedioDePagoDelPanel, "logoUrl"> & { logoKey: string | null }>(
+    db.execute<
+      Omit<MedioDePagoDelPanel, "logoUrl"> & { logoKey: string | null }
+    >(
       sql`
     SELECT id, name, description,
            logo_key   AS "logoKey",
            sort_order AS "sortOrder",
-           is_active  AS "isActive"
+           is_active  AS "isActive",
+           -- Las promociones van en la misma ida: son pocas por medio, y una
+           -- segunda consulta por página no ahorraría nada (RF-40).
+           coalesce((
+             SELECT json_agg(json_build_object(
+                      'id', pp.id,
+                      'plan', pp.plan_name,
+                      'cuotas', pp.installments,
+                      'recargo', pp.surcharge_pct::text,
+                      'desde', pp.starts_on::text,
+                      'hasta', pp.ends_on::text,
+                      'montoMinimo', pp.min_amount::text,
+                      'activa', pp.is_active,
+                      'estado', CASE
+                        WHEN pp.ends_on < ${HOY_EN_ARGENTINA} THEN 'vencida'
+                        WHEN pp.starts_on > ${HOY_EN_ARGENTINA} THEN 'programada'
+                        ELSE 'vigente' END)
+                    ORDER BY coalesce(pp.ends_on < ${HOY_EN_ARGENTINA}, false),
+                             pp.starts_on, pp.installments, pp.id)
+               FROM payment_promotions pp
+              WHERE pp.payment_method_id = payment_methods.id
+           ), '[]'::json) AS promociones
       FROM payment_methods
      -- El id desempata: dos medios con el mismo orden y el mismo nombre
      -- podrían cambiar de página entre dos cargas.
@@ -223,6 +277,44 @@ export const configuracionDeLaTienda = cache(
         pascua: fila.pascua,
       },
     };
+  },
+);
+
+/**
+ * Las promociones de cuotas que la tienda muestra hoy — RF-40, F2.17.
+ *
+ * Activas, de un medio de pago activo y dentro de la vigencia **según el día
+ * de Argentina**: «hasta el 30» incluye el 30 entero acá, aunque en UTC ya
+ * sea 1. El monto mínimo NO se filtra acá: depende del producto, y sin él la
+ * consulta es la misma para toda la tienda y se puede pedir en paralelo con
+ * la ficha (`promocionesParaElPrecio` termina el trabajo).
+ *
+ * En el orden de los medios de pago, que es con el que se desempata.
+ */
+export const promocionesVigentes = cache(
+  async (): Promise<PromocionVigente[]> => {
+    const filas = await db.execute<
+      Omit<PromocionVigente, "logoUrl"> & { logoKey: string | null }
+    >(sql`
+      SELECT pp.id,
+             pm.name                 AS medio,
+             pp.plan_name            AS plan,
+             pm.logo_key             AS "logoKey",
+             pp.installments         AS cuotas,
+             pp.surcharge_pct::text  AS recargo,
+             pp.min_amount::text     AS "montoMinimo"
+        FROM payment_promotions pp
+        JOIN payment_methods pm ON pm.id = pp.payment_method_id
+       WHERE pp.is_active AND pm.is_active
+         AND pp.starts_on <= ${HOY_EN_ARGENTINA}
+         AND (pp.ends_on IS NULL OR pp.ends_on >= ${HOY_EN_ARGENTINA})
+       ORDER BY pm.sort_order, immutable_unaccent(lower(pm.name)),
+                pp.installments, pp.id
+    `);
+    return filas.map(({ logoKey, ...p }) => ({
+      ...p,
+      logoUrl: urlDeLogo(logoKey, "thumb"),
+    }));
   },
 );
 

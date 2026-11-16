@@ -7,6 +7,7 @@ import { ChevronRight, RotateCcw } from "lucide-react";
 import { DatosEstructurados } from "@/components/seo/datos-estructurados";
 import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
 import { Compra } from "@/components/shop/ficha/compra";
+import { CuotasDeLaFicha } from "@/components/shop/ficha/cuotas";
 import { Descripcion } from "@/components/shop/ficha/descripcion";
 import {
   EsqueletoDeRecomendados,
@@ -38,7 +39,11 @@ import {
   type Ficha,
 } from "@/modules/catalog/products/ficha";
 import { esFavorito } from "@/modules/users/favoritos/queries";
-import { numeroDeWhatsApp } from "@/modules/settings/queries";
+import { promocionesParaElPrecio } from "@/modules/settings/promociones";
+import {
+  numeroDeWhatsApp,
+  promocionesVigentes,
+} from "@/modules/settings/queries";
 
 /**
  * Ficha de producto — F3.5, RF-03, DESIGN-REFERENCE §6.5, §6.8, §7.3.
@@ -202,11 +207,15 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
   // —«Agregá al carrito» o «Iniciá sesión para comprar» (RF-08)—, y
   // `getIdentity` verifica el token sin ir a la base. Quien decide si puede
   // agregar es la acción, con el perfil fresco (§6.2).
-  const [ficha, whatsapp, consulta, identidad] = await Promise.all([
+  //
+  // Las promociones de cuotas (RF-40) también: son las de toda la tienda, y
+  // el monto mínimo de cada una se mira después, contra el precio.
+  const [ficha, whatsapp, consulta, identidad, vigentes] = await Promise.all([
     leerFicha(slug),
     numeroDeWhatsApp(),
     searchParams,
     getIdentity(),
+    promocionesVigentes(),
   ]);
 
   // RN-05: un producto inactivo no existe para el sitio público, y da el
@@ -325,6 +334,10 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
               precio={ficha.precio}
               descuento={ficha.descuento}
               precioFinal={ficha.precioFinal}
+            />
+            {/* RF-40: debajo del precio, porque divide ese número. */}
+            <CuotasDeLaFicha
+              promociones={promocionesParaElPrecio(vigentes, ficha.precioFinal)}
             />
             <Datos />
           </header>

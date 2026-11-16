@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { db } from "@/db";
-import { paymentMethods } from "@/db/schema/settings";
+import { paymentMethods, paymentPromotions } from "@/db/schema/settings";
 import { action } from "@/lib/action";
 import { domainError } from "@/lib/errors";
 import { borrarArchivos, clavesDelLogo, quitarLogo } from "@/modules/media/subir";
@@ -15,7 +15,11 @@ import {
 } from "@/modules/settings/service";
 import {
   cambioDeEstadoDePago,
+  cambioDeEstadoDePromocion,
   configuracionDelSitio,
+  crearPromocion,
+  editarPromocion,
+  soloPromocion,
   crearMedioDePago,
   editarMedioDePago,
   modoMantenimiento,
@@ -219,6 +223,94 @@ export const eliminarUnMedioDePago = action
     // existe, así que un archivo que sobreviva es basura, no un motivo para
     // decirle a la vendedora que no se pudo borrar algo que sí se borró.
     if (archivos.length) await borrarArchivos(archivos);
+
+    refrescar();
+    return { id: input.id };
+  });
+
+/* ── Promociones de cuotas — RF-40, F2.17 ─────────────────────────────── */
+
+/**
+ * ABM de las promociones de cuotas de un medio de pago.
+ *
+ * Igual que el medio de pago, no hay nada que las referencie (RN-01): se
+ * borran sin preguntar por nadie. La tienda no se revalida a mano: la ficha
+ * se arma en cada pedido —lee `?color=`— y toma la promoción nueva en la
+ * próxima visita.
+ */
+export const crearUnaPromocion = action
+  .input(crearPromocion)
+  .auth("admin")
+  .handler(async ({ input }) => {
+    // INSERT … SELECT y no un INSERT pelado: si el medio de pago se borró en
+    // otra pestaña, no hay fila y es un «no encontrado», no un error de
+    // clave foránea que el envoltorio no sabe decir.
+    const [fila] = await db.execute<{ id: string }>(sql`
+      INSERT INTO payment_promotions
+             (payment_method_id, plan_name, installments, surcharge_pct,
+              starts_on, ends_on, min_amount)
+      SELECT id, ${input.plan}, ${input.cuotas}, ${input.recargo},
+             ${input.desde}, ${input.hasta}, ${input.montoMinimo}
+        FROM payment_methods
+       WHERE id = ${input.paymentMethodId}
+      RETURNING id`);
+
+    if (!fila) throw domainError("NOT_FOUND");
+
+    refrescar();
+    return { id: fila.id };
+  });
+
+export const editarUnaPromocion = action
+  .input(editarPromocion)
+  .auth("admin")
+  .handler(async ({ input }) => {
+    const filas = await db
+      .update(paymentPromotions)
+      .set({
+        planName: input.plan,
+        installments: input.cuotas,
+        surchargePct: input.recargo,
+        startsOn: input.desde,
+        endsOn: input.hasta,
+        minAmount: input.montoMinimo,
+      })
+      .where(eq(paymentPromotions.id, input.id))
+      .returning({ id: paymentPromotions.id });
+
+    if (!filas.length) throw domainError("NOT_FOUND");
+
+    refrescar();
+    return { id: input.id };
+  });
+
+/** Cortarla antes de que venza, o volver a prenderla. */
+export const cambiarEstadoDePromocion = action
+  .input(cambioDeEstadoDePromocion)
+  .auth("admin")
+  .handler(async ({ input }) => {
+    const filas = await db
+      .update(paymentPromotions)
+      .set({ isActive: input.activa })
+      .where(eq(paymentPromotions.id, input.id))
+      .returning({ id: paymentPromotions.id });
+
+    if (!filas.length) throw domainError("NOT_FOUND");
+
+    refrescar();
+    return { id: input.id, activa: input.activa };
+  });
+
+export const eliminarUnaPromocion = action
+  .input(soloPromocion)
+  .auth("admin")
+  .handler(async ({ input }) => {
+    const filas = await db
+      .delete(paymentPromotions)
+      .where(eq(paymentPromotions.id, input.id))
+      .returning({ id: paymentPromotions.id });
+
+    if (!filas.length) throw domainError("NOT_FOUND");
 
     refrescar();
     return { id: input.id };

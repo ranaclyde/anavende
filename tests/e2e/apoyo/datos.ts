@@ -66,7 +66,7 @@ export function datosDePrueba() {
     marcas: [] as string[],
     categorias: [] as string[],
     colores: [] as string[],
-    mediosDePago: [] as { id: string; archivo: string }[],
+    mediosDePago: [] as { id: string; archivo: string | null }[],
   };
   let casillaOriginal: string | null = null;
 
@@ -250,6 +250,17 @@ export function datosDePrueba() {
     creados.mediosDePago.push({ id: fila.id, archivo });
   }
 
+  /** Un medio de pago sin logo, al final de la lista (RF-19, RF-40). */
+  async function unMedioDePago(nombre: string): Promise<string> {
+    const [fila] = await sql<{ id: string }[]>`
+      INSERT INTO payment_methods (name, sort_order)
+      VALUES (${nombre},
+              (SELECT coalesce(max(sort_order), -1) + 1 FROM payment_methods))
+      RETURNING id`;
+    creados.mediosDePago.push({ id: fila.id, archivo: null });
+    return fila.id;
+  }
+
   /**
    * Para borrar al final una cuenta que el test no creó por la API sino por
    * la pantalla de alta.
@@ -379,7 +390,9 @@ export function datosDePrueba() {
       await sql`DELETE FROM colors WHERE id = ${id}`;
     }
     for (const { id, archivo } of creados.mediosDePago.splice(0)) {
+      // Se lleva sus promociones de cuotas (RF-40) por la clave en cascada.
       await sql`DELETE FROM payment_methods WHERE id = ${id}`;
+      if (archivo === null) continue;
       const { error } = await bucket.remove([archivo]);
       if (error) throw error;
     }
@@ -397,6 +410,7 @@ export function datosDePrueba() {
     unaCuenta,
     unaOrden,
     unMedioDePagoConLogo,
+    unMedioDePago,
     anotarUsuario,
     anotarProducto,
     anotarDelCatalogo,

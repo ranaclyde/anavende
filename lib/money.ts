@@ -138,6 +138,32 @@ export function finalPrice(precio: Money, descuento: Money): Money {
   return subtract(precio, descuento);
 }
 
+/**
+ * El valor de una cuota — RF-40, F2.17.
+ *
+ * `precio × (1 + recargo / 100) / cuotas`, **redondeado al centavo hacia
+ * arriba**: es la única cuenta del sistema que no corta hacia abajo, y es a
+ * propósito (decisión del 2026-11-13). Una cuota que se muestra se va a
+ * sumar, y tres de $ 12.333,33 dan $ 36.999,99 sobre un precio de $ 37.000:
+ * el «mismo precio» de la promoción dejaría de serlo por un centavo.
+ *
+ * `recargo` es un porcentaje con hasta dos decimales, como lo guarda la base
+ * (`surcharge_pct`), no un monto.
+ */
+export function cuota(precio: Money, recargo: string, cuotas: number): Money {
+  if (!Number.isInteger(cuotas) || cuotas < 2) {
+    throw new RangeError(`Las cuotas tienen que ser 2 o más, llegó ${cuotas}.`);
+  }
+  if (!isMoney(recargo) || new Decimal(recargo).isNegative()) {
+    throw new TypeError(`Recargo mal formado: ${JSON.stringify(recargo)}.`);
+  }
+  return aDecimal(precio)
+    .times(new Decimal(recargo).dividedBy(100).plus(1))
+    .dividedBy(cuotas)
+    .toDecimalPlaces(ESCALA, Decimal.ROUND_UP)
+    .toFixed(ESCALA);
+}
+
 // ── Formato ────────────────────────────────────────────────────────────
 // La única capa donde un monto se convierte a número, y solo para mostrarlo.
 
