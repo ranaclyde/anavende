@@ -53,8 +53,10 @@ export function OtrasOpcionesDeCuotas({
         type="button"
         onClick={() => setAbierto(true)}
         className={cn(
-          "relative w-fit cursor-pointer rounded-pill text-left",
-          "underline decoration-border-strong underline-offset-4 hover:text-ink hover:decoration-ink-secondary",
+          // En el color de marca, como «Ver todas» del listado: en gris y
+          // subrayado se confundía con el renglón de arriba (2026-11-16).
+          "relative w-fit cursor-pointer rounded-pill text-left font-medium text-brand",
+          "underline underline-offset-4 hover:text-brand-hover",
           AREA_TACTIL,
         )}
       >
