@@ -663,6 +663,21 @@ lo que ya estaba subido no cambia.
 
 ---
 
+### RF-41 — Descargar las fotos de un producto
+
+**Descripción:** Desde el panel, las fotos de un producto se bajan todas juntas en un zip, para usarlas fuera de la tienda: publicarlas, mandarlas por WhatsApp o subirlas a otro lado.
+
+**Criterios de aceptación:**
+- [ ] En «Colores y stock» hay un botón **«Descargar fotos»**, solo si el producto tiene alguna foto propia.
+- [ ] El zip trae **una carpeta por color** (`negro/1.jpg`, `negro/2.jpg`, `rojo/1.jpg`…), con las fotos en el orden del panel: la `1` es la principal. Las de un producto que no se vende por color van sueltas.
+- [ ] Van **todas, tengan o no marca de agua, tal como están**: la versión más grande que guarda la tienda (1400px de ancho), la misma que ve quien compra. El original no existe (RF-17), así que no hay forma de bajar una foto sin la marca que ya tiene.
+- [ ] **En JPG** y no en WEBP: WhatsApp, Instagram y MercadoLibre lo aceptan sin vueltas. Lo transparente sale sobre blanco.
+- [ ] Las que un color reutiliza de otro (RF-16) van una sola vez, en la carpeta del color que las tiene.
+- [ ] El zip se llama como el producto (`teclado-k120-fotos.zip`). Mientras se arma el botón lo dice, y si falla el error se ve en la sección.
+- [ ] Solo la administradora lo puede pedir.
+
+---
+
 ### RF-18 — Gestión de categorías, marcas y colores
 
 **Criterios de aceptación:**
@@ -1329,4 +1344,5 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-10-23 | Pascua se suma a las escenas por fecha (RF-38): la Semana Santa | Pedido tuyo, en el mismo día. Va del Domingo de Ramos al de Pascua, y como se mueve se calcula cada año en vez de cargar una tabla |
 | 2026-11-11 | Marca de agua en las fotos de productos (RF-39), en el MVP | Pedido tuyo: copian las fotos de la tienda. Capas de imágenes subidas —no un generador de texto, que queda para si esto no alcanza—, solo en fotos nuevas, en tarjeta y detalle, y todo o nada |
 | 2026-11-16 | Promociones de cuotas (RF-40): plan opcional, renglón en verde sin interés y modal «Ver otras opciones» | Pedido tuyo, sobre el modal de MercadoLibre: filas con el monto de la cuota en vez de una grilla de logos, porque son pocos medios; ordenado por cantidad de cuotas; sin total con recargo; sin enlace con una sola promoción. El plan es por «Plan Z», de una tarjeta de NaranjaX |
+| 2026-11-16 | Descargar las fotos de un producto en un zip (RF-41), en el MVP | Pedido tuyo: usar las fotos fuera de la tienda. En JPG y con una carpeta por color, decisiones tuyas del mismo día; tal como están, con la marca de agua si la tienen |
 | 2026-11-13 | Promociones de cuotas por medio de pago (RF-40), en el MVP | Pedido tuyo: Go Cuotas y Naranja X ofrecen cuotas sin interés por temporada y la tienda no lo decía. No es FA-09: el precio no cambia. Solo recargos fijos, solo en la ficha y para todo producto que alcance el monto mínimo |

@@ -1219,6 +1219,22 @@ WEBP y no PNG porque el bucket ya acepta `image/webp` y no hace falta tocarlo. S
 
 **La vista previa** es un Route Handler (`/api/admin/marca-de-agua/vista-previa`) que recibe la foto de prueba y las capas **sin guardar** —las que están en pantalla— y devuelve la versión `-detail` con la marca. La foto de prueba no se guarda en ningún lado. En vez de la foto puede recibir `muestra`, el id de una foto de producto **sin marca**: el servidor lee su `-detail` de Storage, y con la última de ésas arranca la pantalla, para que la vista previa no aparezca vacía. El navegador la achica a 1400px antes de mandarla, una sola vez, así cada cambio de un control no vuelve a subir 8 MB.
 
+### 9.7 Descarga de las fotos de un producto (RF-41)
+
+`GET /api/admin/productos/{id}/fotos` devuelve un zip. Solo para la administradora (404 para el resto, como la subida) y con tope de 10 por minuto: cada pedido lee y convierte todas las fotos.
+
+```
+variant_images propias (sin las reutilizadas, §9.5), en el orden del panel
+  ──▶ get(`…-detail.webp`) de Storage ──▶ sharp: flatten(blanco) + JPEG q90 (mozjpeg)
+  ──▶ {color}/{n}.jpg  ──▶ zip sin compresión
+```
+
+- **La `-detail`, tal como está**: es la más grande que hay —el original no se guarda (§9.0)— y ya tiene la marca de agua si se subió con ella (§9.6).
+- **JPG** porque WhatsApp no toma bien WEBP. Se convierte al pedir y no se guarda: es una descarga ocasional, y una quinta versión por foto ocuparía Storage para siempre.
+- **El zip lo arma `lib/zip.ts`, sin dependencia**: los JPG ya están comprimidos, así que va sin compresión (STORE), que es encabezados, un índice y el CRC-32 de `zlib.crc32`. Nombres en UTF-8 con su bandera; sin ZIP64, que empieza en 4 GB.
+- La carpeta es `slugificar(nombre del color)` (`Negro/Rojo` → `negro-rojo`), y si dos colores dieran la misma, el segundo lleva `-2`. La variante única deja las fotos sueltas.
+- El botón la pide con `fetch` y no con un enlace: muestra que está armando, y un error se dice en la sección en vez de bajarse como archivo.
+
 ---
 ## 10. Búsqueda y catálogo
 

@@ -17,6 +17,7 @@ import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
 import { Seccion, Secciones } from "@/components/admin/formulario";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { VacioDelPanel } from "@/components/admin/vacio";
+import { DescargarFotos } from "@/components/admin/productos/descargar-fotos";
 import { dondeEsta } from "@/components/admin/productos/donde-esta";
 import { ImagenesDeVariante } from "@/components/admin/productos/imagenes";
 import { avisar, avisarConPero } from "@/components/ui/aviso";
@@ -266,14 +267,20 @@ export function VariantesDelProducto({
       ayuda="Cada color lleva su stock y sus fotos. Si el producto no se vende por color, alcanza con uno solo."
       acciones={
         variantes.length === 0 ? null : (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setAgregando(true)}
-          >
-            <Plus aria-hidden />
-            Agregar color
-          </Button>
+          // F2.18: solo con alguna foto propia; un zip vacío no sirve.
+          <div className="flex flex-wrap items-center gap-2">
+            {variantes.some((v) => v.propias > 0) ? (
+              <DescargarFotos productId={productId} alFallar={setError} />
+            ) : null}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setAgregando(true)}
+            >
+              <Plus aria-hidden />
+              Agregar color
+            </Button>
+          </div>
         )
       }
     >
