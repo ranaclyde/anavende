@@ -247,10 +247,10 @@ export const crearUnaPromocion = action
     // clave foránea que el envoltorio no sabe decir.
     const [fila] = await db.execute<{ id: string }>(sql`
       INSERT INTO payment_promotions
-             (payment_method_id, installments, surcharge_pct, starts_on,
-              ends_on, min_amount)
-      SELECT id, ${input.cuotas}, ${input.recargo}, ${input.desde},
-             ${input.hasta}, ${input.montoMinimo}
+             (payment_method_id, plan_name, installments, surcharge_pct,
+              starts_on, ends_on, min_amount)
+      SELECT id, ${input.plan}, ${input.cuotas}, ${input.recargo},
+             ${input.desde}, ${input.hasta}, ${input.montoMinimo}
         FROM payment_methods
        WHERE id = ${input.paymentMethodId}
       RETURNING id`);
@@ -268,6 +268,7 @@ export const editarUnaPromocion = action
     const filas = await db
       .update(paymentPromotions)
       .set({
+        planName: input.plan,
         installments: input.cuotas,
         surchargePct: input.recargo,
         startsOn: input.desde,

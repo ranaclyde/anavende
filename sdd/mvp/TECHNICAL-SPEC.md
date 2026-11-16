@@ -797,6 +797,7 @@ CREATE TABLE payment_methods (
 CREATE TABLE payment_promotions (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   payment_method_id uuid NOT NULL REFERENCES payment_methods ON DELETE CASCADE,
+  plan_name         text CHECK (plan_name IS NULL OR char_length(plan_name) BETWEEN 1 AND 40), -- «Plan Z»
   installments      integer NOT NULL CHECK (installments BETWEEN 2 AND 48),
   surcharge_pct     numeric(5,2) NOT NULL DEFAULT 0
                     CHECK (surcharge_pct >= 0 AND surcharge_pct <= 200),  -- 0 = sin interés

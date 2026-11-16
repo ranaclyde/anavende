@@ -29,6 +29,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { diaCorto, hoyEnArgentina } from "@/lib/fechas";
+import { cn } from "@/lib/utils";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import {
   comoMonto,
@@ -49,6 +50,7 @@ import type {
   MedioDePagoDelPanel,
   PromocionDelPanel,
 } from "@/modules/settings/queries";
+import { conQuien } from "@/modules/settings/promociones";
 import { CUOTAS_MAXIMAS, CUOTAS_MINIMAS } from "@/modules/settings/schemas";
 
 /**
@@ -275,10 +277,14 @@ function Lista({
 }
 
 /** «3 cuotas sin interés», «6 cuotas con 15 % de recargo». */
-function resumen(p: Pick<PromocionDelPanel, "cuotas" | "recargo">): string {
-  return isZero(p.recargo)
+/** «3 cuotas sin interés», «Plan Z: 3 cuotas con 15 % de recargo». */
+function resumen(
+  p: Pick<PromocionDelPanel, "plan" | "cuotas" | "recargo">,
+): string {
+  const cuotas = isZero(p.recargo)
     ? `${p.cuotas} cuotas sin interés`
     : `${p.cuotas} cuotas con ${paraEditar(p.recargo)} % de recargo`;
+  return p.plan ? `${p.plan}: ${cuotas}` : cuotas;
 }
 
 function vigencia(p: PromocionDelPanel): string {
@@ -300,7 +306,7 @@ function Estado({ promocion: p }: { promocion: PromocionDelPanel }) {
 
 /* ── El formulario ────────────────────────────────────────────────────── */
 
-type Campo = "cuotas" | "recargo" | "desde" | "hasta" | "montoMinimo";
+type Campo = "plan" | "cuotas" | "recargo" | "desde" | "hasta" | "montoMinimo";
 
 /** El precio de la vista previa cuando la promoción no pide mínimo. */
 const PRECIO_DE_EJEMPLO = "100000.00";
@@ -320,6 +326,7 @@ function Formulario({
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
 
+  const [plan, setPlan] = useState(promocion?.plan ?? "");
   const [cuotas, setCuotas] = useState(String(promocion?.cuotas ?? 3));
   const [recargo, setRecargo] = useState(
     promocion && !isZero(promocion.recargo)
@@ -337,6 +344,7 @@ function Formulario({
     setErrores(SIN_ERRORES);
 
     const campos = {
+      plan,
       cuotas: Number.parseInt(cuotas, 10),
       recargo,
       desde,
@@ -377,7 +385,33 @@ function Formulario({
       <SheetForm onSubmit={enviar} noValidate>
         <SheetBody>
           <Secciones>
-            <Seccion titulo="El plan">
+            <Seccion titulo="Las cuotas">
+              <Campo
+                id={`${id}-plan`}
+                etiqueta="Plan"
+                opcional
+                error={errores.campos.plan}
+              >
+                <Input
+                  id={`${id}-plan`}
+                  value={plan}
+                  onChange={(e) => setPlan(e.target.value)}
+                  maxLength={40}
+                  autoFocus
+                  aria-invalid={!!errores.campos.plan || undefined}
+                  aria-describedby={
+                    errores.campos.plan ? `${id}-plan-e` : `${id}-plan-ayuda`
+                  }
+                />
+                {errores.campos.plan ? null : (
+                  <FieldHint id={`${id}-plan-ayuda`}>
+                    Si la promoción es de una tarjeta o un plan y no de todo{" "}
+                    {medio.name}, como «Plan Z». La ficha dice «con Plan Z de{" "}
+                    {medio.name}».
+                  </FieldHint>
+                )}
+              </Campo>
+
               <div className="grid grid-cols-2 gap-4">
                 <Campo
                   id={`${id}-cuotas`}
@@ -392,7 +426,6 @@ function Formulario({
                     max={CUOTAS_MAXIMAS}
                     value={cuotas}
                     onChange={(e) => setCuotas(e.target.value)}
-                    autoFocus
                     required
                     aria-invalid={!!errores.campos.cuotas || undefined}
                     aria-describedby={
@@ -511,14 +544,21 @@ function Formulario({
                   <p className="flex items-start gap-2 text-body-sm text-ink-secondary">
                     <CreditCard
                       aria-hidden
-                      className="mt-[3px] size-4 shrink-0"
+                      className={cn(
+                        "mt-[3px] size-4 shrink-0",
+                        previa.sinRecargo ? "text-success" : null,
+                      )}
                     />
                     <span>
                       {previa.sinRecargo ? "Mismo precio en " : null}
                       <strong className="font-semibold text-ink tabular-nums">
                         {previa.cuotas} cuotas de {formatMoney(previa.cuota)}
                       </strong>{" "}
-                      con {medio.name}
+                      con{" "}
+                      {conQuien({
+                        medio: medio.name,
+                        plan: plan.trim() || null,
+                      })}
                     </span>
                   </p>
                 </div>

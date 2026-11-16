@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { paymentMethods } from "@/db/schema";
 import { cuota } from "@/lib/money";
 import {
+  conQuien,
   promocionesParaElPrecio,
   type PromocionVigente,
 } from "@/modules/settings/promociones";
@@ -58,12 +59,20 @@ describe("cuál se muestra (RF-40)", () => {
     cuotas: number,
     recargo = "0.00",
     montoMinimo: string | null = null,
-  ): PromocionVigente => ({ id, medio, cuotas, recargo, montoMinimo });
+  ): PromocionVigente => ({
+    id,
+    medio,
+    plan: null,
+    logoUrl: null,
+    cuotas,
+    recargo,
+    montoMinimo,
+  });
 
   test("sin ninguna, no hay nada que mostrar", () => {
     expect(promocionesParaElPrecio([], "1000.00")).toEqual({
       destacada: null,
-      resto: [],
+      todas: [],
     });
   });
 
@@ -77,7 +86,27 @@ describe("cuál se muestra (RF-40)", () => {
       "12000.00",
     );
     expect(r.destacada?.id).toBe("c");
-    expect(r.resto.map((x) => x.id)).toEqual(["a", "b"]);
+  });
+
+  test("todas, para el modal: la destacada incluida, primero las sin recargo y de menos a más cuotas", () => {
+    const r = promocionesParaElPrecio(
+      [
+        p("doce", "Visa", 12, "40.00"),
+        p("seis", "Go Cuotas", 6),
+        p("tresRecargo", "Naranja X", 3, "15.00"),
+        p("tres", "Go Cuotas", 3),
+        p("tresOtro", "Naranja X", 3),
+      ],
+      "12000.00",
+    );
+    expect(r.todas.map((x) => x.id)).toEqual([
+      // Empatadas en 3: en el orden en que llegaron, que es el de los medios.
+      "tres",
+      "tresOtro",
+      "seis",
+      "tresRecargo",
+      "doce",
+    ]);
   });
 
   test("si ninguna es sin recargo, gana la de cuota más baja", () => {
@@ -103,7 +132,7 @@ describe("cuál se muestra (RF-40)", () => {
       "19999.99",
     );
     expect(r.destacada?.id).toBe("b");
-    expect(r.resto).toEqual([]);
+    expect(r.todas.map((x) => x.id)).toEqual(["b"]);
   });
 
   test("el precio justo en el mínimo alcanza", () => {
@@ -115,15 +144,37 @@ describe("cuál se muestra (RF-40)", () => {
   });
 });
 
+describe("con quién (RF-40)", () => {
+  test("sin plan, el medio; con plan, «Plan Z de NaranjaX»", () => {
+    expect(conQuien({ medio: "NaranjaX", plan: null })).toBe("NaranjaX");
+    expect(conQuien({ medio: "NaranjaX", plan: "Plan Z" })).toBe(
+      "Plan Z de NaranjaX",
+    );
+  });
+});
+
 describe("validación (RF-40)", () => {
   const base = {
     paymentMethodId: "00000000-0000-4000-8000-000000000000",
+    plan: "",
     cuotas: 3,
     recargo: "",
     desde: "2026-11-01",
     hasta: "2026-11-30",
     montoMinimo: "",
   };
+
+  test("el plan se recorta, y vacío es NULL", () => {
+    expect(
+      crearPromocion.safeParse({ ...base, plan: "  Plan Z " }).data?.plan,
+    ).toBe("Plan Z");
+    expect(
+      crearPromocion.safeParse({ ...base, plan: "" }).data?.plan,
+    ).toBeNull();
+    expect(
+      crearPromocion.safeParse({ ...base, plan: "x".repeat(41) }).success,
+    ).toBe(false);
+  });
 
   test("recargo vacío es sin interés, y mínimo vacío es NULL", () => {
     const r = crearPromocion.safeParse(base);
@@ -248,7 +299,13 @@ describe("contra Postgres (RF-40)", () => {
 
   test("el recargo y el mínimo llegan como texto, listos para `lib/money`", async () => {
     const p = (await promocionesVigentes()).find((x) => x.id === ids.vigente);
-    expect(p).toMatchObject({ cuotas: 3, recargo: "0.00", montoMinimo: null });
+    expect(p).toMatchObject({
+      cuotas: 3,
+      recargo: "0.00",
+      montoMinimo: null,
+      plan: null,
+      logoUrl: null,
+    });
     expect(p?.medio).toBe(`Go Cuotas ${marca}`);
   });
 

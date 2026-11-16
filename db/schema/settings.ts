@@ -90,6 +90,12 @@ export const paymentPromotions = pgTable(
     paymentMethodId: uuid("payment_method_id")
       .notNull()
       .references(() => paymentMethods.id, { onDelete: "cascade" }),
+    /**
+     * El plan del medio de pago, cuando no es el medio entero: «Plan Z» de
+     * Naranja X, que es de una de sus tarjetas. La ficha dice «con Plan Z de
+     * NaranjaX». `null` = la promoción es del medio, sin aclaración.
+     */
+    planName: text("plan_name"),
     installments: integer("installments").notNull(),
     /** `0` = sin interés. Texto con dos decimales, como los montos (§7.2). */
     surchargePct: numeric("surcharge_pct", { precision: 5, scale: 2 })
@@ -117,6 +123,10 @@ export const paymentPromotions = pgTable(
     check(
       "payment_promotions_dates",
       sql`${t.endsOn} IS NULL OR ${t.endsOn} >= ${t.startsOn}`,
+    ),
+    check(
+      "payment_promotions_plan_name",
+      sql`${t.planName} IS NULL OR char_length(${t.planName}) BETWEEN 1 AND 40`,
     ),
     check(
       "payment_promotions_min_amount",

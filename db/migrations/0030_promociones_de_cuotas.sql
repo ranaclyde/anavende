@@ -6,6 +6,7 @@
 CREATE TABLE "payment_promotions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"payment_method_id" uuid NOT NULL,
+	"plan_name" text,
 	"installments" integer NOT NULL,
 	"surcharge_pct" numeric(5, 2) DEFAULT '0' NOT NULL,
 	"starts_on" date NOT NULL,
@@ -16,6 +17,7 @@ CREATE TABLE "payment_promotions" (
 	CONSTRAINT "payment_promotions_installments" CHECK ("payment_promotions"."installments" BETWEEN 2 AND 48),
 	CONSTRAINT "payment_promotions_surcharge" CHECK ("payment_promotions"."surcharge_pct" >= 0 AND "payment_promotions"."surcharge_pct" <= 200),
 	CONSTRAINT "payment_promotions_dates" CHECK ("payment_promotions"."ends_on" IS NULL OR "payment_promotions"."ends_on" >= "payment_promotions"."starts_on"),
+	CONSTRAINT "payment_promotions_plan_name" CHECK ("payment_promotions"."plan_name" IS NULL OR char_length("payment_promotions"."plan_name") BETWEEN 1 AND 40),
 	CONSTRAINT "payment_promotions_min_amount" CHECK ("payment_promotions"."min_amount" IS NULL OR "payment_promotions"."min_amount" > 0)
 );
 --> statement-breakpoint

@@ -1432,7 +1432,7 @@ Sin filtros se indexa, con `canonical` propio y en `sitemap.xml`; con cualquier 
 │ ┌──┐                 │  $ 27.500,00                │  tachado, secundario, 12px
 │ └──┘                 │  ▭ Mismo precio en 3 cuotas │  RF-40: body-sm, secundario;
 │                      │    de $ 8.166,67 con …      │  la cuota en tinta y semibold
-│                      │    Ver más opciones (1) ⌄   │  <details>, solo si hay más
+│                      │    Ver otras opciones       │  modal, solo con dos o más
 │                      │                             │
 │                      │  Color: Negro               │
 │    ↑ pegada          │  ● ○ ○ ⊘                    │
@@ -1468,7 +1468,9 @@ Sin filtros se indexa, con `canonical` propio y en `sitemap.xml`; con cualquier 
    Productos similares               → 4 tarjetas
 ```
 
-**Las cuotas van debajo del precio, porque dividen ese número** (RF-40, F2.17). Una sola a la vista —la de más cuotas sin interés o, si no hay, la de cuota más baja— y las demás detrás de «Ver más opciones», un `<details>` nativo que no manda JavaScript. En gris y con la cuota en tinta: el burdeos es de la oferta y de lo accionable (§6.7), y esto informa. Sin recargo dice «Mismo precio en…»; con recargo, solo «3 cuotas de $ X con …», nunca «sin interés».
+**Las cuotas van debajo del precio, porque dividen ese número** (RF-40, F2.17). Una sola a la vista —la de más cuotas sin interés o, si no hay, la de cuota más baja—. En gris y con la cuota en tinta: el burdeos es de la oferta y de lo accionable (§6.7), y esto informa. **Sin interés, el ícono va en verde** (2026-11-16): el verde de éxito, no el de WhatsApp, que es solo de lo que abre WhatsApp (§2.6) y está justo debajo. Sin recargo dice «Mismo precio en…»; con recargo, solo «3 cuotas de $ X con …», nunca «sin interés». Con plan, «con Plan Z de NaranjaX».
+
+**«Ver otras opciones» abre un modal**, solo con dos o más promociones: «Cuotas para este producto», todas las que aplican, la destacada incluida. **Filas y no una grilla de logos** como la de MercadoLibre, que muestra solo «12 cuotas» porque tiene decenas de bancos: acá son pocos medios y entra el monto de la cuota, que es lo que se compara. Cada fila lleva el logo del medio en el chip claro de §6.10, la cuota (verde si es mismo precio) y «con …» debajo. Dos grupos, «Mismo precio» y «Con recargo», cada uno de menos a más cuotas, y sin el total con recargo. La bajada dice que las cuotas se eligen al coordinar el pago (RN-01).
 
 **La columna derecha desplaza y la galería se queda pegada.** La descripción, los datos y el recuadro viven en esa columna, así que es mucho más alta que la foto; sin `sticky`, leer la descripción es perder de vista el producto del que habla. Los bloques de recomendados sí van a lo ancho, debajo de las dos columnas: son otra pantalla dentro de la misma página.
 

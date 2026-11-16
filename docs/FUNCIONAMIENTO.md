@@ -48,8 +48,10 @@ categorías y la ficha de cada producto.
   (`components/shop/ficha/descripcion-plegable.tsx`). El texto completo
   viene igual desde el servidor: solo se recorta. Debajo del precio van
   las **promociones de cuotas** vigentes (RF-40,
-  `components/shop/ficha/cuotas.tsx`): una a la vista y el resto en «Ver
-  más opciones». No cambian el precio ni cobran nada.
+  `components/shop/ficha/cuotas.tsx`): una a la vista, con el ícono en
+  verde si es sin interés. Con dos o más, «Ver otras opciones» abre un modal
+  con todas y el logo de cada medio, separadas en mismo precio y con
+  recargo, de menos a más cuotas. No cambian el precio ni cobran nada.
 - **«Consultar por WhatsApp»** arma un enlace `wa.me` con el producto, el
   color y la cantidad que se están mirando (`lib/whatsapp.ts`). Es la forma
   de comprar sin cuenta.
@@ -210,7 +212,9 @@ para sacarle la marca a una foto se desactiva, se vuelve a subir y se
 reactiva. Borrar la imagen de la única capa la desactiva sola.
 
 **Las promociones de cuotas** (RF-40, F2.17) se cargan desde Catálogo →
-Medios de pago, con el botón de porcentaje de cada fila: cuántas cuotas, el
+Medios de pago, con el botón de porcentaje de cada fila: un plan opcional
+(«Plan Z», cuando la promoción es de una tarjeta y no de todo el medio; la
+ficha dice «con Plan Z de NaranjaX»), cuántas cuotas, el
 recargo (vacío es sin interés, y solo se cargan recargos fijos), desde y
 hasta cuándo (sin fin, no vence) y un monto mínimo opcional sobre el precio
 con descuento. El formulario muestra cómo queda en la ficha. Se ven en la

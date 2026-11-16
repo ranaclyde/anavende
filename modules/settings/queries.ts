@@ -139,6 +139,8 @@ export type MedioDePagoDelPanel = {
  */
 export type PromocionDelPanel = {
   id: string;
+  /** «Plan Z». `null` = la promoción es del medio, sin aclaración. */
+  plan: string | null;
   cuotas: number;
   recargo: string;
   desde: string;
@@ -172,6 +174,7 @@ export async function listarMediosDePago(
            coalesce((
              SELECT json_agg(json_build_object(
                       'id', pp.id,
+                      'plan', pp.plan_name,
                       'cuotas', pp.installments,
                       'recargo', pp.surcharge_pct::text,
                       'desde', pp.starts_on::text,
@@ -290,9 +293,13 @@ export const configuracionDeLaTienda = cache(
  */
 export const promocionesVigentes = cache(
   async (): Promise<PromocionVigente[]> => {
-    return db.execute<PromocionVigente>(sql`
+    const filas = await db.execute<
+      Omit<PromocionVigente, "logoUrl"> & { logoKey: string | null }
+    >(sql`
       SELECT pp.id,
              pm.name                 AS medio,
+             pp.plan_name            AS plan,
+             pm.logo_key             AS "logoKey",
              pp.installments         AS cuotas,
              pp.surcharge_pct::text  AS recargo,
              pp.min_amount::text     AS "montoMinimo"
@@ -304,6 +311,10 @@ export const promocionesVigentes = cache(
        ORDER BY pm.sort_order, immutable_unaccent(lower(pm.name)),
                 pp.installments, pp.id
     `);
+    return filas.map(({ logoKey, ...p }) => ({
+      ...p,
+      logoUrl: urlDeLogo(logoKey, "thumb"),
+    }));
   },
 );
 

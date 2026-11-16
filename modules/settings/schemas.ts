@@ -120,7 +120,19 @@ const montoMinimo = z
     message: "El mínimo tiene que ser mayor que cero, o dejalo vacío.",
   });
 
+/**
+ * El plan, cuando la promoción es de una tarjeta o un plan del medio y no del
+ * medio entero: «Plan Z». Vacío se guarda `NULL`. El tope es lo que entra en
+ * el renglón de la ficha sin partirlo en el teléfono.
+ */
+const plan = z
+  .string()
+  .trim()
+  .max(40, "El plan puede tener hasta 40 caracteres.")
+  .transform((v) => (v === "" ? null : v));
+
 const camposDePromocion = {
+  plan,
   cuotas,
   recargo,
   desde: fecha,

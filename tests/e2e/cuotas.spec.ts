@@ -50,8 +50,9 @@ test.beforeAll(async () => {
   // La segunda, por la base: lo que se prueba de ella es cómo se muestra.
   await datos.sql`
     INSERT INTO payment_promotions
-           (payment_method_id, installments, surcharge_pct, starts_on)
-    VALUES (${naranjaId}, 3, 15,
+           (payment_method_id, plan_name, installments, surcharge_pct,
+            starts_on)
+    VALUES (${naranjaId}, 'Plan Z', 3, 15,
             (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date)`;
   admin = await datos.unaCuenta("Ana", "admin");
 });
@@ -88,7 +89,7 @@ test("se carga en el panel y la ficha la muestra debajo del precio", async ({
 
   await drawer.getByRole("button", { name: "Nueva promoción" }).click();
   const form = page.getByRole("dialog", { name: "Nueva promoción" });
-  await form.getByLabel("Cuotas").fill("6");
+  await form.getByLabel("Cuotas", { exact: true }).fill("6");
   await form.getByLabel("Monto mínimo").fill("20.000");
   // La vista previa calcula sobre el mínimo: 20000 / 6 = 3333,333… → ,34.
   await expect(form.getByText("En un producto de $ 20.000,00")).toBeVisible();
@@ -117,26 +118,48 @@ test("se carga en el panel y la ficha la muestra debajo del precio", async ({
   await expect(
     page.getByText(/^Mismo precio en 6 cuotas de \$\s6\.166,67 con Go Cuotas/),
   ).toBeVisible();
-  const mas = page.locator("summary", { hasText: "Ver más opciones (1)" });
-  await expect(mas).toBeVisible();
+  // Con recargo y plan: sin «Mismo precio», y «Plan Z de …».
+  const naranjaEnLaFicha = /^3 cuotas de \$\s14\.183,34 con Plan Z de Naranja/;
+  await expect(page.getByText(naranjaEnLaFicha)).toHaveCount(0);
+
+  // «Ver otras opciones» abre el modal con todas, la destacada incluida:
+  // primero la sin recargo, después la con recargo.
+  await page.getByRole("button", { name: "Ver otras opciones" }).click();
+  const modal = page.getByRole("dialog", { name: "Cuotas para este producto" });
+  await expect(modal).toBeVisible();
+  await expect(modal.getByRole("listitem")).toHaveText([
+    /6 cuotas de \$\s6\.166,67\s*con Go Cuotas/,
+    /3 cuotas de \$\s14\.183,34\s*con Plan Z de Naranja/,
+  ]);
   await expect(
-    page.getByText(/3 cuotas de \$\s14\.183,34 con Naranja/),
-  ).toBeHidden();
-  await mas.click();
-  await expect(
-    page.getByText(/^3 cuotas de \$\s14\.183,34 con Naranja/),
+    modal.getByRole("heading", { name: "Mismo precio" }),
   ).toBeVisible();
-  // Con recargo, nunca «Mismo precio».
-  await expect(page.getByText(/Mismo precio en 3 cuotas/)).toHaveCount(0);
+  await expect(
+    modal.getByRole("heading", { name: "Con recargo" }),
+  ).toBeVisible();
+  // Con el fundido de entrada terminado: a mitad, axe mide colores que nadie
+  // llega a leer.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
+  expect(await hallazgosDeAxe(page, '[role="dialog"]')).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(modal).toBeHidden();
   expect(await hallazgosDeAxe(page)).toEqual([]);
 
-  // El de $ 5.000 no llega al mínimo de Go Cuotas: queda solo Naranja.
+  // El de $ 5.000 no llega al mínimo de Go Cuotas: queda solo Naranja, y con
+  // una sola no hay «Ver otras opciones», que prometería algo que no hay.
   await page.goto(`/productos/${barato.slug}`);
   await expect(
-    page.getByText(/^3 cuotas de \$\s1\.916,67 con Naranja/),
+    page.getByText(/^3 cuotas de \$\s1\.916,67 con Plan Z de Naranja/),
   ).toBeVisible();
   await expect(page.getByText(/Go Cuotas/)).toHaveCount(0);
-  await expect(page.getByText(/Ver más opciones/)).toHaveCount(0);
+  await expect(page.getByText("Ver otras opciones")).toHaveCount(0);
 
   // Desactivada, desaparece de la ficha.
   await abrirPromociones(page);
@@ -146,9 +169,7 @@ test("se carga en el panel y la ficha la muestra debajo del precio", async ({
   await expect(page.getByText("Desactivada", { exact: true })).toBeVisible();
   await page.goto(`/productos/${producto.slug}`);
   await expect(page.getByText(/Go Cuotas/)).toHaveCount(0);
-  await expect(
-    page.getByText(/^3 cuotas de \$\s14\.183,34 con Naranja/),
-  ).toBeVisible();
+  await expect(page.getByText(naranjaEnLaFicha)).toBeVisible();
 });
 
 test("el drawer pasa axe en el modo oscuro del panel", async ({ browser }) => {

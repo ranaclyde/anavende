@@ -1,5 +1,5 @@
 {
-  "id": "e1d107c4-6412-4cb7-8529-87dcd7f8a166",
+  "id": "3a3ff92a-0996-4685-88b9-96cec113ea77",
   "prevId": "d690e6c0-1fcb-429b-9660-3a51b8fa14b9",
   "version": "7",
   "dialect": "postgresql",
@@ -2509,6 +2509,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "plan_name": {
+          "name": "plan_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "installments": {
           "name": "installments",
           "type": "integer",
@@ -2602,6 +2608,10 @@
         "payment_promotions_dates": {
           "name": "payment_promotions_dates",
           "value": "\"payment_promotions\".\"ends_on\" IS NULL OR \"payment_promotions\".\"ends_on\" >= \"payment_promotions\".\"starts_on\""
+        },
+        "payment_promotions_plan_name": {
+          "name": "payment_promotions_plan_name",
+          "value": "\"payment_promotions\".\"plan_name\" IS NULL OR char_length(\"payment_promotions\".\"plan_name\") BETWEEN 1 AND 40"
         },
         "payment_promotions_min_amount": {
           "name": "payment_promotions_min_amount",
