@@ -300,7 +300,8 @@ anavende/
 
      categories ──▶ category_relations (auto-referencia)
      stock_movements ──▶ product_variants   (libro mayor de stock)
-     payment_methods · legal_pages · site_settings   (independientes)
+     payment_methods ──▶ payment_promotions   (cuotas, RF-40)
+     legal_pages · site_settings   (independientes)
 ```
 
 ### 5.2 Tipos enumerados
@@ -791,11 +792,28 @@ CREATE TABLE payment_methods (
   sort_order  integer NOT NULL DEFAULT 0,
   is_active   boolean NOT NULL DEFAULT true
 );
+
+-- Promociones de cuotas (RF-40, F2.17). Tan informativas como el medio.
+CREATE TABLE payment_promotions (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  payment_method_id uuid NOT NULL REFERENCES payment_methods ON DELETE CASCADE,
+  installments      integer NOT NULL CHECK (installments BETWEEN 2 AND 48),
+  surcharge_pct     numeric(5,2) NOT NULL DEFAULT 0
+                    CHECK (surcharge_pct >= 0 AND surcharge_pct <= 200),  -- 0 = sin interés
+  starts_on         date NOT NULL,
+  ends_on           date CHECK (ends_on IS NULL OR ends_on >= starts_on), -- NULL = no vence
+  min_amount        numeric(12,2) CHECK (min_amount IS NULL OR min_amount > 0),
+  is_active         boolean NOT NULL DEFAULT true,
+  created_at        timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX payment_promotions_method_idx ON payment_promotions (payment_method_id);
 ```
 
 > **La fila de `site_settings` la crea la pantalla de configuración, no una migración.** Sus dos columnas de texto son `NOT NULL` y no hay número de WhatsApp ni email que una migración pueda inventar, así que la primera vez que la vendedora guarda es también la primera vez que la fila existe: se escribe con `INSERT … ON CONFLICT (id) DO UPDATE`, con el `id = 1` explícito para que el conflicto tenga contra qué chocar. Con un `UPDATE` a secas esa primera vez no afectaría ninguna fila y la pantalla diría «se guardó» sin haber guardado nada. Consecuencia para todo lo que lea esta tabla: **hay que contemplar que no haya fila** (§10.3). `updated_at` se escribe a mano al pisar, porque su `DEFAULT` solo corre al insertar.
 >
 > **Nada apunta a `payment_methods`, y por eso RN-11 no le cabe.** Son informativos (RN-01): el MVP no cobra online y la orden no guarda con qué se pagó, así que no hay ninguna clave foránea hacia esta tabla. Borrar un medio de pago siempre se puede; lo único que hay que acordarse de llevar son sus archivos. El día que una orden guarde el medio de pago, esto se da vuelta y hay que traerle el mismo par de reglas del catálogo.
+>
+> **Las promociones de cuotas cuelgan del medio de pago y se van con él** (RF-40). Nada las referencia: no cambian el precio, no cobran y la orden no las guarda. **Las fechas son `date` y se comparan contra el día de Argentina** —`(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date`—, no contra un instante: «hasta el 30» incluye el 30 entero acá, aunque en UTC ya sea 1. La tienda las pide una vez por pedido y en paralelo con la ficha (`promocionesVigentes`), sin filtrar el monto mínimo, que depende del producto; eso, la cuota y cuál se destaca lo decide `modules/settings/promociones.ts`. **La cuota se redondea al centavo hacia arriba** (`cuota` en `lib/money.ts`), la única cuenta del sistema que no corta hacia abajo: tres cuotas tienen que sumar al menos el precio.
 >
 > **`sort_order` se renumera a 0, 1, 2… en cada alta, baja y movimiento.** Es a la vez el orden en que se muestran y de dónde sale la posición del próximo (`max + 1`): una numeración con huecos no falla el día que se hace, falla el siguiente. El listado, el movimiento y la renumeración ordenan los tres por `sort_order, immutable_unaccent(lower(name))` — si discreparan, la flecha movería el de al lado.
 

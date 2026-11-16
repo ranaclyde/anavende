@@ -715,10 +715,11 @@ lo que ya estaba subido no cambia.
 
 **Descripción:** Un medio de pago (RF-19) puede tener promociones de cuotas —«3 cuotas sin interés con Go Cuotas», «plan Z de Naranja X»— que la ficha muestra debajo del precio. Son tan informativas como el medio de pago (RN-01): no cambian el precio, no generan un cobro y la orden no las guarda. No son FA-09: no hay cupón ni descuento, solo una forma de pagar el mismo precio.
 
-**Campos, por promoción:** medio de pago, cantidad de cuotas (2 o más), recargo en % (0 = sin interés), vigencia desde y hasta (fechas, inclusive, hora de Argentina), monto mínimo opcional, activa.
+**Campos, por promoción:** medio de pago, cantidad de cuotas (2 o más), recargo en % (0 = sin interés), vigencia desde y hasta (fechas inclusive, día de Argentina; **sin fecha de fin no vence**, como el plan Z de Naranja X), monto mínimo opcional, activa.
 
 **Criterios de aceptación:**
-- [ ] Se cargan, editan, desactivan y borran desde el medio de pago en el panel. Un medio de pago puede tener varias.
+- [ ] Se cargan, editan, desactivan y borran desde el medio de pago en el panel. Un medio de pago puede tener varias, y el panel dice de cada una si está vigente, programada, vencida o desactivada.
+- [ ] Al cargarla, el panel muestra cómo se va a ver en la ficha, con la cuota calculada sobre el monto mínimo o, sin mínimo, sobre un precio de ejemplo.
 - [ ] **Solo se cargan recargos fijos**: el porcentaje es el que el medio de pago aplica siempre a ese plan. Un plan cuyo recargo depende de la tarjeta o del banco no se carga; el panel lo dice junto al campo.
 - [ ] Una promoción aparece en la ficha **solo si** está activa, su medio de pago está activo, hoy está dentro de la vigencia y el precio final (con el descuento ya aplicado, RF-15) alcanza el monto mínimo. Fuera de eso no aparece, sin que nadie la apague.
 - [ ] La cuota se calcula sobre el **precio final**: `precio final × (1 + recargo / 100) / cuotas`, redondeada al centavo hacia arriba y con el formato de RN-02.

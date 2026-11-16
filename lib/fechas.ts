@@ -79,3 +79,34 @@ const MES = new Intl.DateTimeFormat("es-AR", {
 export function mesEnCurso(): string {
   return MES.format(new Date());
 }
+
+/**
+ * «30/11/2026» para un DÍA de calendario (`AAAA-MM-DD`, una columna `date`),
+ * no para un instante — RF-40.
+ *
+ * Se formatea en UTC a propósito: `new Date("2026-11-30")` es la medianoche
+ * UTC de ese día, y pasada por la zona de Argentina sería el 29 a las 21.
+ * Un día no tiene zona; el truco es no dejar que se la pongan.
+ */
+const DIA = new Intl.DateTimeFormat("es-AR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+export function diaCorto(dia: string): string {
+  return DIA.format(new Date(`${dia}T00:00:00Z`));
+}
+
+/** Hoy en Argentina, como `AAAA-MM-DD`: el valor de un `<input type="date">`. */
+const ISO_DEL_DIA = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: ZONA_HORARIA,
+});
+
+export function hoyEnArgentina(): string {
+  return ISO_DEL_DIA.format(new Date());
+}

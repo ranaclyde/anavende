@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { comoMonto, compare, isMoney, money } from "@/lib/money";
 import { telefonoArgentino } from "@/lib/telefono";
 import {
   AYUDA_DEL_UMBRAL,
@@ -72,6 +73,90 @@ export const movimientoDePago = z.object({
 
 export type CrearMedioDePago = z.infer<typeof crearMedioDePago>;
 export type EditarMedioDePago = z.infer<typeof editarMedioDePago>;
+
+/* ── Promociones de cuotas — RF-40, F2.17 ─────────────────────────────── */
+
+export const CUOTAS_MINIMAS = 2;
+export const CUOTAS_MAXIMAS = 48;
+export const RECARGO_MAXIMO = 200;
+
+const cuotas = z
+  .number({ error: "Poné cuántas cuotas." })
+  .int("Las cuotas son un número entero.")
+  .min(CUOTAS_MINIMAS, `Tienen que ser al menos ${CUOTAS_MINIMAS} cuotas.`)
+  .max(CUOTAS_MAXIMAS, `Pueden ser hasta ${CUOTAS_MAXIMAS} cuotas.`);
+
+/**
+ * El recargo en %, con coma o con punto: «15», «15,5». Vacío es 0, sin
+ * interés, que es el caso más común y no tiene por qué obligar a escribir un
+ * cero. Se guarda con dos decimales, como lo espera `surcharge_pct`.
+ */
+const recargo = z
+  .string()
+  .trim()
+  .transform((v) =>
+    v === "" ? "0" : v.replace("%", "").trim().replace(",", "."),
+  )
+  .refine((v) => /^\d{1,3}(\.\d{1,2})?$/.test(v), {
+    message: "Poné el recargo como un número, con hasta dos decimales.",
+  })
+  .transform(money)
+  .refine((v) => compare(v, `${RECARGO_MAXIMO}.00`) <= 0, {
+    message: `El recargo puede ser hasta ${RECARGO_MAXIMO} %.`,
+  });
+
+const fecha = z.iso.date({ error: "Elegí una fecha." });
+
+/** Vacío = sin mínimo, y se guarda `NULL` (lo mismo que la descripción). */
+const montoMinimo = z
+  .string()
+  .trim()
+  .transform((v) => (v === "" ? null : comoMonto(v)))
+  .refine((v) => v === null || isMoney(v), {
+    message: "Poné el monto con hasta dos decimales.",
+  })
+  .transform((v) => (v === null ? null : money(v)))
+  .refine((v) => v === null || compare(v, "0.00") > 0, {
+    message: "El mínimo tiene que ser mayor que cero, o dejalo vacío.",
+  });
+
+const camposDePromocion = {
+  cuotas,
+  recargo,
+  desde: fecha,
+  /** Vacío = no vence (el plan Z de Naranja X no tiene fecha de fin). */
+  hasta: z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? null : v))
+    .pipe(fecha.nullable()),
+  montoMinimo,
+};
+
+/** Las fechas `AAAA-MM-DD` se comparan bien como texto. */
+const hastaDespuesDeDesde = (p: { desde: string; hasta: string | null }) =>
+  p.hasta === null || p.hasta >= p.desde;
+const errorDeFechas = {
+  message: "La fecha de fin no puede ser anterior a la de inicio.",
+  path: ["hasta"],
+};
+
+export const crearPromocion = z
+  .object({ paymentMethodId: z.uuid(), ...camposDePromocion })
+  .refine(hastaDespuesDeDesde, errorDeFechas);
+
+export const editarPromocion = z
+  .object({ id: z.uuid(), ...camposDePromocion })
+  .refine(hastaDespuesDeDesde, errorDeFechas);
+
+export const soloPromocion = z.object({ id: z.uuid() });
+
+export const cambioDeEstadoDePromocion = z.object({
+  id: z.uuid(),
+  activa: z.boolean(),
+});
+
+export type CrearPromocion = z.input<typeof crearPromocion>;
 
 /* ── Configuración del sitio — RF-20, §5.9 ─────────────────────────────── */
 

@@ -1430,7 +1430,10 @@ Sin filtros se indexa, con `canonical` propio y en `sitemap.xml`; con cualquier 
 │ ┌──┐    imagen       │                             │
 │ └──┘  principal   ›  │  $ 24.500,00                │  burdeos, 28px/500
 │ ┌──┐                 │  $ 27.500,00                │  tachado, secundario, 12px
-│ └──┘                 │                             │
+│ └──┘                 │  ▭ Mismo precio en 3 cuotas │  RF-40: body-sm, secundario;
+│                      │    de $ 8.166,67 con …      │  la cuota en tinta y semibold
+│                      │    Ver más opciones (1) ⌄   │  <details>, solo si hay más
+│                      │                             │
 │                      │  Color: Negro               │
 │    ↑ pegada          │  ● ○ ○ ⊘                    │
 │      (sticky)        │                             │
@@ -1464,6 +1467,8 @@ Sin filtros se indexa, con `canonical` propio y en `sitemap.xml`; con cualquier 
    ─────────── 64px ───────────
    Productos similares               → 4 tarjetas
 ```
+
+**Las cuotas van debajo del precio, porque dividen ese número** (RF-40, F2.17). Una sola a la vista —la de más cuotas sin interés o, si no hay, la de cuota más baja— y las demás detrás de «Ver más opciones», un `<details>` nativo que no manda JavaScript. En gris y con la cuota en tinta: el burdeos es de la oferta y de lo accionable (§6.7), y esto informa. Sin recargo dice «Mismo precio en…»; con recargo, solo «3 cuotas de $ X con …», nunca «sin interés».
 
 **La columna derecha desplaza y la galería se queda pegada.** La descripción, los datos y el recuadro viven en esa columna, así que es mucho más alta que la foto; sin `sticky`, leer la descripción es perder de vista el producto del que habla. Los bloques de recomendados sí van a lo ancho, debajo de las dos columnas: son otra pantalla dentro de la misma página.
 
