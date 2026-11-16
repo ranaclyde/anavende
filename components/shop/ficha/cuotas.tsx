@@ -17,9 +17,9 @@ import {
  * una sola no hay enlace: prometería otras opciones que no hay (decisión del
  * 2026-11-16).
  *
- * Con recargo, en gris y con la cuota en tinta. **Sin interés, el renglón
- * entero va en verde** (pedidos del 2026-11-16): el verde de éxito y no el
- * de WhatsApp, que es solo de lo que abre WhatsApp (§2.6) y está justo
+ * En gris y con la cuota en tinta. **Sin interés, en verde hasta la cuota**
+ * —«Mismo precio en 3 cuotas de $ X»— y «con …» sigue en gris (pedidos del
+ * 2026-11-16): el verde de éxito y no el de WhatsApp, que es solo de lo que abre WhatsApp (§2.6) y está justo
  * debajo. **Sin ícono y en `caption`**: informa, y no pesa más que el texto
  * de abajo (2026-11-16).
  */
@@ -33,16 +33,18 @@ export function CuotasDeLaFicha({
 
   return (
     <div className="flex flex-col gap-1 pt-1 text-caption text-ink-secondary">
-      <p className={p.sinRecargo ? "text-success" : undefined}>
-        {p.sinRecargo ? "Mismo precio en " : null}
-        <strong
-          className={cn(
-            "font-semibold tabular-nums",
-            p.sinRecargo ? null : "text-ink",
-          )}
-        >
-          {p.cuotas} cuotas de {formatMoney(p.cuota)}
-        </strong>{" "}
+      <p>
+        <span className={p.sinRecargo ? "text-success" : undefined}>
+          {p.sinRecargo ? "Mismo precio en " : null}
+          <strong
+            className={cn(
+              "font-semibold tabular-nums",
+              p.sinRecargo ? null : "text-ink",
+            )}
+          >
+            {p.cuotas} cuotas de {formatMoney(p.cuota)}
+          </strong>
+        </span>{" "}
         con {conQuien(p)}
       </p>
 

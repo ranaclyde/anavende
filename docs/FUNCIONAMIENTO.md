@@ -48,7 +48,7 @@ categorías y la ficha de cada producto.
   (`components/shop/ficha/descripcion-plegable.tsx`). El texto completo
   viene igual desde el servidor: solo se recorta. Debajo del precio van
   las **promociones de cuotas** vigentes (RF-40,
-  `components/shop/ficha/cuotas.tsx`): una a la vista, en verde si es
+  `components/shop/ficha/cuotas.tsx`): una a la vista, en verde hasta la cuota si es
   sin interés. Con dos o más, «Ver otras opciones» abre un modal
   con todas y el logo de cada medio, separadas en mismo precio y con
   recargo, de menos a más cuotas. No cambian el precio ni cobran nada.
