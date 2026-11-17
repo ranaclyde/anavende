@@ -181,7 +181,10 @@ se cancela (`modules/returns/registrar.ts`).
    (`components/ui/visor-de-fotos.tsx`), con las fotos de ese color y el
    zoom sobre la versión `detail`. Arriba de los colores se ve si la
    **marca de agua** está activada o desactivada, con un enlace a donde se
-   arma; avisa y no frena la subida (abajo).
+   arma; avisa y no frena la subida (abajo). **«Descargar fotos»** baja un
+   zip con todas, una carpeta por color, en JPG y tal como están —con la
+   marca de agua si la tienen— (`/api/admin/productos/[id]/fotos`,
+   `modules/media/descargar.ts`).
 4. **Activarlo.** No se puede activar un producto con la marca, la categoría
    o un color desactivados, y no se puede desactivar una marca, una
    categoría o un color mientras haya un producto activo que lo use. Así,
