@@ -29,7 +29,7 @@ import {
   urlAbsoluta,
   ZONA_DE_ENTREGA,
 } from "@/lib/seo";
-import { getIdentity } from "@/lib/session";
+import { getSession } from "@/lib/session";
 import { AREA_TACTIL, cn } from "@/lib/utils";
 import { mirar } from "@/modules/cart/pendiente";
 import { urlDeCategoria } from "@/modules/catalog/products/filtros-tienda";
@@ -203,20 +203,26 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
   // Independientes entre sí: encadenarlas sumaría dos viajes a la base para
   // datos que no dependen del producto.
   //
-  // La identidad y no la sesión entera: acá solo decide qué botón se dibuja
-  // —«Agregá al carrito» o «Iniciá sesión para comprar» (RF-08)—, y
-  // `getIdentity` verifica el token sin ir a la base. Quien decide si puede
-  // agregar es la acción, con el perfil fresco (§6.2).
+  // La sesión entera, con perfil, y no solo la identidad (2026-11-17): decide
+  // qué botón se dibuja —«Agregá al carrito» o «Iniciá sesión para comprar»
+  // (RF-08)— y si se retoma la compra pendiente, y las acciones que esos
+  // botones llaman exigen perfil (§13.4). Con la identidad sola, quien entró
+  // con Google y no completó el perfil veía «Agregá al carrito» y recibía
+  // «Necesitás iniciar sesión» al apretarlo, con el encabezado diciendo
+  // «Ingresar». No cuesta otra ida a la base: el layout ya la pidió y
+  // `getSession` está en `cache()`. Quien decide si puede agregar sigue
+  // siendo la acción, con el perfil fresco (§6.2).
   //
   // Las promociones de cuotas (RF-40) también: son las de toda la tienda, y
   // el monto mínimo de cada una se mira después, contra el precio.
-  const [ficha, whatsapp, consulta, identidad, vigentes] = await Promise.all([
+  const [ficha, whatsapp, consulta, sesion, vigentes] = await Promise.all([
     leerFicha(slug),
     numeroDeWhatsApp(),
     searchParams,
-    getIdentity(),
+    getSession(),
     promocionesVigentes(),
   ]);
+  const identidad = sesion?.identity ?? null;
 
   // RN-05: un producto inactivo no existe para el sitio público, y da el
   // mismo 404 que uno que nunca existió.
@@ -225,8 +231,9 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
   /*
    * La compra que quedó pendiente de ingresar (F5.7, RF-08).
    *
-   * Se mira DESPUÉS de la identidad y solo si hay alguien: sin sesión no hay
-   * nada que retomar, y la nota tiene que seguir esperando. Solo mirar, no
+   * Se mira DESPUÉS de la sesión y solo si hay alguien con perfil: sin sesión
+   * —o sin perfil todavía, el caso de Google antes de `/completar-perfil`— no
+   * hay nada que retomar, y la nota tiene que seguir esperando. Solo mirar, no
    * tomar: un Server Component puede leer cookies pero no borrarlas, así que
    * quien la consume es la acción.
    *

@@ -3240,8 +3240,9 @@ devuelve `null`, así que el encabezado muestra «Ingresar» y las acciones
 proveedores nadie llega a ese estado; se encontró por una sesión de prueba
 que quedó huérfana.
 
-**La acción pendiente de F5.7 le va a hablar raro a quien entre por Google o
-Facebook.** `retomarCompraPendiente` es `customer`, y el envoltorio rechaza una
+**~~La acción pendiente de F5.7 le va a hablar raro a quien entre por Google o
+Facebook.~~** Resuelto el 2026-11-17 (rama `fix/compra-pendiente-sin-perfil`),
+y abajo, cómo quedó. Lo que sigue es cómo estaba antes: `retomarCompraPendiente` es `customer`, y el envoltorio rechaza una
 identidad **sin perfil** con «Necesitás iniciar sesión para hacer eso» (§13.4).
 Esa combinación —identidad sí, perfil no— solo existe en el alta por
 proveedor social antes de completar el teléfono (RF-06), que hoy está apagada:
@@ -3251,13 +3252,36 @@ inició sesión cuando el encabezado dice su nombre. La nota **no se pierde** �
 rechazo ocurre antes de tocar la cookie, así que se retoma cuando el perfil
 exista—; lo que hay que arreglar es el mensaje. Se anota acá y no se resuelve
 hoy porque no hay forma de verlo ocurrir hasta que esas dos apps existan.
-**Actualización del 2026-11-17: con Google prendido (F1.7), ya puede pasar en
-producción.** La ficha (`app/(shop)/productos/[slug]/page.tsx`) mira la compra
-pendiente con `getIdentity()`, que no pide perfil; quien entró con Google y
-llega a la ficha antes de pasar por `/completar-perfil` dispara
-`retomarCompraPendiente`, que el envoltorio rechaza en `lib/action.ts`, y lee
-«Lo que habías elegido no se pudo agregar. Necesitás iniciar sesión para hacer
-eso.» con su nombre en el encabezado. Sigue sin arreglar.
+**Lo que pasaba de verdad, visto el 2026-11-17, y en dos puntos la nota estaba
+mal.** No pasaba en producción mientras la tienda esté cerrada: la vuelta de
+Google le cierra la sesión a una compradora y borra la cuenta recién creada.
+Y el encabezado **no** decía su nombre: sale de `getSession()`, que exige
+perfil, así que decía «Ingresar». El problema era más ancho que la compra
+pendiente: la ficha decidía con `getIdentity()`, que no pide perfil, y en ese
+rato dibujaba «Agregá al carrito»; ese botón y la compra retomada llamaban a
+acciones `customer` y las dos respondían «Necesitás iniciar sesión para hacer
+eso.». Tres cosas distintas en la misma pantalla, y la cookie sin consumir
+hacía volver el aviso en cada visita a esa ficha.
+
+**Cómo quedó, en tres piezas.** (1) **La ficha decide con la sesión entera**
+(`app/(shop)/productos/[slug]/page.tsx`), como el encabezado: sin perfil
+ofrece «Iniciá sesión para comprar» y no intenta retomar nada. No suma idas a
+la base: el layout ya pidió `getSession()` y está en `cache()`. (2)
+**`/ingresar`, con cuenta y sin perfil, manda a `/completar-perfil` con la
+vuelta** (`app/(auth)/ingresar/page.tsx`), en vez de a «Mi cuenta», que la
+perdía; solo destinos internos, con la regla de la vuelta de Google. Al
+terminar el perfil vuelve a la ficha y la compra se retoma. (3) **El
+envoltorio distingue el mensaje** (`lib/action.ts`): sin cuenta, «Necesitás
+iniciar sesión para hacer eso.»; con cuenta y sin perfil, «Te falta completar
+tu perfil. Completalo y probá de nuevo.». Sigue siendo `FORBIDDEN` y la acción
+no corre, como pide §13.4: cambia lo que se dice, no lo que se permite. Cubre
+lo que quedó con la identidad sola —el corazón de favoritos en la home, el
+catálogo y «Vistos»—. **Verificado**: `tests/unit/seguridad/accion-sin-perfil.test.ts`
+(2) y `tests/e2e/compra-pendiente-sin-perfil.spec.ts`, que recorre cuenta sin
+perfil → ficha → completar el perfil → compra retomada y en el carrito, y falla
+sin el arreglo; los ocho tests de unidad que simulan `@/lib/session` suman
+`getIdentity` y siguen en verde; `comprar`, `sin-stock`, `aislamiento`,
+`ayudas` y `recuperar` en verde; `DATABASE_URL= npx next build` termina.
 
 **~~`.env.local` apunta al stack local, y este archivo dice lo contrario.~~**
 Resuelto el 2026-09-14: vale el stack local, y así quedó escrito en el
