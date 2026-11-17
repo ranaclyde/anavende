@@ -34,6 +34,11 @@ import { cn } from "@/lib/utils";
  * (`IconoWhatsApp`). Acá el logo pasa a la tinta inversa: verde sobre verde
  * no se ve.
  *
+ * `pizarra` es el PAR de `brand` (DESIGN.md, la regla del par): pesa lo
+ * mismo, para la otra acción principal de una pantalla. Hoy, «Agregar color»
+ * en el producto, al lado de «Guardar» (2026-11-16). No es un escalón más
+ * débil que el burdeos: si algo debe pesar menos, es `secondary`.
+ *
  * `tertiary` es el ghost: texto solo en reposo, y al pasar el puntero aparece
  * el plato de `--canvas`. En táctil no hay hover, por eso el texto se ve
  * siempre y el área táctil sigue siendo la del tamaño elegido (§9).
@@ -54,6 +59,8 @@ const buttonVariants = cva(
           "bg-brand text-ink-inverse hover:bg-brand-hover active:bg-brand-active",
         whatsapp:
           "bg-whatsapp text-ink-inverse hover:bg-whatsapp-hover active:bg-whatsapp-active [&_svg]:text-current",
+        pizarra:
+          "bg-accent text-ink-inverse hover:bg-accent-hover active:bg-accent-active",
         secondary:
           "border border-border bg-surface text-ink hover:bg-surface-sunken hover:border-border-strong",
         tertiary:
