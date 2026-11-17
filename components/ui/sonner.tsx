@@ -100,6 +100,15 @@ export function Toaster(props: ToasterProps) {
           content: "flex min-w-0 flex-1 flex-col gap-0.5",
           title: "font-medium",
           description: "text-caption text-ink-secondary",
+          // Solo lo usa `avisarVersionNueva`: el único aviso que pide hacer
+          // algo. Con `unstyled` no trae aspecto, así que es el «brand» de
+          // `Button` en chico, con su anillo de foco.
+          actionButton: [
+            "shrink-0 self-center rounded-panel-control bg-brand px-3 py-1.5",
+            "text-body-sm font-medium text-ink-inverse transition-colors",
+            "hover:bg-brand-hover active:bg-brand-active",
+            "outline-none focus-visible:shadow-focus",
+          ].join(" "),
         },
       }}
       {...props}

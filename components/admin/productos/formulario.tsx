@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { unstable_isUnrecognizedActionError, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   useCallback,
@@ -14,9 +14,11 @@ import type { LexicalEditor } from "lexical";
 
 import {
   EditorDeDescripcion,
+  escribirMarkdown,
   leerMarkdown,
 } from "@/components/admin/productos/editor";
 import { useAvisoAlSalir } from "@/components/admin/aviso-al-salir";
+import { useBorrador } from "@/components/admin/borrador";
 import { EdicionDeItem } from "@/components/admin/catalogo/edicion";
 import { EstadoDeGuardado } from "@/components/admin/estado-de-guardado";
 import {
@@ -24,7 +26,7 @@ import {
   PieDeGuardado,
   TarjetaDeSeccion,
 } from "@/components/admin/tarjeta";
-import { avisar } from "@/components/ui/aviso";
+import { avisar, avisarVersionNueva } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError } from "@/components/ui/field-error";
@@ -69,6 +71,20 @@ const CAMPOS = [
 ] as const;
 
 type Campo = (typeof CAMPOS)[number];
+
+/** Lo que sobrevive a una recarga (`useBorrador`). */
+type Borrador = {
+  nombre: string;
+  sku: string;
+  marcaId: string;
+  categoriaId: string;
+  precio: string;
+  descuento: string;
+  destacado: boolean;
+  activo: boolean;
+  /** `null` si no se tocó: así no se pisa la guardada con la misma. */
+  descripcion: string | null;
+};
 
 /**
  * El precio final que se muestra mientras se escribe (RF-15, RN-04b).
@@ -204,7 +220,8 @@ export function FormularioDeProducto({
     precio.trim() !== "" ||
     descuento.trim() !== "" ||
     descripcionTocada;
-  useAvisoAlSalir(!enviando && (producto ? !sinCambios : algoEscrito));
+  const hayCambios = producto ? !sinCambios : algoEscrito;
+  useAvisoAlSalir(!enviando && hayCambios);
 
   /**
    * Crear una marca o una categoría sin salir del producto (F2.13). Lo que
@@ -227,6 +244,39 @@ export function FormularioDeProducto({
    * tecla, para un valor que nadie mira hasta que se guarda.
    */
   const editor = useRef<LexicalEditor | null>(null);
+
+  /**
+   * Lo escrito sobrevive a una recarga (2026-11-17). El caso que lo pidió:
+   * un despliegue con este formulario abierto deja «Guardar» fallando hasta
+   * recargar, y recargar borraba todo lo cargado.
+   */
+  const borrador = useBorrador<Borrador>({
+    clave: `producto:${producto?.id ?? "nuevo"}`,
+    hayCambios,
+    leer: () => ({
+      nombre,
+      sku,
+      marcaId,
+      categoriaId,
+      precio,
+      descuento,
+      destacado,
+      activo,
+      descripcion: descripcionTocada ? leerMarkdown(editor.current) : null,
+    }),
+    reponer: (b) => {
+      setNombre(b.nombre);
+      setSku(b.sku);
+      setMarcaId(b.marcaId);
+      setCategoriaId(b.categoriaId);
+      setPrecio(b.precio);
+      setDescuento(b.descuento);
+      setDestacado(b.destacado);
+      setActivo(b.activo);
+      if (b.descripcion !== null)
+        escribirMarkdown(editor.current, b.descripcion);
+    },
+  });
 
   /**
    * Adónde va el foco cuando el envío falla. Sin esto queda en el botón de
@@ -279,9 +329,23 @@ export function FormularioDeProducto({
     };
 
     iniciar(async () => {
-      const resultado = producto
-        ? await editarUnProducto({ id: producto.id, ...datos })
-        : await crearUnProducto(datos);
+      let resultado;
+      try {
+        resultado = producto
+          ? await editarUnProducto({ id: producto.id, ...datos })
+          : await crearUnProducto(datos);
+      } catch (error) {
+        // Hubo un despliegue con el formulario abierto (2026-11-17): esta
+        // página tiene los códigos de las acciones del build anterior. Se
+        // ataja acá y no en la pantalla de error porque esa reemplaza al
+        // formulario, y con él se iría lo escrito antes de poder guardarlo.
+        // Así queda a la vista, y «Recargar» lo guarda y lo repone.
+        if (unstable_isUnrecognizedActionError(error)) {
+          avisarVersionNueva();
+          return;
+        }
+        throw error;
+      }
 
       if (!resultado.ok) {
         const nuevos = leerErrores<Campo>(resultado);
@@ -289,6 +353,8 @@ export function FormularioDeProducto({
         irAlPrimerError(nuevos);
         return;
       }
+
+      borrador.descartar();
 
       // Al EDITAR vuelve al listado: guardar y quedarse en el formulario deja
       // la duda de si se guardó. Al CREAR sigue en la pantalla del producto
@@ -344,6 +410,18 @@ export function FormularioDeProducto({
           cuatro con la barra afuera, y al lado está «Colores y stock», que
           se guarda solo. Con el botón suelto no se sabía qué guardaba. */}
       <form onSubmit={enviar} noValidate className="min-w-0">
+        {/* En su lugar y no flotante: tiene que seguir a la vista mientras se
+            revisa lo recuperado, y está arriba de lo que se recuperó. */}
+        {borrador.recuperado ? (
+          <p
+            role="status"
+            className="mb-4 rounded-panel-control bg-warning-tint px-3 py-2 text-body-sm text-ink"
+          >
+            Recuperamos lo que estabas cargando antes de que se recargara la
+            página. Todavía no está guardado: revisalo y guardá.
+          </p>
+        ) : null}
+
         {/* ── Qué es ────────────────────────────────────────────────── */}
         <TarjetaDeSeccion id="datos" titulo="Datos del producto">
           <div className="flex flex-col gap-1.5">

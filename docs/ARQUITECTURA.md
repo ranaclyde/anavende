@@ -221,7 +221,18 @@ en la página, porque ahí se mueve al pasar el mouse
   Next. Si una migración falla, el contenedor no arranca, en vez de quedar
   sirviendo contra un esquema que no es el suyo.
 - `/api/salud` es el healthcheck. A propósito, no consulta la base: un hipo
-  de Postgres reiniciaría el contenedor en cadena.
+  de Postgres reiniciaría el contenedor en cadena. Dice además qué build
+  sirve (`version`, el `BUILD_ID` de Next, `lib/version.ts`).
+- **Un despliegue deja viejas las páginas abiertas.** Cada build cambia los
+  códigos de las Server Actions, y una página cargada antes llama con los
+  viejos: «Guardar» falla con `UnrecognizedActionError` hasta recargar. El
+  panel compara su versión con la de `/api/salud` cada dos minutos y al
+  volver a la pestaña, y si cambió pide recargar con un aviso que no se va
+  (`components/admin/aviso-de-version.tsx`). Si alguien guarda antes, la
+  pantalla de error lo reconoce y recarga en vez de reintentar
+  (`components/ui/fallo-de-pantalla.tsx`). El formulario de producto ataja
+  el error él mismo y guarda lo escrito al recargar, para reponerlo
+  (`components/admin/borrador.ts`).
 - La compilación no tiene acceso a la base. Por eso la conexión de
   `db/index.ts` es perezosa, y por eso se prueba `DATABASE_URL= npx next build`
   antes de commitear.
