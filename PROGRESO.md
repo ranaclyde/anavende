@@ -321,7 +321,10 @@ las dos casillas por omisión, y un `--build-arg` queda visible en el
 revés, `SENTRY_AUTH_TOKEN` es **solo de construcción** —sube los *source maps*
 al compilar y en ejecución no hace nada—.
 
-**Traefik y Coolify todavía no están en `VERSIONS.md`.** Hoy corren Traefik
+**~~Traefik y Coolify todavía no están en `VERSIONS.md`.~~** Resuelto el
+2026-09-10: `VERSIONS.md` registra Coolify 4.3.18 y Traefik 3.6.25, con la
+nota de que `traefik:v3.6` es una serie y no una versión. Lo que sigue es cómo
+estaba antes: hoy corren Traefik
 v3.6 —con un aviso de que hay v3.7— y la versión de Coolify que instaló
 DonWeb. F0.9 dice que las versiones instaladas son el parámetro de toda
 consulta posterior, así que **falta registrarlas**. Y la actualización de
@@ -1028,7 +1031,7 @@ catálogo y «Favoritos»):
 Esto resuelve los filtros del catálogo. El selector con buscador del panel, el
 segundo punto de arriba, es otro problema y sigue pendiente.
 
-**Pendiente: cinco ajustes de UX pedidos por vos** (2026-11-03, después de
+**~~Pendiente: cinco ajustes de UX pedidos por vos~~** (2026-11-03, después de
 cargar productos reales en producción). Están hechos los cinco.
 
 En el panel:
@@ -3248,6 +3251,13 @@ inició sesión cuando el encabezado dice su nombre. La nota **no se pierde** �
 rechazo ocurre antes de tocar la cookie, así que se retoma cuando el perfil
 exista—; lo que hay que arreglar es el mensaje. Se anota acá y no se resuelve
 hoy porque no hay forma de verlo ocurrir hasta que esas dos apps existan.
+**Actualización del 2026-11-17: con Google prendido (F1.7), ya puede pasar en
+producción.** La ficha (`app/(shop)/productos/[slug]/page.tsx`) mira la compra
+pendiente con `getIdentity()`, que no pide perfil; quien entró con Google y
+llega a la ficha antes de pasar por `/completar-perfil` dispara
+`retomarCompraPendiente`, que el envoltorio rechaza en `lib/action.ts`, y lee
+«Lo que habías elegido no se pudo agregar. Necesitás iniciar sesión para hacer
+eso.» con su nombre en el encabezado. Sigue sin arreglar.
 
 **~~`.env.local` apunta al stack local, y este archivo dice lo contrario.~~**
 Resuelto el 2026-09-14: vale el stack local, y así quedó escrito en el
@@ -3384,7 +3394,9 @@ leyendo el código. La salida está evaluada y es tuya: Playwright, que ya está
 elegido en TS §2.1 y §17.2 y anotado como pendiente de F10.2 en `VERSIONS.md`.
 
 
-**El pie y la ficha enlazan a `/legales/…`, que todavía no existe.** El pie lo
+**~~El pie y la ficha enlazan a `/legales/…`, que todavía no existe.~~**
+Resuelto con F9.3: las cuatro páginas existen (`app/(shop)/legales/[slug]`) y
+se editan desde `/admin/legales`. Lo que sigue es cómo estaba antes: el pie lo
 hace desde F1.13 y la ficha lo sumó en F3.5, porque §7.3 dibuja «Garantías y
 devoluciones» ahí y sacarlo dejaría la ficha sin decir qué pasa si algo sale
 mal. Las cuatro páginas son **F9.3**, y hasta entonces los cinco enlaces caen en
@@ -3392,7 +3404,10 @@ el 404. Queda anotado y no arreglado a propósito: la alternativa sería una
 página de relleno con texto legal inventado, y un texto legal inventado es peor
 que no tenerlo.
 
-**La ficha no se miró en un teléfono.** Su composición móvil es lo que decide
+**~~La ficha no se miró en un teléfono.~~** Resuelto el mismo 2026-09-08: con
+Playwright se abrió la ficha a 390×844 («El teléfono deja de ser una
+suposición», más arriba), y F3.5 y F3.6 están ✅. Lo que sigue es cómo estaba
+antes: su composición móvil es lo que decide
 §6.8 —el carrusel deslizable con puntos, sin miniaturas y sin modal— y está
 escrita, pero el navegador de esta máquina no acepta el cambio de tamaño de
 ventana, así que lo único verificado es escritorio. Es lo que impide poner ✅
@@ -3624,7 +3639,10 @@ desbloqueó** —la canalización ya existe— así que ahora es trabajo, no esp
 Hay que decidir dónde entra: reabrir F2.1 como se hizo con «destacada», o
 sumarlo a F2.3 junto con el resto del ABM.
 
-**La descripción todavía no se renderiza en ningún lado.** El sanitizador
+**~~La descripción todavía no se renderiza en ningún lado.~~** Resuelto con
+F3.5 el 2026-09-08: la pinta `components/shop/ficha/descripcion.tsx`, y las
+páginas legales usan `components/shop/texto-con-formato.tsx`. Lo que sigue es
+cómo estaba antes: el sanitizador
 expone `nodosDeMarkdown`, que es el árbol ya filtrado listo para pintar, pero
 el componente que lo convierte en elementos de React —con la medida, el aire y
 los pesos de `DESIGN-REFERENCE.md` §6.11— no se escribió: **no hay ficha
@@ -4367,7 +4385,10 @@ por su lado:
   cifras iguales. El encabezado fantasma mide 52px contra los 53 del real —el
   `h-7` contra los 29px de `text-title`, que ya estaba anotado—.
 
-  **Queda una cosa sin decidir, y es de texto:** «Nuevo producto» no tiene
+  **~~Queda una cosa sin decidir, y es de texto:~~** Resuelto el 2026-09-21:
+  «Nuevo producto» tiene bajada («Acá van los datos y el precio…», en
+  `app/admin/productos/nuevo/page.tsx`). Lo que sigue es cómo estaba antes:
+  «Nuevo producto» no tiene
   bajada y «Nueva orden» y «Nueva cuenta» sí, siendo las tres altas. Escribirla
   es inventar copia de interfaz, así que no se hizo sin preguntar.
 - **~~Campo de búsqueda: copiado literal tres veces.~~** Resuelto el
