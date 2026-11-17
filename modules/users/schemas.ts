@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { destinoInterno } from "@/lib/destino";
 import { telefonoArgentino } from "@/lib/telefono";
 
 /**
@@ -68,10 +69,7 @@ export const contrasena = z
  * corresponde es tirar el destino raro y seguir, que es lo que hace
  * `/api/auth/confirmar` con lo que le llega.
  */
-export const rutaDeRegreso = z
-  .string()
-  .transform((v) => (v.startsWith("/") && !v.startsWith("//") ? v : undefined))
-  .optional();
+export const rutaDeRegreso = z.string().transform(destinoInterno).optional();
 
 /**
  * El token de Turnstile (F10.5b, §16). Lo valida GoTrue, no la tienda: acá

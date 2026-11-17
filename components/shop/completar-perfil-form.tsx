@@ -14,6 +14,7 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
+import { destinoInterno } from "@/lib/destino";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { completarPerfil } from "@/modules/users/actions";
 
@@ -78,7 +79,8 @@ export function CompletarPerfilForm({
         return;
       }
 
-      router.push(volver && volver.startsWith("/") ? volver : "/");
+      // Solo destinos de la tienda: `//otro.com` también empieza con `/`.
+      router.push(destinoInterno(volver) ?? "/");
       router.refresh();
     });
   };

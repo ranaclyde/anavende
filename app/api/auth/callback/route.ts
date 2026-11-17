@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { destinoInterno } from "@/lib/destino";
 import { urlDelSitio } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -33,11 +34,8 @@ export async function GET(request: NextRequest) {
   const volverCrudo = searchParams.get("volver");
 
   // Solo se aceptan destinos internos: un `volver` con host lo convertiría
-  // en un redirector abierto.
-  const volver =
-    volverCrudo && volverCrudo.startsWith("/") && !volverCrudo.startsWith("//")
-      ? volverCrudo
-      : "/";
+  // en un redirector abierto (`lib/destino.ts`).
+  const volver = destinoInterno(volverCrudo) ?? "/";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/error?motivo=enlace-invalido`);

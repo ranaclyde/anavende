@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/shop/login-form";
+import { destinoInterno } from "@/lib/destino";
 import { getIdentity, getSession } from "@/lib/session";
 import { numeroDeWhatsApp } from "@/modules/settings/queries";
 import { proveedoresDisponibles } from "@/modules/users/proveedores";
@@ -25,14 +26,15 @@ export default async function Ingresar({
   // perfil** (§13.4): quien entró con Google y no lo completó ve «Ingresar»
   // en el encabezado y «Iniciá sesión para comprar» en la ficha, y llega acá.
   // Va a completarlo y **conserva la vuelta**, para que al terminar vuelva a
-  // la ficha y la compra pendiente se retome (F5.7). Solo destinos internos,
-  // con la misma regla que la vuelta de Google.
+  // la ficha y la compra pendiente se retome (F5.7). Solo destinos internos
+  // (`lib/destino.ts`).
   if (identidad && !sesion) {
-    const destino =
-      volver?.startsWith("/") && !volver.startsWith("//")
-        ? `/completar-perfil?volver=${encodeURIComponent(volver)}`
-        : "/completar-perfil";
-    redirect(destino);
+    const interno = destinoInterno(volver);
+    redirect(
+      interno
+        ? `/completar-perfil?volver=${encodeURIComponent(interno)}`
+        : "/completar-perfil",
+    );
   }
   if (identidad) redirect("/mi-cuenta");
 

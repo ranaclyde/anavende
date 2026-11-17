@@ -22,6 +22,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { destinoInterno } from "@/lib/destino";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { enlaceDeWhatsApp } from "@/lib/whatsapp";
 import { enviarVerificacion, ingresar } from "@/modules/users/actions";
@@ -92,7 +93,8 @@ export function LoginForm({
         return;
       }
 
-      router.push(volver && volver.startsWith("/") ? volver : "/");
+      // Solo destinos de la tienda: `//otro.com` también empieza con `/`.
+      router.push(destinoInterno(volver) ?? "/");
       router.refresh();
     });
   };
