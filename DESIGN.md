@@ -115,6 +115,16 @@ components:
   button-whatsapp-hover:
     backgroundColor: "{colors.whatsapp-hover}"
     textColor: "{colors.ink-inverse}"
+  button-pizarra:
+    backgroundColor: "{colors.pizarra}"
+    textColor: "{colors.ink-inverse}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.pill}"
+    padding: "0 16px"
+    height: "40px"
+  button-pizarra-hover:
+    backgroundColor: "{colors.pizarra-hover}"
+    textColor: "{colors.ink-inverse}"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
@@ -241,7 +251,10 @@ cuatro semánticos que sólo hablan cuando hay algo que decir.
 
 ### Secondary
 
-- **Azul Pizarra** (`pizarra`): **lo elegido**; hoy, el checkbox marcado. Da
+- **Azul Pizarra** (`pizarra`): **lo elegido**, como el checkbox marcado, y
+  **el par del botón de marca** donde una pantalla tiene dos acciones
+  principales: hoy, «Agregar color» en el producto, al lado de «Guardar»
+  (botón `pizarra`, 2026-11-16). Da
   9,05:1 sobre blanco contra los 9,07:1 del Malbec. Hasta el 2026-10-19 fue
   también «Comprá ya por WhatsApp»; su papel nuevo, como color de ambiente de
   la tienda, está por decidirse (DR §2.5).

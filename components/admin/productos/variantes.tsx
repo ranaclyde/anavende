@@ -272,8 +272,11 @@ export function VariantesDelProducto({
             {variantes.some((v) => v.propias > 0) ? (
               <DescargarFotos productId={productId} alFallar={setError} />
             ) : null}
+            {/* En pizarra, el par de «Guardar» (2026-11-16): sin colores no
+                hay stock ni fotos, así que pesa casi lo mismo. «Descargar
+                fotos» es una utilidad y queda en contorno. */}
             <Button
-              variant="secondary"
+              variant="pizarra"
               size="sm"
               onClick={() => setAgregando(true)}
             >
@@ -725,15 +728,12 @@ function Vacio({ alAgregar }: { alAgregar: () => void }) {
       icono={Palette}
       titulo="Todavía no cargaste ningún color."
       accion={
-        /* Secundario y no de marca: esta tarjeta convive con «Guardar
-           cambios» del formulario de arriba, que es la principal de la
-           pantalla, y §6.3 admite una sola. Los otros vacíos del panel sí
-           usan la de marca porque su pantalla esconde la del encabezado
-           mientras están vacíos; acá no se puede esconder el submit del
-           formulario. Además el «Agregar color» de la cabecera de esta misma
-           sección ya es secundario, así que el vacío pesa igual que su
-           reemplazo. */
-        <Button variant="secondary" size="sm" onClick={alAgregar}>
+        /* Pizarra y no de marca: esta tarjeta convive con «Guardar
+           cambios» del formulario de arriba, y §6.3 admite una sola de
+           marca. Pizarra es su par (2026-11-16): cargar colores es casi tan
+           importante como guardar. Pesa igual que el «Agregar color» de la
+           cabecera, que la reemplaza cuando hay colores. */
+        <Button variant="pizarra" size="sm" onClick={alAgregar}>
           <Plus aria-hidden />
           Cargar el primero
         </Button>
