@@ -2536,6 +2536,7 @@ Cada una se escribió primero en la especificación y después en el código
 
 | Qué | Dónde quedó | Por qué |
 |---|---|---|
+| **La vuelta después de ingresar ya no puede llevar a otro sitio** (2026-11-17) | `lib/destino.ts`; `components/shop/login-form.tsx`, `completar-perfil-form.tsx`; `app/(auth)/ingresar/page.tsx`; `app/api/auth/callback/route.ts`, `confirmar/route.ts`; `modules/users/schemas.ts`; `tests/unit/seguridad/destino.test.ts`, `tests/e2e/volver-interno.spec.ts` | Visto arreglando F5.7. El formulario de ingreso y el de completar el perfil aceptaban cualquier `volver` que empezara con `/`, y `//otro.com` empieza con `/`: un enlace a nuestro `/ingresar` con ese destino llevaba, después de escribir la contraseña en la tienda, a otro sitio (redirección abierta, §16). Probado: sin el arreglo, el e2e termina en `example.com`. Las rutas del servidor ya rechazaban `//` —y como anteponen el dominio, no salían igual—, pero había cinco copias de la regla y ninguna rechazaba `/\otro.com`, que el navegador lee como `//`. Ahora es una sola función, `destinoInterno`, en los seis lugares |
 | **`/api/salud` no consulta la base, y §19 ya no lo pide** (2026-11-17) | `TECHNICAL-SPEC.md` §19, fila «Salud», y R14 | Decisión tuya. §19 pedía un healthcheck que distinguiera «app caída» de «base inalcanzable»; el código hacía lo contrario a propósito, porque un healthcheck atado a la base reinicia la app en cadena cuando falla la red entre servidores. Un segundo endpoint de diagnóstico no lo consultaría nadie: no hay monitor externo y el DATA se mira desde afuera. Se retoma si se suma un monitor |
 | **Un despliegue con el panel abierto ya no hace perder lo cargado** (2026-11-17) | `DESIGN-REFERENCE.md` §6.15 y §8; `DESIGN.md`; `docs/ARQUITECTURA.md`, `docs/OPERACION.md`; `lib/version.ts`; `app/api/salud/route.ts`; `components/admin/aviso-de-version.tsx`, `borrador.ts`; `components/ui/aviso.tsx`, `sonner.tsx`, `fallo-de-pantalla.tsx`; `components/admin/productos/formulario.tsx`; `tests/e2e/sitio-actualizado.spec.ts` | Lo reportó Sentry: se cargaba un producto, el merge del #152 desplegó en el medio y «Crear producto» falló con `UnrecognizedActionError` —la página tenía los códigos de las Server Actions del build anterior—. La pantalla de error decía «Algo falló de nuestro lado», y «Probar de nuevo» volvía a armar el formulario vacío: no se borró nada de la base, porque la acción nunca corrió, pero se perdió todo lo escrito. **Tres piezas, decididas con vos**: (1) el panel compara su versión —el `BUILD_ID` de Next, que `/api/salud` ahora devuelve— cada dos minutos y al volver a la pestaña, y si cambió muestra un flotante que no se va ni se cierra, con «Recargar» (excepción a «los flotantes confirman», DR §6.15; toast y no banner, a pedido tuyo); (2) la pantalla de error, en la tienda y en el panel, reconoce el caso, dice «Se actualizó AnaVende», recarga en vez de reintentar y no lo manda a Sentry; (3) el formulario de producto ataja el error sin desmontarse y guarda lo escrito en `sessionStorage` al recargar, para reponerlo con un aviso. **No es el `SOURCE_COMMIT`** porque llega vacío si en Coolify no está prendido «Include Source Commit in Build». **Lo que no cubre**: los demás formularios del panel pierden lo escrito al recargar (el aviso y la pantalla de error sí los cubren), y la tienda no tiene el aviso automático, solo la pantalla de error |
 | **Sin stock, el botón dice «Consultar disponibilidad» y ya no lleva aclaración debajo** (2026-11-03) | `FUNCTIONAL-SPEC.md` RF-03 (tabla y criterio); `DESIGN-REFERENCE.md` §2.6, §6.5, §7.3 y §14; `DEVELOPMENT-PLAN.md` F3.5; `components/shop/ficha/compra.tsx`; `app/mantenimiento/page.tsx` (comentario); `tests/e2e/sin-stock.spec.ts` | Pedido tuyo del 2026-11-03: que el botón principal de la ficha sin stock diga «Consultar disponibilidad» en vez de «Preguntá si va a haber», y que se saque el texto de abajo («Te contestamos por WhatsApp. No lo reservamos ni te avisamos solos.»). Contradice la DR §7.3, que justificaba esa aclaración. El mensaje de WhatsApp que arma el botón no cambia, y el espacio entre el botón y «Guardar / Compartir» queda igual al de la ficha con stock |
@@ -3240,8 +3241,9 @@ devuelve `null`, así que el encabezado muestra «Ingresar» y las acciones
 proveedores nadie llega a ese estado; se encontró por una sesión de prueba
 que quedó huérfana.
 
-**La acción pendiente de F5.7 le va a hablar raro a quien entre por Google o
-Facebook.** `retomarCompraPendiente` es `customer`, y el envoltorio rechaza una
+**~~La acción pendiente de F5.7 le va a hablar raro a quien entre por Google o
+Facebook.~~** Resuelto el 2026-11-17 (rama `fix/compra-pendiente-sin-perfil`),
+y abajo, cómo quedó. Lo que sigue es cómo estaba antes: `retomarCompraPendiente` es `customer`, y el envoltorio rechaza una
 identidad **sin perfil** con «Necesitás iniciar sesión para hacer eso» (§13.4).
 Esa combinación —identidad sí, perfil no— solo existe en el alta por
 proveedor social antes de completar el teléfono (RF-06), que hoy está apagada:
@@ -3251,13 +3253,36 @@ inició sesión cuando el encabezado dice su nombre. La nota **no se pierde** �
 rechazo ocurre antes de tocar la cookie, así que se retoma cuando el perfil
 exista—; lo que hay que arreglar es el mensaje. Se anota acá y no se resuelve
 hoy porque no hay forma de verlo ocurrir hasta que esas dos apps existan.
-**Actualización del 2026-11-17: con Google prendido (F1.7), ya puede pasar en
-producción.** La ficha (`app/(shop)/productos/[slug]/page.tsx`) mira la compra
-pendiente con `getIdentity()`, que no pide perfil; quien entró con Google y
-llega a la ficha antes de pasar por `/completar-perfil` dispara
-`retomarCompraPendiente`, que el envoltorio rechaza en `lib/action.ts`, y lee
-«Lo que habías elegido no se pudo agregar. Necesitás iniciar sesión para hacer
-eso.» con su nombre en el encabezado. Sigue sin arreglar.
+**Lo que pasaba de verdad, visto el 2026-11-17, y en dos puntos la nota estaba
+mal.** No pasaba en producción mientras la tienda esté cerrada: la vuelta de
+Google le cierra la sesión a una compradora y borra la cuenta recién creada.
+Y el encabezado **no** decía su nombre: sale de `getSession()`, que exige
+perfil, así que decía «Ingresar». El problema era más ancho que la compra
+pendiente: la ficha decidía con `getIdentity()`, que no pide perfil, y en ese
+rato dibujaba «Agregá al carrito»; ese botón y la compra retomada llamaban a
+acciones `customer` y las dos respondían «Necesitás iniciar sesión para hacer
+eso.». Tres cosas distintas en la misma pantalla, y la cookie sin consumir
+hacía volver el aviso en cada visita a esa ficha.
+
+**Cómo quedó, en tres piezas.** (1) **La ficha decide con la sesión entera**
+(`app/(shop)/productos/[slug]/page.tsx`), como el encabezado: sin perfil
+ofrece «Iniciá sesión para comprar» y no intenta retomar nada. No suma idas a
+la base: el layout ya pidió `getSession()` y está en `cache()`. (2)
+**`/ingresar`, con cuenta y sin perfil, manda a `/completar-perfil` con la
+vuelta** (`app/(auth)/ingresar/page.tsx`), en vez de a «Mi cuenta», que la
+perdía; solo destinos internos, con la regla de la vuelta de Google. Al
+terminar el perfil vuelve a la ficha y la compra se retoma. (3) **El
+envoltorio distingue el mensaje** (`lib/action.ts`): sin cuenta, «Necesitás
+iniciar sesión para hacer eso.»; con cuenta y sin perfil, «Te falta completar
+tu perfil. Completalo y probá de nuevo.». Sigue siendo `FORBIDDEN` y la acción
+no corre, como pide §13.4: cambia lo que se dice, no lo que se permite. Cubre
+lo que quedó con la identidad sola —el corazón de favoritos en la home, el
+catálogo y «Vistos»—. **Verificado**: `tests/unit/seguridad/accion-sin-perfil.test.ts`
+(2) y `tests/e2e/compra-pendiente-sin-perfil.spec.ts`, que recorre cuenta sin
+perfil → ficha → completar el perfil → compra retomada y en el carrito, y falla
+sin el arreglo; los ocho tests de unidad que simulan `@/lib/session` suman
+`getIdentity` y siguen en verde; `comprar`, `sin-stock`, `aislamiento`,
+`ayudas` y `recuperar` en verde; `DATABASE_URL= npx next build` termina.
 
 **~~`.env.local` apunta al stack local, y este archivo dice lo contrario.~~**
 Resuelto el 2026-09-14: vale el stack local, y así quedó escrito en el

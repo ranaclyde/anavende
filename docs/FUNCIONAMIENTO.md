@@ -76,7 +76,10 @@ flowchart LR
    en una cookie mientras se registra o ingresa, y se completa al volver
    (`modules/cart/pendiente.ts`). Es una cookie y no un parámetro en la
    dirección para que nadie pueda mandar un enlace que le agregue cosas al
-   carrito de otro.
+   carrito de otro. Una cuenta sin perfil todavía —la de Google antes de
+   `/completar-perfil`— cuenta como sin sesión: la ficha le ofrece «Iniciá
+   sesión para comprar», `/ingresar` la manda a completar el perfil con la
+   vuelta a la ficha, y la compra se retoma al llegar.
 2. **El carrito no reserva stock.** Se guarda en la base y dura entre
    visitas. Al abrirlo se lo compara con el catálogo
    (`modules/cart/revision.ts`): si un precio cambió, queda el nuevo y se

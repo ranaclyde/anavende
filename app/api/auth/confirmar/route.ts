@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { destinoInterno } from "@/lib/destino";
 import { urlDelSitio } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,10 +31,7 @@ export async function GET(request: NextRequest) {
   // Solo destinos internos: un `next` con host convertiría esto en un
   // redirector abierto.
   const nextCrudo = searchParams.get("next");
-  const next =
-    nextCrudo && nextCrudo.startsWith("/") && !nextCrudo.startsWith("//")
-      ? nextCrudo
-      : "/mi-cuenta";
+  const next = destinoInterno(nextCrudo) ?? "/mi-cuenta";
 
   const errorDelProveedor = searchParams.get("error");
   if (errorDelProveedor) {

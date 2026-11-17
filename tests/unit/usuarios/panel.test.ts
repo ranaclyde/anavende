@@ -24,7 +24,12 @@ import { limpiarOrdenes, unaOrdenActiva } from "@/tests/apoyo/ordenes";
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
-vi.mock("@/lib/session", () => ({ getSession: async () => sesion.actual }));
+vi.mock("@/lib/session", () => ({
+  getSession: async () => sesion.actual,
+  // Sin sesión es sin cuenta: lo de una cuenta sin perfil lo prueba
+  // `tests/unit/seguridad/accion-sin-perfil.test.ts`.
+  getIdentity: async () => null,
+}));
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 

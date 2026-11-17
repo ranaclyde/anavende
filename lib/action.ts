@@ -9,7 +9,7 @@ import {
   isDomainError,
   type DomainErrorCode,
 } from "@/lib/errors";
-import { getSession, type Session } from "@/lib/session";
+import { getIdentity, getSession, type Session } from "@/lib/session";
 
 /**
  * Envoltorio de Server Actions — TECHNICAL-SPEC §6.2.
@@ -102,11 +102,17 @@ class ActionBuilder<TInput, L extends AuthLevel> {
         session = await getSession();
 
         // Sin sesión o sin perfil: para el envoltorio son lo mismo, falta de
-        // autorización (§13.4).
+        // autorización (§13.4), y la acción no corre. **Lo que cambia es el
+        // mensaje**: quien entró con Google y no completó el perfil ya inició
+        // sesión, y decirle que lo haga es falso y no le dice qué hacer.
+        // `getIdentity` está en `cache()` y `getSession` ya la pidió: no es
+        // otra verificación.
         if (!session) {
           return fallo(
             "FORBIDDEN",
-            "Necesitás iniciar sesión para hacer eso.",
+            (await getIdentity())
+              ? "Te falta completar tu perfil. Completalo y probá de nuevo."
+              : "Necesitás iniciar sesión para hacer eso.",
           );
         }
 

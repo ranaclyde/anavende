@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/shop/login-form";
-import { getIdentity } from "@/lib/session";
+import { destinoInterno } from "@/lib/destino";
+import { getIdentity, getSession } from "@/lib/session";
 import { numeroDeWhatsApp } from "@/modules/settings/queries";
 import { proveedoresDisponibles } from "@/modules/users/proveedores";
 
@@ -13,10 +14,29 @@ export default async function Ingresar({
 }: {
   searchParams: Promise<{ volver?: string }>;
 }) {
-  // Quien ya entró no tiene nada que hacer acá.
-  if (await getIdentity()) redirect("/mi-cuenta");
+  const [identidad, sesion, { volver }] = await Promise.all([
+    getIdentity(),
+    // Sin identidad no va a la base: `getSession` corta antes de leer el
+    // perfil, así que a quien no entró no le cuesta nada.
+    getSession(),
+    searchParams,
+  ]);
 
-  const { volver } = await searchParams;
+  // Quien ya entró no tiene nada que hacer acá. **Salvo que le falte el
+  // perfil** (§13.4): quien entró con Google y no lo completó ve «Ingresar»
+  // en el encabezado y «Iniciá sesión para comprar» en la ficha, y llega acá.
+  // Va a completarlo y **conserva la vuelta**, para que al terminar vuelva a
+  // la ficha y la compra pendiente se retome (F5.7). Solo destinos internos
+  // (`lib/destino.ts`).
+  if (identidad && !sesion) {
+    const interno = destinoInterno(volver);
+    redirect(
+      interno
+        ? `/completar-perfil?volver=${encodeURIComponent(interno)}`
+        : "/completar-perfil",
+    );
+  }
+  if (identidad) redirect("/mi-cuenta");
 
   /**
    * El canal de contacto del aviso de cuenta bloqueada (RF-27, RF-06): el
