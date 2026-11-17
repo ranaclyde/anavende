@@ -1,8 +1,10 @@
 import { AdminSidebar } from "@/components/admin/sidebar";
+import { AvisoDeVersion } from "@/components/admin/aviso-de-version";
 import { scriptDeTema } from "@/components/admin/theme";
 import { MarcoDeEscala } from "@/components/ui/escala";
 import { Toaster } from "@/components/ui/sonner";
 import { exigirAdmin } from "@/lib/session";
+import { versionDelBuild } from "@/lib/version";
 import { caraDe } from "@/modules/users/avatar";
 
 /**
@@ -69,6 +71,12 @@ export default async function AdminLayout({
             así que hereda el `data-scale` y la variante `admin:` funciona sin
             el truco de `escala.tsx`. */}
         <Toaster />
+
+        {/* Avisa con el aviso de arriba si hubo un despliegue mientras el
+            panel estaba abierto: desde ese momento «Guardar» falla
+            (2026-11-17, `lib/version.ts`). Acá y no en cada pantalla por lo
+            mismo que los avisos: el layout no se vuelve a montar al navegar. */}
+        <AvisoDeVersion version={versionDelBuild()} />
       </MarcoDeEscala>
     </>
   );

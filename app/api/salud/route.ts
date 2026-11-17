@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { versionDelBuild } from "@/lib/version";
+
 /**
  * Healthcheck del contenedor — TECHNICAL-SPEC §18.1.
  *
@@ -12,6 +14,11 @@ import { NextResponse } from "next/server";
  * responde es «el servidor arrancó y sirve»; si la base está caída, eso lo
  * dice la página con su propio error, no un reinicio en cadena.
  *
+ * **Dice además qué build sirve** (2026-11-17): el panel lo pregunta cada
+ * tanto para avisar que hubo un despliegue y que hay que recargar
+ * (`lib/version.ts`). Es un archivo leído una vez por proceso, así que sigue
+ * sin depender de nada más que del proceso.
+ *
  * `force-dynamic` para que no quede prerrenderizado en la construcción: un
  * healthcheck servido desde la caché diría que sí aunque el proceso estuviera
  * atascado.
@@ -19,5 +26,8 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export function GET() {
-  return NextResponse.json({ estado: "ok" }, { status: 200 });
+  return NextResponse.json(
+    { estado: "ok", version: versionDelBuild() },
+    { status: 200 },
+  );
 }

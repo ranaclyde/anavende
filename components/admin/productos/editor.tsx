@@ -411,6 +411,19 @@ export function leerMarkdown(editor: LexicalEditor | null): string {
 }
 
 /**
+ * Reemplaza lo escrito por este Markdown. Lo usa el borrador recuperado
+ * después de una recarga (`components/admin/borrador.ts`), y **sí cuenta como
+ * cambio** —va sin la marca de la carga inicial—: lo recuperado no está
+ * guardado, y el formulario tiene que decirlo.
+ */
+export function escribirMarkdown(
+  editor: LexicalEditor | null,
+  markdown: string,
+): void {
+  editor?.update(() => $convertFromMarkdownString(markdown, TRANSFORMADORES));
+}
+
+/**
  * Sirve también para las páginas legales (RF-29, F9.3): mismo formato, mismo
  * sanitizador y mismo editor. Lo que cambia es el rótulo, el marcador, el
  * límite y el alto: una política de privacidad no entra en 480px.

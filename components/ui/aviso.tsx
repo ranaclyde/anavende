@@ -38,3 +38,29 @@ export function avisar(texto: string) {
 export function avisarConPero(texto: string) {
   toast.warning(texto);
 }
+
+/**
+ * Hubo un despliegue mientras la página estaba abierta (2026-11-17).
+ *
+ * **La única excepción a «confirman y se van»**, y por eso tiene su propia
+ * función. Desde ese momento la página quedó con los códigos de las Server
+ * Actions del build anterior y el próximo «Guardar» falla: no hay nada que
+ * confirmar, hay algo que hacer, y tiene que seguir ahí hasta que se haga.
+ * Por eso no se va sola ni se puede cerrar —cerrada, la página seguiría rota
+ * sin que se note—, y lleva el botón que lo resuelve.
+ *
+ * En ámbar y no en verde: no salió nada, se pide una acción. El `id` fijo
+ * hace que llamarla dos veces no apile dos avisos.
+ */
+export function avisarVersionNueva() {
+  toast.warning("Se actualizó AnaVende", {
+    id: "version-nueva",
+    description: "Recargá la página para seguir.",
+    duration: Infinity,
+    dismissible: false,
+    action: {
+      label: "Recargar",
+      onClick: () => window.location.reload(),
+    },
+  });
+}

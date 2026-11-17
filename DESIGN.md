@@ -410,6 +410,12 @@ flotantes confirman y no reportan errores**: un error tiene que decir qué hacer
 y a veces ofrecer reintentar, y eso no entra en algo que se va a los cuatro
 segundos, así que se queda donde estuvo la acción.
 
+**Con una excepción, y tiene nombre** (2026-11-17): `avisarVersionNueva`.
+Después de un despliegue, una página abierta ya no puede guardar, y el panel
+lo avisa con un flotante en ámbar que no se va solo, no se cierra y lleva el
+único botón de los avisos, «Recargar». No confirma nada: pide algo que hay que
+hacer, y cerrado dejaría la página rota sin que se note (DR §6.15).
+
 **Dos tonos, cada uno con su disco.** Un glifo relleno dentro de un círculo de
 color, no un trazo suelto: verde con el check cuando salió como se pidió,
 ámbar con el triángulo cuando salió **pero no como se pidió** —borrar un

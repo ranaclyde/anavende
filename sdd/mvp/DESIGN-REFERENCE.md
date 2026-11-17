@@ -1179,6 +1179,7 @@ Tres decisiones de integración, las tres con motivo:
 **Dos canales que no se pisan.** Bloquear y dar de baja una cuenta tienen las dos cosas: el flotante confirma que se hizo, y la caja de aviso que ya estaba se queda **sólo cuando Supabase Auth no respondió**. Eso último no es un éxito limpio —la persona todavía puede iniciar sesión— y es información que hay que ir a revisar: un cartel que se va a los cuatro segundos no sirve para eso.
 
 **Y un caso que enseña dónde está el límite de la regla.** Subir o bajar la cantidad de un ítem cambia el renglón a la vista, así que por la tabla de arriba no haría falta aviso. Lleva uno igual, y el motivo es que **cada uno escribe en el libro de stock**: agregar reserva unidades y quitar las libera, y eso es justamente lo que no se ve desde la pantalla. La pregunta no es «¿cambió algo en pantalla?» sino «¿alcanza lo que cambió para saber qué pasó?».
+**La única excepción: «Se actualizó AnaVende»** (2026-11-17). Cuando hay un despliegue con el panel abierto, la página queda con los códigos de las Server Actions del build anterior y el próximo «Guardar» falla (`UnrecognizedActionError`; lo vio Sentry cargando un producto). El panel compara su versión con la de `/api/salud` y, si cambió, muestra un flotante que **no confirma nada, no se va solo y no se puede cerrar**: cerrado, la página seguiría rota sin que se note. Va en ámbar, porque pide algo, y es el único aviso con botón, «Recargar», que tiene el aspecto del `brand` de `Button` en chico. Se llama con `avisarVersionNueva` y no con `avisarConPero`, para que la excepción tenga nombre y no se copie por accidente.
 
 ### 6.16 Gráficos del panel (2026-10-15)
 
@@ -1717,7 +1718,7 @@ Un componente no está terminado hasta que sus cinco estados están definidos.
 | **Cargando** | Esqueletos con la **forma real** del contenido, no spinners centrados. La página no debe saltar cuando llegan los datos |
 | **Vacío** | Explicar qué falta **y ofrecer la acción**. «Todavía no tenés favoritos» + «Explorar el catálogo». Nunca un espacio en blanco |
 | **Sin resultados** | Repetir el término buscado, sugerir quitar filtros, y ofrecer «Limpiar todo» |
-| **Error** | Qué pasó, en castellano, y qué hacer. Con acción de reintentar. Nunca un código ni un *stack trace* |
+| **Error** | Qué pasó, en castellano, y qué hacer. Con acción de reintentar. Nunca un código ni un *stack trace*. **Si el sitio se actualizó mientras la página estaba abierta** (2026-11-17), no es un fallo: la pantalla dice «Se actualizó AnaVende», el botón recarga la página entera —reintentar repetiría la llamada vieja— y no se manda a Sentry |
 | **Deshabilitado** | Siempre acompañado del motivo, visible o en *tooltip* |
 | **Confirmado** | Toda acción que muta dice que salió bien. Flotante o en su lugar según §6.15; nunca en silencio |
 

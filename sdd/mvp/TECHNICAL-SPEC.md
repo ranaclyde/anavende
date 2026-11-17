@@ -1727,7 +1727,7 @@ El número de WhatsApp y el email de avisos **no son variables de entorno**: viv
 | **Logs** | Salida estructurada en JSON de las operaciones sensibles, visible desde Coolify |
 | **Auditoría de negocio** | Vive en la base, no en los logs: `stock_movements` y `order_status_history` (§5.8, §5.6) |
 | **Backups** | Volcado diario de Postgres y respaldo del bucket de Storage, **guardados fuera del servidor DATA**, con retención y **una restauración de prueba documentada**. Un backup que nunca se restauró no es un backup, y uno que vive en la máquina que puede fallar tampoco |
-| **Salud** | Endpoint de healthcheck que verifica la conexión a la base **y distingue «aplicación caída» de «base inalcanzable»**: con dos servidores, saber cuál de los dos falló es la mitad del diagnóstico |
+| **Salud** | `/api/salud` dice que el proceso de Next está vivo y qué build sirve, y **no consulta la base, a propósito**: es el healthcheck de Docker, y si dependiera de la base, un corte de la red entre los dos servidores marcaría el contenedor como enfermo y lo reiniciaría en cadena, sumándole a la caída de la base la de la tienda. El estado del servidor DATA se mira desde afuera, en `supabase.anavende.com.ar`. Un endpoint de diagnóstico que consulte la base, sin gobernar reinicios, se suma recién si hay un monitor externo que lo consulte (decisión del 2026-11-17) |
 
 ---
 
@@ -1763,7 +1763,7 @@ El número de WhatsApp y el email de avisos **no son variables de entorno**: viv
 | **R11** | El disco del servidor APP se llena con imágenes Docker y caché de build | Medio | Coolify trae limpieza automática, **pero desactivada**: hay que configurarla explícitamente al aprovisionar (§2.4). Se compila en el servidor (§18.2), así que la limpieza programada no es opcional |
 | **R12** | La LAN privada queda accesible a otros clientes del proveedor, o Postgres escucha en la interfaz pública | **Alto** | Firewall local en ambos servidores, `listen_addresses` y `pg_hba.conf` restringidos. Se verifica desde afuera que el puerto de Postgres no responde (V9) |
 | **R13** | Sin RLS, una consulta que olvide filtrar por `user_id` filtra datos entre compradores | **Alto** | Decisión consciente (§13.4). Se compensa con test E2E de aislamiento obligatorio (§17.2) y atención específica en revisión de código |
-| **R14** | Caída del servidor DATA deja el sitio inoperable | Medio | Punto único de falla aceptado en el MVP. Ahora también cae la **autenticación**, no solo la base. Healthcheck que distinga «app caída» de «DATA inalcanzable» (§19) |
+| **R14** | Caída del servidor DATA deja el sitio inoperable | Medio | Punto único de falla aceptado en el MVP. Ahora también cae la **autenticación**, no solo la base. El healthcheck no consulta la base, para que su caída no reinicie la app en cadena; el DATA se mira desde afuera (§19) |
 | **R15** | SMTP mal configurado: los emails de autenticación no llegan | **Alto** | El emisor por omisión de Supabase no sirve para producción. Sin SMTP, **nadie puede verificar su email ni recuperar su contraseña**. Se verifica en F0, no al final |
 
 ---

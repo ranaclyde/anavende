@@ -127,6 +127,12 @@ invitación, reenvío): se edita en `lib/email/plantillas/`, se corre
 descarga las plantillas de la tienda por URL, así que llegan con el
 despliegue. En local se ven en Mailpit (<http://localhost:54324>).
 
+**Desplegar con el panel abierto**: no rompe nada, pero lo que se esté
+cargando en ese momento no se puede guardar hasta recargar. El panel lo avisa
+solo («Se actualizó AnaVende», con «Recargar»), y lo escrito en un producto se
+recupera al recargar; en los demás formularios se pierde. Si se puede, mergear
+cuando nadie está cargando en el panel.
+
 **Cerrar la tienda al público**: «Configuración» → modo mantenimiento. El
 público ve una página con un 503 y quien administra ve la tienda normal.
 `/api/salud` sigue contestando.

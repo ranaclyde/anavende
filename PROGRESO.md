@@ -321,7 +321,10 @@ las dos casillas por omisión, y un `--build-arg` queda visible en el
 revés, `SENTRY_AUTH_TOKEN` es **solo de construcción** —sube los *source maps*
 al compilar y en ejecución no hace nada—.
 
-**Traefik y Coolify todavía no están en `VERSIONS.md`.** Hoy corren Traefik
+**~~Traefik y Coolify todavía no están en `VERSIONS.md`.~~** Resuelto el
+2026-09-10: `VERSIONS.md` registra Coolify 4.3.18 y Traefik 3.6.25, con la
+nota de que `traefik:v3.6` es una serie y no una versión. Lo que sigue es cómo
+estaba antes: hoy corren Traefik
 v3.6 —con un aviso de que hay v3.7— y la versión de Coolify que instaló
 DonWeb. F0.9 dice que las versiones instaladas son el parámetro de toda
 consulta posterior, así que **falta registrarlas**. Y la actualización de
@@ -1028,7 +1031,7 @@ catálogo y «Favoritos»):
 Esto resuelve los filtros del catálogo. El selector con buscador del panel, el
 segundo punto de arriba, es otro problema y sigue pendiente.
 
-**Pendiente: cinco ajustes de UX pedidos por vos** (2026-11-03, después de
+**~~Pendiente: cinco ajustes de UX pedidos por vos~~** (2026-11-03, después de
 cargar productos reales en producción). Están hechos los cinco.
 
 En el panel:
@@ -2533,6 +2536,8 @@ Cada una se escribió primero en la especificación y después en el código
 
 | Qué | Dónde quedó | Por qué |
 |---|---|---|
+| **`/api/salud` no consulta la base, y §19 ya no lo pide** (2026-11-17) | `TECHNICAL-SPEC.md` §19, fila «Salud», y R14 | Decisión tuya. §19 pedía un healthcheck que distinguiera «app caída» de «base inalcanzable»; el código hacía lo contrario a propósito, porque un healthcheck atado a la base reinicia la app en cadena cuando falla la red entre servidores. Un segundo endpoint de diagnóstico no lo consultaría nadie: no hay monitor externo y el DATA se mira desde afuera. Se retoma si se suma un monitor |
+| **Un despliegue con el panel abierto ya no hace perder lo cargado** (2026-11-17) | `DESIGN-REFERENCE.md` §6.15 y §8; `DESIGN.md`; `docs/ARQUITECTURA.md`, `docs/OPERACION.md`; `lib/version.ts`; `app/api/salud/route.ts`; `components/admin/aviso-de-version.tsx`, `borrador.ts`; `components/ui/aviso.tsx`, `sonner.tsx`, `fallo-de-pantalla.tsx`; `components/admin/productos/formulario.tsx`; `tests/e2e/sitio-actualizado.spec.ts` | Lo reportó Sentry: se cargaba un producto, el merge del #152 desplegó en el medio y «Crear producto» falló con `UnrecognizedActionError` —la página tenía los códigos de las Server Actions del build anterior—. La pantalla de error decía «Algo falló de nuestro lado», y «Probar de nuevo» volvía a armar el formulario vacío: no se borró nada de la base, porque la acción nunca corrió, pero se perdió todo lo escrito. **Tres piezas, decididas con vos**: (1) el panel compara su versión —el `BUILD_ID` de Next, que `/api/salud` ahora devuelve— cada dos minutos y al volver a la pestaña, y si cambió muestra un flotante que no se va ni se cierra, con «Recargar» (excepción a «los flotantes confirman», DR §6.15; toast y no banner, a pedido tuyo); (2) la pantalla de error, en la tienda y en el panel, reconoce el caso, dice «Se actualizó AnaVende», recarga en vez de reintentar y no lo manda a Sentry; (3) el formulario de producto ataja el error sin desmontarse y guarda lo escrito en `sessionStorage` al recargar, para reponerlo con un aviso. **No es el `SOURCE_COMMIT`** porque llega vacío si en Coolify no está prendido «Include Source Commit in Build». **Lo que no cubre**: los demás formularios del panel pierden lo escrito al recargar (el aviso y la pantalla de error sí los cubren), y la tienda no tiene el aviso automático, solo la pantalla de error |
 | **Sin stock, el botón dice «Consultar disponibilidad» y ya no lleva aclaración debajo** (2026-11-03) | `FUNCTIONAL-SPEC.md` RF-03 (tabla y criterio); `DESIGN-REFERENCE.md` §2.6, §6.5, §7.3 y §14; `DEVELOPMENT-PLAN.md` F3.5; `components/shop/ficha/compra.tsx`; `app/mantenimiento/page.tsx` (comentario); `tests/e2e/sin-stock.spec.ts` | Pedido tuyo del 2026-11-03: que el botón principal de la ficha sin stock diga «Consultar disponibilidad» en vez de «Preguntá si va a haber», y que se saque el texto de abajo («Te contestamos por WhatsApp. No lo reservamos ni te avisamos solos.»). Contradice la DR §7.3, que justificaba esa aclaración. El mensaje de WhatsApp que arma el botón no cambia, y el espacio entre el botón y «Guardar / Compartir» queda igual al de la ficha con stock |
 | **Studio por túnel SSH, no por lista de IPs; y RLS activado como cerrojo** (F0.5, 2026-10-27) | `TECHNICAL-SPEC.md` §2.1, §2.3, §2.4, §13.8, §16 y R5; `DEVELOPMENT-PLAN.md` F0.5; `db/migrations/0025_cerrar_postgrest.sql` | Decisión tuya. §2.4 pedía Studio público con restricción por IP, y no tenés IP fija: Studio queda sin ninguna puerta en internet, y se entra por túnel SSH, que ya usás para la base. Si algún día lo usa alguien más, la opción evaluada es Cloudflare Access en `studio.anavende.com.ar`; el cambio de nginx sirve igual. **RLS**: §13.8 lo descartó como autorización por persona, y eso sigue en pie; lo que entra es RLS **sin políticas**, como cerrojo frente a PostgREST, junto con quitarles los permisos a `anon` y `authenticated`. Salió de encontrar `/rest/v1/` abierto con todos los permisos |
 | **La baja ejecutada borra la foto de perfil** (2026-10-26) | `FUNCTIONAL-SPEC.md` RN-13, RF-34; `TECHNICAL-SPEC.md` §5.3; `modules/users/panel/operaciones.ts` | Decisión tuya, con F5.9. RN-13 decía que la baja no borra nada, y la foto es la excepción: es un dato personal y no es historial —las órdenes, devoluciones y reportes quedan intactos—. Se borra al **ejecutar** la baja, no al pedirla, y revertirla no la trae: la persona vuelve con su blobatar |
@@ -3246,12 +3251,22 @@ inició sesión cuando el encabezado dice su nombre. La nota **no se pierde** �
 rechazo ocurre antes de tocar la cookie, así que se retoma cuando el perfil
 exista—; lo que hay que arreglar es el mensaje. Se anota acá y no se resuelve
 hoy porque no hay forma de verlo ocurrir hasta que esas dos apps existan.
+**Actualización del 2026-11-17: con Google prendido (F1.7), ya puede pasar en
+producción.** La ficha (`app/(shop)/productos/[slug]/page.tsx`) mira la compra
+pendiente con `getIdentity()`, que no pide perfil; quien entró con Google y
+llega a la ficha antes de pasar por `/completar-perfil` dispara
+`retomarCompraPendiente`, que el envoltorio rechaza en `lib/action.ts`, y lee
+«Lo que habías elegido no se pudo agregar. Necesitás iniciar sesión para hacer
+eso.» con su nombre en el encabezado. Sigue sin arreglar.
 
 **~~`.env.local` apunta al stack local, y este archivo dice lo contrario.~~**
 Resuelto el 2026-09-14: vale el stack local, y así quedó escrito en el
 encabezado de F0.
 
-**La renovación del certificado no se comprobó.** La regla de Cloudflare ya no
+**~~La renovación del certificado no se comprobó.~~** Comprobada el
+2026-11-17, desde afuera contra el servidor APP: `anavende.com.ar` y
+`www.anavende.com.ar` se renovaron solos el 2026-11-10 (Let's Encrypt, vencen
+el 2027-02-08). La regla de Cloudflare ya no
 desafía `/.well-known/acme-challenge/`, que es por donde Let's Encrypt verifica
 el dominio desde servidores de afuera. Pero si esa verificación pasa o no por
 Cloudflare depende del modo SSL entre Cloudflare y el servidor APP, y eso no se
@@ -3306,7 +3321,11 @@ el motivo de arriba sigue en pie. **Desde el 2026-09-11 las migraciones van sin
 backup hasta terminar las fases**, por decisión tuya: mientras se desarrolla, la
 base es de prueba (ver F0.10).
 
-**`/api/salud` no toca la base, y §19 pide que distinga los dos cortes.** La
+**~~`/api/salud` no toca la base, y §19 pide que distinga los dos cortes.~~**
+Resuelto el 2026-11-17, decisión tuya: se quedó el código y se corrigió §19
+(y R14). Nadie consultaría un endpoint de diagnóstico —no hay monitor externo,
+y el DATA se mira desde afuera en `supabase.anavende.com.ar`—; se retoma si se
+suma un monitor. La
 especificación quiere un healthcheck que separe «aplicación caída» de «base
 inalcanzable», porque con dos servidores saber cuál de los dos falló es la
 mitad del diagnóstico. El endpoint hace **lo contrario, a propósito y por
@@ -3375,7 +3394,9 @@ leyendo el código. La salida está evaluada y es tuya: Playwright, que ya está
 elegido en TS §2.1 y §17.2 y anotado como pendiente de F10.2 en `VERSIONS.md`.
 
 
-**El pie y la ficha enlazan a `/legales/…`, que todavía no existe.** El pie lo
+**~~El pie y la ficha enlazan a `/legales/…`, que todavía no existe.~~**
+Resuelto con F9.3: las cuatro páginas existen (`app/(shop)/legales/[slug]`) y
+se editan desde `/admin/legales`. Lo que sigue es cómo estaba antes: el pie lo
 hace desde F1.13 y la ficha lo sumó en F3.5, porque §7.3 dibuja «Garantías y
 devoluciones» ahí y sacarlo dejaría la ficha sin decir qué pasa si algo sale
 mal. Las cuatro páginas son **F9.3**, y hasta entonces los cinco enlaces caen en
@@ -3383,7 +3404,10 @@ el 404. Queda anotado y no arreglado a propósito: la alternativa sería una
 página de relleno con texto legal inventado, y un texto legal inventado es peor
 que no tenerlo.
 
-**La ficha no se miró en un teléfono.** Su composición móvil es lo que decide
+**~~La ficha no se miró en un teléfono.~~** Resuelto el mismo 2026-09-08: con
+Playwright se abrió la ficha a 390×844 («El teléfono deja de ser una
+suposición», más arriba), y F3.5 y F3.6 están ✅. Lo que sigue es cómo estaba
+antes: su composición móvil es lo que decide
 §6.8 —el carrusel deslizable con puntos, sin miniaturas y sin modal— y está
 escrita, pero el navegador de esta máquina no acepta el cambio de tamaño de
 ventana, así que lo único verificado es escritorio. Es lo que impide poner ✅
@@ -3615,7 +3639,10 @@ desbloqueó** —la canalización ya existe— así que ahora es trabajo, no esp
 Hay que decidir dónde entra: reabrir F2.1 como se hizo con «destacada», o
 sumarlo a F2.3 junto con el resto del ABM.
 
-**La descripción todavía no se renderiza en ningún lado.** El sanitizador
+**~~La descripción todavía no se renderiza en ningún lado.~~** Resuelto con
+F3.5 el 2026-09-08: la pinta `components/shop/ficha/descripcion.tsx`, y las
+páginas legales usan `components/shop/texto-con-formato.tsx`. Lo que sigue es
+cómo estaba antes: el sanitizador
 expone `nodosDeMarkdown`, que es el árbol ya filtrado listo para pintar, pero
 el componente que lo convierte en elementos de React —con la medida, el aire y
 los pesos de `DESIGN-REFERENCE.md` §6.11— no se escribió: **no hay ficha
@@ -3709,7 +3736,9 @@ con productos por cada destacada** para quien no, y una **sección de «Más
 categorías»** abajo con el resto. Los chips y las secciones llevan al catálogo
 filtrado, no a una pantalla propia.
 
-**La pantalla de listado de categorías sigue sin existir y sin tarea**, y ahora
+**~~La pantalla de listado de categorías sigue sin existir y sin tarea~~**,
+resuelto con F3.10 el 2026-10-21: `/categorias` existe y «Ver todas» de la
+home ya lleva ahí. Lo que sigue es cómo estaba antes: y ahora
 el hueco se ve: la sección de abajo tiene un botón **«Ver todas» apagado**, con
 el motivo en el `title` (RNF-08). Se enciende el día que esa pantalla exista, y
 ahí vuelve a aparecer FA-21 —la imagen chica de categoría—, que es lo que esa
@@ -4356,7 +4385,10 @@ por su lado:
   cifras iguales. El encabezado fantasma mide 52px contra los 53 del real —el
   `h-7` contra los 29px de `text-title`, que ya estaba anotado—.
 
-  **Queda una cosa sin decidir, y es de texto:** «Nuevo producto» no tiene
+  **~~Queda una cosa sin decidir, y es de texto:~~** Resuelto el 2026-09-21:
+  «Nuevo producto» tiene bajada («Acá van los datos y el precio…», en
+  `app/admin/productos/nuevo/page.tsx`). Lo que sigue es cómo estaba antes:
+  «Nuevo producto» no tiene
   bajada y «Nueva orden» y «Nueva cuenta» sí, siendo las tres altas. Escribirla
   es inventar copia de interfaz, así que no se hizo sin preguntar.
 - **~~Campo de búsqueda: copiado literal tres veces.~~** Resuelto el
