@@ -294,7 +294,8 @@ export function VariantesDelProducto({
         <p className="text-caption text-ink-secondary">
           Hasta 5 fotos por color. Arrastralas desde tu computadora a la fila
           del color, o tocá «Agregar»: JPG, PNG o WEBP de hasta 10 MB, que se
-          guardan optimizadas. La primera es la que se ve en el catálogo, y se
+          guardan optimizadas. Se ven mejor cuadradas, de 1400 × 1400 o más y
+          con fondo claro. La primera es la que se ve en el catálogo, y se
           cambia arrastrando o desde el menú de cada foto.
         </p>
       )}
