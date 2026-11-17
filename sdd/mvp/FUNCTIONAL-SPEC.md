@@ -15,6 +15,8 @@
 
 AnaVende es una tienda online de reventa de productos informáticos (mouses, teclados, auriculares, pasta térmica, cables, memorias, entre otros).
 
+Ana también hace **servicio técnico** de PC y notebooks; la tienda lo cuenta en una página aparte que lleva la consulta a WhatsApp (RF-42), por fuera del catálogo.
+
 El MVP **no procesa pagos online**. La web funciona como catálogo, carrito y generador de órdenes; el cobro y la coordinación del envío se cierran por WhatsApp fuera del sistema. El objetivo del producto es doble:
 
 1. **Para el comprador:** una experiencia de descubrimiento y compra clara, rápida y visualmente cuidada (referencia de diseño: `shop.app`, ver `DESIGN-REFERENCE.md`).
@@ -105,6 +107,7 @@ Ver detalle en §12 (Fuera de alcance).
 7. **Sección de productos en oferta** (con descuento activo).
 8. **Franja de medios de pago**: **sólo los que tienen logo cargado** (RF-19), en una sola hilera que gira. Va abajo y no arriba: es información de respaldo, no la propuesta de la pantalla.
 9. **Sección de más categorías**, con un botón **«Ver todas»** que lleva a la página de categorías (RF-35).
+10. **Franja de servicio técnico** (RF-42, 2026-11-17): una línea —«¿Tu PC o tu notebook necesita una mano?»— y el enlace a `/servicio-tecnico`. El lugar exacto en la home se ajusta en el repaso de diseño de F3.12; lo que no cambia es que es una franja y no una sección con productos.
 
 **Lo que no entra, y por qué:**
 - **«Vistos recientemente»** es RF-33 y se construye en F8.4. Su lugar en la pantalla está previsto en §7.1; hasta entonces no se dibuja.
@@ -178,6 +181,7 @@ Ver detalle en §12 (Fuera de alcance).
 - **Dos datos debajo del precio**, un renglón cada uno: que el producto es nuevo, resaltado, y viene en su caja original, y la zona de entrega (RN-10). El pago se explica en «¿Cómo sigue después de comprar?» (cambiado el 2026-11-02).
 - **Bloque «¿Cómo sigue después de comprar?»** con los tres pasos —armar el pedido o escribir por WhatsApp; confirmación de stock, precio y forma de pago; coordinación de la entrega o el retiro— y el enlace a Legales (garantías y devoluciones) adentro.
 - **Guardar** (favoritos, RF-10) y **Compartir**, juntos debajo de las acciones de compra.
+- **«¿Querés que te lo instalemos?»** (RF-42, 2026-11-17), solo si la categoría del producto lo tiene prendido (RF-18): un enlace a la consulta del servicio técnico, con el servicio y el producto ya cargados.
 
 **Acciones:**
 
@@ -266,6 +270,94 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 - [ ] Una búsqueda sin resultados muestra el cierre con el mensaje que lleva lo buscado.
 - [ ] Sin número de WhatsApp configurado (RF-20) no se dibuja ningún botón de WhatsApp, y el cierre enlaza a la página de contacto.
 - [ ] Sin ninguna categoría activa, la página lo dice y ofrece ir al catálogo.
+
+---
+
+### RF-42 — Servicio técnico
+
+> **El número es el siguiente libre, no la posición** (ver RF-34).
+
+**Origen:** pedido del 2026-11-17, en el MVP. Agregada como F3.12.
+
+**Descripción:** Ana, además de vender, arregla y arma PC de escritorio y
+notebooks. `/servicio-tecnico` es una página aparte que cuenta qué hace y lleva
+la consulta a WhatsApp. **No es parte del catálogo**: no tiene productos, ni
+precios, ni carrito, y no genera órdenes. Su trabajo es que alguien con una
+notebook que no arranca entienda en pocos segundos que acá se la arreglan y
+escriba.
+
+**Los servicios**, con las palabras de Ana:
+
+| Servicio | Qué incluye |
+|---|---|
+| **Armado de PC desde cero** | Básica o gamer |
+| **Equipo nuevo listo para usar** | Configuración inicial y programas básicos |
+| **Formateo e instalación del sistema** | Con o sin copia de seguridad de lo que tiene el equipo |
+| **Licencias originales de Windows y Office** | Instaladas en el equipo, como parte del servicio |
+| **Cambio de componentes y piezas** | Mejoras de hardware; en notebooks, también teclado y pantalla |
+| **Batería y cargador de notebook** | Originales |
+| **Limpieza y cambio de pasta térmica** | PC y notebook |
+| **Diagnóstico y revisión** | Sin cargo; ver abajo |
+
+**Contenido**, en este orden (la composición y el movimiento están en `DESIGN-REFERENCE.md` §7.7):
+
+1. **Hero**: qué hace —«Servicio técnico de PC y notebooks»—, dónde —Viedma— y el botón a la consulta.
+2. **Los servicios** de la tabla, cada uno con su botón que abre la consulta con ese servicio ya elegido.
+3. **Cómo funciona, en tres pasos**: escribís; traés el equipo (o coordinamos retirarlo), lo revisamos y te pasamos el presupuesto; lo retirás o te lo llevamos.
+4. **Trabajos hechos**: fotos de equipos que armó o arregló Ana.
+5. **Taller, traslado y garantía**: el taller está en Viedma —sin dirección: se pasa por WhatsApp, como el retiro de RN-10—; el equipo se trae o se coordina retirarlo y devolverlo en la zona de RN-10, con el costo hablado por WhatsApp; los horarios se coordinan por WhatsApp; el trabajo tiene **5 días de garantía**.
+6. **La consulta** (ver abajo).
+
+**El presupuesto, sin asustar.** Ana prefiere ver el equipo antes de dar un
+precio, y la página no muestra precios. Lo dice como un paso del servicio y no
+como una condición: «Traelo, lo revisamos y te pasamos el presupuesto». **El
+diagnóstico se ofrece sin cargo**; si para diagnosticar hay que resolver algo,
+**Ana lo avisa antes** de hacerlo. La página no promete plazos ni montos.
+
+**Las licencias**, como instalación con licencia original **dentro del
+servicio**: no se venden claves sueltas, no se muestra el precio de la clave y
+no se usan los logos de Microsoft.
+
+**La consulta** es un formulario corto que **arma el mensaje y abre WhatsApp**.
+No guarda nada en la base, no manda emails y no exige cuenta.
+
+| Campo | Obligatorio | Opciones |
+|---|---|---|
+| Equipo | Sí | PC de escritorio · Notebook |
+| Qué necesitás | Sí | Los servicios de la tabla, más «No sé, que lo revisen» |
+| Contanos qué le pasa | No | Texto libre, con tope |
+| Tu nombre | No | — |
+
+El mensaje dice el equipo, el servicio y, si están, el detalle y el nombre.
+Sale del mismo número de la configuración (RF-20) y de la misma tubería que los
+de la tienda (RF-04).
+
+**Cómo se llega:**
+- **Una franja en la home** (RF-01): «¿Tu PC o tu notebook necesita una mano?» con el enlace.
+- **Un enlace en el pie**, en todas las pantallas de la tienda.
+- **«¿Querés que te lo instalemos?» en la ficha** (RF-03) de los productos cuya categoría lo tiene prendido (RF-18). Lleva a la consulta con «Cambio de componentes y piezas» ya elegido y el nombre del producto en el detalle.
+- El encabezado no cambia: sus cuatro enlaces ya ocupan el lugar que hay entre 768 y 1024px (`DESIGN-REFERENCE.md` §5.1).
+
+**Con la tienda en mantenimiento** (RF-20), la página **sigue abierta**: Ana
+puede recibir consultas antes de abrir la tienda. En ese tiempo no lleva a la
+tienda cerrada: el encabezado queda en el logo, sin navegación, buscador,
+cuenta ni carrito, y el pie sin los enlaces de la tienda.
+
+**Criterios de aceptación:**
+- [ ] `/servicio-tecnico` muestra los ocho servicios, los tres pasos, el taller, el traslado, la garantía y la consulta, y no muestra ningún precio.
+- [ ] El formulario no deja abrir WhatsApp sin equipo y servicio, y lo dice junto al campo (RNF-08).
+- [ ] El mensaje sale bien codificado (acentos, saltos de línea) y lleva el equipo, el servicio y, si se cargaron, el detalle y el nombre.
+- [ ] El botón de cada servicio lleva a la consulta con ese servicio ya elegido; el enlace de la ficha, con «Cambio de componentes y piezas» y el nombre del producto.
+- [ ] Sin número de WhatsApp configurado (RF-20), la consulta no se dibuja y la página enlaza a la página de contacto.
+- [ ] Con la tienda en mantenimiento, la página responde 200 a quien no administra, y ningún enlace de la página lleva a la tienda.
+- [ ] La galería de trabajos hechos muestra solo fotos de Ana. Sin ellas no se dibuja.
+- [ ] La página no habla de claves sueltas ni muestra precios de licencias.
+- [ ] Entra en `sitemap.xml`, con título y descripción propios y datos estructurados de servicio con la zona (RNF-04).
+- [ ] Con `prefers-reduced-motion` no se mueve nada, y todo el contenido se lee igual.
+
+**Lo que no entra:**
+- **Turnos, seguimiento de una reparación o precios por servicio.** Todo eso se habla por WhatsApp (FA-22).
+- **Las preguntas frecuentes, por ahora.** Queda como idea: falta decidir si van. Si van, la primera versión puede salir con preguntas y respuestas escritas a partir de esta especificación, revisadas por Ana antes de publicarse.
 
 ---
 
@@ -695,6 +787,7 @@ lo que ya estaba subido no cambia.
 - [ ] Una categoría se puede marcar como **destacada**: pasa al frente en los accesos rápidos de la home (RF-01), en la fila de categorías del encabezado (`DESIGN-REFERENCE.md` §5.1) y en el filtro por categoría del listado (RF-02). Entre destacadas se ordenan por nombre.
 - [ ] **Destacar no publica.** Una categoría destacada e inactiva no aparece en ningún lado: `isActive` sigue siendo la única verdad sobre la visibilidad, y destacar sólo decide el orden entre las que ya se ven.
 - [ ] No hay tope de destacadas —es una decisión de la vendedora—, pero el diálogo dice qué hace destacar y advierte que destacarlas todas equivale a no destacar ninguna.
+- [ ] Una categoría se puede marcar como **«Ofrece instalación»** (RF-42, 2026-11-17): sus fichas llevan «¿Querés que te lo instalemos?». Apagada por defecto. Como destacar, no publica nada: solo decide si ese enlace aparece.
 - [ ] La **dirección** (el `slug`) se deriva del nombre al crear el ítem y **no cambia al renombrarlo**: es la URL pública, y cambiarla rompería en silencio todo enlace ya compartido. No es un campo del formulario —«slug» es jerga (`DESIGN-REFERENCE.md` §10)—; se muestra para leer.
 
 > **Por qué desactivar exige que no quede nada activo usándolo.** La
@@ -1249,6 +1342,7 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | FA-18 | Relacionados curados manualmente producto a producto | Se resuelve por afinidad de categorías (RF-31). Es la capa a sumar antes que la co-compra si hace falta más precisión |
 | FA-19 | Recomendaciones personalizadas por perfil o historial de compras | Más allá de «Vistos recientemente» (RF-33) |
 | FA-21 | **Imagen de categoría**, chica, como referencia visual en un listado de categorías. **Entró al MVP el 2026-10-05 (F2.9)**: se carga en el panel y se ve en «Más categorías» de la home y, desde el 2026-10-21, en la página de categorías (RF-35) | Hoy la categoría es sólo texto en las tres superficies donde aparece —chips del encabezado, accesos de la portada, filtro del listado—. Una imagen chica al lado del nombre ayuda a reconocerla de un vistazo; **no** es una portada ni una cabecera, y por eso no necesita el tamaño `detail` de §9.2: con `thumb` y `card` alcanza. Es **una** imagen por categoría, así que va en una columna de `categories` y no en una tabla aparte — `variant_images` existe porque un producto tiene hasta cinco y hay que ordenarlas. **La marca no lleva otra imagen**: su logo (RF-18) ya cubre lo que necesita. La condición para que esto se vea bien: el listado tiene que quedar prolijo **con categorías sin imagen mezcladas**, porque va a haberlas — el día que se agregue nadie va a cargar las diez de una sentada |
+| FA-22 | **Gestión del servicio técnico**: turnos, seguimiento del estado de una reparación, precios por servicio, venta de licencias sueltas | El servicio técnico de RF-42 es una página que lleva la consulta a WhatsApp, como la compra del visitante (RF-04). Lo demás se coordina por WhatsApp, y Ana prefiere ver el equipo antes de dar un precio |
 | FA-20 | **Etiquetas de producto** (*tags*) y filtro por etiqueta | Un producto pertenece a **una** categoría y `categories` no tiene jerarquía, así que hoy la única forma de subdividir una categoría grande —«Cables» en HDMI, VGA, USB-C, energía— es el nombre del producto, ayudado por la búsqueda tolerante de RF-02. Alcanza mientras la categoría entre en una página (24 productos). Cuando deje de entrar, la respuesta son etiquetas —muchas por producto, transversales a la categoría— y no partir la categoría en hermanas: seis «Cables …» al mismo nivel que «Teclados» arruinan la fila de categorías del encabezado, que es la navegación principal |
 
 ---
@@ -1303,6 +1397,7 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | Login con Google y Facebook | RF-06 | Reducir fricción de registro |
 | Configuración del sitio (WhatsApp, emails, textos) | RF-20 | Evitar valores fijos en el código |
 | Exportación de reportes a Excel | RF-28 | Control offline del negocio |
+| Página de servicio técnico | RF-42 | Ana también arregla y arma equipos, y la tienda no lo decía |
 
 ---
 
@@ -1346,3 +1441,4 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-11-16 | Promociones de cuotas (RF-40): plan opcional, renglón en verde sin interés y modal «Ver otras opciones» | Pedido tuyo, sobre el modal de MercadoLibre: filas con el monto de la cuota en vez de una grilla de logos, porque son pocos medios; ordenado por cantidad de cuotas; sin total con recargo; sin enlace con una sola promoción. El plan es por «Plan Z», de una tarjeta de NaranjaX |
 | 2026-11-16 | Descargar las fotos de un producto en un zip (RF-41), en el MVP | Pedido tuyo: usar las fotos fuera de la tienda. En JPG y con una carpeta por color, decisiones tuyas del mismo día; tal como están, con la marca de agua si la tienen |
 | 2026-11-13 | Promociones de cuotas por medio de pago (RF-40), en el MVP | Pedido tuyo: Go Cuotas y Naranja X ofrecen cuotas sin interés por temporada y la tienda no lo decía. No es FA-09: el precio no cambia. Solo recargos fijos, solo en la ficha y para todo producto que alcance el monto mínimo |
+| 2026-11-17 | Servicio técnico (RF-42), en el MVP: `/servicio-tecnico`, aparte del catálogo | Pedido tuyo. Solo presupuesto, con el diagnóstico sin cargo; la consulta es un formulario que arma el mensaje de WhatsApp y no guarda nada; el taller se nombra por la ciudad; el equipo se trae o se coordina el traslado; Windows y Office como instalación con licencia original, sin claves sueltas; 5 días de garantía. Sigue abierta con la tienda en mantenimiento. Se llega por una franja en la home, el pie y la ficha de las categorías que lo prenden. Las preguntas frecuentes quedan como idea |

@@ -665,7 +665,7 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 - **La cuenta lleva la cara de quien entró** (2026-10-26, F5.9): su foto o su blobatar, en un círculo de 32px con anillo `--border`, en lugar del ícono de persona. Sin sesión sigue el ícono con «Ingresar». Lo mismo al pie del menú del teléfono. El blobatar usa **los colores que elige la biblioteca**, no los de la marca (pedido del 2026-10-26): es una cara por persona y no una acción, y el burdeos queda para lo que se toca. **Se mueve al pasar el mouse por la píldora de la cuenta** —respira, se balancea, parpadea y crece un 4%—, y lo mismo en la fila de la foto de «Mis datos» (2026-10-26): son los dos lugares donde la cara es un control. **En el panel no se mueve**, porque en «Usuarios» hay cuarenta por página. Sin mouse, o con «reducir movimiento», queda quieto; una foto subida no se anima.
 - **El carrito es una píldora** (F3.8, no un ícono con insignia encima). Vacía, solo el ícono. Con productos, el número va en un **círculo burdeos de 28px con texto blanco** adentro de la píldora (2026-10-21), y desde 100 dice «99+».
 - La fila de categorías **desaparece en el panel del comprador y en el checkout**: ahí no se está explorando.
-- **El pie agrupa sus enlaces en tres** (2026-10-21): **«Tienda»** —«Catálogo», «Categorías» (§7.6) y «Nosotros»—, **«Ayuda»** y **«Legales»**, en ese orden. **En el teléfono, un grupo debajo del otro** y con poco aire entre ellos (2026-10-21): de a dos por fila los nombres largos partían la columna. Cada enlace mide **40px de alto, una excepción a los 44 de §9** pedida para que el pie no mida 850px: sigue muy por encima de los 24px de WCAG 2.5.8, y sin espacio entre filas no hay toques que caigan en el vecino.
+- **El pie agrupa sus enlaces en tres** (2026-10-21): **«Tienda»** —«Catálogo», «Categorías» (§7.6), «Nosotros» y, desde el 2026-11-17, «Servicio técnico» (§7.7)—, **«Ayuda»** y **«Legales»**, en ese orden. **En el teléfono, un grupo debajo del otro** y con poco aire entre ellos (2026-10-21): de a dos por fila los nombres largos partían la columna. Cada enlace mide **40px de alto, una excepción a los 44 de §9** pedida para que el pie no mida 850px: sigue muy por encima de los 24px de WCAG 2.5.8, y sin espacio entre filas no hay toques que caigan en el vecino.
 - **Debajo de la marca va el eslogan en su forma canónica** (§2.4), «Ana vende, vos elegís la tecnología.», y debajo «Tu tienda de confianza para productos de tecnología y accesorios.», en lugar del aviso de zona de entrega y de la lista de categorías (2026-10-21, pedido tuyo). La zona sigue en la home, la ficha, el carrito y el checkout (RN-10).
 
 ### 5.2 Panel de administración
@@ -1636,6 +1636,76 @@ Contacto.
 **Sin ninguna categoría activa**, la página dice «Todavía no hay categorías»,
 ofrece «Ver el catálogo» y muestra el cierre.
 
+### 7.7 Servicio técnico
+
+> **Agregada el 2026-11-17, pedido tuyo** (FS RF-42, F3.12). El contenido, los
+> servicios y la consulta están en la especificación funcional; acá va cómo se
+> ve y cómo se mueve.
+
+**Es la misma tienda con otro ritmo.** La página tiene que convencer en
+segundos a alguien con un problema, no dejar comparar productos, así que se
+gana más movimiento y más imagen que el resto. **No es otra marca**: los
+mismos tokens (§3), Inter, el burdeos, el logo y el pie. Quien llega desde la
+home tiene que sentir que sigue en AnaVende.
+
+```
+┌────────────────────────────────────────────────────┐
+│  hero: «Servicio técnico de PC y notebooks»        │  la dirección elegida
+│        en Viedma · [ Consultanos por WhatsApp ]    │  en el artefacto (abajo)
+├────────────────────────────────────────────────────┤
+│  [armado] [equipo nuevo] [formateo] [licencias]    │  los ocho servicios,
+│  [piezas] [batería] [limpieza] [diagnóstico]       │  cada uno con «Consultar»
+├────────────────────────────────────────────────────┤
+│  ① Escribís  →  ② Lo revisamos  →  ③ Lo retirás    │  cómo funciona
+├────────────────────────────────────────────────────┤
+│  [foto] [foto] [foto] [foto]                       │  trabajos hechos: solo
+│                                                    │  fotos de Ana
+├────────────────────────────────────────────────────┤
+│  Taller en Viedma · traslado · 5 días de garantía  │
+├────────────────────────────────────────────────────┤
+│  Contanos qué necesita tu equipo                   │  la consulta
+│  Equipo (•) PC  ( ) Notebook                       │
+│  Qué necesitás [▾]   Contanos qué le pasa [    ]   │
+│  [ 🟢 Seguir en WhatsApp ]                         │  verde, relleno (§2.6)
+└────────────────────────────────────────────────────┘
+```
+
+**El hero se elige comparando.** Antes de construir, dos o tres direcciones
+en un artefacto privado; una de ellas, **la PC que se arma**: gabinete, placa,
+memoria y disco llegan a su lugar, con piezas ilustradas en el estilo de la
+escena de la home (§7.1). Cuenta el servicio sin palabras, y repite la idea de
+la animación del logo, que también separa piezas y las junta (§2.3). La que
+elijas se anota acá.
+
+**Movimiento: un desvío de §8 que vale solo para esta página.** El techo de
+300ms es para la tienda, donde el movimiento confirma una acción. Acá:
+
+- **El hero** puede durar hasta unos 3 segundos, **una vez por carga**, y termina quieto. Es el mismo criterio que el sello del pedido y el logo: una entrada con autoría, no un adorno que se repite.
+- **Las secciones entran al hacer scroll** con animaciones de CSS ligadas a la vista (`animation-timeline: view()`). Sin JavaScript; donde el navegador no las soporta, la página se ve quieta y completa.
+- **Nada infinito.** Lo que dure más de cinco segundos se puede pausar (WCAG 2.2.2).
+- **Sin bibliotecas de animación** —ni `motion`, ni `gsap`, ni `three`—: CSS y el `<ViewTransition>` de React, como el resto de la tienda. Un componente de React Bits sirve como idea y se rehace, como la píldora del encabezado (§5.1).
+- **Con `prefers-reduced-motion`, todo quieto en su estado final**: se lee igual.
+
+**La consulta es la acción principal**, así que su botón va **verde y relleno**
+(§2.6). Los «Consultar» de cada servicio llevan a la consulta y no abren
+WhatsApp directo: el mensaje sale mejor con el equipo elegido. Los campos son
+los de §6.6.
+
+**Fotos.** «Trabajos hechos» muestra **solo fotos de Ana**, y sin ellas la
+sección no se dibuja. Mientras no lleguen, el hero y los servicios pueden usar
+**fotos libres de derechos** (con licencia que permita uso comercial sin
+atribución) **o ilustraciones**, sin logos de marcas a la vista y sin
+presentarlas como trabajos suyos. Se reemplazan cuando estén las de ella.
+
+**Con la tienda en mantenimiento**, el encabezado queda en el logo, sin
+navegación, buscador, cuenta ni carrito, y el pie sin los enlaces de la tienda:
+cada uno llevaría al cartel de «Volvemos en un rato».
+
+**La franja de la home y el enlace de la ficha** usan componentes que ya
+existen: la franja, el aire de 80px entre secciones de §7.1; el enlace de la
+ficha, el estilo de los enlaces de texto, debajo de «¿Cómo sigue después de
+comprar?» (§7.3).
+
 ---
 
 ## 8. Estados
@@ -1816,6 +1886,7 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | RF-14 a RF-28 Panel | §4, §5.2, §6.9 |
 | RF-32 Recomendados | §7.3, §7.4 |
 | RF-33 Vistos recientemente | §7.1 |
+| RF-42 Servicio técnico | §7.7, §5.1 |
 | RN-02 Formato de moneda | §6.7 |
 | RN-04b Descuento como monto | §6.7 |
 | RN-04c Dos números, nunca tres | §6.1, §6.7, §7.3 |
@@ -1872,3 +1943,4 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | **La ficha sin stock ya no lleva aclaración debajo del botón** | Decisión del usuario del 2026-11-03. Hasta entonces el botón decía «Preguntá si va a haber» y abajo aclaraba «Te contestamos por WhatsApp. No lo reservamos ni te avisamos solos.»; ahora dice «Consultar disponibilidad» y la aclaración se sacó |
 | **El catálogo da de alta y edita en un drawer a la derecha (§6.14.3)** | Pedido tuyo del 2026-10-14. La categoría pasó a tener tres secciones y una lista que crece, y el diálogo centrado con tope de alto la cortaba. A la derecha porque la izquierda es la navegación. Las cuatro solapas van igual para que la misma pantalla no se comporte de dos maneras |
 | **Tres intervalos en los formularios del panel: 6, 20 y línea con 24 (§3.4.1)** | Pedido tuyo del 2026-10-14, mirando el diálogo de categoría. Con 16px entre todo, ningún grupo se distinguía de otro. `impeccable` y `ui-ux-pro-max` piden lo mismo: lo relacionado junto y apretado, lo distinto separado, sin cajas que compensen la falta de aire |
+| **La página de servicio técnico se mueve más que la tienda (§7.7)** | Pedido tuyo del 2026-11-17. Una página que tiene que convencer en segundos se gana una entrada de hasta unos 3 segundos y secciones que aparecen al hacer scroll. Vale solo para `/servicio-tecnico`: el techo de 300ms de §8 sigue en la tienda. Sin bibliotecas de animación, y quieta con «reducir movimiento» |

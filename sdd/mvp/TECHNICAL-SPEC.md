@@ -401,6 +401,7 @@ CREATE TABLE categories (
   slug        text NOT NULL UNIQUE,
   is_featured boolean NOT NULL DEFAULT false,   -- RF-18: se muestra primero
   image_key   text,                                -- FA-21: CLAVE en Storage, opcional
+  offers_installation boolean NOT NULL DEFAULT false, -- RF-42: «¿Querés que te lo instalemos?» en sus fichas
   is_active   boolean NOT NULL DEFAULT true,
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now()
@@ -1357,10 +1358,20 @@ Los IDs de los últimos 10 productos vistos se guardan en una **cookie** del nav
 | Home, catálogo, ficha, legales | Server Components con consulta directa. Sin caché explícita en el MVP |
 | Carrito, checkout, `/mi-cuenta`, `/admin` | Siempre dinámico y personalizado. Nunca cacheado |
 | Imágenes | Caché de `next/image` (por omisión, 4 horas de `minimumCacheTTL` en Next 16) |
+| `/servicio-tecnico` | Server Component; el contenido está en el código, y lo único que lee de la base es el número de WhatsApp (RF-20) y el interruptor de mantenimiento. El formulario es la única isla de cliente |
 
 **Por qué el MVP arranca sin caché de datos.** El catálogo es de cientos de productos y las consultas están indexadas: se resuelven en milisegundos contra una base que corre en el mismo servidor. Sumar caché ahora significa sumar invalidación, y la invalidación mal hecha produce el peor error posible en un e-commerce: mostrar un precio o un stock que ya no es cierto.
 
 **Cómo se suma después, si hace falta.** El camino está preparado: las mutaciones ya llaman a `revalidateTag` con etiquetas por entidad (`product:{id}`, `catalog`, `categories`). Activar `cacheComponents: true` y marcar las lecturas públicas con `"use cache"` + `cacheTag` es entonces un cambio acotado y medible. **No se hace sin haber medido antes.**
+
+### 12.1 La página de servicio técnico (RF-42)
+
+- **El contenido vive en el código**, en un módulo propio (`modules/servicio-tecnico/`): los servicios, los pasos, la garantía y las fotos. Cambiarlo es un PR. Si Ana termina cambiándolo seguido, se evalúa pasarlo al panel; no antes.
+- **La consulta no tiene servidor.** El formulario arma el mensaje en el navegador y abre `wa.me` con la función de `lib/whatsapp.ts`; no hay Server Action, ni tabla, ni límite por IP, porque no se guarda ni se manda nada desde la tienda. La validación (equipo y servicio obligatorios, tope del detalle) es de la interfaz, con un esquema zod del módulo.
+- **El servicio elegido entra por la dirección** (`?servicio=<id>`, y `&producto=` desde la ficha), así los botones de cada servicio y el enlace de la ficha son enlaces comunes y la consulta queda compartible. Un `servicio` que no existe se ignora.
+- **Mantenimiento.** `/servicio-tecnico` se suma a `SIEMPRE_PASAN` de `modules/settings/mantenimiento.ts`, con su motivo al lado. La página pregunta `estaEnMantenimiento()` —la misma memoria que el proxy— para dibujar el encabezado y el pie reducidos de DR §7.7.
+- **La columna `categories.offers_installation`** es una bandera, como `is_featured`: la ficha la lee junto con la categoría, sin consulta extra. Entra en una migración nueva, con `false` para las categorías existentes.
+- **SEO**: entra en `sitemap.ts`, con `title`, `description`, imagen para compartir y JSON-LD de tipo `Service` con `areaServed` (Viedma, Carmen de Patagones) y la tienda como `provider`. Sin dirección, que no se publica.
 
 ---
 
