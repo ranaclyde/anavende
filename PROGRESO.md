@@ -3928,6 +3928,11 @@ llegue. Cómo quedó, punto por punto de lo que había que resolver:
   `NEXT_DIST_DIR`, que solo define el gancho; en el `Dockerfile` queda
   `.next`. Esa carpeta se sumó al `include` de `tsconfig.json` —si no, Next
   lo reescribe en cada build—, a `.gitignore` y a los ignorados de ESLint.
+- **Y sin el token de Sentry.** Con el de `.env.local`, un `next build` local
+  crea un release en Sentry y sube los mapas de un build que no se despliega;
+  pasaba también con el build a mano, y con el gancho sería en cada push. El
+  gancho lo vacía (`SENTRY_AUTH_TOKEN=`), igual que `DATABASE_URL=`, y el
+  plugin avisa que no sube nada. Coolify tiene el suyo y sigue subiendo.
 
 **El panel tiene dos diseños conviviendo, y el ancho es lo que se nota
 primero** (revisión del 2026-09-18, pedido tuyo). Las 19 pantallas de

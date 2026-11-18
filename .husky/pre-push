@@ -40,6 +40,7 @@ npm run --silent test:coverage
 
 # En su propia carpeta y no en `.next`: un build ahí con `next dev` levantado
 # ya le pisó la caché al servidor de desarrollo (`distDir` en
-# `next.config.ts`).
+# `next.config.ts`). Y sin el token de Sentry de `.env.local`: con él, cada
+# push crearía un release y subiría los mapas de un build que no se despliega.
 echo "pre-push: build sin base"
-NEXT_DIST_DIR=.next-verificacion DATABASE_URL= npx next build
+NEXT_DIST_DIR=.next-verificacion SENTRY_AUTH_TOKEN= DATABASE_URL= npx next build
