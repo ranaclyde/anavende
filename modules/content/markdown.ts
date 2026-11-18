@@ -5,12 +5,7 @@ import type { Options as FromMarkdownOptions } from "mdast-util-from-markdown";
 import { gfmFromMarkdown } from "mdast-util-gfm";
 import { toMarkdown } from "mdast-util-to-markdown";
 import { gfm } from "micromark-extension-gfm";
-import type {
-  BlockContent,
-  Nodes,
-  PhrasingContent,
-  Root,
-} from "mdast";
+import type { BlockContent, Nodes, PhrasingContent, Root } from "mdast";
 
 /**
  * Markdown acotado: la lista blanca del proyecto — TECHNICAL-SPEC §16, RF-15.

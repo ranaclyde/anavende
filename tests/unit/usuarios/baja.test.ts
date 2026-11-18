@@ -25,7 +25,10 @@ afterEach(async () => {
 });
 
 async function estado(userId: string) {
-  const [fila] = await db.execute<{ pedidaEl: string | null; motivo: string | null }>(sql`
+  const [fila] = await db.execute<{
+    pedidaEl: string | null;
+    motivo: string | null;
+  }>(sql`
     SELECT closure_requested_at AS "pedidaEl", closure_reason AS motivo
       FROM user_profiles WHERE id = ${userId}`);
   return fila;
@@ -78,7 +81,9 @@ describe("pedir la baja", () => {
 
   test("una administradora no la pide desde la tienda", async () => {
     const { userId } = await unComprador();
-    await db.execute(sql`UPDATE user_profiles SET role = 'admin' WHERE id = ${userId}`);
+    await db.execute(
+      sql`UPDATE user_profiles SET role = 'admin' WHERE id = ${userId}`,
+    );
 
     await expect(pedirBaja(userId, "Me voy")).rejects.toMatchObject({
       code: "FORBIDDEN",

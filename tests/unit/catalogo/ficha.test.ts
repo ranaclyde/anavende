@@ -184,7 +184,10 @@ describe("leerFicha (RF-03)", () => {
     const negro = await unColor("Negro");
     const gris = await unColor("Gris", "#8a8a8a");
 
-    const fuente = await unaVarianteDe(productId, { colorId: negro.id, orden: 0 });
+    const fuente = await unaVarianteDe(productId, {
+      colorId: negro.id,
+      orden: 0,
+    });
     await unaImagen(fuente, "productos/x/fuente/1", 0);
     await unaImagen(fuente, "productos/x/fuente/2", 1);
 
@@ -265,8 +268,24 @@ describe("leerFicha (RF-03)", () => {
 
 describe("varianteInicial (?color= de RF-03)", () => {
   const variantes = [
-    { id: "v-negro", colorSlug: "negro", colorNombre: "Negro", colorHex: "#000", colorHex2: null, disponible: 1, imagenes: [] },
-    { id: "v-blanco", colorSlug: "blanco", colorNombre: "Blanco", colorHex: "#fff", colorHex2: null, disponible: 1, imagenes: [] },
+    {
+      id: "v-negro",
+      colorSlug: "negro",
+      colorNombre: "Negro",
+      colorHex: "#000",
+      colorHex2: null,
+      disponible: 1,
+      imagenes: [],
+    },
+    {
+      id: "v-blanco",
+      colorSlug: "blanco",
+      colorNombre: "Blanco",
+      colorHex: "#fff",
+      colorHex2: null,
+      disponible: 1,
+      imagenes: [],
+    },
   ];
 
   test("sin parámetro abre en la primera", () => {

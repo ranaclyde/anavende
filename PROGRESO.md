@@ -3897,9 +3897,15 @@ de que el push salga—, y eso encaja mejor que un check en GitHub con un push
 que despliega, porque frena el problema antes de que llegue a `main`. Lo que
 hay que resolver al armarlo:
 
-- **Falta el formateador.** Hay ESLint y no hay Prettier ni Biome: hay que
-  elegir uno, y sumar `lint-staged` para que el *pre-commit* toque solo los
-  archivos que cambiaron y no el repositorio entero.
+- ~~**Falta el formateador.**~~ **Prettier 3.9.10, desde el 2026-11-18**,
+  fijo en `package.json` y con su configuración por omisión, que es la que el
+  código ya seguía. `npm run format` y `npm run format:revisar` cubren
+  `ts`, `tsx`, `mts`, `mjs`, `cjs`, `js` y `css`; los Markdown quedan
+  afuera a propósito, porque reacomodaría las tablas de este archivo. Prettier
+  respeta `.gitignore`, así que no hizo falta un `.prettierignore`. Los 59
+  archivos que no seguían el formato se pasaron en un PR solo de formato.
+  Falta sumar `lint-staged` para que el *pre-commit* toque solo los archivos
+  que cambiaron y no el repositorio entero.
 - **El coverage pide `@vitest/coverage-v8`**, que Vitest no trae.
 - **Qué va en cada gancho.** En *pre-commit*, formato y lint de lo cambiado:
   tiene que ser rápido o se vuelve una molestia en cada commit. En *pre-push*,

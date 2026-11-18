@@ -113,7 +113,10 @@ describe("quitar el último ítem", () => {
 
     const fallo = (await enTransaccion((tx) =>
       quitarItem(tx, { orderId, orderItemId: renglon.id }),
-    ).catch((e: unknown) => e)) as { code: string; details?: Record<string, unknown> };
+    ).catch((e: unknown) => e)) as {
+      code: string;
+      details?: Record<string, unknown>;
+    };
 
     expect(fallo.code).toBe("VALIDATION");
     // La pantalla necesita saber POR QUÉ se negó para poder preguntar.

@@ -106,8 +106,7 @@ export const FILTROS_VACIOS: FiltrosDeProductos = {
 /** El mismo tope que los otros listados del panel: filas de 44px (§6.9). */
 export const POR_PAGINA = 40;
 
-const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Lee los filtros de la URL sin fallar nunca.
@@ -119,9 +118,7 @@ const UUID =
  * la consulta: sin eso, `?marca=hola` no filtraría de menos, haría fallar a
  * Postgres.
  */
-export function leerFiltros(
-  params: ParametrosDeBusqueda,
-): FiltrosDeProductos {
+export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeProductos {
   const orden = unaDe(params.orden, ORDENES, FILTROS_VACIOS.orden);
   const categoria = texto(params.categoria);
   const marca = texto(params.marca);

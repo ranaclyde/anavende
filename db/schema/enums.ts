@@ -10,10 +10,7 @@ export const orderStatus = pgEnum("order_status", [
 
 export const orderOrigin = pgEnum("order_origin", ["web", "manual"]);
 
-export const returnStatus = pgEnum("return_status", [
-  "registrada",
-  "anulada",
-]);
+export const returnStatus = pgEnum("return_status", ["registrada", "anulada"]);
 
 export const stockMovementType = pgEnum("stock_movement_type", [
   "ajuste", // carga o corrección manual de stock

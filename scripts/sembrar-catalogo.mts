@@ -42,9 +42,8 @@ process.loadEnvFile(".env.local");
 //
 // Se comprueban las DOS, base y Storage, porque apuntar bien una no dice nada
 // de la otra. Es la misma regla que usan los tests, importada y no copiada.
-const { esApiDelStackLocal, esStackLocal, dondeApunta } = await import(
-  "./solo-local.mts"
-);
+const { esApiDelStackLocal, esStackLocal, dondeApunta } =
+  await import("./solo-local.mts");
 
 const baseUrl = process.env.DATABASE_URL ?? "";
 const apiUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";

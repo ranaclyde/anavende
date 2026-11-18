@@ -141,7 +141,11 @@ async function transicionar(
  */
 export async function finalizarOrden(
   tx: Transaccion,
-  args: { orderId: string; actorUserId?: string | null; reason?: string | null },
+  args: {
+    orderId: string;
+    actorUserId?: string | null;
+    reason?: string | null;
+  },
 ): Promise<void> {
   const items = await transicionar(tx, { ...args, hacia: "finalizada" });
 
@@ -170,7 +174,11 @@ export async function finalizarOrden(
  */
 export async function cancelarOrden(
   tx: Transaccion,
-  args: { orderId: string; actorUserId?: string | null; reason?: string | null },
+  args: {
+    orderId: string;
+    actorUserId?: string | null;
+    reason?: string | null;
+  },
 ): Promise<void> {
   const items = await transicionar(tx, { ...args, hacia: "cancelada" });
 

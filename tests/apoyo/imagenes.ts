@@ -40,7 +40,11 @@ export async function png(ancho = 300, alto = 200): Promise<Buffer> {
 }
 
 /** Un JPEG, para el camino de conversión de F2.2. */
-export async function jpeg(ancho = 300, alto = 200, calidad = 90): Promise<Buffer> {
+export async function jpeg(
+  ancho = 300,
+  alto = 200,
+  calidad = 90,
+): Promise<Buffer> {
   const pixeles = Buffer.allocUnsafe(ancho * alto * 3);
   for (let i = 0; i < pixeles.length; i++) {
     pixeles[i] = Math.floor(Math.random() * 256);

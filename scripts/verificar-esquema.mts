@@ -16,12 +16,31 @@ try {
 }
 
 const TABLAS_ESPERADAS = [
-  "addresses", "brands", "cart_items", "carts", "categories",
-  "category_relations", "colors", "favorites", "legal_pages", "order_items",
-  "order_status_history", "orders", "payment_methods", "product_variants",
-  "products", "return_items", "returns", "site_settings", "stock_movements",
-  "user_profiles", "user_status_history", "variant_images",
-  "payment_promotions", "watermark_images", "watermark_layers",
+  "addresses",
+  "brands",
+  "cart_items",
+  "carts",
+  "categories",
+  "category_relations",
+  "colors",
+  "favorites",
+  "legal_pages",
+  "order_items",
+  "order_status_history",
+  "orders",
+  "payment_methods",
+  "product_variants",
+  "products",
+  "return_items",
+  "returns",
+  "site_settings",
+  "stock_movements",
+  "user_profiles",
+  "user_status_history",
+  "variant_images",
+  "payment_promotions",
+  "watermark_images",
+  "watermark_layers",
   "watermark_settings",
 ];
 
@@ -41,14 +60,20 @@ const tablas = (
 ).map((t) => t.tablename);
 
 const faltan = TABLAS_ESPERADAS.filter((t) => !tablas.includes(t));
-ok(faltan.length === 0, `Tablas de §5: ${tablas.length} presentes${faltan.length ? ` — FALTAN: ${faltan.join(", ")}` : ""}`);
+ok(
+  faltan.length === 0,
+  `Tablas de §5: ${tablas.length} presentes${faltan.length ? ` — FALTAN: ${faltan.join(", ")}` : ""}`,
+);
 
 const enums = await sql<{ typname: string; n: number }[]>`
   SELECT t.typname, count(e.enumlabel)::int AS n
   FROM pg_type t JOIN pg_enum e ON e.enumtypid = t.oid
   WHERE t.typnamespace = 'public'::regnamespace
   GROUP BY 1 ORDER BY 1`;
-ok(enums.length === 4, `Enums de §5.2: ${enums.map((e) => `${e.typname}(${e.n})`).join(", ")}`);
+ok(
+  enums.length === 4,
+  `Enums de §5.2: ${enums.map((e) => `${e.typname}(${e.n})`).join(", ")}`,
+);
 
 // ── Extensiones y búsqueda tolerante (§5.10) ─────────────────────────
 const ext = (
@@ -65,7 +90,9 @@ ok(
 );
 
 // La prueba que pide F0.6: similitud real sobre texto con acentos.
-const [sim] = await sql<{ con_acento: number; sin_acento: number; typo: number }[]>`
+const [sim] = await sql<
+  { con_acento: number; sin_acento: number; typo: number }[]
+>`
   SELECT
     similarity(immutable_unaccent(lower('Teclado Mecánico')), immutable_unaccent(lower('mecanico')))::float AS con_acento,
     similarity(immutable_unaccent(lower('Teclado Mecanico')), immutable_unaccent(lower('mecanico')))::float AS sin_acento,
@@ -74,7 +101,10 @@ ok(
   sim.con_acento === sim.sin_acento && sim.con_acento > 0.4,
   `«mecanico» encuentra «Mecánico» — con acento ${sim.con_acento.toFixed(3)}, sin acento ${sim.sin_acento.toFixed(3)} (iguales: el acento no cambia el resultado)`,
 );
-ok(sim.typo > 0.4, `«lojitech» se parece a «Logitech» — similitud ${sim.typo.toFixed(3)}`);
+ok(
+  sim.typo > 0.4,
+  `«lojitech» se parece a «Logitech» — similitud ${sim.typo.toFixed(3)}`,
+);
 
 // ── Restricciones, columnas generadas e índices ──────────────────────
 const checks = (
@@ -82,7 +112,15 @@ const checks = (
     SELECT conname FROM pg_constraint
     WHERE contype = 'c' AND connamespace = 'public'::regnamespace ORDER BY 1`
 ).map((c) => c.conname);
-for (const c of ["ban_has_reason", "closure_has_reason", "closed_was_requested", "discount_valid", "reserved_within_total", "web_order_has_user", "singleton"]) {
+for (const c of [
+  "ban_has_reason",
+  "closure_has_reason",
+  "closed_was_requested",
+  "discount_valid",
+  "reserved_within_total",
+  "web_order_has_user",
+  "singleton",
+]) {
   ok(checks.includes(c), `CHECK ${c}`);
 }
 
@@ -106,15 +144,15 @@ for (const columna of [
 ]) {
   ok(gen.includes(columna), `Columna generada ${columna}`);
 }
-ok(
-  gen.length === 4,
-  `No hay columnas generadas de más: ${gen.join(", ")}`,
-);
+ok(gen.length === 4, `No hay columnas generadas de más: ${gen.join(", ")}`);
 
 const [authFk] = await sql<{ destino: string }[]>`
   SELECT confrelid::regclass::text AS destino FROM pg_constraint
   WHERE conname = 'user_profiles_id_auth_users_fk'`;
-ok(authFk?.destino === "auth.users", `user_profiles.id referencia ${authFk?.destino ?? "nada"}`);
+ok(
+  authFk?.destino === "auth.users",
+  `user_profiles.id referencia ${authFk?.destino ?? "nada"}`,
+);
 
 const gin = await sql<{ indexname: string }[]>`
   SELECT indexname FROM pg_indexes
@@ -149,5 +187,7 @@ ok(
 );
 
 await sql.end();
-console.log(fallos ? `\n${fallos} comprobación(es) fallaron.` : "\nTodo en orden.");
+console.log(
+  fallos ? `\n${fallos} comprobación(es) fallaron.` : "\nTodo en orden.",
+);
 process.exit(fallos ? 1 : 0);

@@ -28,7 +28,9 @@ afterEach(async () => {
 });
 
 async function desactivar(productId: string): Promise<void> {
-  await db.execute(sql`UPDATE products SET is_active = false WHERE id = ${productId}`);
+  await db.execute(
+    sql`UPDATE products SET is_active = false WHERE id = ${productId}`,
+  );
 }
 
 describe("guardar y quitar", () => {
@@ -87,7 +89,10 @@ describe("aislamiento (§13.8)", () => {
     expect(await desmarcar(otra.userId, productId)).toEqual({ quitado: false });
     expect(await idsDeFavoritos(otra.userId)).toEqual([]);
     expect(await esFavorito(otra.userId, productId)).toBe(false);
-    expect(await leerFavoritos(otra.userId)).toEqual({ favoritos: [], total: 0 });
+    expect(await leerFavoritos(otra.userId)).toEqual({
+      favoritos: [],
+      total: 0,
+    });
 
     expect(await esFavorito(ana.userId, productId)).toBe(true);
   });
@@ -115,7 +120,11 @@ describe("la lista", () => {
 
     expect(total).toBe(2);
     expect(lista.map((f) => f.id)).toEqual([nuevo.productId, viejo.productId]);
-    expect(lista[1]).toMatchObject({ precio: "2500.00", disponible: 3, activo: true });
+    expect(lista[1]).toMatchObject({
+      precio: "2500.00",
+      disponible: 3,
+      activo: true,
+    });
     expect(lista[0]).toMatchObject({ disponible: 0, activo: true });
   });
 

@@ -97,7 +97,9 @@ export const userProfiles = pgTable(
      * son lo que la ficha muestra después. Lo que cambia es que se suma
      * `closed_at` (F7.9), y desde ahí ya no puede entrar.
      */
-    closureRequestedAt: timestamp("closure_requested_at", { withTimezone: true }),
+    closureRequestedAt: timestamp("closure_requested_at", {
+      withTimezone: true,
+    }),
     closureReason: text("closure_reason"),
 
     /**

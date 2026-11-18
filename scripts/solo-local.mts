@@ -82,9 +82,11 @@ function esLoopbackEnPuerto(crudo: string, puerto: string): boolean {
 export function dondeApunta(crudo: string, porOmision = "5432"): string {
   try {
     const url = new URL(crudo);
-    return url.port ? `${url.hostname}:${url.port}` : porOmision
-      ? `${url.hostname}:${porOmision}`
-      : url.hostname;
+    return url.port
+      ? `${url.hostname}:${url.port}`
+      : porOmision
+        ? `${url.hostname}:${porOmision}`
+        : url.hostname;
   } catch {
     return crudo;
   }

@@ -74,7 +74,9 @@ describe("el número de WhatsApp (RF-20)", () => {
    * distinto y nadie lo notaría hasta que un `wa.me` no abriera.
    */
   test("el sitio y el comprador normalizan IGUAL: es la misma implementación", () => {
-    expect(telefono.safeParse("11 5555 5555").data).toBe(numero("11 5555 5555"));
+    expect(telefono.safeParse("11 5555 5555").data).toBe(
+      numero("11 5555 5555"),
+    );
   });
 
   test.each(["", "1155", "no tengo"])("«%s» se rechaza", (malo) => {
@@ -94,7 +96,9 @@ describe("el email de avisos (RF-20)", () => {
   });
 
   test.each(["ventas@", ""])("«%s» se rechaza", (malo) => {
-    expect(valido({ ...base, adminNotificationEmail: malo }).success).toBe(false);
+    expect(valido({ ...base, adminNotificationEmail: malo }).success).toBe(
+      false,
+    );
   });
 });
 
@@ -408,11 +412,15 @@ describe("el umbral guardado es el que usa el listado (§10.3)", () => {
       return productos.some((f) => f.id === productId);
     };
 
-    await escribirLaConfiguracion(valido({ ...base, lowStockThreshold: 5 }).data!);
+    await escribirLaConfiguracion(
+      valido({ ...base, lowStockThreshold: 5 }).data!,
+    );
     expect(await umbralDeStockBajo()).toBe(5);
     expect(await paraReponer()).toBe(true);
 
-    await escribirLaConfiguracion(valido({ ...base, lowStockThreshold: 4 }).data!);
+    await escribirLaConfiguracion(
+      valido({ ...base, lowStockThreshold: 4 }).data!,
+    );
     expect(await paraReponer()).toBe(false);
   });
 });

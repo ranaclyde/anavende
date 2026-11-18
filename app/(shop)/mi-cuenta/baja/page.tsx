@@ -45,8 +45,8 @@ export default async function PedirLaBaja() {
           Pedir la baja de tu cuenta
         </h2>
         <p className="text-body text-ink-secondary">
-          La pedís vos y la procesamos nosotros. Antes, esto es lo que tenés
-          que saber.
+          La pedís vos y la procesamos nosotros. Antes, esto es lo que tenés que
+          saber.
         </p>
       </header>
 
@@ -61,10 +61,12 @@ export default async function PedirLaBaja() {
               guardar favoritos, ni cambiar tus datos o tus direcciones.
             </li>
             <li>
-              Hasta que la procesemos, podés retirar el pedido desde «Mis
-              datos» y todo vuelve a ser como antes.
+              Hasta que la procesemos, podés retirar el pedido desde «Mis datos»
+              y todo vuelve a ser como antes.
             </li>
-            <li>Cuando la procesemos, ya no vas a poder entrar con esta cuenta.</li>
+            <li>
+              Cuando la procesemos, ya no vas a poder entrar con esta cuenta.
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -75,7 +77,9 @@ export default async function PedirLaBaja() {
         </CardHeader>
         <CardContent>
           <ul className="flex list-disc flex-col gap-2 pl-5 text-body text-ink">
-            <li>No se borra nada: tus compras y tu historial quedan registrados.</li>
+            <li>
+              No se borra nada: tus compras y tu historial quedan registrados.
+            </li>
             <li>Tus direcciones y tus favoritos quedan guardados.</li>
             <li>
               Si más adelante querés volver, escribinos y la reactivamos con
@@ -88,7 +92,10 @@ export default async function PedirLaBaja() {
       {activas.length > 0 ? (
         <div className="flex flex-col items-start gap-4 rounded-card bg-warning-tint p-5">
           <p className="flex items-start gap-2 text-body text-ink">
-            <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0 text-warning" />
+            <CircleAlert
+              aria-hidden
+              className="mt-0.5 size-5 shrink-0 text-warning"
+            />
             <span>
               <span className="font-medium">Todavía no podés pedirla.</span>{" "}
               {mensajeDeOrdenesActivas(activas)}

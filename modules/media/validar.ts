@@ -24,21 +24,25 @@ type TipoAceptado = (typeof TIPOS_ACEPTADOS)[number];
  * con el tamaño del archivo en el medio. Por eso la firma se describe como
  * una lista de tramos y no como un solo prefijo.
  */
-const FIRMAS: { tipo: TipoAceptado; tramos: { en: number; bytes: number[] }[] }[] =
-  [
-    { tipo: "image/jpeg", tramos: [{ en: 0, bytes: [0xff, 0xd8, 0xff] }] },
-    {
-      tipo: "image/png",
-      tramos: [{ en: 0, bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] }],
-    },
-    {
-      tipo: "image/webp",
-      tramos: [
-        { en: 0, bytes: [0x52, 0x49, 0x46, 0x46] }, // "RIFF"
-        { en: 8, bytes: [0x57, 0x45, 0x42, 0x50] }, // "WEBP"
-      ],
-    },
-  ];
+const FIRMAS: {
+  tipo: TipoAceptado;
+  tramos: { en: number; bytes: number[] }[];
+}[] = [
+  { tipo: "image/jpeg", tramos: [{ en: 0, bytes: [0xff, 0xd8, 0xff] }] },
+  {
+    tipo: "image/png",
+    tramos: [
+      { en: 0, bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] },
+    ],
+  },
+  {
+    tipo: "image/webp",
+    tramos: [
+      { en: 0, bytes: [0x52, 0x49, 0x46, 0x46] }, // "RIFF"
+      { en: 8, bytes: [0x57, 0x45, 0x42, 0x50] }, // "WEBP"
+    ],
+  },
+];
 
 /** El tipo real del archivo, o `null` si no es ninguno de los tres. */
 export function tipoReal(bytes: Buffer): TipoAceptado | null {

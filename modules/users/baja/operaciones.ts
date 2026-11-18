@@ -93,7 +93,10 @@ export async function pedirBaja(
   // fechas como las escribe Postgres. Nadie la usa para calcular; quien
   // muestra la fecha la lee del perfil, que drizzle sí convierte.
   return db.transaction(async (tx) => {
-    const [perfil] = await tx.execute<{ role: string; pedidaEl: string | null }>(sql`
+    const [perfil] = await tx.execute<{
+      role: string;
+      pedidaEl: string | null;
+    }>(sql`
       SELECT role, closure_requested_at AS "pedidaEl"
         FROM user_profiles
        WHERE id = ${userId}

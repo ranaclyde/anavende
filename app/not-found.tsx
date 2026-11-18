@@ -13,8 +13,7 @@ export default function NoEncontrado() {
       <div className="flex flex-col gap-2">
         <h1 className="text-title text-ink">No encontramos esta página</h1>
         <p className="max-w-prose text-body text-ink-secondary">
-          Puede que el enlace esté viejo o que el producto ya no esté
-          publicado.
+          Puede que el enlace esté viejo o que el producto ya no esté publicado.
         </p>
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">

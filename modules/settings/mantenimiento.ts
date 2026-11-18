@@ -135,7 +135,9 @@ export function olvidarElInterruptor(): void {
  * renueve. Si la consulta falla, NO: ver la tienda cerrada es un permiso, y
  * ante la duda un permiso no se da.
  */
-export async function puedeVerLaTiendaCerrada(userId: string): Promise<boolean> {
+export async function puedeVerLaTiendaCerrada(
+  userId: string,
+): Promise<boolean> {
   try {
     const [perfil] = await db
       .select({ role: userProfiles.role, isBanned: userProfiles.isBanned })

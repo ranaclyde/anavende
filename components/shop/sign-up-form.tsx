@@ -116,7 +116,9 @@ export function SignUpForm({
                   errores.campos.firstName ? "e-firstName" : undefined
                 }
               />
-              <FieldError id="e-firstName">{errores.campos.firstName}</FieldError>
+              <FieldError id="e-firstName">
+                {errores.campos.firstName}
+              </FieldError>
             </div>
 
             <div className="flex flex-1 flex-col gap-2">
@@ -160,7 +162,9 @@ export function SignUpForm({
               placeholder="11 5555 5555"
               required
               aria-invalid={!!errores.campos.phone || undefined}
-              aria-describedby={errores.campos.phone ? "e-phone" : "ayuda-phone"}
+              aria-describedby={
+                errores.campos.phone ? "e-phone" : "ayuda-phone"
+              }
             />
             {errores.campos.phone ? (
               <FieldError id="e-phone">{errores.campos.phone}</FieldError>
@@ -220,7 +224,11 @@ export function SignUpForm({
           <p className="text-center text-body-sm text-ink-secondary">
             ¿Ya tenés cuenta?{" "}
             <Link
-              href={volver ? `/ingresar?volver=${encodeURIComponent(volver)}` : "/ingresar"}
+              href={
+                volver
+                  ? `/ingresar?volver=${encodeURIComponent(volver)}`
+                  : "/ingresar"
+              }
               className="rounded-pill text-ink underline underline-offset-4"
             >
               Ingresá

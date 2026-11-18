@@ -1,4 +1,11 @@
-import { Ayuda, Boton, Firma, Marco, Parrafo, PieDeEnlace } from "@/lib/email/base";
+import {
+  Ayuda,
+  Boton,
+  Firma,
+  Marco,
+  Parrafo,
+  PieDeEnlace,
+} from "@/lib/email/base";
 
 /**
  * E1 — Verificación de email (TECHNICAL-SPEC §14, FUNCTIONAL-SPEC RF-05).
@@ -43,8 +50,8 @@ export function Verificacion({
       adelanto="Te queda un paso para acceder a tu cuenta de AnaVende."
       pie={
         <PieDeEnlace href={enlace}>
-          Si no fuiste vos, podés ignorar este mensaje: sin confirmar, la
-          cuenta no se activa.
+          Si no fuiste vos, podés ignorar este mensaje: sin confirmar, la cuenta
+          no se activa.
         </PieDeEnlace>
       }
     >

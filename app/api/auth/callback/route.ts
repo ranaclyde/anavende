@@ -47,7 +47,9 @@ export async function GET(request: NextRequest) {
   if (error) {
     // Supabase rechaza la vinculación cuando el email de la cuenta original
     // no está verificado. Es la protección contra apropiación de RF-06.
-    return NextResponse.redirect(`${origin}/error?motivo=vinculacion-rechazada`);
+    return NextResponse.redirect(
+      `${origin}/error?motivo=vinculacion-rechazada`,
+    );
   }
 
   const { session } = data;

@@ -1,4 +1,11 @@
-import { Ayuda, Boton, Firma, Marco, Parrafo, PieDeEnlace } from "@/lib/email/base";
+import {
+  Ayuda,
+  Boton,
+  Firma,
+  Marco,
+  Parrafo,
+  PieDeEnlace,
+} from "@/lib/email/base";
 import type { PropsDeEnlace } from "@/lib/email/plantillas/verificacion";
 
 /**
@@ -34,8 +41,8 @@ export function Recuperacion({
       <Parrafo>¡Hola{saludo}!</Parrafo>
 
       <Parrafo>
-        Nos pediste cambiar la contraseña de tu cuenta de AnaVende. Hacé clic
-        en el botón de abajo para elegir una nueva.
+        Nos pediste cambiar la contraseña de tu cuenta de AnaVende. Hacé clic en
+        el botón de abajo para elegir una nueva.
       </Parrafo>
 
       <Boton href={enlace}>Elegir una contraseña nueva</Boton>

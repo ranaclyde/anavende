@@ -65,7 +65,9 @@ export function ForgotPasswordForm() {
       <Card>
         <CardHeader>
           <CardTitle>Revisá tu email</CardTitle>
-          <CardDescription>Te mandamos el enlace para cambiarla</CardDescription>
+          <CardDescription>
+            Te mandamos el enlace para cambiarla
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <p className="text-body-sm text-ink-secondary">

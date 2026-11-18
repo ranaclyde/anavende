@@ -37,8 +37,7 @@ export type Progreso = {
 };
 
 export type ResultadoDeSubida =
-  | { ok: true; data: unknown }
-  | { ok: false; message: string };
+  { ok: true; data: unknown } | { ok: false; message: string };
 
 /**
  * Sube un archivo al Route Handler informando el avance.
@@ -80,7 +79,8 @@ export function subirImagen(
       alProgreso?.({ fase: "optimizando", porcentaje: 100 });
 
     xhr.onload = () => {
-      let json: { ok?: boolean; data?: unknown; message?: string } | null = null;
+      let json: { ok?: boolean; data?: unknown; message?: string } | null =
+        null;
       try {
         json = JSON.parse(xhr.responseText);
       } catch {
@@ -102,7 +102,8 @@ export function subirImagen(
     xhr.onerror = () =>
       resolve({
         ok: false,
-        message: "Se cortó la conexión mientras subía la imagen. Probá de nuevo.",
+        message:
+          "Se cortó la conexión mientras subía la imagen. Probá de nuevo.",
       });
 
     xhr.send(cuerpo);

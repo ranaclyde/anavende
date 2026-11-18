@@ -31,7 +31,8 @@ export function RenglonDeFavorito({
   const sinStock = !noDisponible && f.disponible <= 0;
 
   // §9: producto, marca y color.
-  const alt = `${f.nombre} ${f.marca}` + (f.color ? `, ${f.color.toLowerCase()}` : "");
+  const alt =
+    `${f.nombre} ${f.marca}` + (f.color ? `, ${f.color.toLowerCase()}` : "");
 
   return (
     <article
@@ -76,7 +77,11 @@ export function RenglonDeFavorito({
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {noDisponible ? null : (
-            <Precio precio={f.precio} descuento={f.descuento} precioFinal={f.precioFinal} />
+            <Precio
+              precio={f.precio}
+              descuento={f.descuento}
+              precioFinal={f.precioFinal}
+            />
           )}
           <PuntosDeColor colores={f.colores ?? []} />
           {noDisponible ? (
