@@ -3906,18 +3906,18 @@ llegue. Cómo quedó, punto por punto de lo que había que resolver:
   ese PR, solo de formato.
 - **Pre-commit: `lint-staged`** (`lint-staged.config.mjs`), `eslint --fix` y
   después `prettier --write`, solo sobre los archivos del commit.
-- **Pre-push** (`.husky/pre-push`): `typecheck`, `npm run test:coverage` y
-  `DATABASE_URL= npx next build`, en ese orden y frenando en el primero que
-  falle. Medido: los tests tardan unos 50 s. **Si lo que se sube es solo
+- **Pre-push** (`.husky/pre-push`): `typecheck` y `DATABASE_URL= npx next
+  build`, frenando en el primero que falle. **Si lo que se sube es solo
   Markdown, no corre nada.**
-- **Los tests entran en el gancho**, y el stack apagado se resuelve antes de
-  correrlos: el gancho prueba el 54322 y, si no responde, frena con un mensaje
-  que dice `npm run dev:stack` o `--no-verify`, en vez de 81 archivos
-  fallando sin decir por qué.
-- **Coverage con `@vitest/coverage-v8` 5.0.5**, la versión de Vitest. Mide
-  `app`, `components`, `db`, `lib` y `modules`; **sin mínimo exigido**. El
-  primero: **28,6 % de líneas** (2.338 de 8.114). Es bajo porque las pantallas
-  se prueban con Playwright, que no entra en esa cuenta.
+- **Los tests no entran en el gancho, decisión tuya del 2026-11-18.** Se
+  probaron adentro: eran unos 50 s de los 1:24 de cada push, y pedían el
+  stack local levantado. El build es lo que protege el despliegue; los tests
+  se corren antes de abrir cada PR.
+- **Coverage con `@vitest/coverage-v8` 5.0.5**, la versión de Vitest, con
+  `npm run test:coverage` y **sin mínimo exigido**. Mide **solo `modules`,
+  `lib` y `db`**: **71,7 % de líneas** (2.325 de 3.242). Contando también
+  `app` y `components` daba 28,8 %, porque las pantallas las prueba Playwright
+  y esa cuenta no lo ve: un 0 % que no quería decir «sin probar».
 - **El `prepare` en el `Dockerfile` no rompe nada**: sin `.git`, Husky escribe
   «.git can't be found» y sale con 0. Probado con `docker build --target deps`,
   la etapa del `npm ci`. Igual conviene mirar el primer despliegue.

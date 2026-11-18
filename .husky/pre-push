@@ -1,6 +1,10 @@
-# Lo que antes de cada push se corría a mano: tipos, tests con coverage y el
-# build sin base. Un push a `main` despliega, así que esto frena el problema
-# antes de que llegue. Para un apuro: `git push --no-verify`.
+# Lo que antes de cada push se corría a mano: los tipos y el build sin base.
+# Un push a `main` despliega, y lo que rompe un despliegue es un build que
+# falla en Coolify: esto lo frena antes. Para un apuro: `git push --no-verify`.
+#
+# Los tests no están, decisión tuya del 2026-11-18: eran unos 50 s de cada
+# push y pedían el stack local levantado. Se corren antes de abrir cada PR, y
+# `npm run test:coverage` cuando se quiera ver el número.
 #
 # Corre sobre la copia de trabajo, no solo sobre lo commiteado: si quedó algo
 # sin commitear, se verifica con eso adentro.
@@ -15,28 +19,10 @@ if [ -n "$base" ]; then
   fi
 fi
 
-# Los tests corren contra el Postgres del stack local (`vitest.config.mts`).
-# Sin él fallan todos, y con un error que no dice por qué.
-if ! node -e '
-  const s = require("node:net").connect(54322, "127.0.0.1");
-  s.on("connect", () => process.exit(0));
-  s.on("error", () => process.exit(1));
-'; then
-  echo ""
-  echo "pre-push: el stack local de Supabase está apagado, y los tests lo necesitan."
-  echo "  npm run dev:stack            # levantalo y volvé a hacer el push"
-  echo "  git push --no-verify         # o subilo sin verificar"
-  echo ""
-  exit 1
-fi
-
 set -e
 
 echo "pre-push: tipos"
 npm run --silent typecheck
-
-echo "pre-push: tests con coverage"
-npm run --silent test:coverage
 
 # En su propia carpeta y no en `.next`: un build ahí con `next dev` levantado
 # ya le pisó la caché al servidor de desarrollo (`distDir` en

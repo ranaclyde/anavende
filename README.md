@@ -124,11 +124,12 @@ es lo que se quiere; contra cualquier otra cosa, no.
 
 - **Al commitear**, ESLint y Prettier sobre los archivos que entran en el
   commit (`lint-staged.config.mjs`).
-- **Al hacer push**, el chequeo de tipos, los tests con coverage y
-  `DATABASE_URL= npx next build`: producción compila sin base, y `next dev` no
-  muestra ese error. Necesita el stack local levantado, porque los tests
-  corren contra su Postgres; si está apagado, lo dice y frena. Un push que
+- **Al hacer push**, el chequeo de tipos y `DATABASE_URL= npx next build`:
+  producción compila sin base, y `next dev` no muestra ese error. Un push que
   solo cambia Markdown no corre nada.
+
+Los tests no van en el gancho: tardan casi un minuto y necesitan el stack
+local. Se corren antes de abrir cada PR.
 
 Para un apuro, `--no-verify` saltea cualquiera de los dos.
 
