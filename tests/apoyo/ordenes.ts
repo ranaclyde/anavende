@@ -105,9 +105,9 @@ export async function estadoDeLaOrden(orderId: string): Promise<{
 }
 
 /** Los renglones con su id, que es lo que la edición de RF-22 recibe. */
-export async function renglonesDeLaOrden(orderId: string): Promise<
-  { id: string; variantId: string | null; quantity: number }[]
-> {
+export async function renglonesDeLaOrden(
+  orderId: string,
+): Promise<{ id: string; variantId: string | null; quantity: number }[]> {
   return [
     ...(await db.execute<{
       id: string;

@@ -13,7 +13,7 @@ import { expect } from "vitest";
 export function motivoDel(error: unknown): string {
   return [
     (error as Error)?.message,
-    ((error as { cause?: Error })?.cause)?.message,
+    (error as { cause?: Error })?.cause?.message,
   ]
     .filter(Boolean)
     .join("\n");

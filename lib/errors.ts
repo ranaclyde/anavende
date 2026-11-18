@@ -64,8 +64,7 @@ const MENSAJES: Record<DomainErrorCode, string> = {
   FORBIDDEN: "No tenés permiso para hacer eso.",
   NOT_FOUND: "No encontramos eso que buscabas.",
   VALIDATION: "Revisá los datos: hay algo que no está bien.",
-  INTERNAL:
-    "No pudimos completar la acción. Probá de nuevo en un momento.",
+  INTERNAL: "No pudimos completar la acción. Probá de nuevo en un momento.",
 };
 
 export class DomainError extends Error {

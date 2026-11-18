@@ -94,79 +94,79 @@ export function CambiarContrasenaForm({
         aria-describedby={enPausa ? ID_AVISO_DE_PAUSA : undefined}
         className="contents"
       >
-      {tieneContrasena && (
+        {tieneContrasena && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="actual">Contraseña actual</Label>
+            <Input
+              id="actual"
+              name="actual"
+              type="password"
+              autoComplete="current-password"
+              required
+              aria-invalid={!!errores.campos.actual || undefined}
+            />
+            <FieldError>{errores.campos.actual}</FieldError>
+          </div>
+        )}
+
         <div className="flex flex-col gap-2">
-          <Label htmlFor="actual">Contraseña actual</Label>
+          <Label htmlFor="nueva">
+            {tieneContrasena ? "Contraseña nueva" : "Contraseña"}
+          </Label>
           <Input
-            id="actual"
-            name="actual"
+            id="nueva"
+            name="nueva"
             type="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
+            minLength={8}
             required
-            aria-invalid={!!errores.campos.actual || undefined}
+            aria-invalid={!!errores.campos.nueva || undefined}
+            aria-describedby="nueva-ayuda"
+            value={nueva}
+            onChange={(e) => setNueva(e.target.value)}
           />
-          <FieldError>{errores.campos.actual}</FieldError>
+          {errores.campos.nueva ? (
+            <FieldError id="nueva-ayuda">{errores.campos.nueva}</FieldError>
+          ) : (
+            <FieldHint id="nueva-ayuda">Al menos 8 caracteres.</FieldHint>
+          )}
         </div>
-      )}
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="nueva">
-          {tieneContrasena ? "Contraseña nueva" : "Contraseña"}
-        </Label>
-        <Input
-          id="nueva"
-          name="nueva"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          required
-          aria-invalid={!!errores.campos.nueva || undefined}
-          aria-describedby="nueva-ayuda"
-          value={nueva}
-          onChange={(e) => setNueva(e.target.value)}
-        />
-        {errores.campos.nueva ? (
-          <FieldError id="nueva-ayuda">{errores.campos.nueva}</FieldError>
-        ) : (
-          <FieldHint id="nueva-ayuda">Al menos 8 caracteres.</FieldHint>
-        )}
-      </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="repetida">Repetila</Label>
+          <Input
+            id="repetida"
+            name="repetida"
+            type="password"
+            autoComplete="new-password"
+            required
+            aria-invalid={!!errorRepetida || undefined}
+            aria-describedby={errorRepetida ? "repetida-error" : undefined}
+            value={repetida}
+            onChange={(e) => setRepetida(e.target.value)}
+          />
+          <FieldError id="repetida-error">{errorRepetida}</FieldError>
+        </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="repetida">Repetila</Label>
-        <Input
-          id="repetida"
-          name="repetida"
-          type="password"
-          autoComplete="new-password"
-          required
-          aria-invalid={!!errorRepetida || undefined}
-          aria-describedby={errorRepetida ? "repetida-error" : undefined}
-          value={repetida}
-          onChange={(e) => setRepetida(e.target.value)}
-        />
-        <FieldError id="repetida-error">{errorRepetida}</FieldError>
-      </div>
+        <FieldError>{errores.general}</FieldError>
 
-      <FieldError>{errores.general}</FieldError>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Button
-          type="submit"
-          variant="secondary"
-          size="lg"
-          className="w-full sm:w-auto"
-          loading={guardando}
-          loadingLabel="Guardando"
-        >
-          {tieneContrasena ? "Cambiar contraseña" : "Definir contraseña"}
-        </Button>
-        {listo && (
-          <p role="status" className="text-body-sm text-success">
-            {listo}
-          </p>
-        )}
-      </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Button
+            type="submit"
+            variant="secondary"
+            size="lg"
+            className="w-full sm:w-auto"
+            loading={guardando}
+            loadingLabel="Guardando"
+          >
+            {tieneContrasena ? "Cambiar contraseña" : "Definir contraseña"}
+          </Button>
+          {listo && (
+            <p role="status" className="text-body-sm text-success">
+              {listo}
+            </p>
+          )}
+        </div>
       </fieldset>
     </form>
   );

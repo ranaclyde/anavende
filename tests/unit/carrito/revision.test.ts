@@ -184,7 +184,10 @@ describe("revisar el carrito", () => {
     expect(await cantidadEnElCarrito(userId, agotado.variantId)).toBe(2);
 
     const carrito = await leerCarrito(userId);
-    expect(carrito.items.map((i) => i.estado)).toEqual(["sin-stock", "vigente"]);
+    expect(carrito.items.map((i) => i.estado)).toEqual([
+      "sin-stock",
+      "vigente",
+    ]);
     expect(carrito.total).toBe("1000.00");
     expect(carrito.unidades).toBe(1);
     expect(await contarUnidades(userId)).toBe(1);

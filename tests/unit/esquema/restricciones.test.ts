@@ -165,7 +165,10 @@ describe("product_variants — §8.2", () => {
       await tx.execute(sql`
         UPDATE product_variants SET reserved_stock = 0, stock_total = -2
          WHERE id = ${variante}`);
-      expect(await contadores(tx, variante)).toEqual({ total: -2, reservado: 0 });
+      expect(await contadores(tx, variante)).toEqual({
+        total: -2,
+        reservado: 0,
+      });
     });
   });
 
@@ -185,7 +188,10 @@ describe("product_variants — §8.2", () => {
       const { variante } = await unaVariante(tx);
       await tx.execute(sql`
         UPDATE product_variants SET stock_total = -2 WHERE id = ${variante}`);
-      expect(await contadores(tx, variante)).toEqual({ total: -2, reservado: 2 });
+      expect(await contadores(tx, variante)).toEqual({
+        total: -2,
+        reservado: 2,
+      });
     });
   });
 

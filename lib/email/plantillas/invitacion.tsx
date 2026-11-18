@@ -1,4 +1,11 @@
-import { Ayuda, Boton, Firma, Marco, Parrafo, PieDeEnlace } from "@/lib/email/base";
+import {
+  Ayuda,
+  Boton,
+  Firma,
+  Marco,
+  Parrafo,
+  PieDeEnlace,
+} from "@/lib/email/base";
 import type { PropsDeEnlace } from "@/lib/email/plantillas/verificacion";
 
 /**

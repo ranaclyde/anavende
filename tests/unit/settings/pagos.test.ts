@@ -57,8 +57,10 @@ describe("validación (RF-19)", () => {
 
   test("la descripción se recorta", () => {
     expect(
-      crearMedioDePago.safeParse({ name: "Efectivo", description: "  10% off  " })
-        .data?.description,
+      crearMedioDePago.safeParse({
+        name: "Efectivo",
+        description: "  10% off  ",
+      }).data?.description,
     ).toBe("10% off");
   });
 
@@ -151,7 +153,9 @@ describe("contra la base y contra Storage", () => {
 
   afterAll(async () => {
     if (creados.length) {
-      await db.delete(paymentMethods).where(inArray(paymentMethods.id, creados));
+      await db
+        .delete(paymentMethods)
+        .where(inArray(paymentMethods.id, creados));
     }
     await borrarArchivos(archivos);
   });
@@ -216,11 +220,11 @@ describe("contra la base y contra Storage", () => {
         id: a.id,
         archivo: await png(),
       });
-      archivos.push(...TAMANOS_LOGO.map((t) => clave(subido.logoKey, t.sufijo)));
-
-      expect(subido.logoKey).toMatch(
-        new RegExp(`^medios-de-pago/${a.id}/`),
+      archivos.push(
+        ...TAMANOS_LOGO.map((t) => clave(subido.logoKey, t.sufijo)),
       );
+
+      expect(subido.logoKey).toMatch(new RegExp(`^medios-de-pago/${a.id}/`));
     });
 
     test(`suben los ${TAMANOS_LOGO.length} tamaños del logo`, async () => {

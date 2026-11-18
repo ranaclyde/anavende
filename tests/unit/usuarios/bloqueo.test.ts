@@ -57,9 +57,8 @@ vi.mock("@/lib/supabase/server", async () => {
   };
 });
 
-const { bloquearCuenta, desbloquearCuenta } = await import(
-  "@/modules/users/panel/actions"
-);
+const { bloquearCuenta, desbloquearCuenta } =
+  await import("@/modules/users/panel/actions");
 const { leerUsuarioDelPanel } = await import("@/modules/users/panel/queries");
 const { tieneElAccesoCortado } = await import("@/modules/users/acceso");
 const { ingresar } = await import("@/modules/users/actions");
@@ -238,7 +237,9 @@ describe("el motivo es obligatorio (RF-27)", () => {
       const r = await bloquearCuenta({ id: otro.userId, motivo });
       expect(r).toMatchObject({ ok: false, code: "VALIDATION" });
       // Va al campo y no como un fallo general: es lo que la pantalla marca.
-      expect(r.ok === false && leerErrores<"motivo">(r).campos.motivo).toBeTruthy();
+      expect(
+        r.ok === false && leerErrores<"motivo">(r).campos.motivo,
+      ).toBeTruthy();
     }
 
     expect((await elBloqueo(otro.userId)).bloqueado).toBe(false);

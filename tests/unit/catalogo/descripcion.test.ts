@@ -34,7 +34,10 @@ async function unCableConDescripcion(tx: Tx) {
     INSERT INTO categories (name, slug) VALUES ('Probando Cables', 'probando-cables')
     RETURNING id`);
 
-  const [producto] = await tx.execute<{ id: string; descriptionText: string }>(sql`
+  const [producto] = await tx.execute<{
+    id: string;
+    descriptionText: string;
+  }>(sql`
     INSERT INTO products (name, slug, description, brand_id, category_id, price)
     VALUES ('Cable de video', 'probando-cable-de-video', ${DESCRIPCION},
             ${marca.id}, ${categoria.id}, '9999.00')

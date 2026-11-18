@@ -60,7 +60,9 @@ describe("lo que se descarta conservando las palabras", () => {
 
   test("el enlace se va y las palabras quedan", () => {
     expect(
-      sale("Mirá el [manual del fabricante](https://ejemplo.com) antes de usarlo."),
+      sale(
+        "Mirá el [manual del fabricante](https://ejemplo.com) antes de usarlo.",
+      ),
     ).toBe("Mirá el manual del fabricante antes de usarlo.");
   });
 
@@ -194,7 +196,9 @@ describe("el límite cuenta texto, no sintaxis (RF-15)", () => {
    * escribe hasta el tope que le muestran y pierde el texto al guardar.
    */
   test("no cuenta los saltos entre bloques: cuenta menos que el editor", () => {
-    expect(longitudDeTexto("Uno\n\nDos")).toBeLessThanOrEqual("Uno\n\nDos".length);
+    expect(longitudDeTexto("Uno\n\nDos")).toBeLessThanOrEqual(
+      "Uno\n\nDos".length,
+    );
   });
 });
 

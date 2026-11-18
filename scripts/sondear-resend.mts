@@ -16,7 +16,9 @@
  *
  *   npx tsx scripts/sondear-resend.mts tu-casilla@gmail.com
  */
-try { process.loadEnvFile(".env.local"); } catch {}
+try {
+  process.loadEnvFile(".env.local");
+} catch {}
 
 const clave = process.env.RESEND_API_KEY;
 const remitente = process.env.RESEND_FROM;

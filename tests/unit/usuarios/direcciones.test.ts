@@ -69,7 +69,8 @@ describe("cuántas y cuál es la predeterminada", () => {
     await expect(agregarDireccion(userId, datos("Otra"))).rejects.toMatchObject(
       {
         code: "VALIDATION",
-        message: "Podés guardar hasta 3 direcciones. Eliminá una para agregar otra.",
+        message:
+          "Podés guardar hasta 3 direcciones. Eliminá una para agregar otra.",
       },
     );
     expect(await libreta(userId)).toHaveLength(3);

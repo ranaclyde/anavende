@@ -95,21 +95,26 @@ export function ControlesDelItem({
         aria-describedby={enPausa ? ID_AVISO_DE_PAUSA : undefined}
         className="contents"
       >
-      <div className="flex flex-wrap items-center gap-1">
-        {soloQuitar ? null : (
-          <Cantidad
-            valor={mostrada}
-            maximo={maximo}
-            onCambio={cambiar}
-            etiqueta={`Cantidad de ${nombre}`}
-          />
-        )}
-        <Button variant="tertiary" size="md" disabled={enCurso} onClick={quitar}>
-          <Trash2 aria-hidden />
-          Quitar
-          <span className="sr-only"> {nombre} del carrito</span>
-        </Button>
-      </div>
+        <div className="flex flex-wrap items-center gap-1">
+          {soloQuitar ? null : (
+            <Cantidad
+              valor={mostrada}
+              maximo={maximo}
+              onCambio={cambiar}
+              etiqueta={`Cantidad de ${nombre}`}
+            />
+          )}
+          <Button
+            variant="tertiary"
+            size="md"
+            disabled={enCurso}
+            onClick={quitar}
+          >
+            <Trash2 aria-hidden />
+            Quitar
+            <span className="sr-only"> {nombre} del carrito</span>
+          </Button>
+        </div>
       </fieldset>
 
       {error === null ? null : (

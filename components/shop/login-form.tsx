@@ -297,7 +297,11 @@ export function LoginForm({
           <p className="text-center text-body-sm text-ink-secondary">
             ¿Todavía no tenés cuenta?{" "}
             <Link
-              href={volver ? `/registro?volver=${encodeURIComponent(volver)}` : "/registro"}
+              href={
+                volver
+                  ? `/registro?volver=${encodeURIComponent(volver)}`
+                  : "/registro"
+              }
               className="rounded-pill text-ink underline underline-offset-4"
             >
               Creá una

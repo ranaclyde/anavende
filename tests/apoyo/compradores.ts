@@ -92,9 +92,7 @@ export type ItemDeOrden = {
   subtotal: string;
 };
 
-export async function itemsDeLaOrden(
-  orderId: string,
-): Promise<ItemDeOrden[]> {
+export async function itemsDeLaOrden(orderId: string): Promise<ItemDeOrden[]> {
   return [
     ...(await db.execute<ItemDeOrden>(sql`
       SELECT variant_id   AS "variantId",

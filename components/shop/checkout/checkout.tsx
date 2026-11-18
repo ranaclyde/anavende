@@ -224,7 +224,10 @@ export function Checkout({
 
           {entrega === "envio" ? (
             <div className="flex flex-col gap-3 border-t border-border pt-4">
-              <p id="direccion-titulo" className="text-body font-medium text-ink">
+              <p
+                id="direccion-titulo"
+                className="text-body font-medium text-ink"
+              >
                 ¿A dónde te lo enviamos?
               </p>
 
@@ -345,7 +348,10 @@ export function Checkout({
             Confirmar pedido
           </Button>
           {motivo ? (
-            <p id="confirmar-motivo" className="text-body-sm text-ink-secondary">
+            <p
+              id="confirmar-motivo"
+              className="text-body-sm text-ink-secondary"
+            >
               {motivo}
             </p>
           ) : null}

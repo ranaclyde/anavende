@@ -61,7 +61,8 @@ test("un comprador con órdenes no se puede borrar, y el error dice por qué", a
   // Postgres, así que el código vive en `cause`. Antes era 23514 —violación de
   // CHECK—, que fallaba igual pero sin explicar nada: decía que la fila
   // quedaba inválida, no que la persona tiene órdenes.
-  const causa = (fallo as { cause?: { code?: string; message?: string } }).cause;
+  const causa = (fallo as { cause?: { code?: string; message?: string } })
+    .cause;
   expect(causa?.code).toBe("23503");
   expect(causa?.message).toContain("orders");
 

@@ -119,16 +119,18 @@ async function verificarRN11b(
   // error de integridad en vez de una frase.
   if (fila?.marca === null || fila?.categoria === null) {
     throw domainError("NOT_FOUND", {
-      message: "La marca o la categoría que elegiste ya no existen. Actualizá la página.",
+      message:
+        "La marca o la categoría que elegiste ya no existen. Actualizá la página.",
     });
   }
 
   if (fila.marca || fila.categoria) {
-    const que = fila.marca && fila.categoria
-      ? "La marca y la categoría están"
-      : fila.marca
-        ? "La marca está"
-        : "La categoría está";
+    const que =
+      fila.marca && fila.categoria
+        ? "La marca y la categoría están"
+        : fila.marca
+          ? "La marca está"
+          : "La categoría está";
     throw domainError("ENTITY_IN_USE", {
       message: `${que} inactiva, así que el producto no puede estar activo. Activala primero, o guardá el producto como inactivo.`,
     });
@@ -212,7 +214,10 @@ export const cambiarEstadoDeProducto = action
   .input(cambioDeEstadoDeProducto)
   .auth("admin")
   .handler(async ({ input }) => {
-    const [actual] = await db.execute<{ brandId: string; categoryId: string }>(sql`
+    const [actual] = await db.execute<{
+      brandId: string;
+      categoryId: string;
+    }>(sql`
       SELECT brand_id AS "brandId", category_id AS "categoryId"
         FROM products WHERE id = ${input.id}`);
 
@@ -321,5 +326,10 @@ export const eliminarUnProducto = action
     if (archivos.length) await borrarArchivos(archivos);
 
     refrescar();
-    return { id: input.id, resultado: "borrado" as const, ordenes: 0, carritos: 0 };
+    return {
+      id: input.id,
+      resultado: "borrado" as const,
+      ordenes: 0,
+      carritos: 0,
+    };
   });

@@ -204,7 +204,9 @@ export function FormularioDeDireccion({
         {e.localidad ? (
           <FieldError>{e.localidad}</FieldError>
         ) : (
-          <FieldHint>Entregamos en Viedma, Carmen de Patagones y alrededores.</FieldHint>
+          <FieldHint>
+            Entregamos en Viedma, Carmen de Patagones y alrededores.
+          </FieldHint>
         )}
       </div>
 
@@ -252,7 +254,9 @@ export function FormularioDeDireccion({
         {e.notes ? (
           <FieldError>{e.notes}</FieldError>
         ) : (
-          <FieldHint>Entre qué calles, cómo es la casa, qué timbre tocar.</FieldHint>
+          <FieldHint>
+            Entre qué calles, cómo es la casa, qué timbre tocar.
+          </FieldHint>
         )}
       </div>
 
@@ -270,7 +274,12 @@ export function FormularioDeDireccion({
           Guardar dirección
         </Button>
         {alCancelar ? (
-          <Button type="button" variant="tertiary" size="lg" onClick={alCancelar}>
+          <Button
+            type="button"
+            variant="tertiary"
+            size="lg"
+            onClick={alCancelar}
+          >
             Cancelar
           </Button>
         ) : alGuardar ? null : (

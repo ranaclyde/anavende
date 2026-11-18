@@ -73,72 +73,72 @@ export function MisDatosForm({
         aria-describedby={enPausa ? ID_AVISO_DE_PAUSA : undefined}
         className="contents"
       >
-      <div className="flex flex-col gap-5 sm:flex-row sm:gap-4">
-        <div className="flex flex-1 flex-col gap-2">
-          <Label htmlFor="firstName">Nombre</Label>
-          <Input
-            id="firstName"
-            name="firstName"
-            autoComplete="given-name"
-            defaultValue={firstName}
-            required
-            aria-invalid={!!errores.campos.firstName || undefined}
-          />
-          <FieldError>{errores.campos.firstName}</FieldError>
+        <div className="flex flex-col gap-5 sm:flex-row sm:gap-4">
+          <div className="flex flex-1 flex-col gap-2">
+            <Label htmlFor="firstName">Nombre</Label>
+            <Input
+              id="firstName"
+              name="firstName"
+              autoComplete="given-name"
+              defaultValue={firstName}
+              required
+              aria-invalid={!!errores.campos.firstName || undefined}
+            />
+            <FieldError>{errores.campos.firstName}</FieldError>
+          </div>
+
+          <div className="flex flex-1 flex-col gap-2">
+            <Label htmlFor="lastName">Apellido</Label>
+            <Input
+              id="lastName"
+              name="lastName"
+              autoComplete="family-name"
+              defaultValue={lastName}
+              required
+              aria-invalid={!!errores.campos.lastName || undefined}
+            />
+            <FieldError>{errores.campos.lastName}</FieldError>
+          </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-2">
-          <Label htmlFor="lastName">Apellido</Label>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="phone">Teléfono</Label>
           <Input
-            id="lastName"
-            name="lastName"
-            autoComplete="family-name"
-            defaultValue={lastName}
+            id="phone"
+            name="phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            defaultValue={telefono}
             required
-            aria-invalid={!!errores.campos.lastName || undefined}
+            aria-invalid={!!errores.campos.phone || undefined}
           />
-          <FieldError>{errores.campos.lastName}</FieldError>
+          {errores.campos.phone ? (
+            <FieldError>{errores.campos.phone}</FieldError>
+          ) : (
+            <FieldHint>Por acá coordinamos la entrega y el pago.</FieldHint>
+          )}
         </div>
-      </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="phone">Teléfono</Label>
-        <Input
-          id="phone"
-          name="phone"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          defaultValue={telefono}
-          required
-          aria-invalid={!!errores.campos.phone || undefined}
-        />
-        {errores.campos.phone ? (
-          <FieldError>{errores.campos.phone}</FieldError>
-        ) : (
-          <FieldHint>Por acá coordinamos la entrega y el pago.</FieldHint>
-        )}
-      </div>
+        <FieldError>{errores.general}</FieldError>
 
-      <FieldError>{errores.general}</FieldError>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Button
-          type="submit"
-          variant="brand"
-          size="lg"
-          className="w-full sm:w-auto"
-          loading={guardando}
-          loadingLabel="Guardando"
-        >
-          Guardar cambios
-        </Button>
-        {guardado && (
-          <p role="status" className="text-body-sm text-success">
-            Listo, guardamos tus datos.
-          </p>
-        )}
-      </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Button
+            type="submit"
+            variant="brand"
+            size="lg"
+            className="w-full sm:w-auto"
+            loading={guardando}
+            loadingLabel="Guardando"
+          >
+            Guardar cambios
+          </Button>
+          {guardado && (
+            <p role="status" className="text-body-sm text-success">
+              Listo, guardamos tus datos.
+            </p>
+          )}
+        </div>
       </fieldset>
     </form>
   );

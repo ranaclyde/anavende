@@ -71,13 +71,19 @@ describe("el precio (RF-15)", () => {
     ["negativo", "-5"],
     ["que no es un monto", "diez mil"],
   ])("un precio %s se rechaza", (_caso, price) => {
-    expect(errorDe(crearProducto.safeParse({ ...base, price }), "price")).not.toBeNull();
+    expect(
+      errorDe(crearProducto.safeParse({ ...base, price }), "price"),
+    ).not.toBeNull();
   });
 });
 
 describe("el descuento, que necesita mirar el precio (RN-04b)", () => {
   test("IGUAL al precio se rechaza, y el error queda en el descuento", () => {
-    const r = crearProducto.safeParse({ ...base, price: "1000", discount: "1000" });
+    const r = crearProducto.safeParse({
+      ...base,
+      price: "1000",
+      discount: "1000",
+    });
     expect(errorDe(r, "discount")).toBe(
       "El descuento tiene que ser menor que el precio.",
     );
@@ -87,12 +93,20 @@ describe("el descuento, que necesita mirar el precio (RN-04b)", () => {
   });
 
   test("MAYOR al precio se rechaza", () => {
-    const r = crearProducto.safeParse({ ...base, price: "1000", discount: "1500" });
+    const r = crearProducto.safeParse({
+      ...base,
+      price: "1000",
+      discount: "1500",
+    });
     expect(errorDe(r, "discount")).not.toBeNull();
   });
 
   test("negativo se rechaza", () => {
-    const r = crearProducto.safeParse({ ...base, price: "1000", discount: "-1" });
+    const r = crearProducto.safeParse({
+      ...base,
+      price: "1000",
+      discount: "-1",
+    });
     expect(errorDe(r, "discount")).not.toBeNull();
   });
 
@@ -112,7 +126,7 @@ describe("la descripción se sanitiza AL VALIDAR (§16)", () => {
       ...base,
       price: "1000",
       description:
-        'Ver [manual](https://x.com) **acá**.\n\n<script>alert(1)</script>',
+        "Ver [manual](https://x.com) **acá**.\n\n<script>alert(1)</script>",
     });
     expect(r.success && r.data.description).toBe("Ver manual **acá**.");
   });
@@ -142,13 +156,17 @@ describe("la descripción se sanitiza AL VALIDAR (§16)", () => {
   });
 
   test("una descripción vacía es válida (RF-15)", () => {
-    expect(crearProducto.safeParse({ ...base, price: "1000" }).success).toBe(true);
+    expect(crearProducto.safeParse({ ...base, price: "1000" }).success).toBe(
+      true,
+    );
   });
 });
 
 describe("editar exige `id`, y el resto de las reglas son las mismas", () => {
   test("sin `id` se rechaza", () => {
-    expect(editarProducto.safeParse({ ...base, price: "1000" }).success).toBe(false);
+    expect(editarProducto.safeParse({ ...base, price: "1000" }).success).toBe(
+      false,
+    );
   });
 
   test("con `id` y datos válidos se acepta", () => {
@@ -218,7 +236,9 @@ describe("RN-11b al revés: no activar contra algo inactivo", () => {
       await rechaza(
         tx,
         (sp) =>
-          sp.execute(sql`UPDATE products SET discount = price WHERE id = ${p.id}`),
+          sp.execute(
+            sql`UPDATE products SET discount = price WHERE id = ${p.id}`,
+          ),
         /discount_valid/i,
       );
     });

@@ -146,8 +146,7 @@ export function Visor({
   const marco = useRef<HTMLDivElement>(null);
 
   const img = imagenes[Math.min(actual, imagenes.length - 1)] as
-    | FotoDelVisor
-    | undefined;
+    FotoDelVisor | undefined;
 
   // El encuadre se CALCULA y no se mide: medir el `<img>` obligaría a pintar
   // una vez para leer su tamaño y otra para acomodarlo, y el primer cuadro

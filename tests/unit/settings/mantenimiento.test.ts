@@ -1,5 +1,13 @@
 import { sql } from "drizzle-orm";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "vitest";
 
 import { db } from "@/db";
 import {
@@ -190,7 +198,9 @@ describe("el interruptor (§5.9)", () => {
     expect(await estaEnMantenimiento()).toBe(true);
 
     // Por afuera de la acción, como si lo hubiera cambiado otra instancia.
-    await db.execute(sql`UPDATE site_settings SET maintenance_mode = false WHERE id = 1`);
+    await db.execute(
+      sql`UPDATE site_settings SET maintenance_mode = false WHERE id = 1`,
+    );
     expect(await estaEnMantenimiento()).toBe(true);
 
     olvidarElInterruptor();
@@ -203,7 +213,9 @@ describe("quién ve la tienda cerrada", () => {
 
   test("una administradora sí", async () => {
     const { userId } = await unComprador();
-    await db.execute(sql`UPDATE user_profiles SET role = 'admin' WHERE id = ${userId}`);
+    await db.execute(
+      sql`UPDATE user_profiles SET role = 'admin' WHERE id = ${userId}`,
+    );
 
     expect(await puedeVerLaTiendaCerrada(userId)).toBe(true);
   });

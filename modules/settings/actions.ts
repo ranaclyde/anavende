@@ -7,7 +7,11 @@ import { db } from "@/db";
 import { paymentMethods, paymentPromotions } from "@/db/schema/settings";
 import { action } from "@/lib/action";
 import { domainError } from "@/lib/errors";
-import { borrarArchivos, clavesDelLogo, quitarLogo } from "@/modules/media/subir";
+import {
+  borrarArchivos,
+  clavesDelLogo,
+  quitarLogo,
+} from "@/modules/media/subir";
 import { olvidarElInterruptor } from "@/modules/settings/mantenimiento";
 import {
   escribirElModoMantenimiento,

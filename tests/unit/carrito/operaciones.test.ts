@@ -121,7 +121,10 @@ describe("agregar", () => {
 
     await expect(
       agregar(userId, { variantId, cantidad: 1 }),
-    ).rejects.toMatchObject({ code: "INSUFFICIENT_STOCK", details: { quedan: 0 } });
+    ).rejects.toMatchObject({
+      code: "INSUFFICIENT_STOCK",
+      details: { quedan: 0 },
+    });
   });
 
   test("hay un tope por renglón aunque sobre stock", async () => {

@@ -213,7 +213,11 @@ describe("idempotencia (§8.5)", () => {
     await agregarAlCarrito(comprador.cartId, variantId, 2);
 
     const clave = randomUUID();
-    const datos = compra(comprador, [{ variantId, unitPrice: "1000.00", quantity: 2 }], clave);
+    const datos = compra(
+      comprador,
+      [{ variantId, unitPrice: "1000.00", quantity: 2 }],
+      clave,
+    );
 
     const primera = await crearOrdenDesdeCarrito(datos);
     const segunda = await crearOrdenDesdeCarrito(datos);
@@ -260,7 +264,11 @@ describe("idempotencia (§8.5)", () => {
 
     const clave = randomUUID();
     const { orderId } = await crearOrdenDesdeCarrito(
-      compra(comprador, [{ variantId, unitPrice: "1000.00", quantity: 1 }], clave),
+      compra(
+        comprador,
+        [{ variantId, unitPrice: "1000.00", quantity: 1 }],
+        clave,
+      ),
     );
 
     expect((await laOrden(orderId)).idempotencyKey).toBe(clave);
@@ -386,7 +394,9 @@ describe("reconfirmación: lo que cambió mientras miraba (§8.4 paso 3)", () =>
     await agregarAlCarrito(comprador.cartId, colado.variantId, 1);
 
     const fallo = (await crearOrdenDesdeCarrito(
-      compra(comprador, [{ variantId: visto.variantId, unitPrice: "1000.00", quantity: 1 }]),
+      compra(comprador, [
+        { variantId: visto.variantId, unitPrice: "1000.00", quantity: 1 },
+      ]),
     ).catch((e: unknown) => e)) as DomainError;
 
     // Confirmar así le cobraría algo que nunca estuvo en su resumen.
@@ -452,7 +462,9 @@ describe("lo que impide crear la orden", () => {
       details: { variantId },
       // Dice cuál y qué hacer; no «ajustá la cantidad», que la pantalla ya
       // ajusta sola al volver a armarse (F6.2).
-      message: expect.stringContaining("Revisá el resumen y confirmá otra vez."),
+      message: expect.stringContaining(
+        "Revisá el resumen y confirmá otra vez.",
+      ),
     });
 
     // Todo o nada (§8.3 regla 1): ni orden, ni ítems, ni asiento, ni carrito
@@ -490,9 +502,9 @@ describe("lo que impide crear la orden", () => {
   test("carrito vacío", async () => {
     const comprador = await unComprador();
 
-    await expect(crearOrdenDesdeCarrito(compra(comprador, []))).rejects.toMatchObject(
-      { code: "VALIDATION" },
-    );
+    await expect(
+      crearOrdenDesdeCarrito(compra(comprador, [])),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
   });
 
   test("la dirección de otra persona es NOT_FOUND", async () => {
@@ -506,7 +518,9 @@ describe("lo que impide crear la orden", () => {
     // el pedido a la dirección de otro.
     await expect(
       crearOrdenDesdeCarrito({
-        ...compra(comprador, [{ variantId, unitPrice: "1000.00", quantity: 1 }]),
+        ...compra(comprador, [
+          { variantId, unitPrice: "1000.00", quantity: 1 },
+        ]),
         entrega: { tipo: "envio", addressId: ajeno.addressId },
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
@@ -530,9 +544,13 @@ test("dos compradores sobre la última unidad: una orden y un rechazo", async ()
         )
         .then(() => undefined),
     () =>
-      crearOrdenDesdeCarrito(compra(uno, [{ variantId, unitPrice: "1000.00", quantity: 1 }])),
+      crearOrdenDesdeCarrito(
+        compra(uno, [{ variantId, unitPrice: "1000.00", quantity: 1 }]),
+      ),
     () =>
-      crearOrdenDesdeCarrito(compra(otro, [{ variantId, unitPrice: "1000.00", quantity: 1 }])),
+      crearOrdenDesdeCarrito(
+        compra(otro, [{ variantId, unitPrice: "1000.00", quantity: 1 }]),
+      ),
   );
 
   const cumplidas = resultados.filter((r) => r.status === "fulfilled");

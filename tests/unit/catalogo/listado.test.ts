@@ -241,27 +241,41 @@ describe("contra la base", () => {
 
     // Un teclado destacado con stock de sobra.
     teclado = await producto(`Teclado Mecánico ${marca}`, {
-      brand: marcaA, cat: catA, price: "10000.00", destacado: true, dias: 3,
+      brand: marcaA,
+      cat: catA,
+      price: "10000.00",
+      destacado: true,
+      dias: 3,
     });
     await variante(teclado, negro, 10, 2);
 
     // Un cable barato cuya descripción es la única que nombra «USB-C».
     cable = await producto(`Cable ${marca}`, {
-      brand: marcaA, cat: catB, price: "500.00", dias: 2,
+      brand: marcaA,
+      cat: catB,
+      price: "500.00",
+      dias: 2,
       descripcion: "Compatible con **USB-C** y 50% más rápido.",
     });
     await variante(cable, negro, 2);
 
     // Un mouse inactivo y sin nada disponible.
     mouse = await producto(`Mouse ${marca}`, {
-      brand: marcaB, cat: catA, price: "3000.00", activo: false, dias: 1,
+      brand: marcaB,
+      cat: catA,
+      price: "3000.00",
+      activo: false,
+      dias: 1,
     });
     await variante(mouse, negro, 0);
 
     // Un monitor con un color en negativo y otro con stock: la discrepancia
     // que la suma esconde (RF-24, §5.4).
     monitor = await producto(`Monitor ${marca}`, {
-      brand: marcaB, cat: catB, price: "80000.00", dias: 0,
+      brand: marcaB,
+      cat: catB,
+      price: "80000.00",
+      dias: 0,
     });
     await variante(monitor, negro, -3);
     await variante(monitor, blanco, 10);
@@ -269,7 +283,10 @@ describe("contra la base", () => {
     // Recién cargado, todavía sin colores. F2.4 hace el alta en dos pasos, así
     // que este estado existe de verdad y no es un caso inventado.
     auricular = await producto(`Auricular ${marca}`, {
-      brand: marcaA, cat: catA, price: "7000.00", dias: 4,
+      brand: marcaA,
+      cat: catA,
+      price: "7000.00",
+      dias: 4,
     });
   });
 
@@ -288,17 +305,16 @@ describe("contra la base", () => {
     }
     await db.delete(colors).where(inArray(colors.id, creado.colores));
     await db.delete(brands).where(inArray(brands.id, creado.marcas));
-    await db.delete(categories).where(inArray(categories.id, creado.categorias));
+    await db
+      .delete(categories)
+      .where(inArray(categories.id, creado.categorias));
   });
 
   /** Solo nuestros productos, por el sufijo del nombre. */
   const ids = async (f: Partial<Filtros> = {}) =>
-    (
-      await filas(
-        con({ q: marca, marca: "", categoria: "", ...f }),
-        3,
-      )
-    ).map((p) => p.id);
+    (await filas(con({ q: marca, marca: "", categoria: "", ...f }), 3)).map(
+      (p) => p.id,
+    );
 
   describe("el stock sale de la suma de las variantes", () => {
     test("total, reservado y disponible por producto (RF-15): 10, 2 y 8", async () => {
@@ -341,9 +357,7 @@ describe("contra la base", () => {
     });
 
     test("buscar por el nombre de la marca trae sus tres productos", async () => {
-      expect(
-        await filas(con({ q: `lojitech ${marca}` }), 3),
-      ).toHaveLength(3);
+      expect(await filas(con({ q: `lojitech ${marca}` }), 3)).toHaveLength(3);
     });
 
     test("la descripción también se busca, y el guion de «USB-C» sobrevive", async () => {
@@ -363,9 +377,9 @@ describe("contra la base", () => {
     });
 
     test("el guion bajo tampoco es un comodín", async () => {
-      expect(
-        await filas(con({ q: "cabl_", marca: marcaA }), 3),
-      ).toHaveLength(0);
+      expect(await filas(con({ q: "cabl_", marca: marcaA }), 3)).toHaveLength(
+        0,
+      );
     });
   });
 
@@ -428,16 +442,26 @@ describe("contra la base", () => {
 
     test("por nombre, de la A a la Z, y al revés", async () => {
       expect(await nombres({ orden: "nombre", dir: "asc" })).toEqual([
-        "Auricular", "Cable", "Monitor", "Mouse", "Teclado",
+        "Auricular",
+        "Cable",
+        "Monitor",
+        "Mouse",
+        "Teclado",
       ]);
       expect(await nombres({ orden: "nombre", dir: "desc" })).toEqual([
-        "Teclado", "Mouse", "Monitor", "Cable", "Auricular",
+        "Teclado",
+        "Mouse",
+        "Monitor",
+        "Cable",
+        "Auricular",
       ]);
     });
 
     test("por precio, en los dos sentidos", async () => {
       expect((await nombres({ orden: "precio", dir: "asc" }))[0]).toBe("Cable");
-      expect((await nombres({ orden: "precio", dir: "desc" }))[0]).toBe("Monitor");
+      expect((await nombres({ orden: "precio", dir: "desc" }))[0]).toBe(
+        "Monitor",
+      );
     });
 
     test("por stock disponible: primero lo que no queda", async () => {
@@ -447,8 +471,12 @@ describe("contra la base", () => {
     });
 
     test("por fecha de carga, primero lo último", async () => {
-      expect((await nombres({ orden: "fecha", dir: "desc" }))[0]).toBe("Monitor");
-      expect((await nombres({ orden: "fecha", dir: "asc" }))[0]).toBe("Auricular");
+      expect((await nombres({ orden: "fecha", dir: "desc" }))[0]).toBe(
+        "Monitor",
+      );
+      expect((await nombres({ orden: "fecha", dir: "asc" }))[0]).toBe(
+        "Auricular",
+      );
     });
 
     test("destacados primero, y después por nombre", async () => {
