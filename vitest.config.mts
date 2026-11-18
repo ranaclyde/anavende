@@ -59,5 +59,25 @@ export default defineConfig({
     // 5 s por omisión, y un timeout corto se lee como «el test falla».
     testTimeout: 20_000,
     hookTimeout: 20_000,
+
+    /**
+     * Coverage, con `npm run test:coverage` (lo corre el gancho de pre-push).
+     *
+     * Se mide el código de la aplicación, no los scripts ni los tests. **Sin
+     * mínimo exigido**, por ahora: primero ver dónde estamos. El resumen sale
+     * en la terminal y el detalle en `coverage/index.html`, que no se
+     * commitea.
+     */
+    coverage: {
+      provider: "v8",
+      include: [
+        "app/**/*.{ts,tsx}",
+        "components/**/*.{ts,tsx}",
+        "db/**/*.ts",
+        "lib/**/*.{ts,tsx}",
+        "modules/**/*.{ts,tsx}",
+      ],
+      reporter: ["text-summary", "html"],
+    },
   },
 });

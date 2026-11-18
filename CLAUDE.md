@@ -23,7 +23,9 @@ lineamientos.
 - **Ramas:** Conventional Branch — `feat/`, `fix/`, `hotfix/`, `chore/` +
   descripción en español sin tildes + ID de tarea si hay (`feat/f3-7-home`).
 - **Antes de commitear algo que lea la base:** `DATABASE_URL= npx next build`.
-  Coolify compila sin base y `next dev` no lo muestra.
+  Coolify compila sin base y `next dev` no lo muestra. El gancho de pre-push
+  de Husky lo corre igual, con los tipos y los tests; con `--no-verify`, a
+  mano.
 - **Accesibilidad:** lo que toque una pantalla pasa, antes del PR, la lista
   de `DESIGN.md` («Accesibilidad: lo que se revisa en cada tarea») y
   `tests/e2e/accesibilidad.spec.ts`; una página nueva se suma a `PANTALLAS`.

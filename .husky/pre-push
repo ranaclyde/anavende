@@ -1,0 +1,45 @@
+# Lo que antes de cada push se corría a mano: tipos, tests con coverage y el
+# build sin base. Un push a `main` despliega, así que esto frena el problema
+# antes de que llegue. Para un apuro: `git push --no-verify`.
+#
+# Corre sobre la copia de trabajo, no solo sobre lo commiteado: si quedó algo
+# sin commitear, se verifica con eso adentro.
+
+# Si lo que se va a subir es solo documentación, no hay nada que compilar.
+base=$(git merge-base HEAD origin/main 2>/dev/null)
+if [ -n "$base" ]; then
+  cambios=$(git diff --name-only "$base" HEAD)
+  if [ -n "$cambios" ] && ! printf '%s\n' "$cambios" | grep -qvE '\.md$'; then
+    echo "pre-push: solo cambió documentación, no corro nada."
+    exit 0
+  fi
+fi
+
+# Los tests corren contra el Postgres del stack local (`vitest.config.mts`).
+# Sin él fallan todos, y con un error que no dice por qué.
+if ! node -e '
+  const s = require("node:net").connect(54322, "127.0.0.1");
+  s.on("connect", () => process.exit(0));
+  s.on("error", () => process.exit(1));
+'; then
+  echo ""
+  echo "pre-push: el stack local de Supabase está apagado, y los tests lo necesitan."
+  echo "  npm run dev:stack            # levantalo y volvé a hacer el push"
+  echo "  git push --no-verify         # o subilo sin verificar"
+  echo ""
+  exit 1
+fi
+
+set -e
+
+echo "pre-push: tipos"
+npm run --silent typecheck
+
+echo "pre-push: tests con coverage"
+npm run --silent test:coverage
+
+# En su propia carpeta y no en `.next`: un build ahí con `next dev` levantado
+# ya le pisó la caché al servidor de desarrollo (`distDir` en
+# `next.config.ts`).
+echo "pre-push: build sin base"
+NEXT_DIST_DIR=.next-verificacion DATABASE_URL= npx next build

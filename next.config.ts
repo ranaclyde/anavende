@@ -171,6 +171,15 @@ const nextConfig: NextConfig = {
    */
   output: "standalone",
 
+  /**
+   * Solo el gancho de pre-push lo cambia, para compilar en
+   * `.next-verificacion`. Un `next build` sobre `.next` con `next dev`
+   * levantado le pisó la caché al servidor de desarrollo el 2026-09-18, ya con
+   * Next 16 (PROGRESO, «Una hora perdida…»). En el `Dockerfile` no está
+   * definida y queda `.next`, que es donde la imagen va a buscar el build.
+   */
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+
   // `x-powered-by: Next.js` le dice a cualquiera con qué está hecho el sitio,
   // que es lo primero que se busca para saber qué vulnerabilidad probar.
   poweredByHeader: false,

@@ -60,3 +60,4 @@ public/emails/vista-previa/
 # Playwright
 /test-results/
 /playwright-report/
+/.next-verificacion/

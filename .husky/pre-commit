@@ -1,0 +1,3 @@
+# Formato y lint de lo que entra en el commit (`lint-staged.config.mjs`).
+# Para un apuro: `git commit --no-verify`.
+npx lint-staged

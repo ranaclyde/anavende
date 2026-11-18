@@ -52,6 +52,10 @@ const reglasDeDinero = {
 const eslintConfig = defineConfig([
   globalIgnores([
     ".next/**",
+    // El build del gancho de pre-push (`distDir` en `next.config.ts`).
+    ".next-verificacion/**",
+    // El informe de `npm run test:coverage`.
+    "coverage/**",
     "node_modules/**",
     "next-env.d.ts",
     "db/migrations/**",
