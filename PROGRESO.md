@@ -3891,34 +3891,48 @@ un PR contra `main`, y hacer el merge desde la web despliega sin pasar por
 `DATABASE_URL= npx next build`. Mientras no haya un check que compile antes del
 merge, una alerta se resuelve a mano en local, como cualquier otro cambio.
 
-**Husky, para después.** Pedido tuyo: formatear el código al commitear y correr
-los tests con coverage. No necesita GitHub Actions —corre en tu máquina, antes
-de que el push salga—, y eso encaja mejor que un check en GitHub con un push
-que despliega, porque frena el problema antes de que llegue a `main`. Lo que
-hay que resolver al armarlo:
+**~~Husky, para después.~~ Hecho el 2026-11-18, decisión tuya** («hacelo
+como te parezca»). Pedido original: formatear el código al commitear y correr
+los tests con coverage, en tu máquina y antes de que el push salga, sin GitHub
+Actions: con un push a `main` que despliega, frena el problema antes de que
+llegue. Cómo quedó, punto por punto de lo que había que resolver:
 
-- ~~**Falta el formateador.**~~ **Prettier 3.9.10, desde el 2026-11-18**,
-  fijo en `package.json` y con su configuración por omisión, que es la que el
-  código ya seguía. `npm run format` y `npm run format:revisar` cubren
-  `ts`, `tsx`, `mts`, `mjs`, `cjs`, `js` y `css`; los Markdown quedan
-  afuera a propósito, porque reacomodaría las tablas de este archivo. Prettier
-  respeta `.gitignore`, así que no hizo falta un `.prettierignore`. Los 59
-  archivos que no seguían el formato se pasaron en un PR solo de formato.
-  Falta sumar `lint-staged` para que el *pre-commit* toque solo los archivos
-  que cambiaron y no el repositorio entero.
-- **El coverage pide `@vitest/coverage-v8`**, que Vitest no trae.
-- **Qué va en cada gancho.** En *pre-commit*, formato y lint de lo cambiado:
-  tiene que ser rápido o se vuelve una molestia en cada commit. En *pre-push*,
-  `typecheck`, los tests con coverage y el build sin base, que hoy se corre a
-  mano.
-- **Los tests necesitan Postgres de verdad** (`vitest.config.mts`: corren
-  contra el stack local). Un *pre-push* con `npm test` falla cada vez que
-  Supabase local no está levantado, y se cruza con el pendiente de arriba —los
-  tests y el desarrollo comparten base—. Hay que decidir si los tests entran en
-  el gancho o no.
-- **El script `prepare` de Husky corre en cada instalación**, incluida la del
-  `Dockerfile`. Ahí tiene que no hacer nada, o rompe el despliegue: mirar el
-  primer despliegue después de agregarlo.
+- **El formateador: Prettier 3.9.10** (PR #157), fijo en `package.json` y con
+  su configuración por omisión, que es la que el código ya seguía. `npm run
+  format` y `format:revisar` cubren `ts`, `tsx`, `mts`, `mjs`, `cjs`, `js` y
+  `css`; los Markdown quedan afuera a propósito, porque reacomodaría las tablas
+  de este archivo. Respeta `.gitignore`, así que no hizo falta un
+  `.prettierignore`. Los 59 archivos que no seguían el formato se pasaron en
+  ese PR, solo de formato.
+- **Pre-commit: `lint-staged`** (`lint-staged.config.mjs`), `eslint --fix` y
+  después `prettier --write`, solo sobre los archivos del commit.
+- **Pre-push** (`.husky/pre-push`): `typecheck` y `DATABASE_URL= npx next
+  build`, frenando en el primero que falle. **Si lo que se sube es solo
+  Markdown, no corre nada.**
+- **Los tests no entran en el gancho, decisión tuya del 2026-11-18.** Se
+  probaron adentro: eran unos 50 s de los 1:24 de cada push, y pedían el
+  stack local levantado. El build es lo que protege el despliegue; los tests
+  se corren antes de abrir cada PR.
+- **Coverage con `@vitest/coverage-v8` 5.0.5**, la versión de Vitest, con
+  `npm run test:coverage` y **sin mínimo exigido**. Mide **solo `modules`,
+  `lib` y `db`**: **71,7 % de líneas** (2.325 de 3.242). Contando también
+  `app` y `components` daba 28,8 %, porque las pantallas las prueba Playwright
+  y esa cuenta no lo ve: un 0 % que no quería decir «sin probar».
+- **El `prepare` en el `Dockerfile` no rompe nada**: sin `.git`, Husky escribe
+  «.git can't be found» y sale con 0. Probado con `docker build --target deps`,
+  la etapa del `npm ci`. Igual conviene mirar el primer despliegue.
+- **El build del gancho va a `.next-verificacion`, no a `.next`.** La guía de
+  Next 16 dice que dev y build ya no se pisan, pero la hora perdida de la nota
+  de más abajo fue el 2026-09-18 con Next 16.3.4, que ya separaba
+  `.next/dev`: no alcanza. `distDir` en `next.config.ts` lee
+  `NEXT_DIST_DIR`, que solo define el gancho; en el `Dockerfile` queda
+  `.next`. Esa carpeta se sumó al `include` de `tsconfig.json` —si no, Next
+  lo reescribe en cada build—, a `.gitignore` y a los ignorados de ESLint.
+- **Y sin el token de Sentry.** Con el de `.env.local`, un `next build` local
+  crea un release en Sentry y sube los mapas de un build que no se despliega;
+  pasaba también con el build a mano, y con el gancho sería en cada push. El
+  gancho lo vacía (`SENTRY_AUTH_TOKEN=`), igual que `DATABASE_URL=`, y el
+  plugin avisa que no sube nada. Coolify tiene el suyo y sigue subiendo.
 
 **El panel tiene dos diseños conviviendo, y el ancho es lo que se nota
 primero** (revisión del 2026-09-18, pedido tuyo). Las 19 pantallas de

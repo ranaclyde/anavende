@@ -33,7 +33,8 @@ DATABASE_URL= npx next build
 ```
 
 La compilación de producción no tiene base, y `next dev` no muestra ese
-error.
+error. Desde el 2026-11-18 lo corre el gancho de pre-push de Husky, junto con
+los tipos (README, «Scripts»).
 
 **Lo que sostiene la compilación en el servidor**, y no se quita: el swap del
 servidor APP y Coolify configurado con **una construcción simultánea**. Dos

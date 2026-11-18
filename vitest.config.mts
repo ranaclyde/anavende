@@ -59,5 +59,21 @@ export default defineConfig({
     // 5 s por omisión, y un timeout corto se lee como «el test falla».
     testTimeout: 20_000,
     hookTimeout: 20_000,
+
+    /**
+     * Coverage, con `npm run test:coverage`.
+     *
+     * **Solo la lógica: `modules`, `lib` y `db`**, que es lo que estos tests
+     * prueban. Las pantallas —`app` y `components`— las prueba Playwright
+     * (`tests/e2e/`), que esta cuenta no ve: contarlas daba un 0 % que no
+     * quería decir «sin probar», y el promedio bajaba al 29 % (2026-11-18).
+     * **Sin mínimo exigido**, por ahora. El resumen sale en la terminal y el
+     * detalle en `coverage/index.html`, que no se commitea.
+     */
+    coverage: {
+      provider: "v8",
+      include: ["db/**/*.ts", "lib/**/*.{ts,tsx}", "modules/**/*.{ts,tsx}"],
+      reporter: ["text-summary", "html"],
+    },
   },
 });

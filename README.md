@@ -110,16 +110,28 @@ es lo que se quiere; contra cualquier otra cosa, no.
 | `npm run dev`                          | La aplicación en modo desarrollo                                                                                                           |
 | `npm run dev:stack` / `dev:stack:stop` | Levanta o apaga el stack local de Supabase                                                                                                 |
 | `npm test`                             | Los tests de Vitest. Corren solo contra el stack local, y se niegan a arrancar si `.env.test` apunta a otro lado (ver `.env.test.example`) |
+| `npm run test:coverage`                | Los mismos tests, con el resumen de coverage en la terminal y el detalle en `coverage/index.html`                                          |
 | `npm run e2e`                          | Los tests de Playwright. Levantan `npm run dev` si no está corriendo                                                                       |
 | `npm run lint` / `typecheck`           | ESLint y el chequeo de tipos                                                                                                               |
+| `npm run format` / `format:revisar`    | Formatea con Prettier el código (no los Markdown), o solo revisa que esté formateado                                                       |
 | `npm run db:generate`                  | Genera una migración a partir de cambios en `db/`                                                                                          |
 | `npm run db:migrate`                   | Aplica las migraciones pendientes                                                                                                          |
 | `npm run db:reset`                     | Recrea la base local desde cero y verifica el esquema                                                                                      |
 | `npm run seed` / `seed:limpiar`        | Siembra el catálogo de prueba, o borra solo lo que sembró                                                                                  |
 | `npm run email`                        | Convierte las plantillas de `lib/email/` en el HTML que usa Auth                                                                           |
 
-Antes de commitear algo que lea la base, `DATABASE_URL= npx next build`:
-producción compila sin base, y `next dev` no muestra ese error.
+**Los ganchos de Git (Husky)** se instalan solos con `npm install`:
+
+- **Al commitear**, ESLint y Prettier sobre los archivos que entran en el
+  commit (`lint-staged.config.mjs`).
+- **Al hacer push**, el chequeo de tipos y `DATABASE_URL= npx next build`:
+  producción compila sin base, y `next dev` no muestra ese error. Un push que
+  solo cambia Markdown no corre nada.
+
+Los tests no van en el gancho: tardan casi un minuto y necesitan el stack
+local. Se corren antes de abrir cada PR.
+
+Para un apuro, `--no-verify` saltea cualquiera de los dos.
 
 ## Cómo llega a producción
 
