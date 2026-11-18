@@ -243,8 +243,8 @@ desactiva y se avisa. Una variante con stock reservado no se puede quitar.
   `/completar-perfil`, porque Google no da el teléfono; el nombre y el
   apellido llegan precargados, por separado, como los tiene en Google. Si ya había una cuenta
   con ese email, se vinculan solo si el email estaba confirmado. El botón
-  aparece solo si GoTrue tiene Google prendido; Facebook, igual, cuando se
-  configure.
+  aparece solo si GoTrue tiene Google prendido. Facebook salió del MVP el
+  2026-11-18: si se suma, aparece solo al prenderlo, sin tocar la tienda.
 - **Cuentas sin confirmar:** a las 48 horas se borran solas, con una tarea
   programada (`scripts/limpiar-cuentas.mjs`), para que nadie deje tomado el
   email de otra persona. No se borran las que invitó Ana desde el panel ni

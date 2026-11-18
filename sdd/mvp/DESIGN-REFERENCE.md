@@ -1639,6 +1639,9 @@ ofrece «Ver el catálogo» y muestra el cierre.
 
 ### 7.7 Servicio técnico
 
+> **Fuera del MVP desde el 2026-11-18, decisión tuya** (FS FA-24). Queda
+> escrita para cuando se haga.
+>
 > **Agregada el 2026-11-17, pedido tuyo** (FS RF-42, F3.12). El contenido, los
 > servicios y la consulta están en la especificación funcional; acá va cómo se
 > ve y cómo se mueve.

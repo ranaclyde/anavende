@@ -15,7 +15,7 @@
 
 AnaVende es una tienda online de reventa de productos informáticos (mouses, teclados, auriculares, pasta térmica, cables, memorias, entre otros).
 
-Ana también hace **servicio técnico** de PC y notebooks; la tienda lo cuenta en una página aparte que lleva la consulta a WhatsApp (RF-42), por fuera del catálogo.
+Ana también hace **servicio técnico** de PC y notebooks. La página que lo cuenta (RF-42) quedó especificada pero **salió del MVP el 2026-11-18** (FA-24): se hace después.
 
 El MVP **no procesa pagos online**. La web funciona como catálogo, carrito y generador de órdenes; el cobro y la coordinación del envío se cierran por WhatsApp fuera del sistema. El objetivo del producto es doble:
 
@@ -107,7 +107,7 @@ Ver detalle en §12 (Fuera de alcance).
 7. **Sección de productos en oferta** (con descuento activo).
 8. **Franja de medios de pago**: **sólo los que tienen logo cargado** (RF-19), en una sola hilera que gira. Va abajo y no arriba: es información de respaldo, no la propuesta de la pantalla.
 9. **Sección de más categorías**, con un botón **«Ver todas»** que lleva a la página de categorías (RF-35).
-10. **Franja de servicio técnico** (RF-42, 2026-11-17): una línea —«¿Tu PC o tu notebook necesita una mano?»— y el enlace a `/servicio-tecnico`. El lugar exacto en la home se ajusta en el repaso de diseño de F3.12; lo que no cambia es que es una franja y no una sección con productos.
+10. ~~**Franja de servicio técnico**~~ — **fuera del MVP desde el 2026-11-18, con RF-42 (FA-24)**; lo que sigue queda para cuando se haga. (RF-42, 2026-11-17): una línea —«¿Tu PC o tu notebook necesita una mano?»— y el enlace a `/servicio-tecnico`. El lugar exacto en la home se ajusta en el repaso de diseño de F3.12; lo que no cambia es que es una franja y no una sección con productos.
 
 **Lo que no entra, y por qué:**
 - **«Vistos recientemente»** es RF-33 y se construye en F8.4. Su lugar en la pantalla está previsto en §7.1; hasta entonces no se dibuja.
@@ -181,7 +181,7 @@ Ver detalle en §12 (Fuera de alcance).
 - **Dos datos debajo del precio**, un renglón cada uno: que el producto es nuevo, resaltado, y viene en su caja original, y la zona de entrega (RN-10). El pago se explica en «¿Cómo sigue después de comprar?» (cambiado el 2026-11-02).
 - **Bloque «¿Cómo sigue después de comprar?»** con los tres pasos —armar el pedido o escribir por WhatsApp; confirmación de stock, precio y forma de pago; coordinación de la entrega o el retiro— y el enlace a Legales (garantías y devoluciones) adentro.
 - **Guardar** (favoritos, RF-10) y **Compartir**, juntos debajo de las acciones de compra.
-- **«¿Querés que te lo instalemos?»** (RF-42, 2026-11-17), solo si la categoría del producto lo tiene prendido (RF-18): un enlace a la consulta del servicio técnico, con el servicio y el producto ya cargados.
+- ~~**«¿Querés que te lo instalemos?»**~~ — **fuera del MVP desde el 2026-11-18, con RF-42 (FA-24)**. (RF-42, 2026-11-17), solo si la categoría del producto lo tiene prendido (RF-18): un enlace a la consulta del servicio técnico, con el servicio y el producto ya cargados.
 
 **Acciones:**
 
@@ -274,6 +274,11 @@ Los dos salen de la misma función y del mismo número de configuración (RF-20)
 ---
 
 ### RF-42 — Servicio técnico
+
+> **Fuera del MVP desde el 2026-11-18, decisión tuya (FA-24).** La
+> especificación queda entera para cuando se haga; nada de esto se construye
+> en el MVP, ni la página, ni la franja de la home, ni el enlace de la ficha,
+> ni «Ofrece instalación» en las categorías.
 
 > **El número es el siguiente libre, no la posición** (ver RF-34).
 
@@ -398,13 +403,13 @@ cuenta ni carrito, y el pie sin los enlaces de la tienda.
 |---|---|
 | Email + contraseña | Requiere email verificado para confirmar órdenes (RF-05) |
 | **Google** | OAuth. El email que devuelve el proveedor se considera verificado |
-| **Facebook** | OAuth. Si el proveedor no devuelve email, se lo pide antes de completar el alta |
+| ~~**Facebook**~~ | **Fuera del MVP desde el 2026-11-18** (FA-23): con Google alcanza. Si se suma, el proveedor puede no devolver email, y se lo pide antes de completar el alta |
 
 **Criterios de aceptación:**
-- [ ] Login con email + contraseña, con **Google** y con **Facebook**, disponibles tanto en la pantalla de registro como en la de inicio de sesión.
-- [ ] Si alguien se registra con email/contraseña y luego entra con Google o Facebook usando **el mismo email**, se vincula el proveedor a la cuenta existente en lugar de crear una cuenta duplicada.
+- [ ] Login con email + contraseña y con **Google**, disponibles tanto en la pantalla de registro como en la de inicio de sesión.
+- [ ] Si alguien se registra con email/contraseña y luego entra con Google usando **el mismo email**, se vincula el proveedor a la cuenta existente en lugar de crear una cuenta duplicada.
 - [ ] La vinculación automática ocurre **solo si el email de la cuenta original está verificado**. Si no lo está, el ingreso social se rechaza con un mensaje que pide verificar primero el email. Es una protección deliberada: sin ella, alguien podría registrarse con el email de otra persona y quedarse con su cuenta cuando esa persona entre con Google.
-- [ ] Tras el primer ingreso por Google o Facebook, si falta el **teléfono** se lo pide para completar el perfil antes de poder confirmar una orden.
+- [ ] Tras el primer ingreso por Google, si falta el **teléfono** se lo pide para completar el perfil antes de poder confirmar una orden.
 - [ ] Una cuenta creada por proveedor social puede definir una contraseña más adelante desde «Mis datos».
 - [ ] «Olvidé mi contraseña» envía email con enlace de un solo uso y vencimiento.
 - [ ] Mensajes de error genéricos que no revelan si un email existe.
@@ -787,7 +792,7 @@ lo que ya estaba subido no cambia.
 - [ ] Una categoría se puede marcar como **destacada**: pasa al frente en los accesos rápidos de la home (RF-01), en la fila de categorías del encabezado (`DESIGN-REFERENCE.md` §5.1) y en el filtro por categoría del listado (RF-02). Entre destacadas se ordenan por nombre.
 - [ ] **Destacar no publica.** Una categoría destacada e inactiva no aparece en ningún lado: `isActive` sigue siendo la única verdad sobre la visibilidad, y destacar sólo decide el orden entre las que ya se ven.
 - [ ] No hay tope de destacadas —es una decisión de la vendedora—, pero el diálogo dice qué hace destacar y advierte que destacarlas todas equivale a no destacar ninguna.
-- [ ] Una categoría se puede marcar como **«Ofrece instalación»** (RF-42, 2026-11-17): sus fichas llevan «¿Querés que te lo instalemos?». Apagada por defecto. Como destacar, no publica nada: solo decide si ese enlace aparece.
+- [ ] ~~Una categoría se puede marcar como **«Ofrece instalación»**~~ — **fuera del MVP desde el 2026-11-18, con RF-42 (FA-24)**. (RF-42, 2026-11-17): sus fichas llevan «¿Querés que te lo instalemos?». Apagada por defecto. Como destacar, no publica nada: solo decide si ese enlace aparece.
 - [ ] La **dirección** (el `slug`) se deriva del nombre al crear el ítem y **no cambia al renombrarlo**: es la URL pública, y cambiarla rompería en silencio todo enlace ya compartido. No es un campo del formulario —«slug» es jerga (`DESIGN-REFERENCE.md` §10)—; se muestra para leer.
 
 > **Por qué desactivar exige que no quede nada activo usándolo.** La
@@ -1331,7 +1336,7 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | FA-07 | Notificaciones por email de cambios de estado y de bloqueo | — |
 | FA-08 | Reseñas, valoraciones y preguntas de productos | — |
 | FA-09 | Cupones, promociones por volumen o combos | Sólo descuento por producto |
-| FA-10 | Login social más allá de Google y Facebook (Apple, GitHub, etc.) | Google y Facebook **sí** entran en el MVP (RF-06) |
+| FA-10 | Login social más allá de Google (Apple, GitHub, etc.) | Google **sí** entra en el MVP (RF-06). Facebook, desde el 2026-11-18, es FA-23 |
 | FA-11 | Multi-idioma y multi-moneda | Sólo es-AR / ARS |
 | FA-12 | Rol operador y permisos granulares | Sólo `admin` y `customer` |
 | FA-13 | Importación/exportación masiva de catálogo | La exportación existe sólo en reportes (RF-28) |
@@ -1343,6 +1348,8 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | FA-19 | Recomendaciones personalizadas por perfil o historial de compras | Más allá de «Vistos recientemente» (RF-33) |
 | FA-21 | **Imagen de categoría**, chica, como referencia visual en un listado de categorías. **Entró al MVP el 2026-10-05 (F2.9)**: se carga en el panel y se ve en «Más categorías» de la home y, desde el 2026-10-21, en la página de categorías (RF-35) | Hoy la categoría es sólo texto en las tres superficies donde aparece —chips del encabezado, accesos de la portada, filtro del listado—. Una imagen chica al lado del nombre ayuda a reconocerla de un vistazo; **no** es una portada ni una cabecera, y por eso no necesita el tamaño `detail` de §9.2: con `thumb` y `card` alcanza. Es **una** imagen por categoría, así que va en una columna de `categories` y no en una tabla aparte — `variant_images` existe porque un producto tiene hasta cinco y hay que ordenarlas. **La marca no lleva otra imagen**: su logo (RF-18) ya cubre lo que necesita. La condición para que esto se vea bien: el listado tiene que quedar prolijo **con categorías sin imagen mezcladas**, porque va a haberlas — el día que se agregue nadie va a cargar las diez de una sentada |
 | FA-22 | **Gestión del servicio técnico**: turnos, seguimiento del estado de una reparación, precios por servicio, venta de licencias sueltas | El servicio técnico de RF-42 es una página que lleva la consulta a WhatsApp, como la compra del visitante (RF-04). Lo demás se coordina por WhatsApp, y Ana prefiere ver el equipo antes de dar un precio |
+| FA-23 | **Login con Facebook** (2026-11-18) | Salió del MVP por decisión tuya: con Google y email alcanza. Estaba en RF-06 desde el 2026-08-30 y nunca se configuró. El código ya muestra solo los proveedores que GoTrue tiene prendidos (`modules/users/proveedores.ts`), así que sumarlo después es crear la app en Meta y prenderlo, sin tocar la tienda |
+| FA-24 | **Página de servicio técnico** (RF-42, 2026-11-18) | Salió del MVP por decisión tuya, el día después de especificarla y sin código escrito. RF-42, DR §7.7 y TS §12.1 quedan como están, para cuando se haga. Con ella salen la franja de la home, el enlace «¿Querés que te lo instalemos?» de la ficha y «Ofrece instalación» en las categorías |
 | FA-20 | **Etiquetas de producto** (*tags*) y filtro por etiqueta | Un producto pertenece a **una** categoría y `categories` no tiene jerarquía, así que hoy la única forma de subdividir una categoría grande —«Cables» en HDMI, VGA, USB-C, energía— es el nombre del producto, ayudado por la búsqueda tolerante de RF-02. Alcanza mientras la categoría entre en una página (24 productos). Cuando deje de entrar, la respuesta son etiquetas —muchas por producto, transversales a la categoría— y no partir la categoría en hermanas: seis «Cables …» al mismo nivel que «Teclados» arruinan la fila de categorías del encabezado, que es la navegación principal |
 
 ---
@@ -1394,10 +1401,10 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 |---|---|---|
 | Recomendaciones por categorías relacionadas y similares | RF-31, RF-32 | Pedido posterior. Sube el ticket promedio a bajo costo de implementación |
 | Vistos recientemente | RF-33 | Complemento barato de las recomendaciones |
-| Login con Google y Facebook | RF-06 | Reducir fricción de registro |
+| Login con Google (Facebook salió el 2026-11-18, FA-23) | RF-06 | Reducir fricción de registro |
 | Configuración del sitio (WhatsApp, emails, textos) | RF-20 | Evitar valores fijos en el código |
 | Exportación de reportes a Excel | RF-28 | Control offline del negocio |
-| Página de servicio técnico | RF-42 | Ana también arregla y arma equipos, y la tienda no lo decía |
+| Página de servicio técnico (salió el 2026-11-18, FA-24) | RF-42 | Ana también arregla y arma equipos, y la tienda no lo decía |
 
 ---
 
@@ -1442,3 +1449,5 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-11-16 | Descargar las fotos de un producto en un zip (RF-41), en el MVP | Pedido tuyo: usar las fotos fuera de la tienda. En JPG y con una carpeta por color, decisiones tuyas del mismo día; tal como están, con la marca de agua si la tienen |
 | 2026-11-13 | Promociones de cuotas por medio de pago (RF-40), en el MVP | Pedido tuyo: Go Cuotas y Naranja X ofrecen cuotas sin interés por temporada y la tienda no lo decía. No es FA-09: el precio no cambia. Solo recargos fijos, solo en la ficha y para todo producto que alcance el monto mínimo |
 | 2026-11-17 | Servicio técnico (RF-42), en el MVP: `/servicio-tecnico`, aparte del catálogo | Pedido tuyo. Solo presupuesto, con el diagnóstico sin cargo; la consulta es un formulario que arma el mensaje de WhatsApp y no guarda nada; el taller se nombra por la ciudad; el equipo se trae o se coordina el traslado; Windows y Office como instalación con licencia original, sin claves sueltas; 5 días de garantía. Sigue abierta con la tienda en mantenimiento. Se llega por una franja en la home, el pie y la ficha de las categorías que lo prenden. Las preguntas frecuentes quedan como idea |
+| 2026-11-18 | Login con Facebook, fuera del MVP (FA-23) | Decisión tuya: con Google y email alcanza. Nunca se configuró, y el código ya lo deja apagado mientras GoTrue no lo tenga prendido |
+| 2026-11-18 | Servicio técnico (RF-42), fuera del MVP (FA-24) | Decisión tuya, un día después de especificarlo y sin código escrito. La especificación queda para cuando se haga |

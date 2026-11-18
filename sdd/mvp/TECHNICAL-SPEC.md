@@ -191,11 +191,11 @@ Se adopta la **opción C** con una precisión importante: **ambos servidores est
                           │
             ┌─────────────┼─────────────┐
             ▼             ▼             ▼
-        Resend         Sentry      Google / Facebook
-        (emails)      (errores)         (OAuth)
+        Resend         Sentry      Google
+        (emails)      (errores)   (OAuth)
 ```
 
-**Lo que sale del sistema hacia afuera:** emails vía Resend, errores vía Sentry, OAuth con Google y Facebook, y enlaces `wa.me` que abre el propio navegador del usuario. **WhatsApp no tiene integración de servidor**: son enlaces construidos en el cliente. No hay API de ninguna empresa de mensajería (FA-02): la entrega se coordina por WhatsApp (RN-10).
+**Lo que sale del sistema hacia afuera:** emails vía Resend, errores vía Sentry, OAuth con Google, y enlaces `wa.me` que abre el propio navegador del usuario. **WhatsApp no tiene integración de servidor**: son enlaces construidos en el cliente. No hay API de ninguna empresa de mensajería (FA-02): la entrega se coordina por WhatsApp (RN-10).
 
 ---
 
@@ -321,7 +321,7 @@ CREATE TYPE stock_movement_type AS ENUM (
 
 ### 5.3 Modelo de usuario
 
-La identidad vive en `auth.users`, gestionada por GoTrue: email, contraseña con hash, estado de verificación, identidades de Google y Facebook, y `banned_until`. **Ese esquema no se toca ni se lee con Drizzle.**
+La identidad vive en `auth.users`, gestionada por GoTrue: email, contraseña con hash, estado de verificación, identidades de Google, y `banned_until`. **Ese esquema no se toca ni se lee con Drizzle.**
 
 Todo lo que es propio de AnaVende vive en una tabla nuestra:
 
@@ -1366,6 +1366,10 @@ Los IDs de los últimos 10 productos vistos se guardan en una **cookie** del nav
 
 ### 12.1 La página de servicio técnico (RF-42)
 
+> **Fuera del MVP desde el 2026-11-18, decisión tuya** (FS FA-24). Queda
+> escrita para cuando se haga; la columna `offers_installation` de §5 tampoco
+> se crea hasta entonces.
+
 - **El contenido vive en el código**, en un módulo propio (`modules/servicio-tecnico/`): los servicios, los pasos, la garantía y las fotos. Cambiarlo es un PR. Si Ana termina cambiándolo seguido, se evalúa pasarlo al panel; no antes.
 - **La consulta no tiene servidor.** El formulario arma el mensaje en el navegador y abre `wa.me` con la función de `lib/whatsapp.ts`; no hay Server Action, ni tabla, ni límite por IP, porque no se guarda ni se manda nada desde la tienda. La validación (equipo y servicio obligatorios, tope del detalle) es de la interfaz, con un esquema zod del módulo.
 - **El servicio elegido entra por la dirección** (`?servicio=<id>`, y `&producto=` desde la ficha), así los botones de cada servicio y el enlace de la ficha son enlaces comunes y la consulta queda compartible. Un `servicio` que no existe se ignora.
@@ -1384,7 +1388,7 @@ Los IDs de los últimos 10 productos vistos se guardan en una **cookie** del nav
 | Contraseñas con hash | **Rol** (`admin` / `customer`) |
 | Verificación de email | **Teléfono obligatorio** |
 | Recuperación de contraseña | **Bloqueo con motivo** y su exposición al ingresar (RF-27) |
-| OAuth con Google y Facebook | Reglas de negocio: email verificado para confirmar órdenes |
+| OAuth con Google | Reglas de negocio: email verificado para confirmar órdenes |
 | Vinculación automática de identidades | Alta de usuarios por la administradora (RF-26) |
 | `banned_until`, que impide el ingreso | El motivo, que Supabase Auth **no** almacena |
 
@@ -1438,7 +1442,7 @@ Consecuencia honesta: **la verificación local ahorra la ida a la red en las gua
 
 El paso 3 es una **compensación explícita**: sin ella quedaría una identidad sin perfil, que es un usuario que puede entrar y con el que la aplicación no sabe qué hacer.
 
-**Alta por Google o Facebook** (RF-06) — acá GoTrue crea la identidad en el callback, antes de que intervengamos. Por eso:
+**Alta por Google** (RF-06) — acá GoTrue crea la identidad en el callback, antes de que intervengamos. Por eso:
 
 ```
 Callback de OAuth → ¿existe user_profiles para este id?
@@ -1692,7 +1696,7 @@ Mientras F0.3 no esté hecha no hay Supabase al que apuntar, así que el desarro
 | La lógica de stock y de órdenes (§8) | Que los emails salgan de verdad: en local los captura Mailpit, en producción hacen falta las credenciales SMTP de Resend (F0.11) |
 | La Admin API de Auth (§13.5) | ~~El *Send Email Hook* auto-hospedado (F0.13, V3c)~~ — descartado el 2026-10-21 (§13.6) |
 | El envoltorio de Server Actions (§6.2) | Los backups y su restauración (§19, F0.10) |
-| Google y Facebook, con credenciales reales de OAuth | El consumo de memoria de sharp bajo carga (F10.6, R3) |
+| Google, con credenciales reales de OAuth | El consumo de memoria de sharp bajo carga (F10.6, R3) |
 
 **Reglas que se derivan de esto:**
 
@@ -1708,7 +1712,7 @@ Mientras F0.3 no esté hecha no hay Supabase al que apuntar, así que el desarro
 | `DATABASE_URL` | Postgres del servidor DATA, **por IP privada** |
 | `SUPABASE_SERVICE_ROLE_KEY` | Admin API de Auth y escritura en Storage. **Solo servidor** |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Cliente de navegador para iniciar y cerrar sesión |
-| Credenciales de Google y Facebook | Se configuran **en Supabase**, no en la aplicación |
+| Credenciales de Google | Se configuran **en Supabase**, no en la aplicación |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET` | Storage. **Solo servidor**, nunca con prefijo `NEXT_PUBLIC_` |
 | `NEXT_PUBLIC_STORAGE_URL` | Subdominio público de Storage, usado para construir las URL de imagen |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Email E4. Las credenciales **SMTP** de Resend se cargan en Supabase, no acá |
