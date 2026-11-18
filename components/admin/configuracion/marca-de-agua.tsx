@@ -29,8 +29,8 @@ export function MarcaDeAguaEnConfiguracion({ activa }: { activa: boolean }) {
       }
       ayuda={
         activa
-          ? "Las fotos de productos que subas llevan tu marca. Las que ya estaban no cambian."
-          : "Poné tu logo o el nombre de la tienda sobre las fotos de productos que subas, para que no las usen en otro lado."
+          ? "Las fotos nuevas llevan tu marca; las que ya estaban, no."
+          : "Tu logo sobre las fotos nuevas, para que no las copien."
       }
     >
       <Button asChild variant="secondary" className="self-start">

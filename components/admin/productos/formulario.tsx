@@ -442,14 +442,13 @@ export function FormularioDeProducto({
               vez de dejar que se descubra después. */}
             {producto ? (
               <FieldHint>
-                Dirección:{" "}
+                Enlace:{" "}
                 <span className="text-ink">/productos/{producto.slug}</span>. No
-                cambia al renombrar, para no romper los enlaces que ya
-                compartiste.
+                cambia al renombrar.
               </FieldHint>
             ) : nombre.trim() ? (
               <FieldHint>
-                Dirección:{" "}
+                Enlace:{" "}
                 <span className="text-ink">
                   /productos/{slugificar(nombre)}
                 </span>
@@ -479,10 +478,6 @@ export function FormularioDeProducto({
             <FieldError id={`${idBase}-sku-error`}>
               {errores.campos.sku}
             </FieldError>
-            <FieldHint>
-              Se muestra en la tienda, debajo del nombre. No se puede repetir
-              dentro de la misma marca.
-            </FieldHint>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -568,10 +563,7 @@ export function FormularioDeProducto({
                 <FieldError id={`${idBase}-discount-error`}>
                   {errores.campos.discount}
                 </FieldError>
-                <FieldHint>
-                  Es un monto en pesos, no un porcentaje. Dejalo vacío si no hay
-                  oferta.
-                </FieldHint>
+                <FieldHint>Dejalo vacío si no hay oferta.</FieldHint>
               </div>
             </div>
 
@@ -582,7 +574,7 @@ export function FormularioDeProducto({
           <Apartado
             id="descripcion"
             titulo="Descripción"
-            ayuda="Se ve en la ficha del producto. Podés usar negrita, cursiva, listas y un subtítulo."
+            ayuda="Podés usar negrita, cursiva, listas y un subtítulo."
           >
             <EditorDeDescripcion
               id={`${idBase}-description`}

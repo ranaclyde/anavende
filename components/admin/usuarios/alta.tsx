@@ -129,7 +129,7 @@ export function AltaDeUsuario() {
           valor={email}
           alCambiar={setEmail}
           error={e.email}
-          ayuda="Ahí le llega el mensaje para elegir su contraseña. No se puede cambiar después."
+          ayuda="No se puede cambiar después."
           autoComplete="off"
         />
 

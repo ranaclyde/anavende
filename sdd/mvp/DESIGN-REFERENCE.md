@@ -632,7 +632,7 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 
 **1400px es una suma, no un número redondo**: 1024 del formulario, 16 de separación y 360 del stock, que es lo que necesita una fila de tres fotos. Por debajo van apiladas y **las dos topeadas en 1024**, que es exactamente como se veía la pantalla antes de partirla en dos.
 
-**Lo que esto deja sin resolver, y se anota para no perderlo.** Los textos de ayuda del formulario siguen en **102 caracteres por renglón** en «Publicación», contra el techo de **68** que pone §7; los de la tarjeta de stock, alrededor de 97. Angostar el formulario los arreglaba —bajaban a 51— pero a cambio del salto que se acaba de sacar, así que no es por ahí: se arreglan cortando el texto o topeando el párrafo, que es trabajo aparte y toca `TarjetaDeSeccion`, que usan cinco pantallas.
+**~~Lo que esto deja sin resolver, y se anota para no perderlo.~~** Resuelto el 2026-11-18 acortando los textos, sin topear el párrafo (PROGRESO.md). Lo que sigue es cómo estaba antes: Los textos de ayuda del formulario siguen en **102 caracteres por renglón** en «Publicación», contra el techo de **68** que pone §7; los de la tarjeta de stock, alrededor de 97. Angostar el formulario los arreglaba —bajaban a 51— pero a cambio del salto que se acaba de sacar, así que no es por ahí: se arreglan cortando el texto o topeando el párrafo, que es trabajo aparte y toca `TarjetaDeSeccion`, que usan cinco pantallas.
 
 
 ---

@@ -243,8 +243,8 @@ export function BloqueoDeLaCuenta({
                 </FieldError>
               ) : (
                 <FieldHint id="motivo-del-bloqueo-ayuda">
-                  Lo va a leer {nombre} al intentar entrar, así que escribilo
-                  para que se entienda. Hasta {MAXIMO_DEL_MOTIVO} caracteres.
+                  Lo va a leer {nombre} al intentar entrar. Hasta{" "}
+                  {MAXIMO_DEL_MOTIVO} caracteres.
                 </FieldHint>
               )}
             </div>

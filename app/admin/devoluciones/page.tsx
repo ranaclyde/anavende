@@ -97,7 +97,7 @@ export default async function DevolucionesDelPanel({
     <div className="flex flex-col gap-4">
       <EncabezadoDePanel
         titulo="Devoluciones"
-        bajada="Lo que volvió de las órdenes entregadas, con lo que se repuso al stock y lo que se descartó."
+        bajada="Las devoluciones de productos por órdenes."
         acciones={
           hayAlguna ? (
             <AyudaGuiada

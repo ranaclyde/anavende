@@ -320,8 +320,8 @@ function DialogoDeCancelar({
           />
           <p id={`${campo}-ayuda`} className="text-caption text-ink-secondary">
             {loLeeElComprador
-              ? "Por ejemplo: «nos quedamos sin stock del rojo». Queda en el historial de la orden y el comprador lo ve en su compra."
-              : "Por ejemplo: «no contestó». Queda en el historial de la orden. Esta orden no tiene cuenta asociada, así que nadie más lo va a ver."}
+              ? "Por ejemplo: «sin stock del rojo». El comprador lo puede ver."
+              : "Por ejemplo: «no contestó». Queda en el historial."}
           </p>
         </div>
 

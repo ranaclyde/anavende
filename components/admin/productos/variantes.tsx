@@ -264,7 +264,7 @@ export function VariantesDelProducto({
       id="colores-y-stock"
       titulo="Colores y stock"
       insignias={<AvisoDeMarcaDeAgua activa={marcaDeAgua} />}
-      ayuda="Cada color lleva su stock y sus fotos. Si el producto no se vende por color, alcanza con uno solo."
+      ayuda="Cada color lleva su stock y sus fotos."
       acciones={
         variantes.length === 0 ? null : (
           // F2.18: solo con alguna foto propia; un zip vacío no sirve.
@@ -292,11 +292,7 @@ export function VariantesDelProducto({
           completo y no apretadas contra el botón. */}
       {variantes.length === 0 ? null : (
         <p className="text-caption text-ink-secondary">
-          Hasta 5 fotos por color. Arrastralas desde tu computadora a la fila
-          del color, o tocá «Agregar»: JPG, PNG o WEBP de hasta 10 MB, que se
-          guardan optimizadas. Se ven mejor cuadradas, de 1400 × 1400 o más y
-          con fondo claro. La primera es la que se ve en el catálogo, y se
-          cambia arrastrando o desde el menú de cada foto.
+          Hasta 5 fotos por color. Mejor si son de 1400&nbsp;×&nbsp;1400.
         </p>
       )}
 
@@ -430,7 +426,7 @@ export function VariantesDelProducto({
             </DialogTitle>
             <DialogDescription>
               {porBorrar?.ordenes
-                ? "Este color está en órdenes ya hechas, así que no se borra: lo desactivamos para que dejen de leerse enteras."
+                ? "Este color está en órdenes ya hechas, así que no se borra: lo desactivamos para que se sigan leyendo enteras."
                 : porBorrar?.carritos
                   ? "Este color está en el carrito de alguien, así que no se borra: lo desactivamos, y quien lo tenía lo ve como «Ya no disponible»."
                   : "Se van sus fotos y su stock, y no hay vuelta atrás."}
@@ -1062,12 +1058,12 @@ function EdicionDeVariante({
                     (RF-16: una variante sin color es un producto que no se
                     vende por color). */}
                           {!hayColores
-                            ? "Todavía no cargaste ningún color. Podés vender este producto sin colores, o crear uno desde la lista."
+                            ? "Podés venderlo sin colores, o crear uno desde la lista."
                             : color === UNICO
                               ? // 2026-11-05: corta a propósito. «Único» deja
                                 // al producto afuera del filtro de color.
-                                "Solo si el color no importa, como en una memoria RAM. Si viene en un solo color, elegí ese color."
-                              : "Cada color, o cada combinación, una sola vez por producto. Si no está, escribilo y crealo desde la lista."}
+                                "Solo si el color no importa, como en una memoria RAM."
+                              : "Si no está, escribilo y crealo desde la lista."}
                         </FieldHint>
                       )}
                     </div>
@@ -1123,8 +1119,7 @@ function EdicionDeVariante({
                           </FieldError>
                         ) : (
                           <FieldHint id={`${idBase}-ayuda-color2`}>
-                            Para los productos de dos colores, como negro con
-                            rojo. En la tienda se ve la esfera partida en dos.
+                            Para productos de dos colores, como negro con rojo.
                           </FieldHint>
                         )}
                       </div>

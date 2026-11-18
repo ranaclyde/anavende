@@ -158,8 +158,7 @@ function Dialogo({
             aria-describedby={`${campo}-ayuda`}
           />
           <p id={`${campo}-ayuda`} className="text-caption text-ink-secondary">
-            Por ejemplo: «me equivoqué de producto». Es obligatorio: es lo que
-            explica un movimiento de stock que va y vuelve.
+            Por ejemplo: «me equivoqué de producto».
           </p>
           <FieldError>{errorDelMotivo}</FieldError>
         </div>

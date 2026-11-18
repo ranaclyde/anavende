@@ -18,7 +18,7 @@ export default function CatalogoLayout({
     <div className="flex flex-col gap-4">
       <EncabezadoDePanel
         titulo="Catálogo"
-        bajada="Las marcas, categorías y colores con los que se cargan los productos, y los medios de pago que ve el comprador."
+        bajada="Marcas, categorías, colores y medios de pago."
       />
 
       <SolapasDeCatalogo />

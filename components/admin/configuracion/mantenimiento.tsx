@@ -66,8 +66,8 @@ export function ModoMantenimiento({
       }
       ayuda={
         cerrada
-          ? "Quien entra ve un aviso de que volvemos en un rato, y no puede registrarse. Vos la seguís viendo normal."
-          : "Cerrala mientras cargás productos: los compradores ven un aviso de que volvemos en un rato, y vos la seguís viendo normal para revisar cada ficha."
+          ? "Abrila cuando termines los cambios."
+          : "Cerrala mientras hacés cambios."
       }
     >
       <InterruptorDeLaTienda activo={activo} />
