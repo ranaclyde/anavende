@@ -253,13 +253,7 @@ function DialogoDeDevolver({
             maxLength={MAXIMO_DEL_MOTIVO}
             className="min-h-16"
             rows={2}
-            aria-describedby={`${campo}-ayuda`}
           />
-          <p id={`${campo}-ayuda`} className="text-caption text-ink-secondary">
-            Por ejemplo: «le quedaba chico y lo trajo al día siguiente». Queda
-            con la devolución y es lo único que va a explicar, dentro de seis
-            meses, por qué volvió esta mercadería.
-          </p>
           <FieldError>{errorDelMotivo}</FieldError>
         </div>
 

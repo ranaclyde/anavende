@@ -405,9 +405,7 @@ function Formulario({
                 />
                 {errores.campos.plan ? null : (
                   <FieldHint id={`${id}-plan-ayuda`}>
-                    Si la promoción es de una tarjeta o un plan y no de todo{" "}
-                    {medio.name}, como «Plan Z». La ficha dice «con Plan Z de{" "}
-                    {medio.name}».
+                    Como el Plan Z de NaranjaX.
                   </FieldHint>
                 )}
               </Campo>
@@ -455,9 +453,7 @@ function Formulario({
               </div>
               {errores.campos.recargo ? null : (
                 <FieldHint id={`${id}-recargo-ayuda`} className="-mt-3">
-                  Vacío o 0 es sin interés. Cargá solo recargos fijos: si cambia
-                  según la tarjeta o el banco, la cuota que mostramos no sería
-                  la que se paga.
+                  Vacío o 0 es sin interés.
                 </FieldHint>
               )}
             </Seccion>
@@ -528,8 +524,7 @@ function Formulario({
                 />
                 {errores.campos.montoMinimo ? null : (
                   <FieldHint id={`${id}-minimo-ayuda`}>
-                    Sobre el precio con el descuento ya aplicado. Debajo de ese
-                    precio, la ficha no la muestra.
+                    Sobre el precio con descuento. Por debajo, no se muestra.
                   </FieldHint>
                 )}
               </Campo>

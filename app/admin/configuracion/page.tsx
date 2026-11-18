@@ -40,7 +40,7 @@ export default async function ConfiguracionDelSitio() {
     <div className="flex w-full flex-col gap-4">
       <EncabezadoDePanel
         titulo="Configuración"
-        bajada="Por dónde te escriben y te siguen, dónde te avisamos y cuándo un producto se está por acabar."
+        bajada="Acá está toda la configuración de tu tienda."
       />
 
       {/* Lo que se guarda con un botón a la izquierda, y al lado lo que

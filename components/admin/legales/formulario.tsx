@@ -87,7 +87,7 @@ export function FormularioDeTextoLegal({
       <TarjetaDeSeccion
         id={`${idDelCampo}-titulo`}
         titulo={titulo}
-        ayuda={`Última modificación: ${actualizada}. Podés usar negrita, cursiva, listas y subtítulos.`}
+        ayuda={`Última modificación: ${actualizada}.`}
         acciones={
           <Button asChild variant="tertiary" size="sm">
             <a

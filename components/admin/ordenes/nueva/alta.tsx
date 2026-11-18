@@ -283,7 +283,7 @@ export function AltaDeOrdenManual() {
         <Apartado
           id="comprador"
           titulo="Comprador"
-          ayuda="Los datos son de este pedido. Si tiene cuenta, asociala para que le aparezca en «Mis compras»."
+          ayuda="Si tiene cuenta, asociala para que la vea en «Mis compras»."
         >
           <BuscadorDeComprador
             elegido={cuenta}

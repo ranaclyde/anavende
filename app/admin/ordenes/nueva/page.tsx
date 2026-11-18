@@ -46,7 +46,7 @@ export default async function NuevaOrden() {
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EncabezadoDePanel
         titulo="Nueva orden"
-        bajada="Para las ventas que no pasaron por la tienda: por WhatsApp, por teléfono o en persona. Queda marcada como manual y mueve el stock igual que una web."
+        bajada="Para las ventas por WhatsApp, por teléfono o en persona."
         volver={{ href: "/admin/ordenes", etiqueta: "Órdenes" }}
         acciones={
           <AyudaGuiada

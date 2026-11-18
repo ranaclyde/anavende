@@ -13,12 +13,7 @@ import type { Escena } from "@/lib/escenas";
 import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
 import { telefonoLocal } from "@/lib/telefono";
 import { guardarLaConfiguracion } from "@/modules/settings/actions";
-import {
-  AYUDA_DEL_UMBRAL,
-  ENTERO,
-  UMBRAL_MAXIMO,
-  UMBRAL_MINIMO,
-} from "@/modules/settings/limites";
+import { AYUDA_DEL_UMBRAL, ENTERO } from "@/modules/settings/limites";
 import type { ConfiguracionDelSitio } from "@/modules/settings/queries";
 
 /**
@@ -133,12 +128,16 @@ export function FormularioDeConfiguracion({
     umbral === String(guardado.lowStockThreshold) &&
     FECHAS.every(({ columna }) => escenas[columna] === guardado[columna]);
 
-  const campo = (nombre: Campo) => ({
+  // `conAyuda: false` para los campos sin texto de ayuda debajo (2026-11-18):
+  // sin esto, `aria-describedby` apuntaría a un id que no existe.
+  const campo = (nombre: Campo, conAyuda = true) => ({
     id: `${idBase}-${nombre}`,
     "aria-invalid": Boolean(errores.campos[nombre]) || undefined,
     "aria-describedby": errores.campos[nombre]
       ? `${idBase}-${nombre}-error`
-      : `${idBase}-${nombre}-ayuda`,
+      : conAyuda
+        ? `${idBase}-${nombre}-ayuda`
+        : undefined,
   });
 
   /**
@@ -239,14 +238,14 @@ export function FormularioDeConfiguracion({
           primero
           id="contacto"
           titulo="Contacto"
-          ayuda="Es lo único de esta pantalla que ve el comprador."
+          ayuda="Por dónde te contactan los compradores."
         >
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={campo("whatsappNumber").id}>
               Número de WhatsApp
             </Label>
             <Input
-              {...campo("whatsappNumber")}
+              {...campo("whatsappNumber", false)}
               type="tel"
               inputMode="tel"
               autoComplete="off"
@@ -254,16 +253,9 @@ export function FormularioDeConfiguracion({
               onChange={escribir("whatsappNumber", setWhatsapp)}
               className="sm:max-w-64"
             />
-            {errores.campos.whatsappNumber ? (
-              <FieldError id={`${idBase}-whatsappNumber-error`}>
-                {errores.campos.whatsappNumber}
-              </FieldError>
-            ) : (
-              <FieldHint id={`${idBase}-whatsappNumber-ayuda`}>
-                Es el número al que llegan las consultas y las compras por
-                WhatsApp. Escribilo como te salga: se guarda siempre igual.
-              </FieldHint>
-            )}
+            <FieldError id={`${idBase}-whatsappNumber-error`}>
+              {errores.campos.whatsappNumber}
+            </FieldError>
           </div>
 
           {/* Las dos redes van al pie de la tienda, debajo del logo. Mismo
@@ -282,7 +274,7 @@ export function FormularioDeConfiguracion({
                 </span>
               </Label>
               <Input
-                {...campo(nombre)}
+                {...campo(nombre, false)}
                 type="text"
                 inputMode="url"
                 autoComplete="off"
@@ -293,16 +285,9 @@ export function FormularioDeConfiguracion({
                 placeholder={`${red.toLowerCase()}.com/anavende`}
                 className="sm:max-w-96"
               />
-              {errores.campos[nombre] ? (
-                <FieldError id={`${idBase}-${nombre}-error`}>
-                  {errores.campos[nombre]}
-                </FieldError>
-              ) : (
-                <FieldHint id={`${idBase}-${nombre}-ayuda`}>
-                  Pegá el enlace de tu perfil o escribí tu usuario. Aparece en
-                  el pie de la tienda; vacío, no se muestra.
-                </FieldHint>
-              )}
+              <FieldError id={`${idBase}-${nombre}-error`}>
+                {errores.campos[nombre]}
+              </FieldError>
             </div>
           ))}
         </Apartado>
@@ -311,7 +296,7 @@ export function FormularioDeConfiguracion({
         <Apartado
           id="fechas"
           titulo="Fechas especiales"
-          ayuda="En estas fechas la tienda se decora sola: cambian los dibujos de la portada y el logo lleva un adorno."
+          ayuda="En estas fechas la tienda se decora sola."
         >
           <ul className="flex flex-col gap-1">
             {FECHAS.map(({ escena, nombre, columna }) => (
@@ -348,7 +333,7 @@ export function FormularioDeConfiguracion({
         <Apartado
           id="avisos"
           titulo="Avisos"
-          ayuda="Nada de esto se muestra en la tienda."
+          ayuda="Los avisos que te manda la tienda."
         >
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={campo("adminNotificationEmail").id}>
@@ -368,8 +353,7 @@ export function FormularioDeConfiguracion({
               </FieldError>
             ) : (
               <FieldHint id={`${idBase}-adminNotificationEmail-ayuda`}>
-                Acá te llegan las órdenes nuevas. Puede ser distinto del email
-                con el que entrás al panel.
+                Acá te llegan las órdenes nuevas.
               </FieldHint>
             )}
           </div>
@@ -385,11 +369,11 @@ export function FormularioDeConfiguracion({
                 // sin esto un lector de pantalla lee «avisar stock bajo a partir
                 // de: 3» y nunca dice de qué. Se suma a lo que ya describe al
                 // campo en vez de reemplazarlo.
-                aria-describedby={`${
+                aria-describedby={
                   errores.campos.lowStockThreshold
-                    ? `${idBase}-lowStockThreshold-error`
-                    : `${idBase}-lowStockThreshold-ayuda`
-                } ${idBase}-unidades`}
+                    ? `${idBase}-lowStockThreshold-error ${idBase}-unidades`
+                    : `${idBase}-unidades`
+                }
                 // `inputMode` y no `type="number"`, por lo mismo que el stock de
                 // una variante: el campo numérico del navegador sube y baja con
                 // la rueda del mouse encima, y acá eso cambiaría el umbral de
@@ -408,15 +392,9 @@ export function FormularioDeConfiguracion({
                 unidades
               </span>
             </div>
-            {errores.campos.lowStockThreshold ? (
-              <FieldError id={`${idBase}-lowStockThreshold-error`}>
-                {errores.campos.lowStockThreshold}
-              </FieldError>
-            ) : (
-              <FieldHint id={`${idBase}-lowStockThreshold-ayuda`}>
-                <Ejemplo umbral={umbral} />
-              </FieldHint>
-            )}
+            <FieldError id={`${idBase}-lowStockThreshold-error`}>
+              {errores.campos.lowStockThreshold}
+            </FieldError>
           </div>
         </Apartado>
 
@@ -465,31 +443,5 @@ function SinConfigurar({ umbral }: { umbral: number }) {
       WhatsApp para mostrar en la tienda, y el aviso de stock bajo se enciende
       con {umbral} unidades.
     </p>
-  );
-}
-
-/**
- * Qué va a pasar con el número que hay escrito, dicho con las palabras que
- * usa el listado —«Quedan N»— y no con las del formulario. Es la misma idea
- * que el precio final en vivo del alta de producto: se ve la consecuencia
- * antes de guardarla.
- */
-function Ejemplo({ umbral }: { umbral: string }) {
-  const texto = umbral.trim();
-
-  if (!ENTERO.test(texto)) {
-    return <>El listado avisa cuando a un producto le queda poco stock.</>;
-  }
-
-  const n = Number.parseInt(texto, 10);
-  if (n < UMBRAL_MINIMO || n > UMBRAL_MAXIMO) {
-    return <>El listado avisa cuando a un producto le queda poco stock.</>;
-  }
-
-  return (
-    <>
-      Un producto con {n === 1 ? "1 unidad" : `${n} unidades`} o menos aparece
-      como «Quedan {n}» en el listado de productos.
-    </>
   );
 }

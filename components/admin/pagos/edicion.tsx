@@ -178,21 +178,12 @@ export function EdicionDeMedioDePago({
                     maxLength={60}
                     aria-invalid={!!errores.campos.name || undefined}
                     aria-describedby={
-                      errores.campos.name
-                        ? `${idBase}-e-name`
-                        : `${idBase}-ayuda-name`
+                      errores.campos.name ? `${idBase}-e-name` : undefined
                     }
                   />
-                  {errores.campos.name ? (
-                    <FieldError id={`${idBase}-e-name`}>
-                      {errores.campos.name}
-                    </FieldError>
-                  ) : (
-                    <FieldHint id={`${idBase}-ayuda-name`}>
-                      Como lo va a leer el comprador: «Transferencia bancaria»,
-                      «Mercado Pago».
-                    </FieldHint>
-                  )}
+                  <FieldError id={`${idBase}-e-name`}>
+                    {errores.campos.name}
+                  </FieldError>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
@@ -221,8 +212,7 @@ export function EdicionDeMedioDePago({
                     </FieldError>
                   ) : (
                     <FieldHint id={`${idBase}-ayuda-desc`}>
-                      Una línea corta, del estilo «10% off transfiriendo» o
-                      «hasta 6 cuotas».
+                      Una línea corta, como «10% off transfiriendo».
                     </FieldHint>
                   )}
                 </div>

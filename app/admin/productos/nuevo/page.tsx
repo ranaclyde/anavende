@@ -19,7 +19,7 @@ export default async function NuevoProducto() {
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EncabezadoDePanel
         titulo="Nuevo producto"
-        bajada="Acá van los datos y el precio. Los colores, el stock y las fotos se cargan después, en la pantalla que se abre sola al crearlo."
+        bajada="Cargás primero los datos básicos y después el stock."
         volver={{ href: "/admin/productos", etiqueta: "Productos" }}
       />
 

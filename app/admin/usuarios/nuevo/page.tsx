@@ -20,7 +20,7 @@ export default async function NuevaCuenta() {
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EncabezadoDePanel
         titulo="Nueva cuenta"
-        bajada="Le va a llegar un email para elegir su contraseña. Vos no la ves ni la elegís."
+        bajada="El usuario recibe un email para configurar su contraseña."
         volver={{ href: "/admin/usuarios", etiqueta: "Usuarios" }}
       />
 

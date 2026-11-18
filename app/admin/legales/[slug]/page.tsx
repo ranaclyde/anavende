@@ -33,7 +33,7 @@ export default async function EditarTextoLegal({ params }: Props) {
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EncabezadoDePanel
         titulo="Legales"
-        bajada="Las páginas del pie de la tienda: cómo comprar, la garantía, los términos y la privacidad."
+        bajada="Páginas legales de la tienda."
       />
 
       <SolapasDeLegales />
