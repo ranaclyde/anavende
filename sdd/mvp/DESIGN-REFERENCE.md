@@ -438,7 +438,7 @@ La firma del sistema es el **tracking negativo**: el texto grande se comprime, e
 |---|---|---|---|---|---|
 | `marca` | 56px | 1.00 | −0.035em | 600 | **La palabra de la marca en el hero de la home, y nada más** (§7.1, 2026-09-22). Debajo de `sm` cae a `display` |
 | `display` | 36px | 1.10 | −0.035em | 600 | Título del hero. Solo en la home |
-| `hero` | 36–60px | 0.98 | −0.035em | 700 | **El eslogan del hero de la home** (F10.7d, 2026-11-20): `clamp(36px, 4.4vw, 60px)`; arrancó en 40–72px y se achicó el mismo día. Es el único tamaño que escala con el ancho |
+| `hero` | 32–52px | 0.98 | −0.035em | 700 | **El eslogan del hero de la home** (F10.7d, 2026-11-20): `clamp(32px, 3.8vw, 52px)`; arrancó en 40–72px y se achicó dos veces el mismo día. Es el único tamaño que escala con el ancho |
 | `title` | 24px | 1.20 | −0.03em | 600 | Nombre del producto en la ficha, títulos de página |
 | `heading` | 20px | 1.25 | −0.025em | 600 | Encabezados de sección |
 | `body-lg` | 18px | 1.45 | −0.015em | 400 | Descripción del producto, texto legal |
@@ -1334,7 +1334,7 @@ centro, y acá se pierde un poco de los costados.
 | Piezas | 3:4, radio 18px, 12px entre ellas | Más altas que anchas, como en la referencia |
 | Columnas | 3 en computadora, 2 filas en el teléfono | En el teléfono, arrastrar de costado no choca con el scroll |
 | Alto | 628px en computadora | El de las demás direcciones probadas, que dejaba ver los chips |
-| Eslogan | `hero`, 36 a 60px según el ancho | Es la pantalla: tiene que pesar más que las fotos |
+| Eslogan | `hero`, 32 a 52px según el ancho | Es la pantalla: tiene que pesar más que las fotos |
 | Palabra | 3,5s; «la tecnología», 7s | Lo justo para leerla y mirar las columnas |
 | Bloques | 7 colores vivos (700), en orden, texto blanco | Le dan energía a la columna; sin rojos, que son del burdeos |
 

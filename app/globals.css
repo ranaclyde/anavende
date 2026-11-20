@@ -235,8 +235,8 @@
   --text-marca--font-weight: 600;
 
   /* El eslogan del hero de la home (F10.7d, DR §3.3): el único tamaño que
-     escala con el ancho, de 36 a 60px. */
-  --text-hero: clamp(2.25rem, 4.4vw, 3.75rem);
+     escala con el ancho, de 32 a 52px. */
+  --text-hero: clamp(2rem, 3.8vw, 3.25rem);
   --text-hero--line-height: 0.98;
   --text-hero--letter-spacing: -0.035em;
   --text-hero--font-weight: 700;
