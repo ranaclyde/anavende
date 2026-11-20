@@ -445,11 +445,13 @@ export function HeroDeLaHome({
                                     alt=""
                                     fill
                                     draggable={false}
-                                    // Arriba del pliegue: las primeras, sin
-                                    // diferir.
-                                    loading={
-                                      copia === 0 && i < 3 ? "eager" : "lazy"
-                                    }
+                                    // Todas sin diferir: las tiras se mueven,
+                                    // cualquiera puede ser el LCP, y son a
+                                    // lo sumo seis direcciones repetidas que
+                                    // el navegador baja una vez cada una.
+                                    // Sin prioridad alta, como las tarjetas
+                                    // (F10.4).
+                                    loading="eager"
                                     sizes="(min-width: 1024px) 220px, 144px"
                                     className="pointer-events-none object-cover"
                                   />
