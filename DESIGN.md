@@ -329,6 +329,7 @@ apretados y sólidos sin necesidad de un peso más alto.
 
 - **Marca** (600, 3.5rem/56px, 1.0): la palabra «AnaVende» en el hero de la home, en Malbec y escrita como el nombre, y en ningún otro lado. Debajo de `sm` cae a Display.
 - **Display** (600, 2.25rem/36px, 1.1): el hero de la portada, y sólo ahí.
+- **Hero** (700, de 2.5rem/40px a 4.5rem/72px según el ancho, 0.98): el eslogan del hero de la home (F10.7d), «Vos elegís / los auriculares.». Es el único tamaño que escala con el ancho.
 - **Title** (600, 1.5rem/24px, 1.2): nombre del producto en la ficha, títulos de pantalla.
 - **Heading** (600, 1.25rem/20px, 1.25): encabezados de sección.
 - **Body Large** (400, 1.125rem/18px, 1.45): descripción de producto y texto legal.

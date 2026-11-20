@@ -438,6 +438,7 @@ La firma del sistema es el **tracking negativo**: el texto grande se comprime, e
 |---|---|---|---|---|---|
 | `marca` | 56px | 1.00 | −0.035em | 600 | **La palabra de la marca en el hero de la home, y nada más** (§7.1, 2026-09-22). Debajo de `sm` cae a `display` |
 | `display` | 36px | 1.10 | −0.035em | 600 | Título del hero. Solo en la home |
+| `hero` | 40–72px | 0.98 | −0.035em | 700 | **El eslogan del hero de la home** (F10.7d, 2026-11-20): `clamp(40px, 5.2vw, 72px)`. Es el único tamaño que escala con el ancho |
 | `title` | 24px | 1.20 | −0.03em | 600 | Nombre del producto en la ficha, títulos de página |
 | `heading` | 20px | 1.25 | −0.025em | 600 | Encabezados de sección |
 | `body-lg` | 18px | 1.45 | −0.015em | 400 | Descripción del producto, texto legal |
@@ -1226,16 +1227,14 @@ Los reportes (RF-28) y el inicio del panel (RF-14) dibujan con el componente
 
 ```
 ┌────────────────────────────────────────────────────┐
-│  ╭──╮  ▫                               ╭───╮       │  la escena: piezas
-│  │🎧│                                   │🎮 │       │  decorativas en tres
-│  ╰──╯              AnaVende             ╰───╯  ▫   │  profundidades
-│            vos elegís los auriculares.             │  marca + eslogan,
-│                                                    │  la palabra rota
-│      (  ¿Qué estás buscando hoy?        (→)  )     │  buscador, máx 560px
-│   Productos nuevos, cerrados y en su empaque …     │  la aclaración, caption
-│  ╭─╮                                   ╭──────╮    │
-│  ╰─╯                       ▫           │ ⌨    │    │
-│                                        ╰──────╯    │
+│                             ↓      ↑      ↓        │  tres columnas: la del
+│  AnaVende                 ╭────╮ ╭────╮ ╭────╮     │  medio sube, las otras
+│  Vos elegís               │foto│ │Mous│ │foto│     │  bajan; se arrastran
+│  los auriculares.         ╰────╯ │12 p│ ╰────╯     │  foto + bloque de seis
+│                           ╭────╮ ╰────╯ ╭────╮     │  categorías del día
+│  (¿Qué estás buscando?(→))│Cabl│ ╭────╮ │Tecl│     │  buscador, máx 560px
+│  Productos nuevos, …      │ 3 p│ │foto│ │ 8 p│     │  la aclaración, caption
+│                           ╰────╯ ╰────╯ ╰────╯     │
 │   [Teclados] [Mouses] [Auriculares] [Cables] …     │  píldoras, hasta 7
 │                                                    │
 │  [🚚 Envíos a Viedma, Carmen de Patagones y …  ]   │  el aviso de RN-10
@@ -1261,72 +1260,89 @@ Los reportes (RF-28) y el inicio del panel (RF-14) dibujan con el componente
 └────────────────────────────────────────────────────┘
 ```
 
-> **El hero se rehízo el 2026-10-19, pedido tuyo.** Antes eran cinco bloques
-> flotantes con productos de una categoría, que cambiaba cada seis segundos,
-> y la marca en minúsculas. Ahora es una escena propia alrededor del nombre y
-> el eslogan. Lo de abajo describe el nuevo; el viejo queda en el historial.
+> **El hero se rehízo dos veces.** Hasta el 2026-10-19 eran cinco bloques
+> flotantes con productos de una categoría; de ahí al 2026-11-20, una escena
+> de ilustraciones propias alrededor del nombre, que se disfrazaba por fecha
+> (F9.5). **Desde el 2026-11-20 (F10.7d) son columnas de categorías**, elegidas
+> entre unas quince direcciones probadas en la tienda; la de esta forma salió
+> de Atrium MTL. Lo de abajo describe la actual; las anteriores quedan en el
+> historial.
 
-**La marca y el eslogan, al centro.** Se lee «AnaVende / vos elegís **los
-auriculares**.»: el nombre es la primera mitad del eslogan (§2.4), así que no
-se repite «Ana vende». **La palabra final rota** por las categorías destacadas
-—las mismas de los chips—, cada 3,5 segundos, y entra subiendo medio renglón.
-Es el contexto que §2.4 pide para rotarla. El lector de pantalla no la oye
-rotar: oye una vez la forma canónica, «vos elegís la tecnología». El artículo
-sale de una regla (`-as` → «las», el resto «los»); si el catálogo trae una
-categoría femenina que no termina en -as, tiene que pasar a ser un dato de la
-categoría.
+**Dos mitades: el texto a la izquierda, las columnas a la derecha.** En la
+computadora el hero ocupa todo el ancho, pegado al encabezado, con el
+contenido en el ancho de la página: el texto en la mitad izquierda —un poco
+más angosta— y las columnas en la derecha, con 32px de aire arriba y abajo.
+**En el teléfono, el texto arriba y debajo dos filas**, porque el buscador es
+lo primero que se usa ahí.
 
-**Debajo, el buscador, con aire arriba**, y debajo del buscador la aclaración
-en caption —«Productos nuevos, cerrados y en su empaque original. Elegí y armá
-tu pedido.»—: es la nota al pie, no el mensaje, y por eso es más chica que el
-eslogan.
+**El texto.** «AnaVende» en burdeos, el eslogan grande en dos renglones
+—«Vos elegís / **los auriculares**.»—, el buscador y la aclaración en caption
+—«Productos nuevos, cerrados y en su empaque original. Elegí y armá tu
+pedido.»—. El nombre es la primera mitad del eslogan (§2.4), así que no se
+repite «Ana vende». **La palabra rota** por las seis categorías del día, cada
+3,5 segundos, y después dice **«la tecnología»**, que se queda el doble antes
+de volver a empezar: cierra la idea de que la tienda vende de todo. El
+lector de pantalla no la oye rotar: oye una vez «vos elegís la tecnología».
+El artículo sale de una regla (`-as` → «las», el resto «los»); si el catálogo
+trae una categoría femenina que no termina en -as, tiene que pasar a ser un
+dato de la categoría.
 
-**Alrededor, una escena decorativa, y no el catálogo.** Son ilustraciones del
-diseño (`components/shop/home/escena-del-hero.ts`, archivos en
-`public/hero/base/`), recortadas y sin fondo: no dependen de qué cargó la
-vendedora, no son enlaces y el lector de pantalla no las oye. **Se cambia por
-fecha** (F9.5, RF-38): en Pascua, Halloween y Navidad, otra lista de piezas
-con sus archivos (`public/hero/pascua/`, `public/hero/halloween/`,
-`public/hero/navidad/`), sin tocar el componente. **Las cuatro cercanas son las mismas piezas disfrazadas** —los
-auriculares puestos en una calabaza o con gorro, el joystick con sombrero de
-bruja o con moño—, porque la escena tiene que seguir diciendo qué se vende;
-las dos lejanas sí son de la fecha. Cambian los tamaños donde el disfraz
-cambia la proporción, para que cada pieza pese en pantalla lo mismo que la
-que reemplaza. Seis piezas desde `lg`, tres por costado —auriculares,
-mouse y un disco sólido con un pendrive a la izquierda; joystick, cable y
-teclado a la derecha—,
-a los costados; cuatro hasta ahí, arriba y abajo del texto, porque entre 640 y
-1024 los costados no tienen lugar.
+**Las columnas: seis categorías por día, foto y bloque.** Cada categoría
+aparece dos veces: **su foto** (FA-21) —si tiene— y **un bloque liso de
+color** con su nombre y cuántos productos activos tiene. Los bloques le dan
+aire y ritmo a la columna; sin ellos sería una pared de fotos. Las piezas son
+tarjetas de 3:4 con el radio de la tarjeta de producto, y cada columna
+arranca en un tercio distinto de la lista para que la misma categoría no
+quede a la misma altura en dos columnas. La lista se repite para llenar.
+**No se limita a las destacadas**: esas ya están en los chips y en las
+secciones, y mostrar solo esas acá sería decir lo mismo tres veces. Las seis
+salen de todas las categorías con productos —destacadas incluidas— y
+cambian a la medianoche.
 
-**Un solo movimiento: la profundidad.** Nada flota solo. Cada pieza tiene una
-profundidad de tres posibles, y se corre e inclina según ella: **con el mouse**
-donde hay uno, en sentido contrario y con inercia, y **con el scroll** en
-todos lados, que es la profundidad del teléfono. Las cercanas son más grandes,
-tienen más sombra y se mueven más; las lejanas, un poco desenfocadas. El
-centro no se mueve nunca.
+**El resaltado.** Mientras la palabra nombra una categoría, sus piezas
+quedan enteras y las demás bajan un paso (opacidad 45 %); con «la
+tecnología», todas enteras. Así el texto y las columnas dicen lo mismo.
+
+**Se mueven solas y se pueden arrastrar.** La del medio sube y las de los
+costados bajan, cada una a su velocidad, para que no se lean como una sola
+pieza. **Con el mouse se arrastran** para volver a ver lo que pasó —al
+soltar siguen con un poco de envión y vuelven a su paso— y se frenan
+mientras el mouse está encima, para poder apuntar un enlace. La rueda no las
+mueve: se quedaría con el scroll de la página. **En el teléfono las dos
+filas se arrastran de costado**, que es el gesto que no choca con bajar la
+página; una va para cada lado. Soltar después de arrastrar no abre nada.
+
+**La foto sin foto.** Una categoría sin foto pone solo el bloque: las
+columnas se repiten más seguido, pero no se rompe nada, y se van llenando a
+medida que la vendedora carga fotos. La foto es la misma de «Más categorías»,
+que se ve cuadrada: la vendedora la sube cuadrada y con el producto al
+centro, y acá se pierde un poco de los costados.
 
 | Propiedad | Valor | Por qué |
 |---|---|---|
-| Piezas | 6 desde `lg`, tres por costado; 4 hasta ahí | En 390px, seis serían seis estampillas |
-| Profundidades | 1 · 0,65 · 0,35 | Más de tres o cuatro escalones no se distinguen |
-| Mouse | hasta 34px y 9° en la más cercana | Se nota sin marear |
-| Scroll | 0,25 px por px en la más cercana | Separa las capas sin despegarlas del hero |
-| Palabra | 3,5s | Lo justo para leerla y mirar la escena |
+| Categorías | 6 por día (tope 10) | Unas 7 u 8 piezas a la vista: con 12 en la lista no se repite una categoría en pantalla |
+| Piezas | 3:4, radio 18px, 12px entre ellas | Más altas que anchas, como en la referencia |
+| Columnas | 3 en computadora, 2 filas en el teléfono | En el teléfono, arrastrar de costado no choca con el scroll |
+| Alto | 628px en computadora | El de las demás direcciones probadas, que dejaba ver los chips |
+| Eslogan | `hero`, 40 a 72px según el ancho | Es la pantalla: tiene que pesar más que las fotos |
+| Palabra | 3,5s; «la tecnología», 7s | Lo justo para leerla y mirar las columnas |
+| Bloques | tonos suaves fijos, en orden | Ninguno compite con el burdeos, que es de las acciones |
 
-**Y se puede parar con un botón** (WCAG 2.2.2): la palabra cambia sola, y eso
-es movimiento que arranca solo. Siempre a la vista —abajo al medio hasta `lg`,
-arriba a la derecha desde ahí—; detiene la palabra y deja la escena quieta. La
-palabra también para cuando el hero sale de la pantalla. Con
-`prefers-reduced-motion` no se mueve nada, el eslogan queda en su forma
-canónica y el botón no se dibuja.
+**Y se puede parar con un botón** (WCAG 2.2.2): las columnas y la palabra
+arrancan solas. Siempre a la vista, arriba a la derecha; detiene las dos
+cosas. La palabra también para cuando el hero sale de la pantalla. Con
+`prefers-reduced-motion` no corre nada, el eslogan queda en su forma
+canónica sin resaltado y el botón no se dibuja; las columnas se pueden
+arrastrar igual.
 
 **La marca va en burdeos, escrita como el nombre, y sólo acá.** Es un desvío
 anotado de §2.3, que la fija en tinta al lado del isotipo: ahí la marca
 acompaña a la navegación y no puede competir con ella, y acá **es** la
 pantalla. El isotipo no se agranda ni se recolorea; lo que crece es la palabra.
 
-**Las categorías aparecen tres veces, y hacen tres cosas distintas.** Arriba
-son **chips**: un atajo para quien ya sabe qué busca, y por eso están pegadas
+**Las categorías aparecen cuatro veces, y hacen cuatro cosas distintas.** En
+el hero son **una muestra que cambia cada día**, de todo el catálogo: fotos
+para mirar. Debajo del buscador son **chips**: un atajo para quien ya sabe qué busca, y por eso están pegadas
 al buscador y llevan directo al catálogo filtrado. En el medio son **secciones
 con producto adentro**: son para quien no sabe qué busca y necesita ver qué
 hay. La de abajo es la tercera cara —**el resto del catálogo**, las que no
@@ -1916,7 +1932,7 @@ Al programar cualquier apartado visual del frontend —pantallas, componentes, e
 | Dos escalas de densidad | El lenguaje aéreo de la tienda vuelve inoperable una tabla de órdenes |
 | Modo oscuro solo en el panel | La tienda vive del canvas blanco; el panel es donde se pasan horas |
 | Uso obligatorio de `impeccable` y `ui-ux-pro-max` al programar el frontend | Una referencia escrita fija el marco, pero no garantiza el acabado; las skills cierran esa brecha sin abrir la puerta a un segundo criterio visual |
-| Sin hero fotográfico en la home | Una foto genérica de banco de imágenes le resta credibilidad a una tienda de reventa |
+| Sin fotos de banco de imágenes en el hero de la home | Una foto genérica le resta credibilidad a una tienda de reventa. Desde F10.7d (2026-11-20) el hero lleva fotos, pero son las de las categorías, que carga la vendedora |
 | Familia de grises cálida en vez de fría | Es lo que trajo el canvas aprobado en F3.8, y es de donde sale el aire de la referencia: grises cálidos sobre un canvas frío repiten la tensión de temperatura que §2.1 le pide al burdeos |
 | `#716e6d` en vez del `#787574` del canvas, y `#6b6867` desde F10.3 | El del canvas da 4,14:1 sobre `--canvas`, bajo el AA de RNF-02. Un 6% menos de luminosidad conserva la temperatura y llega a 4,58:1; sobre `--brand-tint` daba 4,41, y F10.3 lo bajó a `#6b6867` (4,82) |
 | Radios 28 / 20px en vez de 24 / 16px | Los del canvas aprobado. La diferencia de 8px que pide la regla del marco blanco (§3.5) se mantiene intacta |

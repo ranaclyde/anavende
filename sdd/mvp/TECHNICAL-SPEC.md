@@ -1118,7 +1118,7 @@ usuarios/{userId}/{imageId}-avatar.webp        256 × 256, calidad 78
 
 Se muestra a 32px en el encabezado y a 96px en «Mi cuenta», y 256 cubre las dos al doble de densidad. Pesa del orden de 10 a 20 KB, contra los ~350 KB de las cuatro versiones de una foto de producto. Es una por fila y la nueva borra a la anterior, como un logo, pero va por su propia ruta (`app/api/mi-cuenta/foto`): la de `/api/admin/upload` es solo de administradoras.
 
-**La imagen de categoría (FA-21, F2.9) va por el mismo camino que un logo**: una por fila, en `categories.image_key`, con los mismos dos tamaños, y la nueva reemplaza y borra a la anterior. `-card` es el que usa la tarjeta de «Más categorías» en la home.
+**La imagen de categoría (FA-21, F2.9) va por el mismo camino que un logo**: una por fila, en `categories.image_key`, con los mismos dos tamaños, y la nueva reemplaza y borra a la anterior. `-card` es el que usa la tarjeta de «Más categorías» en la home y, desde F10.7d, el hero (§10.5).
 
 Dos tamaños y no tres: un logo se muestra chico —hoy solo en el listado del panel (RF-18, RF-19)— y `-detail`, pensado para la galería de una ficha a 1400px, no tiene dónde usarse. Se reutilizan los anchos de `-thumb` y `-card` en vez de inventar dos números nuevos: 200px cubre el listado en cualquier densidad de pantalla, y 600px queda para las franjas de la tienda —la de marcas y la de medios de pago (RF-01)—. `brands.logo_key` y `payment_methods.logo_key` guardan la base, igual que `variant_images.storage_key`.
 
@@ -1314,6 +1314,58 @@ Hereda §10.2 —el estado en la URL— y §10.3 —búsqueda por subcadena sin 
 
 ---
 
+
+### 10.5 El hero de la home (F10.7d, 2026-11-20)
+
+**Una consulta más en el mismo `Promise.all` de `leerHome()`**
+(`modules/catalog/products/home.ts`), sin sumar un viaje: las categorías
+activas con al menos un producto activo, cada una con su `image_key` y la
+cuenta de sus productos activos.
+
+```sql
+SELECT c.id, c.slug, c.name AS nombre, c.image_key AS "imageKey",
+       count(p.id)::int AS cantidad
+  FROM categories c
+  JOIN products p ON p.category_id = c.id AND p.is_active
+ WHERE c.is_active
+ GROUP BY c.id
+```
+
+Son decenas de filas —31 en producción el 2026-11-20—, así que **el sorteo
+se hace en el código y no en SQL**: ordenarlas por id y mezclarlas con un
+generador con semilla (LCG o similar, determinista) cuya semilla es **la
+fecha de Argentina** (`YYYYMMDD`, la misma cuenta de `lib/escenas.ts`), y
+quedarse con las primeras seis (`CATEGORIAS_DEL_HERO = 6`; el componente
+admite hasta diez). Ordenar antes de mezclar hace que el resultado no
+dependa del orden en que Postgres devuelva las filas. Mismo día, mismas
+seis, también entre el servidor y el cliente.
+
+**Lo que viaja al cliente** es lo mínimo: nombre, dirección de la categoría
+(`urlDeCategoria`), `imagenUrl` ya resuelta en `-card` (§9.2) o `null`, y la
+cantidad. El texto del bloque («1 producto», «32 productos») lo arma el
+componente.
+
+**Caché.** La home se renderiza en cada pedido (§12, «sin caché
+explícita»), así que el cambio de la medianoche no necesita nada. **Si
+algún día se le pone caché, tiene que vencer como mucho a la medianoche de
+Argentina**, o el sorteo queda pegado al día en que se guardó.
+
+**El movimiento, sin bibliotecas.** Las columnas no son una animación de
+CSS: un solo bucle con `requestAnimationFrame` corre cada tira, en vertical
+en la computadora y en horizontal debajo de `lg`, y ubica las piezas con
+`transform`. El mismo bucle resuelve el arrastre con eventos de puntero —en
+la ventana y no con captura, para que el clic llegue al enlace—, la inercia
+al soltar y la vuelta al paso. Un arrastre de más de unos pocos píxeles
+cancela el clic en la fase de captura. En el teléfono la tira lleva
+`touch-action: pan-y`, para que el dedo hacia arriba siga siendo el scroll
+de la página. No se escucha la rueda. Fuera de la pantalla
+(`IntersectionObserver`) no ubica nada. Con `prefers-reduced-motion` la
+velocidad propia es cero y el arrastre sigue.
+
+**Se borra lo anterior**: `components/shop/home/hero.tsx`,
+`escena-del-hero.ts`, `public/hero/base/` y la prueba
+(`prueba-heroes*.tsx`, `?hero=`). La consulta de las destacadas vuelve a no
+traer la imagen.
 
 ## 11. Recomendaciones (RF-31 a RF-33)
 
