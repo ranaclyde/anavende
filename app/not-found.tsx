@@ -18,7 +18,7 @@ export default function NoEncontrado() {
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button asChild variant="brand" size="lg">
-          <Link href="/productos">Ver el catálogo</Link>
+          <Link href="/productos">Ver los productos</Link>
         </Button>
         <Button asChild variant="tertiary" size="lg">
           <Link href="/">Volver al inicio</Link>

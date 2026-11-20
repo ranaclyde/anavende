@@ -12,7 +12,7 @@ import {
 } from "@/modules/catalog/products/filtros-tienda";
 import { OPEN_GRAPH_BASE, ZONA_DE_ENTREGA } from "@/lib/seo";
 
-const TITULO = "Catálogo";
+const TITULO = "Productos";
 const DESCRIPCION = `Teclados, mouses, auriculares y cables. ${ZONA_DE_ENTREGA}`;
 
 /**
@@ -77,7 +77,7 @@ export default async function Catalogo({
   const datos = await leerElCatalogo(filtros);
 
   /*
-   * El título dice qué se está mirando, no siempre «Catálogo».
+   * El título dice qué se está mirando, no siempre «Productos».
    *
    * Con una búsqueda puesta, un encabezado genérico obliga a mirar los chips
    * para saber por qué hay nueve resultados. El `<h1>` es lo primero que
@@ -100,7 +100,7 @@ export default async function Catalogo({
     <div className="mx-auto w-full max-w-shop px-4 py-10 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-2 pb-7">
         <p className="text-caption font-medium tracking-wide text-ink-secondary uppercase">
-          Catálogo
+          Productos
         </p>
         <h1 className="text-title text-ink">{titulo}</h1>
         <p className="text-body text-ink-secondary">

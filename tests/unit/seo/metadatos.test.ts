@@ -218,7 +218,7 @@ describe("migas", () => {
     };
 
     expect(datos.itemListElement.map((p) => p.name)).toEqual([
-      "Catálogo",
+      "Productos",
       "Teclados",
       "Teclado mecánico",
     ]);

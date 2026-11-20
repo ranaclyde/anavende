@@ -196,11 +196,16 @@ export function TarjetaProducto({
           ) : null}
 
           {/*
-            Encima del enlace estirado, y a la vista SIEMPRE: revelarlo al pasar
-            el mouse lo dejaría inalcanzable en un teléfono, donde no hay hover.
+            Encima del enlace estirado, y solo con el mouse encima de la
+            tarjeta (2026-11-20). Donde no hay hover —teléfono, tablet— no
+            está: un corazón invisible que igual se toca sería una trampa, y
+            ahí se guarda desde la ficha. Con teclado aparece al llegar el
+            foco a la tarjeta.
           */}
           {accionFavorito ? (
-            <div className="absolute top-2 right-2 z-10">{accionFavorito}</div>
+            <div className="absolute top-2 right-2 z-10 hidden opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 motion-safe:transition-opacity motion-safe:duration-150 [@media(hover:hover)]:block">
+              {accionFavorito}
+            </div>
           ) : null}
 
           <CantidadDeColores colores={colores} />

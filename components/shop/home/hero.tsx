@@ -340,6 +340,10 @@ export function HeroDeLaHome({
   const actual = rota && indice < total ? indice : -1;
   const palabra =
     actual >= 0 ? conArticulo(categorias[actual].nombre) : "la tecnología";
+  const palabras = [
+    ...categorias.map((c) => conArticulo(c.nombre)),
+    "la tecnología",
+  ];
 
   const tiras = armarTiras(categorias);
   useTiras(zona, !quieto && !detenido);
@@ -375,17 +379,35 @@ export function HeroDeLaHome({
             {/* El lector de pantalla oye la forma canónica una vez, y no una
                 categoría nueva cada pocos segundos. */}
             <span className="sr-only">: vos elegís la tecnología.</span>
-            <span aria-hidden className="text-hero text-balance text-ink">
-              Vos elegís
-              <br />
-              <span
-                key={palabra}
-                className={cn(
-                  "inline-block",
-                  rota && "motion-safe:animate-palabra",
-                )}
-              >
-                {palabra}.
+            <span aria-hidden className="block text-hero text-ink">
+              <span className="block">Vos elegís</span>
+              {/*
+                Todas las palabras del día, apiladas en la misma celda e
+                invisibles, y la de ahora encima: el título mide siempre lo
+                de la más larga. Si no, «los lectores de tarjetas» pasaba a
+                tres renglones y el buscador y los chips saltaban con cada
+                cambio (2026-11-20).
+              */}
+              <span className="grid">
+                {rota
+                  ? palabras.map((p, i) => (
+                      <span
+                        key={i}
+                        className="invisible col-start-1 row-start-1 text-balance"
+                      >
+                        {p}.
+                      </span>
+                    ))
+                  : null}
+                <span
+                  key={palabra}
+                  className={cn(
+                    "col-start-1 row-start-1 text-balance",
+                    rota && "motion-safe:animate-palabra",
+                  )}
+                >
+                  {palabra}.
+                </span>
               </span>
             </span>
           </h1>

@@ -27,7 +27,11 @@ oscuro, blanco. Nada más: no hay versión en gris, en negro ni en degradé.
 La primera vez que alguien abre la home en una visita, el «AnaVende» grande
 del hero arranca siendo el isotipo: el marco, el joystick y los auriculares se
 apagan, la A y la V crecen hasta su lugar en la palabra, y de cada una sale el
-resto, «na» y «ende». Dura 2,9 segundos: el isotipo queda quieto 0,8 segundos para que se reconozca antes de abrirse.
+resto, «na» y «ende». El isotipo arranca en el borde izquierdo de la palabra,
+donde empieza «AnaVende», y la palabra se abre hacia la derecha. Dura unos 4,2
+segundos: el isotipo queda quieto 1,3 segundos para que se reconozca antes de
+abrirse. Queda por debajo de los 5 segundos de WCAG 2.2.2, que pedirían un
+botón para pausarla.
 
 - **Una vez por visita.** Se anota en `sessionStorage` y en el atributo
   `data-marca-vista` de `<html>`. Volver al inicio desde otra página o

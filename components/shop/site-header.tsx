@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
  * está arriba el encabezado se apoya en el canvas sin separarse; en cuanto
  * hay contenido debajo, la sombra explica que está por encima.
  *
- * **La navegación va al lado del logo** (2026-10-21): Catálogo, Categorías y
+ * **La navegación va al lado del logo** (2026-10-21): Productos, Categorías y
  * Ofertas, con la píldora que viaja (`NavegacionPrincipal`). En el teléfono no
  * entran y pasan a un menú lateral, que se lleva también la cuenta.
  *

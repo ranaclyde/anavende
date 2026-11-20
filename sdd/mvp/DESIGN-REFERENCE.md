@@ -141,8 +141,7 @@ La fuente de verdad son los trazos de `lib/marca.ts`. Los componentes los dibuja
 
 | Uso | Tamaño | Tratamiento |
 |---|---|---|
-| Encabezado | 32px | Horizontal: isotipo + palabra |
-| Encabezado móvil | 32px | Solo isotipo |
+| Encabezado | 32px | Solo isotipo, en todos los tamaños (2026-11-20): la palabra ya está en el hero de la home y en el pie |
 | Ingreso, mantenimiento, pie, panel | 32px | Horizontal |
 | Favicon | 16 / 32 / 48px | Solo isotipo |
 | Emails | 40px | Horizontal, en una imagen (`logo-horizontal.png`), centrado |
@@ -177,7 +176,7 @@ tenía en Inter: 26px en el teléfono y 41px desde `sm`.
 **La animación de la primera carga** (F10.7c, 2026-11-13) es el único lugar
 donde el isotipo y la palabra se tocan: la palabra arranca siendo el isotipo,
 el marco, el joystick y los auriculares se apagan, la A y la V crecen hasta su
-lugar y de cada una sale el resto. Dura 2,9 segundos (1,6 hasta el 2026-11-13: no se distinguía), **una vez por visita**
+lugar y de cada una sale el resto. **El isotipo arranca apoyado en el borde izquierdo de la palabra** y la palabra se abre hacia la derecha (2026-11-20: centrado aparecía sobre la «V», desde que F10.7d alineó el hero a la izquierda). Dura unos 4,2 segundos, con el isotipo quieto 1,3 (2,9 y 0,8 hasta el 2026-11-20, y 1,6 hasta el 2026-11-13: no se distinguía), **una vez por visita**
 (la pestaña: volver al inicio o recargar no la repite) y nunca con «reducir
 movimiento». Las piezas se mueven y cambian de tamaño entero; ninguna rota ni
 se estira. Lo que se ve quieto es la palabra, y el nombre accesible del título
@@ -648,7 +647,7 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ [AV] AnaVende  Catálogo (Categorías) Ofertas Contacto  🔍 ♡ (🛒 3) Ana │  56px, blanco
+│ [AV]  Productos (Categorías) Ofertas Contacto  🔍 ♡ (🛒 3) Ana         │  56px, blanco
 ├──────────────────────────────────────────────────────────┤  sombra al scrollear
 │                                                          │
 │                    [ contenido ]           canvas #f2f4f5│
@@ -660,13 +659,13 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 ```
 
 - El encabezado es **fijo (sticky)** y gana `--shadow-lg` al hacer scroll.
-- **La navegación va al lado del logo** (2026-10-21): «Catálogo», «Categorías» (§7.6), «Ofertas» —el catálogo con el filtro de descuento— y «Contacto». La página en la que se está lleva una **píldora `--brand-tint` con el texto en burdeos**. La píldora **viaja como una gota**: sigue al mouse y al foco, el borde que va adelante llega en 220ms y el de atrás en 560ms, así que se estira en el camino y se recoge al llegar. Al hacer clic suelta una ráfaga de ocho puntos burdeos que se apagan en ~700ms. Sin movimiento con `prefers-reduced-motion`. La fila de chips de categorías que dibujaba esta sección no se hizo: los chips están en la home y la lista en `/categorias`.
+- **La navegación va al lado del logo** (2026-10-21): «Productos» —«Catálogo» hasta el 2026-11-20: la dirección ya decía `/productos`—, «Categorías» (§7.6), «Ofertas» —el catálogo con el filtro de descuento— y «Contacto». La página en la que se está lleva una **píldora `--brand-tint` con el texto en burdeos**. La píldora **viaja como una gota**: sigue al mouse y al foco, el borde que va adelante llega en 220ms y el de atrás en 560ms, así que se estira en el camino y se recoge al llegar. Al hacer clic suelta una ráfaga de ocho puntos burdeos que se apagan en ~700ms. Sin movimiento con `prefers-reduced-motion`. La fila de chips de categorías que dibujaba esta sección no se hizo: los chips están en la home y la lista en `/categorias`.
 - **En el teléfono** (por debajo de `md`) los enlaces pasan a un **menú lateral que sale por la izquierda** (☰ antes del isotipo), de 320px como máximo, con **los mismos cuatro enlaces que en escritorio** y, fija al pie del panel, la cuenta («Ingresar» o el nombre), que sale de la fila.
 - **El buscador es una lupa en todos los tamaños** y se abre a ancho completo debajo del encabezado; Escape lo cierra y devuelve el foco a la lupa. Sigue sin dibujarse mientras la página tiene su buscador a la vista.
 - **La cuenta lleva la cara de quien entró** (2026-10-26, F5.9): su foto o su blobatar, en un círculo de 32px con anillo `--border`, en lugar del ícono de persona. Sin sesión sigue el ícono con «Ingresar». Lo mismo al pie del menú del teléfono. El blobatar usa **los colores que elige la biblioteca**, no los de la marca (pedido del 2026-10-26): es una cara por persona y no una acción, y el burdeos queda para lo que se toca. **Se mueve al pasar el mouse por la píldora de la cuenta** —respira, se balancea, parpadea y crece un 4%—, y lo mismo en la fila de la foto de «Mis datos» (2026-10-26): son los dos lugares donde la cara es un control. **En el panel no se mueve**, porque en «Usuarios» hay cuarenta por página. Sin mouse, o con «reducir movimiento», queda quieto; una foto subida no se anima.
 - **El carrito es una píldora** (F3.8, no un ícono con insignia encima). Vacía, solo el ícono. Con productos, el número va en un **círculo burdeos de 28px con texto blanco** adentro de la píldora (2026-10-21), y desde 100 dice «99+».
 - La fila de categorías **desaparece en el panel del comprador y en el checkout**: ahí no se está explorando.
-- **El pie agrupa sus enlaces en tres** (2026-10-21): **«Tienda»** —«Catálogo», «Categorías» (§7.6), «Nosotros» y, desde el 2026-11-17, «Servicio técnico» (§7.7)—, **«Ayuda»** y **«Legales»**, en ese orden. **En el teléfono, un grupo debajo del otro** y con poco aire entre ellos (2026-10-21): de a dos por fila los nombres largos partían la columna. Cada enlace mide **40px de alto, una excepción a los 44 de §9** pedida para que el pie no mida 850px: sigue muy por encima de los 24px de WCAG 2.5.8, y sin espacio entre filas no hay toques que caigan en el vecino.
+- **El pie agrupa sus enlaces en tres** (2026-10-21): **«Tienda»** —«Productos», «Categorías» (§7.6), «Nosotros» y, desde el 2026-11-17, «Servicio técnico» (§7.7)—, **«Ayuda»** y **«Legales»**, en ese orden. **En el teléfono, un grupo debajo del otro** y con poco aire entre ellos (2026-10-21): de a dos por fila los nombres largos partían la columna. Cada enlace mide **40px de alto, una excepción a los 44 de §9** pedida para que el pie no mida 850px: sigue muy por encima de los 24px de WCAG 2.5.8, y sin espacio entre filas no hay toques que caigan en el vecino.
 - **Debajo de la marca va el eslogan en su forma canónica** (§2.4), «Ana vende, vos elegís la tecnología.», y debajo «Tu tienda de confianza para productos de tecnología y accesorios.», en lugar del aviso de zona de entrega y de la lista de categorías (2026-10-21, pedido tuyo). La zona sigue en la home, la ficha, el carrito y el checkout (RN-10).
 
 ### 5.2 Panel de administración
@@ -727,13 +726,13 @@ El componente más importante del sistema. Aparece en catálogo, home, recomenda
 | **Con descuento** | Precio tachado **arriba** del final, en su propio renglón. El final va en burdeos. **Sin píldora sobre la imagen** |
 | **Sin descuento** | El renglón del tachado queda **reservado vacío**: los precios de una fila caen a la misma altura (2026-10-20) |
 | **Sin stock** | Imagen al 55% de opacidad + píldora «Sin stock» centrada sobre ella, superficie blanca al 92%. **La tarjeta sigue siendo clicable** (RN-05) |
-| **Favorito** | Corazón arriba a la derecha de la imagen, **siempre a la vista**. Contorno cuando no está marcado, **relleno `--brand`** cuando sí. Área táctil de 44px aunque el ícono mida 20. Fondo `--surface` al 92% detrás, porque la imagen de abajo puede ser de cualquier color. **Late al marcarlo**, y no al desmarcarlo: escala a 1.25 y vuelve en 200ms (2026-10-20) |
+| **Favorito** | Corazón arriba a la derecha de la imagen, **solo con el mouse encima de la tarjeta o con el foco adentro**, y **no está donde no hay hover** —teléfono, tablet—: ahí se guarda desde la ficha (2026-11-20). Contorno cuando no está marcado, **relleno `--brand`** cuando sí. Área táctil de 44px aunque el ícono mida 20. Fondo `--surface` al 92% detrás, porque la imagen de abajo puede ser de cualquier color. **Late al marcarlo**, y no al desmarcarlo: escala a 1.25 y vuelve en 200ms (2026-10-20) |
 
 **Sobre la marca, sin versalitas** (2026-10-20). Iba en mayúsculas para separarla del nombre sin sumar un color ni un peso, y el efecto fue el contrario: en versalitas y con aire propio se leía más importante que el nombre del producto. Ahora va en caja normal, en 12px —el piso, §3— y pegada al nombre, igual en la tarjeta y en la ficha.
 
 **Sobre los dos números, y no cuatro.** La tarjeta llegó a mostrar la píldora «−$ 9.900» sobre la imagen, el precio final, el tachado y «Ahorrás $ 9.900»: la misma cifra dos veces y cuatro números para comunicar una sola oferta. Quedan los dos que dicen cosas distintas —cuánto valía y cuánto vale—, que es lo que ya dibujaba este esquema y lo que hace el canvas aprobado en F3.8. Desde el 2026-09-08 **la ficha hace lo mismo** (§6.7, RN-04c): la regla dejó de ser de la tarjeta y pasó a ser de la tienda.
 
-**Sobre el corazón, que no espera al hover.** Revelarlo al pasar el mouse deja media tienda sin favoritos: en un teléfono no hay hover, y ahí el botón no existiría. Y va **encima** del enlace estirado —`z-10`, fuera del ancla— porque envolver la tarjeta entera en un `<a>` metería el corazón adentro del enlace: HTML inválido, e inalcanzable con teclado. El relleno no es la única señal de estado: el botón lo anuncia también para lectores de pantalla (§9), que no ven un contorno lleno.
+**Sobre el corazón, que aparece con el hover** (2026-11-20, decisión tuya; hasta ese día iba siempre a la vista). La objeción de antes era que en un teléfono no hay hover y el botón no existiría: se resuelve sacándolo donde no hay hover (`@media (hover: hover)`, no el ancho, para que una tablet táctil no quede con un corazón invisible que igual se toca) y dejando «Guardar» en la ficha. Con teclado aparece al entrar el foco a la tarjeta. Va **encima** del enlace estirado —`z-10`, fuera del ancla— porque envolver la tarjeta entera en un `<a>` metería el corazón adentro del enlace: HTML inválido, e inalcanzable con teclado. El relleno no es la única señal de estado: el botón lo anuncia también para lectores de pantalla (§9), que no ven un contorno lleno.
 
 **Sobre los colores: una pastilla con la cantidad, no puntos** (2026-10-20, a la manera de Mercado Libre). Hasta ese día iban hasta cuatro puntos y «+N» en el renglón del precio, y no había ancho donde entraran siempre: con cinco colores, en el teléfono o en el carrusel, el precio se partía —el tachado subía en una tarjeta y no en la de al lado— o se pisaba con los puntos. Ahora, **con un solo color no se muestra nada**, y con dos o más va una pastilla oscura abajo a la izquierda de la foto —arriba a la derecha está el corazón y al centro «Sin stock»— con una ruedita y el número. **La ruedita es un arcoíris fijo, igual en todas** (decisión tuya del 2026-10-20): dice «hay más de un color», no cuáles. Se probó partida en los colores reales y no sirve: con diez se vuelve una mancha, y un negro o un gris se pierden contra la pastilla oscura. El nombre de cada color va en `sr-only`. **No es seleccionable**: elegir color es de la ficha (§6.5). El renglón de «Favoritos» conserva los puntos, porque ahí hay ancho.
 
