@@ -98,7 +98,7 @@ Ver detalle en §12 (Fuera de alcance).
 
 **Contenido**, en este orden (detallado el 2026-09-22 y **corregido el mismo día** contra el boceto que pasaste; el dibujo está en `DESIGN-REFERENCE.md` §7.1):
 
-1. **Hero con bloques flotantes.** Hasta cinco productos de **una** categoría destacada, en tarjetas escalonadas que flotan, con la marca y la bajada debajo. Los bloques **cambian de categoría cada tanto** —unos mouses, después unos teclados—, **cada uno enlaza a su ficha** y el movimiento **se puede parar** con un botón.
+1. **Hero con columnas de categorías** (F10.7d, 2026-11-20; reemplaza a la escena decorativa del 2026-10-19, que a su vez había reemplazado a los bloques flotantes). A la izquierda, la marca, el eslogan —con la palabra que rota— y el buscador; a la derecha, **tres columnas que corren solas** —en el teléfono, **dos filas** debajo del texto— con **seis categorías del día**. Cada una pone **su foto** (FA-21), si tiene, y **un bloque de color con su nombre y cuántos productos activos tiene**; las dos enlazan a la categoría. Se pueden **arrastrar** para volver a ver lo que pasó, y el movimiento **se puede parar** con un botón. **No se limita a las destacadas**: esas ya son los chips y las secciones; el hero recorre todo el catálogo, de a seis categorías por día.
 2. **Buscador**, con la invitación «¿Qué estás buscando hoy?». Sigue siendo lo que la pantalla pide hacer: no hay foto de portada ni banner.
 3. **Chips de categoría**: las **destacadas** (RF-18), **hasta siete**. Las que no entran no se muestran acá. Cada chip lleva al catálogo **ya filtrado por esa categoría**, no a una pantalla propia.
 4. **Aviso de la zona de entrega** (RN-10), **pegado a los chips**: es lo primero que alguien de afuera necesita saber para decidir si esta tienda le sirve. Acá va **en una línea** —hasta dónde llevamos y que el envío se coordina por WhatsApp—; el retiro en el punto de entrega lo dicen la ficha, el carrito y el checkout (el pie lo decía hasta el 2026-10-21).
@@ -115,15 +115,19 @@ Ver detalle en §12 (Fuera de alcance).
 - **«Más categorías» va en tarjetas con imagen y nombre** desde el 2026-10-05 (F2.9). La imagen es un campo propio de la categoría (FA-21), opcional: la que no tiene muestra su inicial en el mismo recuadro, así que la fila se ve prolija con categorías sin imagen mezcladas.
 
 **Criterios de aceptación:**
-- [ ] La home carga sin productos cargados (estado vacío controlado, sin errores), y **cada bloque desaparece solo** cuando no tiene qué mostrar: sin destacados no hay sección de destacados, sin ofertas no hay ofertas, sin medios de pago con logo no hay franja, y **sin categorías con fotos suficientes el hero queda en marca, bajada y buscador**.
+- [ ] La home carga sin productos cargados (estado vacío controlado, sin errores), y **cada bloque desaparece solo** cuando no tiene qué mostrar: sin destacados no hay sección de destacados, sin ofertas no hay ofertas, sin medios de pago con logo no hay franja, y **sin categorías con productos activos el hero queda en marca, eslogan y buscador**.
 - [ ] Todos los bloques enlazan a listados filtrados del catálogo.
 - [ ] Sólo se muestran productos con `isActive = true`.
 - [ ] Los accesos rápidos muestran las categorías **destacadas**, ordenadas entre ellas por nombre (§5.4), **con un tope de siete**. Sólo se muestran categorías activas.
 - [ ] Las secciones por categoría muestran **hasta una fila** de productos y enlazan a esa categoría en el catálogo.
-- [ ] El hero **muestra los productos que haya**: una categoría con cuatro dibuja cuatro bloques. Entra a la rotación la que tenga **al menos tres productos activos con foto** —con menos no es un hero, es un hueco—, y sólo entran productos **con foto**.
-- [ ] La rotación del hero **se detiene** mientras el mouse está encima o el foco del teclado está adentro, para que el enlace no se escape mientras se lo apunta.
-- [ ] El hero tiene un **botón de pausa a la vista** que detiene el movimiento —la rotación y el vaivén— y lo vuelve a arrancar. Es lo que pide WCAG 2.2.2 para todo movimiento que arranca solo y dura más de cinco segundos, y es la única forma de frenarlo desde un teléfono, donde no hay mouse encima.
-- [ ] El hero **no rota** si el visitante pidió menos movimiento (`prefers-reduced-motion`): se queda en la primera categoría, con todo su contenido alcanzable.
+- [ ] Las categorías del hero salen de las **activas con al menos un producto activo**, tengan foto o no. Son **seis por día** —el código admite hasta diez— **sorteadas con la fecha de Argentina**: todo el día son las mismas, recargar no las cambia y a la medianoche sale otro grupo. Con menos de seis que cumplan, van las que haya.
+- [ ] Cada categoría pone **su foto** —si tiene— y **un bloque** con su nombre y la cantidad de productos activos («1 producto», «32 productos»). Sin foto, solo el bloque. Las piezas se repiten para llenar las columnas.
+- [ ] **La palabra del eslogan rota por las seis del día y después dice «la tecnología»**, que se queda un poco más, y vuelve a empezar. Mientras nombra una categoría, sus piezas se resaltan en las columnas; con «la tecnología», ninguna.
+- [ ] Cada foto y cada bloque **enlaza a su categoría**. **Un arrastre no es un clic**: soltar después de arrastrar no abre nada. Con el teclado las piezas no se recorren —son muchas y se mueven—: las categorías están en los chips y en las secciones.
+- [ ] La columna **se frena** mientras el mouse está encima, para que el enlace no se escape mientras se lo apunta.
+- [ ] **En la computadora**, tres columnas verticales que se arrastran con el mouse; la rueda no las mueve, para no quedarse con el scroll de la página. **En el teléfono**, dos filas horizontales que se arrastran con el dedo, sin trabar el scroll de la página. Al soltar siguen con un poco de envión y vuelven a su paso.
+- [ ] El hero tiene un **botón de pausa a la vista** que detiene las columnas y la palabra, y las vuelve a arrancar. Es lo que pide WCAG 2.2.2 para todo movimiento que arranca solo y dura más de cinco segundos, y es la única forma de frenarlo desde un teléfono, donde no hay mouse encima.
+- [ ] Si el visitante pidió menos movimiento (`prefers-reduced-motion`), **ni las columnas corren ni la palabra rota**: queda «la tecnología», sin resaltado. Las columnas se pueden arrastrar igual.
 - [ ] La hilera de medios de pago **queda quieta** si el visitante pidió menos movimiento (`prefers-reduced-motion`), y no es la única forma de llegar a esa información.
 
 ---
@@ -1164,8 +1168,14 @@ orden, que es otra acción y está disponible siempre.
 
 **Origen:** pedido del 2026-10-23. Agregada como F9.5.
 
-**Descripción:** En Pascua, Halloween y Navidad la tienda se decora sola: el hero
-de la home cambia sus dibujos por los de la fecha y el logo de la barra lleva
+> **Desde el 2026-11-20 (F10.7d) el hero ya no se disfraza.** El hero nuevo
+> no tiene dibujos propios que cambiar: son las fotos de las categorías. Queda
+> el adorno del logo, con su período y su interruptor; la columna «Hero» de la
+> tabla y el criterio de las piezas quedan como historia. Qué hace la fecha en
+> el hero nuevo, si hace algo, se decide aparte.
+
+**Descripción:** En Pascua, Halloween y Navidad la tienda se decora sola: ~~el hero
+de la home cambia sus dibujos por los de la fecha y~~ el logo de la barra lleva
 un adorno. Se enciende y se apaga sin que nadie haga nada, y la vendedora
 puede **apagar cada fecha** desde la configuración (RF-20).
 
@@ -1184,8 +1194,9 @@ puede **apagar cada fecha** desde la configuración (RF-20).
 - [ ] Desde la configuración se apaga cada fecha por separado; apagada, la
       tienda se ve como todos los días. **Prendidas por defecto**, también antes
       de que la configuración se haya guardado nunca.
-- [ ] Las piezas siguen siendo los productos que vende la tienda,
-      disfrazados: la escena no deja de decir qué se vende.
+- [ ] ~~Las piezas siguen siendo los productos que vende la tienda,
+      disfrazados: la escena no deja de decir qué se vende.~~ (sin hero
+      disfrazado desde el 2026-11-20)
 - [ ] **El isotipo no se toca**: el adorno es un dibujo aparte, encima, y el
       nombre accesible del logo no cambia (DESIGN-REFERENCE §2.3).
 - [ ] Lo que se mueve en el adorno termina solo antes de los cinco segundos,
@@ -1346,7 +1357,7 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | FA-17 | Recomendaciones por co-compra / co-visitación («quienes compraron esto también compraron») | Requiere volumen de órdenes que el MVP no tiene (*cold start*). Candidato natural para la fase 2, reutilizando los bloques de RF-32 |
 | FA-18 | Relacionados curados manualmente producto a producto | Se resuelve por afinidad de categorías (RF-31). Es la capa a sumar antes que la co-compra si hace falta más precisión |
 | FA-19 | Recomendaciones personalizadas por perfil o historial de compras | Más allá de «Vistos recientemente» (RF-33) |
-| FA-21 | **Imagen de categoría**, chica, como referencia visual en un listado de categorías. **Entró al MVP el 2026-10-05 (F2.9)**: se carga en el panel y se ve en «Más categorías» de la home y, desde el 2026-10-21, en la página de categorías (RF-35) | Hoy la categoría es sólo texto en las tres superficies donde aparece —chips del encabezado, accesos de la portada, filtro del listado—. Una imagen chica al lado del nombre ayuda a reconocerla de un vistazo; **no** es una portada ni una cabecera, y por eso no necesita el tamaño `detail` de §9.2: con `thumb` y `card` alcanza. Es **una** imagen por categoría, así que va en una columna de `categories` y no en una tabla aparte — `variant_images` existe porque un producto tiene hasta cinco y hay que ordenarlas. **La marca no lleva otra imagen**: su logo (RF-18) ya cubre lo que necesita. La condición para que esto se vea bien: el listado tiene que quedar prolijo **con categorías sin imagen mezcladas**, porque va a haberlas — el día que se agregue nadie va a cargar las diez de una sentada |
+| FA-21 | **Imagen de categoría**, chica, como referencia visual en un listado de categorías. **Entró al MVP el 2026-10-05 (F2.9)**: se carga en el panel y se ve en «Más categorías» de la home y, desde el 2026-10-21, en la página de categorías (RF-35) | Hoy la categoría es sólo texto en las tres superficies donde aparece —chips del encabezado, accesos de la portada, filtro del listado—. Una imagen chica al lado del nombre ayuda a reconocerla de un vistazo; **no** es una portada ni una cabecera, y por eso no necesita el tamaño `detail` de §9.2: con `thumb` y `card` alcanza. **Desde el 2026-11-20 (F10.7d) también es la foto de la categoría en el hero de la home**, en su versión `card` y recortada a 3:4: la vendedora la sube cuadrada y con el producto al centro, y en el hero se pierde un poco de los costados. Es **una** imagen por categoría, así que va en una columna de `categories` y no en una tabla aparte — `variant_images` existe porque un producto tiene hasta cinco y hay que ordenarlas. **La marca no lleva otra imagen**: su logo (RF-18) ya cubre lo que necesita. La condición para que esto se vea bien: el listado tiene que quedar prolijo **con categorías sin imagen mezcladas**, porque va a haberlas — el día que se agregue nadie va a cargar las diez de una sentada |
 | FA-22 | **Gestión del servicio técnico**: turnos, seguimiento del estado de una reparación, precios por servicio, venta de licencias sueltas | El servicio técnico de RF-42 es una página que lleva la consulta a WhatsApp, como la compra del visitante (RF-04). Lo demás se coordina por WhatsApp, y Ana prefiere ver el equipo antes de dar un precio |
 | FA-23 | **Login con Facebook** (2026-11-18) | Salió del MVP por decisión tuya: con Google y email alcanza. Estaba en RF-06 desde el 2026-08-30 y nunca se configuró. El código ya muestra solo los proveedores que GoTrue tiene prendidos (`modules/users/proveedores.ts`), así que sumarlo después es crear la app en Meta y prenderlo, sin tocar la tienda |
 | FA-24 | **Página de servicio técnico** (RF-42, 2026-11-18) | Salió del MVP por decisión tuya, el día después de especificarla y sin código escrito. RF-42, DR §7.7 y TS §12.1 quedan como están, para cuando se haga. Con ella salen la franja de la home, el enlace «¿Querés que te lo instalemos?» de la ficha y «Ofrece instalación» en las categorías |
@@ -1451,3 +1462,4 @@ Los recomendados persiguen dos intenciones distintas y por eso son **dos bloques
 | 2026-11-17 | Servicio técnico (RF-42), en el MVP: `/servicio-tecnico`, aparte del catálogo | Pedido tuyo. Solo presupuesto, con el diagnóstico sin cargo; la consulta es un formulario que arma el mensaje de WhatsApp y no guarda nada; el taller se nombra por la ciudad; el equipo se trae o se coordina el traslado; Windows y Office como instalación con licencia original, sin claves sueltas; 5 días de garantía. Sigue abierta con la tienda en mantenimiento. Se llega por una franja en la home, el pie y la ficha de las categorías que lo prenden. Las preguntas frecuentes quedan como idea |
 | 2026-11-18 | Login con Facebook, fuera del MVP (FA-23) | Decisión tuya: con Google y email alcanza. Nunca se configuró, y el código ya lo deja apagado mientras GoTrue no lo tenga prendido |
 | 2026-11-18 | Servicio técnico (RF-42), fuera del MVP (FA-24) | Decisión tuya, un día después de especificarlo y sin código escrito. La especificación queda para cuando se haga |
+| 2026-11-20 | Hero de columnas de categorías (RF-01, F10.7d); el hero deja de disfrazarse por fecha (RF-38) | Decisión tuya, después de comparar unas quince direcciones en la tienda. El hero muestra seis categorías por día, sorteadas entre todas las que tienen productos, con su foto y su cantidad: no se limita a las destacadas, que ya están en los chips y las secciones. El adorno del logo sigue |

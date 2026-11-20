@@ -3,6 +3,8 @@ import "server-only";
 import { sql } from "drizzle-orm";
 
 import { db } from "@/db";
+import { diaDeArgentina } from "@/lib/escenas";
+import { sorteoDelDia } from "@/lib/sorteo-del-dia";
 import type { ProductoEnTarjeta } from "@/components/shop/tarjeta-producto";
 import { urlDeLogo } from "@/modules/media/subir";
 import {
@@ -52,6 +54,21 @@ export type CategoriaDeLaHome = {
   productos: ProductoEnTarjeta[];
 };
 
+/** Cuántas categorías muestra el hero por día (F10.7d, DR §7.1). */
+export const CATEGORIAS_DEL_HERO = 6;
+
+/**
+ * Una de las categorías del hero (F10.7d, TS §10.5): su foto (FA-21) ya
+ * resuelta en `-card`, o `null`, y cuántos productos activos tiene.
+ */
+export type CategoriaDelHero = {
+  id: string;
+  slug: string;
+  nombre: string;
+  imagenUrl: string | null;
+  cantidad: number;
+};
+
 export type MedioDePagoDeLaHome = {
   id: string;
   nombre: string;
@@ -77,6 +94,8 @@ export type DatosDeLaHome = {
   ofertas: ProductoEnTarjeta[];
   /** Las demás activas, para la sección del pie. */
   masCategorias: CategoriaEnTarjeta[];
+  /** Las del hero de hoy: seis sorteadas entre todas las que tienen productos. */
+  delHero: CategoriaDelHero[];
   mediosDePago: MedioDePagoDeLaHome[];
 };
 
@@ -96,14 +115,20 @@ export async function leerHome(): Promise<DatosDeLaHome> {
 
   const ids = destacadas.map((c) => c.id);
 
-  const [porCategoria, destacados, ofertas, masCategorias, mediosDePago] =
-    await Promise.all([
-      productosPorCategoria(ids),
+  const [
+    porCategoria,
+    destacados,
+    ofertas,
+    masCategorias,
+    mediosDePago,
+    conProductosActivos,
+  ] = await Promise.all([
+    productosPorCategoria(ids),
 
-      // «Destacados» es la bandera de RF-20, y adentro va lo último cargado:
-      // es la sección que la vendedora usa para mover lo que le interesa hoy,
-      // así que lo nuevo tiene que subir solo.
-      db.execute<FilaDeTarjeta>(sql`
+    // «Destacados» es la bandera de RF-20, y adentro va lo último cargado:
+    // es la sección que la vendedora usa para mover lo que le interesa hoy,
+    // así que lo nuevo tiene que subir solo.
+    db.execute<FilaDeTarjeta>(sql`
         SELECT ${COLUMNAS_DE_TARJETA}
           FROM products p
           JOIN brands b ON b.id = p.brand_id
@@ -112,9 +137,9 @@ export async function leerHome(): Promise<DatosDeLaHome> {
          ORDER BY p.created_at DESC, p.id
          LIMIT ${POR_SECCION}`),
 
-      // «En oferta»: primero el descuento más grande, que es lo que hace que
-      // la sección valga la pena mirarla.
-      db.execute<FilaDeTarjeta>(sql`
+    // «En oferta»: primero el descuento más grande, que es lo que hace que
+    // la sección valga la pena mirarla.
+    db.execute<FilaDeTarjeta>(sql`
         SELECT ${COLUMNAS_DE_TARJETA}
           FROM products p
           JOIN brands b ON b.id = p.brand_id
@@ -123,14 +148,14 @@ export async function leerHome(): Promise<DatosDeLaHome> {
          ORDER BY p.discount DESC, p.id
          LIMIT ${POR_SECCION}`),
 
-      // Las que no están arriba, **y sólo si tienen algo que mostrar**: una
-      // categoría vacía nombrada en la home es un enlace a un «no hay nada».
-      db.execute<{
-        id: string;
-        slug: string;
-        nombre: string;
-        imageKey: string | null;
-      }>(sql`
+    // Las que no están arriba, **y sólo si tienen algo que mostrar**: una
+    // categoría vacía nombrada en la home es un enlace a un «no hay nada».
+    db.execute<{
+      id: string;
+      slug: string;
+      nombre: string;
+      imageKey: string | null;
+    }>(sql`
         SELECT c.id, c.slug, c.name AS nombre, c.image_key AS "imageKey"
           FROM categories c
          WHERE c.is_active
@@ -140,14 +165,30 @@ export async function leerHome(): Promise<DatosDeLaHome> {
          ORDER BY immutable_unaccent(lower(c.name))
          LIMIT ${MAS_CATEGORIAS}`),
 
-      // Sólo los que tienen logo (§7.1): un nombre suelto en una fila de
-      // logos se lee como una imagen que no cargó.
-      db.execute<{ id: string; nombre: string; logoKey: string }>(sql`
+    // Sólo los que tienen logo (§7.1): un nombre suelto en una fila de
+    // logos se lee como una imagen que no cargó.
+    db.execute<{ id: string; nombre: string; logoKey: string }>(sql`
         SELECT id, name AS nombre, logo_key AS "logoKey"
           FROM payment_methods
          WHERE is_active AND logo_key IS NOT NULL
          ORDER BY sort_order, immutable_unaccent(lower(name))`),
-    ]);
+
+    // El hero (F10.7d, TS §10.5): todas las que tienen algo activo, con la
+    // cuenta. Son decenas de filas; el sorteo del día se hace acá abajo.
+    db.execute<{
+      id: string;
+      slug: string;
+      nombre: string;
+      imageKey: string | null;
+      cantidad: number;
+    }>(sql`
+      SELECT c.id, c.slug, c.name AS nombre, c.image_key AS "imageKey",
+             count(p.id)::int AS cantidad
+        FROM categories c
+        JOIN products p ON p.category_id = c.id AND p.is_active
+       WHERE c.is_active
+       GROUP BY c.id`),
+  ]);
 
   const conProductos = destacadas.map((c) => ({
     ...c,
@@ -163,6 +204,14 @@ export async function leerHome(): Promise<DatosDeLaHome> {
     destacados: destacados.map(aTarjeta),
     ofertas: ofertas.map(aTarjeta),
     masCategorias: masCategorias.map(({ imageKey, ...categoria }) => ({
+      ...categoria,
+      imagenUrl: urlDeLogo(imageKey, "card"),
+    })),
+    delHero: sorteoDelDia(
+      conProductosActivos,
+      CATEGORIAS_DEL_HERO,
+      diaDeArgentina(),
+    ).map(({ imageKey, ...categoria }) => ({
       ...categoria,
       imagenUrl: urlDeLogo(imageKey, "card"),
     })),

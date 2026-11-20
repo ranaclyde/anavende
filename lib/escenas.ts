@@ -3,9 +3,9 @@ import { ZONA_HORARIA } from "@/lib/fechas";
 /**
  * Las escenas por fecha — F9.5, RF-38 (2026-10-23).
  *
- * En su período, la tienda se viste: el hero de la home cambia de piezas
- * (`components/shop/home/escena-del-hero.ts`) y el logo de la barra lleva un
- * adorno (`components/shop/adorno-de-temporada.tsx`). **Se encienden solas**;
+ * En su período, el logo de la barra lleva un adorno
+ * (`components/shop/adorno-de-temporada.tsx`). Hasta el 2026-11-20 también
+ * cambiaba las piezas del hero; el hero nuevo (F10.7d) no tiene piezas. **Se encienden solas**;
  * lo único que se toca desde el panel es si están permitidas (`site_settings`).
  *
  * **Los períodos están acá, no en la base.** Cada fecha nueva trae sus
@@ -107,6 +107,16 @@ function hoyEnArgentina(ahora: Date): { anio: number; hoy: number } {
     anio: valor("year"),
     hoy: clave({ mes: valor("month"), dia: valor("day") }),
   };
+}
+
+/**
+ * El día de hoy en Argentina como número, `20261120`: la semilla del sorteo
+ * de categorías del hero (F10.7d, TS §10.5). Cambia a la medianoche de acá,
+ * no a la del servidor.
+ */
+export function diaDeArgentina(ahora: Date = new Date()): number {
+  const { anio, hoy } = hoyEnArgentina(ahora);
+  return anio * 10000 + hoy;
 }
 
 function adentro(hoy: number, { desde, hasta }: Periodo) {

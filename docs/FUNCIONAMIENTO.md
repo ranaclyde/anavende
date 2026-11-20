@@ -281,11 +281,11 @@ mes» da lo mismo en los dos. Los reportes se exportan a Excel desde
 
 En **Pascua** (la Semana Santa, del Domingo de Ramos al de Pascua),
 **Halloween** (1 de octubre al 1 de noviembre) y **Navidad** (1 de diciembre
-al 7 de enero) la tienda se decora sola: el hero de la home cambia sus dibujos
-y el logo de la barra lleva un adorno. Los períodos están en `lib/escenas.ts`
-y se cuentan con la fecha de Argentina; Pascua se calcula para cada año; las piezas de cada
-escena, en `components/shop/home/escena-del-hero.ts`. Cada fecha se apaga
-desde «Configuración» → «Fechas especiales».
+al 7 de enero) el logo de la barra lleva un adorno. Los períodos están en
+`lib/escenas.ts` y se cuentan con la fecha de Argentina; Pascua se calcula
+para cada año. Cada fecha se apaga desde «Configuración» → «Fechas
+especiales». Hasta el 2026-11-20 también cambiaba los dibujos del hero; el
+hero nuevo (F10.7d) no tiene dibujos que disfrazar.
 
 ## Tienda cerrada
 
