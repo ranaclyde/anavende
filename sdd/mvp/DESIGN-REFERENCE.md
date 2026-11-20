@@ -1288,9 +1288,15 @@ trae una categoría femenina que no termina en -as, tiene que pasar a ser un
 dato de la categoría.
 
 **Las columnas: seis categorías por día, foto y bloque.** Cada categoría
-aparece dos veces: **su foto** (FA-21) —si tiene— y **un bloque liso de
-color** con su nombre y cuántos productos activos tiene. Los bloques le dan
-aire y ritmo a la columna; sin ellos sería una pared de fotos. Las piezas son
+aparece dos veces: **su foto** (FA-21) —si tiene— y **un bloque de color
+vivo** con su nombre, cuántos productos activos tiene y **una flecha ↗**
+arriba a la derecha, que dice que se toca. Los bloques le dan ritmo a la
+columna; sin ellos sería una pared de fotos. **Los colores** (2026-11-20,
+elegidos entre tres pruebas: tonos suaves, vivos y todo en pizarra) son
+los 700 de Tailwind —naranja, azul, verde, violeta, ámbar, verde azulado y
+celeste—, todos con texto blanco en AA y **sin rojos ni rosas**, que
+pelearían con el burdeos de las acciones. Van por la posición del día, no
+por la categoría. Las piezas son
 tarjetas de 3:4 con el radio de la tarjeta de producto, y cada columna
 arranca en un tercio distinto de la lista para que la misma categoría no
 quede a la misma altura en dos columnas. La lista se repite para llenar.
@@ -1300,8 +1306,7 @@ salen de todas las categorías con productos —destacadas incluidas— y
 cambian a la medianoche.
 
 **El resaltado: se destaca la que nombra, no se apagan las demás.** Mientras
-la palabra nombra una categoría, **su bloque se invierte** —fondo tinta y
-texto blanco— y **su foto lleva un borde**: tinta afuera y una línea blanca
+la palabra nombra una categoría, **su bloque pasa a tinta** y **su foto lleva un borde**: tinta afuera y una línea blanca
 adentro, porque sobre una foto oscura la tinta sola no se ve. El borde va por
 dentro de la foto, porque afuera lo cortaría el costado de la columna. Las
 demás quedan a color pleno. Con «la tecnología», ninguna destacada. Tinta y
@@ -1331,11 +1336,14 @@ centro, y acá se pierde un poco de los costados.
 | Alto | 628px en computadora | El de las demás direcciones probadas, que dejaba ver los chips |
 | Eslogan | `hero`, 40 a 72px según el ancho | Es la pantalla: tiene que pesar más que las fotos |
 | Palabra | 3,5s; «la tecnología», 7s | Lo justo para leerla y mirar las columnas |
-| Bloques | tonos suaves fijos, en orden | Ninguno compite con el burdeos, que es de las acciones |
+| Bloques | 7 colores vivos (700), en orden, texto blanco | Le dan energía a la columna; sin rojos, que son del burdeos |
 
 **Y se puede parar con un botón** (WCAG 2.2.2): las columnas y la palabra
-arrancan solas. Siempre a la vista, arriba a la derecha; detiene las dos
-cosas. La palabra también para cuando el hero sale de la pantalla. Con
+arrancan solas. Siempre a la vista, **abajo a la derecha de las tiras**,
+encima de la última pieza —pisarla un poco no importa: es donde se mira
+cuando lo que se quiere parar son las fotos—; detiene las dos cosas. Va
+fuera de la caja `aria-hidden` de las tiras, que si no lo dejaría sin
+usar. La palabra también para cuando el hero sale de la pantalla. Con
 `prefers-reduced-motion` no corre nada, el eslogan queda en su forma
 canónica sin resaltado y el botón no se dibuja; las columnas se pueden
 arrastrar igual.

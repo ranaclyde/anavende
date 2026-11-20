@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause, Play } from "lucide-react";
+import { ArrowUpRight, Pause, Play } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -47,15 +47,20 @@ const PALABRA_MS = 3500;
 /** «La tecnología» cierra la vuelta y se queda el doble. */
 const TECNOLOGIA_MS = 7000;
 
-/** Tonos suaves para los bloques, en orden: ninguno compite con el burdeos. */
-const TINTES = [
-  "236 196 168",
-  "176 196 222",
-  "190 210 178",
-  "206 190 228",
-  "228 214 170",
-  "232 186 196",
-  "180 214 214",
+/**
+ * Los bloques, en colores vivos (2026-11-20, elegidos entre tres pruebas:
+ * suaves, vivos y pizarra). Son los 700 de Tailwind, todos con texto blanco
+ * en AA, y sin rojos ni rosas: el burdeos es de las acciones (DR §3.1). Van
+ * en orden: el color es de la posición del día, no de la categoría.
+ */
+const VIVOS = [
+  "#c2410c",
+  "#1d4ed8",
+  "#15803d",
+  "#7e22ce",
+  "#b45309",
+  "#0f766e",
+  "#0369a1",
 ];
 
 /** Las tiras: la del medio va al revés, cada una a su paso (px por segundo). */
@@ -378,124 +383,133 @@ export function HeroDeLaHome({
         </div>
 
         {tiras.length > 0 ? (
-          <div
-            ref={zona}
-            // Decorativas para el lector de pantalla y fuera del Tab: las
-            // categorías están en los chips. Con el mouse, cada pieza lleva
-            // a la suya.
-            aria-hidden
-            className="relative -mx-4 flex flex-col gap-2.5 pb-8 select-none sm:-mx-6 sm:gap-3 lg:mx-0 lg:grid lg:h-full lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)] lg:pb-0 lg:[mask-image:linear-gradient(180deg,transparent,#000_7%,#000_90%,transparent)]"
-          >
-            {tiras.map((piezas, t) => (
-              <div
-                key={t}
-                data-tira
-                className={cn(
-                  "relative min-w-0 cursor-grab touch-pan-y overflow-hidden active:cursor-grabbing lg:touch-auto",
-                  // En el teléfono, dos filas.
-                  t === 2 && "max-lg:hidden",
-                )}
-              >
-                <div data-cinta className="flex w-max lg:w-full lg:flex-col">
-                  {/* Dos veces la misma tira: al dar la vuelta, empalma. */}
-                  {[0, 1].map((copia) => (
-                    <div
-                      key={copia}
-                      data-copia
-                      className="flex shrink-0 pl-4 sm:pl-6 lg:flex-col lg:pl-0"
-                    >
-                      {piezas.map((pieza, i) => {
-                        const c = categorias[pieza.categoria];
-                        // La que nombra la palabra se destaca y las demás
-                        // quedan como están: el bloque se invierte (tinta y
-                        // texto blanco) y la foto lleva un borde en tinta.
-                        // Apagar las otras dejaba todo gris.
-                        const destacada = pieza.categoria === actual;
-                        return (
-                          <Link
-                            key={i}
-                            href={c.href}
-                            tabIndex={-1}
-                            draggable={false}
-                            className="block w-32 shrink-0 pr-2.5 sm:w-36 sm:pr-3 lg:w-full lg:pr-0 lg:pb-3"
-                          >
-                            {pieza.foto ? (
-                              <span className="relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-surface-sunken">
-                                <Image
-                                  src={pieza.foto}
-                                  alt=""
-                                  fill
-                                  draggable={false}
-                                  // Arriba del pliegue: las primeras, sin
-                                  // diferir.
-                                  loading={
-                                    copia === 0 && i < 3 ? "eager" : "lazy"
-                                  }
-                                  sizes="(min-width: 1024px) 220px, 144px"
-                                  className="pointer-events-none object-cover"
-                                />
-                                {/* El borde va adentro: afuera lo cortaría
+          <div className="relative -mx-4 pb-8 sm:-mx-6 lg:mx-0 lg:h-full lg:pb-0">
+            <div
+              ref={zona}
+              // Decorativas para el lector de pantalla y fuera del Tab: las
+              // categorías están en los chips. Con el mouse, cada pieza lleva
+              // a la suya. El botón de pausa va afuera de esta caja: adentro
+              // de un `aria-hidden` no se podría usar.
+              aria-hidden
+              className="relative flex flex-col gap-2.5 select-none sm:gap-3 lg:grid lg:h-full lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)] lg:[mask-image:linear-gradient(180deg,transparent,#000_7%,#000_90%,transparent)]"
+            >
+              {tiras.map((piezas, t) => (
+                <div
+                  key={t}
+                  data-tira
+                  className={cn(
+                    "relative min-w-0 cursor-grab touch-pan-y overflow-hidden active:cursor-grabbing lg:touch-auto",
+                    // En el teléfono, dos filas.
+                    t === 2 && "max-lg:hidden",
+                  )}
+                >
+                  <div data-cinta className="flex w-max lg:w-full lg:flex-col">
+                    {/* Dos veces la misma tira: al dar la vuelta, empalma. */}
+                    {[0, 1].map((copia) => (
+                      <div
+                        key={copia}
+                        data-copia
+                        className="flex shrink-0 pl-4 sm:pl-6 lg:flex-col lg:pl-0"
+                      >
+                        {piezas.map((pieza, i) => {
+                          const c = categorias[pieza.categoria];
+                          // La que nombra la palabra se destaca y las demás
+                          // quedan como están: el bloque se invierte (tinta y
+                          // texto blanco) y la foto lleva un borde en tinta.
+                          // Apagar las otras dejaba todo gris.
+                          const destacada = pieza.categoria === actual;
+                          return (
+                            <Link
+                              key={i}
+                              href={c.href}
+                              tabIndex={-1}
+                              draggable={false}
+                              className="group block w-32 shrink-0 pr-2.5 sm:w-36 sm:pr-3 lg:w-full lg:pr-0 lg:pb-3"
+                            >
+                              {pieza.foto ? (
+                                <span className="relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-surface-sunken">
+                                  <Image
+                                    src={pieza.foto}
+                                    alt=""
+                                    fill
+                                    draggable={false}
+                                    // Arriba del pliegue: las primeras, sin
+                                    // diferir.
+                                    loading={
+                                      copia === 0 && i < 3 ? "eager" : "lazy"
+                                    }
+                                    sizes="(min-width: 1024px) 220px, 144px"
+                                    className="pointer-events-none object-cover"
+                                  />
+                                  {/* El borde va adentro: afuera lo cortaría
                                     el costado de la columna. */}
+                                  <span
+                                    className={cn(
+                                      // Tinta afuera y una línea blanca adentro: sobre una foto
+                                      // oscura, la tinta sola no se ve.
+                                      "absolute inset-0 rounded-[18px] shadow-[inset_0_0_0_3px_var(--color-ink),inset_0_0_0_5px_rgb(255_255_255/0.9)] transition-opacity duration-500",
+                                      destacada ? "opacity-100" : "opacity-0",
+                                    )}
+                                  />
+                                </span>
+                              ) : (
                                 <span
-                                  className={cn(
-                                    // Tinta afuera y una línea blanca adentro: sobre una foto
-                                    // oscura, la tinta sola no se ve.
-                                    "absolute inset-0 rounded-[18px] shadow-[inset_0_0_0_3px_var(--color-ink),inset_0_0_0_5px_rgb(255_255_255/0.9)] transition-opacity duration-500",
-                                    destacada ? "opacity-100" : "opacity-0",
-                                  )}
-                                />
-                              </span>
-                            ) : (
-                              <span
-                                className={cn(
-                                  "flex aspect-[3/4] flex-col justify-end gap-0.5 rounded-[18px] p-3 transition-colors duration-500 sm:p-4",
-                                  destacada ? "text-white" : "text-ink",
-                                )}
-                                style={{
-                                  backgroundColor: destacada
-                                    ? "var(--color-ink)"
-                                    : `rgb(${TINTES[pieza.categoria % TINTES.length]})`,
-                                }}
-                              >
-                                <span className="text-body-sm font-semibold sm:text-body">
-                                  {c.nombre}
+                                  className="relative flex aspect-[3/4] flex-col justify-end gap-0.5 rounded-[18px] p-3 text-white transition-colors duration-500 sm:p-4"
+                                  style={{
+                                    backgroundColor: destacada
+                                      ? "var(--color-ink)"
+                                      : VIVOS[pieza.categoria % VIVOS.length],
+                                  }}
+                                >
+                                  {/* Que se note que se toca. */}
+                                  <span className="absolute top-3 right-3 grid size-8 place-items-center rounded-pill bg-white/20 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 sm:top-4 sm:right-4">
+                                    <ArrowUpRight
+                                      aria-hidden
+                                      className="size-4"
+                                    />
+                                  </span>
+                                  <span className="text-body-sm font-semibold sm:text-body">
+                                    {c.nombre}
+                                  </span>
+                                  <span className="text-caption">
+                                    {productos(c.cantidad)}
+                                  </span>
                                 </span>
-                                <span className="text-caption opacity-75">
-                                  {productos(c.cantidad)}
-                                </span>
-                              </span>
-                            )}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  ))}
+                              )}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            {rota ? (
+              <button
+                type="button"
+                onClick={() => setDetenido((v) => !v)}
+                // El rótulo va dos veces: en `sr-only` para el lector de pantalla y
+                // en `title` para el globo del navegador.
+                title={
+                  detenido ? "Reanudar el movimiento" : "Pausar el movimiento"
+                }
+                // Abajo a la derecha de las tiras, encima de la última pieza.
+                className="absolute right-4 bottom-10 z-30 grid size-11 lg:right-3 lg:bottom-3 place-items-center rounded-pill bg-surface/95 text-ink-secondary shadow-md transition-colors duration-150 hover:text-ink"
+              >
+                {detenido ? (
+                  <Play aria-hidden className="size-4" />
+                ) : (
+                  <Pause aria-hidden className="size-4" />
+                )}
+                <span className="sr-only">
+                  {detenido ? "Reanudar el movimiento" : "Pausar el movimiento"}
+                </span>
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>
-
-      {rota ? (
-        <button
-          type="button"
-          onClick={() => setDetenido((v) => !v)}
-          // El rótulo va dos veces: en `sr-only` para el lector de pantalla y
-          // en `title` para el globo del navegador.
-          title={detenido ? "Reanudar el movimiento" : "Pausar el movimiento"}
-          className="absolute top-4 right-4 z-30 grid size-11 place-items-center rounded-pill bg-surface/90 text-ink-secondary shadow-sm transition-colors duration-150 hover:text-ink"
-        >
-          {detenido ? (
-            <Play aria-hidden className="size-4" />
-          ) : (
-            <Pause aria-hidden className="size-4" />
-          )}
-          <span className="sr-only">
-            {detenido ? "Reanudar el movimiento" : "Pausar el movimiento"}
-          </span>
-        </button>
-      ) : null}
     </section>
   );
 }
