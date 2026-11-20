@@ -1300,7 +1300,9 @@ salen de todas las categorías con productos —destacadas incluidas— y
 cambian a la medianoche.
 
 **El resaltado.** Mientras la palabra nombra una categoría, sus piezas
-quedan enteras y las demás bajan un paso (opacidad 45 %); con «la
+quedan enteras y las demás bajan un paso: la foto al 45 % y el color del
+bloque al 40 %, **pero nunca su texto**, que sigue en tinta y con contraste
+AA (con todo el bloque a media opacidad, axe lo marcaba en 2:1). Con «la
 tecnología», todas enteras. Así el texto y las columnas dicen lo mismo.
 
 **Se mueven solas y se pueden arrastrar.** La del medio sube y las de los

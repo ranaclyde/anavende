@@ -8,8 +8,6 @@ import { BotonFavorito } from "@/components/shop/favorito";
 import { HeroDeLaHome } from "@/components/shop/home/hero";
 import { HileraDePagos } from "@/components/shop/home/pagos";
 // PRUEBA sin commitear: los heros con fotos (`?hero=a` a `?hero=g`).
-import { SelectorDeHero } from "@/components/shop/home/prueba-heroes";
-import { HeroColumnas } from "@/components/shop/home/prueba-heroes-referencias";
 import {
   GrillaDeLaHome,
   SeccionDeLaHome,
@@ -73,16 +71,7 @@ export const metadata: Metadata = {
  * de pago, donde lo prevé §7.1. Llega por `<Suspense>`: es del visitante y no
  * del catálogo, y la home no lo espera.
  */
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ [clave: string]: string | string[] | undefined }>;
-}) {
-  // PRUEBA sin commitear.
-  const pedido = (await searchParams).hero;
-  const variante =
-    typeof pedido === "string" && /^p$/.test(pedido) ? pedido : null;
-
+export default async function Home() {
   // Independientes: los favoritos son del visitante y el catálogo no es de
   // nadie. Encadenarlas sumaría un viaje a la pantalla de entrada, que es la
   // que más caro paga cada milisegundo (RNF-03).
@@ -129,28 +118,30 @@ export default async function Home({
       </li>
     ));
 
-  // PRUEBA: el hero de prueba va a todo el ancho y pegado al encabezado,
-  // fuera del contenedor de la página. Con él, la sección de abajo queda solo
-  // con las chips.
-  const heroDePrueba = variante ? (
-    <HeroColumnas
-      categorias={datos.destacadas.map((c) => ({
-        nombre: c.nombre,
-        imagenUrl: c.imagenUrl,
-      }))}
-      buscador={<SearchBox principal placeholder="¿Qué estás buscando hoy?" />}
-      aclaracion={
-        <p className="max-w-prose text-caption font-normal text-balance text-ink-secondary sm:text-body-sm">
+  return (
+    <>
+      {/* ── El hero (F10.7d, §7.1): a todo el ancho y pegado al encabezado,
+          fuera del contenedor. Las categorías del día, ya sorteadas. ── */}
+      <HeroDeLaHome
+        categorias={datos.delHero.map((c) => ({
+          nombre: c.nombre,
+          href: urlDeCategoria(c.slug),
+          imagenUrl: c.imagenUrl,
+          cantidad: c.cantidad,
+        }))}
+      >
+        <SearchBox
+          principal
+          placeholder="¿Qué estás buscando hoy?"
+          className="w-full max-w-[520px]"
+        />
+        {/* Debajo del buscador y chica a propósito: es la aclaración, no el
+            mensaje. */}
+        <p className="max-w-[460px] text-caption font-normal text-balance text-ink-secondary sm:text-body-sm">
           Productos nuevos, cerrados y en su empaque original. Elegí y armá tu
           pedido.
         </p>
-      }
-    />
-  ) : null;
-
-  return (
-    <>
-      {heroDePrueba}
+      </HeroDeLaHome>
       <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8">
         {/*
         F3.9 — quién vende y dónde se busca. Van en la home y no en el layout
@@ -159,28 +150,8 @@ export default async function Home({
       */}
         <DatosEstructurados datos={[organizacion(), sitio()]} />
 
-        {/* ── El hero: la marca y el eslogan, el catálogo alrededor y el
-          buscador (§7.1) ─────────────────────────────────────────── */}
-        <SelectorDeHero actual={variante} />
+        {/* ── Los chips, pegados al hero ─────────────────────────── */}
         <section className="flex flex-col items-center gap-5 pb-10 text-center">
-          {variante ? null : (
-            <HeroDeLaHome categorias={datos.destacadas.map((c) => c.nombre)}>
-              <SearchBox
-                principal
-                placeholder="¿Qué estás buscando hoy?"
-                // Aire arriba: pegado al eslogan se leía como parte del título.
-                className="mt-4 w-full max-w-[560px] sm:mt-6"
-              />
-
-              {/* Debajo del buscador y chica a propósito: es la aclaración, no el
-              mensaje. */}
-              <p className="max-w-prose text-caption font-normal text-balance text-ink-secondary sm:text-body-sm">
-                Productos nuevos, cerrados y en su empaque original. Elegí y
-                armá tu pedido.
-              </p>
-            </HeroDeLaHome>
-          )}
-
           {datos.destacadas.length > 0 ? (
             <nav aria-label="Categorías destacadas" className="w-full">
               <ul className="flex flex-wrap justify-center gap-2">

@@ -2,85 +2,295 @@
 
 import { Pause, Play } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-import { ESCENA_BASE, type PiezaDelHero } from "./escena-del-hero";
 import { MarcaDelHero } from "./marca-del-hero";
 import { cn } from "@/lib/utils";
 
 /**
- * El hero de la home — RF-01, §7.1. Rehecho el 2026-10-19 (pedido tuyo).
+ * El hero de la home — RF-01, DR §7.1, TS §10.5. Rehecho el 2026-11-20
+ * (F10.7d), después de probar unas quince direcciones en la tienda; la
+ * forma salió de Atrium MTL.
  *
- * **El nombre y el eslogan al centro, una escena alrededor.** Se lee
- * «AnaVende / vos elegís los auriculares»: el nombre es la primera mitad del
- * eslogan (§2.4), así que no se repite «Ana vende». La palabra final rota por
- * las categorías destacadas —las mismas de los chips de abajo—, que es el
- * contexto que §2.4 pide para rotarla.
+ * **Dos mitades.** A la izquierda, la marca, el eslogan grande y lo que pasa
+ * la página (el buscador y la aclaración). A la derecha, tres columnas —dos
+ * filas debajo del texto en el teléfono— con las seis categorías del día:
+ * cada una pone su foto, si tiene, y un bloque de color con su nombre y
+ * cuántos productos activos tiene. Las dos llevan a la categoría.
  *
- * **La escena es decorativa y no se toca.** Son imágenes del diseño
- * (`escena-del-hero.ts`), no productos: no son enlaces y el lector de
- * pantalla no las oye. Lo que se puede tocar está todo al centro.
+ * **La palabra del eslogan** rota por las seis y después dice «la
+ * tecnología», que dura el doble. Mientras nombra una, sus piezas quedan
+ * enteras y las demás bajan un paso.
  *
- * **Un solo movimiento: la profundidad.** Las piezas no flotan solas; se
- * corren y se inclinan según su profundidad, y eso es lo que las hace leer en
- * 3D:
+ * **El movimiento** es un bucle propio (`useTiras`): cada tira corre a su
+ * paso, se frena con el mouse encima y se arrastra —con el mouse las
+ * columnas, con el dedo las filas—, con inercia al soltar. Un arrastre no
+ * abre la categoría. Las piezas no se recorren con Tab: son muchas, se
+ * mueven y las categorías ya están en los chips de abajo.
  *
- * - **Con el mouse**, solo donde hay uno (`pointer: fine`): la escena sigue
- *   al puntero con inercia, en sentido contrario, como lo cercano cuando
- *   movés la cabeza.
- * - **Con el scroll**, en todos lados: al bajar, las capas se separan a
- *   distinta velocidad. Es la profundidad del teléfono, que no tiene mouse y
- *   donde el giroscopio pide un permiso con un cartel.
- *
- * **Nada de esto pasa por React.** El puntero y el scroll escriben tres
- * variables CSS en el escenario (`--px`, `--py`, `--sy`) dentro de un
- * `requestAnimationFrame`, y cada pieza arma su `transform` con ellas
- * (`paralaje` en `globals.css`). Moverse no vuelve a dibujar ningún
- * componente, y el bucle se apaga solo cuando la escena llegó a su lugar.
- *
- * **El freno (WCAG 2.2.2).** La palabra cambia sola cada pocos segundos, y
- * eso es movimiento que arranca solo: el botón de pausa la detiene, y de paso
- * deja la escena quieta. Con `prefers-reduced-motion` no se mueve nada y el
- * eslogan queda en su forma canónica.
+ * **El freno (WCAG 2.2.2).** Botón de pausa para las tiras y la palabra.
+ * Con `prefers-reduced-motion` no corre nada y el eslogan queda en «la
+ * tecnología»; arrastrar sigue andando.
  */
 
-/** Lo que dura cada palabra: lo justo para leerla y mirar la escena. */
-const VUELTA = 3500;
+export type CategoriaDelHero = {
+  nombre: string;
+  href: string;
+  /** La foto de la categoría (FA-21), en `-card`, o `null`. */
+  imagenUrl: string | null;
+  cantidad: number;
+};
+
+/** Lo que dura cada palabra: lo justo para leerla y mirar las columnas. */
+const PALABRA_MS = 3500;
+/** «La tecnología» cierra la vuelta y se queda el doble. */
+const TECNOLOGIA_MS = 7000;
+
+/** Tonos suaves para los bloques, en orden: ninguno compite con el burdeos. */
+const TINTES = [
+  "236 196 168",
+  "176 196 222",
+  "190 210 178",
+  "206 190 228",
+  "228 214 170",
+  "232 186 196",
+  "180 214 214",
+];
+
+/** Las tiras: la del medio va al revés, cada una a su paso (px por segundo). */
+const TIRAS = [
+  { sentido: 1, velocidad: 26 },
+  { sentido: -1, velocidad: 32 },
+  { sentido: 1, velocidad: 22 },
+] as const;
+
+/** Por debajo de esto, una tira se queda corta y dejaría un hueco. */
+const MINIMO_POR_TIRA = 8;
 
 /**
- * «Auriculares» → «los auriculares». Es una aproximación: «Sillas» da «las»,
- * pero una categoría femenina que no termina en -as («Notebooks»,
- * «Fuentes») saldría con «los». Si el catálogo real trae una, el artículo
- * tiene que ser un dato de la categoría y no una regla.
+ * «los teclados», «las sillas». Solo la primera letra va en minúscula, para
+ * no romper siglas: «los hubs USB». Si el catálogo trae una categoría
+ * femenina que no termina en -as, el artículo tiene que pasar a ser un dato
+ * de la categoría (DR §7.1).
  */
 function conArticulo(categoria: string): string {
-  const palabra = categoria.toLocaleLowerCase("es-AR");
-  return `${/as$/.test(palabra) ? "las" : "los"} ${palabra}`;
+  const palabra =
+    categoria.charAt(0).toLocaleLowerCase("es-AR") + categoria.slice(1);
+  return `${/as$/i.test(palabra) ? "las" : "los"} ${palabra}`;
 }
 
-/** Más cerca, más sombra y más nítida: es parte de la profundidad. */
-const POR_PROFUNDIDAD: Record<PiezaDelHero["d"], string> = {
-  1: "drop-shadow-[0_22px_28px_rgb(17_16_16/0.22)]",
-  0.65: "drop-shadow-[0_14px_18px_rgb(17_16_16/0.16)]",
-  0.35: "opacity-90 blur-[1px] drop-shadow-[0_8px_10px_rgb(17_16_16/0.12)]",
-};
+function productos(n: number) {
+  return `${n} ${n === 1 ? "producto" : "productos"}`;
+}
+
+type Pieza = { categoria: number; foto: string | null };
+
+/**
+ * Cada categoría pone su foto (si tiene) y su bloque. Cada tira arranca en
+ * otro tercio de la lista, para que la misma categoría no quede a la misma
+ * altura en dos tiras, y la lista se repite hasta llenar.
+ */
+function armarTiras(categorias: CategoriaDelHero[]): Pieza[][] {
+  const lista: Pieza[] = categorias.flatMap((c, i) =>
+    c.imagenUrl
+      ? [
+          { categoria: i, foto: c.imagenUrl },
+          { categoria: i, foto: null },
+        ]
+      : [{ categoria: i, foto: null }],
+  );
+  if (lista.length === 0) return [];
+  return TIRAS.map((_, t) => {
+    const corrida = Math.round((t * lista.length) / TIRAS.length);
+    const largo =
+      Math.ceil(Math.max(MINIMO_POR_TIRA, lista.length) / lista.length) *
+      lista.length;
+    return Array.from(
+      { length: largo },
+      (_, k) => lista[(corrida + k) % lista.length],
+    );
+  });
+}
+
+/**
+ * El bucle de las tiras. Mueve cada `[data-cinta]` dentro de su
+ * `[data-tira]` con `transform`, sin pasar por React: la cinta tiene dos
+ * copias iguales, y el corrimiento da la vuelta al largo de una.
+ */
+function useTiras(
+  zona: React.RefObject<HTMLDivElement | null>,
+  corre: boolean,
+) {
+  const corriendo = useRef(corre);
+  useEffect(() => {
+    corriendo.current = corre;
+  }, [corre]);
+
+  useEffect(() => {
+    const raiz = zona.current;
+    if (!raiz) return;
+    const vertical = window.matchMedia("(min-width: 1024px)");
+    const tiras = [...raiz.querySelectorAll<HTMLElement>("[data-tira]")].map(
+      (tira, i) => ({
+        tira,
+        cinta: tira.querySelector<HTMLElement>("[data-cinta]")!,
+        copia: tira.querySelector<HTMLElement>("[data-copia]")!,
+        paso: TIRAS[i].sentido * TIRAS[i].velocidad,
+        corrido: 0,
+        velocidad: 0,
+        encima: false,
+      }),
+    );
+    const arrastre = {
+      tira: null as (typeof tiras)[number] | null,
+      donde: 0,
+      cuando: 0,
+      movido: 0,
+    };
+    let visible = true;
+    let antes = performance.now();
+    let cuadro = 0;
+
+    const largo = (t: (typeof tiras)[number]) =>
+      vertical.matches ? t.copia.offsetHeight : t.copia.offsetWidth;
+    const posicion = (e: PointerEvent) =>
+      vertical.matches ? e.clientY : e.clientX;
+
+    const pintar = () => {
+      for (const t of tiras) {
+        const l = largo(t);
+        if (!l) continue;
+        t.corrido = ((t.corrido % l) + l) % l;
+        t.cinta.style.transform = vertical.matches
+          ? `translate3d(0, ${(-t.corrido).toFixed(1)}px, 0)`
+          : `translate3d(${(-t.corrido).toFixed(1)}px, 0, 0)`;
+      }
+    };
+
+    const avanzar = (ahora: number) => {
+      const dt = Math.min(0.05, (ahora - antes) / 1000);
+      antes = ahora;
+      for (const t of tiras) {
+        if (arrastre.tira === t) continue;
+        const meta = corriendo.current && !t.encima ? t.paso : 0;
+        t.velocidad += (meta - t.velocidad) * Math.min(1, dt * 2.2);
+        t.corrido += t.velocidad * dt;
+      }
+      if (visible) pintar();
+      cuadro = requestAnimationFrame(avanzar);
+    };
+
+    const baja = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      // En la computadora las columnas son verticales: con el dedo, ese
+      // gesto es bajar la página, y se lo dejamos al navegador.
+      if (vertical.matches && e.pointerType === "touch") return;
+      const t = tiras.find((x) => x.tira.contains(e.target as Node));
+      if (!t) return;
+      arrastre.tira = t;
+      arrastre.donde = posicion(e);
+      arrastre.cuando = performance.now();
+      arrastre.movido = 0;
+      t.velocidad = 0;
+    };
+    const mueve = (e: PointerEvent) => {
+      const t = arrastre.tira;
+      if (!t) return;
+      const d = posicion(e) - arrastre.donde;
+      const ahora = performance.now();
+      const dt = Math.max(1, ahora - arrastre.cuando) / 1000;
+      t.corrido -= d;
+      t.velocidad = t.velocidad * 0.6 + (-d / dt) * 0.4;
+      arrastre.movido += Math.abs(d);
+      arrastre.donde = posicion(e);
+      arrastre.cuando = ahora;
+    };
+    const suelta = () => {
+      const t = arrastre.tira;
+      if (!t) return;
+      arrastre.tira = null;
+      // Si se quedó quieto antes de soltar, no hay envión.
+      if (performance.now() - arrastre.cuando > 80) t.velocidad = 0;
+      t.velocidad = Math.max(-2400, Math.min(2400, t.velocidad));
+    };
+    // Un arrastre no es un clic: soltar después de arrastrar no abre nada.
+    const clic = (e: MouseEvent) => {
+      if (arrastre.movido > 6) {
+        e.preventDefault();
+        e.stopPropagation();
+        arrastre.movido = 0;
+      }
+    };
+    const encima = (t: (typeof tiras)[number], valor: boolean) => () => {
+      t.encima = valor;
+    };
+    const conMouse = window.matchMedia("(pointer: fine)").matches;
+    const oyentes = tiras.map((t) => ({
+      t,
+      entra: encima(t, true),
+      sale: encima(t, false),
+    }));
+    if (conMouse)
+      for (const { t, entra, sale } of oyentes) {
+        t.tira.addEventListener("mouseenter", entra);
+        t.tira.addEventListener("mouseleave", sale);
+      }
+    // Al cambiar de columnas a filas el largo es otro: se arranca de cero.
+    const cambio = () => {
+      for (const t of tiras) {
+        t.corrido = 0;
+        t.cinta.style.transform = "";
+      }
+    };
+
+    const observador = new IntersectionObserver(([entrada]) => {
+      visible = entrada.isIntersecting;
+    });
+    observador.observe(raiz);
+    raiz.addEventListener("pointerdown", baja);
+    window.addEventListener("pointermove", mueve);
+    window.addEventListener("pointerup", suelta);
+    window.addEventListener("pointercancel", suelta);
+    raiz.addEventListener("click", clic, true);
+    vertical.addEventListener("change", cambio);
+    cuadro = requestAnimationFrame(avanzar);
+
+    return () => {
+      cancelAnimationFrame(cuadro);
+      observador.disconnect();
+      raiz.removeEventListener("pointerdown", baja);
+      window.removeEventListener("pointermove", mueve);
+      window.removeEventListener("pointerup", suelta);
+      window.removeEventListener("pointercancel", suelta);
+      raiz.removeEventListener("click", clic, true);
+      vertical.removeEventListener("change", cambio);
+      for (const { t, entra, sale } of oyentes) {
+        t.tira.removeEventListener("mouseenter", entra);
+        t.tira.removeEventListener("mouseleave", sale);
+      }
+    };
+  }, [zona]);
+}
 
 export function HeroDeLaHome({
   categorias,
   children,
 }: {
-  /** Los nombres de las categorías destacadas, para la palabra que rota. */
-  categorias: string[];
-  /** La bajada y el buscador: los arma la página. */
+  /** Las del día, ya sorteadas (TS §10.5). */
+  categorias: CategoriaDelHero[];
+  /** El buscador y la aclaración: los arma la página. */
   children: ReactNode;
 }) {
+  /** De 0 a `categorias.length`; el último es «la tecnología». */
   const [indice, setIndice] = useState(0);
   const [quieto, setQuieto] = useState(false);
   /** Lo pidió la persona, con el botón. */
   const [detenido, setDetenido] = useState(false);
   /** Fuera de la pantalla no tiene sentido seguir cambiando la palabra. */
   const [aLaVista, setALaVista] = useState(true);
-  const escenario = useRef<HTMLDivElement>(null);
+  const raiz = useRef<HTMLElement>(null);
+  const zona = useRef<HTMLDivElement>(null);
 
   // El estado y no una lectura suelta de `matchMedia`: quien cambia la
   // preferencia del sistema con la pestaña abierta espera que el movimiento
@@ -94,7 +304,7 @@ export function HeroDeLaHome({
   }, []);
 
   useEffect(() => {
-    const nodo = escenario.current;
+    const nodo = raiz.current;
     if (!nodo) return;
     const observador = new IntersectionObserver(([entrada]) =>
       setALaVista(entrada.isIntersecting),
@@ -103,133 +313,158 @@ export function HeroDeLaHome({
     return () => observador.disconnect();
   }, []);
 
+  const total = categorias.length;
   useEffect(() => {
-    if (quieto || detenido || !aLaVista || categorias.length < 2) return;
-    const reloj = setInterval(
-      () => setIndice((n) => (n + 1) % categorias.length),
-      VUELTA,
+    if (quieto || detenido || !aLaVista || total === 0) return;
+    const reloj = setTimeout(
+      () => setIndice((n) => (n + 1) % (total + 1)),
+      indice >= total ? TECNOLOGIA_MS : PALABRA_MS,
     );
-    return () => clearInterval(reloj);
-  }, [quieto, detenido, aLaVista, categorias.length]);
+    return () => clearTimeout(reloj);
+  }, [quieto, detenido, aLaVista, total, indice]);
 
-  // El paralaje. Un solo bucle que acerca el valor actual al objetivo un 8%
-  // por cuadro: eso es la inercia. Mientras corre, el escenario lleva
-  // `data-moviendo`, que es lo que enciende `will-change` (`globals.css`):
-  // con la escena quieta no reserva memoria de la placa de video.
-  useEffect(() => {
-    const nodo = escenario.current;
-    if (!nodo) return;
-    if (quieto || detenido) {
-      for (const v of ["--px", "--py", "--sy"]) nodo.style.setProperty(v, "0");
-      return;
-    }
+  const rota = !quieto && total > 0;
+  /** La categoría que nombra la palabra, o -1 con «la tecnología». */
+  const actual = rota && indice < total ? indice : -1;
+  const palabra =
+    actual >= 0 ? conArticulo(categorias[actual].nombre) : "la tecnología";
 
-    const conMouse = window.matchMedia("(pointer: fine)").matches;
-    const objetivo = { x: 0, y: 0, s: 0 };
-    const actual = { x: 0, y: 0, s: 0 };
-    let cuadro = 0;
-
-    const pintar = () => {
-      actual.x += (objetivo.x - actual.x) * 0.08;
-      actual.y += (objetivo.y - actual.y) * 0.08;
-      actual.s += (objetivo.s - actual.s) * 0.2;
-      nodo.style.setProperty("--px", actual.x.toFixed(4));
-      nodo.style.setProperty("--py", actual.y.toFixed(4));
-      nodo.style.setProperty("--sy", actual.s.toFixed(1));
-      const falta =
-        Math.abs(objetivo.x - actual.x) +
-        Math.abs(objetivo.y - actual.y) +
-        Math.abs(objetivo.s - actual.s);
-      if (falta > 0.001) {
-        cuadro = requestAnimationFrame(pintar);
-      } else {
-        cuadro = 0;
-        delete nodo.dataset.moviendo;
-      }
-    };
-    const arrancar = () => {
-      if (cuadro) return;
-      nodo.dataset.moviendo = "";
-      cuadro = requestAnimationFrame(pintar);
-    };
-
-    const alMover = (e: PointerEvent) => {
-      const caja = nodo.getBoundingClientRect();
-      // De -1 a 1 desde el centro del escenario, recortado: con el puntero
-      // lejos del hero, la escena no sigue yéndose.
-      const x = ((e.clientX - caja.left) / caja.width) * 2 - 1;
-      const y = ((e.clientY - caja.top) / caja.height) * 2 - 1;
-      objetivo.x = Math.max(-1, Math.min(1, x));
-      objetivo.y = Math.max(-1, Math.min(1, y));
-      arrancar();
-    };
-    const alSalir = () => {
-      objetivo.x = 0;
-      objetivo.y = 0;
-      arrancar();
-    };
-    const alBajar = () => {
-      // Solo mientras el hero se ve: más abajo no hay nada que separar.
-      objetivo.s = Math.min(window.scrollY, nodo.offsetHeight);
-      arrancar();
-    };
-
-    if (conMouse) {
-      window.addEventListener("pointermove", alMover, { passive: true });
-      document.documentElement.addEventListener("pointerleave", alSalir);
-    }
-    window.addEventListener("scroll", alBajar, { passive: true });
-    alBajar();
-
-    return () => {
-      cancelAnimationFrame(cuadro);
-      delete nodo.dataset.moviendo;
-      window.removeEventListener("pointermove", alMover);
-      document.documentElement.removeEventListener("pointerleave", alSalir);
-      window.removeEventListener("scroll", alBajar);
-    };
-  }, [quieto, detenido]);
-
-  const rota = !quieto && categorias.length > 0;
-  const palabra = rota
-    ? conArticulo(categorias[indice % categorias.length])
-    : "la tecnología";
+  const tiras = armarTiras(categorias);
+  useTiras(zona, !quieto && !detenido);
 
   return (
-    <div
-      ref={escenario}
-      className="relative isolate w-full pt-32 pb-36 sm:pt-40 sm:pb-44 lg:py-32"
+    <section
+      ref={raiz}
+      aria-label="Presentación"
+      className="relative w-full overflow-hidden bg-canvas"
     >
-      {/* El centro. No se mueve. */}
-      <div className="relative z-10 mx-auto flex max-w-lg flex-col items-center gap-5 text-center">
-        {/*
-          La marca, en burdeos y escrita como se escribe: «AnaVende», con las
-          dos mayúsculas. Desde F10.7c va en la letra del logo y en trazo, y
-          en la primera carga sale del isotipo (`MarcaDelHero`); el nombre lo
-          lee el lector de pantalla del `sr-only`.
-        */}
-        <h1 className="flex flex-col items-center gap-1">
-          <MarcaDelHero />
-          <span className="sr-only">AnaVende</span>
-          {/* El lector de pantalla oye la forma canónica una vez, y no una
-              categoría nueva cada pocos segundos. */}
-          <span className="sr-only">: vos elegís la tecnología.</span>
-          <span
-            aria-hidden
-            className="text-heading font-normal text-ink-secondary sm:text-title sm:font-normal"
-          >
-            vos elegís{" "}
-            <span
-              key={palabra}
-              className="inline-block font-semibold text-ink motion-safe:animate-palabra"
-            >
-              {palabra}
+      <div
+        className={cn(
+          // Columnas y filas con mínimo 0: si no, la grilla toma el largo
+          // de las tiras, que son miles de píxeles.
+          "mx-auto grid max-w-shop grid-cols-[minmax(0,1fr)] gap-8 px-4 pt-8 sm:px-6 lg:px-8",
+          tiras.length > 0
+            ? "lg:h-[628px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-14 lg:py-8"
+            : "lg:py-16",
+        )}
+      >
+        <div className="relative z-10 flex flex-col items-start gap-6 lg:justify-center lg:pb-10">
+          {/*
+            La marca, en burdeos y escrita como se escribe: «AnaVende». En la
+            primera carga sale del isotipo (`MarcaDelHero`, F10.7c); el nombre
+            lo lee el lector de pantalla del `sr-only`.
+          */}
+          <h1 className="flex flex-col items-start gap-5">
+            <MarcaDelHero />
+            <span className="sr-only">AnaVende</span>
+            {/* El lector de pantalla oye la forma canónica una vez, y no una
+                categoría nueva cada pocos segundos. */}
+            <span className="sr-only">: vos elegís la tecnología.</span>
+            <span aria-hidden className="text-hero text-balance text-ink">
+              Vos elegís
+              <br />
+              <span
+                key={palabra}
+                className={cn(
+                  "inline-block",
+                  rota && "motion-safe:animate-palabra",
+                )}
+              >
+                {palabra}.
+              </span>
             </span>
-            .
-          </span>
-        </h1>
+          </h1>
+          {children}
+        </div>
 
-        {children}
+        {tiras.length > 0 ? (
+          <div
+            ref={zona}
+            // Decorativas para el lector de pantalla y fuera del Tab: las
+            // categorías están en los chips. Con el mouse, cada pieza lleva
+            // a la suya.
+            aria-hidden
+            className="relative -mx-4 flex flex-col gap-2.5 pb-8 select-none sm:-mx-6 sm:gap-3 lg:mx-0 lg:grid lg:h-full lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)] lg:pb-0 lg:[mask-image:linear-gradient(180deg,transparent,#000_7%,#000_90%,transparent)]"
+          >
+            {tiras.map((piezas, t) => (
+              <div
+                key={t}
+                data-tira
+                className={cn(
+                  "relative min-w-0 cursor-grab touch-pan-y overflow-hidden active:cursor-grabbing lg:touch-auto",
+                  // En el teléfono, dos filas.
+                  t === 2 && "max-lg:hidden",
+                )}
+              >
+                <div data-cinta className="flex w-max lg:w-full lg:flex-col">
+                  {/* Dos veces la misma tira: al dar la vuelta, empalma. */}
+                  {[0, 1].map((copia) => (
+                    <div
+                      key={copia}
+                      data-copia
+                      className="flex shrink-0 pl-4 sm:pl-6 lg:flex-col lg:pl-0"
+                    >
+                      {piezas.map((pieza, i) => {
+                        const c = categorias[pieza.categoria];
+                        // Un paso atrás cuando la palabra nombra a otra. Se
+                        // apaga la foto o el color del bloque, nunca su
+                        // texto: el nombre tiene que seguir leyéndose (AA).
+                        const apagada =
+                          actual >= 0 && pieza.categoria !== actual;
+                        return (
+                          <Link
+                            key={i}
+                            href={c.href}
+                            tabIndex={-1}
+                            draggable={false}
+                            className="block w-32 shrink-0 pr-2.5 sm:w-36 sm:pr-3 lg:w-full lg:pr-0 lg:pb-3"
+                          >
+                            {pieza.foto ? (
+                              <span
+                                className={cn(
+                                  "relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-surface-sunken transition-opacity duration-500",
+                                  apagada && "opacity-45",
+                                )}
+                              >
+                                <Image
+                                  src={pieza.foto}
+                                  alt=""
+                                  fill
+                                  draggable={false}
+                                  // Arriba del pliegue: las primeras, sin
+                                  // diferir.
+                                  loading={
+                                    copia === 0 && i < 3 ? "eager" : "lazy"
+                                  }
+                                  sizes="(min-width: 1024px) 220px, 144px"
+                                  className="pointer-events-none object-cover"
+                                />
+                              </span>
+                            ) : (
+                              <span
+                                className="flex aspect-[3/4] flex-col justify-end gap-0.5 rounded-[18px] p-3 transition-colors duration-500 sm:p-4"
+                                style={{
+                                  backgroundColor: `rgb(${TINTES[pieza.categoria % TINTES.length]} / ${apagada ? 0.4 : 1})`,
+                                }}
+                              >
+                                <span className="text-body-sm font-semibold text-ink sm:text-body">
+                                  {c.nombre}
+                                </span>
+                                <span className="text-caption text-ink/70">
+                                  {productos(c.cantidad)}
+                                </span>
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {rota ? (
@@ -239,9 +474,7 @@ export function HeroDeLaHome({
           // El rótulo va dos veces: en `sr-only` para el lector de pantalla y
           // en `title` para el globo del navegador.
           title={detenido ? "Reanudar el movimiento" : "Pausar el movimiento"}
-          // Hasta `lg`, abajo al medio: es el hueco que dejan las piezas de
-          // abajo. Desde `lg`, arriba a la derecha.
-          className="absolute bottom-0 left-1/2 z-20 grid size-11 -translate-x-1/2 place-items-center rounded-pill text-ink-secondary transition-colors duration-150 hover:bg-surface hover:text-ink lg:top-0 lg:right-0 lg:bottom-auto lg:left-auto lg:translate-x-0"
+          className="absolute top-4 right-4 z-30 grid size-11 place-items-center rounded-pill bg-surface/90 text-ink-secondary shadow-sm transition-colors duration-150 hover:text-ink"
         >
           {detenido ? (
             <Play aria-hidden className="size-4" />
@@ -253,39 +486,6 @@ export function HeroDeLaHome({
           </span>
         </button>
       ) : null}
-
-      {/* La escena. `aria-hidden` entera: es decoración. */}
-      <div aria-hidden className="absolute inset-0 [perspective:1100px]">
-        {ESCENA_BASE.map((pieza) => (
-          <div
-            key={pieza.src}
-            className={cn("absolute", pieza.lugar)}
-            style={
-              {
-                "--d": pieza.d,
-                zIndex: Math.round(pieza.d * 10),
-              } as React.CSSProperties
-            }
-          >
-            <div className="paralaje">
-              <Image
-                src={pieza.src}
-                alt=""
-                width={pieza.ancho}
-                height={pieza.alto}
-                sizes="(min-width: 1024px) 288px, (min-width: 640px) 208px, 160px"
-                // Arriba del pliegue en el primer pintado: sin diferir.
-                loading="eager"
-                draggable={false}
-                className={cn(
-                  "h-auto w-full select-none",
-                  POR_PROFUNDIDAD[pieza.d],
-                )}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    </section>
   );
 }

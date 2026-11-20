@@ -234,6 +234,13 @@
   --text-marca--letter-spacing: -0.035em;
   --text-marca--font-weight: 600;
 
+  /* El eslogan del hero de la home (F10.7d, DR §3.3): el único tamaño que
+     escala con el ancho, de 40 a 72px. */
+  --text-hero: clamp(2.5rem, 5.2vw, 4.5rem);
+  --text-hero--line-height: 0.98;
+  --text-hero--letter-spacing: -0.035em;
+  --text-hero--font-weight: 700;
+
   --text-display: 2.25rem; /* 36px — hero de la home, solo ahí */
   --text-display--line-height: 1.1;
   --text-display--letter-spacing: -0.035em;
@@ -673,30 +680,6 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   to {
     opacity: 0;
     transform: scale(0.98);
-  }
-}
-
-/* El paralaje del hero (2026-10-19). `--px` y `--py` van de -1 a 1 según
-   dónde está el mouse, `--sy` son los píxeles de scroll, y `--d` es la
-   profundidad de cada pieza: cuanto más cerca, más se mueve y más se
-   inclina. Las escribe `HeroDeLaHome` sin pasar por React; acá solo se
-   combinan. Van al revés del mouse, como lo cercano cuando movés la cabeza.
-   `will-change` solo mientras se mueve (`data-moviendo`): quieta, la escena
-   no reserva memoria de la placa de video. */
-@utility paralaje {
-  transform-style: preserve-3d;
-  transform: translate3d(
-      calc(var(--px, 0) * var(--d, 1) * -34px),
-      calc(
-        var(--py, 0) * var(--d, 1) * -24px - var(--sy, 0) * var(--d, 1) * 0.25px
-      ),
-      0
-    )
-    rotateY(calc(var(--px, 0) * var(--d, 1) * 9deg))
-    rotateX(calc(var(--py, 0) * var(--d, 1) * -7deg));
-
-  [data-moviendo] & {
-    will-change: transform;
   }
 }
 
