@@ -18,7 +18,7 @@ import {
  * que alguien abre la home en una visita, la palabra arranca siendo el
  * isotipo: el marco, el joystick y los auriculares se apagan, la A y la V
  * crecen hasta su lugar en la palabra, y de cada una sale el resto, «na» y
- * «ende». Dura 2,9 segundos y no se repite.
+ * «ende». Dura unos 4,2 segundos y no se repite.
  *
  * **Todo es CSS** (`marca-del-hero` en `globals.css`): arranca con el primer
  * pintado, sin esperar a que React hidrate, y no vuelve a dibujar nada. Lo
@@ -42,13 +42,15 @@ function marcarComoVista() {
 
 const [x, y, ancho, alto] = PALABRA.caja;
 
-/** La grilla arranca un 25 % más alta que la palabra, centrada en ella. */
+/**
+ * La grilla arranca un 25 % más alta que la palabra, centrada en alto y
+ * apoyada en su borde izquierdo: el hero está alineado a la izquierda
+ * (F10.7d), así que la palabra se abre hacia la derecha desde donde empieza.
+ * Centrada a lo ancho aparecía sobre la «V», en medio de la nada.
+ */
 const LADO_DE_LA_GRILLA = alto * 1.25;
 const ESCALA_DE_LA_GRILLA = LADO_DE_LA_GRILLA / LADO_DEL_ISOTIPO;
-const ORIGEN_DE_LA_GRILLA = [
-  x + ancho / 2 - LADO_DE_LA_GRILLA / 2,
-  y + alto / 2 - LADO_DE_LA_GRILLA / 2,
-];
+const ORIGEN_DE_LA_GRILLA = [x, y + alto / 2 - LADO_DE_LA_GRILLA / 2];
 
 /**
  * El `transform` que lleva una letra de la palabra a su celda de la grilla:
