@@ -79,7 +79,7 @@ export function sitio(): Jsonld {
  * El rastro de migas de una ficha — el MISMO que se ve arriba del producto.
  *
  * Google pide que el dato estructurado refleje el camino que ve la persona, y
- * el de la ficha es «Catálogo › Categoría» (`Migas`, en la propia pantalla).
+ * el de la ficha es «Productos › Categoría» (`Migas`, en la propia pantalla).
  * Escribir acá un camino distinto —uno que pase por «Inicio», por ejemplo—
  * sería declarar una navegación que el sitio no tiene.
  *
@@ -93,7 +93,7 @@ export function sitio(): Jsonld {
  */
 export function migas(ficha: Ficha): Jsonld {
   return rastro([
-    { nombre: "Catálogo", ruta: "/productos" },
+    { nombre: "Productos", ruta: "/productos" },
     // La misma que el enlace de la miga, armada con la misma función: dos
     // formas de escribir la misma dirección es cómo se separan.
     { nombre: ficha.categoria, ruta: urlDeCategoria(ficha.categoriaSlug) },

@@ -100,7 +100,11 @@ export function LogoHorizontal({
   );
 }
 
-/** El logo del encabezado de la tienda, con su enlace al inicio. */
+/**
+ * El logo del encabezado de la tienda, con su enlace al inicio. Va solo el
+ * isotipo, también en la computadora (2026-11-20): la palabra ya está en el
+ * hero de la home y en el pie.
+ */
 export function Logo({
   href = "/",
   escena = null,
@@ -115,9 +119,9 @@ export function Logo({
     <Link
       href={href}
       className={cn(
-        "relative inline-flex shrink-0 items-center gap-[calc(var(--isotipo)*0.3)] rounded-pill [--isotipo:2rem]",
-        // Con la palabra oculta queda un enlace de 32×32, por debajo de los
-        // 44 de §9. La marca no se agranda —§2.3 fija ese tamaño de uso—, así
+        "relative inline-flex shrink-0 items-center rounded-pill",
+        // Sin la palabra queda un enlace de 32×32, por debajo de los 44 de
+        // §9. La marca no se agranda —§2.3 fija ese tamaño de uso—, así
         // que lo que crece es la zona que responde al dedo.
         AREA_TACTIL_CUADRADA,
         className,
@@ -127,10 +131,6 @@ export function Logo({
       <span className="relative grid shrink-0">
         <Isotipo />
         {escena ? <AdornoDeTemporada escena={escena} /> : null}
-      </span>
-      {/* En el teléfono va solo el isotipo (§2.3). */}
-      <span className="hidden sm:contents">
-        <Palabra />
       </span>
     </Link>
   );

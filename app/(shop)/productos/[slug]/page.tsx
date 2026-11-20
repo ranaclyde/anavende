@@ -402,7 +402,7 @@ function Migas({
             href="/productos"
             className={cn("relative rounded-pill hover:text-ink", AREA_TACTIL)}
           >
-            Catálogo
+            Productos
           </Link>
         </li>
         <li aria-hidden className="text-ink-tertiary">

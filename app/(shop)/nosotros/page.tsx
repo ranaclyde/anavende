@@ -321,7 +321,7 @@ function Cierre({ whatsapp }: { whatsapp: string | null }) {
           </Button>
         )}
         <Button asChild variant="tertiary" size="lg">
-          <Link href="/productos">Ver el catálogo</Link>
+          <Link href="/productos">Ver los productos</Link>
         </Button>
       </div>
     </section>

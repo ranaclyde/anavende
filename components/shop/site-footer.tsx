@@ -33,7 +33,7 @@ const GRUPOS = [
   {
     titulo: "Tienda",
     enlaces: [
-      { href: "/productos", titulo: "Catálogo" },
+      { href: "/productos", titulo: "Productos" },
       { href: "/categorias", titulo: "Categorías" },
       { href: "/nosotros", titulo: "Nosotros" },
     ],

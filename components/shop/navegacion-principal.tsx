@@ -26,13 +26,13 @@ import { cn } from "@/lib/utils";
  * pantalla.
  *
  * «Ofertas» es el catálogo con el filtro de descuento puesto (RN-04b): no es
- * otra pantalla, así que «Catálogo» se marca sólo cuando ese filtro no está.
+ * otra pantalla, así que «Productos» se marca sólo cuando ese filtro no está.
  * La ficha cuenta como catálogo: se llega desde ahí.
  */
 const ENLACES = [
   {
     href: "/productos",
-    etiqueta: "Catálogo",
+    etiqueta: "Productos",
     activo: (ruta: string, oferta: boolean) =>
       (ruta === "/productos" && !oferta) || ruta.startsWith("/productos/"),
   },

@@ -141,8 +141,7 @@ La fuente de verdad son los trazos de `lib/marca.ts`. Los componentes los dibuja
 
 | Uso | Tamaño | Tratamiento |
 |---|---|---|
-| Encabezado | 32px | Horizontal: isotipo + palabra |
-| Encabezado móvil | 32px | Solo isotipo |
+| Encabezado | 32px | Solo isotipo, en todos los tamaños (2026-11-20): la palabra ya está en el hero de la home y en el pie |
 | Ingreso, mantenimiento, pie, panel | 32px | Horizontal |
 | Favicon | 16 / 32 / 48px | Solo isotipo |
 | Emails | 40px | Horizontal, en una imagen (`logo-horizontal.png`), centrado |
@@ -648,7 +647,7 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ [AV] AnaVende  Catálogo (Categorías) Ofertas Contacto  🔍 ♡ (🛒 3) Ana │  56px, blanco
+│ [AV]  Productos (Categorías) Ofertas Contacto  🔍 ♡ (🛒 3) Ana         │  56px, blanco
 ├──────────────────────────────────────────────────────────┤  sombra al scrollear
 │                                                          │
 │                    [ contenido ]           canvas #f2f4f5│
@@ -660,13 +659,13 @@ En esa pantalla el `<form>` convive con «Colores y stock», que es su hermana y
 ```
 
 - El encabezado es **fijo (sticky)** y gana `--shadow-lg` al hacer scroll.
-- **La navegación va al lado del logo** (2026-10-21): «Catálogo», «Categorías» (§7.6), «Ofertas» —el catálogo con el filtro de descuento— y «Contacto». La página en la que se está lleva una **píldora `--brand-tint` con el texto en burdeos**. La píldora **viaja como una gota**: sigue al mouse y al foco, el borde que va adelante llega en 220ms y el de atrás en 560ms, así que se estira en el camino y se recoge al llegar. Al hacer clic suelta una ráfaga de ocho puntos burdeos que se apagan en ~700ms. Sin movimiento con `prefers-reduced-motion`. La fila de chips de categorías que dibujaba esta sección no se hizo: los chips están en la home y la lista en `/categorias`.
+- **La navegación va al lado del logo** (2026-10-21): «Productos» —«Catálogo» hasta el 2026-11-20: la dirección ya decía `/productos`—, «Categorías» (§7.6), «Ofertas» —el catálogo con el filtro de descuento— y «Contacto». La página en la que se está lleva una **píldora `--brand-tint` con el texto en burdeos**. La píldora **viaja como una gota**: sigue al mouse y al foco, el borde que va adelante llega en 220ms y el de atrás en 560ms, así que se estira en el camino y se recoge al llegar. Al hacer clic suelta una ráfaga de ocho puntos burdeos que se apagan en ~700ms. Sin movimiento con `prefers-reduced-motion`. La fila de chips de categorías que dibujaba esta sección no se hizo: los chips están en la home y la lista en `/categorias`.
 - **En el teléfono** (por debajo de `md`) los enlaces pasan a un **menú lateral que sale por la izquierda** (☰ antes del isotipo), de 320px como máximo, con **los mismos cuatro enlaces que en escritorio** y, fija al pie del panel, la cuenta («Ingresar» o el nombre), que sale de la fila.
 - **El buscador es una lupa en todos los tamaños** y se abre a ancho completo debajo del encabezado; Escape lo cierra y devuelve el foco a la lupa. Sigue sin dibujarse mientras la página tiene su buscador a la vista.
 - **La cuenta lleva la cara de quien entró** (2026-10-26, F5.9): su foto o su blobatar, en un círculo de 32px con anillo `--border`, en lugar del ícono de persona. Sin sesión sigue el ícono con «Ingresar». Lo mismo al pie del menú del teléfono. El blobatar usa **los colores que elige la biblioteca**, no los de la marca (pedido del 2026-10-26): es una cara por persona y no una acción, y el burdeos queda para lo que se toca. **Se mueve al pasar el mouse por la píldora de la cuenta** —respira, se balancea, parpadea y crece un 4%—, y lo mismo en la fila de la foto de «Mis datos» (2026-10-26): son los dos lugares donde la cara es un control. **En el panel no se mueve**, porque en «Usuarios» hay cuarenta por página. Sin mouse, o con «reducir movimiento», queda quieto; una foto subida no se anima.
 - **El carrito es una píldora** (F3.8, no un ícono con insignia encima). Vacía, solo el ícono. Con productos, el número va en un **círculo burdeos de 28px con texto blanco** adentro de la píldora (2026-10-21), y desde 100 dice «99+».
 - La fila de categorías **desaparece en el panel del comprador y en el checkout**: ahí no se está explorando.
-- **El pie agrupa sus enlaces en tres** (2026-10-21): **«Tienda»** —«Catálogo», «Categorías» (§7.6), «Nosotros» y, desde el 2026-11-17, «Servicio técnico» (§7.7)—, **«Ayuda»** y **«Legales»**, en ese orden. **En el teléfono, un grupo debajo del otro** y con poco aire entre ellos (2026-10-21): de a dos por fila los nombres largos partían la columna. Cada enlace mide **40px de alto, una excepción a los 44 de §9** pedida para que el pie no mida 850px: sigue muy por encima de los 24px de WCAG 2.5.8, y sin espacio entre filas no hay toques que caigan en el vecino.
+- **El pie agrupa sus enlaces en tres** (2026-10-21): **«Tienda»** —«Productos», «Categorías» (§7.6), «Nosotros» y, desde el 2026-11-17, «Servicio técnico» (§7.7)—, **«Ayuda»** y **«Legales»**, en ese orden. **En el teléfono, un grupo debajo del otro** y con poco aire entre ellos (2026-10-21): de a dos por fila los nombres largos partían la columna. Cada enlace mide **40px de alto, una excepción a los 44 de §9** pedida para que el pie no mida 850px: sigue muy por encima de los 24px de WCAG 2.5.8, y sin espacio entre filas no hay toques que caigan en el vecino.
 - **Debajo de la marca va el eslogan en su forma canónica** (§2.4), «Ana vende, vos elegís la tecnología.», y debajo «Tu tienda de confianza para productos de tecnología y accesorios.», en lugar del aviso de zona de entrega y de la lista de categorías (2026-10-21, pedido tuyo). La zona sigue en la home, la ficha, el carrito y el checkout (RN-10).
 
 ### 5.2 Panel de administración
