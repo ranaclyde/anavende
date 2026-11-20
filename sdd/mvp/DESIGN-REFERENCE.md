@@ -1234,8 +1234,8 @@ Los reportes (RF-28) y el inicio del panel (RF-14) dibujan con el componente
 │                           ╭────╮ ╰────╯ ╭────╮     │  categorías del día
 │  (¿Qué estás buscando?(→))│Cabl│ ╭────╮ │Tecl│     │  buscador, máx 560px
 │  Productos nuevos, …      │ 3 p│ │foto│ │ 8 p│     │  la aclaración, caption
-│                           ╰────╯ ╰────╯ ╰────╯     │
-│   [Teclados] [Mouses] [Auriculares] [Cables] …     │  píldoras, hasta 7
+│  [Teclados] [Mouses] …    ╰────╯ ╰────╯ ╰────╯     │  píldoras, hasta 7,
+│  [Cables] [Sillas] …                               │  dentro del hero
 │                                                    │
 │  [🚚 Envíos a Viedma, Carmen de Patagones y …  ]   │  el aviso de RN-10
 ├──────────────────────── 80px ──────────────────────┤
@@ -1276,9 +1276,12 @@ más angosta— y las columnas en la derecha, con 32px de aire arriba y abajo.
 lo primero que se usa ahí.
 
 **El texto.** «AnaVende» en burdeos, el eslogan grande en dos renglones
-—«Vos elegís / **los auriculares**.»—, el buscador y la aclaración en caption
+—«Vos elegís / **los auriculares**.»—, el buscador, la aclaración en caption
 —«Productos nuevos, cerrados y en su empaque original. Elegí y armá tu
-pedido.»—. El nombre es la primera mitad del eslogan (§2.4), así que no se
+pedido.», en un solo renglón donde entra— y **los chips de las destacadas**,
+alineados a la izquierda. Los chips entraron al hero el mismo día: abajo,
+sueltos, dejaban la mitad izquierda vacía al lado de columnas de 628px y al
+buscador solo; adentro vuelven a estar pegados a él, que es su lugar. El nombre es la primera mitad del eslogan (§2.4), así que no se
 repite «Ana vende». **La palabra rota** por las seis categorías del día, cada
 3,5 segundos, y después dice **«la tecnología»**, que se queda el doble antes
 de volver a empezar: cierra la idea de que la tienda vende de todo. El
