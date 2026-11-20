@@ -1299,11 +1299,14 @@ secciones, y mostrar solo esas acá sería decir lo mismo tres veces. Las seis
 salen de todas las categorías con productos —destacadas incluidas— y
 cambian a la medianoche.
 
-**El resaltado.** Mientras la palabra nombra una categoría, sus piezas
-quedan enteras y las demás bajan un paso: la foto al 45 % y el color del
-bloque al 40 %, **pero nunca su texto**, que sigue en tinta y con contraste
-AA (con todo el bloque a media opacidad, axe lo marcaba en 2:1). Con «la
-tecnología», todas enteras. Así el texto y las columnas dicen lo mismo.
+**El resaltado: se destaca la que nombra, no se apagan las demás.** Mientras
+la palabra nombra una categoría, **su bloque se invierte** —fondo tinta y
+texto blanco— y **su foto lleva un borde**: tinta afuera y una línea blanca
+adentro, porque sobre una foto oscura la tinta sola no se ve. El borde va por
+dentro de la foto, porque afuera lo cortaría el costado de la columna. Las
+demás quedan a color pleno. Con «la tecnología», ninguna destacada. Tinta y
+no burdeos: el burdeos es de las acciones (§3.1). Se probó al revés —apagar
+las que no nombra— y la pantalla se veía gris casi todo el tiempo.
 
 **Se mueven solas y se pueden arrastrar.** La del medio sube y las de los
 costados bajan, cada una a su velocidad, para que no se lean como una sola

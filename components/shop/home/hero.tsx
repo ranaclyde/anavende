@@ -406,11 +406,11 @@ export function HeroDeLaHome({
                     >
                       {piezas.map((pieza, i) => {
                         const c = categorias[pieza.categoria];
-                        // Un paso atrás cuando la palabra nombra a otra. Se
-                        // apaga la foto o el color del bloque, nunca su
-                        // texto: el nombre tiene que seguir leyéndose (AA).
-                        const apagada =
-                          actual >= 0 && pieza.categoria !== actual;
+                        // La que nombra la palabra se destaca y las demás
+                        // quedan como están: el bloque se invierte (tinta y
+                        // texto blanco) y la foto lleva un borde en tinta.
+                        // Apagar las otras dejaba todo gris.
+                        const destacada = pieza.categoria === actual;
                         return (
                           <Link
                             key={i}
@@ -420,12 +420,7 @@ export function HeroDeLaHome({
                             className="block w-32 shrink-0 pr-2.5 sm:w-36 sm:pr-3 lg:w-full lg:pr-0 lg:pb-3"
                           >
                             {pieza.foto ? (
-                              <span
-                                className={cn(
-                                  "relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-surface-sunken transition-opacity duration-500",
-                                  apagada && "opacity-45",
-                                )}
-                              >
+                              <span className="relative block aspect-[3/4] overflow-hidden rounded-[18px] bg-surface-sunken">
                                 <Image
                                   src={pieza.foto}
                                   alt=""
@@ -439,18 +434,33 @@ export function HeroDeLaHome({
                                   sizes="(min-width: 1024px) 220px, 144px"
                                   className="pointer-events-none object-cover"
                                 />
+                                {/* El borde va adentro: afuera lo cortaría
+                                    el costado de la columna. */}
+                                <span
+                                  className={cn(
+                                    // Tinta afuera y una línea blanca adentro: sobre una foto
+                                    // oscura, la tinta sola no se ve.
+                                    "absolute inset-0 rounded-[18px] shadow-[inset_0_0_0_3px_var(--color-ink),inset_0_0_0_5px_rgb(255_255_255/0.9)] transition-opacity duration-500",
+                                    destacada ? "opacity-100" : "opacity-0",
+                                  )}
+                                />
                               </span>
                             ) : (
                               <span
-                                className="flex aspect-[3/4] flex-col justify-end gap-0.5 rounded-[18px] p-3 transition-colors duration-500 sm:p-4"
+                                className={cn(
+                                  "flex aspect-[3/4] flex-col justify-end gap-0.5 rounded-[18px] p-3 transition-colors duration-500 sm:p-4",
+                                  destacada ? "text-white" : "text-ink",
+                                )}
                                 style={{
-                                  backgroundColor: `rgb(${TINTES[pieza.categoria % TINTES.length]} / ${apagada ? 0.4 : 1})`,
+                                  backgroundColor: destacada
+                                    ? "var(--color-ink)"
+                                    : `rgb(${TINTES[pieza.categoria % TINTES.length]})`,
                                 }}
                               >
-                                <span className="text-body-sm font-semibold text-ink sm:text-body">
+                                <span className="text-body-sm font-semibold sm:text-body">
                                   {c.nombre}
                                 </span>
-                                <span className="text-caption text-ink/70">
+                                <span className="text-caption opacity-75">
                                   {productos(c.cantidad)}
                                 </span>
                               </span>
