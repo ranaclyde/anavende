@@ -67,12 +67,10 @@ const POR_PROFUNDIDAD: Record<PiezaDelHero["d"], string> = {
 
 export function HeroDeLaHome({
   categorias,
-  escena = ESCENA_BASE,
   children,
 }: {
   /** Los nombres de las categorías destacadas, para la palabra que rota. */
   categorias: string[];
-  escena?: PiezaDelHero[];
   /** La bajada y el buscador: los arma la página. */
   children: ReactNode;
 }) {
@@ -258,7 +256,7 @@ export function HeroDeLaHome({
 
       {/* La escena. `aria-hidden` entera: es decoración. */}
       <div aria-hidden className="absolute inset-0 [perspective:1100px]">
-        {escena.map((pieza) => (
+        {ESCENA_BASE.map((pieza) => (
           <div
             key={pieza.src}
             className={cn("absolute", pieza.lugar)}

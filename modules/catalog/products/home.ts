@@ -49,6 +49,8 @@ export type CategoriaDeLaHome = {
   /** Para los enlaces a su página, `/categorias/<slug>` (F3.11). */
   slug: string;
   nombre: string;
+  /** Su foto (F2.9), versión `card`, o `null`: la usa el hero de prueba. */
+  imagenUrl: string | null;
   productos: ProductoEnTarjeta[];
 };
 
@@ -87,8 +89,9 @@ export async function leerHome(): Promise<DatosDeLaHome> {
     id: string;
     slug: string;
     nombre: string;
+    imageKey: string | null;
   }>(sql`
-    SELECT id, slug, name AS nombre
+    SELECT id, slug, name AS nombre, image_key AS "imageKey"
       FROM categories
      WHERE is_active AND is_featured
      ORDER BY immutable_unaccent(lower(name))
@@ -155,8 +158,9 @@ export async function leerHome(): Promise<DatosDeLaHome> {
   }));
 
   return {
-    destacadas: conProductos.map(({ filas, ...c }) => ({
+    destacadas: conProductos.map(({ filas, imageKey, ...c }) => ({
       ...c,
+      imagenUrl: urlDeLogo(imageKey, "card"),
       productos: filas.slice(0, POR_SECCION).map(aTarjeta),
     })),
 

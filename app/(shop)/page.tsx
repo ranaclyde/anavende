@@ -5,9 +5,11 @@ import { Suspense } from "react";
 
 import { DatosEstructurados } from "@/components/seo/datos-estructurados";
 import { BotonFavorito } from "@/components/shop/favorito";
-import { escenaDelHero } from "@/components/shop/home/escena-del-hero";
 import { HeroDeLaHome } from "@/components/shop/home/hero";
 import { HileraDePagos } from "@/components/shop/home/pagos";
+// PRUEBA sin commitear: los heros con fotos (`?hero=a` a `?hero=g`).
+import { SelectorDeHero } from "@/components/shop/home/prueba-heroes";
+import { HeroColumnas } from "@/components/shop/home/prueba-heroes-referencias";
 import {
   GrillaDeLaHome,
   SeccionDeLaHome,
@@ -21,7 +23,6 @@ import {
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
 import { VistosRecientemente } from "@/components/shop/vistos";
 import { organizacion, sitio } from "@/lib/datos-estructurados";
-import { escenaDeHoy } from "@/lib/escenas";
 import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE } from "@/lib/seo";
 import { getIdentity } from "@/lib/session";
 import {
@@ -29,7 +30,6 @@ import {
   urlDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
 import { leerHome } from "@/modules/catalog/products/home";
-import { configuracionDeLaTienda } from "@/modules/settings/queries";
 import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
 
 const DESCRIPCION =
@@ -73,21 +73,23 @@ export const metadata: Metadata = {
  * de pago, donde lo prevé §7.1. Llega por `<Suspense>`: es del visitante y no
  * del catálogo, y la home no lo espera.
  */
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ [clave: string]: string | string[] | undefined }>;
+}) {
+  // PRUEBA sin commitear.
+  const pedido = (await searchParams).hero;
+  const variante =
+    typeof pedido === "string" && /^p$/.test(pedido) ? pedido : null;
+
   // Independientes: los favoritos son del visitante y el catálogo no es de
   // nadie. Encadenarlas sumaría un viaje a la pantalla de entrada, que es la
   // que más caro paga cada milisegundo (RNF-03).
-  //
-  // La configuración ya la pidió el layout para el logo: `cache()` hace que
-  // acá no vuelva a la base (F9.5). Si falla, el hero sale con la escena de
-  // todos los días.
-  const [datos, favoritos, tienda] = await Promise.all([
+  const [datos, favoritos] = await Promise.all([
     leerHome(),
     getIdentity().then((i) => (i ? idsDeFavoritos(i.userId) : null)),
-    configuracionDeLaTienda().catch(() => undefined),
   ]);
-
-  const escena = escenaDelHero(tienda ? escenaDeHoy(tienda.escenas) : null);
 
   const guardados = new Set(favoritos ?? []);
 
@@ -127,47 +129,68 @@ export default async function Home() {
       </li>
     ));
 
+  // PRUEBA: el hero de prueba va a todo el ancho y pegado al encabezado,
+  // fuera del contenedor de la página. Con él, la sección de abajo queda solo
+  // con las chips.
+  const heroDePrueba = variante ? (
+    <HeroColumnas
+      categorias={datos.destacadas.map((c) => ({
+        nombre: c.nombre,
+        imagenUrl: c.imagenUrl,
+      }))}
+      buscador={<SearchBox principal placeholder="¿Qué estás buscando hoy?" />}
+      aclaracion={
+        <p className="max-w-prose text-caption font-normal text-balance text-ink-secondary sm:text-body-sm">
+          Productos nuevos, cerrados y en su empaque original. Elegí y armá tu
+          pedido.
+        </p>
+      }
+    />
+  ) : null;
+
   return (
-    <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8">
-      {/*
+    <>
+      {heroDePrueba}
+      <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8">
+        {/*
         F3.9 — quién vende y dónde se busca. Van en la home y no en el layout
         a propósito: son la declaración del sitio, y repetirla en cada pantalla
         sería decir trescientas veces lo mismo.
       */}
-      <DatosEstructurados datos={[organizacion(), sitio()]} />
+        <DatosEstructurados datos={[organizacion(), sitio()]} />
 
-      {/* ── El hero: la marca y el eslogan, el catálogo alrededor y el
+        {/* ── El hero: la marca y el eslogan, el catálogo alrededor y el
           buscador (§7.1) ─────────────────────────────────────────── */}
-      <section className="flex flex-col items-center gap-5 pb-10 text-center">
-        <HeroDeLaHome
-          categorias={datos.destacadas.map((c) => c.nombre)}
-          escena={escena}
-        >
-          <SearchBox
-            principal
-            placeholder="¿Qué estás buscando hoy?"
-            // Aire arriba: pegado al eslogan se leía como parte del título.
-            className="mt-4 w-full max-w-[560px] sm:mt-6"
-          />
+        <SelectorDeHero actual={variante} />
+        <section className="flex flex-col items-center gap-5 pb-10 text-center">
+          {variante ? null : (
+            <HeroDeLaHome categorias={datos.destacadas.map((c) => c.nombre)}>
+              <SearchBox
+                principal
+                placeholder="¿Qué estás buscando hoy?"
+                // Aire arriba: pegado al eslogan se leía como parte del título.
+                className="mt-4 w-full max-w-[560px] sm:mt-6"
+              />
 
-          {/* Debajo del buscador y chica a propósito: es la aclaración, no el
+              {/* Debajo del buscador y chica a propósito: es la aclaración, no el
               mensaje. */}
-          <p className="max-w-prose text-caption font-normal text-balance text-ink-secondary sm:text-body-sm">
-            Productos nuevos, cerrados y en su empaque original. Elegí y armá tu
-            pedido.
-          </p>
-        </HeroDeLaHome>
+              <p className="max-w-prose text-caption font-normal text-balance text-ink-secondary sm:text-body-sm">
+                Productos nuevos, cerrados y en su empaque original. Elegí y
+                armá tu pedido.
+              </p>
+            </HeroDeLaHome>
+          )}
 
-        {datos.destacadas.length > 0 ? (
-          <nav aria-label="Categorías destacadas" className="w-full">
-            <ul className="flex flex-wrap justify-center gap-2">
-              {datos.destacadas.map((categoria) => (
-                <li key={categoria.id}>
-                  <Link
-                    href={urlDeCategoria(categoria.slug)}
-                    className="flex h-11 items-center gap-2 rounded-pill border border-border bg-surface px-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand sm:pl-2 sm:pr-4"
-                  >
-                    {/*
+          {datos.destacadas.length > 0 ? (
+            <nav aria-label="Categorías destacadas" className="w-full">
+              <ul className="flex flex-wrap justify-center gap-2">
+                {datos.destacadas.map((categoria) => (
+                  <li key={categoria.id}>
+                    <Link
+                      href={urlDeCategoria(categoria.slug)}
+                      className="flex h-11 items-center gap-2 rounded-pill border border-border bg-surface px-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand sm:pl-2 sm:pr-4"
+                    >
+                      {/*
                       La inicial es del boceto y es decoración: el nombre está
                       al lado, así que un lector de pantalla no tiene por qué
                       escuchar «T, Teclados».
@@ -177,127 +200,131 @@ export default async function Home() {
                       la pantalla, y ésa es la regla de una sola voz (§3.1).
                       El burdeos del hero es el botón del buscador, y uno solo.
                     */}
-                    <span
-                      aria-hidden
-                      // Desde `sm`: a 390px los siete chips con disco pasan
-                      // de dos renglones a cuatro, y cuatro renglones de
-                      // atajos ya no son un atajo. Sin el disco entran tres
-                      // por renglón.
-                      className="hidden size-7 place-items-center rounded-full bg-canvas text-caption text-ink-secondary sm:grid"
-                    >
-                      {categoria.nombre.slice(0, 1)}
-                    </span>
-                    {categoria.nombre}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ) : null}
+                      <span
+                        aria-hidden
+                        // Desde `sm`: a 390px los siete chips con disco pasan
+                        // de dos renglones a cuatro, y cuatro renglones de
+                        // atajos ya no son un atajo. Sin el disco entran tres
+                        // por renglón.
+                        className="hidden size-7 place-items-center rounded-full bg-canvas text-caption text-ink-secondary sm:grid"
+                      >
+                        {categoria.nombre.slice(0, 1)}
+                      </span>
+                      {categoria.nombre}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ) : null}
 
-        {/* ── El aviso de zona (RN-10) ─────────────────────────────── */}
-        {/*
+          {/* ── El aviso de zona (RN-10) ─────────────────────────────── */}
+          {/*
           Va ACÁ ARRIBA, pegado a los chips: hasta dónde llevamos es lo primero
           que alguien de Viedma necesita saber para decidir si esta tienda le
           sirve. El pie del sitio lo repite en todas las pantallas y por eso
           acá se dice en una línea —la versión larga, con el retiro en el punto
           de entrega, la sigue diciendo el pie—.
         */}
-        <p className="flex w-full items-center justify-center gap-2.5 rounded-card bg-surface p-4 text-left text-body-sm text-ink-secondary shadow-sm">
-          {/* El ícono va en gris por la misma regla: es un ícono general, no
+          <p className="flex w-full items-center justify-center gap-2.5 rounded-card bg-surface p-4 text-left text-body-sm text-ink-secondary shadow-sm">
+            {/* El ícono va en gris por la misma regla: es un ícono general, no
               una acción (§3.1). Lo que pesa en este renglón es la zona, y ésa
               está en tinta plena. */}
-          <Truck aria-hidden className="size-5 shrink-0 text-ink-secondary" />
-          <span>
-            <span className="font-medium text-ink">
-              Envíos a Viedma, Carmen de Patagones y alrededores
-            </span>{" "}
-            — coordinamos día y horario por WhatsApp.
-          </span>
-        </p>
-      </section>
+            <Truck aria-hidden className="size-5 shrink-0 text-ink-secondary" />
+            <span>
+              <span className="font-medium text-ink">
+                Envíos a Viedma, Carmen de Patagones y alrededores
+              </span>{" "}
+              — coordinamos día y horario por WhatsApp.
+            </span>
+          </p>
+        </section>
 
-      <div className="flex flex-col gap-16 pb-4 sm:gap-20">
-        {/* ── Destacados: lo que la vendedora quiere empujar hoy ───── */}
-        {datos.destacados.length > 0 ? (
-          <SeccionDeLaHome titulo="Destacados">
-            <GrillaDeLaHome>
-              {tarjetas(datos.destacados, "destacados")}
-            </GrillaDeLaHome>
-          </SeccionDeLaHome>
-        ) : null}
+        <div className="flex flex-col gap-16 pb-4 sm:gap-20">
+          {/* ── Destacados: lo que la vendedora quiere empujar hoy ───── */}
+          {datos.destacados.length > 0 ? (
+            <SeccionDeLaHome titulo="Destacados">
+              <GrillaDeLaHome>
+                {tarjetas(datos.destacados, "destacados")}
+              </GrillaDeLaHome>
+            </SeccionDeLaHome>
+          ) : null}
 
-        {/* ── Los medios de pago, justo después de lo primero que se
+          {/* ── Los medios de pago, justo después de lo primero que se
             mira (2026-10-19, pedido tuyo): cómo se paga es una duda de
             entrada, y al fondo de la página no llegaba casi nadie. ─────── */}
-        <HileraDePagos medios={datos.mediosDePago} />
+          <HileraDePagos medios={datos.mediosDePago} />
 
-        {/* ── Una sección por categoría destacada ──────────────────── */}
-        {datos.destacadas.map((categoria) =>
-          categoria.productos.length === 0 ? null : (
+          {/* ── Una sección por categoría destacada ──────────────────── */}
+          {datos.destacadas.map((categoria) =>
+            categoria.productos.length === 0 ? null : (
+              <SeccionDeLaHome
+                key={categoria.id}
+                titulo={categoria.nombre}
+                enlace={{
+                  href: urlDeCategoria(categoria.slug),
+                  etiqueta: `Ver todo en ${categoria.nombre}`,
+                }}
+              >
+                <GrillaDeLaHome>
+                  {tarjetas(categoria.productos, categoria.id)}
+                </GrillaDeLaHome>
+              </SeccionDeLaHome>
+            ),
+          )}
+
+          {datos.ofertas.length > 0 ? (
             <SeccionDeLaHome
-              key={categoria.id}
-              titulo={categoria.nombre}
+              titulo="En oferta"
               enlace={{
-                href: urlDeCategoria(categoria.slug),
-                etiqueta: `Ver todo en ${categoria.nombre}`,
+                href: urlDeTienda({ oferta: true }),
+                etiqueta: "Ver todo lo que está en oferta",
               }}
             >
               <GrillaDeLaHome>
-                {tarjetas(categoria.productos, categoria.id)}
+                {tarjetas(datos.ofertas, "ofertas")}
               </GrillaDeLaHome>
             </SeccionDeLaHome>
-          ),
-        )}
+          ) : null}
 
-        {datos.ofertas.length > 0 ? (
-          <SeccionDeLaHome
-            titulo="En oferta"
-            enlace={{
-              href: urlDeTienda({ oferta: true }),
-              etiqueta: "Ver todo lo que está en oferta",
-            }}
-          >
-            <GrillaDeLaHome>
-              {tarjetas(datos.ofertas, "ofertas")}
-            </GrillaDeLaHome>
-          </SeccionDeLaHome>
-        ) : null}
+          <Suspense fallback={null}>
+            <VistosRecientemente ruta="/" />
+          </Suspense>
 
-        <Suspense fallback={null}>
-          <VistosRecientemente ruta="/" />
-        </Suspense>
-
-        {/* ── Más categorías, con la salida a la página de todas ────── */}
-        {/*
+          {/* ── Más categorías, con la salida a la página de todas ────── */}
+          {/*
           TARJETAS con imagen y nombre, como pide el boceto. La imagen es un
           campo propio de la categoría (FA-21), cargado en el panel, y es
           opcional: las que no tienen muestran su inicial en el mismo recuadro,
           así que la fila no se desarma con categorías sin imagen mezcladas.
         */}
-        {datos.masCategorias.length > 0 ? (
-          <SeccionDeLaHome
-            titulo="Más categorías"
-            enlace={{
-              href: "/categorias",
-              etiqueta: "Ver todas las categorías",
-              texto: "Ver todas",
-            }}
-          >
-            <FilaDeCategorias grilla="sm:grid-cols-4 lg:grid-cols-8">
-              {datos.masCategorias.map((categoria) => (
-                <li key={categoria.id} className={ANCHO_EN_FILA_DE_CATEGORIAS}>
-                  <TarjetaCuadradaDeCategoria
-                    categoria={categoria}
-                    imagenUrl={categoria.imagenUrl}
-                    sizes="(min-width: 1024px) 12vw, (min-width: 640px) 25vw, 40vw"
-                  />
-                </li>
-              ))}
-            </FilaDeCategorias>
-          </SeccionDeLaHome>
-        ) : null}
+          {datos.masCategorias.length > 0 ? (
+            <SeccionDeLaHome
+              titulo="Más categorías"
+              enlace={{
+                href: "/categorias",
+                etiqueta: "Ver todas las categorías",
+                texto: "Ver todas",
+              }}
+            >
+              <FilaDeCategorias grilla="sm:grid-cols-4 lg:grid-cols-8">
+                {datos.masCategorias.map((categoria) => (
+                  <li
+                    key={categoria.id}
+                    className={ANCHO_EN_FILA_DE_CATEGORIAS}
+                  >
+                    <TarjetaCuadradaDeCategoria
+                      categoria={categoria}
+                      imagenUrl={categoria.imagenUrl}
+                      sizes="(min-width: 1024px) 12vw, (min-width: 640px) 25vw, 40vw"
+                    />
+                  </li>
+                ))}
+              </FilaDeCategorias>
+            </SeccionDeLaHome>
+          ) : null}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
