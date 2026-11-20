@@ -123,6 +123,47 @@ export default async function Home() {
       {/* ── El hero (F10.7d, §7.1): a todo el ancho y pegado al encabezado,
           fuera del contenedor. Las categorías del día, ya sorteadas. ── */}
       <HeroDeLaHome
+        // Los chips, pegados al buscador en la computadora y debajo de las
+        // fotos en el teléfono (§7.1). Desde el 2026-11-20 van en el hero:
+        // abajo, sueltos, dejaban la mitad izquierda vacía.
+        chips={
+          datos.destacadas.length > 0 ? (
+            <nav aria-label="Categorías destacadas" className="w-full">
+              <ul className="flex flex-wrap gap-2">
+                {datos.destacadas.map((categoria) => (
+                  <li key={categoria.id}>
+                    <Link
+                      href={urlDeCategoria(categoria.slug)}
+                      className="flex h-11 items-center gap-2 rounded-pill border border-border bg-surface px-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand sm:pl-2 sm:pr-4"
+                    >
+                      {/*
+                    La inicial es del boceto y es decoración: el nombre está
+                    al lado, así que un lector de pantalla no tiene por qué
+                    escuchar «T, Teclados».
+
+                    Y va en gris, no en burdeos: siete discos de marca en
+                    fila son siete cosas en burdeos que no son la acción de
+                    la pantalla, y ésa es la regla de una sola voz (§3.1).
+                    El burdeos del hero es el botón del buscador, y uno solo.
+                  */}
+                      <span
+                        aria-hidden
+                        // Desde `sm`: a 390px los siete chips con disco pasan
+                        // de dos renglones a cuatro, y cuatro renglones de
+                        // atajos ya no son un atajo. Sin el disco entran tres
+                        // por renglón.
+                        className="hidden size-7 place-items-center rounded-full bg-canvas text-caption text-ink-secondary sm:grid"
+                      >
+                        {categoria.nombre.slice(0, 1)}
+                      </span>
+                      {categoria.nombre}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ) : null
+        }
         categorias={datos.delHero.map((c) => ({
           nombre: c.nombre,
           href: urlDeCategoria(c.slug),
@@ -141,45 +182,6 @@ export default async function Home() {
           Productos nuevos, cerrados y en su empaque original. Elegí y armá tu
           pedido.
         </p>
-        {/* Los chips, pegados al buscador (§7.1): el atajo de quien ya sabe
-            qué busca. Desde el 2026-11-20 van dentro del hero; abajo, sueltos,
-            dejaban la mitad izquierda vacía. */}
-        {datos.destacadas.length > 0 ? (
-          <nav aria-label="Categorías destacadas" className="mt-2 w-full">
-            <ul className="flex flex-wrap gap-2">
-              {datos.destacadas.map((categoria) => (
-                <li key={categoria.id}>
-                  <Link
-                    href={urlDeCategoria(categoria.slug)}
-                    className="flex h-11 items-center gap-2 rounded-pill border border-border bg-surface px-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand sm:pl-2 sm:pr-4"
-                  >
-                    {/*
-                    La inicial es del boceto y es decoración: el nombre está
-                    al lado, así que un lector de pantalla no tiene por qué
-                    escuchar «T, Teclados».
-
-                    Y va en gris, no en burdeos: siete discos de marca en
-                    fila son siete cosas en burdeos que no son la acción de
-                    la pantalla, y ésa es la regla de una sola voz (§3.1).
-                    El burdeos del hero es el botón del buscador, y uno solo.
-                  */}
-                    <span
-                      aria-hidden
-                      // Desde `sm`: a 390px los siete chips con disco pasan
-                      // de dos renglones a cuatro, y cuatro renglones de
-                      // atajos ya no son un atajo. Sin el disco entran tres
-                      // por renglón.
-                      className="hidden size-7 place-items-center rounded-full bg-canvas text-caption text-ink-secondary sm:grid"
-                    >
-                      {categoria.nombre.slice(0, 1)}
-                    </span>
-                    {categoria.nombre}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ) : null}
       </HeroDeLaHome>
       <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8">
         {/*
@@ -199,10 +201,12 @@ export default async function Home() {
           acá se dice en una línea —la versión larga, con el retiro en el punto
           de entrega, la sigue diciendo el pie—.
         */}
-          <p className="flex w-full items-center justify-center gap-2.5 rounded-card bg-surface p-4 text-left text-body-sm text-ink-secondary shadow-sm">
+          <p className="flex w-full items-start justify-center gap-2.5 rounded-card bg-surface p-4 text-left text-body-sm text-ink-secondary shadow-sm">
             {/* El ícono va en gris por la misma regla: es un ícono general, no
               una acción (§3.1). Lo que pesa en este renglón es la zona, y ésa
               está en tinta plena. */}
+            {/* Arriba y no al medio: en el teléfono el texto va en tres
+                renglones, y el camión al medio quedaba suelto. */}
             <Truck aria-hidden className="size-5 shrink-0 text-ink-secondary" />
             <span>
               <span className="font-medium text-ink">

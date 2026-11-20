@@ -1281,7 +1281,9 @@ lo primero que se usa ahí.
 pedido.», en un solo renglón donde entra— y **los chips de las destacadas**,
 alineados a la izquierda. Los chips entraron al hero el mismo día: abajo,
 sueltos, dejaban la mitad izquierda vacía al lado de columnas de 628px y al
-buscador solo; adentro vuelven a estar pegados a él, que es su lugar. El nombre es la primera mitad del eslogan (§2.4), así que no se
+buscador solo; adentro vuelven a estar pegados a él, que es su lugar. **En
+el teléfono van debajo de las dos filas de fotos**, para que las fotos
+asomen en la primera pantalla: tres renglones de chips las empujaban fuera. El nombre es la primera mitad del eslogan (§2.4), así que no se
 repite «Ana vende». **La palabra rota** por las seis categorías del día, cada
 3,5 segundos, y después dice **«la tecnología»**, que se queda el doble antes
 de volver a empezar: cierra la idea de que la tienda vende de todo. El

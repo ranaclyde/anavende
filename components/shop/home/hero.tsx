@@ -280,10 +280,17 @@ function useTiras(
 
 export function HeroDeLaHome({
   categorias,
+  chips,
   children,
 }: {
   /** Las del día, ya sorteadas (TS §10.5). */
   categorias: CategoriaDelHero[];
+  /**
+   * Los chips de las destacadas. Van aparte del texto porque cambian de
+   * lugar: en la computadora, debajo del buscador; en el teléfono, debajo de
+   * las fotos, para que las fotos asomen en la primera pantalla.
+   */
+  chips?: ReactNode;
   /** El buscador y la aclaración: los arma la página. */
   children: ReactNode;
 }) {
@@ -347,13 +354,16 @@ export function HeroDeLaHome({
         className={cn(
           // Columnas y filas con mínimo 0: si no, la grilla toma el largo
           // de las tiras, que son miles de píxeles.
-          "mx-auto grid max-w-shop grid-cols-[minmax(0,1fr)] gap-8 px-4 pt-8 sm:px-6 lg:px-8",
+          "mx-auto grid max-w-shop grid-cols-[minmax(0,1fr)] gap-8 px-4 py-8 sm:px-6 lg:px-8",
           tiras.length > 0
-            ? "lg:h-[628px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-14 lg:py-8"
+            ? // Desde `lg`, el texto y los chips en la columna de la
+              // izquierda, centrados entre dos filas elásticas; las tiras,
+              // a la derecha, de arriba abajo.
+              "lg:h-[628px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:grid-rows-[minmax(0,1fr)_auto_auto_minmax(0,1fr)] lg:gap-x-14 lg:gap-y-6 lg:py-8"
             : "lg:py-16",
         )}
       >
-        <div className="relative z-10 flex flex-col items-start gap-6 lg:justify-center lg:pb-10">
+        <div className="relative z-10 flex flex-col items-start gap-6 lg:col-start-1 lg:row-start-2">
           {/*
             La marca, en burdeos y escrita como se escribe: «AnaVende». En la
             primera carga sale del isotipo (`MarcaDelHero`, F10.7c); el nombre
@@ -383,7 +393,7 @@ export function HeroDeLaHome({
         </div>
 
         {tiras.length > 0 ? (
-          <div className="relative -mx-4 pb-8 sm:-mx-6 lg:mx-0 lg:h-full lg:pb-0">
+          <div className="relative -mx-4 sm:-mx-6 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:mx-0 lg:h-full">
             <div
               ref={zona}
               // Decorativas para el lector de pantalla y fuera del Tab: las
@@ -409,7 +419,9 @@ export function HeroDeLaHome({
                       <div
                         key={copia}
                         data-copia
-                        className="flex shrink-0 pl-4 sm:pl-6 lg:flex-col lg:pl-0"
+                        // Sin aire propio a los costados: en el empalme se
+                        // sumaba al de la pieza y dejaba un hueco mayor.
+                        className="flex shrink-0 lg:flex-col"
                       >
                         {piezas.map((pieza, i) => {
                           const c = categorias[pieza.categoria];
@@ -495,7 +507,7 @@ export function HeroDeLaHome({
                   detenido ? "Reanudar el movimiento" : "Pausar el movimiento"
                 }
                 // Abajo a la derecha de las tiras, encima de la última pieza.
-                className="absolute right-4 bottom-10 z-30 grid size-11 lg:right-3 lg:bottom-3 place-items-center rounded-pill bg-surface/95 text-ink-secondary shadow-md transition-colors duration-150 hover:text-ink"
+                className="absolute right-4 bottom-2 z-30 grid size-11 lg:right-3 lg:bottom-3 place-items-center rounded-pill bg-surface/95 text-ink-secondary shadow-md transition-colors duration-150 hover:text-ink"
               >
                 {detenido ? (
                   <Play aria-hidden className="size-4" />
@@ -508,6 +520,10 @@ export function HeroDeLaHome({
               </button>
             ) : null}
           </div>
+        ) : null}
+
+        {chips ? (
+          <div className="lg:col-start-1 lg:row-start-3">{chips}</div>
         ) : null}
       </div>
     </section>
