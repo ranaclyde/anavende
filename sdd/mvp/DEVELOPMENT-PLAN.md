@@ -402,6 +402,7 @@ Ordenado por relación entre valor y esfuerzo, no por entusiasmo. Nada de esto e
 | 11 | Entorno de staging | TS §18.2 |
 | 12 | **Gift cards**: se compran con cuenta, se activan al confirmar el cobro y se canjean con o sin cuenta | `sdd/gift-card/DEFINICION.md` |
 | — | **Compras a proveedores**: la compra se carga como viene en la factura, cada renglón se vincula a una variante cuando se puede y suma al stock con un botón. Leer el PDF o la foto de la factura es **opcional**. Anotada como idea, sin especificar | `sdd/compras/IDEA.md` |
+| — | **Ocho ideas sueltas**: avisar cuando vuelve el stock, carrito armado por la vendedora, catálogo para Google y Meta, comparar productos, actualización masiva de precios, recuento de inventario, garantía de cada venta y búsquedas sin resultados. Anotadas, sin especificar | `sdd/ideas/IDEAS.md` |
 | — | **Página de servicio técnico**, ya especificada (era F3.12) | FA-24 · FS RF-42 · DR §7.7 · TS §12.1 |
 | — | **Login con Facebook** | FA-23 |
 
