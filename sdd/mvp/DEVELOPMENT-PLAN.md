@@ -393,7 +393,7 @@ Ordenado por relación entre valor y esfuerzo, no por entusiasmo. Nada de esto e
 | 2 | Avisos por email de cambios de estado | FA-07 |
 | 3 | Expiración automática de reservas de stock | FA-05 |
 | 4 | Caché del catálogo con `cacheComponents`, **con medición previa** | TS §12 |
-| 5 | **Etiquetas de producto (*tags*) y filtro por etiqueta** | FA-20 |
+| 5 | **Características de producto agrupadas y filtro por característica** (antes «etiquetas»). **Opcional**: anotada como idea, sin especificar | FA-20 · `sdd/caracteristicas/IDEA.md` |
 | 6 | Relacionados curados producto a producto | FA-18 |
 | 7 | Recomendados por co-compra, cuando haya volumen de órdenes | FA-17 |
 | 8 | Cupones y promociones | FA-09 |
