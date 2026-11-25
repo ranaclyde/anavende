@@ -93,6 +93,7 @@ export const crearLaOrdenManualDelPanel = action
       creadaPor: ctx.session.profile.id,
       userId: input.cuentaId ?? null,
       estado: input.estado,
+      fechaDeVenta: input.fechaDeVenta ?? null,
       customerName: input.nombre,
       customerEmail: input.email || null,
       customerPhone: input.telefono,

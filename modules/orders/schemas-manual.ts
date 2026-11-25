@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { hoyEnArgentina } from "@/lib/fechas";
 import { comoMonto, isMoney, money } from "@/lib/money";
 import { telefonoArgentino } from "@/lib/telefono";
 import { problemasDeUbicacion } from "@/modules/users/direcciones/schemas";
@@ -118,6 +119,13 @@ const campos = z.object({
   estado: z.enum(ESTADOS_INICIALES, {
     error: "Elegí si la orden queda activa o finalizada.",
   }),
+  /**
+   * El día de la venta, `AAAA-MM-DD` (RF-24, 2026-11-25). Solo cuenta con
+   * `finalizada`: con `activa` se ignora aunque llegue, porque la venta
+   * ocurre cuando se finaliza. Que sea obligatoria y no futura lo decide el
+   * `superRefine`, que es donde se ve el estado.
+   */
+  fechaDeVenta: z.iso.date({ error: "Elegí la fecha de la venta." }).optional(),
   /** La cuenta del comprador, si se la asoció (RF-24). */
   cuentaId: z.uuid().optional(),
   // El snapshot del pedido, de texto libre: RF-24 pide justamente que se
@@ -156,6 +164,26 @@ const campos = z.object({
  * escrita mientras se cambia de opinión, y lo que decide es la elección.
  */
 export const ordenManualSchema = campos.superRefine((v, ctx) => {
+  // **Sin límite hacia atrás** (decisión tuya del 2026-11-25): una venta
+  // olvidada puede aparecer una semana después. Hacia adelante sí, porque una
+  // venta que todavía no pasó es una orden activa.
+  if (v.estado === "finalizada") {
+    if (!v.fechaDeVenta) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["fechaDeVenta"],
+        message: "Elegí la fecha de la venta.",
+      });
+    } else if (v.fechaDeVenta > hoyEnArgentina()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["fechaDeVenta"],
+        message:
+          "La fecha no puede ser futura. Si todavía no se entregó, cargala como activa.",
+      });
+    }
+  }
+
   if (v.entrega !== "envio") return;
 
   if (!v.direccion) {

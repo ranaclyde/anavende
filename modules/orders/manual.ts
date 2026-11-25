@@ -1,10 +1,11 @@
 import "server-only";
 
-import { sql } from "drizzle-orm";
+import { sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db";
 import type { ShippingAddressSnapshot } from "@/db/schema/orders";
 import { domainError, isDomainError } from "@/lib/errors";
+import { hoyEnArgentina, ZONA_HORARIA } from "@/lib/fechas";
 import type { Money } from "@/lib/money";
 import {
   reservar,
@@ -56,6 +57,11 @@ export type DatosDeOrdenManual = {
   userId: string | null;
   /** Activa reserva; finalizada descuenta de una (§8.1). */
   estado: "activa" | "finalizada";
+  /**
+   * El día de la venta, `AAAA-MM-DD`, si nace finalizada (RF-24, 2026-11-25).
+   * `null` u hoy es «ahora». Con activa no se usa.
+   */
+  fechaDeVenta?: string | null;
   customerName: string;
   customerEmail: string | null;
   customerPhone: string;
@@ -98,6 +104,32 @@ async function snapshotDeLasVariantes(
      )})`);
 
   return new Map([...filas].map((f) => [f.variantId, f]));
+}
+
+/**
+ * El `finalized_at` de la orden (RF-24, TS §5.6).
+ *
+ * **Hoy es «ahora»**, como siempre: la venta que se carga en el momento.
+ * **Un día anterior es ese día a las 12:00 de Argentina**: la hora no se
+ * pregunta porque nadie la recuerda, y el mediodía no cambia de día con
+ * ninguna zona horaria, que es lo único que miran los reportes. `created_at`
+ * queda en el momento de la carga, así que la orden sigue diciendo que se
+ * cargó después.
+ */
+function cuandoSeVendio(datos: DatosDeOrdenManual): SQL {
+  if (datos.estado !== "finalizada") return sql`NULL`;
+
+  const hoy = hoyEnArgentina();
+  const fecha = datos.fechaDeVenta;
+  if (!fecha || fecha === hoy) return sql`now()`;
+
+  // El esquema ya lo impide; esto es para quien llame sin pasar por él.
+  if (fecha > hoy) {
+    throw domainError("VALIDATION", {
+      message: "La fecha de la venta no puede ser futura.",
+    });
+  }
+  return sql`(${fecha}::date + time '12:00') AT TIME ZONE ${ZONA_HORARIA}`;
 }
 
 /**
@@ -147,7 +179,7 @@ export async function crearOrdenManual(
          ${datos.customerEmail}, ${datos.customerPhone},
          ${datos.direccion ? JSON.stringify(datos.direccion) : null}::jsonb,
          ${datos.notas}, ${datos.creadaPor},
-         ${datos.estado === "finalizada" ? sql`now()` : sql`NULL`})
+         ${cuandoSeVendio(datos)})
       RETURNING id, order_number AS "orderNumber"`);
 
     for (const item of items) {

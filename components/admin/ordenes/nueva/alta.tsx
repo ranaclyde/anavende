@@ -19,6 +19,7 @@ import { AgregarProductos } from "@/components/admin/ordenes/nueva/buscador-vari
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Campo, Opcion } from "@/components/admin/formulario";
+import { hoyEnArgentina } from "@/lib/fechas";
 import { FieldError } from "@/components/ui/field-error";
 import { Input, Textarea } from "@/components/ui/input";
 import {
@@ -43,7 +44,9 @@ import { OTRA_LOCALIDAD } from "@/modules/users/direcciones/constantes";
  * **Es un formulario y no un checkout.** El checkout acompaña a alguien que
  * está comprando y por eso va de a un paso; esto lo llena la vendedora con la
  * venta ya hecha y el teléfono en la mano: todo a la vista, en el orden en
- * que se cuenta una venta —qué se llevó, quién, cómo lo recibe, cómo queda—.
+ * que se cuenta una venta —quién compró, qué se llevó, cómo lo recibe, cómo
+ * queda—. **El comprador va primero desde el 2026-11-25** (F7.4b, pedido
+ * tuyo): una venta se empieza a contar por la persona, no por el producto.
  *
  * **Lo que avisa sin bloquear** (RF-24): cuando la cantidad supera el stock.
  * Es la mitad del requisito que existe para poder registrar lo que ya pasó, y
@@ -76,7 +79,8 @@ type CampoDelFormulario =
   | "entrega"
   | "direccion"
   | "notas"
-  | "estado";
+  | "estado"
+  | "fechaDeVenta";
 
 export function AltaDeOrdenManual() {
   const router = useRouter();
@@ -97,6 +101,10 @@ export function AltaDeOrdenManual() {
   // **Finalizada por omisión** (decisión del 2026-09-16): lo habitual es
   // anotar una venta que ya se entregó. Quien coordina para después lo cambia.
   const [estado, setEstado] = useState<"finalizada" | "activa">("finalizada");
+  // Hoy por omisión (RF-24, F7.4b): casi siempre se carga en el día. La de
+  // ayer es la que se dejó para la mañana siguiente.
+  const [hoy] = useState(hoyEnArgentina);
+  const [fechaDeVenta, setFechaDeVenta] = useState(hoy);
   const [notas, setNotas] = useState("");
 
   /** `null` = escribir una dirección; un id = usar una guardada de la cuenta. */
@@ -191,6 +199,8 @@ export function AltaDeOrdenManual() {
         precio: r.precio,
       })),
       estado,
+      // Con activa no viaja: la venta ocurre el día en que se finalice.
+      fechaDeVenta: estado === "finalizada" ? fechaDeVenta : undefined,
       cuentaId: cuenta?.id,
       nombre,
       telefono,
@@ -229,7 +239,48 @@ export function AltaDeOrdenManual() {
     // eran cinco con la barra afuera, y parecían cinco cosas sueltas.
     <form onSubmit={enviar} noValidate className="min-w-0">
       <TarjetaDeSeccion id="datos-de-la-orden" titulo="Datos de la orden">
-        <Apartado primero id="productos" titulo="Productos">
+        <Apartado
+          primero
+          id="comprador"
+          titulo="Comprador"
+          ayuda="Si tiene cuenta, asociala para que la vea en «Mis compras»."
+        >
+          <BuscadorDeComprador
+            elegido={cuenta}
+            alElegir={elegirCuenta}
+            alQuitar={quitarCuenta}
+          />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Campo
+              id={`${idBase}-nombre`}
+              etiqueta="A nombre de"
+              valor={nombre}
+              alCambiar={setNombre}
+              error={e.nombre}
+              autoComplete="off"
+            />
+            <Campo
+              id={`${idBase}-telefono`}
+              etiqueta="Teléfono"
+              valor={telefono}
+              alCambiar={setTelefono}
+              error={e.telefono}
+              type="tel"
+              ayuda="Con característica, por ejemplo 2920 55 5555."
+            />
+          </div>
+          <Campo
+            id={`${idBase}-email`}
+            etiqueta="Email (opcional)"
+            valor={email}
+            alCambiar={setEmail}
+            error={e.email}
+            type="email"
+          />
+        </Apartado>
+
+        <Apartado id="productos" titulo="Productos">
           {renglones.length === 0 ? (
             <p className="rounded-panel-card border border-dashed border-border px-3 py-6 text-center text-body-sm text-ink-secondary">
               Agregá los productos de la venta. Podés cambiarles el precio: lo
@@ -278,46 +329,6 @@ export function AltaDeOrdenManual() {
               </span>
             </div>
           ) : null}
-        </Apartado>
-
-        <Apartado
-          id="comprador"
-          titulo="Comprador"
-          ayuda="Si tiene cuenta, asociala para que la vea en «Mis compras»."
-        >
-          <BuscadorDeComprador
-            elegido={cuenta}
-            alElegir={elegirCuenta}
-            alQuitar={quitarCuenta}
-          />
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Campo
-              id={`${idBase}-nombre`}
-              etiqueta="A nombre de"
-              valor={nombre}
-              alCambiar={setNombre}
-              error={e.nombre}
-              autoComplete="off"
-            />
-            <Campo
-              id={`${idBase}-telefono`}
-              etiqueta="Teléfono"
-              valor={telefono}
-              alCambiar={setTelefono}
-              error={e.telefono}
-              type="tel"
-              ayuda="Con característica, por ejemplo 2920 55 5555."
-            />
-          </div>
-          <Campo
-            id={`${idBase}-email`}
-            etiqueta="Email (opcional)"
-            valor={email}
-            alCambiar={setEmail}
-            error={e.email}
-            type="email"
-          />
         </Apartado>
 
         <Apartado id="entrega" titulo="Entrega">
@@ -407,6 +418,24 @@ export function AltaDeOrdenManual() {
             />
           </div>
           <FieldError id={`${idBase}-estado-error`}>{e.estado}</FieldError>
+
+          {estado === "finalizada" ? (
+            // Sin límite hacia atrás (decisión tuya del 2026-11-25): una venta
+            // olvidada puede aparecer una semana después.
+            <div className="sm:max-w-56">
+              <Campo
+                id={`${idBase}-fechaDeVenta`}
+                etiqueta="Fecha de la venta"
+                type="date"
+                valor={fechaDeVenta}
+                alCambiar={setFechaDeVenta}
+                max={hoy}
+                required
+                error={e.fechaDeVenta}
+                ayuda="Si la cargás tarde, poné el día en que se vendió: es el que cuentan los reportes."
+              />
+            </div>
+          ) : null}
         </Apartado>
 
         <Apartado id="notas" titulo="Notas (opcional)">
@@ -450,13 +479,14 @@ export function AltaDeOrdenManual() {
 
 /** El orden en que se leen en pantalla, que es el orden en que se corrigen. */
 const CAMPOS: CampoDelFormulario[] = [
-  "items",
   "nombre",
   "telefono",
   "email",
+  "items",
   "entrega",
   "direccion",
   "estado",
+  "fechaDeVenta",
   "notas",
 ];
 
