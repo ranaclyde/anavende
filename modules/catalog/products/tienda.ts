@@ -28,17 +28,46 @@ function escaparComodines(termino: string): string {
 }
 
 /**
- * La búsqueda de la tienda, por ahora **la mitad por subcadena de §10.1**.
+ * El umbral del parecido — F3.3, calibrado el 2026-11-25.
  *
- * La otra mitad —similitud por trigramas, la que hace que «lojitech» encuentre
- * «Logitech»— es F3.3, y su «Hecho cuando» pide el umbral «calibrado con el
- * catálogo real». Calibrarlo contra productos de demostración daría un número
- * que no sirve para el catálogo de Ana, así que queda para después de F2.8 y
- * no se agrega a medias: un umbral mal puesto no falla, muestra cosas que no
- * tienen nada que ver, que es peor.
+ * Con `strict_word_similarity` y 0,4, «lojitech» encuentra Logitech,
+ * «adactador» los adaptadores, «tecaldo mecanico» los teclados mecánicos y
+ * «teclados» (en plural) los teclados, y ninguna palabra bien escrita suma
+ * productos que no tienen que ver. Se probó contra el resto:
+ *
+ * - `similarity()` (la de TS §10.1) compara contra el nombre ENTERO, y el
+ *   parecido se diluye en el largo: «adactador» contra «Adaptador USB-C a
+ *   HDMI» queda bajo cualquier umbral razonable.
+ * - `word_similarity()` compara contra el mejor tramo, pero el tramo puede
+ *   cortar una palabra al medio: «silla» trae las «Alfombrillas».
+ * - `strict_word_similarity()` compara contra palabras enteras, que es como
+ *   se equivoca quien escribe. Lo único que pierde es «mause».
+ *
+ * Bajarlo a 0,3 empieza a sumar ruido; subirlo a 0,5 pierde «monitro» y
+ * «auricualr».
  */
-function condicionDeBusqueda(q: string): SQL {
-  const termino = sql`immutable_unaccent(lower(${escaparComodines(q)}))`;
+const UMBRAL_DE_PARECIDO = 0.4;
+
+/** El término, sin acentos y en minúsculas, como lo comparan las dos mitades. */
+function terminoNormalizado(q: string): SQL {
+  return sql`immutable_unaccent(lower(${q}))`;
+}
+
+/**
+ * Marca y nombre juntos, para el parecido: «mouse logitech» encuentra los
+ * mouses Logitech antes que el resto de los mouses o el resto de Logitech, y
+ * «lojitech» sigue encontrando la marca.
+ */
+const MARCA_Y_NOMBRE = sql`immutable_unaccent(lower(b.name || ' ' || p.name))`;
+
+/** Qué tanto se parece el producto a lo buscado, de 0 a 1. */
+function parecido(q: string): SQL {
+  return sql`strict_word_similarity(${terminoNormalizado(q)}, ${MARCA_Y_NOMBRE})`;
+}
+
+/** La mitad por subcadena de §10.1: lo que contiene el término tal cual. */
+function contieneElTermino(q: string): SQL {
+  const termino = terminoNormalizado(escaparComodines(q));
   // El SKU se busca desde el 2026-11-05, cuando empezó a verse en la
   // ficha: si se muestra, quien lo copia tiene que poder encontrarlo.
   return sql`(
@@ -47,6 +76,24 @@ function condicionDeBusqueda(q: string): SQL {
     OR immutable_unaccent(lower(b.name))             ILIKE '%' || ${termino} || '%'
     OR immutable_unaccent(lower(p.description_text)) ILIKE '%' || ${termino} || '%'
   )`;
+}
+
+/**
+ * La búsqueda de la tienda (§10.1): lo que contiene el término, o lo que se
+ * le parece (F3.3).
+ *
+ * **El parecido mira marca y nombre, no la descripción ni el SKU**, como
+ * §10.1: en un texto largo cualquier palabra encuentra algo parecido, y un SKU
+ * se copia, no se tipea de memoria.
+ *
+ * **El umbral va en la comparación y no en `pg_trgm.*_threshold`**: esa
+ * variable se fija por sesión, y con el pool de conexiones habría que
+ * ponerla en cada consulta. Sin el operador no se usa el índice GIN, y no
+ * hace falta: con cientos de productos, comparar todos es menos de un
+ * milisegundo.
+ */
+function condicionDeBusqueda(q: string): SQL {
+  return sql`(${contieneElTermino(q)} OR ${parecido(q)} >= ${UMBRAL_DE_PARECIDO})`;
 }
 
 /**
@@ -136,6 +183,18 @@ const ORDEN: Record<FiltrosDeTienda["orden"], SQL> = {
   nombre: sql`immutable_unaccent(lower(p.name))`,
   novedades: sql`p.created_at DESC`,
 };
+
+/**
+ * Con una búsqueda, el orden por omisión pone primero lo que más se parece
+ * (§10.1: `ORDER BY score DESC`). Lo que contiene el término tal cual vale 1:
+ * buscando «teclado mecanico», los mecánicos van antes que el resto de los
+ * teclados que trae el parecido. Si se eligió otro orden, se respeta.
+ */
+function orden(f: FiltrosDeTienda): SQL {
+  if (!f.q || f.orden !== "relevancia") return ORDEN[f.orden];
+  return sql`CASE WHEN ${contieneElTermino(f.q)} THEN 1
+                  ELSE ${parecido(f.q)} END DESC, ${ORDEN.relevancia}`;
+}
 
 /**
  * Lo que la tarjeta necesita de un producto (§6.1), para cualquier pantalla
@@ -278,7 +337,7 @@ export async function leerPaginaDelCatalogo(
         JOIN brands b ON b.id = p.brand_id
         ${UNIONES_DE_TARJETA}
        WHERE ${donde}
-       ORDER BY ${ORDEN[f.orden]}, p.id
+       ORDER BY ${orden(f)}, p.id
        LIMIT ${POR_PAGINA} OFFSET ${desde}`),
 
     db.execute<{ n: number }>(sql`

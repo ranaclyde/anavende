@@ -64,9 +64,8 @@ function escaparComodines(termino: string): string {
  *
  * No es un recorte por comodidad: son dos preguntas distintas. El comprador
  * tantea —«lojitech»— y agradece que le acerquen algo; la vendedora busca
- * algo que sabe que existe, y un resultado parecido traído por un umbral que
- * todavía no se calibró (F3.3) le esconde el producto que fue a buscar entre
- * otros que no pidió. El `unaccent` sí está: «mecanico» tiene que encontrar
+ * algo que sabe que existe, y los parecidos de la tienda (F3.3) le esconden
+ * el producto que fue a buscar entre otros que no pidió. El `unaccent` sí está: «mecanico» tiene que encontrar
  * «Mecánico» en las dos pantallas.
  */
 function condicionDeBusqueda(q: string): SQL {

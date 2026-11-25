@@ -22,6 +22,11 @@ categorías y la ficha de cada producto.
 - **El catálogo** (`/productos`) guarda todo su estado en la dirección:
   filtros, orden y página. El botón atrás funciona, y el enlace se puede
   mandar por WhatsApp tal como se está viendo (`modules/catalog/products/tienda.ts`).
+  La búsqueda ignora acentos y tolera errores de tipeo y plurales:
+  «adactador» encuentra los adaptadores y «lojitech», Logitech. Con el orden
+  por omisión, lo que contiene la palabra tal cual va primero y después lo
+  que más se le parece (TS §10.1). La del panel, en cambio, busca solo lo
+  que contiene la palabra.
   Los filtros se abren en un drawer a la derecha, y en el teléfono a
   pantalla completa (`components/shop/filtros-catalogo.tsx`). Cada grupo
   muestra sus 8 opciones con más productos y un «Ver las N» para el resto,
