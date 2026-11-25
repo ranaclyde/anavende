@@ -526,3 +526,94 @@ describe("las opciones se ajustan a lo elegido", () => {
     expect(cuantos(r.marcas, marcaX)).toBeGreaterThan(0);
   });
 });
+
+/**
+ * F3.3 — la búsqueda tolera errores de tipeo (§10.1). Los nombres son de
+ * verdad, porque lo que se prueba es el parecido entre palabras, y la marca
+ * lleva su propio token y no `T`: con `T` en el nombre, estos productos
+ * aparecerían en las búsquedas de arriba, que cuentan exactamente cuatro.
+ *
+ * Cada búsqueda filtra por esta marca: la base de desarrollo tiene el
+ * catálogo sembrado, con sus propios adaptadores y teclados.
+ */
+describe("la búsqueda tolera errores de tipeo", () => {
+  const T3 = `zzb${randomUUID().slice(0, 8)}`;
+  let marca: string;
+
+  async function unoReal(nombre: string): Promise<void> {
+    const [fila] = await db.execute<{ id: string }>(sql`
+      INSERT INTO products (name, slug, brand_id, category_id, price)
+      VALUES (${nombre}, ${slugificar(`${nombre}-${T3}`)}, ${marca}, ${catA},
+              '1000.00')
+      RETURNING id`);
+    creados.productos.push(fila.id);
+  }
+
+  beforeAll(async () => {
+    const [fila] = await db.execute<{ id: string }>(sql`
+      INSERT INTO brands (name, slug)
+      VALUES (${`Logitech ${T3}`}, ${slugificar(`logitech-${T3}`)})
+      RETURNING id`);
+    marca = fila.id;
+    creados.marcas.push(marca);
+    slugDe.set(marca, slugificar(`logitech-${T3}`));
+
+    for (const nombre of [
+      "Adaptador USB-C a HDMI",
+      "Adaptador Jack 3,5 a USB",
+      "Teclado Mecánico K120",
+      "Teclado MX Keys",
+      "Silla Gamer Titán",
+      "Alfombrilla XL con Bordes",
+    ]) {
+      await unoReal(nombre);
+    }
+  });
+
+  /** Los nombres, en el orden en que los devuelve el catálogo. */
+  async function nombres(q: string): Promise<string[]> {
+    const pagina = await leerPaginaDelCatalogo({
+      ...FILTROS_DE_TIENDA_VACIOS,
+      q,
+      marca: [slugDe.get(marca)!],
+    });
+    return pagina.productos.map((p) => p.nombre);
+  }
+
+  test("«adactador» encuentra los adaptadores", async () => {
+    expect((await nombres("adactador")).sort()).toEqual([
+      "Adaptador Jack 3,5 a USB",
+      "Adaptador USB-C a HDMI",
+    ]);
+  });
+
+  test("«lojitech» encuentra la marca", async () => {
+    expect(await nombres("lojitech")).toHaveLength(6);
+  });
+
+  test("el plural encuentra el singular", async () => {
+    expect((await nombres("teclados")).sort()).toEqual([
+      "Teclado MX Keys",
+      "Teclado Mecánico K120",
+    ]);
+  });
+
+  test("una palabra bien escrita no trae lo que solo la contiene a medias", async () => {
+    // «silla» está adentro de «Alfombrilla», y un parecido por tramos la
+    // traería: por eso `strict_word_similarity`.
+    expect(await nombres("silla")).toEqual(["Silla Gamer Titán"]);
+  });
+
+  test("lo que contiene el término va antes que lo que solo se le parece", async () => {
+    expect(await nombres("teclado mecanico")).toEqual([
+      "Teclado Mecánico K120",
+      "Teclado MX Keys",
+    ]);
+  });
+
+  test("con un error, primero lo que más se parece", async () => {
+    expect((await nombres("tecaldo mecanico"))[0]).toBe(
+      "Teclado Mecánico K120",
+    );
+  });
+});
