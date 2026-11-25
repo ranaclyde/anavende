@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { db } from "@/db";
+import { hoyEnArgentina } from "@/lib/fechas";
 import { contadores, limpiar, unaVariante } from "@/tests/apoyo/catalogo";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 import { limpiarOrdenes } from "@/tests/apoyo/ordenes";
@@ -55,6 +56,7 @@ function loQueSeCarga(
   return {
     items: [{ variantId, cantidad: 1, precio: "1000.00" }],
     estado: "finalizada" as const,
+    fechaDeVenta: hoyEnArgentina(),
     nombre: "Rosa Pereyra",
     telefono: "2920555555",
     entrega: "retiro" as const,
@@ -164,6 +166,7 @@ describe("lo que escribe una persona (RF-24)", () => {
     const r = await crearLaOrdenManualDelPanel({
       items: [],
       estado: "finalizada",
+      fechaDeVenta: hoyEnArgentina(),
       nombre: "Rosa Pereyra",
       telefono: "2920555555",
       entrega: "retiro",
@@ -336,5 +339,88 @@ describe("los buscadores", () => {
 
     const r = await buscarVariantes({ q: "a" });
     expect(r.ok && r.data.resultados).toEqual([]);
+  });
+});
+
+/**
+ * F7.4b — la fecha de la venta (RF-24, 2026-11-25). Una venta se puede cargar
+ * tarde, y los reportes la tienen que contar en su día, no en el de la carga.
+ */
+describe("la fecha de la venta (RF-24)", () => {
+  /** `AAAA-MM-DD` de hace `dias` días, en Argentina. */
+  function haceDias(dias: number): string {
+    const [a, m, d] = hoyEnArgentina().split("-").map(Number);
+    return new Date(Date.UTC(a, m - 1, d - dias)).toISOString().slice(0, 10);
+  }
+
+  /** El día de una fecha guardada, en Argentina. */
+  async function diaEnArgentina(iso: string): Promise<string> {
+    const [fila] = await db.execute<{ dia: string }>(sql`
+      SELECT to_char(${iso}::timestamptz AT TIME ZONE
+               'America/Argentina/Buenos_Aires', 'YYYY-MM-DD') AS dia`);
+    return fila.dia;
+  }
+
+  async function cargar(variantId: string, cambios: Record<string, unknown>) {
+    const ana = await unComprador();
+    comoSesion(ana.userId, "admin");
+    const r = await crearLaOrdenManualDelPanel(
+      loQueSeCarga(variantId, cambios),
+    );
+    if (r.ok) creadas.push(r.data.numero);
+    return r;
+  }
+
+  test("una venta de días atrás queda finalizada ese día, y cargada hoy", async () => {
+    const { variantId } = await unaVariante({ total: 5 });
+    const r = await cargar(variantId, { fechaDeVenta: haceDias(6) });
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const orden = (await leerOrdenDelPanel(r.data.numero))!;
+    expect(await diaEnArgentina(orden.finalizadaEn!)).toBe(haceDias(6));
+    expect(await diaEnArgentina(orden.creadaEn)).toBe(hoyEnArgentina());
+  });
+
+  test("con la fecha de hoy, la venta es de ahora", async () => {
+    const { variantId } = await unaVariante({ total: 5 });
+    const antes = Date.now();
+    const r = await cargar(variantId, {});
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const orden = (await leerOrdenDelPanel(r.data.numero))!;
+    expect(new Date(orden.finalizadaEn!).getTime()).toBeGreaterThanOrEqual(
+      antes - 5000,
+    );
+  });
+
+  test("una fecha futura no se acepta", async () => {
+    const { variantId } = await unaVariante({ total: 5 });
+    const r = await cargar(variantId, { fechaDeVenta: haceDias(-1) });
+
+    expect(r).toMatchObject({ ok: false, code: "VALIDATION" });
+    // Y el stock no se movió: no hubo orden.
+    expect((await contadores(variantId)).stockTotal).toBe(5);
+  });
+
+  test("finalizada sin fecha no se acepta", async () => {
+    const { variantId } = await unaVariante({ total: 5 });
+    const r = await cargar(variantId, { fechaDeVenta: undefined });
+
+    expect(r).toMatchObject({ ok: false, code: "VALIDATION" });
+  });
+
+  test("una activa ignora la fecha: su venta es cuando se finalice", async () => {
+    const { variantId } = await unaVariante({ total: 5 });
+    const r = await cargar(variantId, {
+      estado: "activa",
+      fechaDeVenta: haceDias(3),
+    });
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const orden = (await leerOrdenDelPanel(r.data.numero))!;
+    expect(orden.finalizadaEn).toBeNull();
   });
 });

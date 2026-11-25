@@ -139,7 +139,10 @@ stateDiagram-v2
   no pasó por la web, por WhatsApp o en persona. El precio lo pone Ana. Puede
   cargarse finalizada, y entonces descuenta directo; si eso deja el stock en
   negativo, se permite, porque la venta ya ocurrió, y el panel lo destaca
-  como una diferencia a revisar.
+  como una diferencia a revisar. Finalizada lleva la **fecha de la venta**,
+  hoy por omisión: una venta cargada tarde entra en los reportes el día en
+  que se hizo, y el detalle dice «venta del…» junto a cuándo se cargó. El
+  formulario arranca por el comprador, después los productos y la entrega.
 
 **El panel también tiene guías de uso** (RF-37): en el detalle de una orden
 activa, la orden manual, la edición de un producto y devoluciones, que son

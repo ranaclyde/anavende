@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fechaConHora } from "@/lib/fechas";
+import { fechaConHora, fechaCorta } from "@/lib/fechas";
 import { formatMoney } from "@/lib/money";
 import { enlaceDeWhatsApp, mensajeParaElComprador } from "@/lib/whatsapp";
 import { formaDeEntrega } from "@/modules/orders/entrega";
@@ -217,7 +217,12 @@ export default async function DetalleDeLaOrden({ params }: Props) {
       <p className="text-body-sm text-ink-secondary">
         Creada el {fechaConHora(orden.creadaEn)}
         {orden.finalizadaEn
-          ? ` · finalizada el ${fechaConHora(orden.finalizadaEn)}`
+          ? // Una manual cargada tarde (RF-24, F7.4b) tiene la venta ANTES
+            // de la carga, y a las 12:00 porque la hora no se preguntó: se
+            // dice el día y no una hora inventada.
+            new Date(orden.finalizadaEn) < new Date(orden.creadaEn)
+            ? ` · venta del ${fechaCorta(orden.finalizadaEn)}`
+            : ` · finalizada el ${fechaConHora(orden.finalizadaEn)}`
           : orden.canceladaEn
             ? ` · cancelada el ${fechaConHora(orden.canceladaEn)}`
             : ""}

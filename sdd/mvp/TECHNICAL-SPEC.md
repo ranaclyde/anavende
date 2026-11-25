@@ -631,6 +631,10 @@ CREATE TABLE orders (
   created_by        uuid REFERENCES user_profiles(id) ON DELETE SET NULL,  -- admin, en órdenes manuales
   created_at        timestamptz NOT NULL DEFAULT now(),
   updated_at        timestamptz NOT NULL DEFAULT now(),
+  -- Cuándo ocurrió la venta (RF-28). En una manual que nace finalizada es la
+  -- fecha que eligió la administradora (RF-24, 2026-11-25): si es un día
+  -- anterior, ese día a las 12:00 de Argentina, y puede quedar ANTES de
+  -- created_at, que sigue siendo cuándo se cargó.
   finalized_at      timestamptz,
   cancelled_at      timestamptz,
 
