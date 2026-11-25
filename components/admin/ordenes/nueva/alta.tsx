@@ -432,7 +432,6 @@ export function AltaDeOrdenManual() {
                 max={hoy}
                 required
                 error={e.fechaDeVenta}
-                ayuda="Si la cargás tarde, poné el día en que se vendió: es el que cuentan los reportes."
               />
             </div>
           ) : null}
