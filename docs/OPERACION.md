@@ -110,6 +110,23 @@ volver a desplegar; cambiarla en Coolify sin reconstruir no hace nada.
 La limpieza sale con código 1 si no puede conectarse o falla la consulta, así
 que en Coolify «Success» quiere decir que corrió de verdad.
 
+**Después de un corte, la tienda vuelve sola.** Si el contenedor termina con
+error —por ejemplo, porque el servidor se quedó sin red—, Docker lo vuelve a
+arrancar con una espera que crece hasta un intento por minuto. Coolify lo deja
+de intentar al llegar a su **Max Restart Count**, que en la app está en
+**120** (_Configuration → Advanced_): unas dos horas de corte. Con el valor que
+trae, 10, se rendía a los dos minutos y la tienda quedaba _Exited_ hasta un
+Deploy a mano, que es lo que pasó el 2026-11-16. No está en 0 —sin límite— a
+propósito: con límite, si el corte dura más, llega un aviso.
+
+**Los avisos de Coolify llegan por email**, por Resend, desde
+`avisos@anavende.com.ar` y con su propia API key (`coolify-avisos`, solo
+envío), separada de la de Supabase y de la de la tienda. Van al email del
+usuario de Coolify y se configuran en _Notifications → Email_ del equipo.
+Están prendidos solo los de falla: _Restart limit reached_, _Deployment
+failure_, _Backup failure_, _Scheduled task failure_ y los del servidor
+(_Server unreachable_, disco, limpieza de Docker, parches, Traefik).
+
 ## Tareas frecuentes
 
 **Entrar a Studio**: no está publicado en internet. Se abre un túnel SSH al
@@ -179,6 +196,11 @@ curl -s -o /dev/null -w "%{http_code}\n" https://anavende.com.ar/api/salud
 | No llega el aviso de orden (E4)     | Sentry: un envío fallido se registra ahí y la orden queda igual                                                                     |
 | No se puede ingresar ni registrarse | Turnstile y los límites de GoTrue. Un `429` es el límite de intentos                                                                |
 | Las fotos no cargan                 | Storage, en el servidor de datos. Las fotos no pasan por la tienda                                                                  |
+| El servidor no se ve desde afuera   | Primero https://status.donweb.com: un corte del nodo es de DonWeb y no se arregla desde adentro. Si no figura, ticket a DonWeb      |
+| Llegó «Restart limit reached»       | Coolify agotó los reintentos y la tienda quedó _Exited_. Si el servidor ya tiene red, un Deploy a mano la levanta                   |
+
+**Si el servidor se reinició, el _journal_ no sirve**: no sobrevive al
+reinicio. `/var/log/syslog` sí, y ahí se ve qué hizo Docker con el contenedor.
 
 Lo de adentro de los servidores, como los logs del _compose_ o la
 configuración de nginx, lo ejecuta quien tiene acceso. Lo que está hecho en
