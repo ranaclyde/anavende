@@ -196,6 +196,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://anavende.com.ar/api/salud
 | No llega el aviso de orden (E4)     | Sentry: un envío fallido se registra ahí y la orden queda igual                                                                     |
 | No se puede ingresar ni registrarse | Turnstile y los límites de GoTrue. Un `429` es el límite de intentos                                                                |
 | Las fotos no cargan                 | Storage, en el servidor de datos. Las fotos no pasan por la tienda                                                                  |
+| El servidor no se ve desde afuera   | Primero https://status.donweb.com: un corte del nodo es de DonWeb y no se arregla desde adentro. Si no figura, ticket a DonWeb      |
 | Llegó «Restart limit reached»       | Coolify agotó los reintentos y la tienda quedó _Exited_. Si el servidor ya tiene red, un Deploy a mano la levanta                   |
 
 **Si el servidor se reinició, el _journal_ no sirve**: no sobrevive al
