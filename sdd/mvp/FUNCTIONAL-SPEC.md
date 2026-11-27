@@ -437,6 +437,7 @@ cuenta ni carrito, y el pie sin los enlaces de la tienda.
 **Criterios de aceptación:**
 - [ ] Rutas protegidas: un no autenticado es redirigido al login y vuelve a la ruta pedida tras loguearse.
 - [ ] El detalle de una orden muestra los ítems con el precio al que se generó la orden (snapshot, RN-12), el estado y los datos de envío.
+- [ ] **El renglón de un pedido no lleva foto.** Sale del snapshot (RN-12), que no guarda imágenes, y traerla del producto de hoy pondría la foto actual al lado del precio de ayer: en una compra vieja, puede ser directamente otro producto.
 - [ ] Desde una orden `activa`, el comprador puede **cancelarla** (RF-23) y **retomar la conversación por WhatsApp**.
 
 > **El historial y el detalle son dos pantallas, y el detalle no es la confirmación** (F6.5, 2026-09-15). `/mi-cuenta/compras` lista, `/mi-cuenta/compras/[numero]` muestra una. La confirmación de RF-12 (`/orden/[numero]`) se queda donde está y con su tono: es el momento de haber comprado, se lee una vez y felicita. Al detalle se vuelve semanas después para otra cosa —ver en qué anda, releer qué se pidió, arrepentirse—, y las dos acciones que ofrece (WhatsApp y cancelar) sólo aparecen mientras la orden está `activa`.
