@@ -24,23 +24,14 @@ export const metadata: Metadata = {
 };
 
 /**
- * Categorías — RF-35, DR §7.6. Tarea F3.10.
- *
- * Se llega desde «Ver todas» de la home y desde «Tienda» en el pie. Arriba
- * las destacadas, después todas de la A a la Z con su cantidad, las que no
- * tienen productos al final y un cierre para escribirle a la vendedora.
- *
- * **La página trae todas y el buscador filtra en el navegador** (ver
- * `ListadoDeCategorias`). Lo que hace el servidor es leerlas, junto con el
- * número de WhatsApp, y pasarle el `?q=` con que se llegó para que la primera
- * pintura ya sea el resultado.
+ * La página trae todas y el buscador filtra en el navegador; el `?q=` se pasa
+ * para que la primera pintura ya sea el resultado.
  */
 export default async function Categorias({
   searchParams,
 }: {
   searchParams: Promise<{ [clave: string]: string | string[] | undefined }>;
 }) {
-  // Independientes: una no espera a la otra.
   const [categorias, whatsapp, { q }] = await Promise.all([
     leerCategoriasDeLaTienda(),
     numeroDeWhatsApp(),

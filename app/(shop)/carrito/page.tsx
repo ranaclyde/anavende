@@ -27,29 +27,11 @@ import { urlDeImagen } from "@/modules/media/subir";
 
 export const metadata: Metadata = {
   title: "Tu carrito",
-  // F3.9: es de una persona y de un momento, no del sitio.
   robots: FUERA_DEL_INDICE,
 };
 
-/**
- * El carrito — F5.5, F5.6, RF-08, DESIGN-REFERENCE §7.4.
- *
- * Lista a la izquierda y resumen a la derecha, que baja al final en el
- * teléfono. Nace sobre el lineamiento del canvas (F3.8) en vez de ser
- * rediseñado después.
- *
- * **Al abrirlo se revisa contra el catálogo** (F5.6): lo que cambió se avisa
- * arriba, una vez; lo que no tiene stock queda marcado y fuera del total; y
- * lo que se dejó de vender queda apartado en «Ya no disponible» hasta que el
- * comprador lo quite.
- *
- * «Continuar con el pedido» lleva al checkout (F6.1). Abajo, «Completá tu
- * setup» (F8.3, RF-32), que llega por `<Suspense>` y no demora el carrito.
- */
 export default async function PaginaDelCarrito() {
-  // El proxy ya manda a ingresar a quien no tiene cookie; esto es la
-  // guardia de verdad (§6.1), y además distingue a quien tiene identidad
-  // pero todavía no completó el perfil (§13.4).
+  // El proxy solo mira la cookie: la guardia de verdad es esta.
   const sesion = await getSession();
 
   if (!sesion) {
@@ -57,8 +39,8 @@ export default async function PaginaDelCarrito() {
     redirect("/ingresar?volver=/carrito");
   }
 
-  // La revisión primero y la lectura DESPUÉS, no en paralelo: lo que se
-  // muestra tiene que ser el carrito ya ajustado, no el de antes de revisar.
+  // La revisión primero y la lectura después, no en paralelo: lo que se
+  // muestra tiene que ser el carrito ya ajustado.
   const avisos = await revisarCarrito(sesion.profile.id);
   const carrito = await leerCarrito(sesion.profile.id);
 
@@ -68,9 +50,8 @@ export default async function PaginaDelCarrito() {
     (item.estado === "no-disponible" ? apartados : enElPedido).push(item);
   }
 
-  // Se sigue al checkout con todo en regla. Lo que no tiene stock o no se
-  // vende no se puede reservar, y la orden es todo o nada (§8.3 regla 1):
-  // confirmar con eso adentro fallaría siempre.
+  // La orden es todo o nada (TS §8.3): con algo sin stock o que no se vende
+  // adentro, confirmar fallaría siempre.
   const continuar: Continuar =
     sesion.profile.closureRequestedAt != null
       ? "pausa"
@@ -79,17 +60,11 @@ export default async function PaginaDelCarrito() {
         ? "si"
         : "quitar";
 
-  // El encabezado es el mismo con y sin productos, y es el del catálogo
-  // (título y bajada): la pantalla vacía no puede ser otra pantalla.
   return (
     <div className="mx-auto w-full max-w-shop px-4 py-10 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-2 pb-7">
         <h1 className="text-title text-ink">Tu carrito</h1>
-        {/*
-          La bajada dice lo que el comprador no puede adivinar: que acá no se
-          paga (RN-08). Sin eso, un carrito con total se lee como el paso
-          previo a una tarjeta.
-        */}
+        {/* Sin esto, un carrito con total se lee como el paso previo a una tarjeta. */}
         <p className="text-body text-ink-secondary">
           Armá tu pedido y lo coordinamos por WhatsApp. No se cobra nada acá.
         </p>
@@ -122,7 +97,7 @@ export default async function PaginaDelCarrito() {
         </div>
       )}
 
-      {/* Con el carrito vacío no hay nada que completar (RF-32). */}
+      {/* Con el carrito vacío no hay nada que completar. */}
       {carrito.items.length > 0 ? (
         <Suspense fallback={<EsqueletoDeRecomendados bloques={1} />}>
           <CompletaTuSetup
@@ -136,20 +111,8 @@ export default async function PaginaDelCarrito() {
 }
 
 /**
- * Un renglón: miniatura de 80px, nombre, color, precio unitario, cantidad,
- * subtotal y «Quitar» (§7.4).
- *
- * Los tres estados (F5.6) comparten el dibujo y cambian lo que ofrecen:
- * vigente es el renglón completo; sin stock pierde la cantidad y el
- * subtotal, porque no hay nada que elegir ni que sumar; y no disponible
- * pierde además el enlace y el precio: la ficha ya no existe para el
- * público, y un precio de algo que no se vende no informa nada.
- *
- * **Quitarlo no lo borra de golpe** (2026-10-20): `<ViewTransition>` apaga el
- * que se va y sube los de abajo a su lugar (`globals.css`, `.renglon`). Lo
- * dispara la acción, que refresca la página dentro de una transición; un
- * cambio de cantidad, por lo mismo, funde el subtotal viejo con el nuevo. Sin
- * soporte del navegador, el renglón desaparece como antes.
+ * `<ViewTransition>` anima la salida al quitarlo (`globals.css`, `.renglon`):
+ * lo dispara la acción, que refresca la página dentro de una transición.
  */
 function Renglon({ item }: { item: ItemDelCarrito }) {
   const vigente = item.estado === "vigente";
@@ -159,15 +122,12 @@ function Renglon({ item }: { item: ItemDelCarrito }) {
     ? `/productos/${item.slug}?color=${item.colorSlug}`
     : `/productos/${item.slug}`;
 
-  // §9: producto, marca y color.
   const alt =
     `${item.nombre} ${item.marca}` +
     (item.colorNombre ? `, ${item.colorNombre.toLowerCase()}` : "");
 
-  // El selector no ofrece más de lo que hay, pero tampoco puede quedar por
-  // DEBAJO de lo que ya está en el carrito. Después de la revisión no
-  // debería pasar, pero el stock puede caer entre la revisión y el clic, y
-  // un tope por debajo dibujaría un número imposible de mover.
+  // Nunca por debajo de lo que ya está en el carrito: el stock puede caer
+  // entre la revisión y el clic, y el número quedaría imposible de mover.
   const maximo = Math.max(
     item.cantidad,
     Math.min(Math.max(0, item.disponible), TOPE_POR_ITEM),
@@ -251,12 +211,7 @@ function Renglon({ item }: { item: ItemDelCarrito }) {
   );
 }
 
-/**
- * Lo que se dejó de vender (RF-08, variante B del 2026-09-12). No se borra
- * solo: queda a la vista, fuera del total, hasta que el comprador lo quite.
- * Ese renglón ES el aviso persistente — si no lo ve hoy, lo ve la próxima
- * vez que abra el carrito.
- */
+/** No se borra solo: este renglón es el aviso persistente (RF-08). */
 function YaNoDisponible({ items }: { items: ItemDelCarrito[] }) {
   return (
     <section
@@ -285,21 +240,8 @@ function YaNoDisponible({ items }: { items: ItemDelCarrito[] }) {
   );
 }
 
-/** Si se puede seguir al checkout, y si no, por qué. */
 type Continuar = "si" | "pausa" | "quitar";
 
-/**
- * El resumen, fijo al costado en pantallas anchas.
- *
- * **«Continuar con el pedido» lleva al checkout** (F6.1). Apagado dice por
- * qué, como todo control apagado (§8): con la baja pedida apunta al aviso de
- * arriba de la tienda; con algo sin stock o que ya no se vende, lo dice abajo
- * del botón.
- *
- * La leyenda de entrega es RN-10 y la pide RF-08: el envío no se cobra en la
- * web, y quien llega al total tiene que saber que ese número no va a crecer
- * en el checkout por un costo que no vio.
- */
 function Resumen({
   total,
   unidades,
@@ -374,13 +316,8 @@ function Resumen({
 }
 
 /**
- * §8: qué falta y la acción para resolverlo. Nunca un espacio en blanco.
- *
- * Es el MISMO recuadro que el estado vacío del catálogo (`Vacio`, en
- * `app/(shop)/productos/page.tsx`), clase por clase: la tienda tiene una sola
- * forma de decir «no hay nada acá». Está copiado y no compartido porque
- * sacarlo a un componente toca el catálogo, y eso quedó para la revisión de
- * consistencia anotada en PROGRESO.
+ * Copia, clase por clase, de `Vacio` en `vista-del-catalogo.tsx`: si cambia
+ * uno, cambia el otro.
  */
 function CarritoVacio() {
   return (

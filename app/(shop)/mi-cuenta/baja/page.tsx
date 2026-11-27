@@ -15,16 +15,8 @@ import {
 export const metadata: Metadata = { title: "Pedir la baja" };
 
 /**
- * Pedir la baja de la cuenta — RF-34, RN-13. Tarea F5.8.
- *
- * **Antes de pedir, la pantalla dice qué implica y qué se conserva** (RF-34):
- * qué deja de poder hacer, que no se borra nada, y que volver es posible.
- *
- * **Con órdenes activas no hay formulario**: se dice cuántas y cuáles, y qué
- * hacer. Un botón que va a fallar es peor que ningún botón (§8).
- *
- * Con la baja ya pedida vuelve a «Mis datos», que es donde se ve y se retira.
- * Una administradora no la pide desde acá (`pedirBaja`).
+ * Con órdenes activas no hay formulario: un botón que va a fallar es peor que
+ * ningún botón. Con la baja ya pedida vuelve a «Mis datos», donde se retira.
  */
 export default async function PedirLaBaja() {
   const sesion = await getSession();

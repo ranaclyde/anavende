@@ -32,22 +32,17 @@ export const metadata: Metadata = {
 };
 
 /**
- * La imagen de Ana. **Hoy es una ilustración provisoria** (2026-10-21): una
- * foto inventada de una persona presentada como «Ana» le mentiría a quien
- * compra si quedara publicada. Para cambiarla, se deja la foto en
- * `public/nosotros/` y se cambia `src` y `alt` acá (4:5, unos 960×1200). Para
- * quitarla, `null`: el texto pasa a ocupar el ancho entero.
+ * Ilustración provisoria a propósito: una foto inventada presentada como «Ana»
+ * le mentiría a quien compra. La real va en `public/nosotros/` (4:5, unos
+ * 960×1200); con `null` el texto ocupa el ancho entero.
  */
 const FOTO_DE_ANA: { src: string; alt: string } | null = {
   src: "/nosotros/ana.svg",
   alt: "Ilustración de Ana",
 };
 
-/**
- * Cómo empezó, en tres momentos. Lo que está acá lo contó la dueña: arrancó
- * en la pandemia revendiendo de todo y terminó enfocada en tecnología. Lo que
- * no se sabe —el año del cambio, cuántos clientes— no se inventa.
- */
+// Lo contó la dueña. Lo que no se sabe (el año del cambio, cuántos clientes)
+// no se inventa.
 const HISTORIA = [
   {
     cuando: "2020",
@@ -69,11 +64,8 @@ const HISTORIA = [
   },
 ];
 
-/**
- * Cómo se trabaja, sacado de lo que la tienda ya promete en otras páginas
- * (RN-10, RF-19, Garantías). **El retiro no dice dónde**: es una casa de
- * familia, y la dirección se pasa sólo a quien ya decidió comprar.
- */
+// El retiro no dice dónde: es una casa de familia, y la dirección se pasa solo
+// a quien ya decidió comprar.
 const COMO_TRABAJO: {
   Icono: LucideIcon;
   titulo: string;
@@ -122,14 +114,8 @@ const COMO_TRABAJO: {
 ];
 
 /**
- * Nosotros (2026-10-21) — quién está detrás de la tienda, en primera persona.
- *
- * **Habla Ana, y no «la empresa»**: el trato con una persona es lo que la
- * tienda ofrece (PRODUCT.md) y el nombre y el eslogan ya la presentan. Una
- * página impersonal desmentiría las dos cosas.
- *
- * Por ahora el texto está en el código. Si Ana lo quiere cambiar seguido,
- * pasa a editarse desde el panel como las páginas legales (RF-29).
+ * Habla Ana y no «la empresa»: el trato con una persona es lo que la tienda
+ * ofrece.
  */
 export default async function Nosotros() {
   // Si la base no contesta, la página sale igual y el cierre lleva a
@@ -176,8 +162,7 @@ function Presentacion() {
       </div>
 
       {FOTO_DE_ANA ? (
-        // La foto inclinada apenas, con el sello encima: el único gesto
-        // decorativo de la página, y en la imagen que más tiene que decir.
+        // El único gesto decorativo de la página.
         <figure className="relative mx-auto w-full max-w-80 lg:max-w-none">
           <div className="relative aspect-[4/5] overflow-hidden rounded-card shadow-lg motion-safe:transition-transform motion-safe:duration-300 lg:-rotate-2 lg:hover:rotate-0">
             <Image
@@ -196,7 +181,6 @@ function Presentacion() {
   );
 }
 
-/** El sello que se apoya en la esquina de la foto. Es texto, no imagen. */
 function SelloDesde2020() {
   return (
     <p className="absolute -bottom-5 -left-3 grid size-24 rotate-[-8deg] place-items-center rounded-pill bg-brand text-center text-ink-inverse shadow-brand sm:-left-6 sm:size-28">
@@ -210,10 +194,6 @@ function SelloDesde2020() {
   );
 }
 
-/**
- * Los tres momentos sobre una línea: vertical en el teléfono, horizontal
- * desde `lg`. El punto del último va relleno, porque es donde se está.
- */
 function Historia() {
   return (
     <section aria-labelledby="historia" className="flex flex-col gap-10">
@@ -263,8 +243,7 @@ function ComoTrabajo() {
           Una tienda chica, con las reglas claras desde el principio.
         </p>
       </div>
-      {/* Renglones y no tarjetas: son cinco datos para leer de corrido, no
-          cinco cosas para elegir. */}
+      {/* Renglones y no tarjetas: se leen de corrido, no se eligen. */}
       <ul className="grid gap-x-12 rounded-card bg-surface px-6 shadow-md sm:px-8 md:grid-cols-2">
         {COMO_TRABAJO.map(({ Icono, titulo, texto }) => (
           <li
@@ -285,11 +264,6 @@ function ComoTrabajo() {
   );
 }
 
-/**
- * El cierre: el eslogan en su forma canónica (DR §2.4), que es la página
- * donde más sentido tiene, y la invitación a escribir. Sin número cargado no
- * hay botón de WhatsApp (RF-04): queda Contacto.
- */
 function Cierre({ whatsapp }: { whatsapp: string | null }) {
   return (
     <section
