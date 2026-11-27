@@ -7,29 +7,11 @@ import { ZONA_HORARIA } from "@/lib/fechas";
 import type { Money } from "@/lib/money";
 import type { Rango, Ranking } from "@/modules/reports/periodo";
 
-/**
- * Los reportes de ventas — FS RF-28 · TS §15. Tarea F9.1.
- *
- * **Una venta es una orden `finalizada`, y se cuenta el día en que se
- * finalizó** (`finalized_at`). Las activas todavía pueden cancelarse y las
- * canceladas nunca fueron una venta. **Las devoluciones restan el día en que
- * se registraron** (`returns.created_at`), no el de la orden devuelta, y las
- * anuladas no restan: una devolución anulada es una que no ocurrió. Es la
- * misma definición que el inicio del panel (F7.8): dos definiciones para la
- * misma pregunta darían dos números y nadie sabría cuál creer.
- *
- * **Dos fuentes, y cada una para lo suyo.** Lo que es de la orden —el total,
- * cuántas, web contra manual— suma `orders.total`, como el tablero del
- * inicio, así «Este mes» y el reporte de este mes dan exactamente lo mismo.
- * Lo que es del producto —más vendidos, categoría, marca— suma los renglones,
- * porque una orden trae productos de varias. Las dos coinciden porque todo
- * camino de escritura deja `total = SUM(subtotal)` (TS §15).
- *
- * **Todo se suma en SQL** (§7.1, P4): de acá salen montos ya calculados, como
- * texto, y la pantalla sólo los muestra o los dibuja.
- */
+// Qué es una venta y cuándo resta una devolución: TECHNICAL-SPEC §15. Lo de la
+// orden suma `orders.total`, como el tablero del inicio; lo del producto suma
+// los renglones. Coinciden porque todo camino de escritura deja
+// `total = SUM(subtotal)`.
 
-/** Los dos instantes que cortan un rango de días del calendario de acá. */
 function limites({ desde, hasta }: Rango): { inicio: SQL; fin: SQL } {
   return {
     inicio: sql`((${desde}::date)::timestamp AT TIME ZONE ${ZONA_HORARIA})`,
@@ -37,7 +19,6 @@ function limites({ desde, hasta }: Rango): { inicio: SQL; fin: SQL } {
   };
 }
 
-/** Las órdenes vendidas en el rango. */
 function vendidas(rango: Rango): SQL {
   const { inicio, fin } = limites(rango);
   return sql`
@@ -65,21 +46,16 @@ function devueltos(rango: Rango): SQL {
        AND r.created_at <  ${fin}`;
 }
 
-// ── Totales ─────────────────────────────────────────────────────────────
-
 export type Totales = {
-  /** Facturado neto de devoluciones. Puede dar negativo, y se muestra así. */
+  /** Neto de devoluciones. Puede dar negativo. */
   vendido: Money;
-  /** Cuánto de eso se restó por devoluciones. */
   devuelto: Money;
   ordenes: number;
-  /** Unidades vendidas, menos las devueltas. */
+  /** Menos las devueltas. */
   unidades: number;
   /**
-   * Lo que deja una orden en promedio: lo facturado **antes** de las
-   * devoluciones, sobre las órdenes del período. Una devolución de hoy suele
-   * ser de una orden de otro mes; restarla acá bajaría el ticket de órdenes
-   * que no la tuvieron.
+   * Antes de las devoluciones: una devolución de hoy suele ser de una orden de
+   * otro mes, y bajaría el ticket de órdenes que no la tuvieron.
    */
   ticket: Money;
 };
@@ -106,8 +82,6 @@ export async function totalesDelPeriodo(rango: Rango): Promise<Totales> {
   return fila;
 }
 
-// ── Ventas en el tiempo ─────────────────────────────────────────────────
-
 export type PuntoDeVentas = {
   /** `AAAA-MM-DD`: el día, o el 1° del mes si se agrupa por mes. */
   fecha: string;
@@ -115,11 +89,7 @@ export type PuntoDeVentas = {
   ordenes: number;
 };
 
-/**
- * Lo vendido día por día —o mes por mes—, **con los días sin ventas en
- * cero**: una columna que falta se lee como un día que no existió, y el
- * gráfico saltaría del 3 al 5 sin avisar.
- */
+/** Con los días sin ventas en cero, para que el gráfico no salte del 3 al 5. */
 export async function ventasEnElTiempo(
   rango: Rango,
   agrupado: "dia" | "mes",
@@ -155,16 +125,10 @@ export async function ventasEnElTiempo(
   ];
 }
 
-// ── Por producto, categoría y marca ─────────────────────────────────────
-
 /**
- * Los renglones del período, con signo: lo vendido suma y lo devuelto resta.
- *
- * **El nombre es el de hoy, con el del pedido de respaldo.** El renglón guarda
- * el nombre y la marca de cuando se vendió (RN-12), pero la categoría no: para
- * agrupar por categoría hay que ir al producto. Y con la categoría al día, la
- * marca y el nombre también van al día: si no, un producto renombrado
- * aparecería partido en dos filas del ranking.
+ * Con signo: lo devuelto resta. Nombre y marca son los de hoy, con los del
+ * renglón de respaldo: la categoría hay que buscarla en el producto, y si no
+ * fueran todos al día un producto renombrado saldría en dos filas.
  */
 function lineas(rango: Rango): SQL {
   return sql`
@@ -200,13 +164,7 @@ export type FilaAgrupada = {
   vendido: Money;
 };
 
-/**
- * Facturación y unidades agrupadas por categoría o por marca — RF-28.
- *
- * Todas, de mayor a menor: son decenas, no miles. Lo que quedó en cero
- * exacto —vendido y devuelto en el mismo período— no se lista: es una fila
- * que no dice nada.
- */
+/** Sin tope: son decenas. Lo que quedó en cero exacto no se lista. */
 export async function ventasAgrupadas(
   rango: Rango,
   por: "categoria" | "marca",
@@ -229,27 +187,17 @@ export async function ventasAgrupadas(
 
 export type ProductoVendido = FilaAgrupada & {
   marca: string;
-  /** El desglose por color de RF-28, de mayor a menor. */
+  /** De mayor a menor. */
   colores: { color: string | null; unidades: number; vendido: Money }[];
 };
 
-/** Cuántos entran en el ranking. Diez se leen de un vistazo; veinte no. */
 export const TOPE_DEL_RANKING = 10;
 
-/**
- * Los productos más vendidos, por ingresos o por unidades — RF-28.
- *
- * **Entra lo que se vendió en el período.** Un producto que sólo tuvo una
- * devolución —vendido el mes pasado, devuelto este— resta en los totales,
- * pero no es «de lo más vendido» de nada.
- */
+/** Un producto que en el período solo tuvo devoluciones no entra. */
 export async function masVendidos(
   rango: Rango,
   ranking: Ranking,
-  /**
-   * Cuántos. La pantalla muestra diez; la exportación a Excel (F9.2) los
-   * pide todos con `null`, que en Postgres es `LIMIT NULL`: sin tope.
-   */
+  /** `null` es `LIMIT NULL` en Postgres: sin tope. */
   tope: number | null = TOPE_DEL_RANKING,
 ): Promise<ProductoVendido[]> {
   const orden =
@@ -282,21 +230,13 @@ export async function masVendidos(
   ];
 }
 
-// ── Web contra manual ───────────────────────────────────────────────────
-
 export type PorOrigen = {
   origen: "web" | "manual";
   vendido: Money;
   ordenes: number;
 };
 
-/**
- * Facturación y órdenes según de dónde vino la orden — RF-28, TS §15.
- *
- * `orders.origin` se fija al crearla y no se edita, así que una orden manual
- * es manual para siempre. **Las dos filas salen siempre**, aunque una esté en
- * cero: «manual: $ 0» es una respuesta, y una fila que falta no.
- */
+/** Las dos filas salen siempre, aunque una esté en cero. */
 export async function webContraManual(rango: Rango): Promise<PorOrigen[]> {
   return [
     ...(await db.execute<PorOrigen>(sql`
