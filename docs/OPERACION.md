@@ -129,11 +129,28 @@ failure_, _Backup failure_, _Scheduled task failure_ y los del servidor
 
 ## Tareas frecuentes
 
+**Entrar a los servidores**: desde internet, solo con llave (F0.15). La
+contraseña de `root` sigue andando únicamente desde las IPs de soporte de
+DonWeb, que fija su propio archivo
+(`/etc/ssh/sshd_config.d/00-0-trusted-ca.conf`: no se toca). Lo nuestro está
+en `/etc/ssh/sshd_config.d/50-solo-llave.conf`, en los dos servidores. La
+llave es `~/.ssh/id_ed25519_anavende`, sin passphrase: perderla no deja la
+tienda sin andar, pero sí a vos sin SSH, y se recupera desde la consola VNC
+del panel de DonWeb cargando una llave nueva.
+
+```bash
+ssh -i ~/.ssh/id_ed25519_anavende -p 5400 root@149.34.225.79   # DATA
+ssh -i ~/.ssh/id_ed25519_anavende -p 5057 root@149.34.225.107  # APP
+```
+
+Coolify entra al APP por el 22 desde adentro, con su propia llave (_Servers
+→ localhost → Private Key_), así que no depende de esto.
+
 **Entrar a Studio**: no está publicado en internet. Se abre un túnel SSH al
 servidor DATA, que escucha SSH en el 5400, y se deja la terminal abierta:
 
 ```bash
-ssh -N -p 5400 -L 8000:localhost:8000 root@149.34.225.79
+ssh -i ~/.ssh/id_ed25519_anavende -N -p 5400 -L 8000:localhost:8000 root@149.34.225.79
 ```
 
 y se entra a <http://localhost:8000> con el usuario y la contraseña del
