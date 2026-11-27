@@ -10,34 +10,18 @@ import { urlDeLogo } from "@/modules/media/subir";
 import type { PromocionVigente } from "@/modules/settings/promociones";
 
 /**
- * El día de hoy en Argentina, para comparar contra columnas `date` (RF-40).
  * La sesión de Postgres está en UTC: sin esto, de 21 a 24 una promoción que
  * vence hoy ya se daría por vencida.
  */
 const HOY_EN_ARGENTINA = sql`(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date`;
 
-/**
- * Configuración del sitio — RF-20, §5.9.
- *
- * La tabla es un singleton garantizado por CHECK, y la fila puede NO
- * existir: **no la escribe ninguna migración, la escribe la vendedora** la
- * primera vez que guarda la pantalla de configuración (F2.7). No podría ser
- * de otra manera: sus dos columnas de texto son NOT NULL y no hay número de
- * WhatsApp ni email que una migración pueda inventar. Así que el respaldo
- * del umbral no era algo provisorio de F2.5: es permanente.
- */
+// La fila de `site_settings` puede no existir: no la escribe ninguna migración
+// sino la vendedora, la primera vez que guarda la configuración (§5.9).
 
 /**
- * El mismo `3` que declara `DEFAULT` en la columna (§5.9).
- *
- * Está repetido a propósito y no derivado: la base decide el valor de la
- * fila nueva, y este decide qué pasa cuando NO hay fila. Son dos preguntas
- * distintas que hoy tienen la misma respuesta.
- *
- * También es lo que la pantalla de configuración muestra en el campo antes
- * de la primera vez, y eso importa: si ofreciera otro número, guardar sin
- * tocar nada cambiaría el comportamiento del listado sin que nadie lo
- * hubiera pedido.
+ * Repetido a propósito del `DEFAULT` de la columna: la base decide la fila
+ * nueva, y esto qué pasa cuando no hay fila. Es también lo que muestra el
+ * formulario antes de la primera vez.
  */
 export const UMBRAL_DE_STOCK_BAJO_POR_DEFECTO = 3;
 
@@ -53,22 +37,18 @@ export type ConfiguracionDelSitio = {
   whatsappNumber: string;
   adminNotificationEmail: string;
   lowStockThreshold: number;
-  /** Enlaces completos y normalizados; `null` = esa red no se muestra. */
+  /** `null` = esa red no se muestra. */
   facebookUrl: string | null;
   instagramUrl: string | null;
-  /** Si la escena de cada fecha puede encenderse sola (F9.5, RF-38). */
+  /** Si la escena de cada fecha puede encenderse sola (RF-38). */
   halloweenScene: boolean;
   christmasScene: boolean;
   easterScene: boolean;
 };
 
 /**
- * La configuración entera, para la pantalla que la edita.
- *
- * Devuelve `null` —y no valores de relleno— cuando todavía no se guardó
- * nunca. Es la diferencia entre «acá dice 3 porque lo elegiste» y «acá dice
- * 3 porque es lo que usa el sistema mientras no elijas»: quien lo tiene que
- * distinguir es la pantalla, y con un objeto ya rellenado no podría.
+ * `null`, y no valores de relleno, si nunca se guardó: la pantalla tiene que
+ * distinguir un valor elegido de uno por defecto.
  */
 export async function leerLaConfiguracion(): Promise<ConfiguracionDelSitio | null> {
   const [fila] = await db.execute<ConfiguracionDelSitio>(sql`
@@ -87,12 +67,8 @@ export async function leerLaConfiguracion(): Promise<ConfiguracionDelSitio | nul
 }
 
 /**
- * El interruptor de mantenimiento como está EN LA BASE — F2.7b.
- *
- * Para la pantalla que lo cambia, que no puede mostrar lo que el proxy
- * recuerda: si dijera «abierta» cinco segundos después de cerrarla, parecería
- * que no se guardó. `null` = la configuración nunca se guardó y no hay fila
- * donde prenderlo.
+ * De la base y no de lo que recuerda el proxy, para que la pantalla no diga
+ * «abierta» justo después de cerrarla. `null` = no hay fila.
  */
 export async function elModoMantenimiento(): Promise<boolean | null> {
   const [fila] = await db.execute<{ activo: boolean }>(sql`
@@ -102,44 +78,28 @@ export async function elModoMantenimiento(): Promise<boolean | null> {
 }
 
 /**
- * Los medios de pago del panel — RF-19.
- *
- * El orden es el que se configuró, y el nombre desempata: `sort_order` se
- * renumera sin huecos en cada alta, baja y movimiento (`actions.ts`), pero
- * dos filas pueden compartir número si alguien las escribe por fuera del
- * panel. Sin el desempate, esas dos cambiarían de lugar entre dos cargas de
- * la misma pantalla.
- *
- * **Es el mismo orden que usa `moverMedioDePago` para saber quién está
- * arriba de quién.** Si discreparan, la flecha movería el de al lado.
+ * Ordenados por `sort_order` y después por nombre, por si dos filas comparten
+ * número. Es el mismo orden que usa `moverMedioDePago`: si discreparan, la
+ * flecha movería el de al lado.
  */
 export type MedioDePagoDelPanel = {
   id: string;
   name: string;
   description: string | null;
-  /**
-   * La URL del logo, ya resuelta. `null` = no tiene. La vista recibe una URL
-   * y no una clave a propósito: armarla necesita el adaptador de
-   * almacenamiento (§9.4), que es código de servidor.
-   */
+  /** Ya resuelta: armarla necesita el adaptador de almacenamiento. */
   logoUrl: string | null;
   sortOrder: number;
   isActive: boolean;
-  /** Sus promociones de cuotas (RF-40), las vencidas al final. */
+  /** Las vencidas al final. */
   promociones: PromocionDelPanel[];
 };
 
 /**
- * Una promoción de cuotas en el panel — RF-40.
- *
- * Los montos y el recargo como los guarda la base (§7.2); las fechas,
- * `AAAA-MM-DD`. `estado` lo calcula la base contra el día de Argentina, el
- * mismo criterio que usa la tienda, para que el panel no diga «vigente» de
- * una que la ficha ya no muestra.
+ * `estado` lo calcula la base contra el día de Argentina, como la tienda, para
+ * que el panel no diga «vigente» de una que la ficha ya no muestra.
  */
 export type PromocionDelPanel = {
   id: string;
-  /** «Plan Z». `null` = la promoción es del medio, sin aclaración. */
   plan: string | null;
   cuotas: number;
   recargo: string;
@@ -150,13 +110,6 @@ export type PromocionDelPanel = {
   estado: "vigente" | "programada" | "vencida";
 };
 
-/**
- * Los medios de pago del panel, paginados desde el 2026-09-18 (§6.9).
- *
- * Devuelve `{ items, total }` por lo mismo que las otras tres de catálogo: con
- * `LIMIT`, el largo del arreglo es el de la página, y el contador y el estado
- * vacío de la pantalla necesitan el total de verdad.
- */
 export async function listarMediosDePago(
   pagina = 1,
 ): Promise<{ items: MedioDePagoDelPanel[]; total: number }> {
@@ -210,20 +163,12 @@ export async function listarMediosDePago(
   };
 }
 
-// ── Lo que la tienda necesita de la configuración ───────────────────────
-//
-// Consultas propias y no `leerLaConfiguracion()` recortada: esa devuelve
-// también el email de aviso a la administradora, y una pantalla pública no
-// tiene por qué traerse un dato interno a la memoria del servidor para
-// después descartarlo.
+// Lo que lee la tienda va en consultas propias y no en `leerLaConfiguracion()`
+// recortada: una pantalla pública no tiene por qué traerse el email interno.
 
 /**
- * El número al que van los `wa.me` de la tienda — RF-20, F3.6.
- *
- * `null` mientras la vendedora no haya guardado la configuración, y eso pasa
- * de verdad: la fila no la escribe ninguna migración (§5.9). Quien lo use
- * tiene que poder no mostrar el botón, no armar un enlace roto — `wa.me/`
- * sin número abre WhatsApp en la nada y parece que el sitio falló.
+ * `null` mientras no se haya guardado la configuración: quien lo use tiene que
+ * no mostrar el botón, porque `wa.me/` sin número parece un sitio roto.
  */
 export async function numeroDeWhatsApp(): Promise<string | null> {
   const [fila] = await db.execute<{ numero: string }>(sql`
@@ -243,15 +188,8 @@ export type ConfiguracionDeLaTienda = {
 };
 
 /**
- * Lo que la tienda lee de la configuración en cada página: los perfiles del
- * pie (2026-10-20) y qué escenas por fecha están permitidas (F9.5, RF-38).
- *
- * **Una consulta y no dos**, porque las dos van en la misma tanda del layout.
- * Con `cache()` porque la home la vuelve a pedir para el hero, y dentro de
- * un mismo pedido no tiene que volver a la base.
- *
- * Sin fila, ninguna red —un ícono que no lleva a ningún lado es peor que no
- * tenerlo— y todas las escenas permitidas, lo mismo que el DEFAULT.
+ * Con `cache()` porque el layout y el hero de la home la piden en el mismo
+ * pedido. Sin fila, ninguna red y todas las escenas, como el DEFAULT.
  */
 export const configuracionDeLaTienda = cache(
   async (): Promise<ConfiguracionDeLaTienda> => {
@@ -281,15 +219,9 @@ export const configuracionDeLaTienda = cache(
 );
 
 /**
- * Las promociones de cuotas que la tienda muestra hoy — RF-40, F2.17.
- *
- * Activas, de un medio de pago activo y dentro de la vigencia **según el día
- * de Argentina**: «hasta el 30» incluye el 30 entero acá, aunque en UTC ya
- * sea 1. El monto mínimo NO se filtra acá: depende del producto, y sin él la
- * consulta es la misma para toda la tienda y se puede pedir en paralelo con
- * la ficha (`promocionesParaElPrecio` termina el trabajo).
- *
- * En el orden de los medios de pago, que es con el que se desempata.
+ * El monto mínimo no se filtra acá: así la consulta es la misma para toda la
+ * tienda y va en paralelo con la ficha (`promocionesParaElPrecio` termina).
+ * Viene en el orden de los medios de pago, que es el que desempata.
  */
 export const promocionesVigentes = cache(
   async (): Promise<PromocionVigente[]> => {
@@ -318,21 +250,13 @@ export const promocionesVigentes = cache(
   },
 );
 
-/** Un medio de pago como lo ve el comprador (RF-01, RF-02, RF-03). */
 export type MedioDePagoDeLaTienda = {
   id: string;
   nombre: string;
   logoUrl: string | null;
 };
 
-/**
- * Los medios de pago **activos**, en el orden configurado — RF-19, RN-01.
- *
- * `listarMediosDePago()` es la del panel y trae también los desactivados,
- * porque ahí desactivar es un estado que se administra. Acá un desactivado
- * no existe: son informativos y decir que se acepta algo que no se acepta es
- * el peor de los dos errores posibles.
- */
+/** Solo los activos: decir que se acepta algo que no, es el peor error. */
 export async function mediosDePagoDeLaTienda(): Promise<
   MedioDePagoDeLaTienda[]
 > {
@@ -355,15 +279,8 @@ export async function mediosDePagoDeLaTienda(): Promise<
 }
 
 /**
- * La casilla que recibe el aviso de nueva orden — RF-20, RF-30 (E4), F6.4.
- *
- * Consulta propia y no `leerLaConfiguracion()` recortada, por el mismo motivo
- * que `numeroDeWhatsApp()`: cada lectura trae lo suyo y nada más.
- *
- * `null` mientras la vendedora no haya guardado la configuración. Quien la use
- * tiene que poder **no mandar el email**, que es lo que corresponde: no hay
- * dirección de respaldo razonable, y mandárselo a cualquier otra sería peor
- * que no mandarlo.
+ * `null` mientras no se haya guardado la configuración: entonces el aviso no
+ * se manda, porque no hay dirección de respaldo razonable.
  */
 export async function emailDeAvisos(): Promise<string | null> {
   const [fila] = await db.execute<{ email: string }>(sql`
