@@ -5,12 +5,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ZERO, type Money } from "@/lib/money";
 
-/**
- * Lecturas del carrito — RF-08 · TS §5.5, §7.1, §13.8. Tarea F5.5.
- *
- * Las dos filtran por `carts.user_id` con el id de la sesión, y por el mismo
- * motivo que las operaciones: sin RLS no hay otra barrera (§13.8).
- */
+// Sin RLS, el filtro por `carts.user_id` es la única barrera (§13.8).
 
 export type EstadoDelItem = "vigente" | "sin-stock" | "no-disponible";
 
@@ -22,11 +17,7 @@ export type ItemDelCarrito = {
   colorNombre: string | null;
   /** Para volver a la ficha en el color que se agregó. */
   colorSlug: string | null;
-  /**
-   * Los tres precios VIGENTES (RN-09): el carrito guarda cantidades, nunca
-   * precios (§5.5). Si la vendedora cambia un precio, el carrito lo muestra
-   * cambiado; avisarlo es F5.6.
-   */
+  /** Vigentes (RN-09): el carrito guarda cantidades, nunca precios. */
   precio: Money;
   descuento: Money;
   precioFinal: Money;
@@ -35,15 +26,7 @@ export type ItemDelCarrito = {
   subtotal: Money;
   /** `stock_total − reserved_stock`. Puede ser negativo (RF-24). */
   disponible: number;
-  /**
-   * Qué es este renglón para el pedido (RF-08, F5.6):
-   *
-   *   · `vigente` — suma al total y se va a poder confirmar.
-   *   · `sin-stock` — queda en el carrito, marcado, y fuera del total.
-   *   · `no-disponible` — el producto o la variante se desactivaron: queda
-   *     apartado en «Ya no disponible», fuera del total, hasta que el
-   *     comprador lo quite. Ese renglón a la vista es el aviso persistente.
-   */
+  /** `sin-stock` y `no-disponible` quedan en el carrito, fuera del total. */
   estado: EstadoDelItem;
   /** La primera foto de la variante, o de la que le presta las suyas (§9.5). */
   imagenKey: string | null;
@@ -51,26 +34,15 @@ export type ItemDelCarrito = {
 
 export type Carrito = {
   items: ItemDelCarrito[];
-  /**
-   * Suma de los subtotales VIGENTES, también en la base. Lo que no se puede
-   * pedir —sin stock o no disponible— no suma (RF-08): un total que incluye
-   * algo que no se va a poder confirmar es un número que no se cumple.
-   */
+  /** Solo suma lo vigente: lo que no se va a poder pedir no entra. */
   total: Money;
   /** Unidades vigentes, no renglones: dos del mismo teclado son dos. */
   unidades: number;
 };
 
 /**
- * El carrito entero, con los subtotales y el total calculados en SQL.
- *
- * **Una sola consulta y no dos**: el total va como función de ventana sobre
- * las mismas filas. Con una consulta aparte serían dos lecturas que pueden
- * ver dos carritos distintos si en el medio se cambia una cantidad, y la
- * pantalla mostraría un total que no es la suma de lo que lista.
- *
- * El orden es el de llegada: lo último que se agregó queda abajo, que es
- * donde se lo busca después de agregarlo.
+ * Una sola consulta, con el total como función de ventana: dos lecturas
+ * podrían ver carritos distintos y el total no sería la suma de lo listado.
  */
 export async function leerCarrito(userId: string): Promise<Carrito> {
   const filas = [
@@ -142,16 +114,9 @@ export async function leerCarrito(userId: string): Promise<Carrito> {
 }
 
 /**
- * Las unidades del carrito, para la píldora del encabezado (§5.1). Las mismas
- * que cuenta el resumen: lo apartado o sin stock no se va a poder pedir, y
- * un número en el encabezado que no coincide con el del carrito se lee como
- * un error.
- *
- * **El `least` no sobra.** El encabezado y la página se arman a la vez, así
- * que esta cuenta puede correr ANTES de que `revisarCarrito` baje una
- * cantidad al stock que queda. Contando el mínimo entre lo pedido y lo que
- * hay, da lo mismo que va a dar después de la revisión, sin depender de
- * quién llegó primero.
+ * Cuenta lo mismo que el resumen del carrito. El `least` no sobra: el
+ * encabezado se arma a la vez que la página, y esto puede correr antes de que
+ * `revisarCarrito` baje una cantidad al stock que queda.
  */
 export async function contarUnidades(userId: string): Promise<number> {
   const [fila] = await db.execute<{ n: number }>(sql`
