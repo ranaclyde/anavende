@@ -1007,6 +1007,12 @@ Si `rowCount = 0`, no había stock suficiente: se lanza `INSUFFICIENT_STOCK` y l
 4. **Nada externo adentro.** No se envían emails ni se llama a Sentry dentro de la transacción: se hace después del `COMMIT`.
 5. **Revalidación al final.** `revalidateTag` se invoca después del `COMMIT`, nunca antes.
 
+> **Un solo lugar escribe los contadores: `modules/stock/operaciones.ts`.** Ni siquiera el ABM de variantes, que ajusta stock desde el panel, toca `stock_total` por su cuenta: llama a `ajustar()`. Un segundo lugar que escriba los contadores es un segundo lugar que puede olvidarse del asiento de la regla 3.
+
+> **El estado del asiento sale del `RETURNING`, no de una segunda consulta.** `stock_after` y `reserved_after` tienen que ser los valores que dejó *esa* sentencia. Releerlos después es leer un número que otra transacción ya pudo haber movido, y el libro quedaría contando una historia que no pasó.
+
+> **El ajuste es la excepción a §8.2, y usa `SELECT … FOR UPDATE`.** Su asiento lleva la **diferencia** entre el valor nuevo y el anterior, y un `UPDATE` a secas no devuelve el anterior. Leerlo sin bloquear deja una ventana en la que otra transacción lo mueve, y el libro queda descuadrado por exactamente lo que pasó en el medio. Se puede pagar ese bloqueo porque lo dispara la vendedora desde el panel, de a una variante por vez, y no el camino caliente de la reserva. Un ajuste que no cambia el número no se asienta —llenaría el libro de filas en cero cada vez que alguien guarda el formulario sin tocar el stock—, pero `updated_at` se actualiza igual.
+
 ### 8.4 Confirmación de orden, paso a paso (RF-12)
 
 ```
