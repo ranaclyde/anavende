@@ -9,24 +9,8 @@ import { almacenamiento } from "@/lib/storage";
 import { armarZip, type ArchivoDelZip } from "@/lib/zip";
 import { clave } from "@/modules/media/tamanos";
 
-/**
- * Las fotos de un producto en un zip, para usarlas fuera de la tienda —
- * F2.18, pedido del 2026-11-16.
- *
- * **Se baja la `-detail`**, la más grande que hay (1400px de ancho): el
- * original no se guarda nunca (§9.0). Va **tal como está**, con la marca de
- * agua si la tiene y sin ella si no: es la misma foto que ve quien compra.
- *
- * **En JPG y no en WEBP** (decisión del 2026-11-16): WhatsApp, Instagram y
- * MercadoLibre lo toman sin vueltas, y un WEBP en WhatsApp a veces llega
- * como documento o como sticker. Lo transparente se aplana sobre blanco, que
- * es el fondo de la galería (DR §6.8).
- *
- * **Una carpeta por color**, con las fotos en el orden del panel: la primera
- * es la portada. Solo las **propias** de cada color: las que reutiliza de
- * otro (§9.5) ya van en la carpeta de ese otro. La variante única, sin
- * color, deja sus fotos sueltas.
- */
+// Las fotos de un producto en un zip (TECHNICAL-SPEC §9.7). Solo las propias
+// de cada color: las reutilizadas (§9.5) ya van en la carpeta del otro.
 
 export type FotoDelProducto = {
   /** `null` = la variante única: sin carpeta. */
@@ -62,12 +46,7 @@ export async function fotosDelProducto(
   return { slug: producto.slug, fotos: [...fotos] };
 }
 
-/**
- * Dónde va cada foto adentro del zip: `negro/1.jpg`, `negro-rojo/2.jpg`, o
- * `1.jpg` sin color. Si dos colores dieran la misma carpeta —«Negro/Rojo» y
- * uno que se llame «Negro Rojo»—, el segundo lleva `-2`: pisarse sería
- * perder fotos sin que nadie se entere.
- */
+/** Si dos colores dieran la misma carpeta, el segundo lleva `-2` para no pisarse. */
 export function nombresEnElZip(fotos: readonly FotoDelProducto[]): string[] {
   const carpetaDe = new Map<string, string>();
   const usadas = new Set<string>();
