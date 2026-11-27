@@ -1,19 +1,11 @@
 import { aJson, type Jsonld } from "@/lib/datos-estructurados";
 
 /**
- * Pinta datos estructurados en la página — F3.9, RNF-04.
+ * Datos estructurados (RNF-04). Van en el cuerpo y no en el `<head>`: Google
+ * los lee igual y cada pantalla declara lo suyo.
  *
- * **Va en el cuerpo y no en el `<head>`**, que es lo que recomienda Google
- * desde que existe el renderizado por componentes: el rastreador ejecuta la
- * página entera y lo encuentra igual, y así cada pantalla declara lo suyo sin
- * tener que llegar al layout.
- *
- * **`dangerouslySetInnerHTML` es la única forma correcta acá**, y no es una
- * concesión: React escapa el texto de un hijo como HTML —las comillas saldrían
- * como `&quot;`— y un JSON con entidades adentro no lo parsea nadie.
- *
- * Lo que sí hay que escapar es `<`, y de eso se ocupa `aJson`: vive en el
- * módulo de al lado para poder probarse sin montar un componente.
+ * `dangerouslySetInnerHTML` a propósito: como hijo, React escaparía las
+ * comillas a `&quot;` y el JSON dejaría de parsear. El `<` lo escapa `aJson`.
  */
 export function DatosEstructurados({ datos }: { datos: Jsonld | Jsonld[] }) {
   return (

@@ -4,12 +4,8 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * Etiqueta de estado — DESIGN-REFERENCE §6.4.
- * Píldora, caption 12px peso 500, fondo de tinte y texto semántico.
- *
- * NUNCA solo color: toda etiqueta lleva texto. Quien no distingue rojo de
- * verde tiene que poder operar el panel igual (§9, RNF-02). Por eso el
- * componente no acepta un modo «solo punto de color».
+ * Etiqueta de estado (DR §6.4). Toda etiqueta lleva texto: el color nunca es
+ * la única señal (§9, RNF-02), por eso no hay modo «solo punto de color».
  */
 const badgeVariants = cva(
   "inline-flex items-center gap-1 rounded-pill px-2.5 py-0.5 text-caption font-medium whitespace-nowrap [&_svg]:size-3",

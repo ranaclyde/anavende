@@ -1,17 +1,9 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Los íconos de Instagram y Facebook, para el pie de la tienda (2026-10-20).
- *
- * **Dibujados a mano, por lo mismo que el de WhatsApp** (`icono-whatsapp.tsx`):
- * lucide todavía los trae, pero marcados como deprecados y con fecha de salida
- * en su 1.0, porque un logo ajeno no es un ícono de interfaz.
- *
- * En `currentColor` y no en el color de cada marca: viven sobre el pie oscuro,
- * en el mismo blanco atenuado que los enlaces de al lado. El verde de WhatsApp
- * es la excepción porque es un botón de acción (§2.6); estos son señas.
- *
- * `aria-hidden` fijo: el enlace que los lleva dice a dónde va.
+ * Dibujados a mano: lucide los trae deprecados y los saca en su 1.0.
+ * En `currentColor` y no en el color de la marca: van en el pie, como los
+ * enlaces de al lado. `aria-hidden` porque el enlace dice a dónde va.
  */
 export function IconoInstagram({ className }: { className?: string }) {
   return (

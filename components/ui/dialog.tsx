@@ -7,12 +7,7 @@ import { X } from "lucide-react";
 import { useDataScale } from "@/components/ui/escala";
 import { cn } from "@/lib/utils";
 
-/**
- * Diálogo — DESIGN-REFERENCE §12.2.
- * Radio 20px en la tienda, 16px en el panel (§3.5).
- * Es el único lugar donde el botón destructivo va RELLENO (§2.2): acá no
- * hay ningún botón de marca al lado con el cual confundirlo.
- */
+/** El único lugar donde el botón destructivo va relleno (DR §2.2). */
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogClose = DialogPrimitive.Close;
@@ -42,21 +37,13 @@ type AutoFoco = Pick<
 >;
 
 /**
- * **Al cerrarse, el foco vuelve a lo que lo tenía al abrirse** (F10.3).
+ * Al cerrarse, el foco vuelve a lo que lo tenía al abrirse. Radix lo devuelve
+ * a su `DialogTrigger`, que acá nadie usa, y caía en `<body>`. Un
+ * `preventDefault` de quien llama se respeta.
  *
- * Radix lo devuelve a su `DialogTrigger`, y acá ningún diálogo ni drawer lo
- * usa: se abren con un botón propio y estado, así que el foco caía en
- * `<body>` y quien usa teclado volvía al principio de la página. Si quien lo
- * llama tiene otro manejo —un `preventDefault`—, se respeta.
- *
- * Lo usan `DialogContent` y `SheetContent`.
- *
- * **Con un campo con `autoFocus` adentro, Radix no avisa la apertura**: el
- * campo toma el foco cuando React lo monta, y con el foco ya adentro
- * `onOpenAutoFocus` no se dispara. Para ese caso, un solo `focusin` en el
- * documento anota el último elemento enfocado fuera de un diálogo o un
- * drawer, y se usa ése. Cuando sí avisa, gana lo que tenía el foco en ese
- * momento, que sirve también para un diálogo abierto desde otro.
+ * Con un campo con `autoFocus` adentro, Radix no dispara `onOpenAutoFocus`:
+ * para ese caso, un `focusin` global anota lo último enfocado fuera de las
+ * capas.
  */
 const CAPA = '[data-slot="dialog-content"], [data-slot="sheet-content"]';
 let fueraDeLasCapas: HTMLElement | null = null;
@@ -94,16 +81,10 @@ export function useFocoQueVuelve({
 }
 
 /**
- * **Cuando lo que tenía el foco desaparece** (F2.15). Borrar una fila cierra
- * el diálogo, el foco vuelve a su botón «Borrar» y, cuando la lista se
- * refresca, ese botón deja de existir: el foco caía en `<body>` y con
- * teclado o lector se volvía al principio de la página. Pasaba en todos los
- * borrados del panel, así que se arregla acá y no en cada uno.
- *
- * El reemplazo se anota al cerrar, mientras la fila sigue en pantalla: la
- * fila siguiente, o la anterior si era la última, o el título de la página.
- * Las filas hermanas sobreviven al refresco —React las reconcilia por
- * `key`—, así que siguen siendo las mismas cuando hacen falta.
+ * Si lo que tenía el foco desaparece —el «Borrar» de una fila borrada—, el
+ * foco va a la fila siguiente, la anterior o el título. El reemplazo se anota
+ * al cerrar, mientras la fila sigue en pantalla; las hermanas sobreviven al
+ * refresco porque React las reconcilia por `key`.
  */
 const FILA = "li, tr";
 const ENFOCABLE =
@@ -173,9 +154,7 @@ function DialogContent({
 }) {
   const foco = useFocoQueVuelve({ onOpenAutoFocus, onCloseAutoFocus });
 
-  // El portal lo saca de `[data-scale]`, así que se lo lleva puesto: sin
-  // esto, un diálogo del panel se pinta con la escala de la tienda y sus
-  // propias clases `admin:` de más abajo no valen nada (ver `escala.tsx`).
+  // El portal lo saca de `[data-scale]` (`escala.tsx`).
   const escala = useDataScale();
 
   return (
@@ -187,13 +166,9 @@ function DialogContent({
         {...foco}
         className={cn(
           "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2",
-          // El tope de alto va acá y no en cada diálogo: hasta el 2026-09-21
-          // lo tenía **uno de los veinticinco**, y los otros veinticuatro, si
-          // crecían más que la pantalla, se cortaban arriba y abajo sin
-          // ninguna forma de llegar a lo que quedaba afuera — ni siquiera
-          // scrolleando, porque una caja centrada y fija no scrollea.
-          // `svh` y no `vh`: en el teléfono la barra del navegador se come
-          // parte de `vh` y el diálogo terminaba debajo de ella.
+          // Sin tope, un diálogo más alto que la pantalla se corta y no se
+          // llega a lo de afuera. `svh` y no `vh`: la barra del navegador del
+          // teléfono se come parte de `vh`.
           "max-h-[85svh] flex-col gap-4 rounded-modal bg-surface p-6 text-ink shadow-lg",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
@@ -203,17 +178,9 @@ function DialogContent({
         )}
         {...props}
       >
-        {/* Lo que scrollea es el contenido y no la caja, para que la × quede
-            siempre a la vista: dentro de un contenedor con scroll, un
-            `absolute top-4` se va con el contenido y el diálogo se queda sin
-            su salida visible.
-            `min-h-0` porque un hijo de flex no baja del alto de su contenido
-            sin eso, y entonces el tope de arriba no mordería.
-            `flex-1` y `gap-[inherit]` para que este envoltorio sea
-            transparente: hay diálogos que fijan su alto y su separación desde
-            afuera —la galería de la ficha manda `h-[calc(100dvh-2rem)]` y
-            `gap-0`— y sin estas dos, meterles una caja en el medio les rompe
-            las dos cosas. */}
+        {/* Scrollea el contenido y no la caja, para que la × no se vaya con
+            él. `min-h-0` para que el tope muerda; `flex-1` y `gap-[inherit]`
+            para respetar el alto y la separación que fija quien lo usa. */}
         <div className="flex min-h-0 flex-1 flex-col gap-[inherit] overflow-y-auto">
           {children}
         </div>

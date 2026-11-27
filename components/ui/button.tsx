@@ -12,49 +12,23 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Botón — DESIGN-REFERENCE §6.3.
+ * Botón (DR §6.3). Lo destructivo se separa de la marca por forma y no por
+ * color: el burdeos y el rojo están a 7 grados de matiz. `destructive-solid`
+ * va solo en el diálogo de confirmación.
  *
- * Las variantes destructivas se separan de la de marca por FORMA, no por
- * color (§2.2): el burdeos y el rojo de peligro están a 7 grados de matiz.
- * `destructive` es contorno; `destructive-solid` es relleno y vive
- * únicamente dentro del diálogo de confirmación, donde no hay un botón de
- * marca al lado con el cual confundirlo.
- *
- * ESCALERA DE ÉNFASIS, de más a menos peso:
- *
- *   brand      relleno burdeos  — LA acción de la pantalla, una sola
- *   whatsapp   relleno verde    — abrir WhatsApp, cuando es LA acción o su par
- *   secondary  contorno gris    — acciones de apoyo entre pares
- *   tertiary   sin caja         — cancelar, volver, lo que no debe pesar
- *
- * `whatsapp` no es un escalón más abajo de `brand` (§2.6, 2026-10-19): es la
- * acción principal donde la conversación es lo único que queda —sin stock, la
- * orden confirmada— y el PAR del carrito en la ficha. Donde WhatsApp es apoyo
- * —legales, el panel— va `secondary`, y el logo pone el verde solo
- * (`IconoWhatsApp`). Acá el logo pasa a la tinta inversa: verde sobre verde
- * no se ve.
- *
- * `pizarra` es el PAR de `brand` (DESIGN.md, la regla del par): pesa lo
- * mismo, para la otra acción principal de una pantalla. Hoy, «Agregar color»
- * en el producto, al lado de «Guardar» (2026-11-16). No es un escalón más
- * débil que el burdeos: si algo debe pesar menos, es `secondary`.
- *
- * `tertiary` es el ghost: texto solo en reposo, y al pasar el puntero aparece
- * el plato de `--canvas`. En táctil no hay hover, por eso el texto se ve
- * siempre y el área táctil sigue siendo la del tamaño elegido (§9).
+ * `whatsapp` y `pizarra` pesan lo mismo que `brand`, como su par; lo que debe
+ * pesar menos va en `secondary`.
  */
 const buttonVariants = cva(
   [
     "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap",
     "font-medium transition-colors duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-    // Deshabilitado: 40% de opacidad, sin cambiar de color (§6.3).
     "disabled:cursor-not-allowed disabled:opacity-40",
   ],
   {
     variants: {
       variant: {
-        // Una sola por pantalla.
         brand:
           "bg-brand text-ink-inverse hover:bg-brand-hover active:bg-brand-active",
         whatsapp:
@@ -67,45 +41,23 @@ const buttonVariants = cva(
           "bg-transparent text-ink-secondary hover:bg-canvas hover:text-ink active:bg-border",
         destructive:
           "border border-danger bg-transparent text-danger hover:bg-danger-tint",
-        // Ghost destructivo — §2.2, §6.3. **Solo el panel.**
-        //
-        // Es el destructivo de una columna de acciones: el ícono en rojo desde
-        // el reposo, sin caja. El contorno de `destructive` no entra ahí —una
-        // caja por fila, cuarenta por página, se lee como una columna de
-        // alertas— y el terciario gris tampoco servía: dejaba el rojo colgado
-        // del hover, y en táctil no hay hover. Ana opera en tablet (RNF-01),
-        // así que borrar y editar se veían iguales justo donde más caro sale
-        // confundirlos.
+        // Solo el panel, en columnas de acciones: rojo desde el reposo,
+        // porque en táctil no hay hover.
         "destructive-ghost":
           "bg-transparent text-danger hover:bg-danger-tint active:bg-danger-tint",
-        // `text-ink-inverse`, no `text-white`: el token se invierte con el
-        // tema y `text-white` no. En oscuro `--danger` se aclara a #f87171 y
-        // el blanco encima da 2,77:1 — por debajo de AA incluso para texto
-        // grande. Con el token da 6,65:1. En claro los dos valen #ffffff, así
-        // que la tienda no cambia.
+        // `text-ink-inverse` y no `text-white`: en oscuro el blanco sobre
+        // `--danger` da 2,77:1.
         "destructive-solid": "bg-danger text-ink-inverse hover:opacity-90",
       },
       size: {
-        // Tienda: píldora. Panel: 8px de radio (§3.5).
-        // `admin:max-md:h-11`: en el panel este tamaño es el de «Reponer»,
-        // «Limpiar todo» y el «Ver» del tablero, y 32px es la mitad de lo que
-        // §9 pide para el dedo. En la tienda se deja como está: ahí `sm` vive
-        // en chips y píldoras que ya se revisaron a 390 (F3.8).
+        // `admin:max-md:h-11`: 44px de área táctil (§9) en el panel; en la
+        // tienda `sm` va en chips ya revisados.
         sm: "h-8 rounded-pill px-3 text-body-sm admin:rounded-panel-control admin:max-md:h-11",
-        // `max-md:h-11`: los 40px de `h-10` quedan cuatro por debajo del
-        // mínimo táctil de §9, y este es el tamaño por defecto —lo usan
-        // Guardar, Compartir y «Garantías y devoluciones» de la ficha, y todo
-        // lo que venga—. Se arregla en la variante y no en cada llamada, o el
-        // próximo botón nace con el mismo problema.
+        // `max-md:h-11`: 44px de área táctil (§9) en el teléfono.
         md: "h-10 max-md:h-11 rounded-pill px-4 text-body-sm admin:rounded-panel-control",
         lg: "h-12 rounded-pill px-6 text-body admin:h-10 admin:rounded-panel-control admin:text-body-sm",
-        // Cuadrado para acciones de solo ícono. 44px de área táctil en móvil
-        // (§9) — y **también en el panel**, que hasta el 2026-09-22 se quedaba
-        // en los 36px de `admin:size-9` a cualquier ancho: son los cuatro
-        // iconos de cada fila del listado de productos, 109 en una pantalla,
-        // el lugar donde más caro sale errarle al de al lado. Hasta `lg` y
-        // no hasta `md` desde F2.15: la tablet también se toca con el dedo,
-        // y es uno de los dos aparatos de la vendedora.
+        // 44px de área táctil (§9), en el panel hasta `lg`: la tablet también
+        // se toca con el dedo.
         icon: "size-11 rounded-pill admin:size-9 admin:max-lg:size-11 admin:rounded-panel-control",
       },
       emphasis: {
@@ -163,14 +115,9 @@ function Button({
     );
   }
 
-  /**
-   * **Un botón de solo ícono con `title` lleva un globo de verdad** (F2.15).
-   * El `title` del navegador tarda en aparecer, no aparece al llegar con
-   * teclado, y en el panel había 31: ojo tachado, estrella, flechas. Se
-   * resuelve acá y no en cada botón, así el próximo nace con el suyo. El
-   * proveedor va adentro porque no todas las pantallas tienen uno arriba.
-   * En el teléfono, sin hover, no aparece: el nombre sigue en el `sr-only`.
-   */
+  // Un botón de solo ícono con `title` lleva tooltip: el `title` nativo no
+  // aparece con teclado. El proveedor va adentro porque no todas las
+  // pantallas tienen uno arriba.
   if (size === "icon" && typeof title === "string") {
     return (
       <TooltipProvider>

@@ -1,25 +1,9 @@
 import { cn } from "@/lib/utils";
 
 /**
- * El ícono de WhatsApp — F3.6, DESIGN-REFERENCE §6.3.
- *
- * **Está dibujado a mano y no sale de `lucide-react`**, que es el juego de
- * íconos del proyecto: lucide sacó las marcas de su librería justamente
- * porque un logo ajeno no es un ícono de interfaz —no se puede reescalar el
- * trazo ni recolorear a gusto sin dejar de ser el logo—. Traer una segunda
- * librería de íconos para una sola forma sería un paquete entero por 400
- * bytes de trazado.
- *
- * **En el verde de WhatsApp, siempre** (§2.6, decisión tuya del 2026-10-19).
- * Hasta ese día iba en `currentColor` para que §11 dejara al burdeos como
- * único color; pero el verde con el logo es lo que la gente reconoce como
- * «esto abre WhatsApp», y eso pesa más que la paleta. Es el color de una
- * marca ajena, como los logos de los medios de pago, no un tercer color de la
- * tienda. Adentro del botón `whatsapp`, que ya es verde, el botón lo pasa a la
- * tinta inversa.
- *
- * `aria-hidden` fijo: nunca es la única señal de nada — el botón que lo lleva
- * dice «por WhatsApp» con todas las letras.
+ * Dibujado a mano: `lucide-react` no trae marcas. En el verde de WhatsApp
+ * siempre (DR §2.6); dentro del botón `whatsapp` el botón lo pasa a la tinta
+ * inversa. `aria-hidden` porque el botón dice «por WhatsApp» en texto.
  */
 export function IconoWhatsApp({ className }: { className?: string }) {
   return (

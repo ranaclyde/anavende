@@ -9,22 +9,9 @@ import { useDataScale } from "@/components/ui/escala";
 import { cn } from "@/lib/utils";
 
 /**
- * Drawer lateral — DESIGN-REFERENCE §6.14.3.
- *
- * Es un diálogo de Radix con otra caja: foco atrapado, Escape, bloqueo del
- * scroll del cuerpo y el título anunciado vienen del mismo primitivo, así que
- * no hay nada de accesibilidad que reimplementar.
- *
- * **Sale por la derecha.** La izquierda del panel es la navegación —el menú
- * de 240px, que en el teléfono ya se abre como drawer desde ese lado—, y un
- * formulario que sale de ahí se confunde con el menú. A la derecha deja a la
- * vista la columna de nombres del listado, que es lo que dice qué se está
- * editando.
- *
- * Se arma en tres partes para que lo único que scrollee sea el medio:
- * `SheetHeader` y `SheetFooter` quedan fijos —el título y «Guardar» siempre a
- * la vista—, y `SheetBody` se lleva el resto. Un `<form>` que envuelva cuerpo
- * y pie usa `SheetForm`, que es la misma columna con el `min-h-0` puesto.
+ * Drawer lateral (DR §6.14.3): un diálogo de Radix con otra caja. Solo
+ * scrollea `SheetBody`; encabezado y pie quedan fijos. Un `<form>` que
+ * envuelva cuerpo y pie va en `SheetForm`, que lleva el `min-h-0`.
  */
 const Sheet = DialogPrimitive.Root;
 const SheetTrigger = DialogPrimitive.Trigger;
@@ -41,20 +28,13 @@ function SheetContent({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   closeLabel?: string;
-  /**
-   * La izquierda es sólo para navegar: el menú de la tienda en el teléfono.
-   * Un formulario sale siempre por la derecha (arriba, por qué).
-   */
+  /** La izquierda es solo para navegar; un formulario sale por la derecha. */
   lado?: "derecha" | "izquierda";
-  /**
-   * Para el fondo atenuado. Lo usan los filtros del catálogo para nombrarlo
-   * en las View Transitions (`globals.css`).
-   */
+  /** Para el fondo atenuado: los filtros lo nombran en las View Transitions. */
   overlayClassName?: string;
 }) {
   const foco = useFocoQueVuelve({ onOpenAutoFocus, onCloseAutoFocus });
-  // La misma razón que en `DialogContent`: el portal saca la caja de
-  // `[data-scale]` y sin esto se pinta con la escala de la tienda.
+  // El portal saca la caja de `[data-scale]` (`escala.tsx`).
   const escala = useDataScale();
 
   return (
@@ -65,14 +45,11 @@ function SheetContent({
         data-scale={escala}
         {...foco}
         className={cn(
-          // `dvh`: el alto entero que se ve, también con la barra del
-          // navegador del teléfono a la vista. 32rem alcanzan para que un
-          // renglón de categoría relacionada entre en una línea.
+          // `dvh`: el alto que se ve, también con la barra del navegador del teléfono.
           "fixed inset-y-0 z-50 flex h-dvh w-full flex-col bg-surface text-ink shadow-lg",
           lado === "derecha"
             ? "right-0 sm:max-w-[32rem] sm:border-l sm:border-border data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right"
-            : // El menú no ocupa la pantalla entera: el borde de la página
-              // que queda a la vista dice que se cierra tocando afuera.
+            : // No ocupa la pantalla entera: el borde a la vista dice que se cierra tocando afuera.
               "left-0 max-w-[20rem] border-r border-border data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
           "data-[state=open]:animate-in data-[state=open]:duration-200 data-[state=open]:ease-out",
           "data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=closed]:ease-in",
@@ -110,7 +87,6 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-/** La columna que envuelve cuerpo y pie cuando los dos son un `<form>`. */
 function SheetForm({ className, ...props }: React.ComponentProps<"form">) {
   return (
     <form
@@ -136,8 +112,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sheet-footer"
       className={cn(
-        // En el teléfono los dos botones se reparten el ancho: uno de 80px
-        // en una esquina de una pantalla de 390 es fácil de errar.
+        // En el teléfono los botones se reparten el ancho: uno chico en una esquina se erra.
         "flex shrink-0 justify-end gap-2 border-t border-border px-6 py-4 max-sm:*:flex-1",
         className,
       )}
