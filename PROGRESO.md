@@ -3067,6 +3067,21 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 
 ## Pendiente detectado, sin tarea propia
 
+**~~La contraseña nueva se definía desde el navegador~~ — resuelto el
+2026-11-27.** Apareció en F10.7e, en un comentario de
+`components/shop/update-password-form.tsx` («PENDIENTE F1.7 / F5.1: paso por
+Server Action con Zod») que no estaba anotado en ningún otro lado. La pantalla
+de `/recuperar/nueva-contrasena` —destino de E2 y de E3— llamaba a
+`supabase.auth.updateUser` directo, sin Zod ni envoltorio. Ahora va por
+`definirContrasena` (`modules/users/actions.ts`), con el mismo esquema que
+«Mis datos». **Y con una guarda que antes no había:** la pantalla no pide la
+contraseña actual, porque lo que la reemplaza es haber llegado por el enlace
+del email. La acción lo comprueba en el token: GoTrue anota en `amr`
+`recovery` al canjear el enlace de recuperación (PKCE) y `otp` al de la
+invitación (`token_hash`), y la acción exige uno de los dos de la última hora.
+Una sesión abierta con contraseña o con Google no alcanza. Medido contra el
+GoTrue local, y cubierto en `tests/e2e/recuperar.spec.ts` con un caso nuevo.
+
 **La vista previa al compartir una ficha estaba rota por DOS motivos, y el
 segundo no se veía hasta arreglar el primero** (2026-09-22, probándolo con vos
 por WhatsApp). Lo que se compartía era el enlace pelado: ni foto, ni nombre, ni

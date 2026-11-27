@@ -22,6 +22,7 @@ import { actualizarDatos } from "@/modules/users/perfil";
 import {
   cambioDeContrasenaSchema,
   completarPerfilSchema,
+  definicionDeContrasenaSchema,
   ingresoSchema,
   misDatosSchema,
   registroSchema,
@@ -494,11 +495,68 @@ async function anotarContrasenaDefinida({ userId }: { userId: string }) {
   refresh();
 }
 
+const VIGENCIA_DEL_ENLACE_MS = 60 * 60 * 1000;
+
+/**
+ * Si la sesión salió de un enlace del email en la última hora. GoTrue anota
+ * en `amr` `recovery` al canjear el de recuperación (PKCE) y `otp` al de la
+ * invitación E3 (`token_hash`); un ingreso con contraseña o con Google no. Tener el enlace prueba que el email es suyo,
+ * que es lo que reemplaza a la contraseña actual.
+ */
+async function vieneDeUnEnlaceReciente() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const metodos = (data?.claims?.amr ?? []) as {
+    method?: string;
+    timestamp?: number;
+  }[];
+  return metodos.some(
+    (m) =>
+      (m.method === "recovery" || m.method === "otp") &&
+      typeof m.timestamp === "number" &&
+      Date.now() - m.timestamp * 1000 < VIGENCIA_DEL_ENLACE_MS,
+  );
+}
+
 function errorEnCampo(campo: string, mensaje: string) {
   return domainError("VALIDATION", {
     fields: { properties: { [campo]: { errors: [mensaje] } } },
   });
 }
+
+export const definirContrasena = action
+  .input(definicionDeContrasenaSchema)
+  .auth("customer")
+  .handler(async ({ input, ctx }) => {
+    if (!(await vieneDeUnEnlaceReciente())) {
+      throw domainError("VALIDATION", {
+        message:
+          "El enlace para definir la contraseña venció. Pedí uno nuevo desde «Olvidé mi contraseña».",
+      });
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.auth.updateUser({ password: input.nueva });
+
+    if (!error) {
+      const { identity } = ctx.session;
+      if (!identity.tieneContrasena) await anotarContrasenaDefinida(identity);
+      return { definida: true };
+    }
+
+    if (error.code === "same_password") {
+      throw errorEnCampo("nueva", "Es la misma que ya tenías. Elegí otra.");
+    }
+
+    if (error.code === "weak_password") {
+      throw errorEnCampo(
+        "nueva",
+        "Esa contraseña es muy fácil de adivinar. Probá con una más larga.",
+      );
+    }
+
+    throw new Error(`updateUser falló: ${error.message}`);
+  });
 
 export const cambiarContrasena = action
   .input(cambioDeContrasenaSchema)
