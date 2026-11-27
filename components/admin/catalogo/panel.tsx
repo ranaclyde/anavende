@@ -48,18 +48,11 @@ const SIN_RELACIONABLES: CategoriaRelacionable[] = [];
 type Confirmacion = { accion: "borrar" | "desactivar"; item: ItemDeCatalogo };
 
 /**
- * Listado de marcas, categorías o colores — RF-18, DESIGN-REFERENCE §6.9.
+ * Listado de marcas, categorías o colores — RF-18, DR §6.9.
  *
- * Los conteos de uso no son decorativos: son los que deciden qué se puede
- * hacer con cada fila. Se muestran en la tabla y se vuelven a usar para
- * anticipar el rechazo, de modo que el diálogo explique el porqué ANTES de
- * intentar en lugar de devolver un error después.
- *
- * Anticipar no es confiar: el servidor vuelve a verificar (RN-11, RN-11b) y
- * si su respuesta contradice a la tabla —porque alguien cargó un producto
- * mientras tanto—, se muestra la del servidor.
- *
- * En móvil la tabla se vuelve tarjetas, no scroll horizontal (§6.9).
+ * Los conteos de uso anticipan el rechazo para que el diálogo explique el
+ * porqué antes de intentar. El servidor vuelve a verificar (RN-11, RN-11b) y,
+ * si contradice a la tabla, se muestra lo suyo.
  */
 export function PanelDeCatalogo({
   tipo,
@@ -71,20 +64,20 @@ export function PanelDeCatalogo({
   relacionables = SIN_RELACIONABLES,
 }: {
   tipo: TipoDeItem;
-  /** Los de ESTA página. Para contar, el estado vacío y el botón va `total`. */
+  /** Los de esta página. Para contar, el estado vacío y el botón va `total`. */
   items: ItemDeCatalogo[];
   total: number;
   pagina: number;
   paginas: number;
-  /** La ruta de la solapa. El enlace lo arma acá: una función no cruza de
-      servidor a cliente. */
+  /**
+   * La ruta de la solapa: el enlace se arma acá porque una función no cruza
+   * de servidor a cliente.
+   */
   base: string;
-  /** Las categorías que se pueden elegir como relacionadas (RF-31). */
   relacionables?: CategoriaRelacionable[];
 }) {
   const palabras = PALABRAS[tipo];
-  // `isFeatured` es `null` en los tipos que no se destacan (RF-18): la vista
-  // pregunta por el dato, no por el tipo.
+  // `isFeatured` es `null` en los tipos que no se destacan.
   const sePuedeDestacar = items.some((i) => i.isFeatured !== null);
   const [enCurso, iniciar] = useTransition();
   const [editando, setEditando] = useState<ItemDeCatalogo | null>(null);
@@ -110,9 +103,7 @@ export function PanelDeCatalogo({
       }
 
       // Avisa el borrado y no la desactivación: borrar se lleva la fila y no
-      // queda dónde mirar, mientras que desactivar le cambia la insignia a la
-      // fila que seguís teniendo delante (§6.15). Lo mismo vale para
-      // «Destacar» y «Activar», que por eso no avisan nada.
+      // queda dónde mirar (DR §6.15).
       if (c.accion === "borrar") {
         avisar(
           `Borraste ${palabras.articulo} ${palabras.singular} «${c.item.name}».`,
@@ -122,9 +113,8 @@ export function PanelDeCatalogo({
     });
   };
 
-  // Destacar no pide confirmación: no se pierde nada y se deshace con el
-  // mismo clic. Confirmar cada acción reversible entrena a confirmar sin
-  // leer, que es justo lo que arruina la confirmación de borrar.
+  // Destacar no pide confirmación: se deshace con el mismo clic, y confirmar
+  // lo reversible entrena a confirmar sin leer.
   const destacar = (item: ItemDeCatalogo) => {
     iniciar(async () => {
       const r = await cambiarDestacada({
@@ -155,10 +145,8 @@ export function PanelDeCatalogo({
                 cosa: palabras,
               })}
         </p>
-        {/* Con la lista vacía este botón no está: el estado vacío ya ofrece
-            el mismo primer paso en el medio de la pantalla, y dos botones de
-            marca iguales a 100px uno del otro se leen como un error (§6.3:
-            una sola por pantalla). */}
+        {/* Con la lista vacía el botón lo ofrece el estado vacío: uno de marca
+            por pantalla (§6.3). */}
         {total === 0 ? null : (
           <Button variant="brand" size="sm" onClick={() => setCreando(true)}>
             <Plus aria-hidden />
@@ -182,13 +170,8 @@ export function PanelDeCatalogo({
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow className="hover:bg-surface-sunken">
-                  {/* El nombre se queda con el espacio sobrante; las demás
-                      ocupan lo que necesitan y nada más, para que el ojo no
-                      cruce media pantalla vacía entre el nombre y su conteo.
-                      La de acciones se ensancha cuando aparece la estrella:
-                      cuatro botones de 36px con 4px de separación piden 156px
-                      de contenido, y `w-32` daba 104px descontando el
-                      padding —ya justo para tres—. */}
+                  {/* El nombre se queda con el espacio sobrante. La de acciones
+                      se ensancha con la estrella: cuatro botones de 36px. */}
                   <TableHead>Nombre</TableHead>
                   <TableHead className="w-28">Estado</TableHead>
                   <TableHead data-align="right" className="w-32">
@@ -280,9 +263,8 @@ export function PanelDeCatalogo({
         </>
       )}
 
-      {/* El drawer NO existe mientras está cerrado, y eso no es un ahorro:
-          es lo que garantiza que abra en blanco. Ver el comentario de
-          `EdicionDeItem`. */}
+      {/* El drawer no existe mientras está cerrado: así abre en blanco (ver
+          `EdicionDeItem`). */}
       {creando ? (
         <EdicionDeItem
           tipo={tipo}
@@ -322,16 +304,10 @@ export function PanelDeCatalogo({
 function Nombre({ item, tipo }: { item: ItemDeCatalogo; tipo: TipoDeItem }) {
   return (
     <span className="flex items-center gap-2">
-      {/* El logo es decorativo acá: el nombre está al lado, en texto, y
-          repetirlo en el `alt` se lo haría leer dos veces a un lector de
-          pantalla (§9). Las marcas sin logo no dejan un hueco: la fila no
-          reserva lugar para algo que la mayoría no va a tener. La imagen de
-          categoría (FA-21) se dibuja igual. */}
+      {/* Logo decorativo: el nombre está al lado, en texto (§9). */}
       {tipo !== "color" && item.logoUrl && (
-        // Chip CLARO en los dos modos (§6.10). Un logo de marca es trazo
-        // sobre transparente, casi siempre oscuro: sobre el panel en modo
-        // oscuro desaparece. Y a diferencia del logo de AnaVende, el de una
-        // marca ajena no se puede derivar en versión clara.
+        // Chip claro en los dos modos (DR §6.10): un logo de marca ajena suele
+        // ser oscuro sobre transparente y desaparece en modo oscuro.
         <span className="grid size-6 shrink-0 place-items-center overflow-hidden rounded-[4px] border border-border bg-logo-chip">
           <Image
             src={item.logoUrl}
@@ -350,12 +326,9 @@ function Nombre({ item, tipo }: { item: ItemDeCatalogo; tipo: TipoDeItem }) {
         />
       )}
       <span className="font-medium text-ink">{item.name}</span>
-      {/* Sin insignia «Destacada» (F2.15): lo dice la estrella de las
-          acciones, rellena y con `aria-pressed`. Eran ocho insignias burdeos
-          por pantalla para repetir lo que ya estaba en la misma fila. */}
+      {/* Sin insignia «Destacada»: lo dice la estrella de las acciones. */}
       {tipo === "color" && item.hexCode && (
-        // El código va escrito, no solo pintado: la muestra sola no sirve a
-        // quien no distingue ese matiz (§9).
+        // El código va escrito, no solo pintado (§9).
         <span className="font-mono text-caption text-ink-secondary">
           {item.hexCode}
         </span>
@@ -379,12 +352,8 @@ function EstadoDelItem({
 }
 
 /**
- * Cuántos productos usan esta marca, categoría o color.
- *
- * **En tarjeta lleva la palabra y en tabla no**, y no es un descuido: la
- * columna se llama «Productos» y ahí el número está debajo de su encabezado.
- * Abajo de `md` la tabla se convierte en tarjetas, el encabezado desaparece y
- * queda un «6» suelto que no dice de qué (visto a 390 el 2026-09-22).
+ * Cuántos productos usan esta marca, categoría o color. En tarjeta lleva la
+ * palabra: sin el encabezado de la columna, un «6» suelto no dice de qué.
  */
 function Uso({
   item,
@@ -444,13 +413,8 @@ function Acciones({
 }) {
   return (
     <div className="flex justify-end gap-1">
-      {/*
-        Un botón con `aria-pressed`, no un interruptor: la fila ya habla en
-        botones de ícono, y meter un `switch` entre ellos serían dos lenguajes
-        de control en la misma celda. `aria-pressed` dice el estado sin
-        inventar un rol —lo que el lector de pantalla anuncia coincide con lo
-        que la estrella muestra—.
-      */}
+      {/* Un botón con `aria-pressed` y no un `switch`: la fila ya habla en
+          botones de ícono. */}
       {item.isFeatured !== null && (
         <Button
           variant="tertiary"
@@ -464,9 +428,8 @@ function Acciones({
               : `${DESTACADO.destacar}: ${item.name}`
           }
           className={
-            // Interruptor: el estado lo dice el relleno, no el color. En
-            // burdeos quedaba a siete grados del tacho de al lado (§2.2). Es
-            // la única marca de «destacada» de la lista (F2.15).
+            // El estado lo dice el relleno, no el color: en burdeos se confundía
+            // con el tacho de al lado.
             item.isFeatured ? "text-ink hover:text-ink" : undefined
           }
         >
@@ -540,11 +503,9 @@ function Vacio({ tipo, alCrear }: { tipo: TipoDeItem; alCrear: () => void }) {
 }
 
 /**
- * Confirmación de las acciones que no se deshacen solas.
- *
- * El diálogo distingue cuatro situaciones porque la respuesta honesta es
- * distinta en cada una: se puede, no se puede y hay salida, no se puede y hay
- * que hacer otra cosa primero, o el servidor dijo que no.
+ * Confirmación de las acciones que no se deshacen solas. Distingue cuatro
+ * casos: se puede, no se puede y hay salida, no se puede y hay que hacer otra
+ * cosa primero, o el servidor dijo que no.
  */
 function DialogoDeConfirmacion({
   tipo,
@@ -570,10 +531,8 @@ function DialogoDeConfirmacion({
   const borrando = accion === "borrar";
   const bloqueadoPorUso = borrando ? total > 0 : item.activos > 0;
 
-  // Al borrar algo que está en uso, desactivar es la salida que ofrece RN-11
-  // —pero solo si desactivar es posible: con productos activos, RN-11b
-  // también lo rechazaría, y ofrecer un botón que va a fallar es peor que no
-  // ofrecerlo.
+  // Desactivar en lugar de borrar (RN-11) solo se ofrece si es posible: con
+  // productos activos, RN-11b también lo rechazaría.
   const puedeDesactivarEnSuLugar =
     borrando && bloqueadoPorUso && item.isActive && item.activos === 0;
 
