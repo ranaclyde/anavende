@@ -1,12 +1,5 @@
-/**
- * Búsqueda, filtros y orden del listado de productos — RF-15, §10.2.
- *
- * Este módulo NO es `server-only` a propósito: el estado del listado vive en
- * la URL (§10.2), así que la consulta tiene que leerlo y la barra de filtros
- * tiene que escribirlo. Si cada lado tuviera su copia de los nombres de los
- * parámetros y de los valores válidos, el día que uno cambie el otro deja de
- * encontrar sin decir nada.
- */
+// No es `server-only`: la consulta lee los filtros de la URL y la barra los
+// escribe, con los mismos nombres y valores.
 
 import {
   pagina as leerPagina,
@@ -18,8 +11,7 @@ import {
 export type { ParametrosDeBusqueda };
 
 export const ORDENES = [
-  // El de siempre, y el que queda cuando no hay nada en la URL: es el orden
-  // con el que se venía mostrando el listado desde F2.3.
+  // El que queda cuando no hay nada en la URL.
   { valor: "destacados", etiqueta: "Destacados primero" },
   { valor: "nombre", etiqueta: "Nombre" },
   { valor: "precio", etiqueta: "Precio" },
@@ -29,19 +21,7 @@ export const ORDENES = [
 
 export type OrdenDeProductos = (typeof ORDENES)[number]["valor"];
 
-/**
- * Las solapas por estado — §6.9. **Son solapas desde el 2026-09-22**, pedido
- * tuyo: productos era el único de los seis listados que escondía su estado en
- * un desplegable, y la pregunta «¿qué tengo sin publicar?» costaba dos clics
- * y no se veía contestada hasta abrirlo.
- *
- * «Todos los estados» perdió el «los estados»: adentro de una lista hacía
- * falta para saber de qué lista era, y como solapa el encabezado ya lo dice.
- *
- * **El parámetro de la URL se sigue llamando `estado`**, que es lo que ya
- * escribían los dos enlaces del tablero (`?estado=activos&stock=reponer` y
- * `?estado=activos`): cambiarle el nombre los habría roto sin avisar.
- */
+/** Las solapas. El tablero enlaza a `?estado=…`: no renombrar el parámetro. */
 export const ESTADOS = [
   { valor: "todos", etiqueta: "Todos" },
   { valor: "activos", etiqueta: "Activos" },
@@ -53,9 +33,7 @@ export type EstadoDeProductos = (typeof ESTADOS)[number]["valor"];
 export const FILTROS_DE_STOCK = [
   { valor: "todos", etiqueta: "Cualquier stock" },
   { valor: "sin", etiqueta: "Sin stock" },
-  // «Para reponer» es sin stock MÁS lo que está por debajo del umbral: es una
-  // sola pregunta —qué hay que comprar— y por eso es una sola opción. El
-  // dashboard de F7.8 enlaza «stock bajo o en cero» a este valor.
+  // Sin stock más lo que está por debajo del umbral. El tablero enlaza acá.
   { valor: "reponer", etiqueta: "Para reponer" },
 ] as const;
 
@@ -65,9 +43,9 @@ export type Direccion = "asc" | "desc";
 
 export type FiltrosDeProductos = {
   q: string;
-  /** UUID de la categoría, o `""` = todas. */
+  /** `""` = todas. */
   categoria: string;
-  /** UUID de la marca, o `""` = todas. */
+  /** `""` = todas. */
   marca: string;
   estado: EstadoDeProductos;
   stock: FiltroDeStock;
@@ -76,14 +54,7 @@ export type FiltrosDeProductos = {
   pagina: number;
 };
 
-/**
- * Hacia dónde ordena cada criterio cuando nadie lo dijo.
- *
- * No son todas iguales porque las preguntas no son iguales: de la fecha
- * interesa lo último que se cargó, y del stock lo que se está por acabar.
- * Poner «ascendente» en las cinco obligaría a invertir a mano justo en los
- * dos casos que más se miran.
- */
+/** Hacia dónde ordena cada criterio cuando la URL no lo dice. */
 export const DIRECCION_NATURAL: Record<OrdenDeProductos, Direccion> = {
   destacados: "desc",
   nombre: "asc",
@@ -103,20 +74,13 @@ export const FILTROS_VACIOS: FiltrosDeProductos = {
   pagina: 1,
 };
 
-/** El mismo tope que los otros listados del panel: filas de 44px (§6.9). */
 export const POR_PAGINA = 40;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Lee los filtros de la URL sin fallar nunca.
- *
- * Un valor que no reconoce se descarta y queda el de siempre. Es deliberado:
- * la URL es editable a mano y compartible, y un listado que devuelve un
- * error porque alguien borró media palabra del enlace es un callejón sin
- * salida. Los UUID además se validan con forma de UUID **antes** de entrar a
- * la consulta: sin eso, `?marca=hola` no filtraría de menos, haría fallar a
- * Postgres.
+ * Nunca falla: un valor que no reconoce queda en el de siempre. Los UUID se
+ * validan antes de la consulta: `?marca=hola` haría fallar a Postgres.
  */
 export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeProductos {
   const orden = unaDe(params.orden, ORDENES, FILTROS_VACIOS.orden);
@@ -136,14 +100,7 @@ export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeProductos {
   };
 }
 
-/**
- * La URL que representa estos filtros.
- *
- * Lo que coincide con el valor de siempre NO se escribe: así la dirección de
- * un listado sin tocar es `/admin/productos` a secas, y la de uno filtrado
- * dice exactamente qué se cambió. Una URL con siete parámetros repitiendo
- * los valores por defecto no se puede leer ni comparar de un vistazo.
- */
+/** Lo que coincide con el valor de siempre no se escribe. */
 export function urlDeFiltros(
   filtros: FiltrosDeProductos,
   base = "/admin/productos",
@@ -165,15 +122,8 @@ export function urlDeFiltros(
 }
 
 /**
- * La URL de ordenar por `orden`: si ya es el orden vigente, lo INVIERTE.
- *
- * Es lo que hace cualquier tabla: el primer clic ordena, el segundo da
- * vuelta. Cambiar de criterio arranca por su dirección natural en vez de
- * heredar la anterior — venir de «más nuevos primero» no tiene por qué
- * dejar los precios de mayor a menor.
- *
- * **Vuelve a la primera página.** Reordenar cambia qué hay en cada página, así
- * que quedarse en la 3 deja a la persona en un lugar que no eligió.
+ * Si ya es el orden vigente, lo invierte; si no, arranca por su dirección
+ * natural. Vuelve a la primera página.
  */
 export function urlDeOrden(
   filtros: FiltrosDeProductos,
@@ -189,14 +139,7 @@ export function urlDeOrden(
   return urlDeFiltros({ ...filtros, orden, dir, pagina: 1 });
 }
 
-/**
- * Si hay algo que limpiar: búsqueda o filtros, no el orden **ni la solapa**.
- *
- * El estado salió de esta cuenta cuando pasó a ser solapa (2026-09-22), por
- * lo mismo que en órdenes y en usuarios: estar parada en «Inactivos» no es un
- * filtro puesto encima de un listado, es qué listado se está mirando. Si
- * contara, «Limpiar todo» devolvería a otra solapa sin que nadie la tocara.
- */
+/** Búsqueda o filtros; el orden y la solapa no cuentan. */
 export function hayFiltros(filtros: FiltrosDeProductos): boolean {
   return (
     filtros.q !== "" ||
@@ -206,7 +149,7 @@ export function hayFiltros(filtros: FiltrosDeProductos): boolean {
   );
 }
 
-/** Limpia la búsqueda y los filtros, y conserva el orden y la solapa. */
+/** Conserva el orden y la solapa. */
 export function sinFiltros(filtros: FiltrosDeProductos): FiltrosDeProductos {
   return {
     ...FILTROS_VACIOS,

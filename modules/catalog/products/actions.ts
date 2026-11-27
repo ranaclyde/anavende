@@ -17,34 +17,18 @@ import {
   soloProducto,
 } from "@/modules/catalog/products/schemas";
 
-/**
- * ABM de productos — RF-15, RN-04b, RN-11b.
- *
- * Tres reglas que no están en el formulario y que por eso viven acá:
- *
- *   · **RN-11b al revés.** No se puede ACTIVAR un producto cuya marca o
- *     categoría estén inactivas, ni uno con variantes activas de un color
- *     inactivo. El otro sentido —no desactivar una marca con productos
- *     activos— ya lo cubre `modules/catalog/actions.ts`; juntos mantienen la
- *     invariante que le permite a `products.is_active` ser la única verdad
- *     sobre la visibilidad, y a las consultas públicas (§10.1) no tener que
- *     mirar el estado de la marca en cada `WHERE`.
- *   · **El slug no cambia al renombrar.** Es la dirección pública del
- *     producto (RF-03): corregir un nombre es frecuente, romper un enlace ya
- *     compartido por WhatsApp es irreversible.
- *   · **Borrar puede terminar en desactivar** (RF-15, RN-11): un producto que
- *     alguna orden nombra no se borra, porque la orden histórica lo sigue
- *     mostrando. Se desactiva, y se informa que eso fue lo que pasó.
- */
+// RN-11b en este sentido (no activar un producto con marca, categoría o color
+// inactivos) más el otro en `modules/catalog/actions.ts` sostienen que
+// `products.is_active` sea la única verdad sobre la visibilidad: las consultas
+// públicas no miran el estado de la marca ni de la categoría.
 
 function refrescar() {
   revalidatePath("/admin/productos", "layout");
 }
 
 /**
- * Igual que en RF-18: Postgres devuelve 23505 y Drizzle envuelve el error.
- * Devuelve el índice que chocó —el slug o el SKU—, o `null` si no fue un
- * duplicado.
+ * Drizzle envuelve el 23505 de Postgres en `cause`. Devuelve el índice que
+ * chocó, o `null` si no fue un duplicado.
  */
 function indiceDuplicado(e: unknown): string | null {
   let actual: unknown = e;
@@ -62,15 +46,10 @@ function indiceDuplicado(e: unknown): string | null {
   return null;
 }
 
-/**
- * Dos productos pueden llamarse igual —«Cable HDMI» de dos marcas—, así que
- * lo único único es el slug, y colisiona en silencio: la vendedora escribió
- * un nombre, no una dirección. El mensaje habla del nombre, que es lo que
- * ella ve, y sugiere qué agregarle.
- */
+/** El slug sale del nombre, así que su choque se informa sobre el nombre. */
 function siEsDuplicado(e: unknown): never {
   const indice = indiceDuplicado(e);
-  // El SKU es único dentro de la marca (`products_sku_key`, 2026-11-05).
+  // El SKU es único dentro de la marca.
   if (indice === "products_sku_key") {
     throw domainError("VALIDATION", {
       message: "Ya hay un producto de esa marca con ese SKU.",
@@ -98,11 +77,7 @@ function siEsDuplicado(e: unknown): never {
   throw e;
 }
 
-/**
- * RN-11b, el sentido que le toca a esta pantalla. Se consulta con los IDs que
- * se van a guardar y no con los que están guardados: al editar, la marca
- * puede estar cambiando en la misma operación.
- */
+/** Con los ids que se van a guardar: al editar, la marca puede estar cambiando. */
 async function verificarRN11b(
   brandId: string,
   categoryId: string,
@@ -115,8 +90,7 @@ async function verificarRN11b(
            (SELECT NOT is_active FROM categories WHERE id = ${categoryId}) AS categoria
   `);
 
-  // `null` = no existe. La clave foránea lo rechazaría igual, pero con un
-  // error de integridad en vez de una frase.
+  // `null` = no existe.
   if (fila?.marca === null || fila?.categoria === null) {
     throw domainError("NOT_FOUND", {
       message:
@@ -137,15 +111,7 @@ async function verificarRN11b(
   }
 }
 
-/**
- * RN-11b, el pedazo que faltaba: «ningún producto activo puede … tener
- * variantes activas de un color inactivo».
- *
- * No estaba en F2.3 porque no había variantes que mirar. Va aparte de
- * `verificarRN11b` y no adentro porque necesita el id del producto, que al
- * crear todavía no existe — y un producto recién creado no tiene variantes,
- * así que ahí no hay nada que comprobar.
- */
+/** RN-11b para colores. Al crear no hace falta: todavía no hay variantes. */
 async function verificarColoresDeVariantes(productId: string, activo: boolean) {
   if (!activo) return;
 
@@ -161,8 +127,6 @@ async function verificarColoresDeVariantes(productId: string, activo: boolean) {
     });
   }
 }
-
-// ── Alta ────────────────────────────────────────────────────────────────
 
 export const crearUnProducto = action
   .input(crearProducto)
@@ -182,8 +146,6 @@ export const crearUnProducto = action
     }
   });
 
-// ── Edición ─────────────────────────────────────────────────────────────
-
 export const editarUnProducto = action
   .input(editarProducto)
   .auth("admin")
@@ -193,7 +155,7 @@ export const editarUnProducto = action
     await verificarColoresDeVariantes(id, campos.isActive);
 
     try {
-      // El SLUG NO SE TOCA: no está en el `set`, a propósito.
+      // El slug no se toca a propósito: rompería enlaces ya compartidos.
       const filas = await db
         .update(products)
         .set({ ...campos, updatedAt: new Date() })
@@ -207,8 +169,6 @@ export const editarUnProducto = action
       siEsDuplicado(e);
     }
   });
-
-// ── Activar y desactivar ────────────────────────────────────────────────
 
 export const cambiarEstadoDeProducto = action
   .input(cambioDeEstadoDeProducto)
@@ -235,11 +195,7 @@ export const cambiarEstadoDeProducto = action
     return { id: input.id, activo: input.activo };
   });
 
-// ── Destacar ────────────────────────────────────────────────────────────
-//
-// Destacar NO PUBLICA (RF-15), igual que en las categorías: `is_active` sigue
-// siendo la única verdad sobre la visibilidad. Por eso destacar un producto
-// inactivo no se rechaza — es una preferencia guardada para cuando se active.
+// Destacar no publica (RF-15): destacar un producto inactivo no se rechaza.
 
 export const cambiarDestacadoDeProducto = action
   .input(cambioDeDestacadoDeProducto)
@@ -257,25 +213,13 @@ export const cambiarDestacadoDeProducto = action
     return { id: input.id, destacado: input.destacado };
   });
 
-// ── Baja (RF-15, RN-11) ─────────────────────────────────────────────────
-
 export const eliminarUnProducto = action
   .input(soloProducto)
   .auth("admin")
   .handler(async ({ input }) => {
-    /**
-     * ¿Alguna orden lo nombra? Se pregunta por las VARIANTES, que es lo que
-     * `order_items` referencia.
-     *
-     * La base no lo impediría: la clave es `ON DELETE SET NULL` justamente
-     * para que el snapshot de la orden (§5.6) sobreviva a un producto
-     * borrado. Pero una orden con la variante en NULL pierde el enlace al
-     * producto para siempre, y RF-15 pide conservarlo: se desactiva.
-     */
-    //
-    // ¿Y algún CARRITO? (RN-11, desde F5.6.) Borrarlo se lo llevaría de ahí
-    // por cascada, sin que el comprador se entere, y RF-08 pide que lo vea
-    // apartado en «Ya no disponible». Desactivado, el carrito lo muestra así.
+    // Con órdenes o carritos se desactiva en vez de borrar (RN-11). La base no
+    // lo impediría: `order_items` es `ON DELETE SET NULL` y `cart_items` cae
+    // en cascada, y en los dos casos se pierde el enlace al producto.
     const [uso] = await db.execute<{ ordenes: number; carritos: number }>(sql`
       SELECT (SELECT count(DISTINCT oi.order_id)
                 FROM order_items oi
@@ -296,8 +240,7 @@ export const eliminarUnProducto = action
       if (!filas.length) throw domainError("NOT_FOUND");
 
       refrescar();
-      // No es un error: es el otro final posible de «eliminar». La vista
-      // cuenta qué pasó, en vez de decir «listo» sobre algo que sigue ahí.
+      // No es un error: la vista cuenta que se desactivó.
       return {
         id: input.id,
         resultado: "desactivado" as const,
@@ -306,11 +249,8 @@ export const eliminarUnProducto = action
       };
     }
 
-    // Las claves de TODAS las imágenes de TODAS sus variantes, leídas ANTES
-    // del DELETE: el borrado cae en cascada hasta `variant_images` y se lleva
-    // con él la única referencia a los archivos. Después ya no hay dónde
-    // buscarlas, y quedan en Storage para siempre sin que se note en ninguna
-    // pantalla (RF-17). Es lo mismo que hace `eliminar` con el logo de marca.
+    // Antes del DELETE: la cascada borra `variant_images`, la única referencia
+    // a los archivos en Storage.
     const archivos = await clavesDeProducto(input.id);
 
     const filas = await db
@@ -320,9 +260,7 @@ export const eliminarUnProducto = action
 
     if (!filas.length) throw domainError("NOT_FOUND");
 
-    // Después del DELETE y sin poder fallar hacia afuera: el producto ya no
-    // existe. Un archivo que sobreviva es basura, no un motivo para decir que
-    // no se pudo borrar algo que sí se borró.
+    // Después del DELETE y sin fallar hacia afuera: el producto ya se borró.
     if (archivos.length) await borrarArchivos(archivos);
 
     refrescar();
