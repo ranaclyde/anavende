@@ -53,17 +53,7 @@ import {
 } from "@/modules/catalog/products/actions";
 import type { ProductoDelListado } from "@/modules/catalog/products/queries";
 
-/**
- * Listado de productos del panel — RF-15, RF-20, DESIGN-REFERENCE §6.9.
- *
- * La búsqueda, los filtros y el orden los escribe `BarraDeFiltros` en la
- * URL; acá solo se pintan los resultados y se ofrecen las acciones de cada
- * fila. Las cabeceras ordenan porque en escritorio es donde se mira la
- * columna, y son ENLACES y no botones: la misma dirección que produce la
- * barra, así que ordenar se puede compartir y volver atrás.
- *
- * En móvil la tabla se vuelve tarjetas, no scroll horizontal (§6.9).
- */
+/** Filtros y orden viven en la URL (`BarraDeFiltros`); acá solo se pinta. */
 export function ListadoDeProductos({
   items,
   filtros,
@@ -71,16 +61,14 @@ export function ListadoDeProductos({
 }: {
   items: ProductoDelListado[];
   filtros: FiltrosDeProductos;
-  /** Stock bajo: `disponible <= umbral` (RF-20). */
+  /** Stock bajo: `disponible <= umbral`. */
   umbral: number;
 }) {
   const [enCurso, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [porBorrar, setPorBorrar] = useState<ProductoDelListado | null>(null);
 
-  // Destacar y desactivar NO avisan, y es a propósito: la estrella se
-  // rellena y la insignia cambia en la fila que se tocó. Un cartel que
-  // repita lo que ya se ve es ruido (DR §6.15).
+  // Destacar y desactivar no avisan a propósito: el cambio se ve en la fila.
   const correr = (fn: () => Promise<{ ok: boolean; message?: string }>) => {
     setError(null);
     iniciar(async () => {
@@ -97,12 +85,6 @@ export function ListadoDeProductos({
       cambiarDestacadoDeProducto({ id: p.id, destacado: !p.isFeatured }),
     );
 
-  /**
-   * «Eliminar» tiene dos finales (RF-15): si alguna orden lo nombra, el
-   * producto se desactiva en vez de borrarse, porque la orden histórica lo
-   * sigue mostrando. La vista cuenta cuál de los dos pasó en lugar de decir
-   * «listo» sobre algo que sigue estando.
-   */
   const borrar = (p: ProductoDelListado) => {
     setPorBorrar(null);
     setError(null);
@@ -112,11 +94,8 @@ export function ListadoDeProductos({
         setError(r.message);
         return;
       }
-      // Acá sí: la fila que se tocó ya no está, así que no queda dónde
-      // poner la respuesta.
-      // Dos finales, dos tonos. Desactivar no es lo que se apretó, y con el
-      // check verde al lado la frase se lee de reojo como «listo, borrado»,
-      // que es justo lo que no pasó.
+      // Borrar sí avisa: la fila ya no está. Desactivar va con `avisarConPero`
+      // para que no se lea como «listo, borrado».
       if (r.data.resultado === "borrado") {
         avisar(`Borraste «${p.name}».`);
       } else {
@@ -138,12 +117,7 @@ export function ListadoDeProductos({
         <SinResultados filtros={filtros} />
       ) : (
         <>
-          {/* La tabla, cuando entra (F2.15). Las columnas fijas suman 784px y
-              «Producto» se queda con lo que sobra: en una tablet de 820px eso
-              eran 4px, y las filas se veían sin nombre. 62rem le dejan unos
-              200px, que alcanzan para nombre y marca en dos renglones. Es de
-              contenedor y no de ventana por lo mismo que la ficha: contraer
-              el menú lateral es justo lo que se hace para ganar ancho. */}
+          {/* 62rem: las columnas fijas suman 784px y dejan ~200 al nombre. */}
           <div className="hidden overflow-hidden rounded-panel-card border border-border bg-surface @min-[62rem]:block">
             <Table className="table-fixed">
               <TableHeader>
@@ -159,9 +133,7 @@ export function ListadoDeProductos({
                   >
                     Precio
                   </Cabecera>
-                  {/* Más ancha desde el 2026-09-21: acá entra también el
-                      botón de reponer, y apretado partía el renglón de 44px
-                      que pide §6.9. */}
+                  {/* Ancha: entra también el botón de reponer. */}
                   <Cabecera
                     filtros={filtros}
                     orden="stock"
@@ -170,9 +142,7 @@ export function ListadoDeProductos({
                   >
                     Disponible
                   </Cabecera>
-                  {/* Ancha para que «Activo» y la etiqueta de stock entren
-                      en la misma línea: apiladas, la fila crece 10px y la
-                      tabla pierde el renglón parejo de 44px (§6.9). */}
+                  {/* Ancha: «Activo» y la etiqueta en una línea. */}
                   <TableHead className="w-48">Estado</TableHead>
                   <TableHead className="w-40 text-right">
                     <span className="sr-only">Acciones</span>
@@ -189,19 +159,15 @@ export function ListadoDeProductos({
                       <Precio producto={p} />
                     </TableCell>
                     <TableCell data-align="right">
-                      {/* El botón va ANTES del número y no después: §6.9
-                          pide los números pegados a la derecha, y con el
-                          botón al final la columna terminaba en él y las
-                          cifras dejaban de caer bajo «Disponible». */}
+                      {/* El botón antes de las cifras, para que caigan bajo
+                          «Disponible». */}
                       <div className="flex items-center justify-end gap-3">
                         <ReponerStock
                           productId={p.id}
                           nombre={p.name}
                           variantes={p.variantes}
                         />
-                        {/* Con ancho mínimo, «Reponer» queda en la misma
-                            vertical en todas las filas: sin él se corría
-                            según lo largo de «de 17 · 1 reservada». */}
+                        {/* Ancho mínimo: «Reponer» en la misma vertical. */}
                         <div className="min-w-32">
                           <Stock producto={p} umbral={umbral} />
                         </div>
@@ -225,11 +191,8 @@ export function ListadoDeProductos({
             </Table>
           </div>
 
-          {/* Tarjetas: el teléfono y la tablet. De a dos cuando hay ancho,
-              que es la tablet parada: una sola de 790px estira cada fila.
-              `grid-cols-1` y no la columna automática: esa crece hasta el
-              texto más largo que no se parte —un nombre truncado— y a 320px
-              la tarjeta se salía 4px de la pantalla. */}
+          {/* `grid-cols-1` y no la columna automática: esa crece hasta el
+              texto más largo y a 320px la tarjeta se sale de la pantalla. */}
           <ul className="grid grid-cols-1 gap-2 @min-[40rem]:grid-cols-2 @min-[62rem]:hidden">
             {items.map((p) => (
               <li
@@ -240,19 +203,13 @@ export function ListadoDeProductos({
                   <Nombre producto={p} />
                   <Estado producto={p} umbral={umbral} />
                 </div>
-                {/* Arriba: el precio y el disponible arrancan en la misma
-                    línea, y cada uno explica debajo. Alineados abajo, el
-                    número grande del stock quedaba flotando sobre el
-                    precio. */}
+                {/* Precio y disponible alineados arriba. */}
                 <div className="flex items-start justify-between gap-3">
                   <Precio producto={p} />
                   <Stock producto={p} umbral={umbral} />
                 </div>
-                {/* `flex-wrap`: «Reponer» y los cuatro íconos de 44px suman
-                    unos 300px, y a 320 la tarjeta deja 262 adentro. Sin esto
-                    la fila ensanchaba la tarjeta y se cortaban el borrar y
-                    las reservadas (2026-11-03). Ahí los íconos bajan a un
-                    renglón propio, a la derecha como siempre (`ml-auto`). */}
+                {/* `flex-wrap`: a 320px, «Reponer» y los íconos no entran en
+                    un renglón. */}
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                   <ReponerStock
                     productId={p.id}
@@ -305,11 +262,7 @@ export function ListadoDeProductos({
   );
 }
 
-/**
- * Cabecera que ordena. El primer clic ordena por su columna; el segundo, ya
- * estando en ella, da vuelta la dirección — que es lo que hace cualquier
- * tabla y lo que la flecha promete.
- */
+/** El segundo clic en la columna activa da vuelta la dirección. */
 function Cabecera({
   filtros,
   orden,
@@ -329,8 +282,6 @@ function Cabecera({
   return (
     <TableHead
       data-align={align}
-      // Lo lee el lector de pantalla: por qué columna está ordenada la tabla
-      // y hacia dónde, sin depender de ver la flecha (§9).
       aria-sort={activa ? (ascendente ? "ascending" : "descending") : "none"}
       className={cn("p-0", className)}
     >
@@ -339,9 +290,8 @@ function Cabecera({
         className={cn(
           "group flex h-9 w-full items-center gap-1 px-3",
           "transition-colors duration-150 hover:text-ink",
-          // En las columnas de números la flecha va ADELANTE del título: el
-          // hueco que ocupa cuando no se ve corría el título 18px a la
-          // izquierda del borde donde terminan las cifras.
+          // En columnas de números la flecha va adelante: su hueco invisible
+          // corría el título respecto de las cifras.
           align === "right" ? "flex-row-reverse justify-start" : "",
           activa ? "text-ink" : "",
         )}
@@ -354,8 +304,6 @@ function Cabecera({
             <ArrowDown aria-hidden className="size-3.5" />
           )
         ) : (
-          // La flecha doble aparece al pasar por encima: dice que la columna
-          // ordena sin ensuciar la cabecera de flechas todo el tiempo.
           <ChevronsUpDown
             aria-hidden
             className="size-3.5 opacity-0 transition-opacity duration-150 group-hover:opacity-60 group-focus-visible:opacity-60"
@@ -369,10 +317,7 @@ function Cabecera({
 function Nombre({ producto }: { producto: ProductoDelListado }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
-      {/* Sin estrella al lado del nombre (F2.15): lo dice la de la columna
-          de acciones, rellena y con `aria-pressed`, alineada fila tras fila.
-          Con las dos, «destacado» se marcaba de dos maneras en la misma fila
-          y de una tercera en categorías. */}
+      {/* Sin estrella: «destacado» lo dice la de acciones. */}
       <div className="flex min-w-0 items-center gap-1.5">
         <Link
           href={`/admin/productos/${producto.id}`}
@@ -388,15 +333,11 @@ function Nombre({ producto }: { producto: ProductoDelListado }) {
   );
 }
 
-/** El precio final, y el original tachado solo si hay oferta (RN-04b). */
 function Precio({ producto }: { producto: ProductoDelListado }) {
   const hayOferta = producto.finalPrice !== producto.price;
 
   return (
-    // `shrink-0` y `whitespace-nowrap`: al lado del botón de reponer este
-    // bloque se comprimía y «de 15 · 2 reservadas» pasaba a dos renglones,
-    // que subía la fila de 55px a 72 en los productos con reservas y dejaba
-    // la tabla despareja.
+    // Comprimido, parte en dos renglones y despareja la altura de las filas.
     <div className="flex shrink-0 flex-col items-end gap-0.5 whitespace-nowrap tabular-nums">
       <span className="font-medium text-ink">
         {formatMoney(producto.finalPrice)}
@@ -410,16 +351,7 @@ function Precio({ producto }: { producto: ProductoDelListado }) {
   );
 }
 
-/**
- * Los tres números de stock del producto (RF-15, RF-16).
- *
- * El grande es el DISPONIBLE, que es el único que responde «¿esto se puede
- * vender?»; el total y el reservado van debajo porque explican de dónde sale
- * y por qué no coincide con lo que hay en la caja.
- *
- * El color acompaña, no informa: lo que dice el estado es la etiqueta de al
- * lado (§9).
- */
+/** El color acompaña: el estado lo dice la etiqueta de al lado. */
 function Stock({
   producto,
   umbral,
@@ -427,9 +359,7 @@ function Stock({
   producto: ProductoDelListado;
   umbral: number;
 }) {
-  // Un producto sin colores no tiene números que mostrar, y por qué lo dice
-  // la etiqueta de al lado: repetir «Sin colores» acá sería decir dos veces
-  // lo mismo en dos columnas contiguas.
+  // «Sin colores» ya lo dice la etiqueta de al lado.
   if (producto.variantes === 0) {
     return <span className="text-ink-secondary">—</span>;
   }
@@ -472,21 +402,8 @@ function Estado({
 }
 
 /**
- * Lo que hay que saber del stock de un vistazo — DESIGN-REFERENCE §6.4.
- *
- * Es UNA etiqueta y no tres: son estados excluyentes, y apilarlas dejaría
- * «Sin colores» al lado de «Sin stock» diciendo dos veces lo mismo con
- * palabras distintas.
- *
- *   Sin colores      el producto está cargado y no tiene nada que vender.
- *                    No es falta de stock: es que todavía no hay dónde
- *                    ponerlo (F2.4 dejó el alta en dos pasos).
- *   Stock negativo   alguna variante quedó por debajo de cero. Lo produce
- *                    una venta registrada sobre unidades que el sistema no
- *                    tenía (RF-24, §5.4): es una discrepancia a corregir,
- *                    no una compra pendiente, y por eso no dice «sin stock».
- *   Sin stock        no queda nada disponible para vender.
- *   Quedan N         por debajo del umbral de RF-20.
+ * Una sola etiqueta: los estados son excluyentes. «Stock negativo» es una
+ * discrepancia a corregir (RF-24), no falta de stock.
  */
 function EtiquetaDeStock({
   producto,
@@ -539,10 +456,7 @@ function Acciones({
         aria-pressed={producto.isFeatured}
         title={producto.isFeatured ? "Quitar de destacados" : "Destacar"}
       >
-        {/* La estrella es un INTERRUPTOR, y lo que tiene que decir es
-            encendido o apagado: eso ya lo dice el relleno. El color sobra, y
-            en burdeos quedaba a siete grados del tacho rojo de al lado (§2.2).
-            Es la única marca de «destacado» del listado (F2.15). */}
+        {/* Relleno y sin color: en burdeos se confundía con el tacho rojo. */}
         <Star
           aria-hidden
           className={producto.isFeatured ? "fill-ink text-ink" : ""}
@@ -578,12 +492,6 @@ function Acciones({
   );
 }
 
-/**
- * Sin resultados (§8), que no es lo mismo que vacío: acá hay productos y
- * ninguno coincide. Se repite el término buscado —para ver el error de
- * tipeo sin volver al campo—, se sugiere aflojar los filtros y se ofrece
- * limpiarlos de una.
- */
 function SinResultados({ filtros }: { filtros: FiltrosDeProductos }) {
   return (
     <VacioDelPanel
@@ -603,7 +511,6 @@ function SinResultados({ filtros }: { filtros: FiltrosDeProductos }) {
   );
 }
 
-/** Estado vacío (§8): dice qué falta y ofrece el primer paso. */
 export function SinProductos() {
   return (
     <VacioDelPanel
