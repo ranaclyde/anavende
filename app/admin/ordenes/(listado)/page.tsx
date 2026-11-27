@@ -27,36 +27,25 @@ import { exigirAdmin } from "@/lib/session";
 export const metadata: Metadata = { title: "Órdenes" };
 
 /**
- * Listado de órdenes — RF-21, DR §5.2 y §6.9. Tarea F7.1.
- *
- * Es la pantalla con la que la vendedora empieza el día, y por eso se abre en
- * **Activas**: lo que hay que preparar. Las otras solapas son consulta.
- *
- * El estado del listado —solapa, búsqueda, origen, rango de fechas y página—
- * vive en la URL y no en el cliente (§10.2): así se comparte, funciona el
- * botón atrás, y el dashboard de F7.8 y el email E4 pueden enlazar a una
- * vista concreta sin que esta pantalla se entere.
+ * Abre en «Activas», lo que hay que preparar. El estado vive en la URL
+ * (§10.2): el inicio del panel y los emails enlazan a vistas concretas.
  */
 export default async function OrdenesDelPanel({
   searchParams,
 }: {
-  // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
   await exigirAdmin();
 
   const filtros = leerFiltros(await searchParams);
 
-  // Las dos consultas son independientes: encadenarlas agregaría una ida a la
-  // base por cada carga de la pantalla que más se usa del panel.
   const [{ ordenes, total }, conteo] = await Promise.all([
     listarOrdenesDelPanel(filtros),
     contarPorEstado(),
   ]);
 
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
-  // Una página que ya no existe —un enlace viejo, o filtrar estando en la 4—
-  // lleva a la última que sí.
+  // Una página que ya no existe lleva a la última que sí.
   if (filtros.pagina > paginas) {
     redirect(urlDeFiltros({ ...filtros, pagina: paginas }));
   }
@@ -69,9 +58,7 @@ export default async function OrdenesDelPanel({
         titulo="Órdenes"
         bajada="Los pedidos de la tienda y los que cargues a mano, con su estado."
         acciones={
-          /* RF-24. Acá arriba y no adentro de las solapas: cargar una venta no
-             es una acción sobre lo que se está mirando, es lo otro que se
-             puede hacer en esta pantalla. */
+          /* RF-24: arriba, porque no actúa sobre lo que se está mirando. */
           <Button asChild variant="brand" size="sm">
             <Link href="/admin/ordenes/nueva">
               <Plus aria-hidden />
@@ -81,9 +68,7 @@ export default async function OrdenesDelPanel({
         }
       />
 
-      {/* Sin una sola orden, las solapas y los filtros no tienen sobre qué
-          operar: cuatro controles arriba de un cartel que dice «todavía no
-          hay ninguna» son ruido, no ayuda (§8). */}
+      {/* Sin órdenes, no se muestran solapas ni filtros (§8). */}
       {!hayOrdenes ? (
         <SinOrdenes />
       ) : (

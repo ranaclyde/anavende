@@ -28,34 +28,21 @@ import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Productos" };
 
-/**
- * Listado de productos — RF-15, RF-20.
- *
- * El estado del listado —búsqueda, filtros y orden— vive en la URL y no en
- * el cliente (§10.2): así se comparte, funciona el botón atrás y el
- * dashboard de F7.8 puede enlazar «para reponer» sin que esta pantalla tenga
- * que enterarse.
- */
 export default async function ProductosDelPanel({
   searchParams,
 }: {
-  // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
   await exigirAdmin();
 
   const filtros = leerFiltros(await searchParams);
 
-  // El umbral se pide primero porque el listado lo necesita: el filtro «para
-  // reponer» se resuelve en la base (HAVING), no filtrando en memoria lo que
-  // ya vino. Es una lectura por clave primaria de una fila.
+  // Antes que el listado: «para reponer» se filtra en la base con el umbral.
   const umbral = await umbralDeStockBajo();
 
-  // Dos cuentas, y son preguntas distintas: `coincidencias` es cuántos pasan
-  // la solapa y los filtros —lo que decide cuántas páginas hay— y `conteo` es
-  // cuántos hay en cada solapa sin mirar nada más, que es lo que dibujan las
-  // solapas y lo que separa «todavía no cargaste ninguno» de «ninguno
-  // coincide con esto» (§8).
+  // `coincidencias` pasa solapa y filtros (decide las páginas); `conteo` es
+  // por solapa sin filtros (separa «no cargaste ninguno» de «ninguno
+  // coincide»).
   const [{ productos, total: coincidencias }, conteo, { marcas, categorias }] =
     await Promise.all([
       listarProductos(filtros, umbral),
@@ -63,9 +50,7 @@ export default async function ProductosDelPanel({
       opcionesDeProducto(),
     ]);
 
-  // Pedir una página que ya no existe —un enlace viejo, o borrar productos
-  // estando en la última— lleva a la última que sí existe, como en los otros
-  // tres listados del panel.
+  // Una página que ya no existe lleva a la última que sí.
   const paginas = Math.max(1, Math.ceil(coincidencias / POR_PAGINA));
   if (filtros.pagina > paginas) {
     redirect(urlDeFiltros({ ...filtros, pagina: paginas }));
@@ -77,10 +62,8 @@ export default async function ProductosDelPanel({
         titulo="Productos"
         bajada="Lo que se ve en la tienda: nombre, precio, stock y estado."
         acciones={
-          /* Con el catálogo vacío este botón no está: el estado vacío ya
-             ofrece el mismo primer paso en el medio de la pantalla, y dos
-             botones de marca iguales a 100px uno del otro se leen como un
-             error, no como una invitación (§6.3: una sola por pantalla). */
+          /* Con el catálogo vacío lo ofrece el estado vacío: un solo botón de
+             marca por pantalla (§6.3). */
           conteo.todos === 0 ? null : (
             <Button asChild variant="brand" size="sm">
               <Link href="/admin/productos/nuevo">
@@ -92,10 +75,7 @@ export default async function ProductosDelPanel({
         }
       />
 
-      {/* Sin ningún producto cargado las solapas y la barra no tienen sobre
-          qué operar: tres solapas en cero y tres filtros vacíos arriba de un
-          cartel que dice «todavía no cargaste ninguno» son ruido, no ayuda
-          (§8). */}
+      {/* Sin productos, no se muestran solapas ni filtros (§8). */}
       {conteo.todos === 0 ? (
         <SinProductos />
       ) : (
@@ -107,9 +87,7 @@ export default async function ProductosDelPanel({
             marcas={marcas}
             categorias={categorias}
             mostrados={coincidencias}
-            // El «de cuántos» es el de la solapa donde se está parada, no el
-            // del catálogo entero: en «Inactivos», «3 de 47 productos» sería
-            // contar contra un listado que no se está mirando.
+            // El total es el de la solapa, no el del catálogo entero.
             total={conteo[filtros.estado]}
             porPagina={POR_PAGINA}
           />

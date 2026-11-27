@@ -6,13 +6,7 @@ import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Nueva cuenta" };
 
-/**
- * Alta de una cuenta — FS RF-26 · TS §13.4. Tarea F7.6.
- *
- * **Es la vía por la que se suma una administradora**, que hasta hoy era un
- * `UPDATE` a mano en la base (está contado en PROGRESO). También sirve para
- * cargar a un comprador que compró por WhatsApp y quiere su cuenta.
- */
+/** Alta de una cuenta, administradora o compradora (RF-26, TS §13.4). */
 export default async function NuevaCuenta() {
   await exigirAdmin();
 
