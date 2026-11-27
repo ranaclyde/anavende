@@ -624,7 +624,7 @@ resalta un elemento y lo explica en un globo. Hay uno por pantalla:
 
 ## 8. Módulo: Panel de administración
 
-Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente acceder recibe 404/403 sin filtración de información.
+Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente acceder recibe **404, no 403**: un panel que responde «prohibido» confirma que existe.
 
 ### RF-14 — Dashboard del panel
 
