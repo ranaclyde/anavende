@@ -1,7 +1,5 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
-/** Tipos enumerados — TECHNICAL-SPEC §5.2. */
-
 export const orderStatus = pgEnum("order_status", [
   "activa",
   "finalizada",

@@ -16,12 +16,7 @@ import {
 import { products, productVariants } from "./catalog";
 import { userProfiles } from "./users";
 
-/** Carrito, direcciones y favoritos — TECHNICAL-SPEC §5.5. */
-
-/**
- * EL CARRITO NO EXISTE SIN SESIÓN (RF-08): no hay tabla ni cookie de carrito
- * anónimo. Un carrito por usuario, garantizado por el UNIQUE.
- */
+/** EL CARRITO NO EXISTE SIN SESIÓN (RF-08). */
 export const carts = pgTable("carts", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
@@ -36,12 +31,7 @@ export const carts = pgTable("carts", {
     .defaultNow(),
 }).enableRLS();
 
-/**
- * Guarda CANTIDAD, nunca precio: el precio se lee del producto en el momento
- * de mostrar (RN-09). Un precio congelado en el carrito es un precio que se
- * cobra mal. `last_seen_price` es la excepción, y no lo contradice: es lo que
- * se vio, no lo que se cobra.
- */
+/** Guarda CANTIDAD, nunca precio: el precio se lee al mostrar (RN-09). */
 export const cartItems = pgTable(
   "cart_items",
   {
@@ -53,11 +43,7 @@ export const cartItems = pgTable(
       .notNull()
       .references(() => productVariants.id, { onDelete: "cascade" }),
     quantity: integer("quantity").notNull(),
-    /**
-     * El precio final que el comprador VIO la última vez (F5.6, §5.5). Es
-     * con qué comparar para decir «pasó de $A a $B» (RN-09). NUNCA entra en
-     * un subtotal, un total ni una orden: eso sale de `products.final_price`.
-     */
+    /** Lo que el comprador VIO, para avisar si cambió. NUNCA se cobra. */
     lastSeenPrice: numeric("last_seen_price", {
       precision: 12,
       scale: 2,
@@ -88,10 +74,7 @@ export const addresses = pgTable(
     notes: text("notes"),
     city: text("city").notNull(),
     province: text("province").notNull(),
-    /**
-     * Opcional desde F5.3 (2026-09-13, migración `0014`): no se pregunta,
-     * se deduce de la localidad, y la de «Otra localidad cercana» no se sabe.
-     */
+    /** Se deduce de la localidad; `null` en «Otra localidad cercana». */
     postalCode: text("postal_code"),
     isDefault: boolean("is_default").notNull().default(false),
     /** Baja lógica: una orden vieja tiene que poder seguir mostrándose. */
@@ -101,8 +84,7 @@ export const addresses = pgTable(
       .defaultNow(),
   },
   (t) => [
-    // «Hay una sola dirección predeterminada» es una GARANTÍA DE LA BASE, no
-    // una convención que la aplicación deba recordar (§5.5).
+    // Una sola predeterminada por usuario, garantizado por la base.
     uniqueIndex("one_default_address_per_user")
       .on(t.userId)
       .where(sql`is_default AND deleted_at IS NULL`),

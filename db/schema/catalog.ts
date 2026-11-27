@@ -14,20 +14,13 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
-/** Catálogo — TECHNICAL-SPEC §5.4. */
-
 export const brands = pgTable(
   "brands",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
-    /**
-     * La CLAVE del logo en Storage, no su URL (§9.4). Guardar la URL ataría
-     * la fila al servidor del día que se escribió: el logo cargado en local
-     * seguiría apuntando a `127.0.0.1` en producción. La URL se arma al
-     * mostrar, con el backend que corresponda.
-     */
+    /** CLAVE en Storage, no URL (§9.4): la URL se arma al mostrar. */
     logoKey: text("logo_key"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -39,7 +32,6 @@ export const brands = pgTable(
   },
   (t) => [
     uniqueIndex("brands_name_key").on(sql`lower(${t.name})`),
-    // Búsqueda tolerante a acentos y errores de tipeo (§5.10, RF-02).
     index("brands_name_trgm_idx").using(
       "gin",
       sql`immutable_unaccent(lower(${t.name})) gin_trgm_ops`,
@@ -53,26 +45,11 @@ export const categories = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
-    /**
-     * RF-18: la categoría se muestra primero en el encabezado, en la home y
-     * en el filtro del listado. Es una BANDERA, no un orden: entre destacadas
-     * desempata el nombre (§5.4). Destacar no publica — `isActive` sigue
-     * siendo la única verdad sobre la visibilidad.
-     */
+    /** Bandera, no orden (RF-18). Destacar no publica: eso es `isActive`. */
     isFeatured: boolean("is_featured").notNull().default(false),
-    /**
-     * FA-21: UNA imagen chica por categoría, y por eso una columna y no una
-     * tabla. Guarda la clave en Storage, igual que `brands.logo_key` (§9.4),
-     * y se sube por el mismo camino que el logo. Es opcional: el listado
-     * tiene que quedar prolijo con categorías sin imagen mezcladas.
-     */
+    /** Clave en Storage, como `brands.logo_key`. */
     imageKey: text("image_key"),
-    /**
-     * F3.11: dos o tres renglones sobre qué hay en la categoría, debajo del
-     * título de su página y en su resultado de Google. Opcional: sin texto,
-     * la página dice la frase de siempre. Texto plano, sin formato, y con
-     * tope en el esquema del panel (`modules/catalog/schemas.ts`).
-     */
+    /** Texto plano; el tope está en `modules/catalog/schemas.ts`. */
     description: text("description"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -85,11 +62,7 @@ export const categories = pgTable(
   (t) => [uniqueIndex("categories_name_key").on(sql`lower(${t.name})`)],
 ).enableRLS();
 
-/**
- * Afinidad entre categorías (RF-31).
- * Una fila POR SENTIDO: la reciprocidad se materializa como dos filas, no
- * como una bandera que haya que interpretar al consultar (§11.1).
- */
+/** Afinidad entre categorías (RF-31): una fila POR SENTIDO (§11.1). */
 export const categoryRelations = pgTable(
   "category_relations",
   {
@@ -129,34 +102,14 @@ export const products = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
-    /**
-     * SKU del producto, opcional y único dentro de cada marca, sin distinguir
-     * mayúsculas (`products_sku_key`). Reemplaza a `model`, de abajo.
-     * La ficha lo muestra entre el nombre y el precio, y lo encuentran las dos
-     * búsquedas. El código de barras, si llega, va en la variante: cada color
-     * suele tener el suyo.
-     */
     sku: text("sku"),
-    /**
-     * SIN USO desde el 2026-11-05: era el SKU con otro nombre, y la 0028 lo
-     * copió a `sku`. Queda hasta que el código que la leía no corra en
-     * ningún contenedor; se borra en otro cambio (TS §18.2, agregar antes de
-     * borrar). Nada la lee ni la escribe.
-     */
+    /** SIN USO: reemplazada por `sku`. Se borra en otro cambio (TS §18.2). */
     model: text("model"),
-    /** RF-15: Markdown acotado. La vendedora nunca ve la sintaxis (§5.4). */
+    /** Markdown acotado (RF-15). */
     description: text("description").notNull().default(""),
     /**
-     * Columna GENERADA, igual que `finalPrice`: la proyección en texto plano
-     * de la descripción, SOLO para buscar (§10.1). Se calcula en la base para
-     * que sea imposible que la consulta y el contenido discrepen.
-     *
-     * Se quitan `* _ # \``, que es la sintaxis que parte una subcadena:
-     * `%cable hdmi%` no encuentra `Cable **HDMI**`. El guion NO se quita,
-     * porque «USB-C» tiene que seguir siendo «USB-C».
-     *
-     * NO SE MUESTRA NUNCA. Si una descripción con `XT_500` pierde el guion
-     * bajo, afecta a qué encuentra la búsqueda, jamás a lo que el comprador lee.
+     * Generada: la descripción sin la sintaxis que parte una subcadena
+     * (`Cable **HDMI**`), SOLO para buscar (§10.1). NO SE MUESTRA NUNCA.
      */
     descriptionText: text("description_text").generatedAlwaysAs(
       sql`regexp_replace(description, '[*_#\`]', '', 'g')`,
@@ -168,16 +121,11 @@ export const products = pgTable(
       .notNull()
       .references(() => categories.id, { onDelete: "restrict" }),
     price: numeric("price", { precision: 12, scale: 2 }).notNull(),
-    /** RN-04b: el descuento es un MONTO, no un porcentaje. */
+    /** Un MONTO, no un porcentaje (RN-04b). */
     discount: numeric("discount", { precision: 12, scale: 2 })
       .notNull()
       .default("0"),
-    /**
-     * Columna GENERADA: el precio final se calcula en la base, nunca en
-     * JavaScript. Así filtrar y ordenar por precio con descuento (RF-02) es
-     * un índice y no un cálculo por fila, y es imposible que la vista y la
-     * consulta discrepen.
-     */
+    /** Generada: se calcula en la base, nunca en JavaScript, y se indexa. */
     finalPrice: numeric("final_price", {
       precision: 12,
       scale: 2,
@@ -197,21 +145,16 @@ export const products = pgTable(
       "discount_valid",
       sql`${t.discount} >= 0 AND ${t.discount} < ${t.price}`,
     ),
-    // Búsqueda tolerante (§5.10, RF-02).
     index("products_name_trgm_idx").using(
       "gin",
       sql`immutable_unaccent(lower(${t.name})) gin_trgm_ops`,
     ),
-    // Sobre la PROYECCIÓN, no sobre `description`: §10.1 busca en
-    // `description_text` y un índice sobre la columna con sintaxis no lo
-    // usaría nunca.
+    // Sobre `description_text`, que es donde busca §10.1.
     index("products_description_trgm_idx").using(
       "gin",
       sql`immutable_unaccent(lower(${t.descriptionText})) gin_trgm_ops`,
     ),
-    // Filtros y orden del catálogo (RF-02). Los índices son PARCIALES: el
-    // sitio público nunca consulta productos inactivos (RN-05), así que el
-    // índice solo indexa lo que se consulta.
+    // Parciales: la tienda nunca consulta productos inactivos (RN-05).
     index("products_active_category_idx")
       .on(t.categoryId)
       .where(sql`is_active`),
@@ -224,8 +167,7 @@ export const products = pgTable(
     index("products_created_idx")
       .on(t.createdAt.desc())
       .where(sql`is_active`),
-    // Único DENTRO DE LA MARCA: dos marcas pueden usar el mismo código.
-    // «abc-1» y «ABC-1» son el mismo. Los NULL no chocan entre sí.
+    // Único dentro de la marca y sin distinguir mayúsculas.
     uniqueIndex("products_sku_key").on(t.brandId, sql`lower(${t.sku})`),
   ],
 ).enableRLS();
@@ -241,28 +183,17 @@ export const productVariants = pgTable(
     colorId: uuid("color_id").references(() => colors.id, {
       onDelete: "restrict",
     }),
-    /**
-     * El segundo color de una variante de dos: «Negro/Rojo». `NULL` = es de un
-     * solo color. Nunca más de dos (decidido el 2026-10-05).
-     *
-     * Columna y no tabla: con un tope de dos, una tabla aparte sería una
-     * consulta más en cada pantalla para guardar un dato que entra en una
-     * celda. Las pantallas no leen las dos columnas: leen la vista
-     * `variant_colors`, que arma el nombre compuesto y los dos códigos.
-     */
+    /** «Negro/Rojo». Las pantallas leen la vista `variant_colors`. */
     secondaryColorId: uuid("secondary_color_id").references(() => colors.id, {
       onDelete: "restrict",
     }),
     /**
-     * SIN check de no-negatividad, a propósito (§5.4). RF-24 exige que la
-     * vendedora pueda registrar una venta ya ocurrida aunque el sistema crea
-     * que no hay stock: bloquearla la obligaría a mentirle al sistema. Un
-     * total negativo es una SEÑAL DE DISCREPANCIA, se destaca en el panel y
-     * se corrige con un ajuste.
+     * SIN check de no-negatividad, a propósito (§5.4, RF-24): un total
+     * negativo es una señal de discrepancia, no un error.
      */
     stockTotal: integer("stock_total").notNull().default(0),
     reservedStock: integer("reserved_stock").notNull().default(0),
-    /** RF-16: reutilizar las imágenes de otra variante. Un solo salto. */
+    /** Reutiliza las imágenes de otra variante (RF-16). Un solo salto. */
     imagesSourceId: uuid("images_source_id").references(
       (): AnyPgColumn => productVariants.id,
       { onDelete: "set null" },
@@ -277,33 +208,25 @@ export const productVariants = pgTable(
       .defaultNow(),
   },
   (t) => [
-    // La reserva nunca es negativa, en ninguna circunstancia.
     check("reserved_not_negative", sql`${t.reservedStock} >= 0`),
-    // Y no supera al total MIENTRAS el total no sea negativo. La guarda no es
-    // un descuido: sin ella, junto con la restricción de arriba, implicaría
-    // `stock_total >= 0` e impondría el CHECK que §5.4 decidió NO poner,
-    // rompiendo RF-24. Ver el recuadro de §5.4.
+    // La guarda `stock_total < 0` no es un descuido: sin ella esto implicaría
+    // `stock_total >= 0`, el CHECK que §5.4 decidió NO poner.
     check(
       "reserved_within_total",
       sql`${t.stockTotal} < 0 OR ${t.reservedStock} <= ${t.stockTotal}`,
     ),
     check("images_source_not_self", sql`${t.imagesSourceId} <> ${t.id}`),
-    // El segundo color sólo existe si hay primero, y no lo repite: «Negro/
-    // Negro» es Negro.
     check(
       "secondary_color_valid",
       sql`${t.secondaryColorId} IS NULL OR (${t.colorId} IS NOT NULL AND ${t.secondaryColorId} <> ${t.colorId})`,
     ),
-    // Una combinación por producto, SIN IMPORTAR EL ORDEN: «Negro/Rojo» y
-    // «Rojo/Negro» son la misma variante. El orden de carga sólo decide qué
-    // mitad de la esfera ocupa cada uno. Los COALESCE hacen que la variante
-    // única (sin color) y la de un color también queden sujetas a esto.
+    // Sin importar el orden: «Negro/Rojo» y «Rojo/Negro» son la misma. Los
+    // COALESCE alcanzan también a la variante única y a la de un color.
     uniqueIndex("variant_product_color_key").on(
       t.productId,
       sql`LEAST(COALESCE(${t.colorId}, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(${t.secondaryColorId}, '00000000-0000-0000-0000-000000000000'::uuid))`,
       sql`GREATEST(COALESCE(${t.colorId}, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(${t.secondaryColorId}, '00000000-0000-0000-0000-000000000000'::uuid))`,
     ),
-    // El filtro de la tienda busca por cualquiera de los dos colores.
     index("variant_secondary_color_idx")
       .on(t.secondaryColorId)
       .where(sql`${t.secondaryColorId} IS NOT NULL`),
@@ -324,7 +247,7 @@ export const variantImages = pgTable(
     height: integer("height").notNull(),
     bytes: integer("bytes").notNull(),
     sortOrder: integer("sort_order").notNull().default(0),
-    /** Se subió con la marca de agua puesta (RF-39). No se puede sacar. */
+    /** Quemada en la imagen (RF-39): no se puede sacar. */
     hasWatermark: boolean("has_watermark").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
