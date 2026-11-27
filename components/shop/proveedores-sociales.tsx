@@ -10,20 +10,9 @@ import { cn } from "@/lib/utils";
 import type { ProveedorSocial } from "@/modules/users/proveedores";
 
 /**
- * Ingreso con Google y Facebook — RF-06.
- *
- * Van en las dos pantallas, registro e ingreso, porque para el proveedor
- * social son la misma operación: si la identidad no existe se crea, y si
- * existe se vincula. Supabase vincula automáticamente cuando el email
- * coincide y está verificado; si no lo está, rechaza. Es deliberado: sin esa
- * condición alguien podría registrarse con el email de otra persona y
- * quedarse con su cuenta cuando esa persona entre con Google (RF-06).
- *
- * **Solo se muestran los que están prendidos en GoTrue** (`disponibles`,
- * de `modules/users/proveedores.ts`), y sin ninguno no se muestra nada, ni el
- * «o con tu email». Hasta el 2026-10-26 salían los dos deshabilitados con el
- * motivo al lado; con Google andando y Facebook para el final, un botón que
- * nadie puede tocar es ruido justo en la pantalla donde menos conviene dudar.
+ * Ingreso con proveedores sociales (RF-06), en registro e ingreso: para el
+ * proveedor son la misma operación. Supabase vincula por email solo si está
+ * verificado. Sin ninguno prendido en GoTrue no se muestra nada.
  */
 
 const NOMBRES: Record<ProveedorSocial, string> = {
@@ -32,10 +21,8 @@ const NOMBRES: Record<ProveedorSocial, string> = {
 };
 
 /**
- * El logo de cada uno, en sus colores (`icono-google.tsx`). Facebook va sin
- * logo hasta que se configure: el de `iconos-de-redes.tsx` está en
- * `currentColor` para el pie, y en este botón tendría que ser el azul de la
- * marca.
+ * En sus colores. Facebook va sin logo: el de `iconos-de-redes.tsx` está en
+ * `currentColor`, y acá tendría que ser el azul de la marca.
  */
 const LOGOS: Partial<Record<ProveedorSocial, ReactNode>> = {
   google: <IconoGoogle />,
@@ -48,7 +35,7 @@ export function ProveedoresSociales({
 }: {
   volver?: string;
   accion: "ingreso" | "registro";
-  /** Los que GoTrue tiene prendidos, en el orden en que se muestran. */
+  /** Los que GoTrue tiene prendidos, en orden. */
   disponibles: readonly ProveedorSocial[];
 }) {
   const [pendiente, iniciar] = useTransition();

@@ -13,13 +13,7 @@ import { guardarMisDatos } from "@/modules/users/actions";
 
 type Campo = "firstName" | "lastName" | "phone";
 
-/**
- * «Mis datos» — RF-07. Tarea F5.2.
- *
- * Nombre, apellido y teléfono, con las mismas reglas que el alta: el teléfono
- * no puede quedar vacío (RF-05), porque es el canal por el que se coordina la
- * venta. El email no se edita y lo dibuja la página, fuera del formulario.
- */
+/** «Mis datos» (RF-07), con las mismas reglas que el alta. */
 export function MisDatosForm({
   firstName,
   lastName,
@@ -61,13 +55,12 @@ export function MisDatosForm({
   return (
     <form
       onSubmit={enviar}
-      // Un «Listo» que queda a la vista mientras se sigue escribiendo dice
-      // que lo nuevo ya se guardó, y no es cierto.
+      // Un «Listo» a la vista mientras se sigue escribiendo mentiría.
       onChange={() => guardado && setGuardado(false)}
       className="flex flex-col gap-5"
       noValidate
     >
-      {/* Con la baja pedida (F5.8) los datos se ven y no se cambian. */}
+      {/* Con la baja pedida, los datos se ven y no se cambian. */}
       <fieldset
         disabled={enPausa}
         aria-describedby={enPausa ? ID_AVISO_DE_PAUSA : undefined}

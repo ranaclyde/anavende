@@ -6,30 +6,19 @@ import { LADO_DEL_ISOTIPO, PALABRA, PIEZAS } from "@/lib/marca";
 import { AREA_TACTIL_CUADRADA, cn } from "@/lib/utils";
 
 /**
- * Isotipo, palabra y logo — DESIGN-REFERENCE §2.3, F10.7c.
- *
- * El isotipo es la cuadrícula de cuatro celdas —A, joystick, auriculares, V—
- * y la palabra es «AnaVende» en la misma letra que la A y la V. Los dos se
- * dibujan en línea desde `lib/marca.ts`, con el color del texto: burdeos
- * (`text-logo`), blanco en el panel oscuro —el mismo token cambia— y blanco
- * sobre el pie (`claro`). Sin imagen que pedir ni dos versiones en el árbol.
- *
- * Nunca se deforma, ni cambia de color, ni lleva sombra.
+ * Isotipo, palabra y logo (DESIGN-REFERENCE §2.3), en línea desde
+ * `lib/marca.ts` y con el color del texto.
  */
 
 const VISTA_DEL_ISOTIPO = `0 0 ${LADO_DEL_ISOTIPO} ${LADO_DEL_ISOTIPO}`;
 const VISTA_DE_LA_PALABRA = PALABRA.caja.join(" ");
 const TRAZOS = Object.values(PIEZAS);
 
-/**
- * El isotipo solo, sin enlace. 32px es el tamaño de uso (§2.3); se cambia
- * con `className`.
- */
+/** El isotipo solo, sin enlace. */
 export function Isotipo({
   claro = false,
   className,
 }: {
-  /** Sobre fondo oscuro de la tienda: el pie. */
   claro?: boolean;
   className?: string;
 }) {
@@ -53,11 +42,7 @@ export function Isotipo({
   );
 }
 
-/**
- * «AnaVende» en trazo. Su mayúscula mide el 45 % del isotipo y la separación
- * es el 30 % (`HORIZONTAL` en `lib/marca.ts`): las dos salen de `--isotipo`,
- * el lado del isotipo que la acompaña.
- */
+/** «AnaVende» en trazo, medida contra `--isotipo` (`HORIZONTAL` en `lib/marca.ts`). */
 function Palabra({ claro = false }: { claro?: boolean }) {
   return (
     <svg
@@ -76,10 +61,7 @@ function Palabra({ claro = false }: { claro?: boolean }) {
   );
 }
 
-/**
- * La versión horizontal: isotipo y palabra, sin enlace. Para donde la marca
- * va con su nombre siempre a la vista —ingreso, mantenimiento, pie, panel—.
- */
+/** Isotipo y palabra, sin enlace. */
 export function LogoHorizontal({
   claro = false,
   className,
@@ -100,18 +82,13 @@ export function LogoHorizontal({
   );
 }
 
-/**
- * El logo del encabezado de la tienda, con su enlace al inicio. Va solo el
- * isotipo, también en la computadora (2026-11-20): la palabra ya está en el
- * hero de la home y en el pie.
- */
+/** El logo del encabezado, con su enlace al inicio: solo el isotipo. */
 export function Logo({
   href = "/",
   escena = null,
   className,
 }: {
   href?: string;
-  /** La de hoy, si hay (F9.5): el isotipo lleva su adorno encima. */
   escena?: Escena | null;
   className?: string;
 }) {
@@ -120,9 +97,6 @@ export function Logo({
       href={href}
       className={cn(
         "relative inline-flex shrink-0 items-center rounded-pill",
-        // Sin la palabra queda un enlace de 32×32, por debajo de los 44 de
-        // §9. La marca no se agranda —§2.3 fija ese tamaño de uso—, así
-        // que lo que crece es la zona que responde al dedo.
         AREA_TACTIL_CUADRADA,
         className,
       )}

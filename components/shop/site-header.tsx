@@ -15,24 +15,8 @@ import type { Escena } from "@/lib/escenas";
 import { cn } from "@/lib/utils";
 
 /**
- * Encabezado de la tienda — DESIGN-REFERENCE §5.1.
- *
- * 56px, blanco, FIJO, y gana --shadow-lg al hacer scroll: mientras la página
- * está arriba el encabezado se apoya en el canvas sin separarse; en cuanto
- * hay contenido debajo, la sombra explica que está por encima.
- *
- * **La navegación va al lado del logo** (2026-10-21): Productos, Categorías y
- * Ofertas, con la píldora que viaja (`NavegacionPrincipal`). En el teléfono no
- * entran y pasan a un menú lateral, que se lleva también la cuenta.
- *
- * **El buscador es una lupa en todos los tamaños** y se abre a ancho completo
- * debajo. Abierto en escritorio le quitaba a los enlaces el lugar que
- * necesitan entre 768 y 1024px, y donde más se busca —la home y el catálogo—
- * la página ya trae uno grande.
- *
- * **El buscador no se dibuja si la página ya tiene el suyo** (F3.8). La regla
- * vive en `globals.css`; vuelve solo en cuanto el de la página sale de la
- * pantalla. Ver `SearchBox`, prop `principal`.
+ * Encabezado de la tienda (DESIGN-REFERENCE §5.1). La lupa no se dibuja si la
+ * página ya tiene su buscador a la vista (`SearchBox`, prop `principal`).
  */
 export function SiteHeader({
   cartCount = 0,
@@ -42,12 +26,8 @@ export function SiteHeader({
 }: {
   cartCount?: number;
   userName?: string | null;
-  /**
-   * La cara de quien entró (F5.9), ya armada en el servidor: la foto, o el
-   * blobatar que se mueve al pasar el mouse (`CaraAnimada`).
-   */
+  /** La cara de quien entró, ya armada en el servidor. */
   userCara?: React.ReactNode;
-  /** La escena por fecha de hoy (F9.5): el logo lleva su adorno. */
   escena?: Escena | null;
 }) {
   const [conSombra, setConSombra] = useState(false);
@@ -62,20 +42,16 @@ export function SiteHeader({
     return () => window.removeEventListener("scroll", alScrollear);
   }, []);
 
-  // El buscador abierto se cierra al navegar: si no, tapa la página que llega.
-  // Se ajusta durante el render, cuando cambia la ruta, y no en un efecto:
-  // así no se pinta un cuadro con el buscador abierto sobre la página nueva.
+  // Se cierra al navegar, durante el render y no en un efecto, que pintaría
+  // un cuadro con el buscador abierto sobre la página nueva.
   const [rutaVista, setRutaVista] = useState(pathname);
   if (rutaVista !== pathname) {
     setRutaVista(pathname);
     setBuscadorAbierto(false);
   }
 
-  // El número salta cuando SUBE: agregar desde la ficha refresca la pantalla
-  // y el encabezado recibe el número nuevo. Quitar no salta, porque el salto
-  // dice «acá fue a parar». Cada salto cambia la `key` del número, y así la
-  // animación vuelve a empezar aunque se agregue dos veces seguidas. Se ajusta
-  // al pintar, como la ruta de arriba, y nunca en la primera carga.
+  // El número salta solo cuando sube. Cada salto cambia la `key`, así la
+  // animación vuelve a empezar aunque se agregue dos veces seguidas.
   const [cuentaVista, setCuentaVista] = useState(cartCount);
   const [saltos, setSaltos] = useState(0);
   if (cuentaVista !== cartCount) {
@@ -87,7 +63,7 @@ export function SiteHeader({
     <header
       className={cn(
         "sticky top-0 z-40 bg-surface transition-shadow duration-150",
-        // Que nada de una View Transition le pase por encima (`globals.css`).
+        // Que nada de una View Transition le pase por encima.
         "[view-transition-name:encabezado]",
         conSombra && "shadow-lg",
       )}
@@ -127,12 +103,7 @@ export function SiteHeader({
             <Heart aria-hidden className="size-5" />
           </AccionDelEncabezado>
 
-          {/*
-            Píldora y no un ícono con insignia encima: la insignia de 18px
-            sobre el ícono obliga a entrecerrar los ojos (F3.8). Vacía es solo
-            el carrito; con algo adentro, el número va en un círculo burdeos
-            de 28px (2026-10-21), que se lee como insignia sin achicarse.
-          */}
+          {/* Píldora y no ícono con insignia: la de 18px no se leía. */}
           <Link
             href="/carrito"
             className={cn(
@@ -166,8 +137,6 @@ export function SiteHeader({
             data-anima-cara
             className={cn(
               "flex h-11 items-center gap-2 rounded-pill px-3 text-body-sm text-ink-secondary transition-colors duration-150 hover:bg-surface-sunken hover:text-ink max-md:hidden",
-              // Con la cara, el círculo de 32px llena el alto del ícono y un
-              // poco más: se le saca relleno para que el texto no quede lejos.
               userCara && "pl-1.5 lg:pr-3",
             )}
           >
@@ -187,8 +156,7 @@ export function SiteHeader({
         </nav>
       </div>
 
-      {/* El buscador se despliega a ancho completo; Escape lo cierra y
-          devuelve el foco a la lupa. */}
+      {/* Escape lo cierra y devuelve el foco a la lupa. */}
       {buscadorAbierto && (
         <div
           id="buscador-del-encabezado"
