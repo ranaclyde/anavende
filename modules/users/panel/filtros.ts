@@ -1,19 +1,4 @@
-/**
- * Filtros del listado de usuarios del panel — FS RF-26, §10.2. Tarea F7.6.
- *
- * RF-26 pide búsqueda por nombre o email y filtros por **estado** y por
- * **rol**. RF-34 pide que el estado distinga los tres que puede tener una
- * cuenta: activa, bloqueada y dada de baja.
- *
- * **Y hay un cuarto valor que no es un estado: «Con baja pedida»** (decisión
- * tuya del 2026-09-17, F7.9). La baja pedida no es un estado de la cuenta
- * —está activa, en solo lectura— sino trabajo por hacer, y es a donde tiene
- * que llevar el aviso de pendientes del inicio del panel. Sin este valor, ese
- * enlace no tiene a dónde ir.
- *
- * **No es `server-only`**: la consulta lee estos valores y la barra los
- * escribe, como en los otros dos listados del panel.
- */
+// No es `server-only`: la consulta lee estos valores y la barra los escribe.
 
 import {
   pagina as leerPagina,
@@ -33,10 +18,8 @@ export const ROLES = [
 export type FiltroDeRol = (typeof ROLES)[number]["valor"];
 
 /**
- * Los cinco estados, que desde el 2026-09-21 son **solapas** y ya no un
- * desplegable (§6.9). Las etiquetas se acortaron con el cambio: «Solo
- * activos» decía «solo» porque convivía con «Todos los estados» adentro de
- * una lista; como solapa, el «solo» es el hecho de estar parada ahí.
+ * «Baja pedida» no es un estado de la cuenta (sigue activa, en solo lectura)
+ * sino trabajo por hacer: es a donde lleva el aviso de pendientes del panel.
  */
 export const ESTADOS = [
   { valor: "todos", etiqueta: "Todas" },
@@ -49,7 +32,6 @@ export const ESTADOS = [
 export type FiltroDeEstado = (typeof ESTADOS)[number]["valor"];
 
 export type FiltrosDeUsuarios = {
-  /** Nombre, apellido o email. */
   q: string;
   rol: FiltroDeRol;
   estado: FiltroDeEstado;
@@ -63,7 +45,6 @@ export const FILTROS_VACIOS: FiltrosDeUsuarios = {
   pagina: 1,
 };
 
-/** El mismo tope que los otros listados del panel: filas de 44px (§6.9). */
 export const POR_PAGINA = 40;
 
 export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeUsuarios {
@@ -75,10 +56,6 @@ export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeUsuarios {
   };
 }
 
-/**
- * La URL que representa estos filtros. Lo que coincide con el valor de siempre
- * no se escribe: el listado sin tocar es `/admin/usuarios` a secas.
- */
 export function urlDeFiltros(
   filtros: FiltrosDeUsuarios,
   base = "/admin/usuarios",
@@ -93,18 +70,11 @@ export function urlDeFiltros(
   return cadena ? `${base}?${cadena}` : base;
 }
 
-/**
- * Si hay algo que limpiar.
- *
- * **El estado no cuenta**, desde que es una solapa y no un desplegable
- * (2026-09-21): la solapa dice dónde se está parada, y «Limpiar todo» no
- * mueve a nadie de pantalla. Es el mismo criterio que la solapa de órdenes.
- */
+/** El estado no cuenta: es una solapa, y «Limpiar todo» no cambia de solapa. */
 export function hayFiltros(filtros: FiltrosDeUsuarios): boolean {
   return filtros.q !== "" || filtros.rol !== "todos";
 }
 
-/** Lo mismo pero conservando la solapa, para el botón «Limpiar todo». */
 export function sinFiltros(filtros: FiltrosDeUsuarios): FiltrosDeUsuarios {
   return { ...FILTROS_VACIOS, estado: filtros.estado };
 }

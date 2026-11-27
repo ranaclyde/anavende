@@ -7,53 +7,23 @@ import { publicarFotoDePerfil } from "@/modules/media/subir";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
 
 /**
- * Lo que se trae de Google al darse de alta — F1.7 y F5.9, pedidos tuyos del
- * 2026-10-26: la **foto**, como primera foto de perfil, y el **nombre y el
- * apellido por separado**, para precargar `/completar-perfil`.
+ * La foto y el nombre de Google, solo en el alta. Va en dos tiempos porque la
+ * cuenta no tiene perfil hasta `/completar-perfil`: en la vuelta de Google se
+ * anotan en `app_metadata`, y al crear el perfil se baja la foto y se borran.
  *
- * **La foto se procesa y se guarda como cualquier otra** (la misma versión
- * cuadrada de 256px en Storage), y no como un enlace a los servidores de
- * Google: así se cambia y se quita desde «Mis datos» como una foto subida, y
- * no desaparece si la cambia allá. Si no tiene foto, o algo falla, queda su
- * blobatar.
+ * Se usa la API de People porque la `picture` del ingreso no distingue la
+ * inicial genérica que inventa Google; People la marca `default`. GoTrue no
+ * guarda `given_name` ni `family_name`.
  *
- * **El nombre y el apellido, de Google y no adivinados.** GoTrue guarda de
- * Google solo el nombre completo —en la v2.184.0, `parseGoogleIDToken` tira
- * `given_name` y `family_name`—, y partirlo en el primer espacio deja a
- * «Juan Pablo Pérez» con nombre «Juan» y apellido «Pablo Pérez». Si Google no
- * los da, `/completar-perfil` sigue partiendo el nombre completo, como antes.
- *
- * **Va en dos tiempos**, porque todo esto vive en el perfil y una cuenta de
- * Google no tiene perfil hasta `/completar-perfil`:
- *
- *   1. En la vuelta de Google (`/api/auth/callback`), con el permiso que
- *      Google acaba de dar, se le pregunta a la API de People —una sola
- *      consulta, nombres y fotos— y lo que diga se anota en `app_metadata`
- *      de GoTrue.
- *   2. `/completar-perfil` lee el nombre y el apellido para precargarlos, y
- *      al crear el perfil (`completarPerfil`) se baja la foto, se procesa y
- *      se borran las anotaciones.
- *
- * **Por qué la API de People y no la `picture` que ya trae el ingreso**: a
- * quien no subió ninguna foto, Google le inventa una —la inicial sobre un
- * color— y la `picture` no lo distingue. People sí: la marca `default`. Sin
- * eso, «si no tiene foto, el blobatar» no se podría cumplir. Necesita la API
- * de People prendida en el proyecto de Google Cloud; si no lo está, responde
- * 403, la cuenta queda con su blobatar y el nombre se parte como antes.
- *
- * **En `app_metadata` y no en `user_metadata`**: la segunda la escribe el
- * propio usuario, y alguien podría poner ahí la dirección que quisiera para
- * que el servidor la baje. Por lo mismo se acepta solo un host de Google.
- *
- * **Solo en el alta.** A una cuenta que ya existía y vincula Google no se le
- * toca nada: si quitó la foto, la quitó a propósito.
+ * En `app_metadata` y no en `user_metadata`, que la escribe el propio usuario:
+ * podría poner ahí cualquier dirección para que el servidor la baje. Por lo
+ * mismo se acepta solo un host de Google.
  */
 
 const FOTO = "foto_de_google";
 const NOMBRE = "nombre_de_google";
 const APELLIDO = "apellido_de_google";
 
-/** Lo que tarda como mucho cada pedido a Google antes de rendirse. */
 const ESPERA_MS = 5_000;
 
 export type DatosDeGoogle = {
@@ -64,10 +34,7 @@ export type DatosDeGoogle = {
 
 const NADA: DatosDeGoogle = { foto: null, nombre: null, apellido: null };
 
-/**
- * Pide la foto en 512px: la que da People es de 100, y la versión guardada es
- * de 256. Las direcciones de Google llevan el tamaño al final (`=s100`).
- */
+/** People da 100px y se guarda en 256: se pide en 512 (`=s100` al final). */
 function enTamano(url: string): string {
   return /=s\d+(-c)?$/.test(url)
     ? url.replace(/=s\d+(-c)?$/, "=s512-c")
@@ -88,7 +55,6 @@ export function esFotoDeGoogle(url: string): boolean {
   }
 }
 
-/** Sin espacios de más, y `null` si no queda nada. */
 function limpio(texto: string | undefined): string | null {
   const t = texto?.trim().replace(/\s+/g, " ");
   return t ? t : null;
@@ -96,7 +62,6 @@ function limpio(texto: string | undefined): string | null {
 
 type ConMetadata = { metadata?: { primary?: boolean } };
 
-/** La que la persona marcó como principal, o la primera. */
 function principal<T extends ConMetadata>(lista: T[]): T | undefined {
   return lista.find((x) => x.metadata?.primary) ?? lista[0];
 }
@@ -106,10 +71,7 @@ type RespuestaDePeople = {
   photos?: (ConMetadata & { url?: string; default?: boolean })[];
 };
 
-/**
- * Lo que Google sabe de la persona. Lo que no se pudo saber —o una foto que
- * no eligió ella— vuelve en `null`.
- */
+/** Lo que no se pudo saber —o una foto que no eligió— vuelve en `null`. */
 export async function leerDeGoogle(
   tokenDeGoogle: string,
 ): Promise<DatosDeGoogle> {
@@ -174,7 +136,6 @@ async function anotados(userId: string): Promise<DatosDeGoogle | null> {
   };
 }
 
-/** Paso 1: en la vuelta de Google, para una cuenta sin perfil. */
 export async function anotarDatosDeGoogle(
   userId: string,
   tokenDeGoogle: string,
@@ -185,17 +146,12 @@ export async function anotarDatosDeGoogle(
   try {
     await anotar(userId, datos);
   } catch (error) {
-    // Sin la anotación, blobatar y el nombre partido: nada que frenar.
     Sentry.captureException(error, {
       tags: { capa: "auth-callback", paso: "datos-de-google" },
     });
   }
 }
 
-/**
- * Paso 2a: el nombre y el apellido para precargar `/completar-perfil`, o
- * `null` si Google no dio el nombre.
- */
 export async function nombreDeGoogle(
   userId: string,
 ): Promise<{ nombre: string; apellido: string } | null> {
@@ -205,10 +161,7 @@ export async function nombreDeGoogle(
 }
 
 /**
- * Paso 2b: con el perfil recién creado, la foto, y las anotaciones se van.
- * Devuelve si quedó la foto. **No lanza nunca**: el perfil ya está guardado,
- * y una foto que no se pudo traer no es motivo para decirle a nadie «no
- * pudimos».
+ * Devuelve si quedó la foto. No lanza nunca: el perfil ya está guardado.
  */
 export async function importarFotoDeGoogle(userId: string): Promise<boolean> {
   const datos = await anotados(userId);
@@ -238,8 +191,7 @@ export async function importarFotoDeGoogle(userId: string): Promise<boolean> {
         throw new Error("La foto es demasiado grande.");
       }
 
-      // La misma conversión que una foto subida, magic bytes incluidos: si
-      // Google devolviera otra cosa que una imagen, sharp la rechaza acá.
+      // sharp rechaza lo que no sea una imagen, como en una foto subida.
       await publicarFotoDePerfil({ userId, archivo });
       guardada = true;
     } catch (error) {
@@ -249,8 +201,7 @@ export async function importarFotoDeGoogle(userId: string): Promise<boolean> {
     }
   }
 
-  // Se borran salga como salga: un segundo intento no tiene por qué andar
-  // mejor, y la cuenta ya tiene perfil, así que no vuelve a pasar por acá.
+  // Se borran salga como salga: la cuenta ya tiene perfil y no vuelve acá.
   await anotar(userId, NADA).catch((error: unknown) => {
     Sentry.captureException(error, {
       tags: { capa: "server-action", paso: "datos-de-google" },
