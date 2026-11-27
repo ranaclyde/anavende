@@ -9,21 +9,10 @@ import {
 import type { PropsDeEnlace } from "@/lib/email/plantillas/verificacion";
 
 /**
- * E3 — Definición de contraseña de cuenta nueva (TECHNICAL-SPEC §14,
- * FUNCTIONAL-SPEC RF-26). Lo emite GoTrue con `inviteUserByEmail`, cuando la
- * vendedora da de alta a alguien a mano desde el panel.
+ * E3 (TECHNICAL-SPEC §14, RF-26). Lo emite GoTrue con `inviteUserByEmail`.
  *
- * **Este NO usa `{{ .RedirectTo }}`, y es a propósito.** En E1 y E2 el enlace
- * lo arma la aplicación y siempre pasa un destino. Acá quien invita es una
- * pantalla del panel que todavía no existe (RF-26): si el día que se escriba
- * nadie se acuerda de pasar `redirectTo`, `{{ .RedirectTo }}` sale vacío y el
- * enlace queda roto —y se descubre cuando una persona real no puede entrar—.
- * Armarlo desde `{{ .SiteURL }}` lo hace imposible de olvidar. La asimetría
- * está acá escrita para que se vea que fue una decisión.
- *
- * **El saludo puede quedar en «¡Hola!» y está bien.** El alta por invitación
- * no conoce el nombre de pila salvo que RF-26 lo cargue en los metadatos; la
- * condición del generador lo resuelve sin romper nada.
+ * Sin `{{ .RedirectTo }}` a propósito: si quien invita no pasa `redirectTo`,
+ * sale vacío y el enlace queda roto. Se arma desde `{{ .SiteURL }}`.
  */
 export function Invitacion({
   sitio = "http://localhost:3000",

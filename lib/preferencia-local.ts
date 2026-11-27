@@ -1,17 +1,6 @@
 /**
- * Una preferencia de este navegador, guardada en `localStorage` y leída con
- * `useSyncExternalStore` — el menú colapsado y el tema del panel.
- *
- * **Por qué no un `useEffect` que la lea al montar.** Es lo que había, y pinta
- * dos veces: primero con el valor de relleno y después con el guardado. Las
- * reglas de React Hooks 7 lo marcan como error (`set-state-in-effect`), y
- * `useSyncExternalStore` es lo que la guía de React recomienda para leer algo
- * que vive fuera de React: el servidor y la hidratación usan
- * `getServerSnapshot`, y el cliente pasa al valor guardado sin efecto.
- *
- * **Sin almacenamiento, el cambio vale para esta sesión**, como antes: si
- * `localStorage` está bloqueado o no deja escribir, el valor queda en memoria
- * y se sigue leyendo de ahí.
+ * Una preferencia de este navegador en `localStorage`, para leer con
+ * `useSyncExternalStore`. Si `localStorage` está bloqueado, queda en memoria.
  */
 export function crearPreferencia(clave: string) {
   const oyentes = new Set<() => void>();

@@ -1,17 +1,7 @@
 import type { ErrorEvent } from "@sentry/nextjs";
 
-/**
- * Filtrado de datos personales antes de salir hacia Sentry
- * (TECHNICAL-SPEC §16, §19).
- *
- * Un informe de error viaja a un tercero. Email, teléfono y dirección de un
- * comprador no tienen por qué viajar con él: para depurar alcanza con el id
- * del usuario, que no dice nada por sí solo.
- *
- * El filtro es por NOMBRE DE CLAVE y se aplica en profundidad, no por una
- * lista de rutas conocidas: una ruta nueva aparece con cada función que se
- * escribe, y la que se olvide es la que filtra el dato.
- */
+// Datos personales fuera de Sentry (TECHNICAL-SPEC §16, §19). Por nombre de
+// clave y en profundidad, no por rutas: la ruta que se olvide filtra el dato.
 const CLAVES_SENSIBLES = [
   "email",
   "phone",
@@ -62,7 +52,6 @@ function limpiar(valor: unknown, profundidad = 0): unknown {
 }
 
 export function scrubEvent(event: ErrorEvent): ErrorEvent | null {
-  // Del usuario se conserva SOLO el id.
   if (event.user) {
     event.user = { id: event.user.id };
   }
@@ -76,7 +65,7 @@ export function scrubEvent(event: ErrorEvent): ErrorEvent | null {
         string
       >;
     }
-    // La query string se va entera: ahí viajan búsquedas y a veces emails.
+    // Entera: ahí viajan búsquedas y a veces emails.
     delete event.request.query_string;
   }
 
