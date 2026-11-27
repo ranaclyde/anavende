@@ -12,19 +12,8 @@ import { motivoDeRechazo } from "@/modules/media/cliente";
 import { TIPOS_ACEPTADOS } from "@/modules/media/tamanos";
 
 /**
- * Elegir, cambiar o quitar un logo — RF-18 (marca) y RF-19 (medio de pago).
- *
- * Salió del diálogo de marcas cuando apareció el segundo consumidor. No es
- * el dibujo lo que se comparte, es el COMPORTAMIENTO: que «Cancelar» cancele
- * también el logo, que la vista previa se libere, que un archivo rechazado
- * deje el campo limpio para poder volver a elegir el mismo. Tres reglas que
- * no se ven en la pantalla y que la segunda copia habría perdido de a una.
- */
-
-/**
- * Qué hacer con el logo al guardar. Se decide acá y se aplica en el envío,
- * en vez de subir o borrar en cuanto se toca el botón: así «Cancelar»
- * cancela de verdad, incluido el logo.
+ * Qué hacer con el logo al guardar. Se aplica en el envío, no al tocar el
+ * botón: así «Cancelar» cancela también el logo.
  */
 export type AccionDeLogo =
   | { tipo: "mantener" }
@@ -56,12 +45,8 @@ export function SelectorDeLogo({
   deshabilitado,
 }: {
   id: string;
-  /**
-   * Cómo se llama lo que se sube. La categoría (FA-21) usa este mismo
-   * selector, y lo suyo no es un logo: es una imagen.
-   */
+  /** Cómo se llama lo que se sube: en la categoría es una imagen. */
   palabras?: { etiqueta: string; sinLogo: string };
-  /** La URL del logo que ya está guardado, o `null`. */
   guardado: string | null;
   logo: AccionDeLogo;
   alCambiar: (logo: AccionDeLogo) => void;
@@ -72,8 +57,7 @@ export function SelectorDeLogo({
   const campoDeArchivo = useRef<HTMLInputElement>(null);
   const visible = logoVisible(logo, guardado);
 
-  // La vista previa es un objeto en memoria del navegador; si no se libera,
-  // el archivo entero queda retenido hasta que se recargue la página.
+  // Si no se libera, el archivo queda retenido hasta recargar la página.
   useEffect(() => {
     if (logo.tipo !== "reemplazar") return;
     return () => URL.revokeObjectURL(logo.vistaPrevia);
@@ -86,8 +70,7 @@ export function SelectorDeLogo({
     const motivo = motivoDeRechazo(archivo);
     if (motivo) {
       alError(motivo);
-      // Se limpia el input: si no, elegir el MISMO archivo otra vez no
-      // dispara `change` y parece que el botón dejó de andar.
+      // Si no se limpia, elegir el mismo archivo otra vez no dispara `change`.
       if (campoDeArchivo.current) campoDeArchivo.current.value = "";
       return;
     }
@@ -107,9 +90,7 @@ export function SelectorDeLogo({
       </Label>
 
       <div className="flex items-center gap-3">
-        {/* El recuadro tiene el mismo tamaño con logo y sin logo: si creciera
-            al elegir uno, el diálogo entero saltaría bajo el cursor justo
-            cuando hay que apretar «Guardar». */}
+        {/* Tamaño fijo: si creciera al elegir un logo, el diálogo saltaría. */}
         <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-panel-control border border-border bg-logo-chip">
           {visible ? (
             <Image
@@ -167,9 +148,8 @@ export function SelectorDeLogo({
         </div>
       </div>
 
-      {/* El input nativo va oculto y no `display:none`: escondido así sigue
-          siendo alcanzable por el `click()` del botón y por los lectores de
-          pantalla. */}
+      {/* `sr-only` y no `display:none`: así lo alcanzan el `click()` y los
+          lectores de pantalla. */}
       <input
         ref={campoDeArchivo}
         id={id}

@@ -13,22 +13,8 @@ import {
 } from "@/modules/users/direcciones/constantes";
 
 /**
- * La dirección de una orden manual — FS RF-24, RN-10. Tarea F7.4.
- *
- * **Son los campos de la libreta menos la etiqueta**: ésta no se guarda en
- * ninguna libreta, es el snapshot de a dónde fue este pedido. La localidad es
- * la misma lista cerrada de RN-10 —la vendedora no envía al resto del país— y
- * la provincia y el código postal se deducen de ella, como en F5.3.
- *
- * **No reusa el formulario del comprador** y no es un descuido: aquél es un
- * `<form>` entero con su propio envío, su validación y su «Guardar» contra la
- * libreta. Acá estos campos son una parte de otro formulario que se envía
- * junto con todo lo demás. Lo que sí se comparte es lo que importa que no se
- * desincronice: la lista de localidades y la regla que la valida.
- *
- * **El `Campo` sí se comparte** desde el 2026-09-22: tenía una copia local
- * igual a la de `components/admin/formulario.tsx` menos la ayuda, y esa copia
- * se quedó sin el arreglo de `aria-describedby`. Una menos.
+ * No reusa el formulario de direcciones del comprador, a propósito: aquél es
+ * un `<form>` con su propio envío; esto es parte de otro formulario.
  */
 
 export type ValoresDeDireccion = {
@@ -52,7 +38,7 @@ export function CamposDeDireccion({
   valores: ValoresDeDireccion;
   alCambiar: (cambios: Partial<ValoresDeDireccion>) => void;
   errores: Partial<Record<string, string>>;
-  /** Prefijo de los `id`, para que el envío de afuera sepa a quién enfocar. */
+  /** Prefijo de los `id`, para que el formulario sepa a quién enfocar. */
   idBase?: string;
 }) {
   const propio = useId();
@@ -192,10 +178,7 @@ function Elegir({
   );
 }
 
-/**
- * En qué orden se leen, que es el orden en que se corrigen. Lo usa el
- * formulario de la orden para llevar el foco al primero que falló.
- */
+/** En el orden en que se leen: el formulario enfoca el primero que falló. */
 export const CAMPOS_DE_DIRECCION = [
   "recipientName",
   "phone",
