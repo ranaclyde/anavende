@@ -13,6 +13,10 @@ lineamientos.
   variables, funciones, tipos, tablas y columnas); los comentarios, en
   español. La interfaz, los commits y la documentación, en español con
   voseo. Nada de voseo ni de español dentro de los identificadores.
+  **Excepción: las rutas y sus parámetros de búsqueda van en español**
+  (`/cuenta/direcciones`, `?categoria=`), porque son interfaz: las ve la
+  gente y las guardan los buscadores. Es decir, las carpetas de `app/` que
+  arman URLs y los nombres de los *query params*.
 - **Comentarios:** solo donde el código no se explica solo. El porqué de una
   decisión va en `sdd/`, en `docs/` o en el commit, no repetido en el código.
 - **Tests:** donde los piden las especificaciones (`TECHNICAL-SPEC.md` §17,
