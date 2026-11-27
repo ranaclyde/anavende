@@ -1497,16 +1497,22 @@ Consecuencia honesta: **la verificación local ahorra la ida a la red en las gua
 
 ### 13.4 Alta de usuarios
 
-**Registro con email y contraseña** (RF-05) — Server Action propia, no el `signUp` del cliente, porque el perfil es obligatorio:
+**Registro con email y contraseña** (RF-05) — Server Action propia, porque el perfil es obligatorio: el formulario no llama a GoTrue desde el navegador.
 
 ```
-1. admin.createUser({ email, password })       → id
+1. auth.signUp({ email, password, data: { first_name, full_name } })
+                                    → id, y GoTrue manda E1 en la misma llamada
 2. INSERT user_profiles (id, nombre, email, teléfono, role='customer')
 3. Si (2) falla → admin.deleteUser(id) y se informa el error
-4. Se dispara el email de verificación
 ```
 
 El paso 3 es una **compensación explícita**: sin ella quedaría una identidad sin perfil, que es un usuario que puede entrar y con el que la aplicación no sabe qué hacer.
+
+> **Hasta el 2026-09-05 el paso 1 era `admin.createUser`, y E1 salía después con un reenvío.** No funcionaba: `/resend` descarta el `code_challenge` de `@supabase/ssr`, el enlace volvía por el flujo implícito (`#access_token=…`), que nunca llega al servidor, y la confirmación terminaba en «enlace inválido» con la cuenta ya verificada. `signUp` sí registra el desafío. Eso trae tres consecuencias:
+>
+> - **Un email repetido no da error.** `signUp` oculta a propósito que la cuenta existe y devuelve un usuario sin `identities`; es la única señal para el mensaje que pide RF-05.
+> - **Si el correo no sale, no queda cuenta.** `signUp` falla entero, también cuando GoTrue llega a su tope de emails por hora (F10.5b). Antes el alta sobrevivía a un problema de correo y se resolvía con el reenvío, pero con un enlace que no servía.
+> - **El nombre para saludar viaja en `user_metadata`** (`first_name`), porque es lo único que leen las plantillas de GoTrue (`{{ .Data }}`).
 
 **Alta por Google** (RF-06) — acá GoTrue crea la identidad en el callback, antes de que intervengamos. Por eso:
 
