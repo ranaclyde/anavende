@@ -6,25 +6,11 @@ import { db } from "@/db";
 import type { ShippingAddressSnapshot } from "@/db/schema/orders";
 import type { Money } from "@/lib/money";
 
-/**
- * Los dos buscadores del alta manual — FS RF-24. Tarea F7.4.
- *
- * **El de variantes es la pieza que F7.2a espera** (sumar productos a una
- * orden activa): por eso vive acá y no adentro del componente, y por eso
- * devuelve también los dos contadores de stock, que es lo que las dos
- * pantallas necesitan mostrar antes de agregar nada.
- *
- * Las dos búsquedas son **por subcadena y sin similitud**, como el buscador
- * de productos del panel: la vendedora busca algo que sabe que existe, y un
- * resultado «parecido» le esconde lo que fue a buscar (F2.5).
- */
-
 /** Sin esto, buscar «50%» traería todo y «USB_C» encontraría cualquier cosa. */
 function escaparComodines(termino: string): string {
   return termino.replace(/[\\%_]/g, "\\$&");
 }
 
-/** Cuántos resultados alcanzan para elegir sin convertirlo en un catálogo. */
 const TOPE = 12;
 
 export type VarianteParaLaOrden = {
@@ -32,27 +18,16 @@ export type VarianteParaLaOrden = {
   nombre: string;
   marca: string;
   color: string | null;
-  /** El vigente, con descuento aplicado: es el que propone el formulario. */
+  /** El vigente, con descuento aplicado. */
   precio: Money;
-  /** Total − reservado: lo que se puede comprometer sin pisar otra orden. */
   disponible: number;
-  /** El stock real, que es lo que baja si la orden nace finalizada (§8.1). */
+  /** El stock real: es lo que baja si la orden nace finalizada. */
   stock: number;
-  /**
-   * Producto o variante dados de baja. **Se muestran igual**: una venta
-   * manual puede ser justamente la del último que quedaba de algo que ya se
-   * sacó del catálogo. Se marcan para que no se elija uno sin querer.
-   */
+  /** Dados de baja se muestran igual: la venta manual puede ser la del último que quedaba. */
   inactiva: boolean;
 };
 
-/**
- * Variantes que coinciden con lo que se escribió, por producto o por marca.
- *
- * **Devuelve variantes y no productos**, al revés del listado del panel: lo
- * que se agrega a una orden es un color concreto, y hacer elegir primero el
- * producto y después el color serían dos pasos donde alcanza con uno.
- */
+/** Por nombre de producto o de marca; devuelve variantes, no productos. */
 export async function buscarVariantesParaLaOrden(
   q: string,
 ): Promise<VarianteParaLaOrden[]> {
@@ -89,24 +64,10 @@ export type CompradorParaLaOrden = {
   nombre: string;
   email: string;
   telefono: string;
-  /**
-   * Sus direcciones guardadas, listas para usar como snapshot de la orden
-   * (decisión tuya del 2026-09-16). Son tres como mucho
-   * (`MAXIMO_DE_DIRECCIONES`), así que traerlas con el resultado sale más
-   * barato que una segunda vuelta a la base cuando se elige una.
-   */
   direcciones: (ShippingAddressSnapshot & { id: string; label: string })[];
 };
 
-/**
- * Compradores registrados, por nombre o email — RF-24, «opcionalmente se
- * puede asociar a un comprador registrado».
- *
- * **No aparecen los bloqueados ni los que pidieron la baja.** Asociarle una
- * orden nueva a una cuenta que está saliendo del sistema es prometer un
- * «Mis compras» que no va a poder abrir (RF-27, RF-34): la venta se carga
- * igual, sin cuenta, que es lo que RF-24 permite desde el principio.
- */
+/** Por nombre o email. Excluye bloqueados y cuentas con baja pedida. */
 export async function buscarCompradoresParaLaOrden(
   q: string,
 ): Promise<CompradorParaLaOrden[]> {

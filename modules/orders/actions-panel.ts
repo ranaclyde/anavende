@@ -19,37 +19,12 @@ import {
   laOrdenDelPanel,
 } from "@/modules/orders/schemas-panel";
 
-/**
- * Acciones del panel sobre una orden — FS RF-22, RF-23 · TS §8.1.
- * Tareas F7.2 (quitar y reducir), F7.3 (finalizar y cancelar) y F7.2a (sumar).
- *
- * **La lógica no está acá.** Quitar un renglón y bajar una cantidad ya estaban
- * resueltos y probados en `modules/orders/editar.ts` desde F4.4, con el
- * `FOR UPDATE` sobre la orden, la liberación de la reserva, el recálculo del
- * total en SQL y la fila del historial. Lo que F7.2 agrega es la puerta: rol,
- * validación de la entrada, traducción del número de la URL a un `id`, y el
- * `refresh()` para que la pantalla se vuelva a pedir.
- *
- * **Están separadas de `actions.ts` sólo por dónde viven**, no por una
- * garantía: a diferencia de las consultas —donde el archivo del comprador
- * filtra por `user_id` y el del panel no (§13.8)—, acá la guardia la pone el
- * envoltorio en las dos. Se separan porque conviven dos «cancelar» que se
- * parecen y no son lo mismo —el arrepentimiento de RF-23 vive en `actions.ts`
- * y la decisión de la vendedora acá—, y un archivo con las dos mezcladas se
- * lee peor.
- *
- * **El número de la orden viaja en la entrada y el `id` se busca acá.** La
- * URL del panel es `/admin/ordenes/1043`, y hacer que la pantalla mande el
- * `id` obligaría a pasearlo por el cliente sin ninguna ventaja.
- */
-
 const laOrden = z.object({
   numero: z.number().int().positive(),
   /** El renglón, no la variante: una orden puede repetir producto y color. */
   itemId: z.uuid(),
 });
 
-/** Traduce el número de la URL, o corta con NOT_FOUND. */
 async function idDeLaOrdenO404(numero: number): Promise<string> {
   const orderId = await idDeLaOrden(numero);
   if (!orderId) throw domainError("NOT_FOUND");
@@ -57,20 +32,13 @@ async function idDeLaOrdenO404(numero: number): Promise<string> {
 }
 
 /**
- * Quitar un renglón de una orden activa — RF-22.
- *
- * `cancelarSiEsElUltimo` es la **confirmación explícita** que pide RF-22 para
- * el caso en que el renglón que se quita es el único: quitarlo deja una orden
- * sin nada adentro, que no es una orden, y `quitarItem` la cancela. La
- * pantalla ya sabe si es el último y pregunta distinto, pero **quien decide es
- * el dominio**: entre que la pantalla se pintó y llegó el clic, otra pestaña
- * pudo haber quitado los demás renglones, y ahí el pedido llegaría sin la
- * confirmación puesta y la orden se cancelaría sin que nadie lo pidiera.
+ * `cancelarSiEsElUltimo` autoriza cancelar la orden si el renglón es el único
+ * (RF-22). Lo decide el dominio y no la pantalla: otra pestaña pudo haber
+ * quitado los demás renglones entre que se pintó y llegó el clic.
  */
 export const quitarItemDeLaOrden = action
-  // Opcional y no `default(false)`: con un `default`, el tipo que ve quien
-  // llama exige el campo igual, y lo que se quiere decir es lo contrario —
-  // **no mandarlo es no autorizar la cancelación**, que es el caso seguro.
+  // Opcional y no `default(false)`: con `default` el tipo de entrada exigiría
+  // el campo. No mandarlo es no autorizar la cancelación.
   .input(laOrden.extend({ cancelarSiEsElUltimo: z.boolean().optional() }))
   .auth("admin")
   .handler(async ({ input, ctx }) => {
@@ -89,14 +57,7 @@ export const quitarItemDeLaOrden = action
     return resultado;
   });
 
-/**
- * Bajar la cantidad de un renglón — RF-22.
- *
- * Sólo baja; subir es `aumentarCantidadDelItem`, acá abajo. Que sean dos y no
- * una que mire el signo es del dominio: bajar libera y no puede fallar, subir
- * reserva y puede no entrar. Lo rechaza `reducirCantidad`, no este esquema: la
- * cantidad de la que se baja es la de la base, no la que diga el cliente.
- */
+/** Sólo baja; que la cantidad sea menor lo valida el dominio contra la base. */
 export const reducirCantidadDelItem = action
   .input(laOrden.extend({ cantidad: z.number().int().min(1).max(9999) }))
   .auth("admin")
@@ -116,25 +77,6 @@ export const reducirCantidadDelItem = action
     return { cantidad: input.cantidad };
   });
 
-// ── Resolver la orden: finalizar o cancelar (RF-23) ─────────────────────
-
-/**
- * Finalizar una orden activa — RF-23. Tarea F7.3.
- *
- * **La venta se concretó**: `finalizarOrden` descuenta el stock real y suelta
- * la reserva de una (§8.1), escribe el historial en la misma transacción y
- * usa un `UPDATE` condicional por estado, así que dos «Finalizar» a la vez
- * dan un ganador y un `INVALID_ORDER_STATE` — el perdedor no llega a tocar el
- * stock. Todo eso es de F4.2 y está probado en `estados.test.ts`.
- *
- * **Sin motivo, y no por olvido.** RF-23 lo pide para la cancelación, que es
- * la que necesita explicarse. Finalizar es el curso normal de una orden: el
- * motivo sería un campo que siempre se deja vacío.
- *
- * **Sólo la administradora.** Finalizar es afirmar que se entregó, y el
- * comprador no puede hacerlo ni por su propia orden: lo único suyo es
- * arrepentirse (`cancelarMiOrden`, F6.5).
- */
 export const finalizarLaOrden = action
   .input(laOrdenDelPanel)
   .auth("admin")
@@ -150,23 +92,8 @@ export const finalizarLaOrden = action
   });
 
 /**
- * Cancelar una orden activa desde el panel — RF-23. Tarea F7.3.
- *
- * **No es `cancelarMiOrden` con otro rol.** Aquélla es el arrepentimiento
- * (RF-34): la pide quien compró, sobre su propia orden, sin explicaciones y
- * buscando por dueño además de por número (§13.8). Ésta es una decisión de la
- * vendedora sobre la orden de otra persona —no hay stock, no se pudo
- * coordinar—, y por eso puede llevar motivo y no filtra por nadie. El dominio
- * que las dos llaman es el mismo (`cancelarOrden`), y lo que las distingue
- * después es el autor que queda en el historial, que es exactamente lo que
- * RF-23 pidió que se registrara.
- *
- * **El motivo lo lee el comprador**, en el detalle de su compra: decisión
- * tuya del 2026-09-16. Hasta hoy la única cancelación posible era la suya, y
- * la pantalla le decía «Cancelaste este pedido»; ahora distingue quién fue y,
- * si la vendedora escribió por qué, se lo muestra en lugar de dejarlo
- * preguntando por WhatsApp. El diálogo avisa que se publica, porque un campo
- * que se cree interno y no lo sea es peor que no tenerlo.
+ * La cancelación de la vendedora; el arrepentimiento del comprador es
+ * `cancelarMiOrden`. El motivo lo ve el comprador en el detalle de su compra.
  */
 export const cancelarLaOrden = action
   .input(cancelacionDelPanel)
@@ -178,11 +105,7 @@ export const cancelarLaOrden = action
       cancelarOrden(tx, {
         orderId,
         actorUserId: ctx.session.profile.id,
-        // **Vacío es `null`, no la cadena vacía.** Un `reason = ''` se lee
-        // como «hay un motivo» en toda consulta que pregunte si lo hay, y
-        // termina siendo un «Motivo:» sin nada al lado en dos pantallas.
-        // El esquema ya le pasó el `trim`, así que esto atrapa el campo que
-        // se abrió, se tocó y se dejó en blanco.
+        // Vacío es `null`: un `reason = ''` se leería como «hay motivo».
         reason: input.motivo || null,
       }),
     );
@@ -191,16 +114,7 @@ export const cancelarLaOrden = action
     return { numero: input.numero };
   });
 
-// ── Sumar a una orden activa (RF-22, F7.2a) ─────────────────────────────
-
-/**
- * Subir la cantidad de un renglón — RF-22.
- *
- * La contracara de `reducirCantidadDelItem`, y la que puede volver con
- * `INSUFFICIENT_STOCK`: el dominio traduce ese error a un mensaje que dice
- * **cuántas quedan**, que es lo que el requisito pide y lo que la pantalla
- * muestra tal cual.
- */
+/** Puede volver con `INSUFFICIENT_STOCK`, con un mensaje que dice cuántas quedan. */
 export const aumentarCantidadDelItem = action
   .input(laOrden.extend({ cantidad: z.number().int().min(1).max(9999) }))
   .auth("admin")
@@ -220,13 +134,7 @@ export const aumentarCantidadDelItem = action
     return { cantidad: input.cantidad };
   });
 
-/**
- * Agregar un producto que no estaba — RF-22.
- *
- * **Viaja la variante y no el renglón**, al revés que el resto de las
- * acciones de este archivo: todavía no hay renglón, y si la variante ya está
- * en la orden el dominio suma sobre el suyo en vez de crear otro igual.
- */
+/** Viaja la variante: si ya está en la orden, el dominio suma sobre su renglón. */
 export const agregarItemALaOrden = action
   .input(
     z.object({
