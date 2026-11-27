@@ -9,7 +9,15 @@ lineamientos.
 
 # Cómo se trabaja en este repositorio
 
-- **Idioma:** español con voseo en código, commits, documentación e interfaz.
+- **Idioma:** el código va en inglés (nombres de archivos, carpetas,
+  variables, funciones, tipos, tablas y columnas); los comentarios, en
+  español. La interfaz, los commits y la documentación, en español con
+  voseo. Nada de voseo ni de español dentro de los identificadores.
+- **Comentarios:** solo donde el código no se explica solo. El porqué de una
+  decisión va en `sdd/`, en `docs/` o en el commit, no repetido en el código.
+- **Tests:** donde los piden las especificaciones (`TECHNICAL-SPEC.md` §17,
+  las compuertas del plan, accesibilidad) o donde un error sale caro. No un
+  test por cada cambio.
 - **Dónde está cada cosa:** especificaciones en `sdd/mvp/`; estado tarea por
   tarea en `PROGRESO.md`, que se actualiza en el mismo commit que cierra la
   tarea. Las especificaciones mandan: desviarse es una decisión que se anota.
