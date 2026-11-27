@@ -36,44 +36,20 @@ import {
 import { TOPE_POR_ITEM } from "@/modules/cart/schemas";
 import type { VarianteDeFicha } from "@/modules/catalog/products/ficha";
 
-/**
- * La mitad viva de la ficha — F3.5, RF-03, DESIGN-REFERENCE §6.5, §6.8, §7.3.
- *
- * **Es una sola isla y no dos porque el color manda sobre todo lo demás.**
- * Cambiar de color cambia las imágenes, el stock, el tope del selector de
- * cantidad y el mensaje de WhatsApp. Partirla en «galería» y «acciones»
- * obligaría a levantar el estado a un tercer componente que igual tendría
- * que ser cliente, y serían tres archivos para una sola decisión.
- *
- * **Lo que NO entra acá entra como nodo.** El nombre, la marca, el precio, la
- * descripción y el bloque de información son servidor y llegan por
- * `encabezado` e `informacion`: nada de eso depende del color, y meterlo
- * adentro mandaría al navegador el formateador de moneda —`decimal.js`
- * entero— y el parseador de Markdown para pintar cosas que ya venían
- * pintadas.
- *
- * **La galería queda pegada y la columna derecha desplaza** (§7.3, decisión
- * del 2026-09-08). La descripción, los datos y el recuadro de «cómo sigue»
- * pasaron a la columna derecha, así que esa columna es mucho más alta que la
- * foto; sin `sticky`, mirar la descripción es perder de vista el producto del
- * que habla.
- *
- * **`import type` y no `import`**: `modules/catalog/products/ficha` es
- * `server-only`. El tipo se borra al compilar, así que el módulo nunca entra
- * al paquete del navegador.
- */
+// Una sola isla porque el color cambia imágenes, stock, tope y mensaje de
+// WhatsApp. Lo que no depende del color llega como nodo (`encabezado`,
+// `informacion`): adentro mandaría al navegador `decimal.js` y el parseador
+// de Markdown. `import type` porque `modules/catalog/products/ficha` es
+// `server-only`.
 
 export type ProductoEnFicha = {
   nombre: string;
   marca: string;
   /** Absoluta y sin consulta: el `?color=` lo agrega el enlace de WhatsApp. */
   url: string;
-  /**
-   * Relativa y sin consulta: a dónde volver después de ingresar (RF-08). El
-   * `?color=` lo agrega quien arma el enlace, con el color elegido.
-   */
+  /** Relativa y sin consulta: a dónde volver después de ingresar. */
   ruta: string;
-  /** Ya formateado por el servidor (§7.1, RN-02). */
+  /** Ya formateado por el servidor, para no traer `decimal.js`. */
   precioFinalFormateado: string;
 };
 
@@ -83,23 +59,18 @@ type Props = {
   /** Índice de la variante que pide el `?color=` de la dirección. */
   inicial: number;
   /**
-   * `null` mientras la vendedora no haya guardado la configuración (RF-20).
    * Sin número no se dibuja ningún botón de WhatsApp: `wa.me/` sin destino
    * abre la aplicación en la nada y parece que falló el sitio.
    */
   whatsapp: string | null;
-  /**
-   * Decide qué botón de compra se dibuja: sin sesión no existe carrito
-   * (RF-08), y el botón invita a ingresar.
-   */
+  /** Sin sesión no hay carrito, y el botón invita a ingresar. */
   conSesion: boolean;
   /**
-   * Hay una compra anotada para este producto, de antes de iniciar sesión
-   * (F5.7, RF-08). La ficha no sabe cuál —eso vive en la cookie, del lado del
-   * servidor—: solo si hay que preguntar.
+   * Hay una compra anotada de antes de iniciar sesión. Cuál, vive en la
+   * cookie del lado del servidor: la ficha solo sabe si hay que preguntar.
    */
   pendiente: boolean;
-  /** «Guardar» (F5.4): el favorito es del producto, no del color elegido. */
+  /** El favorito es del producto, no del color elegido. */
   favorito: { productId: string; marcado: boolean };
   encabezado: ReactNode;
   informacion: ReactNode;
@@ -116,8 +87,7 @@ export function Compra({
   encabezado,
   informacion,
 }: Props) {
-  // Con la baja pedida (F5.8) no se retoma la compra pendiente: la acción la
-  // rechazaría, y el aviso de arriba ya dice por qué.
+  // Con la baja pedida no se retoma: la acción la rechazaría.
   const enPausa = useCuentaEnPausa();
   const retomada = useRetomarPendiente(pendiente && !enPausa);
   const [iVariante, setVariante] = useState(inicial);
@@ -129,19 +99,14 @@ export function Compra({
   const slug = producto.ruta.split("/")[2];
   const imagenes = variante?.imagenes ?? [];
 
-  // Derivados, no estado: RF-24 permite stock NEGATIVO —una venta cargada
-  // sobre unidades que el sistema no tenía— y eso es una discrepancia de la
-  // vendedora, no un número que el comprador tenga que ver.
+  // El stock puede ser negativo (RF-24): el comprador no lo tiene que ver.
   const disponible = Math.max(0, variante?.disponible ?? 0);
   const sinStock = disponible === 0;
 
-  // El selector no ofrece más de lo que el carrito acepta (F5.5): con 500
-  // unidades en stock, el tope sigue siendo el de un renglón.
   const tope = Math.min(disponible, TOPE_POR_ITEM);
 
-  // La cantidad se corrige AL LEERLA y no con un efecto: al pasar de un color
-  // con 10 unidades a uno con 2, un efecto pintaría una vez con el 10 puesto
-  // sobre un stock de 2 y lo corregiría en el siguiente cuadro.
+  // Se corrige al leerla y no con un efecto, que pintaría un cuadro con una
+  // cantidad mayor al stock del color nuevo.
   const cantidadValida = Math.min(Math.max(1, cantidad), Math.max(1, tope));
 
   const mensaje = {
@@ -158,19 +123,12 @@ export function Compra({
     : producto.ruta;
 
   /**
-   * El color se refleja en la dirección con `history.replaceState` y no con
-   * una navegación: RF-03 pide que cambie «sin recargar la página», y una
-   * navegación —aunque sea blanda— vuelve al servidor a buscar lo que ya
-   * está en memoria y se lleva puesta la transición de 150ms de la galería.
-   *
-   * `replaceState` y no `pushState`: con `pushState`, mirar tres colores deja
-   * tres entradas en el historial y el botón atrás recorre colores en vez de
-   * volver al catálogo, que es de donde se llegó.
+   * `history.replaceState` y no una navegación: aun blanda vuelve al servidor
+   * y corta la transición de la galería. Y no `pushState`, para que atrás
+   * vuelva al catálogo y no recorra colores.
    */
   function elegirColor(i: number) {
     setVariante(i);
-    // Al primer plano del color nuevo: seguir en la cuarta foto de un color
-    // que tenía cinco, en uno que tiene dos, es quedarse en ninguna.
     setImagen(0);
     pista.current?.scrollTo({ left: 0, behavior: "instant" });
 
@@ -195,9 +153,8 @@ export function Compra({
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
       {/*
-        `self-start` es lo que hace posible el `sticky`: en una grilla, un
-        elemento estirado ya ocupa toda la altura de la fila y no tiene contra
-        qué pegarse. El `top` son los 56px del encabezado fijo más aire.
+        Sin `self-start` no hay `sticky`: estirado en la grilla, no tiene
+        contra qué pegarse. El `top` es el encabezado fijo más aire.
       */}
       <div className="self-start lg:sticky lg:top-18">
         <Galeria
@@ -225,29 +182,19 @@ export function Compra({
 
         <div className="pt-6">
           {variantes.length === 0 ? (
-            /*
-             * No es «sin stock»: es un producto que todavía no tiene ningún
-             * color cargado. Existe de verdad —F2.4 da de alta en dos pasos,
-             * y RN-05 lo muestra igual porque está activo— y decirle «sin
-             * stock» sería contar una unidad que nunca hubo.
-             */
+            // No es «sin stock»: es un producto activo sin ningún color cargado.
             <TodaviaNo whatsapp={whatsapp} mensaje={mensaje} />
           ) : sinStock ? (
             <SinStock
               color={variante?.colorNombre ?? null}
               whatsapp={whatsapp}
               mensaje={mensaje}
-              /*
-                Se quedó sin stock mientras el comprador se registraba: el
-                aviso de por qué no se agregó va acá, que es donde estaría el
-                botón que lo iba a agregar.
-              */
+              // Por si se quedó sin stock mientras el comprador se registraba.
               aviso={<AvisoDelCarrito resultado={retomada.resultado} />}
             />
           ) : (
             <ConStock
-              // Por color: el «Listo, está en tu carrito» es del color que se
-              // agregó, y no puede quedar puesto al cambiar a otro.
+              // Por color, para que el «Listo» no quede puesto al cambiar.
               key={variante.id}
               variantId={variante.id}
               conSesion={conSesion}
@@ -279,8 +226,6 @@ export function Compra({
   );
 }
 
-// ── La compra que quedó pendiente de iniciar sesión (F5.7) ──────────────
-
 type ResultadoDelCarrito =
   { ok: true; enElCarrito: number } | { ok: false; mensaje: string };
 
@@ -291,18 +236,11 @@ type Retomada = {
 };
 
 /**
- * Retoma la compra anotada antes de ingresar — F5.7 · RF-08.
+ * Retoma la compra anotada antes de ingresar. La acción no recibe qué agregar
+ * a propósito: sale de la cookie del servidor, no del navegador.
  *
- * **La acción no recibe qué agregar.** El producto y la cantidad salen de la
- * cookie que escribió el servidor cuando el visitante apretó «Iniciá sesión
- * para comprar»; acá solo se decide *cuándo* preguntar. Si la entrada viniera
- * del navegador, esto sería «agregá lo que yo te diga» con otro nombre.
- *
- * **Vive en `Compra` y no en el botón**, porque el botón puede no estar: si
- * la variante se quedó sin stock mientras el comprador se registraba, la
- * ficha dibuja «Sin stock» y el intento igual tiene que ocurrir y contarse.
- * Callarse ahí sería dejar que se pierda una compra en silencio, que es
- * exactamente el defecto del que nació F5.6.
+ * Vive en `Compra` y no en el botón porque el botón puede no estar (sin
+ * stock), y el intento igual tiene que ocurrir y contarse.
  */
 function useRetomarPendiente(pendiente: boolean): Retomada {
   const [enCurso, iniciar] = useTransition();
@@ -312,18 +250,15 @@ function useRetomarPendiente(pendiente: boolean): Retomada {
   useEffect(() => {
     if (!pendiente || yaSePidio.current) return;
 
-    // Un `ref` y no una dependencia: en desarrollo React monta dos veces, y
-    // dos llamadas simultáneas alcanzan a leer la misma cookie antes de que
-    // la primera la borre — se agregaría el doble de lo pedido.
+    // Un `ref`: React monta dos veces en desarrollo, y dos llamadas leerían la
+    // misma cookie antes de que la primera la borre, agregando el doble.
     yaSePidio.current = true;
 
     iniciar(async () => {
       const r = await retomarCompraPendiente({});
 
       if (!r.ok) {
-        // El motivo solo no alcanza: quien vuelve de ingresar no sabe que
-        // había algo esperando, y leer «Se quedó sin stock.» al lado de una
-        // etiqueta que ya dice «Sin stock» no le cuenta lo que pasó. Primero
+        // Quien vuelve de ingresar no sabe que había algo esperando: primero
         // qué pasó, después por qué.
         setResultado({
           ok: false,
@@ -332,9 +267,7 @@ function useRetomarPendiente(pendiente: boolean): Retomada {
         return;
       }
 
-      // `retomado: false` es que no había nada: entre que el servidor dibujó
-      // la ficha y llegó esta llamada, otra pestaña se lo llevó. No es una
-      // falla y no se dice nada.
+      // `retomado: false`: otra pestaña se lo llevó antes. No es una falla.
       if (r.data.retomado) {
         setResultado({ ok: true, enElCarrito: r.data.cantidad });
       }
@@ -345,12 +278,8 @@ function useRetomarPendiente(pendiente: boolean): Retomada {
 }
 
 /**
- * Lo que pasó con el carrito, dicho con palabras.
- *
- * **La región viva existe SIEMPRE, vacía hasta que haya algo que decir**: un
- * lector de pantalla solo anuncia los cambios de una región que ya estaba en
- * la página, no una que aparece con el texto adentro. El error va aparte, con
- * `role="alert"`: no es una novedad, es algo que no se pudo hacer.
+ * La región viva existe siempre, vacía hasta que haya algo que decir: un
+ * lector de pantalla no anuncia una región que aparece con el texto adentro.
  */
 function AvisoDelCarrito({
   resultado,
@@ -385,22 +314,10 @@ function AvisoDelCarrito({
   );
 }
 
-// ── Selector de color (§6.5) ────────────────────────────────────────────
-
 /**
- * Muestras circulares, con el nombre del color SIEMPRE a la vista: §9 prohíbe
- * que el color sea la única forma de identificar una opción, y «gris grafito»
- * y «negro» son dos puntos casi iguales.
- *
- * **Un color sin stock SÍ se puede elegir**, y §6.5 decía lo contrario hasta
- * el 2026-09-08. El motivo del cambio es que ahora hay algo que hacer ahí:
- * elegir el color agotado es lo que da el mensaje de WhatsApp para preguntar
- * si va a haber (RF-03). Con el color bloqueado, ese estado no se alcanzaba
- * desde ninguna parte de la pantalla.
- *
- * Son `<input type="radio">` de verdad, escondidos: el recorrido con flechas,
- * el anuncio de «2 de 4» y el agrupado por nombre salen del navegador. Con
- * botones habría que reimplementar los tres y uno se olvida siempre.
+ * Un color sin stock se puede elegir a propósito: es lo que da el mensaje de
+ * WhatsApp para preguntar si va a haber. Son radios de verdad, escondidos:
+ * las flechas y el anuncio de «2 de 4» salen del navegador.
  */
 function SelectorDeColor({
   variantes,
@@ -413,9 +330,7 @@ function SelectorDeColor({
 }) {
   const actual = variantes[elegida];
 
-  // Un producto de un solo color sin nombre no tiene nada que elegir: el
-  // selector sería una muestra sola, marcada, que no hace nada. Pero el dato
-  // se dice igual (2026-11-05): sin la línea, quien compra no sabe si hay
+  // Sin nada que elegir, el dato se dice igual: si no, no se sabe si hay
   // otros colores o si la ficha se olvidó de contarlo.
   if (variantes.length === 1 && !actual?.colorNombre) {
     return (
@@ -426,11 +341,8 @@ function SelectorDeColor({
   }
 
   return (
-    // MARGEN y no relleno, y esto se midió: un `<legend>` se pinta sobre el
-    // borde del `<fieldset>` e ignora su `padding-top`. Con `pt-8` la
-    // separación real entre el precio y el «Color:» era CERO —el relleno solo
-    // empujaba las muestras— y el rótulo se leía como una aclaración del
-    // precio. §3.4: agrupar apretado, separar generoso.
+    // Margen y no relleno: el `<legend>` se pinta sobre el borde del
+    // `<fieldset>` e ignora su `padding-top`.
     <fieldset
       className="mt-8"
       // Con un solo color no hay nada que elegir, y la guía no lo señala.
@@ -444,11 +356,8 @@ function SelectorDeColor({
       </legend>
 
       {/*
-        La muestra mide 32px (§6.5) y el área táctil 44 (§9): el relleno de
-        6px de cada `label` es lo que las concilia. Sin él son 32px de blanco
-        objetivo en un teléfono, que es donde se elige el color equivocado.
-        El `-ml-1.5` devuelve la primera muestra al margen del texto, que si
-        no queda desalineada del «Color:» de arriba.
+        El `p-1.5` de cada `label` lleva la muestra de 32px al área táctil de
+        44; el `-ml-1.5` la devuelve al margen del «Color:».
       */}
       <div className="-ml-1.5 flex flex-wrap gap-1 pt-2">
         {variantes.map((v, i) => {
@@ -469,10 +378,8 @@ function SelectorDeColor({
                 onChange={() => onElegir(i)}
               />
               {/*
-                DOS capas, y el 40% de §6.5 va SOLO en la de adentro. Con la
-                opacidad sobre la muestra entera, el anillo burdeos del color
-                elegido se destiñe con ella: un producto agotado en su único
-                color se veía sin marcar. Es exactamente el caso más común.
+                Dos capas: la opacidad va solo en la de adentro, para que no
+                destiña el anillo del color elegido.
               */}
               <span
                 className={cn(
@@ -491,11 +398,7 @@ function SelectorDeColor({
                   <span className="block size-8 rounded-full border border-border" />
                 )}
               </span>
-              {/*
-                La barra diagonal de §6.5. Va sobre la muestra y no la
-                reemplaza: el color se sigue viendo, que es lo que hace que
-                alguien lo elija para preguntar si va a haber.
-              */}
+              {/* La barra va sobre la muestra: el color se sigue viendo. */}
               {agotado ? (
                 <span
                   aria-hidden
@@ -514,25 +417,13 @@ function SelectorDeColor({
   );
 }
 
-// ── Las acciones ────────────────────────────────────────────────────────
-
-/**
- * El botón de WhatsApp: relleno verde en los tres estados de la ficha (§2.6,
- * 2026-10-19). Con stock es el par del carrito —la otra forma de comprar, no
- * una acción de apoyo—; sin stock y en «todavía no está a la venta» es la
- * única acción que queda.
- *
- * El ícono va adelante del texto y NO es lo único que dice de qué se trata:
- * el rótulo lleva «por WhatsApp» con todas las letras, así que el logo es
- * reconocimiento y no información (§9).
- */
 function BotonDeWhatsApp({
   href,
   ayuda,
   children,
 }: {
   href: string;
-  /** El paso de la ayuda guiada que lo señala (F6.6). */
+  /** El paso de la ayuda guiada que lo señala. */
   ayuda?: string;
   children: ReactNode;
 }) {
@@ -552,13 +443,6 @@ function BotonDeWhatsApp({
   );
 }
 
-/**
- * Con stock: cantidad, carrito y WhatsApp.
- *
- * **Sin sesión, el botón del carrito invita a ingresar** (RF-08): no existe
- * carrito anónimo. Lleva de vuelta a esta misma ficha y en el mismo color, y
- * desde F5.7 **el producto queda agregado al volver**.
- */
 function ConStock({
   variantId,
   conSesion,
@@ -588,12 +472,7 @@ function ConStock({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-4">
         <Cantidad valor={cantidad} maximo={tope} onCambio={onCantidad} />
-        {/*
-          Sin color: no es una etiqueta de estado sino un dato, y §11 pide que
-          la interfaz quede acromática y que el color lo ponga la foto. El
-          verde acá sería tranquilizar de un riesgo que nadie corrió — casi
-          todos los productos tienen stock.
-        */}
+        {/* Sin color a propósito: es un dato, no una etiqueta de estado. */}
         <p className="flex items-center gap-1.5 text-body-sm text-ink-secondary">
           <Check aria-hidden className="size-4" />
           {disponible === 1 ? "Queda 1" : `${disponible} disponibles`}
@@ -615,12 +494,7 @@ function ConStock({
           />
         )}
 
-        {/*
-          Relleno y no contorno: comprar por WhatsApp no es una acción de
-          apoyo, es la otra forma de comprar —y la que cierra la venta—. Va a
-          la par del carrito, no debajo. En contorno se leía igual que
-          «Compartir».
-        */}
+        {/* Relleno: es la otra forma de comprar, no una acción de apoyo. */}
         {whatsapp ? (
           <BotonDeWhatsApp
             ayuda="comprar-whatsapp"
@@ -638,19 +512,9 @@ function ConStock({
 }
 
 /**
- * «Iniciá sesión para comprar» — F5.7 · RF-08, DR §7.3.
- *
- * **Sigue siendo un enlace, y la nota se manda al pasar.** Lo que hace es
- * llevar al ingreso: con `<button>` se perderían el destino a la vista, abrir
- * en otra pestaña y el clic del medio, y sin JavaScript no llevaría a ningún
- * lado. Escribir la cookie es el efecto de costado, no el propósito.
- *
- * **La llamada NO se espera a propósito.** La navegación es blanda —el
- * documento no se recarga—, así que el pedido sigue viajando mientras la
- * pantalla ya cambió, y la cookie llega mucho antes de que alguien termine de
- * escribir su contraseña. Esperarla sería frenar la navegación por algo que
- * nadie está mirando. Si falla, se pierde la nota y no el ingreso: quien
- * vuelve encuentra el botón «Agregá al carrito» donde siempre estuvo.
+ * Un enlace y no un botón: lleva al ingreso, y anotar la compra es el efecto
+ * de costado. La llamada no se espera a propósito: la navegación es blanda y
+ * el pedido sigue viajando; si falla, se pierde la nota y no el ingreso.
  */
 function IniciarSesionParaComprar({
   variantId,
@@ -683,18 +547,9 @@ function IniciarSesionParaComprar({
 }
 
 /**
- * «Agregá al carrito», encendido desde F5.5.
- *
- * **La confirmación se dice con palabras y se queda en la ficha.** No abre el
- * carrito ni un panel lateral: quien agrega casi siempre sigue mirando, y
- * sacarlo de la ficha es obligarlo a volver. El número del encabezado sube
- * solo —la acción refresca la pantalla— y el enlace «Ver carrito» queda a
- * mano para quien sí quiere ir.
- *
- * **Un solo aviso, venga de donde venga** (F5.7): el de lo que se retomó al
- * volver del ingreso ocupa el mismo lugar que el de un agregado a mano, y el
- * primer clic lo descarta. Dos «Listo» apilados, uno de hace un rato y otro
- * recién, se leen como que se agregó dos veces.
+ * Un solo aviso, venga de donde venga: el de la compra retomada y el de un
+ * agregado a mano ocupan el mismo lugar. Dos «Listo» apilados se leerían como
+ * que se agregó dos veces.
  */
 function AgregarAlCarrito({
   variantId,
@@ -746,24 +601,6 @@ function AgregarAlCarrito({
   );
 }
 
-/**
- * Sin stock — RF-03, DR §7.3.
- *
- * Dos cosas a propósito: **lo dice con palabras** y no solo con un botón
- * apagado —un botón gris sin explicación se lee como una falla del sitio—;
- * y la consulta por WhatsApp es el botón **principal**, porque es la única
- * acción que le queda a quien llegó hasta acá.
- *
- * **Sin aclaración debajo del botón**: hasta el 2026-11-03 había una («Te
- * contestamos por WhatsApp. No lo reservamos ni te avisamos solos.») y el
- * botón decía «Preguntá si va a haber». Las dos cosas cambiaron por decisión
- * del usuario; el botón queda solo, con el mismo aire que el caso con stock.
- *
- * **El `aviso` es de F5.7**, y casi siempre está vacío: es el lugar donde se
- * cuenta que la compra que había quedado pendiente no se pudo retomar porque
- * justo esto se quedó sin stock. Va arriba de todo porque responde la
- * pregunta que trae quien llega: «¿se agregó o no?».
- */
 function SinStock({
   color,
   whatsapp,
@@ -777,10 +614,7 @@ function SinStock({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      {/*
-        La etiqueta de estado de §6.4: píldora de tinte, color semántico y
-        SIEMPRE con texto.
-      */}
+      {/* Siempre con texto, no solo el color. */}
       <div>
         <Badge tone="danger">
           <Ban aria-hidden />
@@ -805,14 +639,7 @@ function SinStock({
   );
 }
 
-/**
- * Un producto activo sin ninguna variante activa (RF-16, RN-05).
- *
- * Comparte el mensaje de disponibilidad con el estado sin stock: desde
- * afuera la pregunta es la misma —«¿esto se puede conseguir?»— y dos
- * mensajes casi iguales le harían a la vendedora leer dos veces para
- * entender qué le están preguntando.
- */
+/** Un producto activo sin ninguna variante activa (RN-05). */
 function TodaviaNo({
   whatsapp,
   mensaje,
@@ -840,23 +667,6 @@ function TodaviaNo({
   );
 }
 
-// ── Guardar y compartir (§7.3) ──────────────────────────────────────────
-
-/**
- * Los dos secundarios, uno al lado del otro debajo de las acciones de compra.
- *
- * **El corazón se mudó acá desde arriba de la foto** (decisión del
- * 2026-09-08). En la TARJETA sigue arriba a la derecha de la imagen, que es
- * donde §6.1 lo puso y donde se lo busca en una grilla; en la ficha hay lugar
- * para que diga «Guardar» con todas las letras, y un ícono solo sobre la foto
- * es la única señal que un lector de pantalla no puede aprovechar sin
- * etiqueta. Es un caso donde la misma acción se dibuja distinto en dos
- * pantallas a propósito, y está anotado en §14.
- *
- * **Guardar se encendió con F5.4** (`components/shop/favorito.tsx`). Sin
- * sesión lleva a ingresar y vuelve a esta ficha, en el mismo color, con el
- * producto ya guardado.
- */
 function AccionesSecundarias({
   nombre,
   marca,
@@ -879,10 +689,8 @@ function AccionesSecundarias({
   async function compartir() {
     const datos = { title: `${nombre} — ${marca}`, url };
 
-    // La hoja nativa del sistema si existe —es la del teléfono, y la que
-    // ofrece WhatsApp de primera—. `AbortError` es que la persona la cerró:
-    // no es un fallo y no debe caer al portapapeles, que sería copiar algo
-    // que decidió no compartir.
+    // `AbortError` es que la persona cerró la hoja: no cae al portapapeles,
+    // que sería copiar algo que decidió no compartir.
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share(datos);
@@ -897,14 +705,8 @@ function AccionesSecundarias({
       setEstado("copiado");
       window.setTimeout(() => setEstado("listo"), 2000);
     } catch {
-      /*
-       * **El fallo se DICE, no se traga**, y esta rama pasa de verdad: el
-       * portapapeles necesita contexto seguro, y `next.config.ts` habilita a
-       * propósito abrir la tienda por IP de la LAN para probarla desde el
-       * teléfono. Ahí `navigator.clipboard` directamente no existe. Sin este
-       * aviso, el botón se aprieta y no pasa nada — que es la peor forma de
-       * fallar, porque parece que el sitio se colgó.
-       */
+      // Pasa de verdad: sin contexto seguro (la tienda por IP de la LAN) no
+      // existe `navigator.clipboard`.
       setEstado("sin-copiar");
       window.setTimeout(() => setEstado("listo"), 4000);
     }
@@ -942,10 +744,8 @@ function AccionesSecundarias({
       ) : null}
 
       {/*
-        El cambio de rótulo lo anuncia una región viva y no el botón: cambiar
-        el nombre accesible de un control que acaba de recibir el foco hace
-        que el lector lo lea de nuevo y suene como si hubiera aparecido otro
-        botón.
+        Lo anuncia una región viva: cambiar el nombre accesible del botón con
+        foco suena como si hubiera aparecido otro.
       */}
       <p aria-live="polite" className="sr-only">
         {copiado ? "Enlace copiado al portapapeles" : ""}

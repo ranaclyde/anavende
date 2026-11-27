@@ -26,17 +26,7 @@ export type OpcionDeCuotas = {
 };
 
 /**
- * «Ver otras opciones» y el modal con todas las promociones que aplican al
- * producto — RF-40, F2.17, pedido del 2026-11-16 sobre el de MercadoLibre.
- *
- * **Filas y no una grilla de logos**: MercadoLibre muestra solo «12 cuotas»
- * porque tiene decenas de bancos; acá son pocos medios y entra el monto de
- * la cuota, que es lo que se compara. Dos grupos —mismo precio y con
- * recargo—, cada uno de menos a más cuotas. Sin el total con recargo: lo
- * calcula quien compra (decisión del 2026-11-16).
- *
- * Isla de cliente y chica: los montos llegan formateados, así que no viaja
- * `decimal.js` para poner un punto de miles.
+ * Los montos llegan formateados para que no viaje `decimal.js` al navegador.
  */
 export function OtrasOpcionesDeCuotas({
   opciones,
@@ -53,8 +43,6 @@ export function OtrasOpcionesDeCuotas({
         type="button"
         onClick={() => setAbierto(true)}
         className={cn(
-          // En el color de marca, como «Ver todas» del listado: en gris y
-          // subrayado se confundía con el renglón de arriba (2026-11-16).
           "relative w-fit cursor-pointer rounded-pill text-left font-medium text-brand",
           "underline underline-offset-4 hover:text-brand-hover",
           AREA_TACTIL,
@@ -67,7 +55,7 @@ export function OtrasOpcionesDeCuotas({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cuotas para este producto</DialogTitle>
-            {/* RN-01: la web no cobra. Dicho donde se eligen, no escondido. */}
+            {/* RN-01: la web no cobra. */}
             <DialogDescription>
               Las elegís cuando coordinamos el pago por WhatsApp.
             </DialogDescription>
@@ -100,9 +88,7 @@ function Grupo({
       <ul className="flex flex-col divide-y divide-border">
         {opciones.map((o) => (
           <li key={o.id} className="flex items-center gap-3 py-2.5">
-            {/* El mismo chip claro de los logos de pago del panel (§6.10):
-                los logos vienen sobre transparente y no son nuestros para
-                repintarlos. Sin logo, la tarjeta genérica. */}
+            {/* Chip claro: los logos vienen sobre transparente y no se repintan. */}
             <span className="relative grid h-8 w-14 shrink-0 place-items-center overflow-hidden rounded-[6px] border border-border bg-logo-chip">
               {o.logoUrl ? (
                 <Image

@@ -13,15 +13,8 @@ import { elegirVistaDeFavoritos } from "@/modules/users/favoritos/actions";
 import type { VistaDeFavoritos } from "@/modules/users/favoritos/schemas";
 
 /**
- * Lista o tarjetas en «Favoritos» — F5.4 (pedido del 2026-09-14).
- *
- * **Un solo botón, que muestra la vista a la que lleva**: con la lista puesta
- * se ven los recuadros, y con las tarjetas, la lista. La etiqueta lo dice con
- * palabras —«Ver como tarjetas»— para el lector de pantalla, y el tooltip
- * para quien no reconozca el ícono.
- *
- * Si la acción falla no se dice nada: la vista queda como estaba, que es
- * todo lo que puede pasar, y el botón sigue ahí para volver a probar.
+ * Muestra la vista a la que lleva, no la actual. Si la acción falla no se dice
+ * nada a propósito: la vista queda como estaba y se puede volver a probar.
  */
 export function BotonDeVista({ vista }: { vista: VistaDeFavoritos }) {
   const [enCurso, iniciar] = useTransition();

@@ -6,37 +6,18 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/**
- * Alto de la descripción plegada: unos ocho renglones de `text-body-sm`, que
- * mide 20px de línea. Es lo que entra para saber de qué se trata sin tapar lo
- * que viene abajo (pedido tuyo del 2026-11-03).
- */
+/** Unos ocho renglones de `text-body-sm`. */
 const PLEGADA = 160;
 
-/**
- * Lo que tiene que sobrar para que valga plegar: unos cuatro renglones. Si
- * «Mostrar más» destapara uno o dos, sería un toque para nada. Una
- * descripción que se pasa por menos que esto se muestra entera.
- */
+/** Lo que tiene que sobrar para que valga plegar: unos cuatro renglones. */
 const MINIMO_ESCONDIDO = 80;
 
 type Estado = "midiendo" | "corta" | "plegada" | "abierta";
 
 /**
- * La descripción de la ficha, cortada con «Mostrar más» cuando es larga.
- *
- * **El contenido llega ya pintado desde el servidor** como `children`: el
- * Markdown es `server-only` y no cruza al navegador. Esta parte solo mide y
- * corta.
- *
- * Antes de medir, el corte se aplica igual pero sin el fundido ni el botón.
- * A una descripción corta no le cambia nada. A una larga la corta desde el
- * primer pintado, sin el salto de verla entera y después plegarse.
- *
- * **El texto escondido sigue en la página**: queda recortado, no se saca. Un
- * lector de pantalla lo lee entero, y el botón le dice con `aria-expanded` si
- * se ve o no. La descripción no admite enlaces, así que en la parte cortada no
- * hay nada que el Tab pueda enfocar sin que se vea.
+ * El contenido llega pintado desde el servidor: el Markdown es `server-only`.
+ * Antes de medir ya se corta, para que una larga no salte al plegarse. El
+ * texto escondido queda recortado, no se saca: el lector de pantalla lo lee.
  */
 export function DescripcionPlegable({ children }: { children: ReactNode }) {
   const id = useId();
@@ -44,8 +25,7 @@ export function DescripcionPlegable({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<Estado>("midiendo");
   const [alto, setAlto] = useState(0);
 
-  // Se vuelve a medir cuando cambia el ancho (girar el teléfono) o termina de
-  // cargar la fuente: el mismo texto puede pasar de corto a largo.
+  // Se vuelve a medir al cambiar el ancho o cargar la fuente.
   useEffect(() => {
     const nodo = contenido.current;
     if (!nodo) return;
@@ -59,8 +39,7 @@ export function DescripcionPlegable({ children }: { children: ReactNode }) {
     };
     medir();
     const observador = new ResizeObserver(medir);
-    // Se observa el hijo y no la caja: la caja tiene el alto recortado y no
-    // cambia cuando el texto crece.
+    // El hijo y no la caja: la caja tiene el alto recortado y no cambia.
     if (nodo.firstElementChild) observador.observe(nodo.firstElementChild);
     return () => observador.disconnect();
   }, []);
@@ -69,8 +48,7 @@ export function DescripcionPlegable({ children }: { children: ReactNode }) {
 
   function alternar() {
     if (estado === "abierta") {
-      // Al plegar, el botón sube y quien estaba leyendo abajo queda en lo que
-      // venía después. Si el comienzo ya salió de la pantalla, se vuelve a él.
+      // Al plegar, si el comienzo ya salió de la pantalla, se vuelve a él.
       const seccion = contenido.current?.closest("section");
       if (seccion && seccion.getBoundingClientRect().top < 0) {
         const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -100,8 +78,7 @@ export function DescripcionPlegable({ children }: { children: ReactNode }) {
         }}
         className={cn(
           "overflow-hidden motion-safe:transition-[max-height] motion-safe:duration-300 motion-safe:ease-out",
-          // El fundido es una máscara y no un degradado pintado: no depende
-          // del color del fondo y en oscuro anda igual.
+          // Máscara y no degradado: no depende del color del fondo.
           estado === "plegada" &&
             "[mask-image:linear-gradient(to_bottom,black_55%,transparent)]",
         )}
@@ -113,8 +90,7 @@ export function DescripcionPlegable({ children }: { children: ReactNode }) {
         <Button
           type="button"
           variant="tertiary"
-          // `-ml-4`: el texto del botón queda alineado con el de la
-          // descripción, y el fondo del hover sale hacia el margen.
+          // `-ml-4`: alinea el texto del botón con el de la descripción.
           className="-ml-4 mt-1 self-start"
           aria-expanded={estado === "abierta"}
           aria-controls={id}
