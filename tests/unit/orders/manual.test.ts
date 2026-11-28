@@ -19,24 +19,13 @@ import {
 } from "@/tests/apoyo/ordenes";
 
 /**
- * F7.4 — alta de una orden manual. RF-24 · TS §5.6, §8.1.
- *
- * «Hecho cuando»: productos con precio editable, comprador de texto libre,
- * envío o retiro, activa o finalizada, y advertir sin bloquear cuando la
- * cantidad supera el stock.
- *
- * **Acá se prueba el dominio**, que es donde está lo que puede romperse en
- * silencio: qué contador se mueve según cómo nace la orden, que el negativo
- * de §5.4 siga siendo posible, y que una orden que no se puede completar no
- * quede a medias. La puerta —el rol, la validación del formulario— va en
- * `panel-manual.test.ts`.
+ * Alta de una orden manual, el dominio (RF-24 · TS §5.6, §8.1). La puerta y la
+ * validación del formulario van en `panel-manual.test.ts`.
  */
 
 /**
- * Las órdenes manuales sin cuenta no las borra `limpiarCompradores()` —no
- * cuelgan de ningún usuario— ni `limpiar()` —no cuelgan de ningún producto—,
- * así que se anotan acá y se borran al final. Sin esto, cada corrida deja
- * órdenes sueltas en la base local.
+ * Las órdenes manuales sin cuenta no cuelgan de un usuario ni de un producto:
+ * ni `limpiarCompradores()` ni `limpiar()` las borran, así que se anotan acá.
  */
 const creadas: string[] = [];
 
@@ -149,8 +138,7 @@ describe("lo que la vendedora escribe (RF-24)", () => {
     const orden = await crear({
       ...datosBase([
         { variantId: uno.variantId, quantity: 2, unitPrice: "1500.50" },
-        // Bonificado: RF-24 no pide un mínimo, y regalar un cable con la
-        // venta es exactamente lo que se registra a mano.
+        // Bonificado: RF-24 no pide un mínimo.
         { variantId: otro.variantId, quantity: 1, unitPrice: "0.00" },
       ]),
       creadaPor: ana.userId,
@@ -259,8 +247,8 @@ describe("el stock que no alcanza (RF-24, §5.4)", () => {
     const ana = await unComprador();
     const { variantId } = await unaVariante({ total: 2 });
 
-    // Vendió 5 de las que el sistema creía tener 2. Bloquearlo obligaría a
-    // mentirle al sistema; el −3 es la señal que el panel destaca.
+    // Vendió 5 de 2: bloquearlo obligaría a mentirle al sistema; el −3 es la
+    // señal que el panel destaca.
     const orden = await crear({
       ...datosBase([{ variantId, quantity: 5, unitPrice: "1000.00" }]),
       creadaPor: ana.userId,
@@ -292,7 +280,6 @@ describe("el stock que no alcanza (RF-24, §5.4)", () => {
       "cargala como finalizada",
     );
 
-    // Y la orden no quedó a medias: todo o nada (§8.3 regla 1).
     expect(await contadores(variantId)).toEqual({
       stockTotal: 2,
       reservedStock: 0,
@@ -353,7 +340,6 @@ describe("lo que no se puede cargar", () => {
     }).catch((e: unknown) => e);
 
     expect(isDomainError(error) && error.code).toBe("NOT_FOUND");
-    // El renglón que sí existía tampoco se movió.
     expect(await contadores(variantId)).toEqual({
       stockTotal: 10,
       reservedStock: 0,

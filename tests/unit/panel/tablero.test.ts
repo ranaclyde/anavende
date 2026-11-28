@@ -11,17 +11,12 @@ import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 import { limpiarOrdenes, unaOrdenActiva } from "@/tests/apoyo/ordenes";
 
 /**
- * F7.8 — los números del inicio del panel. RF-14 · RF-20, RF-28.
- *
- * **Todo se mide contra lo que ya había.** Estas lecturas no filtran por
- * dueño: cuentan la tienda entera, así que un número absoluto dependería de
- * con qué quedó la base de desarrollo. Lo que se prueba es la diferencia que
- * produce cada escenario, que es lo que el tablero promete.
+ * Todo se mide contra lo que ya había: estas lecturas cuentan la tienda
+ * entera, así que se prueba la diferencia que produce cada escenario.
  */
 
 const UMBRAL = 3;
 
-/** Los colores que crea este archivo: se borran al final, como todo lo demás. */
 const colores: string[] = [];
 
 afterEach(async () => {
@@ -34,11 +29,8 @@ afterEach(async () => {
 });
 
 /**
- * Un color propio, y no uno de los que estén sembrados.
- *
- * Un test que hace `FROM colors LIMIT 1` pasa o falla según con qué quedó la
- * base de desarrollo, y peor: sin colores sembrados no insertaría ninguna
- * variante y el escenario sería otro sin que el test lo dijera.
+ * Un color propio y no uno sembrado: sin colores en la base no se insertaría
+ * ninguna variante y el escenario sería otro sin que el test lo dijera.
  */
 async function unColor(): Promise<string> {
   const sufijo = randomUUID().slice(0, 8);
@@ -119,15 +111,14 @@ describe("lo que hay para hacer (RF-14)", () => {
        WHERE id = ${finalizada.orderId}`);
 
     const ahora = await loQueHayParaHacer(UMBRAL);
-    // Una activa es una entrega pendiente; una finalizada ya no espera a nadie.
     expect(ahora.ordenesActivas).toBe(antes.ordenesActivas + 2);
   });
 
   test("el stock se suma por producto, no por variante", async () => {
     const antes = await loQueHayParaHacer(UMBRAL);
 
-    // Un producto con un color agotado y otro con diez NO hay que reponerlo:
-    // preguntado variante por variante, aparecería como sin stock.
+    // Un color agotado y otro con diez: variante por variante aparecería
+    // como sin stock.
     const productId = await unProducto();
     await db.execute(sql`
       INSERT INTO product_variants (product_id, color_id, stock_total)
@@ -142,8 +133,8 @@ describe("lo que hay para hacer (RF-14)", () => {
   test("lo reservado no está disponible: cuenta para reponer", async () => {
     const antes = await loQueHayParaHacer(UMBRAL);
 
-    // Diez unidades con nueve reservadas son una disponible: el tablero mira
-    // lo mismo que el listado de productos, que es el disponible (RF-15).
+    // Diez con nueve reservadas son una disponible: el tablero mira lo mismo
+    // que el listado.
     await unaVariante({ total: 10, reservado: 9 });
 
     const ahora = await loQueHayParaHacer(UMBRAL);
@@ -155,8 +146,7 @@ describe("lo que hay para hacer (RF-14)", () => {
     const antes = await loQueHayParaHacer(UMBRAL);
     await unaVariante({ total: 0 });
 
-    // «Sin stock» es un subconjunto de «para reponer», no otra lista: RF-20 lo
-    // resuelve con un solo filtro, y acá se nombra aparte porque es lo urgente.
+    // «Sin stock» es un subconjunto de «para reponer», no otra lista.
     const ahora = await loQueHayParaHacer(UMBRAL);
     expect(ahora.paraReponer).toBe(antes.paraReponer + 1);
     expect(ahora.sinStock).toBe(antes.sinStock + 1);
@@ -176,8 +166,8 @@ describe("lo que hay para hacer (RF-14)", () => {
     await db.execute(sql`
       UPDATE products SET is_active = false WHERE id = ${productId}`);
 
-    // No se vende, así que reponerlo no urge. Y el enlace lleva al listado con
-    // ese mismo filtro, para que el número y lo que se abre coincidan.
+    // El enlace lleva al listado con este mismo filtro: el número y lo que se
+    // abre tienen que coincidir.
     const ahora = await loQueHayParaHacer(UMBRAL);
     expect(ahora.paraReponer).toBe(antes.paraReponer);
     expect(ahora.sinStock).toBe(antes.sinStock);
@@ -195,7 +185,6 @@ describe("lo que hay para hacer (RF-14)", () => {
       antes.bajasPedidas + 1,
     );
 
-    // Ejecutada deja de ser trabajo por hacer (F7.9).
     await db.execute(sql`
       UPDATE user_profiles SET closed_at = now() WHERE id = ${comprador.userId}`);
     expect((await loQueHayParaHacer(UMBRAL)).bajasPedidas).toBe(
@@ -210,9 +199,8 @@ describe("cómo viene el mes (RF-14 sobre RF-28)", () => {
     const { variantId } = await unaVariante({ total: 100 });
 
     await unaOrdenFinalizada({ variantId, cantidad: 2, precio: "1500.00" });
-    // Activa: todavía puede cancelarse, así que no es una venta.
+    // Activa: todavía puede cancelarse.
     await unaOrdenActiva([{ variantId, quantity: 5 }]);
-    // Cancelada: nunca fue una venta.
     const cancelada = await unaOrdenActiva([{ variantId, quantity: 5 }]);
     await db.execute(sql`
       UPDATE orders SET status = 'cancelada', cancelled_at = now()
@@ -252,8 +240,8 @@ describe("cómo viene el mes (RF-14 sobre RF-28)", () => {
     await unaDevolucion(orden, 1);
     await unaDevolucion(orden, 2, { anulada: true });
 
-    // 4000 vendidos menos 1000 devueltos. La anulada es una devolución que no
-    // ocurrió: restarla sería descontar dos veces lo mismo.
+    // La anulada es una devolución que no ocurrió: restarla descontaría dos
+    // veces lo mismo.
     const ahora = await comoVieneElMes();
     expect(subtract(ahora.vendido, antes.vendido)).toBe(money("3000.00"));
     // Restan del vendido, no de la cantidad de órdenes: la venta existió.
@@ -291,9 +279,8 @@ describe("cómo viene el mes (RF-14 sobre RF-28)", () => {
   test("el `desde` del enlace es el 1° del mes, en la zona del negocio", async () => {
     const { desde } = await comoVieneElMes();
 
-    // Es lo que el listado de órdenes recibe como `?desde=`: si no coincidiera
-    // con el corte de la consulta, el tablero diría un número y el listado
-    // mostraría otro.
+    // Es el `?desde=` del listado de órdenes: si no coincidiera con el corte
+    // de la consulta, el tablero y el listado dirían números distintos.
     expect(desde).toMatch(/^\d{4}-\d{2}-01$/);
 
     const [fila] = await db.execute<{ hoy: string }>(sql`

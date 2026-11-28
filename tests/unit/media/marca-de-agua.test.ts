@@ -9,11 +9,8 @@ import {
 import { procesarImagen } from "@/modules/media/procesar";
 
 /**
- * F2.16 — La marca de agua: dónde cae cada capa, en qué versiones y con qué
- * opacidad (RF-39, TECHNICAL-SPEC §9.6).
- *
- * Sin Storage ni base: la composición recibe los bytes de la capa ya leídos,
- * así que se prueba con imágenes armadas acá. Lo que se mira son píxeles.
+ * La composición de la marca de agua (RF-39, TECHNICAL-SPEC §9.6), sin Storage
+ * ni base: recibe los bytes ya leídos y se miran píxeles.
  */
 
 /** Una foto gris parejo: cualquier píxel que no sea gris lo puso la marca. */

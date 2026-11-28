@@ -3,13 +3,8 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
 /**
- * TECHNICAL-SPEC §7.1 y riesgo R2: los montos son `numeric(12,2)` y llegan
- * como `string`. Convertirlos a número flotante pierde precisión, y ese error
- * no se ve hasta que una orden no cuadra por un centavo.
- *
- * La spec lo dice explícitamente: «es una regla de lint, no una
- * recomendación». La única conversión legítima vive en `lib/money.ts`, en la
- * capa de formateo, y ese archivo es la única excepción.
+ * Montos `numeric(12,2)` como `string` (TECHNICAL-SPEC §7.1): convertirlos a
+ * flotante pierde precisión. La única excepción es `lib/money.ts`.
  */
 const MOTIVO_MONTOS =
   "Los montos son numeric(12,2) y viajan como string (TECHNICAL-SPEC §7.1). " +
@@ -44,17 +39,11 @@ const reglasDeDinero = {
   ],
 };
 
-/**
- * Desde `eslint-config-next` 16 las configuraciones de Next ya vienen en
- * formato plano y se importan directo; antes había que traducirlas con
- * `FlatCompat`.
- */
 const eslintConfig = defineConfig([
   globalIgnores([
     ".next/**",
     // El build del gancho de pre-push (`distDir` en `next.config.ts`).
     ".next-verificacion/**",
-    // El informe de `npm run test:coverage`.
     "coverage/**",
     "node_modules/**",
     "next-env.d.ts",
@@ -67,7 +56,6 @@ const eslintConfig = defineConfig([
     rules: reglasDeDinero,
   },
   {
-    // La capa de formateo: el único lugar donde un monto se vuelve número.
     files: ["lib/money.ts"],
     rules: {
       "no-restricted-syntax": "off",

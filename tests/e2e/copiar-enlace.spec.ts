@@ -47,7 +47,6 @@ test("copia el enlace del producto activo y lo oculta si está inactivo", async 
   await ingresar(page, admin);
   await page.goto(`/admin/productos/${producto.id}`);
 
-  // «Ver en la tienda» abre la ficha en otra pestaña.
   const ver = page.getByRole("link", { name: "Ver en la tienda" });
   await expect(ver).toHaveAttribute("href", `/productos/${producto.slug}`);
   const [pestana] = await Promise.all([

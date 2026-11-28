@@ -8,24 +8,19 @@ import { auth, datosDePrueba, type Cuenta, type Orden } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * F10.3 — Todas las pantallas pasan axe. DESIGN-REFERENCE §9, FS RNF-02.
+ * Todas las pantallas pasan axe (DESIGN-REFERENCE §9, FS RNF-02). Cada página
+ * de `app/` se abre con los datos que la llenan, en el teléfono y en la
+ * computadora; el panel, además, en oscuro, donde el contraste ya se rompió.
  *
- * Cada página de `app/` se abre con los datos que la llenan —un producto
- * con dos colores, una compradora con dirección, carrito, favorito y un
- * pedido, y la administradora— y se le pasa axe con las reglas de WCAG 2.2
- * AA. La tienda se mira en el teléfono y en la computadora; el panel, además,
- * en oscuro, que es donde el contraste se rompió antes (2026-09-18).
+ * **El primer test hace que esto no se olvide**: falla si una página de
+ * `app/` no está en `PANTALLAS`. Una pantalla nueva entra al repaso o dice
+ * por qué no.
  *
- * **El primer test es el que hace que esto no se olvide**: falla si hay una
- * página en `app/` que no está en `PANTALLAS`. Una pantalla nueva entra al
- * repaso o dice por qué no.
- *
- * Lo que axe no puede ver —teclado, foco, zoom, color como único portador—
- * está en la lista de `DESIGN.md`.
+ * Lo que axe no ve (teclado, foco, zoom, color como único portador) está en
+ * la lista de `DESIGN.md`.
  */
 
-// Cada recorrido abre unas veinte pantallas, y `next dev` compila cada una la
-// primera vez.
+// Cada recorrido abre unas veinte pantallas y `next dev` compila cada una.
 test.describe.configure({ timeout: 600_000 });
 // Un botón que no aparece falla en segundos, no al final de los diez minutos.
 test.use({ actionTimeout: 15_000 });
@@ -55,7 +50,6 @@ type Pantalla = {
  * `SIN_REVISAR`, con el motivo.
  */
 const PANTALLAS: Pantalla[] = [
-  // La tienda, sin cuenta.
   { ruta: "/", quien: "visitante" },
   { ruta: "/productos", quien: "visitante" },
   { ruta: "/categorias", quien: "visitante" },
@@ -87,7 +81,6 @@ const PANTALLAS: Pantalla[] = [
   { ruta: "/recuperar/nueva-contrasena", quien: "visitante" },
   { ruta: "/error", quien: "visitante" },
 
-  // La tienda, con la compradora.
   { ruta: "/carrito", quien: "compradora" },
   { ruta: "/checkout", quien: "compradora" },
   { ruta: "/mi-cuenta", quien: "compradora" },
@@ -112,10 +105,9 @@ const PANTALLAS: Pantalla[] = [
     url: () => `/orden/${orden.numero}`,
   },
 
-  // Quien entró y todavía no tiene perfil: el paso de Google y Facebook.
+  // Quien entró con Google y todavía no tiene perfil.
   { ruta: "/completar-perfil", quien: "sinPerfil" },
 
-  // El panel.
   { ruta: "/admin", quien: "admin" },
   { ruta: "/admin/catalogo/categorias", quien: "admin" },
   { ruta: "/admin/catalogo/colores", quien: "admin" },
@@ -334,11 +326,10 @@ for (const forma of ["telefono", "computadora"] as const) {
 }
 
 /**
- * Los diálogos no están en la página hasta que se abren, así que axe no los
- * ve en el recorrido de arriba. Se abre uno de cada clase y se mira, además,
- * lo que axe no puede: que **el foco entre** al abrirlo y **vuelva al botón**
- * al cerrarlo con Escape. Ninguno se confirma: todos se cierran sin hacer
- * nada.
+ * Los diálogos no están en la página hasta que se abren, así que el recorrido
+ * de arriba no los ve. Se abre uno de cada clase y se mira, además, que **el
+ * foco entre** y **vuelva al botón** al cerrar con Escape. Ninguno se
+ * confirma.
  */
 type Dialogo = {
   quien: "compradora" | "admin";
@@ -487,11 +478,7 @@ for (const quien of ["compradora", "admin"] as const) {
   });
 }
 
-/**
- * El selector con buscador (F2.11) tampoco está en la página hasta que se
- * abre. Se mira lo mismo que en los diálogos: axe sobre la lista, el foco en
- * el buscador al abrir y de vuelta en el campo al cerrar con Escape.
- */
+/** El selector con buscador tampoco está en la página hasta que se abre. */
 test("el selector con buscador, abierto", async ({ browser }) => {
   const page = await navegador(browser, "admin", "computadora");
   await page.goto("/admin/productos/nuevo", { waitUntil: "load" });
@@ -508,13 +495,10 @@ test("el selector con buscador, abierto", async ({ browser }) => {
     "el foco no entró al buscador",
   ).toBeFocused();
   /*
-   * `scrollable-region-focusable` no aplica acá (revisado el 2026-11-05).
-   * La regla pide que una zona con scroll se pueda enfocar para recorrerla
-   * con el teclado. Este es un combobox con `aria-activedescendant`: el foco
-   * se queda en el buscador, las flechas mueven la opción marcada y `cmdk` la
-   * trae a la vista. Hacer enfocable la lista sumaría un Tab que no lleva a
-   * nada nuevo. Lo que la regla quiere asegurar se comprueba abajo: con las
-   * flechas se llega a la última opción, y se ve.
+   * `scrollable-region-focusable` no aplica: es un combobox con
+   * `aria-activedescendant`, el foco se queda en el buscador y las flechas
+   * mueven la opción. Lo que la regla quiere asegurar se comprueba abajo: con
+   * las flechas se llega a la última opción, y se ve.
    */
   expect(
     await hallazgosDeAxe(page, '[data-slot="popover-content"]', [
@@ -547,20 +531,16 @@ test("el drawer de filtros, en la computadora", async ({ browser }) => {
   await animacionesTerminadas(page);
   expect.soft(await hallazgosDeAxe(page), "drawer abierto").toEqual([]);
 
-  // Con la lista larga abierta y su buscador a la vista, si el grupo tiene
-  // más de 8 opciones. Con menos no hay «Ver las…» y no hay nada más que
-  // mirar.
+  // «Ver las…» solo aparece si el grupo tiene más de 8 opciones.
   const verTodas = filtros.getByRole("button", { name: /^Ver las/ }).first();
   if (await verTodas.isVisible()) {
     await verTodas.click();
-    // Abierto, el mismo botón pasa a decir «Ver menos».
     await expect(
       filtros.getByRole("button", { name: "Ver menos" }),
     ).toHaveAttribute("aria-expanded", "true");
     expect.soft(await hallazgosDeAxe(page), "grupo abierto").toEqual([]);
   }
 
-  // Escape cierra y el foco vuelve a «Filtros».
   await page.keyboard.press("Escape");
   await expect(filtros).toBeHidden();
   await expect(abrir).toBeFocused();
@@ -579,8 +559,7 @@ test("los filtros del catálogo y el menú del panel, en el teléfono", async ({
 
   const panel = await navegador(browser, "admin", "telefono");
   await panel.goto("/admin", { waitUntil: "load" });
-  // Cerrado, el menú no toma el foco: el primer Tab después de «Abrir el
-  // menú» ya está en la página.
+  // Cerrado, el menú no toma el foco.
   const abrir = panel.getByRole("button", { name: "Abrir el menú" });
   const menu = panel.getByRole("complementary", {
     name: "Secciones del panel",
@@ -604,7 +583,7 @@ test("los filtros del catálogo y el menú del panel, en el teléfono", async ({
   expect
     .soft(await hallazgosDeAxe(panel, "aside"), "menú del panel")
     .toEqual([]);
-  // Abierto, Tab no se va a la página tapada (F2.15): queda inerte.
+  // Abierto, la página tapada queda inerte.
   await expect(abrir).toHaveAttribute("aria-expanded", "true");
   for (let i = 0; i < 20; i++) {
     await panel.keyboard.press("Tab");

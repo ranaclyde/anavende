@@ -8,10 +8,8 @@ import {
 } from "@/lib/escenas";
 
 /**
- * F9.5 — RF-38. Cuándo se enciende cada escena por fecha.
- *
- * Las horas van en UTC a propósito: la fecha que cuenta es la de Argentina
- * (UTC−3), y los bordes son justo donde las dos no coinciden.
+ * RF-38. Las horas van en UTC a propósito: la fecha que cuenta es la de
+ * Argentina (UTC−3), y los bordes son justo donde las dos no coinciden.
  */
 
 const en = (iso: string) => escenaDeHoy(TODAS_PERMITIDAS, new Date(iso));

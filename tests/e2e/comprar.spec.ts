@@ -9,21 +9,14 @@ import {
 } from "./apoyo/datos";
 
 /**
- * F10.2 — Registrarse, comprar y que el stock quede reservado. TS §17.2,
- * caso 2; FS RF-05, RF-08 a RF-12; TS §8.4.
+ * Registrarse, comprar y que el stock quede reservado (TS §17.2, caso 2).
+ * **La cuenta se crea por la pantalla de alta** y se confirma con el enlace
+ * del email: una creada por la API se saltearía lo que una compradora nueva
+ * tiene que atravesar.
  *
- * Es el camino que crea una orden desde la tienda, de punta a punta y sin
- * atajos: **la cuenta se crea por la pantalla de alta** y se confirma con el
- * enlace del email, que llega al buzón del stack local (`apoyo/buzon.ts`).
- * Una cuenta creada por la API se saltearía justo lo que una compradora nueva
- * tiene que atravesar antes de poder comprar.
- *
- * Lo que se verifica al final es la base, además de la pantalla: la orden
- * nace activa con lo que se vio en el resumen, **la variante elegida queda
- * con las unidades reservadas** y la otra no, y el carrito queda vacío.
- *
- * El aviso a la vendedora (E4) sale de verdad por Resend, a la casilla de
- * prueba (`casillaDeAvisosDePrueba`).
+ * Al final se mira la base: **la variante elegida queda con las unidades
+ * reservadas** y la otra no. El aviso a la vendedora sale de verdad por
+ * Resend, a la casilla de prueba.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -66,7 +59,6 @@ test.afterAll(async () => {
 test("comprador se registra, compra y el stock queda reservado", async ({
   page,
 }) => {
-  // Alta.
   await page.goto("/registro");
   await page.getByLabel("Nombre").fill("Compradora");
   await page.getByLabel("Apellido").fill("De Prueba");
@@ -79,11 +71,10 @@ test("comprador se registra, compra y el stock queda reservado", async ({
     page.getByRole("heading", { name: "Revisá tu email" }),
   ).toBeVisible();
 
-  // Confirmación: el enlace del email deja la sesión abierta.
   await page.goto(await enlaceDelEmail(email));
   await expect(page).toHaveURL(/\/mi-cuenta$/);
 
-  // Carrito: dos del color que no es el primero.
+  // El color que no es el primero.
   await page.goto(`/productos/${teclado.slug}?color=${negro.slug}`);
   await expect(page.getByRole("radio", { name: negro.nombre })).toBeChecked();
   await page.getByRole("button", { name: "Agregar uno" }).click();
@@ -96,7 +87,6 @@ test("comprador se registra, compra y el stock queda reservado", async ({
   ).toHaveValue("2");
   await page.getByRole("link", { name: "Continuar con el pedido" }).click();
 
-  // Checkout: envío a una dirección nueva, cargada ahí mismo.
   await expect(
     page.getByRole("heading", { level: 1, name: "Confirmá tu pedido" }),
   ).toBeVisible();
@@ -118,15 +108,12 @@ test("comprador se registra, compra y el stock queda reservado", async ({
   await expect(confirmar).toBeEnabled();
   await confirmar.click();
 
-  // Confirmación.
   await page.waitForURL(/\/orden\/\d+$/);
   const numero = new URL(page.url()).pathname.split("/").pop()!;
 
-  // La orden aparece en su panel.
   await page.goto("/mi-cuenta/compras");
   await expect(page.getByText(`#${numero}`).first()).toBeVisible();
 
-  // Y en la base, con el stock reservado sobre la variante elegida.
   const [orden] = await datos.sql<
     { status: string; total: string; email: string }[]
   >`

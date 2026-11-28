@@ -16,10 +16,8 @@ import { limpiar, unaVariante, unProducto } from "@/tests/apoyo/catalogo";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 
 /**
- * F5.4 — favoritos. RF-10 · §5.5, §13.8.
- *
- * El favorito es del PRODUCTO (decisión del 2026-09-14). Que un visitante no
- * pueda guardar lo sostiene el envoltorio de §6.2, probado desde F1.10.
+ * RF-10 · §5.5, §13.8. El favorito es del PRODUCTO. Que un visitante no pueda
+ * guardar lo sostiene el envoltorio de §6.2.
  */
 
 afterEach(async () => {

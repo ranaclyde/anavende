@@ -6,22 +6,11 @@ import { interpretar } from "@/modules/cart/pendiente";
 import { TOPE_POR_ITEM } from "@/modules/cart/schemas";
 
 /**
- * F5.7 — la compra que quedó pendiente de iniciar sesión. RF-08.
- *
- * Lo que se prueba acá es **lo único que esta tarea agrega y que no es la
- * cookie ni la pantalla**: cómo se lee lo que vuelve del navegador. Agregar
- * al carrito ya está probado en `operaciones.test.ts` y no cambia por venir
- * de una nota; la cookie en sí la escribe y la borra Next, y lo que hay que
- * mirar es que un valor manipulado no se convierta en una compra.
- *
- * **Nada de lo que llega del navegador se cree.** La cookie es `httpOnly`,
- * así que la escribe el servidor y no debería poder tocarse desde la página;
- * «no debería» no es una garantía, y una extensión, otra pestaña o un cliente
- * escrito a mano pueden mandar cualquier cosa. Un valor que no pasa el
- * esquema se ignora en silencio, que es lo correcto: la ficha se dibuja
- * igual, con su botón de siempre.
+ * Cómo se lee la compra pendiente que vuelve del navegador (RF-08). La cookie
+ * es `httpOnly`, pero una extensión o un cliente escrito a mano pueden mandar
+ * cualquier cosa: un valor que no pasa el esquema se ignora en silencio, y la
+ * ficha se dibuja con su botón de siempre.
  */
-
 const variantId = randomUUID();
 
 describe("una nota que se puede usar", () => {

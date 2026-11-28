@@ -5,14 +5,9 @@ import { db } from "@/db";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 
 /**
- * El contador de las solapas de estado del listado de usuarios — RF-26,
- * RF-34 · DR §6.9.
- *
- * Lo que se prueba acá no se ve leyendo la consulta: que **los cinco números
- * digan exactamente lo que el listado va a mostrar**. Son dos lugares que
- * repiten las mismas condiciones —`contarPorEstado` con `FILTER` y
- * `condiciones()` con `WHERE`—, y si se separan la solapa dice 3 y la tabla
- * trae 2.
+ * Las solapas de estado del listado de usuarios — RF-26, RF-34 · DR §6.9.
+ * `contarPorEstado` (con `FILTER`) y `condiciones()` (con `WHERE`) repiten las
+ * mismas condiciones: si se separan, la solapa dice 3 y la tabla trae 2.
  */
 
 const { contarPorEstado, listarUsuarios } =
@@ -67,9 +62,8 @@ describe("contarPorEstado (§6.9)", () => {
              closed_at = now()
        WHERE id = ${deBaja.userId}`);
 
-    // No se comparan números absolutos —la base de pruebas tiene cuentas de
-    // otros archivos— sino que **la solapa y el listado digan lo mismo**, que
-    // es lo único que puede romperse si las condiciones se separan.
+    // No se comparan números absolutos: la base de pruebas tiene cuentas de
+    // otros archivos.
     const conteo = await contarPorEstado();
 
     for (const estado of [
@@ -99,9 +93,8 @@ describe("contarPorEstado (§6.9)", () => {
     const conteo = await contarPorEstado();
     const ids = [doble.userId];
 
-    // La misma cuenta aparece en «bloqueadas» y en «baja pedida», porque son
-    // dos filtros y no una partición. Lo que no puede pasar es que alguna
-    // solapa la esconda: la suma de las dos es mayor que la cuenta sola.
+    // La misma cuenta aparece en «bloqueadas» y en «baja pedida»: son dos
+    // filtros y no una partición.
     expect(await filas("bloqueados", ids)).toBe(1);
     expect(await filas("baja-pedida", ids)).toBe(1);
     // Y no está entre las activas: el bloqueo la saca.
@@ -146,9 +139,8 @@ describe("contarPorEstado (§6.9)", () => {
 
 describe("el estado dejó de ser un filtro que se limpia", () => {
   test("estar parada en una solapa no enciende «Limpiar todo»", () => {
-    // Antes sí: era un desplegable, y elegir «Solo bloqueados» contaba como
-    // filtro puesto. Como solapa dice dónde se está parada, y limpiar los
-    // filtros no tiene por qué mover a nadie de pantalla.
+    // La solapa dice dónde se está parada: limpiar los filtros no tiene por
+    // qué mover a nadie de pantalla.
     expect(hayFiltros({ ...FILTROS_VACIOS, estado: "bloqueados" })).toBe(false);
     expect(hayFiltros({ ...FILTROS_VACIOS, q: "ana" })).toBe(true);
     expect(hayFiltros({ ...FILTROS_VACIOS, rol: "admin" })).toBe(true);
@@ -177,7 +169,6 @@ describe("el estado dejó de ser un filtro que se limpia", () => {
       pagina: 1,
     });
     expect(url).toBe("/admin/usuarios?q=ana&rol=admin&estado=bloqueados");
-    // Y el listado sin tocar sigue siendo la dirección a secas.
     expect(urlDeFiltros(FILTROS_VACIOS)).toBe("/admin/usuarios");
   });
 });

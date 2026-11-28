@@ -4,12 +4,8 @@ import { datosDePrueba, sufijo, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * F2.13 — Crear una marca, una categoría o un color sin salir del producto.
- *
- * Con el catálogo sin nada que sirva, el alta se completa igual: cada
- * selector ofrece crear lo que se escribió, el drawer del catálogo abre con
- * el nombre puesto y, al guardar, queda elegido. Lo que ya estaba cargado en
- * el producto —el nombre, el stock de la variante— sigue ahí al volver.
+ * Crear una marca, una categoría o un color sin salir del producto: al
+ * volver, lo que ya estaba cargado sigue ahí.
  */
 
 const datos = datosDePrueba();
@@ -25,7 +21,7 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-  // Lo creó la pantalla, así que hay que buscarlo para poder borrarlo.
+  // Lo creó la pantalla: hay que buscarlo para borrarlo.
   for (const [lista, tabla, valor] of [
     ["marcas", "brands", marca],
     ["categorias", "categories", categoria],
@@ -38,7 +34,6 @@ test.afterAll(async () => {
   await datos.desarmar();
 });
 
-/** Abre el selector, escribe un nombre que no está y toca «Crear…». */
 async function crearDesde(
   page: Page,
   selector: Locator,
@@ -57,7 +52,6 @@ test("se crea marca, categoría y color sin salir del producto", async ({
   await page.goto("/admin/productos/nuevo");
   await page.getByRole("textbox", { name: "Nombre" }).fill(nombre);
 
-  // La marca: el drawer del catálogo, con lo escrito ya puesto.
   const selectorDeMarca = page.getByRole("combobox", { name: "Marca" });
   await crearDesde(page, selectorDeMarca, marca, `Crear la marca «${marca}»`);
   const nuevaMarca = page.getByRole("dialog", { name: "Nueva marca" });
@@ -68,7 +62,6 @@ test("se crea marca, categoría y color sin salir del producto", async ({
   await expect(nuevaMarca).toBeHidden();
   await expect(selectorDeMarca).toContainText(marca);
 
-  // La categoría, igual.
   const selectorDeCategoria = page.getByRole("combobox", { name: "Categoría" });
   await crearDesde(
     page,
@@ -81,7 +74,6 @@ test("se crea marca, categoría y color sin salir del producto", async ({
   await expect(nuevaCategoria).toBeHidden();
   await expect(selectorDeCategoria).toContainText(categoria);
 
-  // Lo que se había escrito antes de ir y volver sigue ahí.
   await expect(page.getByRole("textbox", { name: "Nombre" })).toHaveValue(
     nombre,
   );
@@ -91,7 +83,6 @@ test("se crea marca, categoría y color sin salir del producto", async ({
   await page.waitForURL(/\/admin\/productos\/[0-9a-f-]{36}\?agregar=color$/);
   datos.anotarProducto(new URL(page.url()).pathname.split("/").pop()!);
 
-  // El color es un paso adentro del drawer de la variante.
   const drawer = page.getByRole("dialog", { name: "Agregar un color" });
   await drawer.getByRole("textbox", { name: "Stock" }).fill("4");
   const selectorDeColor = drawer.getByRole("combobox", {
@@ -99,7 +90,6 @@ test("se crea marca, categoría y color sin salir del producto", async ({
     exact: true,
   });
 
-  // Escape en el paso de crear vuelve a la variante, no cierra todo.
   await crearDesde(page, selectorDeColor, color, `Crear el color «${color}»`);
   const paso = page.getByRole("dialog", { name: "Nuevo color" });
   await expect(paso).toBeVisible();
@@ -123,7 +113,6 @@ test("se crea marca, categoría y color sin salir del producto", async ({
   await drawer.getByRole("button", { name: "Agregar" }).click();
   await expect(drawer).toBeHidden();
 
-  // En la base: el producto con su marca, su categoría y su color nuevos.
   const [fila] = await datos.sql<
     {
       marca: string;

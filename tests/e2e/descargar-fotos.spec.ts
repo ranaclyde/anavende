@@ -10,12 +10,8 @@ import { ingresar } from "./apoyo/sesion";
 import { slugificar } from "@/lib/slug";
 
 /**
- * F2.18 — «Descargar fotos» en «Colores y stock»: un zip con las fotos del
- * producto, en JPG y con una carpeta por color.
- *
- * Sin fotos el botón no está. Con una, se sube desde el panel como lo haría
- * la administradora, se descarga y el zip se abre con el `zipfile` de
- * Python. Las fotos se borran del storage al terminar (`desarmar`).
+ * «Descargar fotos»: un zip con las fotos del producto, en JPG y con una
+ * carpeta por color. Se abre con el `zipfile` de Python.
  */
 
 const datos = datosDePrueba();
@@ -65,7 +61,7 @@ test("baja un zip con las fotos del producto en JPG", async ({ page }) => {
   await expect(
     seccion.getByRole("button", { name: "Agregar color" }),
   ).toBeVisible();
-  // Sin fotos, un zip vacío no sirve: no hay botón.
+  // Sin fotos no hay botón: un zip vacío no sirve.
   await expect(
     seccion.getByRole("button", { name: "Descargar fotos" }),
   ).toHaveCount(0);
@@ -97,7 +93,7 @@ test("baja un zip con las fotos del producto en JPG", async ({ page }) => {
   expect(
     JSON.parse(zipfile(ruta, "print(__import__('json').dumps(z.namelist()))")),
   ).toEqual([`${slugificar(color)}/1.jpg`]);
-  // JPG de verdad, del tamaño de la `-detail`: la de 900 no se agranda.
+  // Del tamaño de la `-detail`: la de 900 no se agranda.
   const foto = await sharp(
     execFileSync("python3", [
       "-I",

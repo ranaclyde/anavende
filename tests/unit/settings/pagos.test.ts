@@ -18,26 +18,17 @@ import {
 import { existe, png } from "@/tests/apoyo/imagenes";
 
 /**
- * F2.6 — RF-19, RN-01, §9.1, §9.2. Contra Postgres y contra Storage de verdad.
+ * RF-19, RN-01, §9.1, §9.2. Contra Postgres y Storage de verdad:
  *
- * Migrado de `scripts/verificar-pagos.mts` (F4.0b).
+ *   · El orden sin huecos ni repetidos después de mover y borrar: `sort_order`
+ *     también da la posición del próximo que se cree.
+ *   · El listado, mover y renumerar ordenan IGUAL; si no, la flecha movería
+ *     el de al lado.
+ *   · Los logos (la misma canalización que las marcas): los dos tamaños, el
+ *     anterior borrado al reemplazar y nada suelto cuando la fila se va.
  *
- * Lo que se prueba es lo que NO se ve leyendo el código:
- *
- *   · Que el orden quede sin huecos ni repetidos después de mover y de borrar.
- *     `sort_order` decide el orden en la tienda Y de dónde sale la posición del
- *     próximo que se cree: una numeración con agujeros no falla el día que se
- *     hace, falla el día siguiente.
- *   · Que el listado, mover y renumerar ordenen IGUAL. Si discreparan, la
- *     flecha movería el de al lado.
- *   · Que la canalización de logos —compartida con las marcas desde F2.6— suba
- *     los dos tamaños, borre el anterior al reemplazar y no deje archivos
- *     cuando la fila se va.
- *
- * **Los tests de orden y de logo son SECUENCIALES**, como el flujo que imitan:
- * mover dos veces y volver es una sola historia, y partirla en tres tests
- * independientes obligaría a rearmar el escenario tres veces para probar
- * menos. Vitest los corre en orden de declaración.
+ * Los tests de orden y de logo son SECUENCIALES, como el flujo que imitan:
+ * Vitest los corre en orden de declaración.
  */
 
 describe("validación (RF-19)", () => {
@@ -116,10 +107,8 @@ describe("contra la base y contra Storage", () => {
     (await posiciones()).map((f) => f.name.split(" ")[0]).join(",");
 
   /**
-   * Mover, con la MISMA lógica de `modules/settings/actions.ts`, incluido el
-   * `FOR UPDATE`: sin el bloqueo, dos flechas apretadas casi a la vez leen la
-   * misma lista y la segunda escribe posiciones calculadas sobre un orden que
-   * ya cambió.
+   * La MISMA lógica de `modules/settings/actions.ts`, con el `FOR UPDATE`: sin
+   * él, dos flechas casi a la vez calculan sobre un orden que ya cambió.
    */
   async function mover(id: string, direccion: "arriba" | "abajo") {
     await db.transaction(async (tx) => {
@@ -186,13 +175,8 @@ describe("contra la base y contra Storage", () => {
     });
 
     test("subir el primero no falla y no cambia nada: el borde no es un error", async () => {
-      // **El primero DE LA TABLA, no el primero de los tres que creó el
-      // test.** La base local puede tener medios de pago cargados de antes
-      // —los tres que se ven en la tienda—, y ahí arriba de `c` sí hay
-      // alguien: con `c.id` esto no probaba ningún borde, probaba un
-      // movimiento común, fallaba, y de paso le corría el orden al de al
-      // lado. Es el mismo motivo por el que las comprobaciones de acá usan
-      // `endsWith` y no igualdad.
+      // El primero DE LA TABLA, no el de los tres que creó el test: la base
+      // local puede tener medios de pago de antes, y con `c.id` no habría borde.
       const [primero] = await posiciones();
       const antes = await nombres();
       await mover(primero.id, "arriba");
@@ -298,10 +282,8 @@ describe("contra la base y contra Storage", () => {
         ...TAMANOS_LOGO.map((t) => clave(conArchivos.logoKey, t.sufijo)),
       );
 
-      // Es el orden que hace toda la diferencia: después del DELETE la fila ya
-      // no está y las claves no se pueden averiguar. Los archivos quedarían en
-      // el bucket sin nada que los nombre — y a un huérfano no lo encuentra ni
-      // lo borra nadie.
+      // Antes del DELETE: después la fila ya no está, las claves no se pueden
+      // averiguar y los archivos quedarían huérfanos en el bucket.
       aBorrar = await clavesDelLogo("medio-de-pago", b.id);
       expect(aBorrar).toHaveLength(TAMANOS_LOGO.length);
     });

@@ -5,10 +5,8 @@ import { datosDePrueba, sufijo, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * El SKU (2026-11-05): se carga y se busca en el panel, no se repite dentro
- * de la marca, la ficha lo muestra entre el nombre y el precio con «Copiar»,
- * y la tienda lo encuentra. Un producto de color único lo dice en vez de
- * callarlo.
+ * El SKU: no se repite dentro de la marca, la ficha lo muestra con «Copiar»
+ * y la tienda lo encuentra.
  */
 
 const datos = datosDePrueba();
@@ -95,8 +93,7 @@ test("el SKU se guarda, no se repite en la marca y la tienda lo muestra y lo enc
   await page.goto(`/admin/productos?q=${sku}`);
   await expect(page.getByText(`Teclado ${palabra}`).first()).toBeVisible();
 
-  // Otro producto de la MISMA marca no puede usar el mismo código, aunque
-  // cambien las mayúsculas.
+  // En la misma marca no se repite, ni cambiando las mayúsculas.
   await page.goto(`/admin/productos/${gemelo.id}`);
   await page.getByRole("textbox", { name: /SKU/ }).fill(sku.toLowerCase());
   await page.getByRole("button", { name: "Guardar cambios" }).click();
@@ -105,23 +102,20 @@ test("el SKU se guarda, no se repite en la marca y la tienda lo muestra y lo enc
   ).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/admin/productos/${gemelo.id}`));
 
-  // La ficha: entre el nombre y el precio, y «Copiar» lo pone en el
-  // portapapeles y cambia a «Copiado».
   await page.goto(`/productos/${producto.slug}`);
   const encabezado = page
     .locator("header")
     .filter({ has: page.getByRole("heading", { level: 1 }) })
     .filter({ visible: true });
   await expect(encabezado.getByText(`SKU: ${sku}`)).toBeVisible();
-  // El renglón nuevo, por axe: la prueba de accesibilidad usa productos sin
-  // SKU y no lo ve.
+  // `accesibilidad.spec.ts` usa productos sin SKU y no lo ve.
   expect(await hallazgosDeAxe(page, "header")).toEqual([]);
   await encabezado.getByRole("button", { name: "Copiar SKU" }).click();
   await expect(encabezado.getByText("Copiado", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(sku);
   expect(await hallazgosDeAxe(page, "header")).toEqual([]);
 
-  // La tienda lo encuentra en las dos marcas: el código es el mismo.
+  // Lo encuentra en las dos marcas: el código es el mismo.
   await page.goto(`/productos?q=${sku}`);
   await expect(page.getByRole("status")).toHaveText("2 productos");
   const resultados = page.getByRole("region", { name: "Resultados" });

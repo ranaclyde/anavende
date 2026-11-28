@@ -7,13 +7,9 @@ import { limpiarCuentasSinVerificar } from "@/scripts/limpiar-cuentas.mjs";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 
 /**
- * F10.5b — La limpieza de cuentas sin verificar. TS §16;
- * `scripts/limpiar-cuentas.mjs`.
- *
- * **Con una ventana de 10.000 horas, no de 48**, y las cuentas de prueba
- * fechadas antes que eso. La limpieza borra de verdad en la base que lee
- * `next dev`: con 48 horas se llevaría también cualquier cuenta sin verificar
- * que haya quedado de probar a mano. Así solo pueden caer las de este test.
+ * La limpieza de cuentas sin verificar, TS §16. Con una ventana de 10.000
+ * horas y no de 48: borra de verdad en la base de `next dev`, y con 48 se
+ * llevaría las cuentas sin verificar que quedaron de probar a mano.
  */
 
 const HORAS = 10_000; // unos 417 días
