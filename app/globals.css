@@ -337,9 +337,10 @@
      `stroke-dasharray: 24` arranca oculto y termina entero. 300ms, el techo
      de §8, saliendo rápido y frenando al final. Con `prefers-reduced-motion`
      la regla global lo muestra entero de una. */
-  --animate-tilde: tilde 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-tilde-copiado: tilde-copiado 300ms cubic-bezier(0.16, 1, 0.3, 1)
+    both;
 
-  @keyframes tilde {
+  @keyframes tilde-copiado {
     from {
       stroke-dashoffset: 24;
     }

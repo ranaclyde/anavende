@@ -13,7 +13,7 @@ import { AREA_TACTIL_CUADRADA, cn } from "@/lib/utils";
  * mensaje o compararlo con otra tienda, y de memoria se escribe mal.
  *
  * **El ícono solo, y «Copiado» en verde al tocarlo**, con el tilde que se
- * dibuja (`animate-tilde`). Es el verde de estado (`success`) y no el de
+ * dibuja (`animate-tilde-copiado`). Es el verde de estado (`success`) y no el de
  * WhatsApp: dice que algo salió bien, no que abre WhatsApp. Dura 4 segundos,
  * el doble que «Compartir»: el código se mira antes de pegarlo. Si el
  * portapapeles no existe —la tienda abierta por IP de la LAN, sin contexto
@@ -72,7 +72,7 @@ export function Sku({ sku }: { sku: string }) {
             <Check
               key={veces}
               aria-hidden
-              className="[&_path]:animate-tilde [&_path]:[stroke-dasharray:24]"
+              className="[&_path]:animate-tilde-copiado [&_path]:[stroke-dasharray:24]"
             />
           ) : (
             <Copy aria-hidden />

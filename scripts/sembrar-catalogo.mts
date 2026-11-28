@@ -53,8 +53,9 @@ if (!esStackLocal(baseUrl) || !esApiDelStackLocal(apiUrl)) {
     `✋ El seed escribe filas y sube archivos, y no está apuntando al stack local.\n` +
       `   base:    ${baseUrl ? dondeApunta(baseUrl) : "sin definir"}  (tiene que ser loopback:54322)\n` +
       `   storage: ${apiUrl ? dondeApunta(apiUrl, "") : "sin definir"}  (tiene que ser loopback:54321)\n\n` +
-      `   Con el stack levantado (npm run dev:stack), .env.local sale de\n` +
-      `   .env.stack-local.bak. Contra producción esto entra en el catálogo real.\n`,
+      `   Con el stack levantado (npm run dev:stack), .env.local tiene que\n` +
+      `   tener los valores de \`npx supabase status\`. Contra producción esto\n` +
+      `   entra en el catálogo real.\n`,
   );
   process.exit(1);
 }

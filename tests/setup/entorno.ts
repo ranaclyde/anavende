@@ -71,7 +71,7 @@ const url = process.env.DATABASE_URL;
 if (!url) {
   throw new Error(
     "Los tests necesitan DATABASE_URL y `.env.test` no la trajo.\n" +
-      "Ese archivo se commitea con el repo: si falta, algo lo borró.",
+      "Revisá que tenga DATABASE_URL: sale de `npx supabase status`.",
   );
 }
 
