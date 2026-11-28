@@ -10,15 +10,15 @@ import * as schema from "./schema";
  */
 
 declare global {
-  var __anavendeDb: Conexion | undefined;
+  var __anavendeDb: Connection | undefined;
 }
 
-type Conexion = {
+type Connection = {
   db: PostgresJsDatabase<typeof schema>;
   sql: ReturnType<typeof postgres>;
 };
 
-function conectar(): Conexion {
+function connect(): Connection {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
@@ -40,8 +40,8 @@ function conectar(): Conexion {
  * caliente reevalúa el módulo, y Next compila `proxy.ts` aparte con su propia
  * copia. Sin el global, cada copia abriría su pool.
  */
-function obtener(): Conexion {
-  globalThis.__anavendeDb ??= conectar();
+function getConnection(): Connection {
+  globalThis.__anavendeDb ??= connect();
   return globalThis.__anavendeDb;
 }
 
@@ -49,16 +49,16 @@ function obtener(): Conexion {
  * Para PROCESOS QUE TERMINAN (tests, scripts): sin esto, `vitest run` se
  * cuelga esperando las conexiones. El servidor de Next no la llama nunca.
  */
-export async function cerrarConexion(): Promise<void> {
-  const abierta = globalThis.__anavendeDb;
+export async function closeConnection(): Promise<void> {
+  const current = globalThis.__anavendeDb;
   globalThis.__anavendeDb = undefined;
-  await abierta?.sql.end({ timeout: 5 });
+  await current?.sql.end({ timeout: 5 });
 }
 
 /** No abre la conexión hasta la primera consulta. */
 export const db = new Proxy({} as PostgresJsDatabase<typeof schema>, {
   get(_target, prop, receiver) {
-    return Reflect.get(obtener().db, prop, receiver);
+    return Reflect.get(getConnection().db, prop, receiver);
   },
 });
 
