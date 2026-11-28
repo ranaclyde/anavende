@@ -11,7 +11,9 @@ import { ingresar } from "./apoyo/sesion";
 
 const datos = datosDePrueba();
 const palabra = sufijo();
-const sku = `SKU-${palabra}`;
+// Un sufijo propio: con el de los nombres, la búsqueda por parecido trae
+// todos los productos del test y no solo los que tienen el SKU.
+const sku = `SKU-${sufijo()}`;
 const marca = `Marca ${palabra}`;
 let admin: Cuenta;
 let producto: { id: string; slug: string };
