@@ -26,21 +26,8 @@ async function buscar(q: string) {
 }
 
 /**
- * Asociar la orden a un comprador registrado — FS RF-24. Tarea F7.4.
- *
- * **Es opcional, y el requisito lo dice así**: la orden manual existe
- * justamente para la venta de alguien que no tiene cuenta. Cuando la tiene,
- * asociarla hace que le aparezca en «Mis compras» como cualquier otra.
- *
- * Al elegir una cuenta, el formulario completa el nombre, el teléfono y el
- * email, y ofrece sus direcciones (decisión del 2026-09-16). Todo eso queda
- * editable: lo que se guarda es el snapshot de ESTE pedido, y quien compra
- * para un tercero pone los datos del tercero (F6.1).
- *
- * **La búsqueda va en un diálogo** (2026-09-30), igual que la de productos:
- * con la lista debajo del campo, cada búsqueda empujaba el resto del
- * formulario hacia abajo. A diferencia de aquélla, **elegir cierra el
- * diálogo**: una orden tiene una sola cuenta.
+ * Opcional (RF-24). Lo que completa al elegir queda editable: se guarda el
+ * snapshot de este pedido, que puede ser para un tercero.
  */
 export function BuscadorDeComprador({
   elegido,
@@ -94,8 +81,7 @@ export function BuscadorDeComprador({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Se desmonta al cerrar, y con eso la búsqueda: la próxima vez que
-            se abre es para buscar a otra persona. */}
+        {/* Se desmonta al cerrar, y con eso la búsqueda. */}
         {abierto ? (
           <Resultados
             alElegir={(c) => {

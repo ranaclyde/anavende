@@ -31,18 +31,9 @@ import type { ProveedorSocial } from "@/modules/users/proveedores";
 type Campo = "email" | "password";
 
 /**
- * Ingreso — RF-06, RF-27, RF-34.
- *
- * Cuatro desenlaces además del normal, y cada uno se presenta distinto:
- *   · bloqueado           → se muestra LA RAZÓN registrada (RF-27)
- *   · dado de baja        → otra cosa, y se dice distinto (RF-34, RN-13)
- *   · email sin verificar → se explica y se ofrece reenviar ahí mismo (RF-05)
- *   · cualquier otro      → mensaje genérico que no revela si el email existe
- *
- * **Los dos primeros llegan como el mismo error de GoTrue** (`user_banned`):
- * quién es cada uno lo decide la acción mirando el perfil (§13.5b). Acá lo
- * único que cambia es qué se lee, y es todo el punto de RN-13: a quien se fue
- * por su cuenta no se le dice que está bloqueado.
+ * Ingreso (RF-06). Bloqueado y dado de baja llegan de GoTrue como el mismo
+ * `user_banned`; la acción los distingue mirando el perfil, porque a quien se
+ * fue por su cuenta no se le dice que está bloqueado (RN-13).
  */
 export function LoginForm({
   volver,
@@ -50,7 +41,7 @@ export function LoginForm({
   proveedores,
 }: {
   volver?: string;
-  /** Para los avisos de cuenta bloqueada y dada de baja. `null` si no hay. */
+  /** Para los avisos de cuenta bloqueada y dada de baja. */
   whatsapp?: string | null;
   proveedores: readonly ProveedorSocial[];
 }) {
@@ -61,8 +52,7 @@ export function LoginForm({
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
   const [reenviado, setReenviado] = useState(false);
 
-  // F10.5b: un token por envío, que sirve igual para ingresar y para
-  // reenviar la verificación. Después de cada uno se pide otro.
+  // Un token por envío, para ingresar o para reenviar la verificación.
   const [captcha, setCaptcha] = useState<string | null>(null);
   const turnstile = useRef<ControlDeTurnstile>(null);
   const idDelAviso = useId();
@@ -93,7 +83,7 @@ export function LoginForm({
         return;
       }
 
-      // Solo destinos de la tienda: `//otro.com` también empieza con `/`.
+      // `//otro.com` también empieza con `/`.
       router.push(destinoInterno(volver) ?? "/");
       router.refresh();
     });
@@ -102,8 +92,6 @@ export function LoginForm({
   const reenviar = () => {
     if (!emailSinVerificar) return;
     iniciarReenvio(async () => {
-      // Con el `volver` puesto, el enlace del email devuelve a donde estaba
-      // queriendo comprar y no a «Mi cuenta» (F5.7).
       const r = await enviarVerificacion({
         email: emailSinVerificar,
         volver,
@@ -165,7 +153,7 @@ export function LoginForm({
             <FieldError>{errores.campos.password}</FieldError>
           </div>
 
-          {/* RF-27: no alcanza con negar el acceso, hay que decir por qué. */}
+          {/* RF-27: hay que decir por qué. */}
           {bloqueado && (
             <div
               role="alert"
@@ -179,10 +167,7 @@ export function LoginForm({
                   Motivo registrado: {motivo}
                 </p>
               )}
-              {/* RF-27 pide el motivo Y el canal de contacto. Hasta F7.7 esto
-                  nombraba WhatsApp sin llevar a ningún lado; sin número
-                  configurado sigue siendo la frase, que es mejor que un
-                  enlace roto. */}
+              {/* Sin número configurado, la frase sola y no un enlace roto. */}
               {whatsapp ? (
                 <a
                   href={enlaceDeWhatsApp(
@@ -204,10 +189,7 @@ export function LoginForm({
             </div>
           )}
 
-          {/* RF-34 y RN-13: se fue por su cuenta, no lo echaron. Sin motivo
-              —lo escribió ella misma— y con la puerta de vuelta, que es lo
-              único que le falta saber: volver se pide, y la cuenta está
-              entera. */}
+          {/* Se fue por su cuenta (RN-13): sin motivo, y con la vuelta. */}
           {dadoDeBaja && (
             <div
               role="alert"
@@ -242,7 +224,7 @@ export function LoginForm({
             </div>
           )}
 
-          {/* RF-05: se explica y se resuelve en el mismo lugar. */}
+          {/* Se explica y se resuelve en el mismo lugar. */}
           {sinVerificar && (
             <div
               role="alert"

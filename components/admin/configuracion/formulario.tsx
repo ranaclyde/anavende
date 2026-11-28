@@ -16,11 +16,7 @@ import { guardarLaConfiguracion } from "@/modules/settings/actions";
 import { AYUDA_DEL_UMBRAL, ENTERO } from "@/modules/settings/limites";
 import type { ConfiguracionDelSitio } from "@/modules/settings/queries";
 
-/**
- * En el ORDEN EN QUE SE VEN: al fallar el envío el foco va al primero de
- * esta lista que tenga error, y «el primero» tiene que ser el de más arriba
- * en la pantalla.
- */
+/** En el orden en que se ven: al fallar el envío el foco va al primero con error. */
 const CAMPOS = [
   "whatsappNumber",
   "instagramUrl",
@@ -32,11 +28,8 @@ const CAMPOS = [
 type Campo = (typeof CAMPOS)[number];
 
 /**
- * Las escenas por fecha (F9.5, RF-38), en el orden del año. El período
- * escrito lo trae la página (`periodoEscrito`), del mismo lugar que decide
- * cuándo se encienden: escrito a mano acá, el día que cambie uno la pantalla
- * diría otra cosa. Y se calcula en el servidor porque el de Pascua depende de
- * la fecha de hoy.
+ * Las escenas por fecha (RF-38), en el orden del año. El período escrito lo
+ * trae la página, del mismo lugar que decide cuándo se encienden.
  */
 const FECHAS = [
   { escena: "pascua", nombre: "Pascua", columna: "easterScene" },
@@ -51,17 +44,8 @@ const FECHAS = [
 type Columna = (typeof FECHAS)[number]["columna"];
 
 /**
- * Configuración del sitio — RF-20, F2.7.
- *
- * Lo que la vendedora tiene que poder cambiar sin que nadie despliegue
- * nada: el número por el que vende, sus redes sociales, la casilla donde le
- * avisamos y a partir de cuántas unidades considera que algo se está por
- * acabar.
- *
- * **La fila puede no existir todavía** (§5.9): la escribe este formulario la
- * primera vez que se guarda. Por eso `configuracion` puede ser `null`, y por
- * eso la pantalla lo dice en vez de mostrar campos vacíos que parecerían un
- * error de carga.
+ * Configuración del sitio — RF-20. La fila puede no existir todavía: la
+ * escribe este formulario la primera vez que se guarda.
  */
 export function FormularioDeConfiguracion({
   configuracion,
@@ -70,9 +54,9 @@ export function FormularioDeConfiguracion({
 }: {
   /** `null` = todavía no se guardó nunca. */
   configuracion: ConfiguracionDelSitio | null;
-  /** El que usa el sistema mientras la fila no existe (§10.3). */
+  /** El que usa el sistema mientras la fila no existe. */
   umbralPorDefecto: number;
-  /** Cada período escrito, «Del 1 de diciembre al 7 de enero.» (F9.5). */
+  /** Cada período escrito, «Del 1 de diciembre al 7 de enero.». */
   periodos: Record<Escena, string>;
 }) {
   const idBase = useId();
@@ -81,9 +65,8 @@ export function FormularioDeConfiguracion({
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
 
   /**
-   * Lo último que se sabe guardado. Arranca en lo que trajo el servidor y se
-   * reemplaza por lo que DEVUELVE la acción, que no es lo mismo que lo
-   * enviado: el número vuelve normalizado a `+549…`.
+   * Lo último que se sabe guardado: lo que devuelve la acción, no lo enviado
+   * (el número vuelve normalizado a `+549…`).
    */
   const [guardado, setGuardado] = useState(configuracion);
   const [seGuardoRecien, setSeGuardoRecien] = useState(false);
@@ -97,9 +80,8 @@ export function FormularioDeConfiguracion({
   const [email, setEmail] = useState(
     configuracion?.adminNotificationEmail ?? "",
   );
-  // El umbral vive como texto porque un campo de formulario devuelve texto.
-  // Se muestra el que el sistema YA está usando: ofrecer otro número haría
-  // que guardar sin tocar nada cambiara el listado sin que nadie lo pidiera.
+  // Se muestra el umbral que el sistema ya usa: otro número haría que guardar
+  // sin tocar nada cambiara el listado.
   const [umbral, setUmbral] = useState(
     String(configuracion?.lowStockThreshold ?? umbralPorDefecto),
   );
@@ -113,11 +95,8 @@ export function FormularioDeConfiguracion({
   const errorGeneral = useRef<HTMLDivElement | null>(null);
 
   /**
-   * Se calcula durante el render, sin efecto ni limpieza en cada `onChange`:
-   * la confirmación se muestra mientras lo que hay en pantalla siga siendo
-   * lo guardado. Tocar un campo la apaga sola, y volver atrás la enciende,
-   * que es exactamente lo que corresponde: el formulario vuelve a coincidir
-   * con lo que está en la base.
+   * Se calcula durante el render: tocar un campo apaga la confirmación y
+   * volver atrás la enciende.
    */
   const sinCambios =
     guardado !== null &&
@@ -128,8 +107,8 @@ export function FormularioDeConfiguracion({
     umbral === String(guardado.lowStockThreshold) &&
     FECHAS.every(({ columna }) => escenas[columna] === guardado[columna]);
 
-  // `conAyuda: false` para los campos sin texto de ayuda debajo (2026-11-18):
-  // sin esto, `aria-describedby` apuntaría a un id que no existe.
+  // `conAyuda: false` para los campos sin ayuda, o `aria-describedby` apunta
+  // a un id que no existe.
   const campo = (nombre: Campo, conAyuda = true) => ({
     id: `${idBase}-${nombre}`,
     "aria-invalid": Boolean(errores.campos[nombre]) || undefined,
@@ -141,16 +120,9 @@ export function FormularioDeConfiguracion({
   });
 
   /**
-   * Escribir en un campo apaga SU error y el general.
-   *
-   * Sin esto la pantalla se contradice, y no es una hipótesis: se vio.
-   * Después de un envío rechazado, corregir el número hasta dejarlo igual al
-   * guardado apaga el botón —no hay nada que guardar— y el aviso rojo se
-   * queda al lado de un «Guardado», señalando un problema que ya no
-   * existe y que no hay forma de sacar de la pantalla.
-   *
-   * No es validar mientras se escribe, que §6.6 no quiere: es dejar de
-   * afirmar algo que se dijo sobre un valor que ya no está.
+   * Escribir en un campo apaga su error y el general: si no, corregir el valor
+   * hasta igualar lo guardado apaga «Guardar» y deja un error que no se puede
+   * sacar de la pantalla.
    */
   const escribir =
     (nombre: Campo, poner: (v: string) => void) =>
@@ -171,10 +143,8 @@ export function FormularioDeConfiguracion({
     setErrores(SIN_ERRORES);
     setSeGuardoRecien(false);
 
-    // El único caso que no puede viajar: sin dígitos no hay número que
-    // mandar, y `NaN` no sobrevive al viaje. El mensaje es EL MISMO que
-    // daría el servidor, que es lo que hace que la comprobación de acá sea
-    // un adelanto y no una segunda regla.
+    // Sin dígitos no hay número que mandar y `NaN` no sobrevive al viaje. El
+    // mensaje es el mismo que daría el servidor.
     if (!ENTERO.test(umbral.trim())) {
       setErrores({
         ...SIN_ERRORES,
@@ -190,9 +160,8 @@ export function FormularioDeConfiguracion({
         instagramUrl: instagram,
         facebookUrl: facebook,
         adminNotificationEmail: email,
-        // `Number.parseInt` explícito, que es lo que pide la regla de lint de
-        // §7.1: acá no hay un monto sino un conteo de unidades. La guarda de
-        // arriba ya garantizó que hay dígitos y nada más.
+        // `Number.parseInt` explícito, como pide la regla de lint (TS §7.1):
+        // es un conteo, no un monto.
         lowStockThreshold: Number.parseInt(umbral.trim(), 10),
         ...escenas,
       });
@@ -207,8 +176,8 @@ export function FormularioDeConfiguracion({
         return;
       }
 
-      // Se pisan los campos con lo GUARDADO: escribir «(011) 15-5555-5555»
-      // y ver «1155555555» es la confirmación de que se entendió el número.
+      // Se pisan los campos con lo guardado: el número normalizado confirma
+      // que se entendió.
       setGuardado(resultado.data);
       setWhatsapp(telefonoLocal(resultado.data.whatsappNumber));
       setInstagram(resultado.data.instagramUrl ?? "");
@@ -225,15 +194,12 @@ export function FormularioDeConfiguracion({
   }
 
   return (
-    // **Una tarjeta, con «Guardar» adentro y al pie**: lo que se guarda con
-    // un botón se ve como una sola cosa. Eran tres tarjetas con la barra
-    // afuera, y debajo dos más que surten efecto solas; parecían cinco
-    // secciones sueltas y no se sabía qué guardaba el botón (2026-11-11).
+    // Una tarjeta con «Guardar» adentro y al pie (DESIGN.md, «Guardar»).
     <form onSubmit={enviar} noValidate className="min-w-0">
       <TarjetaDeSeccion id="datos-de-la-tienda" titulo="Datos de la tienda">
         {guardado === null ? <SinConfigurar umbral={umbralPorDefecto} /> : null}
 
-        {/* ── Lo que ve el comprador ───────────────────────────────────── */}
+        {/* Lo que ve el comprador */}
         <Apartado
           primero
           id="contacto"
@@ -258,8 +224,7 @@ export function FormularioDeConfiguracion({
             </FieldError>
           </div>
 
-          {/* Las dos redes van al pie de la tienda, debajo del logo. Mismo
-            criterio que el WhatsApp: se pega como venga y vuelve normalizado. */}
+          {/* Las redes se pegan como vengan y vuelven normalizadas. */}
           {(
             [
               ["instagramUrl", "Instagram", instagram, setInstagram],
@@ -292,7 +257,7 @@ export function FormularioDeConfiguracion({
           ))}
         </Apartado>
 
-        {/* ── Las escenas por fecha (F9.5) ──────────────────────────────── */}
+        {/* Las escenas por fecha */}
         <Apartado
           id="fechas"
           titulo="Fechas especiales"
@@ -329,7 +294,7 @@ export function FormularioDeConfiguracion({
           </ul>
         </Apartado>
 
-        {/* ── Lo que ve solo la vendedora ──────────────────────────────── */}
+        {/* Lo que ve solo la vendedora */}
         <Apartado
           id="avisos"
           titulo="Avisos"
@@ -365,19 +330,15 @@ export function FormularioDeConfiguracion({
             <div className="flex items-center gap-2">
               <Input
                 {...campo("lowStockThreshold")}
-                // La unidad está al lado del campo y no en la etiqueta, así que
-                // sin esto un lector de pantalla lee «avisar stock bajo a partir
-                // de: 3» y nunca dice de qué. Se suma a lo que ya describe al
-                // campo en vez de reemplazarlo.
+                // La unidad está al lado del campo y no en la etiqueta: sin
+                // esto el lector de pantalla no dice de qué es el número.
                 aria-describedby={
                   errores.campos.lowStockThreshold
                     ? `${idBase}-lowStockThreshold-error ${idBase}-unidades`
                     : `${idBase}-unidades`
                 }
-                // `inputMode` y no `type="number"`, por lo mismo que el stock de
-                // una variante: el campo numérico del navegador sube y baja con
-                // la rueda del mouse encima, y acá eso cambiaría el umbral de
-                // todo el catálogo mientras alguien baja la página.
+                // `inputMode` y no `type="number"`: la rueda del mouse cambiaría
+                // el umbral de todo el catálogo al bajar la página.
                 inputMode="numeric"
                 autoComplete="off"
                 maxLength={3}
@@ -403,8 +364,7 @@ export function FormularioDeConfiguracion({
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
-          {/* Por qué «Guardar» está apagado, o que hay algo por guardar,
-            escrito y no colgado de un `title` (§8). */}
+          {/* Por qué «Guardar» está apagado, escrito y no en un `title` (§8). */}
           <EstadoDeGuardado
             estado={
               !sinCambios
@@ -431,10 +391,8 @@ export function FormularioDeConfiguracion({
 }
 
 /**
- * El estado vacío de esta pantalla (§8): no es una lista sin filas, es una
- * configuración que nunca se guardó. Lo que hay que decir es qué está
- * usando el sistema mientras tanto, porque los campos ya muestran valores y
- * sin esto parecerían guardados.
+ * El estado vacío (§8): la configuración nunca se guardó. Dice qué usa el
+ * sistema mientras tanto, o los campos parecerían guardados.
  */
 function SinConfigurar({ umbral }: { umbral: number }) {
   return (

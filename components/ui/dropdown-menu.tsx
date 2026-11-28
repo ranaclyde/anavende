@@ -64,9 +64,7 @@ const DropdownMenuContent = React.forwardRef<
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
       ref={ref}
-      // Igual que el diálogo: el portal lo saca de `[data-scale]` y se lo
-      // lleva puesto (ver `escala.tsx`). El menú de imágenes del panel es el
-      // que lo usa hoy.
+      // El portal lo saca de `[data-scale]` (`escala.tsx`).
       data-scale={useDataScale()}
       sideOffset={sideOffset}
       className={cn(

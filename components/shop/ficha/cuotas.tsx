@@ -10,18 +10,8 @@ import {
 } from "@/modules/settings/promociones";
 
 /**
- * Las promociones de cuotas, debajo del precio — RF-40, F2.17.
- *
- * **Una sola a la vista**, la que eligió `promocionesParaElPrecio`; con dos
- * o más, «Ver otras opciones» abre un modal con todas, esta incluida. Con
- * una sola no hay enlace: prometería otras opciones que no hay (decisión del
- * 2026-11-16).
- *
- * En gris y con la cuota en tinta. **Sin interés, en verde hasta la cuota**
- * —«Mismo precio en 3 cuotas de $ X»— y «con …» sigue en gris (pedidos del
- * 2026-11-16): el verde de éxito y no el de WhatsApp, que es solo de lo que abre WhatsApp (§2.6) y está justo
- * debajo. **Sin ícono y en `caption`**: informa, y no pesa más que el texto
- * de abajo (2026-11-16).
+ * Una sola promoción a la vista, la que eligió `promocionesParaElPrecio`; el
+ * modal con todas aparece solo si hay dos o más (RF-40).
  */
 export function CuotasDeLaFicha({
   promociones,

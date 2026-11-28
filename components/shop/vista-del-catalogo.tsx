@@ -27,15 +27,8 @@ import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
 import { getIdentity } from "@/lib/session";
 
 /**
- * Lo que necesita la vista del catálogo, en tres lecturas paralelas.
- *
- * Es una función aparte y no algo que haga `VistaDelCatalogo` adentro porque
- * el encabezado de `/productos` también usa las opciones: con una categoría
- * elegida, el título la nombra.
- *
- * Los favoritos van con la identidad y no con la sesión entera (F5.4): son
- * una lectura de datos propios, que se filtra por el id del token sin ir a
- * buscar el perfil (§13.3). `null` es que no hay nadie adentro.
+ * Lo que necesita la vista del catálogo. Aparte porque el encabezado de
+ * `/productos` también usa las opciones. `favoritos` es `null` sin sesión.
  */
 export async function leerElCatalogo(filtros: FiltrosDeTienda) {
   const [pagina, opciones, favoritos] = await Promise.all([
@@ -49,17 +42,8 @@ export async function leerElCatalogo(filtros: FiltrosDeTienda) {
 export type DatosDelCatalogo = Awaited<ReturnType<typeof leerElCatalogo>>;
 
 /**
- * El catálogo debajo del encabezado — F3.4, F3.8, F3.11, RF-02, §7.2, §10.2.
- *
- * Lo comparten `/productos` y la página de cada categoría, que es el mismo
- * catálogo con la categoría fija (`filtros.seccion`). Cada página pone su
- * encabezado; desde la barra de búsqueda para abajo es esto, y por eso las
- * dos no se pueden separar sin que se note.
- *
- * Todo el estado vive en la URL: filtros, orden y página. Eso es lo que hace
- * que el botón atrás funcione, que el enlace se pueda mandar por WhatsApp tal
- * como se está viendo, y que esta pantalla no necesite ni una línea de estado
- * de cliente para lo que muestra.
+ * El catálogo debajo del encabezado, compartido por `/productos` y la página
+ * de cada categoría. Todo el estado vive en la URL.
  */
 export function VistaDelCatalogo({
   filtros,
@@ -70,10 +54,7 @@ export function VistaDelCatalogo({
   filtros: FiltrosDeTienda;
   datos: DatosDelCatalogo;
   placeholder: string;
-  /**
-   * La pantalla de «todavía no hay productos»: en la tienda y en una
-   * categoría no se dice lo mismo, ni se ofrece la misma salida.
-   */
+  /** La pantalla de «todavía no hay productos», distinta en cada página. */
   vacio: {
     titulo: string;
     detalle: string;
@@ -81,29 +62,16 @@ export function VistaDelCatalogo({
   };
 }) {
   const guardados = new Set(favoritos ?? []);
-  // El corazón de un visitante lleva a ingresar y vuelve acá, con los mismos
-  // filtros y en la misma página (RF-10: «sin perder la navegación»).
   const volver = urlDePagina(filtros, filtros.pagina);
 
   const paginas = Math.max(1, Math.ceil(pagina.total / POR_PAGINA));
 
   return (
     <>
-      {/*
-        `relative` acá y no en el `<details>`: el panel se posiciona contra
-        ESTA fila, y así se estira de lado a lado por debajo de los tres
-        controles en vez de quedar del ancho del botón que lo abre.
-      */}
+      {/* Búsqueda, filtros y orden. */}
       <div className="relative flex flex-wrap items-center gap-3">
-        {/*
-          `conservarFiltros`: buscar teniendo puesta una marca no puede
-          borrarla — el chip está a la vista y se espera que siga valiendo.
-          `seccion`: buscar en una categoría busca en esa categoría.
-        */}
-        {/*
-          `principal`: mientras este buscador se ve, el del encabezado no se
-          dibuja (§5.1). Vuelve solo al scrollear más abajo.
-        */}
+        {/* `conservarFiltros`: buscar no borra los filtros que están a la vista. */}
+        {/* `principal`: mientras este se ve, el del encabezado se oculta. */}
         <SearchBox
           className="min-w-60 flex-1"
           conservarFiltros
@@ -111,11 +79,7 @@ export function VistaDelCatalogo({
           principal
           placeholder={placeholder}
         />
-        {/*
-          `total` es para el botón «Ver N productos» del pie del panel: dice
-          cuántos quedan con los filtros que se están tocando, antes de
-          cerrarlo.
-        */}
+        {/* `total`, para el «Ver N productos» del pie del panel. */}
         <PanelDeFiltros filtros={filtros} {...opciones} total={pagina.total} />
         <SelectorDeOrden filtros={filtros} />
       </div>
@@ -124,13 +88,7 @@ export function VistaDelCatalogo({
         <ChipsDeFiltros filtros={filtros} {...opciones} />
         <p
           className="ml-auto text-body-sm text-ink-secondary"
-          // El conteo cambia al filtrar sin que se mueva el foco: sin esto,
-          // quien usa lector de pantalla no se entera de que la lista cambió.
-          //
-          // `role="status"` además de `aria-live`, y `aria-atomic` para que se
-          // lea «9 productos» entero y no el número suelto: un «9» sin sustantivo
-          // no dice qué cambió, y es exactamente lo que se anuncia cuando el
-          // lector reporta solo el nodo de texto que se modificó.
+          // `aria-atomic`: que se lea «9 productos» y no el número suelto.
           role="status"
           aria-live="polite"
           aria-atomic="true"
@@ -139,27 +97,14 @@ export function VistaDelCatalogo({
         </p>
       </div>
 
-      {/*
-        `<section>` y no `<main>`: el layout de la tienda ya abre uno, y dos
-        landmarks `main` anidados son HTML inválido — un lector de pantalla
-        ofrece «saltar al contenido principal» y hay dos destinos.
-      */}
+      {/* `<section>` y no `<main>`: el layout de la tienda ya abre uno. */}
       <section id="resultados" aria-label="Resultados">
-        {/*
-          §8 pide tres pantallas distintas, y confundirlas es el error que se
-          ve todo el tiempo: «no hay nada» y «no encontramos nada para esto»
-          dicen cosas opuestas sobre el negocio.
-        */}
+        {/* «No hay nada» y «no encontramos nada para esto» no son lo mismo. */}
         {pagina.productos.length > 0 ? (
           <>
             {/*
-              Al filtrar, ordenar o buscar (2026-10-20), las tarjetas que
-              siguen en el resultado se deslizan a su lugar nuevo, las que se
-              van se apagan y las nuevas aparecen (`globals.css`, `.tarjeta`).
-              Solo con el tipo `filtro` (`lib/transiciones.ts`): la página 2
-              cambia todas las tarjetas y además scrollea, y al tocar una la
-              que vuela es la foto (`foto-viajera.tsx`), que una transición de
-              React acá cortaría. Mientras espera, la grilla se atenúa.
+              Las tarjetas se reacomodan solo con el tipo `filtro`: al tocar
+              una vuela la foto, y una transición acá la cortaría.
             */}
             <GrillaQueEspera className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {pagina.productos.map((producto, i) => (
@@ -173,8 +118,7 @@ export function VistaDelCatalogo({
                   <li>
                     <TarjetaProducto
                       producto={producto}
-                      // La primera fila está arriba del pliegue: diferirla
-                      // penaliza el LCP. Cuatro es el ancho de la grilla.
+                      // La primera fila de la grilla más ancha.
                       inmediata={i < 4}
                       accionFavorito={
                         <BotonFavorito
@@ -201,14 +145,7 @@ export function VistaDelCatalogo({
         ) : pagina.totalSinFiltros === 0 ? (
           <Vacio {...vacio} />
         ) : pagina.total > 0 ? (
-          /*
-           * Hay resultados, pero no en ESTA página: alguien editó `?pagina`
-           * a mano o volvió a un enlace viejo de cuando el catálogo era más
-           * grande. Sin este caso caía en «no hay productos con estos
-           * filtros» ofreciendo «Limpiar todo» sin ningún filtro puesto —
-           * una instrucción imposible de obedecer, que es exactamente el
-           * callejón sin salida que el panel ya tuvo una vez.
-           */
+          // Hay resultados, pero no en esta página (`?pagina` editado o viejo).
           <Vacio
             titulo="Esa página no existe"
             detalle={`El catálogo llega hasta la página ${paginas}.`}
@@ -225,8 +162,6 @@ export function VistaDelCatalogo({
                 : "No hay productos con estos filtros"
             }
             detalle="Probá con menos filtros o buscando otra cosa."
-            // Sin filtros puestos no se ofrece limpiarlos: un botón que no
-            // puede cambiar nada es peor que ningún botón (§8).
             accion={
               hayFiltrosDeTienda(filtros)
                 ? { texto: "Limpiar todo", href: urlSinFiltros(filtros) }
@@ -239,10 +174,6 @@ export function VistaDelCatalogo({
   );
 }
 
-/**
- * §8: un estado vacío explica qué falta **y ofrece la acción**. Nunca un
- * espacio en blanco, y nunca «Sin registros».
- */
 function Vacio({
   titulo,
   detalle,

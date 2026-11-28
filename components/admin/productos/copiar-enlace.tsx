@@ -6,12 +6,9 @@ import { avisar, avisarConPero } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 
 /**
- * Copia la dirección pública del producto, para no tener que buscarlo en la
- * tienda. La página solo lo dibuja si el producto está activo: uno inactivo
- * da 404 a quien reciba el enlace.
- *
- * El portapapeles no existe sin contexto seguro —la tienda abierta por IP en
- * la LAN, por ejemplo—, y ahí el fallo se dice en vez de no hacer nada.
+ * Dibujarlo solo con el producto activo: uno inactivo da 404 a quien reciba el
+ * enlace. Sin contexto seguro (la tienda por IP en la LAN) no hay
+ * portapapeles, y el fallo se dice.
  */
 export function CopiarEnlace({ url }: { url: string }) {
   async function copiar() {

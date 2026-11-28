@@ -7,17 +7,8 @@ import { formatMoney } from "@/lib/money";
 import type { Devolucion, ItemDevuelto } from "@/modules/returns/queries";
 
 /**
- * Una devolución — FS RF-25. Tarea F7.5.
- *
- * **Es una tarjeta y no una fila de tabla, también en escritorio**, al revés
- * del listado de órdenes (§6.9). Una orden entra en una fila porque tiene un
- * total y un estado; una devolución tiene **un número variable de renglones**,
- * cada uno con su cantidad, su destino —vuelve al stock o se descarta— y a
- * veces su propio motivo. Meter eso en una celda es dibujar una lista adentro
- * de una tabla, que es una tabla peor.
- *
- * La misma pieza sirve en el listado general y en el detalle de la orden: lo
- * único que cambia es que allá hay que decir de qué orden es, y acá ya se sabe.
+ * Tarjeta y no fila, también en escritorio: una devolución tiene un número
+ * variable de renglones, y eso en una celda es una lista dentro de una tabla.
  */
 export function TarjetaDeDevolucion({
   devolucion,
@@ -32,14 +23,7 @@ export function TarjetaDeDevolucion({
   return (
     <article
       className={`flex flex-col gap-3 rounded-panel-card border border-border p-4 ${
-        // La anulada retrocede: sigue estando —revertir stock deja rastro—
-        // pero no es lo que cuenta. El color no es lo único que lo dice:
-        // arriba lleva la etiqueta «Anulada» (§9).
-        //
-        // **Retrocede por superficie y no por `opacity`** (§3.1, 2026-09-22):
-        // apagar la tarjeta entera multiplicaba el contraste de todo lo de
-        // adentro y dejaba los metadatos en 2,17:1, la mitad de lo que pide
-        // AA. `surface-sunken` la hunde sin tocar el texto.
+        // La anulada retrocede por superficie, no por `opacity` (DR §3.1).
         anulada ? "bg-surface-sunken" : "bg-surface"
       }`}
     >
@@ -115,8 +99,7 @@ export function TarjetaDeDevolucion({
           pueden devolver de nuevo.
         </p>
       ) : (
-        // `self-end` y no una fila a todo el ancho: la guía (F6.7) resalta
-        // esta caja, y tiene que medir lo que el botón.
+        // `self-end`: la guía resalta esta caja, que mide lo que el botón.
         <div data-ayuda="anular-devolucion" className="self-end">
           <AnularLaDevolucion
             returnId={devolucion.id}
@@ -133,20 +116,13 @@ export function TarjetaDeDevolucion({
   );
 }
 
-/** «Auricular Cloud II (negro)», como en el resto del panel. */
 function nombrar(item: ItemDevuelto): string {
   return item.color
     ? `${item.nombre} (${item.color.toLowerCase()})`
     : item.nombre;
 }
 
-/**
- * Un renglón devuelto, **diciendo siempre qué pasó con el stock**.
- *
- * Es la mitad de RF-25 que no se ve en ningún otro lado: dos devoluciones de
- * dos unidades del mismo producto son cosas distintas según hayan vuelto a la
- * góndola o al tacho, y meses después esta línea es lo único que lo explica.
- */
+/** Dice siempre qué pasó con el stock: es lo único que lo explica después. */
 function Renglon({ item }: { item: ItemDevuelto }) {
   return (
     <li className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-body-sm">

@@ -10,35 +10,23 @@ import {
 } from "react";
 
 /**
- * La verificación de Cloudflare Turnstile — F10.5b, TECHNICAL-SPEC §16.
+ * Cloudflare Turnstile (TECHNICAL-SPEC §16). Lo valida GoTrue, no la tienda:
+ * el token viaja como `captchaToken`. Sin `NEXT_PUBLIC_TURNSTILE_SITE_KEY` no
+ * dibuja nada y la pantalla no espera token.
  *
- * **La valida GoTrue, no la tienda**: el token viaja con la acción y la
- * acción se lo pasa a GoTrue (`captchaToken`), que lo comprueba contra
- * Cloudflare (`GOTRUE_SECURITY_CAPTCHA_*` en el servidor DATA). Con el
- * captcha prendido GoTrue lo pide para el alta, el ingreso con contraseña, la
- * recuperación y los reenvíos, y por eso esto está en esas cuatro pantallas.
- *
- * **Sin `NEXT_PUBLIC_TURNSTILE_SITE_KEY` no dibuja nada** y la pantalla no
- * espera ningún token: es el desarrollo sin claves, donde GoTrue tampoco lo
- * pide. Con las claves de prueba de Cloudflare se prueba entero en local.
- *
- * **El script se carga a mano, una sola vez y solo acá**: es de un tercero y
- * no tiene por qué viajar en el resto del sitio. Cada token sirve para un
- * solo pedido, así que la pantalla llama a `reiniciar()` después de cada
- * envío, haya salido bien o mal.
- *
- * **Cada pantalla dice cuál es** (`accion`): Cloudflare lo devuelve al
- * validar y el panel de Turnstile cuenta las verificaciones por pantalla.
- * GoTrue no lo compara —acepta el token de cualquier pantalla—, así que sirve
- * para mirar de dónde vienen los intentos, no para frenar nada.
+ * Cada token sirve para un solo pedido: la pantalla llama a `reiniciar()`
+ * después de cada envío, haya salido bien o mal.
  */
 
 const CLAVE_DEL_SITIO = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
-/** ¿Hay verificación? Sin ella la pantalla no espera ningún token. */
+/** Sin verificación, la pantalla no espera ningún token. */
 export const TURNSTILE_ACTIVO = CLAVE_DEL_SITIO !== "";
 
-/** Letras, números, `-` y `_`, hasta 32: lo que acepta Cloudflare. */
+/**
+ * Letras, números, `-` y `_`, hasta 32: lo que acepta Cloudflare. GoTrue no
+ * la compara: sirve para contar intentos por pantalla, no para frenarlos.
+ */
 export type AccionDeTurnstile = "ingreso" | "alta" | "recuperacion" | "reenvio";
 
 const SCRIPT =
@@ -82,8 +70,7 @@ function cargarElScript(): Promise<ApiDeTurnstile> {
         ? listo(window.turnstile)
         : fallo(new Error("Turnstile no quedó disponible"));
     script.onerror = () => {
-      // Sin esto, un fallo de red dejaría la promesa rechazada para siempre y
-      // ni recargando el formulario se volvería a intentar.
+      // Si no, un fallo de red dejaría la promesa rechazada para siempre.
       cargando = null;
       fallo(new Error("No se pudo cargar Turnstile"));
     };
@@ -104,7 +91,6 @@ export function Turnstile({
   idDelAviso,
   ref,
 }: {
-  /** Qué pantalla es, para el panel de Cloudflare. */
   accion: AccionDeTurnstile;
   /** El token listo, o `null` cuando vence, falla o se reinicia. */
   onToken: (token: string | null) => void;
@@ -165,8 +151,7 @@ export function Turnstile({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* El alto del widget reservado: sin esto, el formulario salta al
-          aparecer. */}
+      {/* Alto reservado: si no, el formulario salta al aparecer el widget. */}
       <div ref={contenedor} className="min-h-[65px]" />
       <p
         id={idDelAviso}

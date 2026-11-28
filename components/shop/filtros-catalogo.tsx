@@ -30,21 +30,9 @@ import type {
 import { AREA_TACTIL, cn } from "@/lib/utils";
 
 /**
- * Filtros del catálogo — F3.8, RF-02, §7.2.
- *
- * **Todo son enlaces, no controles.** Un filtro que es un `<a>` se puede abrir
- * en otra pestaña, se precarga al pasar por encima, funciona sin JavaScript y
- * —lo que más importa— deja el botón atrás haciendo exactamente lo que la
- * persona espera. Con casillas y estado de cliente habría que reimplementar
- * las cuatro cosas, y la cuarta nunca queda bien.
- *
- * **El panel es el `Sheet` de los drawers del panel** (`drawer-de-filtros.tsx`,
- * 2026-11-04): un drawer a la derecha, y en el teléfono a pantalla completa.
- * Hasta entonces era un `<details>` nativo, que abría sin JavaScript pero no
- * se animaba y obligaba a reimplementar el foco, Escape y el fondo. Lo de
- * adentro sigue armándose acá, en el servidor; las islas son el precio
- * (`filtros-cliente.tsx`) y cada grupo (`grupo-de-filtro.tsx`), que recorta
- * las listas largas y les pone un buscador.
+ * Filtros del catálogo (RF-02). **Todo son enlaces, no controles**: se abren
+ * en otra pestaña, se precargan, funcionan sin JavaScript y dejan el botón
+ * atrás haciendo lo que la persona espera.
  */
 
 type Props = {
@@ -74,16 +62,10 @@ export function PanelDeFiltros({
       total={total}
       hrefLimpiar={hayFiltrosDeTienda(filtros) ? urlSinFiltros(filtros) : null}
     >
+      {/* Una sola columna: con 512px no entran dos. */}
       {/*
-        **Una sola columna, con una línea entre sección y sección**
-        (2026-11-04). Con 512px no entran dos. Las ofertas van primero: es el
-        filtro que más se busca y el único de sí o no. El precio va al final,
-        con su slider.
-      */}
-      {/*
-        Sin nada en oferta con los demás filtros, la casilla llevaría a un
-        vacío y no se ofrece (2026-11-05), como una marca sin productos. Si ya
-        está puesta, se ve igual, para poder sacarla.
+        Sin nada en oferta, la casilla llevaría a un vacío. Si ya está puesta,
+        se ve igual, para poder sacarla.
       */}
       {filtros.oferta || enOferta > 0 ? (
         <section
@@ -104,10 +86,8 @@ export function PanelDeFiltros({
         </section>
       ) : null}
       {/*
-        En la página de una categoría (F3.11) la categoría de la página es un
-        chip marcado más: elegir otra la suma y lleva a `/productos` con las
-        dos, y destildarla lleva a `/productos` con el resto de los filtros
-        (`comoFiltroDeCategoria`).
+        En la página de una categoría, esa categoría es un chip marcado más:
+        elegir otra o destildarla lleva a `/productos`.
       */}
       <GrupoDeFiltro
         titulo="Categoría"
@@ -137,11 +117,7 @@ export function PanelDeFiltros({
   );
 }
 
-/**
- * Las opciones de un grupo con su enlace y su estado ya armados, para que la
- * isla del grupo (`grupo-de-filtro.tsx`) reciba datos y no funciones: lo que
- * cruza al cliente tiene que poder serializarse.
- */
+/** Arma enlaces y estado acá: a la isla del grupo solo cruzan datos serializables. */
 function resolver(
   opciones: (OpcionDeFiltro | OpcionDeColor)[],
   seleccionados: readonly string[],
@@ -157,13 +133,8 @@ function resolver(
 }
 
 /**
- * El descuento se ve como casilla porque no es una opción entre varias: es
- * sí o no. Un chip suelto en una fila de uno parecería un grupo al que le
- * faltan los demás.
- *
- * Sigue siendo un enlace por el mismo motivo que todo lo demás de este
- * archivo. La casilla es dibujada, no un `<input>`: un input real necesitaría
- * JavaScript para navegar, y perdería el atrás.
+ * Casilla dibujada y no un `<input>`: un input real necesitaría JavaScript
+ * para navegar, y perdería el atrás.
  */
 function Casilla({
   href,
@@ -207,13 +178,7 @@ function Casilla({
   );
 }
 
-/**
- * Los filtros aplicados, como chips removibles arriba de la grilla (§7.2).
- *
- * Existe porque los filtros viven detrás de un botón: sin los chips, la
- * persona ve nueve resultados y **no tiene forma de saber por qué** son
- * nueve. El chip dice qué está puesto y lo saca de un toque.
- */
+/** Los filtros aplicados, como chips removibles arriba de la grilla. */
 export function ChipsDeFiltros({
   filtros,
   categorias,
@@ -232,18 +197,8 @@ export function ChipsDeFiltros({
     });
   }
 
-  /*
-   * Un chip por VALOR, no por grupo: con dos marcas puestas hay dos chips y
-   * cada uno saca la suya. Un chip «2 marcas» diría cuántas hay y obligaría a
-   * abrir el panel para saber cuáles, que es justo lo que los chips existen
-   * para evitar.
-   *
-   * Si un slug no está en las opciones no se dibuja chip, y eso pasa
-   * de verdad: una categoría cuyo último producto se desactivó desaparece de
-   * la lista. La salida no se pierde —«Limpiar todo» está siempre al final de
-   * esta misma fila—, pero el filtro invisible es el motivo por el que ese
-   * enlace no es opcional.
-   */
+  // Un slug que no está en las opciones no lleva chip, y pasa: una categoría
+  // sin productos activos desaparece. Por eso «Limpiar todo» no es opcional.
   const grupos = [
     { clave: "categoria", slugs: filtros.categoria, opciones: categorias },
     { clave: "marca", slugs: filtros.marca, opciones: marcas },
@@ -268,7 +223,6 @@ export function ChipsDeFiltros({
     puestos.push({
       clave: "precio",
       etiqueta: etiquetaDePrecio(filtros),
-      // Los dos bordes se van juntos: es UN filtro, y su chip es uno.
       href: urlCambiando(filtros, { precioMin: null, precioMax: null }),
     });
   }
@@ -282,21 +236,14 @@ export function ChipsDeFiltros({
   }
 
   return (
-    // `flex-wrap`: con cinco filtros puestos en un teléfono, una fila sola
-    // recortaría los últimos y esos valores dejarían de poder quitarse.
-    // `gap-y-4` y no `gap-2`: estos chips miden 30px de alto, así que su área
-    // táctil sobresale 7px por lado. Con 8px de separación entre filas, dos
-    // filas se pisarían el blanco y se tocaría el chip de arriba queriendo
-    // tocar el de abajo.
+    // `gap-y-4`: el área táctil sobresale 7px por lado del chip, y con menos
+    // separación dos filas se pisarían.
     <ul className="flex flex-wrap items-center gap-x-2 gap-y-4">
       {puestos.map((p) => (
         <li key={p.clave}>
           <Link
             href={p.href}
             transitionTypes={TIPO_FILTRO}
-            // Tinte de marca y no blanco: sobre el canvas gris, un chip
-            // blanco es una superficie más entre otras y no se lee como «esto
-            // está aplicado». El tinte lo dice sin sumar un color al sistema.
             className={cn(
               "relative flex items-center gap-1.5 rounded-full border border-brand-tint-border bg-brand-tint",
               "py-1.5 pr-2 pl-3 text-caption font-medium whitespace-nowrap text-brand",
@@ -332,13 +279,7 @@ export function ChipsDeFiltros({
   );
 }
 
-/**
- * «$ 5.000,00 – $ 20.000,00», «Desde $ 5.000,00» o «Hasta $ 20.000,00».
- *
- * Con `formatMoney` y no con el número pelado: RN-02 pide que todo precio de
- * la tienda se vea igual, y un chip que dice «5000» al lado de tarjetas que
- * dicen «$ 5.000,00» se lee como si fuera otra cosa.
- */
+/** «$ 5.000,00 – $ 20.000,00», «Desde $ 5.000,00» o «Hasta $ 20.000,00». */
 function etiquetaDePrecio(f: FiltrosDeTienda): string {
   const min = f.precioMin !== null ? formatMoney(String(f.precioMin)) : null;
   const max = f.precioMax !== null ? formatMoney(String(f.precioMax)) : null;

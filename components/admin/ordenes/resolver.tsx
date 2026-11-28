@@ -22,22 +22,8 @@ import {
 import { MAXIMO_DEL_MOTIVO } from "@/modules/orders/schemas-panel";
 
 /**
- * Finalizar o cancelar una orden activa — FS RF-23. Tarea F7.3.
- *
- * **Las dos salidas de la orden, juntas y a la misma altura**, porque son la
- * misma pregunta: este pedido ¿se entregó o no se entregó? Repartirlas —una
- * arriba y la otra al pie, o una detrás de un menú— obligaría a buscar la
- * segunda justo cuando ya se decidió cuál de las dos es.
- *
- * **Ninguna tiene vuelta** (RF-13): de `finalizada` y de `cancelada` no se
- * sale, y por eso las dos preguntan antes. No es la confirmación por reflejo
- * de todo botón rojo — es que acá el error no se arregla con otro clic.
- *
- * **Y las dos dicen qué le pasa al stock**, que es lo que pide el plan y lo
- * que no se puede deducir mirando la pantalla. Cada una mira un contador
- * distinto, y confundirlos sería mostrar un número que no va a pasar:
- * finalizar baja el stock real —la reserva ya estaba descontada del
- * disponible—, y cancelar sube el disponible sin tocar el stock real.
+ * Cada salida mira un contador distinto: finalizar baja el stock real (la
+ * reserva ya estaba descontada del disponible); cancelar sube el disponible.
  */
 export function ResolverLaOrden({
   numero,
@@ -61,14 +47,8 @@ export function ResolverLaOrden({
         Finalizar
       </Button>
 
-      {/* Contorno pizarra y no rojo (F2.15, decisión tuya del 2026-10-28).
-          Siguen juntas, como pide F7.3, pero en burdeos y rojo —a 7° de
-          matiz— eran dos acciones sin vuelta atrás que en el teléfono se
-          confundían a la altura del pulgar. Ahora se separan por color y por
-          forma: finalizar, relleno burdeos; cancelar, contorno pizarra. Es
-          el primer pizarra del panel, que hasta acá era acromático
-          (DR §2.5): va por pedido tuyo, a cuenta de «el panel necesita más
-          color» del 2026-10-19. El diálogo sigue siendo el que avisa. */}
+      {/* Contorno pizarra y no rojo: al lado del burdeos, a 7° de matiz, se
+          confundían en el teléfono. */}
       <Button
         variant="secondary"
         size="sm"
@@ -96,10 +76,6 @@ export function ResolverLaOrden({
   );
 }
 
-/**
- * Lo que el diálogo necesita de cada renglón, y nada más: el precio y el
- * subtotal están en la tabla de al lado y no cambian con esto.
- */
 export type RenglonParaResolver = {
   id: string;
   nombre: string;
@@ -111,7 +87,6 @@ export type RenglonParaResolver = {
   stock: number | null;
 };
 
-/** «Auricular Cloud II (negro)», como lo nombran el historial y F7.2. */
 function nombrar(item: RenglonParaResolver): string {
   return item.color
     ? `${item.nombre} (${item.color.toLowerCase()})`
@@ -119,12 +94,8 @@ function nombrar(item: RenglonParaResolver): string {
 }
 
 /**
- * El impacto en stock, renglón por renglón.
- *
- * `contador` es el número de hoy y `despues` el de después; una variante
- * borrada (§5.6) llega con el contador en `null` y se dice, en vez de mostrar
- * un cero que significaría otra cosa — el renglón sigue en la orden porque el
- * snapshot sobrevive, pero ya no hay nada que mover.
+ * Una variante borrada (§5.6) llega con el contador en `null`: se dice, no
+ * se muestra un cero.
  */
 function Impacto({
   items,
@@ -183,8 +154,6 @@ function DialogoDeFinalizar({
         setError(r.message);
         return;
       }
-      // La orden deja de estar activa y estos botones se van con el refresco,
-      // pero cerrar no depende de en qué orden desmonte React (F7.2).
       avisar(`La orden #${numero} quedó finalizada.`);
       cerrar();
     });
@@ -208,12 +177,7 @@ function DialogoDeFinalizar({
             contador={(item) => item.stock}
             despues={(actual, item) => actual - item.cantidad}
           />
-          {/*
-            El número que la vendedora ve en el catálogo es el disponible, y
-            no se va a mover con esto: estas unidades ya estaban apartadas
-            desde que entró la orden (§8.1). Sin decirlo, el catálogo después
-            parece no haberse enterado.
-          */}
+          {/* Sin esto, el catálogo parece no haberse enterado (§8.1). */}
           <p className="text-caption text-ink-secondary">
             El disponible no cambia: estas unidades ya estaban reservadas para
             esta orden desde que se hizo.
@@ -270,8 +234,6 @@ function DialogoDeCancelar({
         setError(r.message);
         return;
       }
-      // Nombra lo que la pantalla NO muestra: que el stock volvió. La
-      // insignia de arriba ya dice «Cancelada».
       avisar(
         `Cancelaste la orden #${numero} y se liberó lo que tenía reservado.`,
       );
@@ -299,11 +261,7 @@ function DialogoDeCancelar({
           />
         </div>
 
-        {/*
-          Opcional, porque RF-23 dice que la administradora *puede* registrar
-          un motivo. Y dicho dónde termina: es la diferencia entre escribir
-          «no hay stock del rojo» y escribir una nota para uno mismo.
-        */}
+        {/* Opcional (RF-23). */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={campo}>Motivo (opcional)</Label>
           <Textarea
@@ -311,9 +269,7 @@ function DialogoDeCancelar({
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             maxLength={MAXIMO_DEL_MOTIVO}
-            // El alto por defecto del campo es para un párrafo, y esto es una
-            // frase: «no contestó», «se quedó sin stock». `field-sizing-content`
-            // lo estira solo si hace falta.
+            // Es una frase, no un párrafo; `field-sizing-content` lo estira.
             className="min-h-16"
             rows={2}
             aria-describedby={`${campo}-ayuda`}

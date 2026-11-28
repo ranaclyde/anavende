@@ -9,38 +9,16 @@ import { useDataScale } from "@/components/ui/escala";
 import { cn } from "@/lib/utils";
 
 /**
- * Ayuda guiada — FS RF-36 y RF-37. Tareas F6.6 (la tienda) y F6.7 (el panel).
+ * Ayuda guiada con Driver.js (RF-36, RF-37): se abre sola la primera vez y
+ * después con este botón. Lo visto se anota en `localStorage`; si no anda, no
+ * se abre sola, o aparecería en cada visita.
  *
- * Un recorrido corto con Driver.js: oscurece la página, resalta un elemento y
- * explica en un globo qué es. **Aparece solo la primera vez** que se entra a
- * la pantalla y después se reabre con «Ayuda», que es este mismo botón.
+ * Si falta un paso obligatorio, el recorrido espera a otra visita. Cada paso
+ * señala el primer `data-ayuda` visible: una pieza puede estar dos veces, una
+ * por ancho, y la oculta viene primero.
  *
- * **Lo visto se anota en el navegador y no en la base** (decisión del
- * 2026-10-22, anotada en `sdd/ayudas-guiadas/DEFINICION.md`): la ficha la mira
- * sobre todo quien no tiene cuenta, y un solo mecanismo para todos vale más
- * que no repetirla en un segundo dispositivo. Si el almacenamiento no
- * funciona —navegación privada, bloqueado— **no se abre sola**: sin poder
- * anotarla aparecería en cada visita, que es peor que no aparecer.
- *
- * **Los pasos se buscan por `data-ayuda`**, no por clases ni ids: el
- * atributo dice para qué está y nadie lo borra por estética. Un paso cuyo
- * elemento no está en pantalla no se arma; si el que falta es obligatorio,
- * el recorrido entero espera a una visita en la que esté.
- *
- * **Cada paso señala el primer elemento visible con su `data-ayuda`.** En el
- * panel el atributo va en todas las copias —cada renglón de una orden, cada
- * color de un producto—, y una misma pieza puede estar dos veces, una para
- * cada ancho: la orden se dibuja como tabla en escritorio y como lista en el
- * teléfono, y la que está oculta viene primero.
- *
- * **En el panel el globo lleva su escala** (F6.7). Driver.js lo pinta en el
- * `<body>`, fuera de `data-scale="admin"`, igual que los diálogos (ver
- * `escala.tsx`): sin el atributo, sus botones tomaban las medidas de la
- * tienda. El modo oscuro llega solo, porque `data-theme` está en `<html>`.
- *
- * **La librería se pide recién al abrir** (`import()`): quien ya la vio no
- * la descarga. Y **su CSS no se importa**: sin capa, ganaría a las utilidades
- * de Tailwind; el globo se dibuja en `globals.css` y con `buttonVariants`.
+ * Su CSS no se importa: sin capa les ganaría a las utilidades de Tailwind; el
+ * globo se dibuja en `globals.css`.
  */
 
 export type PasoDeAyuda = {
@@ -109,19 +87,14 @@ const CRUZ =
   '<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 
 /**
- * Viste el globo: botones de la tienda y la semántica que le falta.
- *
- * Driver.js los crea en cada paso, así que se visten en cada paso. El foco va
- * a «Siguiente» y no a la cruz, que es donde lo deja la librería: lo primero
- * que se anuncia tiene que ser el recorrido, no la salida. Va diferido porque
- * la librería enfoca DESPUÉS de este gancho y lo pisaría.
+ * Driver.js recrea el globo en cada paso. El foco va a «Siguiente» y no a la
+ * cruz, diferido porque la librería enfoca después de este gancho.
  */
 function vestir(globo: PopoverDOM, escala: "admin" | undefined): void {
   globo.wrapper.setAttribute("aria-modal", "true");
   if (escala) globo.wrapper.setAttribute("data-scale", escala);
-  // Driver.js arma el título con `<header>` y el pie con `<footer>`, y fuera
-  // de una sección eso son las regiones «banner» y «contentinfo» de la
-  // página: un lector de pantalla las listaría junto al encabezado del sitio.
+  // `<header>` y `<footer>` sueltos son las regiones «banner» y «contentinfo»
+  // de la página para un lector de pantalla.
   globo.title.setAttribute("role", "heading");
   globo.title.setAttribute("aria-level", "2");
   globo.footer.setAttribute("role", "none");
@@ -141,10 +114,8 @@ function vestir(globo: PopoverDOM, escala: "admin" | undefined): void {
     "absolute top-2 right-2",
   );
   globo.closeButton.innerHTML = CRUZ;
-  // Driver.js les escribe `style="display: block"` a los tres botones en cada
-  // paso, y el estilo en línea le gana al `inline-flex` de `buttonVariants`:
-  // la cruz quedaba arriba a la izquierda de su círculo. Solo se borra el
-  // `block`; el `none` de un botón que no va se respeta.
+  // Driver.js les pone `display: block` en línea, que le gana a `inline-flex`.
+  // Solo se borra el `block`; el `none` de un botón que no va se respeta.
   for (const boton of [
     globo.closeButton,
     globo.nextButton,
@@ -171,8 +142,7 @@ export function AyudaGuiada({
   const escala = useDataScale();
   const boton = useRef<HTMLButtonElement>(null);
   const activo = useRef<Driver | null>(null);
-  // El `import()` tarda: sin esto, dos llamadas seguidas —el doble efecto de
-  // desarrollo, o un doble toque— abrirían dos recorridos superpuestos.
+  // El `import()` tarda: sin esto, un doble toque abriría dos recorridos.
   const abriendo = useRef(false);
   // Y si se fue de la pantalla mientras llegaba, no se abre en la siguiente.
   const montado = useRef(false);
@@ -194,16 +164,12 @@ export function AyudaGuiada({
     const config: Config = {
       steps,
       animate: !quieto,
-      // Sin desplazamiento suave, ni siquiera con movimiento: Driver.js ubica
-      // el globo antes de que termine de desplazarse, y en el teléfono un paso
-      // que estaba fuera de pantalla lo dejaba pegado al borde de abajo, lejos
-      // de lo que señala (probado con la 1.9.0).
+      // Driver.js ubica el globo antes de que termine el desplazamiento suave,
+      // y queda lejos de lo que señala.
       smoothScroll: false,
       overlayColor: "rgb(17 16 16)",
       overlayOpacity: 0.55,
       stagePadding: 8,
-      // El radio de lo resaltado sigue al de sus piezas: píldoras y tarjetas
-      // de 20 a 28px en la tienda, controles y tarjetas de 8 a 12 en el panel.
       stageRadius: escala ? 12 : 20,
       popoverClass: "ayuda-guiada",
       // Que un toque en lo resaltado no navegue a mitad del recorrido.
@@ -215,8 +181,7 @@ export function AyudaGuiada({
       doneBtnText: "Listo",
       closeBtnLabel: "Cerrar la guía",
       onPopoverRender: (globo) => vestir(globo, escala),
-      // El foco vuelve al botón que la reabre; diferido por lo mismo que en
-      // `vestir`.
+      // El foco vuelve al botón; diferido, como en `vestir`.
       onDestroyed: () => {
         activo.current = null;
         setTimeout(() => boton.current?.focus());
@@ -225,10 +190,8 @@ export function AyudaGuiada({
 
     activo.current = driver(config);
     activo.current.drive();
-    // **Mostrada es vista**, y no al cerrarla: quien la cierra en el primer
-    // paso no quiere verla de nuevo, y Driver.js no avisa el cierre si llega
-    // durante el fundido de entrada (probado con la 1.9.0: Esc a los pocos
-    // milisegundos la cierra sin llamar a `onDestroyed`).
+    // Mostrada es vista, y no al cerrarla: Driver.js no llama a `onDestroyed`
+    // si se cierra durante el fundido de entrada.
     marcarVista(id);
   }
 
@@ -240,8 +203,7 @@ export function AyudaGuiada({
       montado.current = false;
       activo.current?.destroy();
     };
-    // Una sola vez por montaje: `pasos` cambia de identidad en cada render
-    // del padre y volvería a abrirla.
+    // `pasos` cambia de identidad en cada render del padre y volvería a abrirla.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 

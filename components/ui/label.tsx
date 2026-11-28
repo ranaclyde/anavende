@@ -6,9 +6,8 @@ import * as LabelPrimitive from "@radix-ui/react-label";
 import { cn } from "@/lib/utils";
 
 /**
- * Etiqueta de campo — DESIGN-REFERENCE §6.6.
- * `body-sm` peso 500, SIEMPRE visible arriba del campo. No hay etiquetas
- * flotantes. Lo que se marca es lo opcional, no lo obligatorio.
+ * Siempre visible arriba del campo, sin etiquetas flotantes. Se marca lo
+ * opcional, no lo obligatorio (DR §6.6).
  */
 function Label({
   className,
@@ -27,7 +26,6 @@ function Label({
   );
 }
 
-/** Texto de ayuda bajo el campo: caption, secundario (§6.6). */
 function FieldHint({ className, ...props }: React.ComponentProps<"p">) {
   return (
     <p

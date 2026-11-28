@@ -82,11 +82,8 @@ const SIN_RELACIONADAS: CategoriaRelacionada[] = [];
 const SIN_RELACIONABLES: CategoriaRelacionable[] = [];
 
 /**
- * Sube el logo de la marca, o la imagen de la categoría (FA-21), por el
- * Route Handler (§9.1). Devuelve el motivo del fallo, o `null` si salió bien.
- *
- * Sin progreso: un logo pesa poco y la barra aparecería y desaparecería antes
- * de poder leerse. El de las imágenes de producto sí lo usa (RF-17).
+ * Sube el logo de la marca, o la imagen de la categoría, por el Route Handler
+ * (TS §9.1). Devuelve el motivo del fallo, o `null` si salió bien.
  */
 async function subirLogo(
   tipo: "marca" | "categoria",
@@ -109,42 +106,18 @@ const QUITAR = {
 };
 
 /**
- * Alta y edición de un ítem del catálogo — RF-18.
+ * Alta y edición de un ítem del catálogo, en un drawer — RF-18, DR §6.14.3.
+ * La dirección (slug) no es un campo: se deriva del nombre y no cambia al
+ * renombrar.
  *
- * **Es un drawer y no un diálogo** desde el 2026-10-14 (DR §6.14.3): con la
- * imagen, «Destacada» y las relacionadas, la categoría pasó a tener tres
- * secciones y una lista que crece, y un diálogo centrado con tope de alto la
- * cortaba. El drawer usa el alto entero y deja fijos el título y «Guardar».
- * Marcas, colores y medios de pago van igual aunque sean más cortos: son
- * solapas de la misma pantalla y se tienen que comportar igual.
+ * Se monta al abrirse y se desmonta al cerrar, y por eso el estado arranca de
+ * las props sin efecto que lo reponga. Limpiarlo al abrir no alcanza: el
+ * cierre ocurre dentro de una transición que todavía revalida, y reabrir ahí
+ * mostraba los valores del ítem anterior.
  *
- * El SLUG NO ES UN CAMPO. «Slug» es jerga (§10) y la vendedora no tiene por
- * qué saber qué es: se deriva del nombre y se muestra como la dirección que
- * va a tener, para leer. Al renombrar tampoco cambia —romper un enlace ya
- * compartido es peor que arrastrar una dirección vieja—, y el diálogo lo
- * dice en vez de dejar que se descubra después.
- *
- * **Se monta cuando se abre y se desmonta al cerrar** (lo decide el panel),
- * y por eso el estado arranca de las props y no hay ningún efecto que lo
- * reponga. Mantenerlo montado y limpiarlo al abrir parece lo mismo y no lo
- * es: el cierre ocurre dentro de una transición —la acción todavía está
- * revalidando—, así que hay un rato en que la pantalla muestra el diálogo
- * con los valores viejos, y volver a abrirlo ahí no dispara ningún efecto.
- * Se descubrió en F2.6, con un medio de pago que se guardó con la
- * descripción del anterior.
- *
- * **También se abre desde el producto** (F2.13), cuando lo que hace falta no
- * está en el selector: llega con `nombreInicial` —lo que se escribió en el
- * buscador— y avisa con `alCrear` para que el producto lo deje elegido. Ahí
- * no ofrece las relacionadas: son lo único que pide recorrer el resto del
- * catálogo, y quien está cargando un producto viene a destrabarlo, no a
- * ordenar categorías. Se eligen después, desde Catálogo.
- *
- * Con `incrustado` no trae su propio drawer y se pinta adentro del de quien
- * lo usa, como un paso (§6.14.2): la variante de color lo usa así, porque
- * un drawer encima de otro tapa lo que se estaba cargando. El Escape de ese
- * paso lo maneja el drawer de afuera; por eso solo lo usan los colores, que
- * no tienen un paso propio.
+ * Desde el producto llega con `nombreInicial` y avisa con `alCrear`; ahí no
+ * ofrece las relacionadas. Con `incrustado` se pinta adentro del drawer de
+ * quien lo usa, como un paso, y el Escape lo maneja el de afuera.
  */
 export function EdicionDeItem({
   tipo,
@@ -161,7 +134,6 @@ export function EdicionDeItem({
   item: ItemDeCatalogo | null;
   abierto: boolean;
   alCerrar: () => void;
-  /** Solo las categorías las usan (RF-31). */
   relacionables?: CategoriaRelacionable[];
   nombreInicial?: string;
   alCrear?: (creado: { id: string; name: string; hexCode: string }) => void;
@@ -175,15 +147,13 @@ export function EdicionDeItem({
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
   const [nombre, setNombre] = useState(item?.name ?? nombreInicial);
   const [hex, setHex] = useState(item?.hexCode ?? HEX_POR_OMISION);
-  // Una categoría nueva no nace destacada: destacar es elegir un puñado, y un
-  // valor por omisión que destaca todo vacía la distinción.
+  // Una categoría nueva no nace destacada.
   const [destacada, setDestacada] = useState(item?.isFeatured ?? false);
   const [texto, setTexto] = useState(item?.description ?? "");
   const originales = item?.relacionadas ?? SIN_RELACIONADAS;
   const [relacionadas, setRelacionadas] = useState(originales);
-  // El paso de elegir relacionadas (RF-31) va adentro del mismo drawer
-  // (§6.14.2): el formulario se esconde pero no se desmonta, así lo escrito
-  // y la imagen elegida siguen ahí al volver.
+  // El paso de elegir relacionadas va en el mismo drawer: el formulario se
+  // esconde sin desmontarse, así lo escrito sigue al volver.
   const [eligiendo, setEligiendo] = useState(false);
   const botonElegir = useRef<HTMLButtonElement>(null);
   const disponibles = relacionables.filter((c) => c.id !== item?.id);
@@ -196,7 +166,6 @@ export function EdicionDeItem({
     e.preventDefault();
     setErrores(SIN_ERRORES);
 
-    // Solo lo que el servidor necesita: el orden lo da la posición.
     const pedidas = relacionadas.map(({ id, reciproca }) => ({
       id,
       reciproca,
@@ -237,25 +206,18 @@ export function EdicionDeItem({
         alCrear?.({ id: resultado.data.id, name: nombre.trim(), hexCode: hex });
       }
 
-      // El logo va después de guardar el nombre, y por dos caminos distintos:
-      // subirlo necesita mandar un archivo, así que va por el Route Handler
-      // (§9.1); quitarlo es un booleano y va por una Server Action.
       if (tipo !== "color" && logo.tipo !== "mantener") {
         const id = item?.id ?? resultado.data.id;
 
         if (logo.tipo === "reemplazar") {
           const fallo = await subirLogo(tipo, id, logo.archivo);
           if (!fallo) {
-            // El Route Handler invalida la caché del servidor, pero un
-            // `fetch` —a diferencia de una Server Action— no trae la vista
-            // nueva de vuelta. Sin esto el logo está guardado y el listado
-            // sigue mostrando la fila sin él.
+            // Un `fetch`, a diferencia de una Server Action, no trae la vista
+            // nueva: sin esto el listado sigue mostrando la fila sin el logo.
             router.refresh();
           }
           if (fallo) {
-            // La marca YA se guardó. Decirlo tal cual es más honesto que
-            // fingir que no pasó nada o que falló todo: el diálogo queda
-            // abierto con el error y el nombre ya está a salvo.
+            // La marca ya se guardó: el diálogo queda abierto con el error del logo.
             setErrorDelLogo(
               item
                 ? fallo
@@ -276,9 +238,8 @@ export function EdicionDeItem({
         }
       }
 
-      // El diálogo se cierra y la fila nueva queda en algún lugar de un
-      // listado ordenado alfabéticamente, que puede ni estar en esta página:
-      // sin aviso, guardar no contesta nada (§6.15).
+      // La fila nueva puede ni estar en esta página: sin aviso, guardar no
+      // contesta nada (DR §6.15).
       avisar(
         item
           ? `Guardaste ${palabras.articulo} ${palabras.singular} «${nombre.trim()}».`
@@ -295,9 +256,8 @@ export function EdicionDeItem({
   };
 
   /**
-   * Lo que ya estaba y sigue marcado conserva su lugar —y su «Recíproca»—;
-   * lo nuevo entra al final, en el orden en que se marcó. Las inactivas no
-   * aparecen para elegir, así que no se pueden haber desmarcado: se quedan.
+   * Lo que ya estaba conserva su lugar y su «Recíproca»; lo nuevo entra al
+   * final. Las inactivas no aparecen para elegir, así que se quedan.
    */
   const aplicarEleccion = (marcadas: string[]) => {
     const marcada = new Set(marcadas);
@@ -388,9 +348,7 @@ export function EdicionDeItem({
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor={`${idBase}-hex`}>Color</Label>
                   <div className="flex items-center gap-2">
-                    {/* El selector nativo y el campo de texto escriben el
-                          mismo valor: se puede elegir a ojo o pegar el código
-                          exacto que vino de la marca. */}
+                    {/* El selector nativo y el campo de texto escriben el mismo valor. */}
                     <input
                       type="color"
                       aria-label="Elegir el color a ojo"
@@ -433,9 +391,7 @@ export function EdicionDeItem({
 
             {tipo === "categoria" ? (
               <Seccion>
-                {/* F3.11: el texto de la página de la categoría. Va antes
-                      de «Destacada» porque es contenido, como el nombre y la
-                      imagen; destacar es una decisión de orden. */}
+                {/* El texto va antes de «Destacada»: es contenido, no orden. */}
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor={`${idBase}-texto`}>
                     {TEXTO_DE_CATEGORIA.etiqueta}
@@ -461,10 +417,7 @@ export function EdicionDeItem({
                   )}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  {/* La casilla y su etiqueta son un solo blanco: `htmlFor`
-                        sobre el Checkbox de Radix hace que tocar el texto
-                        también marque, que en un teléfono es la diferencia
-                        entre poder y no. */}
+                  {/* `htmlFor` sobre el Checkbox de Radix: tocar el texto también marca. */}
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id={`${idBase}-destacada`}
@@ -476,9 +429,7 @@ export function EdicionDeItem({
                       {DESTACADO.etiqueta}
                     </Label>
                   </div>
-                  {/* Alineada con el texto de la etiqueta y no con la
-                        casilla: 16px de la casilla más 8 de separación. Sin
-                        la sangría la ayuda se lee como un párrafo suelto. */}
+                  {/* Alineada con el texto de la etiqueta: casilla de 16px más 8. */}
                   <FieldHint id={`${idBase}-destacada-ayuda`} className="pl-6">
                     {DESTACADO.ayuda}
                   </FieldHint>
@@ -533,8 +484,7 @@ export function EdicionDeItem({
     <Sheet open={abierto} onOpenChange={(v) => !v && alCerrar()}>
       <SheetContent
         onEscapeKeyDown={(e) => {
-          // Escape en el paso de elegir vuelve al formulario: cerrar todo
-          // perdería lo escrito por querer salir de una lista.
+          // Escape en el paso de elegir vuelve al formulario y no cierra todo.
           if (eligiendo) {
             e.preventDefault();
             volverDeElegir();

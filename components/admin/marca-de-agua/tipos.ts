@@ -1,10 +1,6 @@
 import type { Ancla, Modo } from "@/modules/media/capas-de-marca";
 
-/**
- * Una capa en pantalla: lo que se guarda más una clave local. La clave es
- * para la lista de React y no viaja: dos capas con la misma imagen y los
- * mismos valores son dos capas igual.
- */
+/** Una capa en pantalla: lo que se guarda más una clave local para React, que no viaja. */
 export type CapaEnPantalla = {
   clave: string;
   imageId: string;

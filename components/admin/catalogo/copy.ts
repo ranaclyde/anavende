@@ -1,15 +1,9 @@
 import type { TipoDeItem } from "@/modules/catalog/schemas";
 
 /**
- * Las palabras de cada listado, en un solo lugar — DESIGN-REFERENCE §10.
- *
- * Marcas, categorías y colores comparten la pantalla entera y se diferencian
- * solo en cómo se los nombra. Con las tres formas juntas es imposible que una
- * quede en masculino y otra en femenino, que es lo que pasa cuando cada
- * cartel se escribe donde se usa.
- *
- * Los mensajes de ERROR no están acá: los redacta el servidor
- * (`lib/errors.ts`), porque son la regla de negocio hablando.
+ * Las palabras de cada listado, en un solo lugar — DR §10: así marcas,
+ * categorías y colores no terminan con géneros distintos. Los mensajes de
+ * error no están acá: los redacta el servidor (`lib/errors.ts`).
  */
 export type PalabrasDeItem = {
   singular: string;
@@ -18,18 +12,15 @@ export type PalabrasDeItem = {
   vacio: string;
   /** Qué se pierde de vista al desactivarlo. */
   desactivar: string;
-  /**
-   * Concordancia. «Color» es masculino y las otras dos son femeninas: sin
-   * estas formas la pantalla termina diciendo «esta color está activa».
-   */
+  /** Concordancia: «Color» es masculino y las otras dos, femeninas. */
   activo: string;
   inactivo: string;
   demostrativo: string;
   /** Objeto directo: «borrar**la**» / «borrar**lo**». */
   pronombre: string;
-  /** Artículo: «**la** marca», «**el** color». Lo usan los avisos (§6.15). */
+  /** Artículo: «**la** marca», «**el** color». */
   articulo: string;
-  /** «Al crear**la**, queda **elegida**» (F2.13). */
+  /** «Al crear**la**, queda **elegida**». */
   elegido: string;
 };
 
@@ -77,38 +68,22 @@ export const PALABRAS: Record<TipoDeItem, PalabrasDeItem> = {
   },
 };
 
-/**
- * Destacar — RF-18. Sólo las categorías se destacan, así que sus palabras no
- * entran en `PALABRAS`: un campo que es `null` para dos de los tres tipos
- * invita a olvidarse de comprobarlo.
- */
-/**
- * F3.11: el texto opcional de la página de la categoría. La ayuda dice dónde
- * se ve y qué pasa si queda vacío, que es lo que decide si vale la pena
- * escribirlo.
- */
 export const TEXTO_DE_CATEGORIA = {
   etiqueta: "Texto de la página (opcional)",
   ayuda: (tope: number) =>
     `Dos o tres renglones sobre qué hay en esta categoría. Se ve debajo del título y en Google. Sin texto, va la frase general de la tienda. Hasta ${tope} caracteres.`,
 } as const;
 
+/** Solo las categorías se destacan, por eso no entra en `PALABRAS`. */
 export const DESTACADO = {
   etiqueta: "Destacada",
-  /** Qué hace, dicho antes de hacerlo. */
   ayuda:
     "Aparece primero en el menú de la tienda, en la portada y en los filtros. Si destacás todas, ninguna se adelanta.",
   destacar: "Destacar",
   quitar: "Quitar de destacadas",
 } as const;
 
-/**
- * El logo — RF-18 (marca) y RF-19 (medio de pago).
- *
- * Las palabras son las mismas para los dos porque el trámite es el mismo:
- * elegir un archivo, cambiarlo o sacarlo. Lo único que cambia es de qué se
- * está hablando, y eso lo pone quien llama a `falloTrasCrear`.
- */
+/** El logo de una marca o de un medio de pago: el trámite es el mismo. */
 export const LOGO = {
   etiqueta: "Logo",
   opcional: "(opcional)",
@@ -120,18 +95,13 @@ export const LOGO = {
   subiendo: "Subiendo el logo",
   /**
    * Cuando la fila se creó pero su logo no pudo subirse. El sujeto y el verbo
-   * los pone quien llama: «La marca … Editala» y «El medio de pago …
-   * Editalo» no se pueden armar con una sola plantilla sin que a una de las
-   * dos le quede mal el género.
+   * los pone quien llama, para que concuerden en género.
    */
   falloTrasCrear: (sujeto: string, editar: string) =>
     `${sujeto} se creó, pero el logo no se pudo subir. ${editar} para intentar de nuevo.`,
 } as const;
 
-/**
- * La imagen de categoría — FA-21. Usa el selector del logo y sus botones; lo
- * único que cambia es cómo se llama, y qué decir si no se pudo subir.
- */
+/** La imagen de categoría: usa el selector del logo y sus botones. */
 export const IMAGEN_DE_CATEGORIA = {
   etiqueta: "Imagen",
   sinLogo: "Sin imagen",
@@ -141,9 +111,8 @@ export const IMAGEN_DE_CATEGORIA = {
 } as const;
 
 /**
- * Las categorías relacionadas — RF-31. Los avisos sobre la OTRA categoría
- * nombran a las dos: «Pads deja de recomendar Teclados» se entiende sin saber
- * cómo se guarda una relación; «se borra el sentido inverso», no.
+ * Las categorías relacionadas — RF-31. Los avisos sobre la otra categoría
+ * nombran a las dos: «Pads deja de recomendar Teclados».
  */
 export const RELACIONADAS = {
   etiqueta: "Categorías relacionadas",

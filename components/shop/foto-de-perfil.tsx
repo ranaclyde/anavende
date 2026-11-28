@@ -19,28 +19,16 @@ import { TIPOS_ACEPTADOS } from "@/modules/media/tamanos";
 import { quitarMiFoto } from "@/modules/users/actions";
 
 /**
- * La foto de perfil, en «Mis datos» — RF-07, F5.9.
- *
- * **Se guarda al elegirla**, sin pasar por «Guardar cambios»: la foto no es
- * un campo que se corrige letra por letra, y atarla al botón del formulario
- * dejaría una foto elegida y sin guardar si alguien se va de la página
- * convencido de que ya la cambió. Lo mismo «Quitar foto».
- *
- * Mientras sube se ve la foto elegida, atenuada, y el botón dice en qué va:
- * primero los bytes por la red y después la conversión del servidor, que con
- * una foto de celular no es instantánea (§9.1).
- *
- * Sin foto, la cuenta tiene igual una cara: el blobatar que arma el servidor
- * a partir del id, y que se mueve al pasar el mouse por la fila
- * (`CaraAnimada`, `data-anima-cara`).
+ * La foto de perfil, en «Mis datos» (RF-07). Se guarda al elegirla, sin pasar
+ * por «Guardar cambios»: si no, alguien se iría creyendo que ya la cambió.
  */
 export function FotoDePerfil({
   cara,
   fotoActual,
 }: {
-  /** Lo que se ve hoy, armado en el servidor: la foto o el blobatar. */
+  /** La foto o el blobatar, armado en el servidor. */
   cara: React.ReactNode;
-  /** La clave de la foto guardada, o `null`: dice si hay una y cuándo cambió. */
+  /** La clave de la foto guardada, o `null`. */
   fotoActual: string | null;
 }) {
   const tieneFoto = fotoActual !== null;
@@ -57,16 +45,13 @@ export function FotoDePerfil({
   const subiendo = progreso !== null;
   const ocupado = subiendo || quitando;
 
-  // La vista previa es el archivo entero en memoria del navegador; si no se
-  // libera, queda retenido hasta recargar.
   useEffect(() => {
     if (!vistaPrevia) return;
     return () => URL.revokeObjectURL(vistaPrevia);
   }, [vistaPrevia]);
 
   const elegir = async (archivo: File | null) => {
-    // Se limpia siempre: si no, elegir la MISMA foto otra vez no dispara
-    // `change` y parece que el botón dejó de andar.
+    // Si no, elegir la misma foto otra vez no dispara `change`.
     if (campoDeArchivo.current) campoDeArchivo.current.value = "";
     if (!archivo) return;
 
@@ -97,12 +82,11 @@ export function FotoDePerfil({
     }
 
     setListo("Listo, cambiamos tu foto.");
-    // La foto nueva llega con el refresco —acá y en el encabezado—; recién
-    // ahí se suelta la vista previa, para que no parpadee la anterior.
+    // La vista previa se suelta recién cuando llega la foto nueva, para que
+    // no parpadee la anterior.
     router.refresh();
   };
 
-  // Cuando llega la foto nueva del servidor, la vista previa ya no hace falta.
   const [fotoVista, setFotoVista] = useState(fotoActual);
   if (fotoVista !== fotoActual) {
     setFotoVista(fotoActual);
@@ -181,8 +165,7 @@ export function FotoDePerfil({
         </div>
       </div>
 
-      {/* El input nativo, escondido y fuera del orden de tabulación: el
-          botón es el control, y con los dos se pasaba dos veces por lo mismo. */}
+      {/* Fuera del orden de tabulación: el control es el botón. */}
       <input
         ref={campoDeArchivo}
         type="file"

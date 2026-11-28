@@ -20,19 +20,9 @@ import {
 } from "@/modules/users/panel/schemas";
 
 /**
- * Cambiar el rol de una cuenta — FS RF-26. Tarea F7.6.
- *
- * **Pregunta antes**, al revés de «Guardar datos» de al lado: esto da o quita
- * el acceso al panel entero —catálogo, órdenes, stock, usuarios— y el diálogo
- * dice qué significa cada uno. No es la confirmación por reflejo de todo
- * botón: es que acá el error se descubre cuando alguien entra a donde no
- * debía, o cuando no puede entrar a donde tenía que.
- *
- * **Sobre la propia cuenta no hay selector, hay una explicación** (RF-26). El
- * requisito pide que la administradora no pueda quitarse el rol a sí misma, y
- * un control que rebota sin decir por qué deja pensando que la pantalla falla.
- * La regla la hace cumplir el dominio igual: esconder el control no es una
- * guardia.
+ * Cambiar el rol de una cuenta — RF-26. Pregunta antes: da o quita el acceso
+ * al panel entero. Sobre la propia cuenta no hay selector sino una
+ * explicación; la regla la hace cumplir el dominio igual.
  */
 export function RolDelUsuarioEditable({
   id,
@@ -136,8 +126,7 @@ export function RolDelUsuarioEditable({
             </DialogDescription>
           </DialogHeader>
 
-          {/* Lo que no se ve y conviene saber: el rol no viaja en el token
-              (§13.3), así que el cambio surte efecto enseguida. */}
+          {/* El rol no viaja en el token (TS §13.3): el cambio surte efecto enseguida. */}
           <p className="text-body-sm text-ink-secondary">
             El cambio vale desde la próxima página que cargue. No hace falta que
             cierre sesión ni que vuelva a entrar.

@@ -10,15 +10,8 @@ import { urlDeImagen } from "@/modules/media/subir";
 import type { Favorito } from "@/modules/users/favoritos/queries";
 
 /**
- * Un favorito en la vista de lista — F5.4 (pedido del 2026-09-14).
- *
- * Dice lo mismo que la tarjeta en un renglón: miniatura de 80px como la del
- * carrito (§7.4), marca, nombre, precio, colores y estado. Toda la fila lleva
- * a la ficha con el mismo enlace estirado que la tarjeta, y el corazón queda
- * encima, fuera del ancla.
- *
- * **Lo que ya no se vende no muestra precio**, como en el carrito (F5.6): un
- * precio de algo que no se puede comprar no informa nada.
+ * La tarjeta de producto en un renglón. Toda la fila lleva a la ficha con un
+ * enlace estirado; el corazón queda encima, fuera del ancla.
  */
 export function RenglonDeFavorito({
   favorito: f,
@@ -30,7 +23,6 @@ export function RenglonDeFavorito({
   const noDisponible = !f.activo;
   const sinStock = !noDisponible && f.disponible <= 0;
 
-  // §9: producto, marca y color.
   const alt =
     `${f.nombre} ${f.marca}` + (f.color ? `, ${f.color.toLowerCase()}` : "");
 

@@ -20,23 +20,22 @@ import { FieldError } from "@/components/ui/field-error";
 import { enviarVerificacion } from "@/modules/users/actions";
 
 /**
- * «Revisá tu email» — RF-05.
- * Hasta abrir el enlace no se puede entrar, así que esta pantalla tiene que
- * resolver sola el caso de que el email no llegue: el reenvío vive acá.
+ * «Revisá tu email» (RF-05). Hasta abrir el enlace no se puede entrar: por eso
+ * el reenvío vive acá.
  */
 export function AvisoDeVerificacion({
   email,
   volver,
 }: {
   email?: string;
-  /** El mismo destino que viajó en el primer email (F5.7). */
+  /** El mismo destino que viajó en el primer email. */
   volver?: string;
 }) {
   const [reenviando, iniciar] = useTransition();
   const [reenviado, setReenviado] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // F10.5b: el reenvío también pide el token de Turnstile.
+  // El reenvío también pide el token de Turnstile.
   const [captcha, setCaptcha] = useState<string | null>(null);
   const turnstile = useRef<ControlDeTurnstile>(null);
   const idDelAviso = useId();

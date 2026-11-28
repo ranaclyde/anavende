@@ -8,51 +8,20 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MarcaDelHero } from "./marca-del-hero";
 import { cn } from "@/lib/utils";
 
-/**
- * El hero de la home — RF-01, DR §7.1, TS §10.5. Rehecho el 2026-11-20
- * (F10.7d), después de probar unas quince direcciones en la tienda; la
- * forma salió de Atrium MTL.
- *
- * **Dos mitades.** A la izquierda, la marca, el eslogan grande y lo que pasa
- * la página (el buscador y la aclaración). A la derecha, tres columnas —dos
- * filas debajo del texto en el teléfono— con las seis categorías del día:
- * cada una pone su foto, si tiene, y un bloque de color con su nombre y
- * cuántos productos activos tiene. Las dos llevan a la categoría.
- *
- * **La palabra del eslogan** rota por las seis y después dice «la
- * tecnología», que dura el doble. Mientras nombra una, sus piezas quedan
- * enteras y las demás bajan un paso.
- *
- * **El movimiento** es un bucle propio (`useTiras`): cada tira corre a su
- * paso, se frena con el mouse encima y se arrastra —con el mouse las
- * columnas, con el dedo las filas—, con inercia al soltar. Un arrastre no
- * abre la categoría. Las piezas no se recorren con Tab: son muchas, se
- * mueven y las categorías ya están en los chips de abajo.
- *
- * **El freno (WCAG 2.2.2).** Botón de pausa para las tiras y la palabra.
- * Con `prefers-reduced-motion` no corre nada y el eslogan queda en «la
- * tecnología»; arrastrar sigue andando.
- */
+// El diseño está en DESIGN-REFERENCE §7.1 y el movimiento en TECHNICAL-SPEC §10.5.
 
 export type CategoriaDelHero = {
   nombre: string;
   href: string;
-  /** La foto de la categoría (FA-21), en `-card`, o `null`. */
+  /** En `-card`. */
   imagenUrl: string | null;
   cantidad: number;
 };
 
-/** Lo que dura cada palabra: lo justo para leerla y mirar las columnas. */
 const PALABRA_MS = 3500;
-/** «La tecnología» cierra la vuelta y se queda el doble. */
 const TECNOLOGIA_MS = 7000;
 
-/**
- * Los bloques, en colores vivos (2026-11-20, elegidos entre tres pruebas:
- * suaves, vivos y pizarra). Son los 700 de Tailwind, todos con texto blanco
- * en AA, y sin rojos ni rosas: el burdeos es de las acciones (DR §3.1). Van
- * en orden: el color es de la posición del día, no de la categoría.
- */
+/** Los 700 de Tailwind: texto blanco en AA, y sin rojos ni rosas (DR §3.1). */
 const VIVOS = [
   "#c2410c",
   "#1d4ed8",
@@ -63,7 +32,7 @@ const VIVOS = [
   "#0369a1",
 ];
 
-/** Las tiras: la del medio va al revés, cada una a su paso (px por segundo). */
+/** Velocidad en px por segundo. */
 const TIRAS = [
   { sentido: 1, velocidad: 26 },
   { sentido: -1, velocidad: 32 },
@@ -74,10 +43,8 @@ const TIRAS = [
 const MINIMO_POR_TIRA = 8;
 
 /**
- * «los teclados», «las sillas». Solo la primera letra va en minúscula, para
- * no romper siglas: «los hubs USB». Si el catálogo trae una categoría
- * femenina que no termina en -as, el artículo tiene que pasar a ser un dato
- * de la categoría (DR §7.1).
+ * Solo la primera letra va en minúscula, para no romper siglas: «los hubs
+ * USB». Una categoría femenina sin -as necesitaría el artículo como dato.
  */
 function conArticulo(categoria: string): string {
   const palabra =
@@ -92,9 +59,8 @@ function productos(n: number) {
 type Pieza = { categoria: number; foto: string | null };
 
 /**
- * Cada categoría pone su foto (si tiene) y su bloque. Cada tira arranca en
- * otro tercio de la lista, para que la misma categoría no quede a la misma
- * altura en dos tiras, y la lista se repite hasta llenar.
+ * Cada tira arranca en otro tercio de la lista, para que la misma categoría
+ * no quede a la misma altura en dos tiras.
  */
 function armarTiras(categorias: CategoriaDelHero[]): Pieza[][] {
   const lista: Pieza[] = categorias.flatMap((c, i) =>
@@ -119,9 +85,8 @@ function armarTiras(categorias: CategoriaDelHero[]): Pieza[][] {
 }
 
 /**
- * El bucle de las tiras. Mueve cada `[data-cinta]` dentro de su
- * `[data-tira]` con `transform`, sin pasar por React: la cinta tiene dos
- * copias iguales, y el corrimiento da la vuelta al largo de una.
+ * Mueve cada `[data-cinta]` con `transform`, sin pasar por React. La cinta
+ * tiene dos copias iguales, y el corrimiento da la vuelta al largo de una.
  */
 function useTiras(
   zona: React.RefObject<HTMLDivElement | null>,
@@ -188,8 +153,7 @@ function useTiras(
 
     const baja = (e: PointerEvent) => {
       if (e.button !== 0) return;
-      // En la computadora las columnas son verticales: con el dedo, ese
-      // gesto es bajar la página, y se lo dejamos al navegador.
+      // Con el dedo, arrastrar en vertical es bajar la página: es del navegador.
       if (vertical.matches && e.pointerType === "touch") return;
       const t = tiras.find((x) => x.tira.contains(e.target as Node));
       if (!t) return;
@@ -219,7 +183,6 @@ function useTiras(
       if (performance.now() - arrastre.cuando > 80) t.velocidad = 0;
       t.velocidad = Math.max(-2400, Math.min(2400, t.velocidad));
     };
-    // Un arrastre no es un clic: soltar después de arrastrar no abre nada.
     const clic = (e: MouseEvent) => {
       if (arrastre.movido > 6) {
         e.preventDefault();
@@ -241,7 +204,7 @@ function useTiras(
         t.tira.addEventListener("mouseenter", entra);
         t.tira.addEventListener("mouseleave", sale);
       }
-    // Al cambiar de columnas a filas el largo es otro: se arranca de cero.
+    // De columnas a filas el largo es otro: se arranca de cero.
     const cambio = () => {
       for (const t of tiras) {
         t.corrido = 0;
@@ -283,30 +246,24 @@ export function HeroDeLaHome({
   chips,
   children,
 }: {
-  /** Las del día, ya sorteadas (TS §10.5). */
+  /** Las del día, ya sorteadas. */
   categorias: CategoriaDelHero[];
-  /**
-   * Los chips de las destacadas. Van aparte del texto porque cambian de
-   * lugar: en la computadora, debajo del buscador; en el teléfono, debajo de
-   * las fotos, para que las fotos asomen en la primera pantalla.
-   */
+  /** Aparte del texto porque en el teléfono van debajo de las fotos. */
   chips?: ReactNode;
-  /** El buscador y la aclaración: los arma la página. */
+  /** El buscador y la aclaración. */
   children: ReactNode;
 }) {
   /** De 0 a `categorias.length`; el último es «la tecnología». */
   const [indice, setIndice] = useState(0);
   const [quieto, setQuieto] = useState(false);
-  /** Lo pidió la persona, con el botón. */
+  /** Con el botón de pausa. */
   const [detenido, setDetenido] = useState(false);
-  /** Fuera de la pantalla no tiene sentido seguir cambiando la palabra. */
   const [aLaVista, setALaVista] = useState(true);
   const raiz = useRef<HTMLElement>(null);
   const zona = useRef<HTMLDivElement>(null);
 
-  // El estado y no una lectura suelta de `matchMedia`: quien cambia la
-  // preferencia del sistema con la pestaña abierta espera que el movimiento
-  // pare ahí mismo, no en la próxima navegación.
+  // Escuchado y no leído una vez: si cambia la preferencia con la pestaña
+  // abierta, el movimiento para ahí mismo.
   useEffect(() => {
     const consulta = window.matchMedia("(prefers-reduced-motion: reduce)");
     const leer = () => setQuieto(consulta.matches);
@@ -356,37 +313,25 @@ export function HeroDeLaHome({
     >
       <div
         className={cn(
-          // Columnas y filas con mínimo 0: si no, la grilla toma el largo
-          // de las tiras, que son miles de píxeles.
+          // Mínimo 0: si no, la grilla toma el largo de las tiras, miles de píxeles.
           "mx-auto grid max-w-shop grid-cols-[minmax(0,1fr)] gap-8 px-4 py-8 sm:px-6 lg:px-8",
           tiras.length > 0
-            ? // Desde `lg`, el texto y los chips en la columna de la
-              // izquierda, centrados entre dos filas elásticas; las tiras,
-              // a la derecha, de arriba abajo.
-              "lg:h-[628px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:grid-rows-[minmax(0,1fr)_auto_auto_minmax(0,1fr)] lg:gap-x-14 lg:gap-y-6 lg:py-8"
+            ? "lg:h-[628px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:grid-rows-[minmax(0,1fr)_auto_auto_minmax(0,1fr)] lg:gap-x-14 lg:gap-y-6 lg:py-8"
             : "lg:py-16",
         )}
       >
         <div className="relative z-10 flex flex-col items-start gap-6 lg:col-start-1 lg:row-start-2">
-          {/*
-            La marca, en burdeos y escrita como se escribe: «AnaVende». En la
-            primera carga sale del isotipo (`MarcaDelHero`, F10.7c); el nombre
-            lo lee el lector de pantalla del `sr-only`.
-          */}
+          {/* El nombre lo lee el lector de pantalla del `sr-only`. */}
           <h1 className="flex flex-col items-start gap-5">
             <MarcaDelHero />
             <span className="sr-only">AnaVende</span>
-            {/* El lector de pantalla oye la forma canónica una vez, y no una
-                categoría nueva cada pocos segundos. */}
+            {/* El lector oye la forma canónica una vez, no cada rotación. */}
             <span className="sr-only">: vos elegís la tecnología.</span>
             <span aria-hidden className="block text-hero text-ink">
               <span className="block">Vos elegís</span>
               {/*
-                Todas las palabras del día, apiladas en la misma celda e
-                invisibles, y la de ahora encima: el título mide siempre lo
-                de la más larga. Si no, «los lectores de tarjetas» pasaba a
-                tres renglones y el buscador y los chips saltaban con cada
-                cambio (2026-11-20).
+                Todas apiladas e invisibles en la misma celda: el título mide
+                lo de la más larga y lo de abajo no salta con cada cambio.
               */}
               <span className="grid">
                 {rota
@@ -418,10 +363,8 @@ export function HeroDeLaHome({
           <div className="relative -mx-4 sm:-mx-6 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:mx-0 lg:h-full">
             <div
               ref={zona}
-              // Decorativas para el lector de pantalla y fuera del Tab: las
-              // categorías están en los chips. Con el mouse, cada pieza lleva
-              // a la suya. El botón de pausa va afuera de esta caja: adentro
-              // de un `aria-hidden` no se podría usar.
+              // Decorativas: las categorías están en los chips. El botón de
+              // pausa va afuera: adentro de un `aria-hidden` no se podría usar.
               aria-hidden
               className="relative flex flex-col gap-2.5 select-none sm:gap-3 lg:grid lg:h-full lg:grid-cols-3 lg:grid-rows-[minmax(0,1fr)] lg:[mask-image:linear-gradient(180deg,transparent,#000_7%,#000_90%,transparent)]"
             >
@@ -431,7 +374,6 @@ export function HeroDeLaHome({
                   data-tira
                   className={cn(
                     "relative min-w-0 cursor-grab touch-pan-y overflow-hidden active:cursor-grabbing lg:touch-auto",
-                    // En el teléfono, dos filas.
                     t === 2 && "max-lg:hidden",
                   )}
                 >
@@ -441,16 +383,11 @@ export function HeroDeLaHome({
                       <div
                         key={copia}
                         data-copia
-                        // Sin aire propio a los costados: en el empalme se
-                        // sumaba al de la pieza y dejaba un hueco mayor.
+                        // Sin aire propio: en el empalme dejaría un hueco mayor.
                         className="flex shrink-0 lg:flex-col"
                       >
                         {piezas.map((pieza, i) => {
                           const c = categorias[pieza.categoria];
-                          // La que nombra la palabra se destaca y las demás
-                          // quedan como están: el bloque se invierte (tinta y
-                          // texto blanco) y la foto lleva un borde en tinta.
-                          // Apagar las otras dejaba todo gris.
                           const destacada = pieza.categoria === actual;
                           return (
                             <Link
@@ -467,22 +404,16 @@ export function HeroDeLaHome({
                                     alt=""
                                     fill
                                     draggable={false}
-                                    // Todas sin diferir: las tiras se mueven,
-                                    // cualquiera puede ser el LCP, y son a
-                                    // lo sumo seis direcciones repetidas que
-                                    // el navegador baja una vez cada una.
-                                    // Sin prioridad alta, como las tarjetas
-                                    // (F10.4).
+                                    // Sin diferir: cualquiera puede ser el
+                                    // LCP, y son a lo sumo seis direcciones.
                                     loading="eager"
                                     sizes="(min-width: 1024px) 220px, 144px"
                                     className="pointer-events-none object-cover"
                                   />
-                                  {/* El borde va adentro: afuera lo cortaría
-                                    el costado de la columna. */}
+                                  {/* Adentro: afuera lo cortaría la columna. */}
                                   <span
                                     className={cn(
-                                      // Tinta afuera y una línea blanca adentro: sobre una foto
-                                      // oscura, la tinta sola no se ve.
+                                      // La línea blanca: sobre una foto oscura la tinta no se ve.
                                       "absolute inset-0 rounded-[18px] shadow-[inset_0_0_0_3px_var(--color-ink),inset_0_0_0_5px_rgb(255_255_255/0.9)] transition-opacity duration-500",
                                       destacada ? "opacity-100" : "opacity-0",
                                     )}
@@ -525,12 +456,9 @@ export function HeroDeLaHome({
               <button
                 type="button"
                 onClick={() => setDetenido((v) => !v)}
-                // El rótulo va dos veces: en `sr-only` para el lector de pantalla y
-                // en `title` para el globo del navegador.
                 title={
                   detenido ? "Reanudar el movimiento" : "Pausar el movimiento"
                 }
-                // Abajo a la derecha de las tiras, encima de la última pieza.
                 className="absolute right-4 bottom-2 z-30 grid size-11 lg:right-3 lg:bottom-3 place-items-center rounded-pill bg-surface/95 text-ink-secondary shadow-md transition-colors duration-150 hover:text-ink"
               >
                 {detenido ? (

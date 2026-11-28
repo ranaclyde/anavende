@@ -17,11 +17,10 @@ import { FieldHint, Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * Definición de una contraseña nueva (RF-05).
- * También es el destino del email E3, cuando la administradora crea una
- * cuenta desde el panel (RF-30, F9.4).
+ * Definición de una contraseña nueva (RF-05). También es el destino del email
+ * E3, cuando la administradora crea una cuenta desde el panel (RF-30).
  *
- * PENDIENTE F1.7 / F5.1: paso por Server Action con Zod.
+ * Pendiente: pasar por una Server Action con Zod.
  */
 export function UpdatePasswordForm() {
   const [password, setPassword] = useState("");
@@ -46,8 +45,7 @@ export function UpdatePasswordForm() {
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      // Los mismos casos que «Mis datos» (`cambiarContrasena`): con estos,
-      // probar de nuevo no sirve, así que se dice qué cambiar (F10.7).
+      // Con estos, probar de nuevo no sirve: se dice qué cambiar.
       setError(
         error.code === "same_password"
           ? "Es la misma que ya tenías. Elegí otra."

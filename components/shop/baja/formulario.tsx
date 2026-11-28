@@ -24,15 +24,8 @@ import { MAXIMO_DEL_MOTIVO } from "@/modules/users/baja/schemas";
 const OBLIGATORIO = "Contanos por qué te querés ir: es obligatorio.";
 
 /**
- * El motivo y la confirmación — RF-34, F5.8.
- *
- * **El motivo se pide antes de la pregunta**: si falta, se dice en el campo y
- * no se abre el diálogo. Preguntar «¿seguro?» para después rechazar por un
- * campo vacío es hacerle confirmar algo que no iba a pasar.
- *
- * **Confirmar va en un diálogo, con el botón rojo relleno** (DR §2.2): es el
- * único lugar donde el destructivo va relleno, porque ahí no hay un botón de
- * marca al lado con qué confundirlo. Afuera, «Pedir la baja» es de contorno.
+ * El motivo se valida antes de abrir el diálogo: preguntar «¿seguro?» para
+ * después rechazar por un campo vacío es confirmar algo que no iba a pasar.
  */
 export function FormularioDeBaja() {
   const router = useRouter();
@@ -58,8 +51,7 @@ export function FormularioDeBaja() {
       const r = await pedirLaBaja({ motivo });
 
       if (r.ok) {
-        // A «Mis datos», donde se ve el pedido y se puede retirar. El
-        // `refresh` trae el aviso de arriba y los controles apagados.
+        // El `refresh` trae el aviso de arriba y los controles apagados.
         router.push("/mi-cuenta#baja");
         router.refresh();
         return;
@@ -71,8 +63,8 @@ export function FormularioDeBaja() {
         return;
       }
 
-      // Órdenes activas que aparecieron mientras tanto, o lo inesperado: se
-      // dice en el diálogo, que es donde está mirando.
+      // Órdenes activas que aparecieron mientras tanto: se dice en el diálogo,
+      // que es donde está mirando.
       setErrorDelDialogo(r.message);
     });
   }

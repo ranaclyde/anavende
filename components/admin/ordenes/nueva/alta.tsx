@@ -39,31 +39,14 @@ import { MAXIMO_DE_NOTAS } from "@/modules/orders/schemas-manual";
 import { OTRA_LOCALIDAD } from "@/modules/users/direcciones/constantes";
 
 /**
- * Alta de una venta cargada a mano — FS RF-24. Tarea F7.4.
- *
- * **Es un formulario y no un checkout.** El checkout acompaña a alguien que
- * está comprando y por eso va de a un paso; esto lo llena la vendedora con la
- * venta ya hecha y el teléfono en la mano: todo a la vista, en el orden en
- * que se cuenta una venta —quién compró, qué se llevó, cómo lo recibe, cómo
- * queda—. **El comprador va primero desde el 2026-11-25** (F7.4b, pedido
- * tuyo): una venta se empieza a contar por la persona, no por el producto.
- *
- * **Lo que avisa sin bloquear** (RF-24): cuando la cantidad supera el stock.
- * Es la mitad del requisito que existe para poder registrar lo que ya pasó, y
- * por eso el aviso no apaga el botón. La otra mitad la decide el dominio: una
- * orden que nace **activa** sí necesita stock libre para reservar, y eso se
- * explica cuando vuelve el error (`manual.ts`).
- *
- * **Es un `<form>` de verdad** desde el 2026-09-22, como el de producto y el
- * de configuración: Enter envía, el navegador lo anuncia como formulario y el
- * foco va al primer campo que falló —la dirección incluida—. Hasta hoy era un
- * `<div>` con botones `onClick`.
+ * Pasarse del stock avisa y no bloquea (RF-24): una venta ya hecha se carga
+ * igual. Una orden que nace activa sí necesita stock libre, y eso lo decide
+ * el dominio (`manual.ts`).
  */
 
 type Renglon = {
   /** Propio del renglón: la misma variante puede entrar dos veces, a precios
-   *  distintos —dos unidades a $100 y una bonificada—, y la clave de React
-   *  no puede ser la variante. */
+   *  distintos, y la clave de React no puede ser la variante. */
   key: string;
   variante: VarianteParaLaOrden;
   cantidad: number;
@@ -98,11 +81,8 @@ export function AltaDeOrdenManual() {
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
   const [entrega, setEntrega] = useState<"envio" | "retiro">("retiro");
-  // **Finalizada por omisión** (decisión del 2026-09-16): lo habitual es
-  // anotar una venta que ya se entregó. Quien coordina para después lo cambia.
+  // Finalizada por omisión: lo habitual es anotar una venta ya entregada.
   const [estado, setEstado] = useState<"finalizada" | "activa">("finalizada");
-  // Hoy por omisión (RF-24, F7.4b): casi siempre se carga en el día. La de
-  // ayer es la que se dejó para la mañana siguiente.
   const [hoy] = useState(hoyEnArgentina);
   const [fechaDeVenta, setFechaDeVenta] = useState(hoy);
   const [notas, setNotas] = useState("");
@@ -113,14 +93,10 @@ export function AltaDeOrdenManual() {
   );
   const [direccion, setDireccion] = useState(DIRECCION_VACIA);
 
-  // Lo escrito se normaliza para mostrar, igual que lo hace la validación al
-  // recibirlo: quien escribe «150000,50» tiene que ver su total enseguida, no
-  // después de averiguar que acá el separador es el punto.
+  // Normaliza lo escrito como la validación: «150000,50» ya suma.
   const total = sum(renglones.map(subtotalDelRenglon));
 
-  // Para que el buscador marque lo que ya se eligió. El mismo color puede
-  // estar en dos renglones —a precios distintos, por ejemplo—, así que se
-  // cuentan en vez de marcarse sí o no.
+  // Se cuentan: el mismo color puede estar en dos renglones.
   const enLaOrden = new Map<string, number>();
   for (const r of renglones) {
     const id = r.variante.variantId;
@@ -134,8 +110,6 @@ export function AltaDeOrdenManual() {
         key: `${variante.variantId}-${Date.now()}`,
         variante,
         cantidad: 1,
-        // Arranca con el precio vigente y se edita: RF-24 pide el acordado,
-        // y el del catálogo es el punto de partida nueve de cada diez veces.
         precio: variante.precio,
       },
     ]);
@@ -143,8 +117,7 @@ export function AltaDeOrdenManual() {
 
   function elegirCuenta(comprador: CompradorParaLaOrden) {
     setCuenta(comprador);
-    // Se completa lo que esté vacío y no se pisa lo ya escrito: si la
-    // vendedora escribió «Rosa (regalo para Ana)», eso lo puso por algo.
+    // Completa lo vacío sin pisar lo ya escrito.
     setNombre((v) => v || comprador.nombre);
     setTelefono((v) => v || telefonoLocal(comprador.telefono));
     setEmail((v) => v || comprador.email);
@@ -157,21 +130,14 @@ export function AltaDeOrdenManual() {
     setDireccionGuardada(null);
   }
 
-  /**
-   * Adónde va el foco cuando el envío falla. Sin esto queda en el botón, al
-   * pie de un formulario largo, y el campo que hay que corregir puede estar
-   * cuatro tarjetas más arriba, fuera de la pantalla.
-   */
   const errorGeneral = useRef<HTMLDivElement | null>(null);
 
   function irAlPrimerError(
     nuevos: ErroresDeFormulario<CampoDelFormulario>,
     deLaDireccion: Partial<Record<string, string>>,
   ) {
-    // Los candidatos en orden de lectura, y se enfoca el primero que exista
-    // de verdad: «direccion» y «items» son secciones y no controles, y la
-    // dirección escrita sólo está en pantalla cuando no se eligió una
-    // guardada. Lo que no tiene dónde aterrizar cae al mensaje de abajo.
+    // El primero que exista: «direccion» e «items» son secciones y no
+    // controles, y la dirección escrita no está si se eligió una guardada.
     const candidatos = [
       ...CAMPOS.filter((c) => nuevos.campos[c]).map((c) => `${idBase}-${c}`),
       ...CAMPOS_DE_DIRECCION.filter((c) => deLaDireccion[c]).map(
@@ -225,8 +191,6 @@ export function AltaDeOrdenManual() {
         irAlPrimerError(nuevos, deLaDireccion);
         return;
       }
-      // Al detalle de la orden recién creada: es donde se la revisa, se le
-      // escribe al comprador o se la corrige (F7.1, F7.2).
       avisar(`Creaste la orden #${r.data.numero}.`);
       router.push(`/admin/ordenes/${r.data.numero}`);
     });
@@ -235,8 +199,6 @@ export function AltaDeOrdenManual() {
   const e = errores.campos;
 
   return (
-    // Una sola tarjeta con «Cargar la orden» al pie (DESIGN.md, 2026-11-13):
-    // eran cinco con la barra afuera, y parecían cinco cosas sueltas.
     <form onSubmit={enviar} noValidate className="min-w-0">
       <TarjetaDeSeccion id="datos-de-la-orden" titulo="Datos de la orden">
         <Apartado
@@ -310,8 +272,7 @@ export function AltaDeOrdenManual() {
             </ul>
           )}
 
-          {/* Debajo de la lista y no arriba: los renglones son lo que se
-            revisa, y el botón queda donde termina lo que ya se cargó. */}
+          {/* Debajo de la lista: queda donde termina lo ya cargado. */}
           <AgregarProductos
             id={`${idBase}-items`}
             renglones={renglones.length}
@@ -420,8 +381,7 @@ export function AltaDeOrdenManual() {
           <FieldError id={`${idBase}-estado-error`}>{e.estado}</FieldError>
 
           {estado === "finalizada" ? (
-            // Sin límite hacia atrás (decisión tuya del 2026-11-25): una venta
-            // olvidada puede aparecer una semana después.
+            // Sin límite hacia atrás: una venta olvidada puede llegar tarde.
             <div className="sm:max-w-56">
               <Campo
                 id={`${idBase}-fechaDeVenta`}
@@ -455,9 +415,7 @@ export function AltaDeOrdenManual() {
           <FieldError>{errores.general}</FieldError>
         </div>
 
-        {/* En el panel la acción principal va a la derecha, y el escape queda a
-          mano: cancelar es un enlace y no un botón, porque no hace nada, va a
-          otro lado. */}
+        {/* Cancelar es un enlace: no hace nada, va a otro lado. */}
         <PieDeGuardado>
           <Button asChild variant="tertiary">
             <Link href="/admin/ordenes">Cancelar</Link>
@@ -476,7 +434,7 @@ export function AltaDeOrdenManual() {
   );
 }
 
-/** El orden en que se leen en pantalla, que es el orden en que se corrigen. */
+/** En el orden en que se leen: es el orden en que se corrigen. */
 const CAMPOS: CampoDelFormulario[] = [
   "nombre",
   "telefono",
@@ -489,7 +447,7 @@ const CAMPOS: CampoDelFormulario[] = [
   "notas",
 ];
 
-/** Cero mientras el precio no sea un monto: lo que no se entiende no suma. */
+/** Cero mientras el precio no sea un monto. */
 function subtotalDelRenglon(r: Renglon): string {
   const precio = comoMonto(r.precio);
   return isMoney(precio) ? multiply(precio, r.cantidad) : "0.00";
@@ -507,7 +465,6 @@ export const DIRECCION_VACIA = {
   notes: "",
 };
 
-/** De una dirección guardada del comprador a los campos del formulario. */
 function deDireccionGuardada(d: {
   recipientName: string;
   phone: string;
@@ -535,12 +492,8 @@ function deDireccionGuardada(d: {
 }
 
 /**
- * Un renglón con su cantidad y su precio.
- *
- * **El aviso de stock mira un contador distinto según cómo va a nacer la
- * orden** (§8.1): una finalizada descuenta del total, una activa compromete
- * el disponible. Avisar contra el número que no es sería avisar de más o de
- * menos justo donde RF-24 quiere precisión.
+ * El aviso de stock mira el total si la orden nace finalizada y el disponible
+ * si nace activa (TS §8.1).
  */
 function RenglonDeLaOrden({
   renglon,
@@ -627,9 +580,8 @@ function RenglonDeLaOrden({
       </div>
 
       {seExcede ? (
-        // RF-24: **advierte y no bloquea**. Si la venta ya ocurrió, esto es
-        // exactamente lo que hay que poder cargar; el stock queda en negativo
-        // y el panel lo muestra como la discrepancia que es (§5.4).
+        // Advierte y no bloquea (RF-24): el stock queda en negativo, como
+        // discrepancia (§5.4).
         <p className="flex items-start gap-1.5 rounded-panel-control bg-warning-tint px-2 py-1.5 text-caption text-warning">
           <TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
           <span>

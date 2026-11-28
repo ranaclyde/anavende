@@ -3,17 +3,8 @@ import Link from "next/link";
 import { useId } from "react";
 
 /**
- * Una sección de la home — RF-01, §7.1. Tarea F3.7.
- *
- * **Son todas la misma pieza**: las de categoría, «Destacados», «En oferta» y
- * la de «Más categorías» de abajo. Cinco encabezados escritos a mano eran
- * cinco tamaños de `h2` esperando a divergir, que es exactamente lo que el
- * repaso del panel encontró del otro lado (§6.9, 2026-09-21). Desde F8.2 la
- * usan también los recomendados de la ficha.
- *
- * **El enlace de la derecha dice a dónde va, no «ver más».** «Ver todos los
- * teclados» se entiende leído solo, que es como lo lee un lector de pantalla
- * cuando recorre los enlaces de la página; a la vista alcanza con la flecha.
+ * La usan todas las secciones de la home y los recomendados de la ficha. El
+ * enlace dice a dónde va para el lector de pantalla, que lo lee suelto.
  */
 export function SeccionDeLaHome({
   titulo,
@@ -22,17 +13,9 @@ export function SeccionDeLaHome({
   children,
 }: {
   titulo: string;
-  /**
-   * A dónde lleva el «→». Sin esto la sección no ofrece salida. `texto` es lo
-   * que se ve, «Ver todo» si no se dice otra cosa: «Más categorías» dice «Ver
-   * todas».
-   */
+  /** `texto` es lo que se ve; `etiqueta`, lo que oye el lector de pantalla. */
   enlace?: { href: string; etiqueta: string; texto?: string };
-  /**
-   * Un control en el lugar del enlace, para la sección que no lleva a un
-   * listado sino que hace algo: «Borrar historial» de «Vistos
-   * recientemente» (F8.4).
-   */
+  /** Un control en el lugar del enlace, como «Borrar historial». */
   accion?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -64,7 +47,7 @@ export function SeccionDeLaHome({
   );
 }
 
-/** La grilla de tarjetas: la misma del catálogo, para que pesen igual (§6.1). */
+/** La misma grilla del catálogo, para que las tarjetas pesen igual. */
 export function GrillaDeLaHome({ children }: { children: React.ReactNode }) {
   return (
     <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

@@ -20,30 +20,7 @@ import {
 } from "@/modules/catalog/variants/actions";
 import type { VarianteParaReponer } from "@/modules/catalog/variants/queries";
 
-/**
- * Reponer el stock sin salir del listado — RF-16, RF-20 · DR §6.9.
- *
- * **Por qué existe.** El tablero dice «5 productos para reponer» y enlaza al
- * listado filtrado; desde ahí, hasta el 2026-09-21, cargar stock costaba seis
- * pasos por producto —abrir la ficha, scrollear 480px hasta «Colores y
- * stock», abrir el diálogo del color, escribir, guardar, volver— y no
- * confirmaba nada. Con esto es uno, y la lista de lo que falta no se pierde
- * de vista en el medio.
- *
- * **Globo y no diálogo**, a propósito: un diálogo oscurece la pantalla y se
- * queda con el foco, y acá la operación se repite fila tras fila. Perder de
- * vista cuáles faltan entre un producto y el siguiente es justo lo que se
- * viene a evitar.
- *
- * **Se escribe el total, no lo disponible**, y por eso cada renglón muestra
- * la cuenta al lado. La columna del listado dice lo disponible —lo que se
- * puede vender— y el campo pide el total; sin decirlo, alguien que ve «0
- * disponibles» y escribe 10 esperaría vender diez cuando hay dos reservadas.
- *
- * **Guardar explícito** (decisión tuya del 2026-09-21): se corrigen los
- * números que haga falta y se guarda una vez. Un campo que se guarda solo al
- * salir del foco mueve stock sin que nadie lo haya pedido.
- */
+/** Ver «Reponer desde el listado» en `DESIGN.md`. */
 export function ReponerStock({
   productId,
   nombre,
@@ -51,7 +28,7 @@ export function ReponerStock({
 }: {
   productId: string;
   nombre: string;
-  /** Cuántos colores tiene. Sin ninguno no hay nada que reponer. */
+  /** Cuántos colores tiene. */
   variantes: number;
 }) {
   const [abierto, setAbierto] = useState(false);
@@ -67,8 +44,7 @@ export function ReponerStock({
     setAbierto(v);
     setError(null);
     if (!v) return;
-    // Se lee al abrir y no con el listado: son cuarenta productos por página
-    // y se repone uno o dos.
+    // Se lee al abrir y no con el listado: se repone uno de cuarenta.
     setFilas(null);
     iniciar(async () => {
       const r = await leerParaReponer({ productId });
@@ -94,10 +70,7 @@ export function ReponerStock({
     iniciar(async () => {
       const r = await reponerStock({
         productId,
-        // `Number.parseInt` explícito, que es lo que pide la regla de lint
-        // de los montos: el genérico `Number` está prohibido en todo el
-        // repositorio para que nadie convierta un `numeric(12,2)` sin
-        // pensarlo. Acá son unidades enteras, no pesos.
+        // `Number.parseInt`: la regla de lint prohíbe `Number` por los montos.
         ajustes: filas.map((v) => ({
           variantId: v.id,
           nuevoTotal: Number.parseInt(valores[v.id] || "0", 10),
@@ -112,9 +85,7 @@ export function ReponerStock({
         (n, v) => n + Number.parseInt(valores[v.id] || "0", 10),
         0,
       );
-      // El globo se acaba de cerrar y la fila cambia de números sin decir
-      // por qué: es el caso de DR §6.15. Antes esto era un renglón arriba del
-      // listado, a una pantalla de distancia de la fila que cambió.
+      // Con el globo cerrado, la fila cambia sin decir por qué (DR §6.15).
       avisar(
         `«${nombre}» quedó con ${total === 1 ? "1 unidad" : `${total} unidades`} en total.`,
       );
@@ -175,10 +146,8 @@ export function ReponerStock({
                         {v.colorName ?? "Sin color"}
                       </span>
                     </label>
-                    {/* `inputMode` y no `type="number"`, por la misma razón
-                        que el umbral de Configuración: el campo numérico del
-                        navegador sube y baja con la rueda del mouse encima, y
-                        acá eso cambiaría el stock mientras alguien scrollea. */}
+                    {/* No `type="number"`: la rueda del mouse cambiaría el
+                        stock al scrollear. */}
                     <Input
                       id={`${id}-${v.id}`}
                       inputMode="numeric"
@@ -192,9 +161,8 @@ export function ReponerStock({
                       className="w-20 shrink-0 text-right tabular-nums"
                     />
                   </div>
-                  {/* La cuenta, para que el total que se escribe y lo
-                      disponible que muestra el listado no se lean como dos
-                      números en desacuerdo. */}
+                  {/* La cuenta: el total escrito y lo disponible del listado
+                      no son el mismo número. */}
                   <p
                     className={cn(
                       "pl-6 text-caption tabular-nums",

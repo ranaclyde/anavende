@@ -5,12 +5,7 @@ import { usePathname } from "next/navigation";
 import { SolapasDelPanel } from "@/components/admin/solapas";
 import { PAGINAS_LEGALES } from "@/modules/content/paginas";
 
-/**
- * Las cuatro páginas legales — RF-29, F9.3.
- *
- * **Subrayado y sin número** (§6.9), como el catálogo: cada solapa es otra
- * página, no otra vista del mismo listado.
- */
+/** Subrayado y sin número (DR §6.9): cada solapa es otra página. */
 export function SolapasDeLegales() {
   const pathname = usePathname();
 

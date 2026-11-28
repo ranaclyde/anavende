@@ -7,17 +7,8 @@ import { useDataScale } from "@/components/ui/escala";
 import { cn } from "@/lib/utils";
 
 /**
- * Tooltip — el de shadcn sobre Radix, como el resto de los primitivos
- * (`@radix-ui/react-*`, uno por componente). Llegó con F5.4 para los botones
- * que son solo un ícono: el `title` nativo tarda en aparecer y se va apenas se
- * mueve el mouse, así que en la práctica no se ve.
- *
- * **No reemplaza la etiqueta.** El nombre accesible sigue en el botón (texto
- * `sr-only`): el tooltip es para quien ve el ícono y no lo reconoce, y en un
- * teléfono, donde no hay hover, no aparece.
- *
- * En tinta y con texto claro, como la franja de tienda cerrada: es lo único
- * oscuro que flota sobre una tienda clara, y se distingue sin sumar un color.
+ * No reemplaza la etiqueta: el nombre accesible sigue en el botón (`sr-only`),
+ * y en el teléfono, sin hover, el tooltip no aparece.
  */
 
 function TooltipProvider({
@@ -53,9 +44,7 @@ function TooltipContent({
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
-        // Los globos de ayuda viven hoy en la tienda, así que esto no cambia
-        // nada todavía. Va igual porque el que falta es el que se olvida: si
-        // mañana aparece uno en el panel, tiene que nacer bien (`escala.tsx`).
+        // Hoy solo hay tooltips en la tienda; va para que uno del panel nazca bien.
         data-scale={useDataScale()}
         sideOffset={sideOffset}
         className={cn(
