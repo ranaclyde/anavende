@@ -7,7 +7,7 @@ import { variantImages } from "@/db/schema/catalog";
 import { isDomainError } from "@/lib/errors";
 import { consumir } from "@/lib/limite";
 import { getSession } from "@/lib/session";
-import { almacenamiento } from "@/lib/storage";
+import { getStorage } from "@/lib/storage";
 import { prepararCapas } from "@/modules/marca-de-agua/service";
 import { capas as esquemaDeCapas } from "@/modules/marca-de-agua/schemas";
 import { procesarImagen } from "@/modules/media/procesar";
@@ -41,7 +41,7 @@ async function bytesDeMuestra(id: string): Promise<Buffer | null> {
     .where(and(eq(variantImages.id, id), eq(variantImages.hasWatermark, false)))
     .limit(1);
   if (!fila) return null;
-  return almacenamiento().get(clave(fila.storageKey, "detail"));
+  return getStorage().get(clave(fila.storageKey, "detail"));
 }
 
 export async function POST(request: NextRequest) {

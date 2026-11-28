@@ -5,7 +5,7 @@ import sharp from "sharp";
 
 import { db } from "@/db";
 import { slugificar } from "@/lib/slug";
-import { almacenamiento } from "@/lib/storage";
+import { getStorage } from "@/lib/storage";
 import { armarZip, type ArchivoDelZip } from "@/lib/zip";
 import { clave } from "@/modules/media/tamanos";
 
@@ -92,9 +92,7 @@ export async function zipDeFotos({
   for (let desde = 0; desde < fotos.length; desde += EN_PARALELO) {
     await Promise.all(
       fotos.slice(desde, desde + EN_PARALELO).map(async (foto, i) => {
-        const webp = await almacenamiento().get(
-          clave(foto.storageKey, "detail"),
-        );
+        const webp = await getStorage().get(clave(foto.storageKey, "detail"));
         archivos[desde + i] = {
           nombre: nombres[desde + i],
           datos: await aJpg(webp),

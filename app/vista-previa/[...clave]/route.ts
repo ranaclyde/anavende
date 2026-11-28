@@ -1,4 +1,4 @@
-import { almacenamiento } from "@/lib/storage";
+import { getStorage } from "@/lib/storage";
 
 /**
  * El `-og.jpg` de una ficha desde el dominio de la tienda: la excepción de
@@ -25,7 +25,7 @@ export async function GET(
     return new Response(null, { status: 404 });
   }
 
-  const respuesta = await fetch(almacenamiento().publicUrl(clave), {
+  const respuesta = await fetch(getStorage().publicUrl(clave), {
     cache: "no-store",
   });
 
