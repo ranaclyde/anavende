@@ -2,23 +2,12 @@
 
 # dependencies
 /node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
 
 # testing
 /coverage
 
 # next.js
 /.next/
-/out/
-
-# production
-/build
 
 # misc
 .DS_Store
@@ -26,9 +15,6 @@
 
 # debug
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env*.local
@@ -41,9 +27,6 @@ yarn-error.log*
 # una clave en el repositorio es una clave en el repositorio—. La plantilla que
 # SÍ se commitea es `.env.test.example`, con los valores vacíos.
 .env.test
-
-# vercel
-.vercel
 
 # typescript
 *.tsbuildinfo

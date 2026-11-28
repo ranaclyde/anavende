@@ -53,11 +53,6 @@ export const TAMANOS_LOGO = TAMANOS.filter(
   (t) => t.sufijo === "thumb" || t.sufijo === "card",
 ) as unknown as readonly Tamano[];
 
-/** Para regenerar solo `-og` a partir del `-detail` (`scripts/derivar-og-productos.mts`). */
-export const TAMANOS_OG = TAMANOS.filter(
-  (t) => t.sufijo === "og",
-) as unknown as readonly Tamano[];
-
 /**
  * Aparte de `TAMANOS` a propósito: sumarla ahí haría que cada foto de producto
  * sacara también un recorte de perfil.

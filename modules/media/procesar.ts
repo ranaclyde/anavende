@@ -126,8 +126,8 @@ export async function procesarImagen(
   }
 
   // Las de lienzo fijo (`og`) no cuentan: con una foto chica, 1200×630 pasaría
-  // por la más grande. El respaldo no sobra: `derivar-og-productos.mts` pasa
-  // solo `TAMANOS_OG`, y reducir un arreglo vacío revienta.
+  // por la más grande. El respaldo no sobra: si se piden solo versiones de
+  // lienzo fijo no hay ninguna de galería, y reducir un arreglo vacío revienta.
   const deGaleria = new Set(
     tamanos.filter((t) => !t.alto).map((t) => t.sufijo),
   );

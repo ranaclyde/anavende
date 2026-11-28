@@ -84,16 +84,6 @@ export function isPositive(monto: Money): boolean {
   return aDecimal(monto).greaterThan(0);
 }
 
-/** Solo para previsualizar: en la base es la columna generada `final_price`. */
-export function finalPrice(precio: Money, descuento: Money): Money {
-  if (compare(descuento, precio) >= 0) {
-    throw new RangeError(
-      "El descuento tiene que ser menor que el precio (RN-04b).",
-    );
-  }
-  return subtract(precio, descuento);
-}
-
 /**
  * RF-40. Hacia arriba a propósito, la única cuenta que no corta hacia abajo:
  * las cuotas tienen que sumar al menos el precio. `recargo` es un porcentaje.

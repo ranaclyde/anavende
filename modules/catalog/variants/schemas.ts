@@ -83,11 +83,6 @@ export const reposicion = z.object({
     .max(50),
 });
 
-export const cambioDeEstadoDeVariante = z.object({
-  id: z.uuid(),
-  activo: z.boolean(),
-});
-
 /** `sourceId: null` = volver a las imágenes propias. */
 export const fuenteDeImagenes = z.object({
   id: z.uuid(),

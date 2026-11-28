@@ -22,7 +22,7 @@ function marcarComoVista() {
 }
 
 // En las unidades de la palabra (mayúscula de 1000).
-const [x, y, ancho, alto] = PALABRA.caja;
+const [x, y, , alto] = PALABRA.caja;
 
 /** Un 25 % más alta que la palabra, centrada en alto y apoyada a la izquierda. */
 const LADO_DE_LA_GRILLA = alto * 1.25;
