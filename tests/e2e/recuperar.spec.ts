@@ -77,3 +77,24 @@ test("dice lo mismo exista o no, y al pedir dos veces seguidas", async ({
 
   await expect(enlaceDelEmail(inexistente)).rejects.toThrow(/No llegó/);
 });
+
+test("con una sesión abierta normalmente, no se define sin el enlace", async ({
+  page,
+}) => {
+  // La pantalla no pide la contraseña actual: lo que la reemplaza es haber
+  // llegado por el enlace del email. Con una sesión de contraseña, la acción
+  // se niega y la contraseña queda como estaba.
+  const otra = await datos.unaCuenta("Sesionada");
+  await ingresar(page, otra);
+
+  await page.goto("/recuperar/nueva-contrasena");
+  const nueva = `Nueva-${sufijo()}-${sufijo()}`;
+  await page.getByLabel("Contraseña nueva").fill(nueva);
+  await page.getByLabel("Repetila").fill(nueva);
+  await page.getByRole("button", { name: "Guardar contraseña" }).click();
+
+  await expect(
+    page.getByText(/El enlace para definir la contraseña venció/),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/recuperar\/nueva-contrasena/);
+});

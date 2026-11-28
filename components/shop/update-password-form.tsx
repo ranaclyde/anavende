@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,51 +14,43 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { definirContrasena } from "@/modules/users/actions";
+
+type Campo = "nueva" | "repetida";
 
 /**
  * Definición de una contraseña nueva (RF-05). También es el destino del email
  * E3, cuando la administradora crea una cuenta desde el panel (RF-30).
- *
- * Pendiente: pasar por una Server Action con Zod.
  */
 export function UpdatePasswordForm() {
   const [password, setPassword] = useState("");
   const [repetida, setRepetida] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [enviando, setEnviando] = useState(false);
+  const [errores, setErrores] =
+    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [enviando, iniciar] = useTransition();
   const router = useRouter();
 
   const noCoinciden = repetida.length > 0 && password !== repetida;
+  const errorRepetida = noCoinciden
+    ? "Las dos contraseñas tienen que ser iguales."
+    : errores.campos.repetida;
 
-  const guardar = async (e: React.FormEvent) => {
+  const guardar = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setErrores(SIN_ERRORES);
 
-    if (password !== repetida) {
-      setError("Las dos contraseñas tienen que ser iguales.");
-      return;
-    }
+    iniciar(async () => {
+      const r = await definirContrasena({ nueva: password, repetida });
 
-    setEnviando(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password });
+      if (!r.ok) {
+        setErrores(leerErrores<Campo>(r));
+        return;
+      }
 
-    if (error) {
-      // Con estos, probar de nuevo no sirve: se dice qué cambiar.
-      setError(
-        error.code === "same_password"
-          ? "Es la misma que ya tenías. Elegí otra."
-          : error.code === "weak_password"
-            ? "Esa contraseña es muy fácil de adivinar. Probá con una más larga."
-            : "No pudimos guardar la contraseña. Probá de nuevo.",
-      );
-      setEnviando(false);
-      return;
-    }
-
-    router.push("/mi-cuenta?contrasena=nueva");
-    router.refresh();
+      router.push("/mi-cuenta?contrasena=nueva");
+      router.refresh();
+    });
   };
 
   return (
@@ -80,11 +72,20 @@ export function UpdatePasswordForm() {
               autoComplete="new-password"
               minLength={8}
               required
-              aria-describedby="password-ayuda"
+              aria-invalid={errores.campos.nueva ? true : undefined}
+              aria-describedby={
+                errores.campos.nueva ? "password-error" : "password-ayuda"
+              }
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <FieldHint id="password-ayuda">Al menos 8 caracteres.</FieldHint>
+            {errores.campos.nueva ? (
+              <FieldError id="password-error">
+                {errores.campos.nueva}
+              </FieldError>
+            ) : (
+              <FieldHint id="password-ayuda">Al menos 8 caracteres.</FieldHint>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -95,19 +96,17 @@ export function UpdatePasswordForm() {
               type="password"
               autoComplete="new-password"
               required
-              aria-invalid={noCoinciden || undefined}
-              aria-describedby={noCoinciden ? "repetida-error" : undefined}
+              aria-invalid={errorRepetida ? true : undefined}
+              aria-describedby={errorRepetida ? "repetida-error" : undefined}
               value={repetida}
               onChange={(e) => setRepetida(e.target.value)}
             />
-            {noCoinciden && (
-              <FieldError id="repetida-error">
-                Las dos contraseñas tienen que ser iguales.
-              </FieldError>
+            {errorRepetida && (
+              <FieldError id="repetida-error">{errorRepetida}</FieldError>
             )}
           </div>
 
-          <FieldError>{error}</FieldError>
+          <FieldError>{errores.general}</FieldError>
 
           <Button
             type="submit"
