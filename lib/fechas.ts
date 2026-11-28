@@ -1,22 +1,9 @@
-/**
- * Fechas y horas en la zona del negocio — F7.1.
- *
- * **La zona se nombra, no se hereda del servidor.** El contenedor de
- * producción corre en UTC, y una orden de las 22:00 de un lunes en Argentina
- * es de la 01:00 del martes en UTC: mostrada sin zona, aparece con la fecha
- * del día siguiente. Peor todavía en el filtro por rango de RF-21, donde la
- * pantalla diría «lunes» y la consulta la contaría en el martes.
- *
- * Por eso la constante la comparten los dos lados: lo que se muestra y lo que
- * se corta en SQL (`queries-panel.ts` la pasa a `AT TIME ZONE`). Con dos
- * copias, el día que una cambie el listado deja de coincidir con su filtro.
- *
- * Sin `server-only`: la escribe la consulta y la leen las pantallas.
- */
+// La zona se nombra y no se hereda: el contenedor corre en UTC. La misma
+// constante va a `AT TIME ZONE` en SQL, para que la pantalla y el filtro
+// coincidan. Sin `server-only`: la usan la consulta y las pantallas.
 
 export const ZONA_HORARIA = "America/Argentina/Buenos_Aires";
 
-/** «30/08/2026» — la de las tablas del panel, que se recorren con la vista. */
 const CORTA = new Intl.DateTimeFormat("es-AR", {
   day: "2-digit",
   month: "2-digit",
@@ -24,13 +11,7 @@ const CORTA = new Intl.DateTimeFormat("es-AR", {
   timeZone: ZONA_HORARIA,
 });
 
-/**
- * «30/08/2026, 14:35» — la del detalle y del historial, donde la hora importa.
- *
- * **En 24 horas.** `es-AR` por omisión imprime «01:07 p. m.», que es cinco
- * caracteres más para decir lo mismo y se lee peor en una lista de
- * transiciones, donde lo que interesa es el orden entre ellas.
- */
+// En 24 horas: `es-AR` por omisión imprime «01:07 p. m.».
 const CON_HORA = new Intl.DateTimeFormat("es-AR", {
   day: "2-digit",
   month: "2-digit",
@@ -49,10 +30,6 @@ export function fechaConHora(iso: string): string {
   return CON_HORA.format(new Date(iso));
 }
 
-/**
- * «16 de octubre de 2026» — para leer y no para comparar: la fecha de
- * actualización de una página legal (F9.3).
- */
 const LARGA = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
   month: "long",
@@ -64,13 +41,6 @@ export function fechaLarga(fecha: Date): string {
   return LARGA.format(fecha);
 }
 
-/**
- * «septiembre» — el mes en curso, en la zona del negocio. Tarea F7.8.
- *
- * Lo usa el inicio del panel para que «Este mes» diga cuál es: en el primer
- * día del mes, un total que cayó a cero de golpe se entiende solo si la
- * pantalla nombra el mes que está contando.
- */
 const MES = new Intl.DateTimeFormat("es-AR", {
   month: "long",
   timeZone: ZONA_HORARIA,
@@ -80,14 +50,8 @@ export function mesEnCurso(): string {
   return MES.format(new Date());
 }
 
-/**
- * «30/11/2026» para un DÍA de calendario (`AAAA-MM-DD`, una columna `date`),
- * no para un instante — RF-40.
- *
- * Se formatea en UTC a propósito: `new Date("2026-11-30")` es la medianoche
- * UTC de ese día, y pasada por la zona de Argentina sería el 29 a las 21.
- * Un día no tiene zona; el truco es no dejar que se la pongan.
- */
+// Para un día de calendario (columna `date`), en UTC a propósito: pasado por
+// la zona de Argentina, `2026-11-30` sería el 29 a las 21.
 const DIA = new Intl.DateTimeFormat("es-AR", {
   day: "2-digit",
   month: "2-digit",
@@ -99,7 +63,7 @@ export function diaCorto(dia: string): string {
   return DIA.format(new Date(`${dia}T00:00:00Z`));
 }
 
-/** Hoy en Argentina, como `AAAA-MM-DD`: el valor de un `<input type="date">`. */
+// `en-CA` da `AAAA-MM-DD`, el valor de un `<input type="date">`.
 const ISO_DEL_DIA = new Intl.DateTimeFormat("en-CA", {
   year: "numeric",
   month: "2-digit",

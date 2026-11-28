@@ -6,38 +6,17 @@ import { domainError } from "@/lib/errors";
 import { liberar, vender, type Transaccion } from "@/modules/stock/operaciones";
 
 /**
- * Máquina de estados de la orden — FS RF-13, RF-23 · TS §5.6, §8.1. Tarea F4.2.
+ * Máquina de estados de la orden (RF-13, RF-23): `activa` pasa a `finalizada`
+ * o a `cancelada`, y de ahí no sale.
  *
- * Tres estados y dos salidas, las dos desde `activa`:
- *
- *     crear ──▶ ACTIVA ──┬──▶ FINALIZADA   descuenta el stock y suelta la reserva
- *                        └──▶ CANCELADA    suelta la reserva sin descontar
- *
- * `finalizada` y `cancelada` no van a ningún lado. Una orden finalizada admite
- * devoluciones (RF-25), pero eso no la mueve de estado.
- *
- * **El cambio de estado es la compuerta, y por eso va primero.** Igual que la
- * reserva de §8.2, la transición es un `UPDATE` condicional cuyo `WHERE` lleva
- * el estado esperado. Dos «Finalizar» simultáneos sobre la misma orden dan un
- * ganador y un `INVALID_ORDER_STATE`; el perdedor ni siquiera llega a tocar el
- * stock, porque el `UPDATE` que no encontró fila corta la transacción antes.
- * Con un `SELECT` para chequear el estado y un `UPDATE` después, los dos
- * pasarían el chequeo y el stock se descontaría **dos veces** — y eso no se
- * nota hasta que el inventario no cierra.
- *
- * **El estado se cambia antes de mover el stock, no después.** Es el mismo
- * argumento: lo que decide quién gana tiene que ser lo primero que se ejecuta.
+ * La transición es un `UPDATE` condicional sobre el estado y va antes de mover
+ * el stock: de dos «Finalizar» simultáneos gana uno y el otro corta antes de
+ * tocar el stock. Con `SELECT` + `UPDATE` los dos pasarían y se descontaría dos veces.
  */
 
 export type EstadoOrden = "activa" | "finalizada" | "cancelada";
 
-/**
- * La tabla de RF-13, como dato y no como una cadena de `if`.
- *
- * Se exporta porque la vista también la necesita: un botón «Finalizar» sobre
- * una orden cancelada no tiene que existir, y averiguarlo repitiendo la regla
- * en el componente es tener dos reglas que un día dicen cosas distintas.
- */
+/** Se exporta para que la vista decida qué botones mostrar sin repetir la regla. */
 export const TRANSICIONES: Record<EstadoOrden, readonly EstadoOrden[]> = {
   activa: ["finalizada", "cancelada"],
   finalizada: [],
@@ -56,14 +35,7 @@ type ItemDeOrden = {
   quantity: number;
 };
 
-/**
- * Los ítems, **ordenados por `variant_id`** — §8.3 regla 2, y no es cosmético.
- *
- * Dos órdenes que comparten productos y los procesan en distinto orden se
- * traban mutuamente: la primera bloquea la variante A y pide la B, la segunda
- * bloqueó la B y pide la A. Postgres mata a una de las dos con un *deadlock*.
- * Recorrer siempre en el mismo orden hace que ese ciclo no pueda formarse.
- */
+/** Ordenados por `variant_id` para evitar *deadlocks* (TECHNICAL-SPEC §8.3). */
 async function itemsDeLaOrden(
   tx: Transaccion,
   orderId: string,
@@ -77,12 +49,7 @@ async function itemsDeLaOrden(
   ];
 }
 
-/**
- * El `UPDATE` condicional del estado, más su fila en el historial.
- *
- * Devuelve los ítems ya ordenados, porque quien llama va a moverles el stock y
- * no tiene sentido volver a consultarlos.
- */
+/** Cambia el estado y escribe el historial; devuelve los ítems ya ordenados. */
 async function transicionar(
   tx: Transaccion,
   args: {
@@ -107,8 +74,7 @@ async function transicionar(
     RETURNING 'activa'::text AS desde`);
 
   if (filas.length === 0) {
-    // Cero filas no dice si la orden no existe o si ya no está activa, y son
-    // dos respuestas distintas para quien las recibe (RNF-08).
+    // Cero filas no distingue «no existe» de «ya no está activa».
     const [actual] = await tx.execute<{ status: EstadoOrden }>(sql`
       SELECT status FROM orders WHERE id = ${args.orderId}`);
 
@@ -120,9 +86,6 @@ async function transicionar(
     });
   }
 
-  // El historial se escribe en la MISMA transacción que el cambio. Una
-  // transición sin fila en el historial es una orden que cambió y no se sabe
-  // quién la cambió ni por qué (RF-23).
   await tx.execute(sql`
     INSERT INTO order_status_history
       (order_id, from_status, to_status, reason, actor_user_id)
@@ -133,12 +96,7 @@ async function transicionar(
   return itemsDeLaOrden(tx, args.orderId);
 }
 
-// ── Finalizar (RF-23) ───────────────────────────────────────────────────
-
-/**
- * La venta se concretó: descuenta el stock real y suelta la reserva, de una
- * (§8.1). Sólo la administradora.
- */
+/** Descuenta el stock real y suelta la reserva. Sólo la administradora. */
 export async function finalizarOrden(
   tx: Transaccion,
   args: {
@@ -150,8 +108,7 @@ export async function finalizarOrden(
   const items = await transicionar(tx, { ...args, hacia: "finalizada" });
 
   for (const item of items) {
-    // Una variante borrada deja el ítem con `variant_id` en NULL (§5.6): el
-    // snapshot de la orden se lee igual, pero ya no hay contador que mover.
+    // Variante borrada: el ítem queda con `variant_id` NULL y no hay contador.
     if (!item.variantId) continue;
 
     await vender(tx, {
@@ -164,13 +121,9 @@ export async function finalizarOrden(
   }
 }
 
-// ── Cancelar (RF-23) ────────────────────────────────────────────────────
-
 /**
- * No se concretó: suelta la reserva y no toca el stock real. La puede
- * disparar la administradora o el propio comprador desde su panel (RF-07),
- * así que `actorUserId` puede ser cualquiera de los dos — quién tiene permiso
- * lo resuelve la capa de acciones, no esto.
+ * Suelta la reserva sin tocar el stock real. La dispara la administradora o el
+ * comprador (RF-07); el permiso lo resuelve la capa de acciones.
  */
 export async function cancelarOrden(
   tx: Transaccion,

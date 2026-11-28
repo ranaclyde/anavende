@@ -6,14 +6,6 @@ import { cache } from "react";
 import { db } from "@/db";
 import type { SlugLegal } from "@/modules/content/paginas";
 
-/**
- * Lectura y escritura de las páginas legales — RF-29, §5.9.
- *
- * Las cuatro filas las crea la migración `0020_paginas_legales` con un
- * borrador, así que en una base migrada siempre están. Igual se contesta
- * `null` si falta: la página da 404 en vez de caerse.
- */
-
 export type TextoLegal = {
   slug: SlugLegal;
   titulo: string;
@@ -22,8 +14,8 @@ export type TextoLegal = {
 };
 
 /**
- * Con `cache` porque la página la lee dos veces en el mismo pedido: una para
- * los metadatos y otra para el cuerpo.
+ * Con `cache` porque la página la lee para los metadatos y para el cuerpo.
+ * `null` si falta la fila (la crea una migración): la página da 404.
  */
 export const leerTextoLegal = cache(
   async (slug: SlugLegal): Promise<TextoLegal | null> => {
@@ -40,13 +32,9 @@ export const leerTextoLegal = cache(
 );
 
 /**
- * Un UPSERT y no un UPDATE, por la misma razón que la configuración del
- * sitio: si la fila faltara, un UPDATE no afectaría nada y el panel diría
- * «guardado» sin haber guardado. El título viene de `PAGINAS_LEGALES` y no
- * se edita: es el nombre del enlace del pie.
- *
- * Vive fuera de `actions.ts` para que el test corra exactamente esta
- * sentencia; la acción pone el rol, la validación y la revalidación.
+ * UPSERT y no UPDATE: si la fila faltara, un UPDATE no tocaría nada y el panel
+ * diría «guardado». Fuera de `actions.ts` para que el test corra esta
+ * sentencia.
  */
 export async function escribirTextoLegal(entrada: {
   slug: SlugLegal;

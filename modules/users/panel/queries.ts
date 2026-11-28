@@ -14,12 +14,8 @@ import {
 } from "@/modules/users/panel/filtros";
 
 /**
- * Lecturas de usuarios para el panel — FS RF-26 · TS §5.6. Tarea F7.6.
- *
- * **Del panel y de nadie más**, como las de órdenes: no filtran por dueño
- * porque la administradora ve a todos, y la guardia es el layout de `/admin`
- * más el `.auth("admin")` de cada acción (§13.8). Por eso viven acá y no en
- * `modules/users/perfil.ts`, que es lo que cada persona ve de sí misma.
+ * Solo para el panel: no filtran por dueño, y la guardia es el layout de
+ * `/admin` más el `.auth("admin")` de cada acción (§13.8).
  */
 
 export type RolDeUsuario = "admin" | "customer";
@@ -29,26 +25,16 @@ export type UsuarioDelListado = {
   nombre: string;
   email: string;
   telefono: string;
-  /** La foto o el blobatar (F5.9), lista para `<Avatar>`. */
   cara: string;
-  /** Si subió una foto propia: la ficha la ofrece para verla grande. */
   tieneFoto: boolean;
   rol: RolDeUsuario;
   bloqueado: boolean;
-  /** RF-34: la pidió y nadie la ejecutó todavía. Es trabajo por hacer. */
   bajaPedida: boolean;
-  /** RF-34: la baja ya ejecutada (F7.9). No es lo mismo que bloqueado. */
   dadoDeBaja: boolean;
   creadoEn: string;
-  /** Cuántas órdenes tiene, que es lo que dice si es un cliente de verdad. */
   ordenes: number;
 };
 
-/**
- * La fila tal como sale de la base: con la clave de Storage y sin la cara,
- * que se resuelve en JavaScript —la URL depende del adaptador de Storage y el
- * blobatar, de la biblioteca—.
- */
 type ConFoto<T> = Omit<T, "cara" | "tieneFoto"> & { avatarKey: string | null };
 
 function conCara<T extends { id: string }>({
@@ -67,13 +53,6 @@ function escaparComodines(termino: string): string {
   return termino.replace(/[\\%_]/g, "\\$&");
 }
 
-/**
- * Búsqueda por nombre o email — RF-26.
- *
- * Con `unaccent`, como el buscador de productos y el de órdenes: «Gomez»
- * tiene que encontrar a «Gómez». Sobre `full_name`, que es la columna
- * generada, así el nombre y el apellido se buscan juntos o por separado.
- */
 function condicionDeBusqueda(q: string): SQL {
   const termino = sql`immutable_unaccent(lower(${escaparComodines(q)}))`;
   return sql`(
@@ -87,9 +66,7 @@ function condiciones(filtros: FiltrosDeUsuarios): SQL {
 
   if (filtros.q) partes.push(condicionDeBusqueda(filtros.q));
   if (filtros.rol !== "todos") partes.push(sql`p.role = ${filtros.rol}`);
-  // «Activos» es lo que queda cuando se sacan las dos formas de estar afuera:
-  // el bloqueo y la baja ejecutada. La baja **pedida** no saca a nadie de ahí
-  // —la cuenta entra, en solo lectura— y por eso es un filtro aparte (RF-34).
+  // La baja pedida no saca de «activos»: la cuenta entra, en solo lectura.
   if (filtros.estado === "bloqueados") partes.push(sql`p.is_banned`);
   if (filtros.estado === "dados-de-baja")
     partes.push(sql`p.closed_at IS NOT NULL`);
@@ -105,15 +82,6 @@ function condiciones(filtros: FiltrosDeUsuarios): SQL {
     : sql`WHERE true`;
 }
 
-/**
- * El listado, y cuántos hay en total.
- *
- * **Ordenado por rol y después por nombre**: las administradoras son unas
- * pocas y son a quienes se viene a mirar cuando se abre esta pantalla —quién
- * tiene acceso al panel—; los compradores se buscan por nombre o email.
- * Ordenar por fecha de alta, como las órdenes, dejaría a las administradoras
- * repartidas entre cientos de cuentas.
- */
 export async function listarUsuarios(
   filtros: FiltrosDeUsuarios,
 ): Promise<{ usuarios: UsuarioDelListado[]; total: number }> {
@@ -146,23 +114,9 @@ export async function listarUsuarios(
 }
 
 /**
- * Cuántos hay en cada solapa, para el contador de arriba — §6.9.
- *
- * **Una sola consulta con `FILTER`** y no cinco: son cinco recuentos sobre la
- * misma tabla, y cinco viajes para eso serían cinco veces la misma lectura.
- *
- * **No recibe los filtros, y es a propósito.** §6.9 pide que el número sea el
- * del total: si cambiara con la búsqueda o con el rol elegido, la solapa
- * dejaría de contestar «¿tengo algo que hacer?» para pasar a ser un resultado
- * más. Es el mismo criterio que `contarPorEstado` de órdenes.
- *
- * **Los cinco números no suman el total, y está bien**: no son una partición
- * sino cinco filtros, y se pisan. Una cuenta bloqueada que además pidió la
- * baja aparece en las dos. Cada solapa dice cuántas va a mostrar, que es lo
- * único que promete.
- *
- * Las condiciones son **las mismas de `condiciones()`**, palabra por palabra:
- * si se separaran, la solapa diría un número y el listado mostraría otro.
+ * No recibe los filtros a propósito: la solapa cuenta el total (§6.9). Los
+ * cinco números se pisan y no suman el total. Las condiciones tienen que ser
+ * las mismas de `condiciones()`, o la solapa y el listado no coincidirían.
  */
 export async function contarPorEstado(): Promise<
   Record<FiltroDeEstado, number>
@@ -190,7 +144,6 @@ export type OrdenDelUsuario = {
   unidades: number;
 };
 
-/** Una fila del historial de la cuenta — RF-27, RF-34, §5.3. F7.7 y F7.9. */
 export type MovimientoDeEstado = {
   evento: UserStatusEvent;
   motivo: string | null;
@@ -201,45 +154,18 @@ export type MovimientoDeEstado = {
 export type UsuarioDelPanel = UsuarioDelListado & {
   firstName: string;
   lastName: string;
-  /** RF-27: el motivo del bloqueo y quién lo hizo. Lo escribe F7.7. */
   motivoDelBloqueo: string | null;
   bloqueadoEn: string | null;
   bloqueadoPor: string | null;
-  /**
-   * RF-34: el motivo de la baja, que escribió el comprador (F5.8).
-   *
-   * **Sigue estando después de ejecutarla**, y es a propósito: es lo que
-   * contesta por qué esa cuenta ya no está. Lo que lo borra es revertirla, y
-   * ahí queda en el historial.
-   */
+  /** Sigue después de ejecutar la baja, a propósito; revertirla lo borra. */
   motivoDeLaBaja: string | null;
   bajaPedidaEn: string | null;
-  /** RF-34, F7.9: cuándo la ejecutó la administradora, y cuál. */
   dadoDeBajaEn: string | null;
   dadoDeBajaPor: string | null;
-  /** Las últimas cinco, que es lo que la ficha muestra. */
   ultimasOrdenes: OrdenDelUsuario[];
-  /**
-   * Todo lo que le pasó a la cuenta, del más nuevo al más viejo: bloqueos y
-   * desbloqueos (RF-27), bajas ejecutadas y revertidas (RF-34).
-   *
-   * **Es lo único que queda cuando la cuenta vuelve a estar desbloqueada**:
-   * las columnas de arriba dicen cómo está hoy, no lo que pasó. Va entera y
-   * no paginada porque es una lista que casi siempre está vacía y nunca va a
-   * tener veinte filas: una cuenta se bloquea una vez, o ninguna.
-   */
   historialDeEstado: MovimientoDeEstado[];
 };
 
-/**
- * Una ficha entera — RF-26.
- *
- * **Las órdenes vienen acá y no en otra consulta**: son cinco filas de la
- * misma ida a la base, y la ficha no se dibuja sin ellas. El total sí se
- * cuenta aparte en la misma vuelta, porque «las últimas cinco» no dice si hay
- * seis o seiscientas, y ese número es el que decide si vale la pena abrir el
- * listado completo.
- */
 export async function leerUsuarioDelPanel(
   id: string,
 ): Promise<UsuarioDelPanel | null> {
@@ -306,14 +232,6 @@ export async function leerUsuarioDelPanel(
   return fila ? conCara(fila) : null;
 }
 
-/**
- * Cuántas administradoras hay.
- *
- * Lo usa la regla que impide dejar la tienda sin ninguna: RF-26 pide que la
- * administradora no pueda quitarse el rol a sí misma, y quitárselo **a la
- * última** deja exactamente el mismo desastre por otro camino —nadie puede
- * entrar al panel, y volver a tener acceso es un `UPDATE` a mano en la base—.
- */
 export async function contarAdministradoras(): Promise<number> {
   const [fila] = await db.execute<{ n: number }>(sql`
     SELECT count(*)::int AS n FROM user_profiles WHERE role = 'admin'`);

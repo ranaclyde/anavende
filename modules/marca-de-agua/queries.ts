@@ -23,7 +23,6 @@ export type ImagenDeLaBiblioteca = {
   alto: number;
 };
 
-/** La foto con la que arranca la vista previa: la última sin marca. */
 export type FotoDeMuestra = { id: string; producto: string };
 
 export type MarcaDeAguaDelPanel = {
@@ -33,10 +32,7 @@ export type MarcaDeAguaDelPanel = {
   muestra: FotoDeMuestra | null;
 };
 
-/**
- * La última foto de producto que se subió **sin marca**: con una marcada, la
- * vista previa pondría la marca encima de otra.
- */
+/** Sin marca: con una marcada, la vista previa pondría la marca encima de otra. */
 async function ultimaFotoSinMarca(): Promise<FotoDeMuestra | null> {
   const [fila] = await db
     .select({ id: variantImages.id, producto: products.name })
@@ -49,7 +45,6 @@ async function ultimaFotoSinMarca(): Promise<FotoDeMuestra | null> {
   return fila ?? null;
 }
 
-/** Todo lo que necesita la pantalla de la marca de agua (RF-39). */
 export async function leerLaMarcaDeAgua(): Promise<MarcaDeAguaDelPanel> {
   const [activa, filas, capas, muestra] = await Promise.all([
     estaActiva(),

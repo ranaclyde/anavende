@@ -7,64 +7,28 @@ import { brands, categories, colors } from "@/db/schema/catalog";
 import { urlDeLogo } from "@/modules/media/subir";
 import { POR_PAGINA } from "@/modules/catalog/filtros-panel";
 
-/**
- * Lecturas del catálogo para el panel — RF-18.
- *
- * Cada listado trae, además del ítem, CUÁNTOS PRODUCTOS lo usan, separando
- * activos de inactivos. La separación no es informativa: es la que decide qué
- * acciones se ofrecen. Con productos activos no se puede desactivar (RN-11b);
- * con productos de cualquier tipo no se puede borrar (RN-11).
- *
- * Los conteos vienen en la MISMA consulta que el listado, con `count(...)
- * FILTER`. Pedirlos aparte serían N+1 consultas para pintar una tabla.
- *
- * **Los tres paginan desde el 2026-09-18** (§6.9). Devuelven `{ items, total }`
- * porque con `LIMIT` el largo del arreglo es el de la página, y el contador de
- * la pantalla —«4 marcas»— y el estado vacío necesitan el total de verdad.
- */
+// Cada listado trae cuántos productos activos e inactivos usan el ítem: eso
+// decide qué acciones se ofrecen (RN-11, RN-11b).
 
 export type ItemDeCatalogo = {
   id: string;
   name: string;
   slug: string;
   hexCode: string | null;
-  /**
-   * `null` = el tipo no tiene la noción. Sólo las categorías se destacan
-   * (RF-18); marcas y colores devuelven `null`, igual que `hexCode` es
-   * `null` para todo lo que no es un color. Así la vista pregunta por el
-   * dato y no por el tipo.
-   */
+  /** `null` = el tipo no tiene la noción, como `hexCode` fuera de colores. */
   isFeatured: boolean | null;
-  /**
-   * El texto de la página de la categoría (F3.11). `null` = no tiene, o el
-   * tipo no lleva texto: marcas y colores.
-   */
+  /** `null` = no tiene, o el tipo no lleva texto. */
   description: string | null;
-  /**
-   * La URL del logo, ya resuelta: el de la marca o la imagen de la
-   * categoría (FA-21), que se sube igual. `null` = no tiene, o el tipo no
-   * lleva imagen. La vista recibe una URL y no una clave a propósito: armarla
-   * necesita el adaptador de almacenamiento (§9.4), que es código de
-   * servidor, y el panel es un componente de cliente.
-   */
+  /** Ya resuelta: armarla es código de servidor y el panel es de cliente. */
   logoUrl: string | null;
   isActive: boolean;
-  /** Productos activos que lo usan. Si es > 0, no se puede desactivar. */
+  /** Si es > 0, no se puede desactivar. */
   activos: number;
-  /** Productos inactivos que lo usan. */
   inactivos: number;
-  /**
-   * Las categorías relacionadas (RF-31), en su orden. `null` en marcas y
-   * colores, que no tienen la noción —el mismo criterio que `isFeatured`—.
-   */
+  /** En su orden; `null` en marcas y colores. */
   relacionadas: CategoriaRelacionada[] | null;
 };
 
-/**
- * Una relación vista desde su categoría. Trae el nombre, el estado y lo que
- * APORTA —sus productos activos—: RF-31 pide verlo por relación, para
- * encontrar las que no recomiendan nada.
- */
 export type CategoriaRelacionada = {
   id: string;
   name: string;
@@ -73,7 +37,6 @@ export type CategoriaRelacionada = {
   reciproca: boolean;
 };
 
-/** Una categoría que se puede elegir como relacionada, con lo que aportaría. */
 export type CategoriaRelacionable = {
   id: string;
   name: string;
@@ -103,8 +66,6 @@ export async function listarMarcas(
      LIMIT ${POR_PAGINA} OFFSET ${(pagina - 1) * POR_PAGINA}
   `);
 
-  // La clave se convierte en URL acá y no en la consulta: la base guarda
-  // claves justamente para no saber en qué servidor vive Storage (§9.4).
   return {
     items: filas.map(({ logoKey, ...fila }) => ({
       ...fila,
@@ -114,12 +75,7 @@ export async function listarMarcas(
   };
 }
 
-/**
- * Las categorías se listan en el MISMO orden en que las ve el comprador
- * (§10.2): destacadas primero, después por nombre. El panel no tiene un orden
- * propio a propósito — destacar es una decisión sobre el orden, y se juzga
- * mal si la pantalla donde se toma la muestra de otra manera.
- */
+/** En el mismo orden en que las ve el comprador: destacadas primero. */
 export async function listarCategorias(
   pagina = 1,
 ): Promise<{ items: ItemDeCatalogo[]; total: number }> {
@@ -161,12 +117,7 @@ export async function listarCategorias(
   };
 }
 
-/**
- * Las categorías que se pueden elegir como relacionadas (RF-31): todas las
- * ACTIVAS, con cuántos productos activos aportarían. Sin paginar: son pocas,
- * y el selector las necesita todas. La propia y las ya elegidas las saca el
- * diálogo, que es el que sabe cuál está editando.
- */
+/** Todas las activas, sin paginar. La propia y las ya elegidas las saca el diálogo. */
 export async function listarRelacionables(): Promise<CategoriaRelacionable[]> {
   const filas = await db.execute<CategoriaRelacionable>(sql`
     SELECT c.id, c.name,
@@ -183,23 +134,10 @@ export async function listarRelacionables(): Promise<CategoriaRelacionable[]> {
 export async function listarColores(
   pagina = 1,
 ): Promise<{ items: ItemDeCatalogo[]; total: number }> {
-  // Un color se usa a través de las VARIANTES, no de los productos —como
-  // primer color o como segundo de una variante de dos (2026-10-05)—. Se cuenta
-  // el producto una sola vez aunque tenga dos variantes de ese color —no
-  // puede, por `variant_product_color_key`, pero el DISTINCT deja la consulta
-  // correcta si esa restricción cambiara.
-  //
-  // **`activos` mira también `v.is_active`, y esa es la diferencia con marcas
-  // y categorías.** Lo que impide desactivar un color es lo que dice RN-11b:
-  // una variante ACTIVA de un producto ACTIVO. Contar el producto sin mirar
-  // la variante deja sin salida a quien desactivó el color en el producto y
-  // vuelve a intentarlo: el aviso le pide desactivar un producto que ya no
-  // ofrece ese color. Hasta F2.4 no había variantes y esto no se podía ver.
-  //
-  // El resto de los usos cae en `inactivos`, que acá significa «lo usa sin
-  // ofrecerlo»: el producto puede estar inactivo, o tener apagada justo la
-  // variante de este color. En los dos casos desactivar el color no rompe
-  // nada, que es lo que la columna tiene que responder.
+  // Un color se usa a través de las variantes, como primero o segundo color.
+  // A diferencia de marcas y categorías, `activos` mira también `v.is_active`:
+  // lo que impide desactivarlo es una variante activa de un producto activo
+  // (RN-11b). `inactivos` acá es «lo usa sin ofrecerlo».
   const filas = await db.execute<ItemDeCatalogo>(sql`
     SELECT c.id, c.name, c.slug, c.hex_code AS "hexCode",
            NULL::boolean AS "isFeatured",
@@ -223,7 +161,6 @@ export async function listarColores(
   return { items: [...filas], total: await contar(sql`${colors}`) };
 }
 
-/** Cuántas filas tiene la tabla, sin mirar la página. */
 async function contar(tabla: ReturnType<typeof sql>): Promise<number> {
   const [fila] = await db.execute<{ total: number }>(
     sql`SELECT count(*)::int AS total FROM ${tabla}`,

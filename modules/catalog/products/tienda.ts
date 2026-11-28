@@ -11,65 +11,29 @@ import {
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
 
-/**
- * El catálogo público — F3.4, RF-02, §10.1, §10.2.
- *
- * **Por qué no filtra por `b.is_active` ni `c.is_active`.** Parece un olvido y
- * es justo lo contrario: RN-11b prohíbe que un producto ACTIVO tenga marca,
- * categoría o color inactivos, y esa invariante la sostiene la base. Agregar
- * la condición acá sería sumar una segunda defensa que hay que acordarse de
- * repetir en cada consulta pública nueva — y el día que se olvide, esa
- * pantalla muestra de más. La decisión está registrada en §5.4.
- */
+// No filtra por `b.is_active` ni `c.is_active` a propósito: RN-11b garantiza
+// que un producto activo no tiene marca, categoría ni color inactivos.
 
-/** Los comodines de ILIKE se escapan: buscar «50%» no puede traer todo. */
+/** Buscar «50%» no puede traer todo. */
 function escaparComodines(termino: string): string {
   return termino.replace(/[\\%_]/g, "\\$&");
 }
 
-/**
- * El umbral del parecido — F3.3, calibrado el 2026-11-25.
- *
- * Con `strict_word_similarity` y 0,4, «lojitech» encuentra Logitech,
- * «adactador» los adaptadores, «tecaldo mecanico» los teclados mecánicos y
- * «teclados» (en plural) los teclados, y ninguna palabra bien escrita suma
- * productos que no tienen que ver. Se probó contra el resto:
- *
- * - `similarity()` (la de TS §10.1) compara contra el nombre ENTERO, y el
- *   parecido se diluye en el largo: «adactador» contra «Adaptador USB-C a
- *   HDMI» queda bajo cualquier umbral razonable.
- * - `word_similarity()` compara contra el mejor tramo, pero el tramo puede
- *   cortar una palabra al medio: «silla» trae las «Alfombrillas».
- * - `strict_word_similarity()` compara contra palabras enteras, que es como
- *   se equivoca quien escribe. Lo único que pierde es «mause».
- *
- * Bajarlo a 0,3 empieza a sumar ruido; subirlo a 0,5 pierde «monitro» y
- * «auricualr».
- */
+/** Calibrado en TECHNICAL-SPEC §10.1. */
 const UMBRAL_DE_PARECIDO = 0.4;
 
-/** El término, sin acentos y en minúsculas, como lo comparan las dos mitades. */
 function terminoNormalizado(q: string): SQL {
   return sql`immutable_unaccent(lower(${q}))`;
 }
 
-/**
- * Marca y nombre juntos, para el parecido: «mouse logitech» encuentra los
- * mouses Logitech antes que el resto de los mouses o el resto de Logitech, y
- * «lojitech» sigue encontrando la marca.
- */
 const MARCA_Y_NOMBRE = sql`immutable_unaccent(lower(b.name || ' ' || p.name))`;
 
-/** Qué tanto se parece el producto a lo buscado, de 0 a 1. */
 function parecido(q: string): SQL {
   return sql`strict_word_similarity(${terminoNormalizado(q)}, ${MARCA_Y_NOMBRE})`;
 }
 
-/** La mitad por subcadena de §10.1: lo que contiene el término tal cual. */
 function contieneElTermino(q: string): SQL {
   const termino = terminoNormalizado(escaparComodines(q));
-  // El SKU se busca desde el 2026-11-05, cuando empezó a verse en la
-  // ficha: si se muestra, quien lo copia tiene que poder encontrarlo.
   return sql`(
        immutable_unaccent(lower(p.name))             ILIKE '%' || ${termino} || '%'
     OR immutable_unaccent(lower(p.sku))              ILIKE '%' || ${termino} || '%'
@@ -79,32 +43,14 @@ function contieneElTermino(q: string): SQL {
 }
 
 /**
- * La búsqueda de la tienda (§10.1): lo que contiene el término, o lo que se
- * le parece (F3.3).
- *
- * **El parecido mira marca y nombre, no la descripción ni el SKU**, como
- * §10.1: en un texto largo cualquier palabra encuentra algo parecido, y un SKU
- * se copia, no se tipea de memoria.
- *
- * **El umbral va en la comparación y no en `pg_trgm.*_threshold`**: esa
- * variable se fija por sesión, y con el pool de conexiones habría que
- * ponerla en cada consulta. Sin el operador no se usa el índice GIN, y no
- * hace falta: con cientos de productos, comparar todos es menos de un
- * milisegundo.
+ * El umbral va en la comparación y no en `pg_trgm.*_threshold`: esa variable
+ * es por sesión, y con el pool habría que fijarla en cada consulta.
  */
 function condicionDeBusqueda(q: string): SQL {
   return sql`(${contieneElTermino(q)} OR ${parecido(q)} >= ${UMBRAL_DE_PARECIDO})`;
 }
 
-/**
- * `columna IN (a, b, c)` con los valores como parámetros.
- *
- * Los identificadores NO se interpolan en el texto de la consulta ni siquiera
- * después de haber pasado por la validación de UUID: la validación protege de
- * lo que ya conocemos, y un `sql.raw` acá sería una inyección esperando a que
- * alguien afloje esa expresión. Es la misma decisión que el reordenamiento de
- * imágenes de `modules/media/subir.ts`.
- */
+/** Con los valores como parámetros: nunca `sql.raw`, aunque ya estén validados. */
 export function enLaLista(columna: SQL, ids: readonly string[]): SQL {
   return sql`${columna} IN (${sql.join(
     ids.map((id) => sql`${id}::uuid`),
@@ -112,7 +58,6 @@ export function enLaLista(columna: SQL, ids: readonly string[]): SQL {
   )})`;
 }
 
-/** `columna IN ('a', 'b')` con los slugs como parámetros, como `enLaLista`. */
 function losSlugs(columna: SQL, slugs: readonly string[]): SQL {
   return sql`${columna} IN (${sql.join(
     slugs.map((slug) => sql`${slug}`),
@@ -125,17 +70,7 @@ function condiciones(f: FiltrosDeTienda): SQL {
 
   if (f.q) partes.push(condicionDeBusqueda(f.q));
 
-  // Multiselección (RF-02): dentro de un grupo las opciones se suman —«Teclados
-  // O Mouses»— y entre grupos se cruzan —«(Teclados O Mouses) Y Logitech»—.
-  // Es lo que espera cualquiera que haya usado un filtro de tienda, y lo
-  // contrario —cruzar dentro del grupo— daría cero resultados siempre: ningún
-  // producto es de dos categorías a la vez.
-  // Los filtros llegan como slugs (`filtros-tienda.ts`) y se cruzan por
-  // slug, que es único en las tres tablas. Una subconsulta y no un JOIN: el
-  // de categoría y el de color no agregan columnas, solo recortan.
-  //
-  // La categoría de la página (F3.11) recorta igual que el filtro: es la
-  // misma condición con otro origen.
+  // Dentro de un grupo las opciones se suman (O); entre grupos se cruzan (Y).
   const categorias = f.seccion ? [f.seccion] : f.categoria;
   if (categorias.length) {
     partes.push(sql`p.category_id IN (
@@ -143,14 +78,7 @@ function condiciones(f: FiltrosDeTienda): SQL {
   }
   if (f.marca.length) partes.push(losSlugs(sql`b.slug`, f.marca));
 
-  // RF-02: «muestra el producto si ALGUNA de sus variantes tiene ese color».
-  // Por eso es un EXISTS y no un JOIN: con el join, un producto que tiene el
-  // color en tres variantes aparecería tres veces en la grilla y contaría tres
-  // veces en el total.
-  //
-  // **Por cualquiera de los dos colores** (2026-10-05): una variante
-  // «Negro/Rojo» aparece buscando negro y buscando rojo, que es como la
-  // describiría quien la tiene en la mano.
+  // EXISTS y no JOIN: con el JOIN, un producto saldría una vez por variante.
   if (f.color.length) {
     partes.push(sql`EXISTS (
       SELECT 1 FROM product_variants v
@@ -162,9 +90,7 @@ function condiciones(f: FiltrosDeTienda): SQL {
     )`);
   }
 
-  // Sobre el precio FINAL y no sobre `price` (RF-02): quien pone «hasta
-  // 20.000» está diciendo cuánto quiere pagar, no cuánto salía antes de la
-  // oferta. Los bordes son inclusivos.
+  // Sobre el precio final, no sobre `price` (RF-02).
   if (f.precioMin !== null) partes.push(sql`p.final_price >= ${f.precioMin}`);
   if (f.precioMax !== null) partes.push(sql`p.final_price <= ${f.precioMax}`);
 
@@ -174,9 +100,6 @@ function condiciones(f: FiltrosDeTienda): SQL {
 }
 
 const ORDEN: Record<FiltrosDeTienda["orden"], SQL> = {
-  // Destacados arriba y después alfabético, igual que el orden público de las
-  // categorías (§10.2). `immutable_unaccent` para que «Ábaco» no caiga al
-  // final por su acento.
   relevancia: sql`p.is_featured DESC, immutable_unaccent(lower(p.name))`,
   "precio-asc": sql`p.final_price ASC`,
   "precio-desc": sql`p.final_price DESC`,
@@ -184,12 +107,7 @@ const ORDEN: Record<FiltrosDeTienda["orden"], SQL> = {
   novedades: sql`p.created_at DESC`,
 };
 
-/**
- * Con una búsqueda, el orden por omisión pone primero lo que más se parece
- * (§10.1: `ORDER BY score DESC`). Lo que contiene el término tal cual vale 1:
- * buscando «teclado mecanico», los mecánicos van antes que el resto de los
- * teclados que trae el parecido. Si se eligió otro orden, se respeta.
- */
+/** Con búsqueda y orden por omisión, lo que contiene el término tal cual vale 1. */
 function orden(f: FiltrosDeTienda): SQL {
   if (!f.q || f.orden !== "relevancia") return ORDEN[f.orden];
   return sql`CASE WHEN ${contieneElTermino(f.q)} THEN 1
@@ -197,12 +115,8 @@ function orden(f: FiltrosDeTienda): SQL {
 }
 
 /**
- * Lo que la tarjeta necesita de un producto (§6.1), para cualquier pantalla
- * que la dibuje: el catálogo y, desde F5.4, «Favoritos». La tarjeta es SIEMPRE
- * la misma, y dos copias de esta consulta terminarían mostrando dos portadas
- * o dos stocks distintos para el mismo producto.
- *
- * Los dos fragmentos esperan `p` (products) y `b` (brands) en el FROM.
+ * Para toda pantalla que dibuje la tarjeta, así no muestra otra portada u otro
+ * stock. Los dos fragmentos esperan `p` (products) y `b` (brands) en el FROM.
  */
 export const COLUMNAS_DE_TARJETA = sql`
   p.id,
@@ -302,34 +216,18 @@ export function aTarjeta(r: FilaDeTarjeta): ProductoEnTarjeta {
 
 export type PaginaDelCatalogo = {
   productos: ProductoEnTarjeta[];
-  /** Cuántos hay con ESTOS filtros. Decide la paginación y el conteo. */
   total: number;
-  /**
-   * Cuántos hay en total, sin filtros: en la tienda, o en la categoría de la
-   * página. Ver `leerPaginaDelCatalogo`.
-   */
+  /** En la tienda o en la categoría de la página. */
   totalSinFiltros: number;
 };
 
-/**
- * Una página del catálogo.
- *
- * Devuelve también `totalSinFiltros` porque §8 pide distinguir **vacío** de
- * **sin resultados**: son dos pantallas distintas —«todavía no hay productos»
- * contra «no encontramos nada para “xxx”, probá quitando filtros»— y con un
- * solo número no se pueden separar. Sale de la misma llamada para no obligar a
- * cada pantalla a acordarse de pedirlo.
- */
+/** `totalSinFiltros` separa «todavía no hay productos» de «sin resultados». */
 export async function leerPaginaDelCatalogo(
   f: FiltrosDeTienda,
 ): Promise<PaginaDelCatalogo> {
   const donde = condiciones(f);
   const desde = (f.pagina - 1) * POR_PAGINA;
 
-  /**
-   * Las tres consultas van en paralelo, no una tras otra: son independientes
-   * y encadenarlas suma tres viajes a la base donde alcanza con uno.
-   */
   const [filas, [conteo], [todos]] = await Promise.all([
     db.execute<FilaDeTarjeta>(sql`
       SELECT ${COLUMNAS_DE_TARJETA}
@@ -346,9 +244,6 @@ export async function leerPaginaDelCatalogo(
         JOIN brands b ON b.id = p.brand_id
        WHERE ${donde}`),
 
-    // En la página de una categoría (F3.11), «sin filtros» es la categoría
-    // entera: «todavía no hay productos» tiene que hablar de esa categoría,
-    // no de la tienda.
     db.execute<{ n: number }>(sql`
       SELECT count(*)::int AS n FROM products p
        WHERE p.is_active ${
@@ -365,43 +260,14 @@ export async function leerPaginaDelCatalogo(
   };
 }
 
-/**
- * Una opción del filtro. Viaja con su `slug` y no con su id: es lo que va en
- * la dirección (`?categoria=teclados`) y lo único que el filtro necesita.
- */
 export type OpcionDeFiltro = { slug: string; nombre: string; cuantos: number };
 
-/** Un color además se dibuja, así que viaja con su hexadecimal (§6.5). */
 export type OpcionDeColor = OpcionDeFiltro & { hex: string };
 
 /**
- * Las opciones de cada grupo del drawer, con cuántos — RF-02.
- *
- * **Cada grupo se calcula con los filtros de los OTROS grupos, no con los
- * suyos** (2026-11-05, decisión tuya). Con «Teclados» elegido, Marca ofrece
- * solo las marcas que tienen teclados; Categoría sigue ofreciendo todas las
- * que tienen algo con el resto de los filtros, porque dentro del grupo las
- * opciones se suman y ofrecer otra categoría amplía, no recorta. Así ningún
- * chip lleva a un listado vacío. La búsqueda, el precio y la oferta cuentan
- * para todos los grupos.
- *
- * **Lo elegido se ofrece siempre, aunque quede en cero**: una marca elegida
- * que deja de tener productos al sumar un color tiene que seguir en el drawer
- * —y en los chips de arriba de la grilla, que salen de acá— para poder
- * sacarla.
- *
- * **El orden no cambia al filtrar**: las que más productos activos tienen en
- * toda la tienda primero (2026-11-03), las categorías destacadas antes que
- * todo, y a igual número por nombre. Ordenar por el número del momento haría
- * que los chips salten de lugar con cada toque. El drawer muestra las 8
- * primeras de cada grupo, así que el orden decide qué se ve sin abrir nada.
- *
- * **Las puntas del precio** salen con todos los filtros menos el precio:
- * el slider va de lo más barato a lo más caro de lo que se está mirando.
- *
- * **En la página de una categoría** (F3.11) la categoría de la página es un
- * filtro más (`comoFiltroDeCategoria`): recorta marcas, colores y precio, y
- * en el grupo Categoría aparece elegida.
+ * Cada grupo se calcula con los filtros de los otros grupos (DESIGN-REFERENCE
+ * §7.2). Lo elegido sale siempre, aunque quede en cero, para poder sacarlo.
+ * El orden es por productos activos en toda la tienda, para que no salte.
  */
 export async function leerOpcionesDeFiltro(
   filtros: FiltrosDeTienda = FILTROS_DE_TIENDA_VACIOS,
@@ -410,22 +276,17 @@ export async function leerOpcionesDeFiltro(
   marcas: OpcionDeFiltro[];
   colores: OpcionDeColor[];
   precios: { min: number; max: number } | null;
-  /**
-   * Cuántos productos en oferta hay con los demás filtros. Con cero, la
-   * casilla «Solo productos en oferta» llevaría a un vacío.
-   */
+  /** Con los demás filtros. Con cero, la casilla llevaría a un vacío. */
   enOferta: number;
 }> {
   const f = comoFiltroDeCategoria(filtros);
 
-  /** Los productos que cuentan para un grupo: los filtros de los demás. */
   const coincidentes = (sinElGrupo: Partial<FiltrosDeTienda>) => sql`
     SELECT p.id, p.category_id, p.brand_id, p.final_price
       FROM products p
       JOIN brands b ON b.id = p.brand_id
      WHERE ${condiciones({ ...f, ...sinElGrupo })}`;
 
-  /** `slug IN (...)` con lo elegido, o falso si no hay nada elegido. */
   const elegido = (columna: SQL, slugs: readonly string[]) =>
     slugs.length ? losSlugs(columna, slugs) : sql`false`;
 
@@ -454,12 +315,8 @@ export async function leerOpcionesDeFiltro(
                   WHERE t.brand_id = b.id AND t.is_active) DESC,
                 immutable_unaccent(lower(b.name))`),
 
-      // `count(DISTINCT x.id)`, no `count(x.id)`: un producto con dos variantes
-      // negras se contaría dos veces.
-      //
-      // El filtro ofrece los colores SUELTOS, nunca «Negro/Rojo»: una variante
-      // de dos colores suma en los dos, igual que el filtro la encuentra por
-      // cualquiera (arriba, en `condiciones`).
+      // DISTINCT: un producto con dos variantes negras se contaría dos veces.
+      // Una variante de dos colores suma en los dos.
       db.execute<OpcionDeColor>(sql`
       WITH x AS (${coincidentes({ color: [] })})
       SELECT co.slug,
@@ -480,16 +337,13 @@ export async function leerOpcionesDeFiltro(
                     AND co.id IN (tv.color_id, tv.secondary_color_id)) DESC,
                 immutable_unaccent(lower(co.name))`),
 
-      // El precio FINAL, el mismo que mira el filtro, en pesos enteros hacia
-      // afuera: así lo más barato y lo más caro siempre quedan adentro.
+      // Redondeado hacia afuera para que las puntas queden adentro.
       db.execute<{ min: number | null; max: number | null }>(sql`
       WITH x AS (${coincidentes({ precioMin: null, precioMax: null })})
       SELECT floor(min(final_price))::int AS min,
              ceil(max(final_price))::int  AS max
         FROM x`),
 
-      // La oferta, como un grupo más (2026-11-05): con los demás filtros y
-      // la oferta puesta. Es lo que la casilla mostraría si se la tocara.
       db.execute<{ n: number }>(sql`
       SELECT count(*)::int AS n
         FROM products p
@@ -502,7 +356,6 @@ export async function leerOpcionesDeFiltro(
     categorias: [...categorias],
     marcas: [...marcas],
     colores: [...colores],
-    // Sin productos o todo al mismo precio no hay nada que deslizar.
     precios:
       precios &&
       precios.min !== null &&
