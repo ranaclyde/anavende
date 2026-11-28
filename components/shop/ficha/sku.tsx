@@ -60,7 +60,7 @@ export function Sku({ sku }: { sku: string }) {
             <Check
               key={veces}
               aria-hidden
-              className="[&_path]:animate-tilde [&_path]:[stroke-dasharray:24]"
+              className="[&_path]:animate-tilde-copiado [&_path]:[stroke-dasharray:24]"
             />
           ) : (
             <Copy aria-hidden />
