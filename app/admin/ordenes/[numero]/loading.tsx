@@ -2,15 +2,8 @@ import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Carga del detalle de una orden — DR §8. Tarea F7.1.
- *
- * Reproduce la grilla de dos columnas de `page.tsx`, que **en `xl` pone la
- * tabla de ítems a la izquierda y la ficha del comprador al costado**: sin
- * eso, al llegar los datos el contenido saltaría de una columna a dos.
- *
- * El «Volver» sí se dibuja, y a propósito: en la página real está siempre, y
- * es la salida de emergencia de quien entró por un enlace equivocado. Un
- * esqueleto que lo esconde deja esa salida tapada justo mientras se espera.
+ * Reproduce la grilla de dos columnas de `page.tsx`, o el contenido saltaría.
+ * El «Volver» se dibuja a propósito: es la salida mientras se espera.
  */
 export default function CargandoLaOrden() {
   return (
@@ -26,7 +19,7 @@ export default function CargandoLaOrden() {
 
       <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
         <div className="flex flex-col gap-4">
-          {/* La tabla de ítems: cabecera y filas del alto real (§6.9). */}
+          {/* La tabla de ítems, con filas del alto real. */}
           <div className="overflow-hidden rounded-panel-card border border-border bg-surface">
             <div className="h-9 border-b border-border bg-surface-sunken" />
             {Array.from({ length: 3 }).map((_, i) => (

@@ -16,8 +16,6 @@ import { productVariants } from "./catalog";
 import { orderOrigin, orderStatus } from "./enums";
 import { userProfiles } from "./users";
 
-/** Órdenes — TECHNICAL-SPEC §5.6. */
-
 /** Snapshot de la dirección de envío (RN-12). */
 export type ShippingAddressSnapshot = {
   recipientName: string;
@@ -28,7 +26,7 @@ export type ShippingAddressSnapshot = {
   notes?: string | null;
   city: string;
   province: string;
-  /** `null` en «Otra localidad cercana» (F5.3, 2026-09-13). */
+  /** `null` en «Otra localidad cercana». */
   postalCode: string | null;
 };
 
@@ -36,24 +34,14 @@ export const orders = pgTable(
   "orders",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    /** Lo que ve la gente. Arranca en 1000 para no parecer la orden n.º 1. */
+    /** Arranca en 1000 para no parecer la orden n.º 1. */
     orderNumber: integer("order_number")
       .notNull()
       .unique()
       .generatedByDefaultAsIdentity({ startWith: 1000 }),
     /**
-     * NULL en órdenes manuales de alguien sin cuenta (RF-24).
-     *
-     * **RESTRICT, no SET NULL** (F4.5b). `SET NULL` decía «la orden sobrevive
-     * a que se borre la cuenta» y el CHECK `web_order_has_user` de más abajo
-     * dice «una orden web siempre tiene comprador»: las dos no pueden ser
-     * ciertas, y el borrado fallaba igual pero con una violación de CHECK que
-     * no explica nada.
-     *
-     * Se resolvió del lado de conservar: los usuarios no se eliminan. Tampoco
-     * es una regla nueva — RF-26 nunca tuvo «eliminar usuario». Ahora la base
-     * dice lo mismo que los requisitos, y el intento falla nombrando el
-     * motivo: esta persona tiene órdenes.
+     * NULL en órdenes manuales de alguien sin cuenta. RESTRICT y no SET
+     * NULL: chocaría con `web_order_has_user`; los usuarios no se eliminan.
      */
     userId: uuid("user_id").references(() => userProfiles.id, {
       onDelete: "restrict",
@@ -61,8 +49,7 @@ export const orders = pgTable(
     status: orderStatus("status").notNull().default("activa"),
     origin: orderOrigin("origin").notNull().default("web"),
 
-    // Snapshot del comprador (RN-12): la orden se lee igual dentro de un año,
-    // aunque la persona haya cambiado su teléfono o borrado la cuenta.
+    // Snapshot del comprador (RN-12).
     customerName: text("customer_name").notNull(),
     customerEmail: text("customer_email"),
     customerPhone: text("customer_phone").notNull(),
@@ -75,16 +62,9 @@ export const orders = pgTable(
     notes: text("notes"),
 
     /**
-     * Idempotencia (§8.5): la clave que genera el checkout al abrirse. Un
-     * doble clic o un reintento del navegador llegan con la misma y devuelven
-     * LA MISMA orden en vez de crear otra.
-     *
-     * Quien lo hace cumplir es el índice único de abajo, no una consulta
-     * previa: dos peticiones simultáneas consultan las dos, no encuentran
-     * nada las dos, e insertan las dos.
-     *
-     * NULL en las órdenes manuales (RF-24), que las carga una persona de a
-     * una y no tienen de qué protegerse.
+     * Idempotencia (§8.5). La hace cumplir el índice único, no una consulta
+     * previa: dos peticiones simultáneas no encontrarían nada e insertarían
+     * las dos. NULL en las órdenes manuales.
      */
     idempotencyKey: text("idempotency_key"),
 
@@ -103,16 +83,14 @@ export const orders = pgTable(
   },
   (t) => [
     check("total_not_negative", sql`${t.total} >= 0`),
-    // Una orden de la web sin usuario sería un comprador fantasma.
     check(
       "web_order_has_user",
       sql`${t.origin} <> 'web' OR ${t.userId} IS NOT NULL`,
     ),
     index("orders_status_idx").on(t.status, t.createdAt.desc()),
     index("orders_user_idx").on(t.userId, t.createdAt.desc()),
-    // Parcial. En Postgres dos NULL no colisionan, así que el WHERE no cambia
-    // el comportamiento: deja escrito que el hueco de las órdenes manuales es
-    // deliberado y no un olvido.
+    // Dos NULL no colisionan igual: el WHERE solo deja escrito que el hueco
+    // de las órdenes manuales es deliberado.
     uniqueIndex("orders_idempotency_key_idx")
       .on(t.idempotencyKey)
       .where(sql`idempotency_key IS NOT NULL`),
@@ -126,20 +104,15 @@ export const orderItems = pgTable(
     orderId: uuid("order_id")
       .notNull()
       .references(() => orders.id, { onDelete: "cascade" }),
-    /** Se pone en NULL si la variante desaparece: el snapshot sobrevive. */
     variantId: uuid("variant_id").references(() => productVariants.id, {
       onDelete: "set null",
     }),
 
-    // Snapshot (RN-12): la orden se lee igual aunque el catálogo cambie.
+    // Snapshot (RN-12).
     productName: text("product_name").notNull(),
     brandName: text("brand_name").notNull(),
     colorName: text("color_name"),
-    /**
-     * El precio final YA CON DESCUENTO al momento de crear la orden. No se
-     * guarda el descuento por separado: la orden registra lo que se acordó
-     * cobrar, no cómo se llegó a ese número (§5.6).
-     */
+    /** El precio final YA CON DESCUENTO; el descuento no se guarda (§5.6). */
     unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
     quantity: integer("quantity").notNull(),
     subtotal: numeric("subtotal", {
@@ -157,7 +130,7 @@ export const orderItems = pgTable(
   ],
 ).enableRLS();
 
-/** Cada transición de estado deja rastro, con autor y motivo (RF-13). */
+/** Cada transición de estado, con autor y motivo (RF-13). */
 export const orderStatusHistory = pgTable("order_status_history", {
   id: uuid("id").primaryKey().defaultRandom(),
   orderId: uuid("order_id")
@@ -169,15 +142,8 @@ export const orderStatusHistory = pgTable("order_status_history", {
   actorUserId: uuid("actor_user_id").references(() => userProfiles.id, {
     onDelete: "set null",
   }),
-  /**
-   * `clock_timestamp()` por el mismo motivo que `stock_movements` (F4.1): con
-   * `now()`, dos filas escritas en la misma transacción quedan con el
-   * timestamp idéntico y el historial se lee en un orden cualquiera.
-   *
-   * Acá todavía no muerde —una transición por transacción—, pero F4.4 empieza
-   * a escribir acá las ediciones de RF-22, y quitar dos ítems de una es una
-   * sola transacción con dos filas. Se corrige antes y no después.
-   */
+  // clock_timestamp() y no now(): now() repite la hora en toda la
+  // transacción y dos filas quedarían sin orden.
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`clock_timestamp()`),

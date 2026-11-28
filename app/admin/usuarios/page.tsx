@@ -21,27 +21,17 @@ import { exigirAdmin } from "@/lib/session";
 export const metadata: Metadata = { title: "Usuarios" };
 
 /**
- * Listado de usuarios — FS RF-26. Tarea F7.6.
- *
- * Las cuentas de la tienda y las del panel en la misma lista, porque la
- * pregunta que se viene a hacer acá es siempre la misma —«¿quién es esta
- * persona y qué puede hacer?»— y separarlas en dos pantallas obligaría a saber
- * de antemano en cuál buscar.
- *
- * **No hay «eliminar»**, ni acá ni en la ficha: un comprador con órdenes no se
- * borra (§5.6, F4.5b). Lo que existe es bloquear (F7.7) y dar de baja (F7.9).
+ * Compradores y administradoras en la misma lista (RF-26). No hay «eliminar»:
+ * un comprador con órdenes no se borra (§5.6).
  */
 export default async function UsuariosDelPanel({
   searchParams,
 }: {
-  // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
   await exigirAdmin();
 
   const filtros = leerFiltros(await searchParams);
-  // En paralelo: el conteo de las solapas no depende de los filtros (§6.9),
-  // así que no tiene por qué esperar al listado.
   const [{ usuarios, total }, conteo] = await Promise.all([
     listarUsuarios(filtros),
     contarPorEstado(),

@@ -10,47 +10,29 @@ import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
 import { numeroDeWhatsApp } from "@/modules/settings/queries";
 
 /**
- * La tienda cerrada al público — F2.7b, DESIGN-REFERENCE §8 y §10.
+ * El proxy reescribe acá cualquier ruta de la tienda
+ * (`lib/supabase/proxy.ts`): por eso no hay «volver al inicio», que también
+ * está cerrado.
  *
- * **No se llega acá por un enlace**: el proxy reescribe cualquier ruta de la
- * tienda a esta página, con 503 y `Retry-After`, y la dirección del navegador
- * sigue siendo la que se pidió (`lib/supabase/proxy.ts`). Por eso no hay
- * «volver al inicio»: el inicio también está cerrado, y un botón que lleva de
- * vuelta a este mismo cartel es una salida que no existe.
- *
- * **Con la tienda abierta, esta página no tiene nada que decir** y manda al
- * inicio. Pregunta con `estaEnMantenimiento()` —la memoria que usa el proxy—
- * y no con la base: si una dijera «cerrada» y la otra «abierta» en los
- * segundos después de reabrir, el proxy mandaría acá y esta página mandaría
- * al inicio, una y otra vez.
- *
- * Sin encabezado ni pie de la tienda, como las pantallas de identidad: no hay
- * nada que buscar ni ningún lado adonde ir.
+ * Pregunta con `estaEnMantenimiento()`, la memoria del proxy, y no con la
+ * base: si discreparan al reabrir, el proxy y esta página se mandarían uno al
+ * otro en bucle.
  */
 export const metadata: Metadata = {
   title: "Volvemos en un rato",
-  // El 503 ya le dice a un buscador que no guarde esto; el `noindex` es por si
-  // alguien llega a la dirección directa, que responde 200.
+  // Por si alguien llega a la dirección directa, que responde 200 y no 503.
   robots: FUERA_DEL_INDICE,
 };
 
-/**
- * Se arma en cada pedido, nunca en la construcción, igual que `/api/salud`.
- *
- * Sin esto `next build` la **prerrenderiza**: no usa cookies ni encabezados,
- * así que para Next es una página estática, y la consulta a la base corre al
- * compilar. En el servidor no hay base a esa altura —§18.2 exige que se pueda
- * compilar sin ella—, y el despliegue del 2026-09-11 se cayó justo por eso. En
- * `next dev` no se ve, porque ahí no se prerrenderiza nada.
- */
+// Sin esto `next build` la prerrenderiza y consulta la base al compilar, donde
+// no la hay (§18.2). En `next dev` no se ve.
 export const dynamic = "force-dynamic";
 
 export default async function Mantenimiento() {
   const [cerrada, numero] = await Promise.all([
     estaEnMantenimiento(),
-    // Sin número, la página se muestra igual, sin el botón. Es la página que
-    // se ve cuando algo no anda: no puede ser la que se cae con un 500 porque
-    // la base tardó en contestar.
+    // Es la página de cuando algo no anda: no puede caerse con un 500 porque
+    // la base tardó. Sin número, sale sin el botón.
     numeroDeWhatsApp().catch((error: unknown) => {
       console.error(
         "[mantenimiento] No se pudo leer el número de WhatsApp.",
@@ -76,9 +58,7 @@ export default async function Mantenimiento() {
         </p>
       </div>
 
-      {/* La única salida que hay, así que es la principal (§7.3, el mismo
-          criterio que «Consultar disponibilidad»). Sin número cargado no se
-          dibuja: un `wa.me` sin número abre WhatsApp en la nada. */}
+      {/* Un `wa.me` sin número abre WhatsApp en la nada. */}
       {numero ? (
         <div className="flex flex-col items-center gap-2">
           <Button asChild variant="whatsapp" size="lg">
@@ -100,7 +80,7 @@ export default async function Mantenimiento() {
         </div>
       ) : null}
 
-      {/* §2.4: donde se ve una sola vez va la forma canónica, sin rotar. */}
+      {/* La forma canónica, sin rotar (§2.4). */}
       <p className="text-body-sm text-ink-secondary">
         Ana vende, vos elegís la tecnología.
       </p>

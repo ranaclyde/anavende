@@ -1767,6 +1767,8 @@ Un componente no está terminado hasta que sus cinco estados están definidos.
 
 **Transiciones:** 150ms para color y opacidad, 200ms para transformaciones, `cubic-bezier(0.4, 0, 0.2, 1)`. Nada por encima de 300ms. Todo se desactiva bajo `prefers-reduced-motion`.
 
+> **Una excepción: el sello del pedido registrado** (`/orden/[numero]`). El círculo da la vuelta, se llena de verde y el tilde se traza, en unos 1,15 s (`anillo`, `relleno` y `tilde` en `globals.css`). Pasa el techo a propósito: apretados en 300ms los tres tiempos se veían toscos, y en 750 todavía bruscos. Pasa una vez por compra, es CSS sin JavaScript, el texto y el resumen quedan quietos, y con «reducir movimiento» el sello ya aparece completo.
+
 ---
 
 ## 9. Accesibilidad

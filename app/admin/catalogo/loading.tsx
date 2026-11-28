@@ -1,17 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Carga del listado — DESIGN-REFERENCE §6.9: filas fantasma del alto real,
- * no un spinner centrado. La página no salta cuando llegan los datos.
- *
- * **Cubre sólo los hijos del layout**: el «Catálogo» y las solapas se pintan
- * al instante, porque viven en `layout.tsx` y no esperan nada.
- *
- * **Cuatro columnas, que son las de marcas, categorías y colores** —nombre,
- * estado, productos y acciones—. Hasta el 2026-09-21 dibujaba tres, así que
- * la fila se reacomodaba al llegar los datos. Medios de pago tiene tres y
- * comparte este esqueleto: se eligió el caso de las tres solapas que se abren
- * más seguido, y la diferencia es una columna angosta al medio.
+ * Cubre solo los hijos del layout: el encabezado y las solapas no esperan.
+ * Cuatro columnas, las de marcas, categorías y colores; medios de pago tiene
+ * tres y comparte este esqueleto a propósito.
  */
 export default function CargandoCatalogo() {
   return (
