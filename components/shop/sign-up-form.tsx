@@ -21,7 +21,7 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import { registrar } from "@/modules/users/actions";
 import type { ProveedorSocial } from "@/modules/users/proveedores";
 
@@ -40,8 +40,7 @@ export function SignUpForm({
 }) {
   const router = useRouter();
   const [enviando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
 
   // El token de Turnstile, uno por envío.
   const [captcha, setCaptcha] = useState<string | null>(null);
@@ -52,7 +51,7 @@ export function SignUpForm({
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const datos = new FormData(e.currentTarget);
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     iniciar(async () => {
       const r = await registrar({
@@ -68,7 +67,7 @@ export function SignUpForm({
       turnstile.current?.reiniciar();
 
       if (!r.ok) {
-        setErrores(leerErrores<Campo>(r));
+        setErrores(readErrors<Campo>(r));
         return;
       }
 
@@ -103,13 +102,13 @@ export function SignUpForm({
                 name="firstName"
                 autoComplete="given-name"
                 required
-                aria-invalid={!!errores.campos.firstName || undefined}
+                aria-invalid={!!errores.fields.firstName || undefined}
                 aria-describedby={
-                  errores.campos.firstName ? "e-firstName" : undefined
+                  errores.fields.firstName ? "e-firstName" : undefined
                 }
               />
               <FieldError id="e-firstName">
-                {errores.campos.firstName}
+                {errores.fields.firstName}
               </FieldError>
             </div>
 
@@ -120,12 +119,12 @@ export function SignUpForm({
                 name="lastName"
                 autoComplete="family-name"
                 required
-                aria-invalid={!!errores.campos.lastName || undefined}
+                aria-invalid={!!errores.fields.lastName || undefined}
                 aria-describedby={
-                  errores.campos.lastName ? "e-lastName" : undefined
+                  errores.fields.lastName ? "e-lastName" : undefined
                 }
               />
-              <FieldError id="e-lastName">{errores.campos.lastName}</FieldError>
+              <FieldError id="e-lastName">{errores.fields.lastName}</FieldError>
             </div>
           </div>
 
@@ -137,10 +136,10 @@ export function SignUpForm({
               type="email"
               autoComplete="email"
               required
-              aria-invalid={!!errores.campos.email || undefined}
-              aria-describedby={errores.campos.email ? "e-email" : undefined}
+              aria-invalid={!!errores.fields.email || undefined}
+              aria-describedby={errores.fields.email ? "e-email" : undefined}
             />
-            <FieldError id="e-email">{errores.campos.email}</FieldError>
+            <FieldError id="e-email">{errores.fields.email}</FieldError>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -153,13 +152,13 @@ export function SignUpForm({
               autoComplete="tel"
               placeholder="11 5555 5555"
               required
-              aria-invalid={!!errores.campos.phone || undefined}
+              aria-invalid={!!errores.fields.phone || undefined}
               aria-describedby={
-                errores.campos.phone ? "e-phone" : "ayuda-phone"
+                errores.fields.phone ? "e-phone" : "ayuda-phone"
               }
             />
-            {errores.campos.phone ? (
-              <FieldError id="e-phone">{errores.campos.phone}</FieldError>
+            {errores.fields.phone ? (
+              <FieldError id="e-phone">{errores.fields.phone}</FieldError>
             ) : (
               <FieldHint id="ayuda-phone">
                 Por acá coordinamos la entrega y el pago.
@@ -176,13 +175,13 @@ export function SignUpForm({
               autoComplete="new-password"
               minLength={8}
               required
-              aria-invalid={!!errores.campos.password || undefined}
+              aria-invalid={!!errores.fields.password || undefined}
               aria-describedby={
-                errores.campos.password ? "e-password" : "ayuda-password"
+                errores.fields.password ? "e-password" : "ayuda-password"
               }
             />
-            {errores.campos.password ? (
-              <FieldError id="e-password">{errores.campos.password}</FieldError>
+            {errores.fields.password ? (
+              <FieldError id="e-password">{errores.fields.password}</FieldError>
             ) : (
               <FieldHint id="ayuda-password">Al menos 8 caracteres.</FieldHint>
             )}

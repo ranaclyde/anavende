@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { urlAbsoluta } from "@/lib/seo";
+import { absoluteUrl } from "@/lib/seo";
 import { urlDeCategoria } from "@/modules/catalog/products/filtros-tienda";
 import {
   categoriasDelMapa,
@@ -27,22 +27,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const ultimoCambio = productos[0]?.actualizado;
 
   return [
-    { url: urlAbsoluta("/"), lastModified: ultimoCambio },
-    { url: urlAbsoluta("/productos"), lastModified: ultimoCambio },
-    { url: urlAbsoluta("/categorias"), lastModified: ultimoCambio },
+    { url: absoluteUrl("/"), lastModified: ultimoCambio },
+    { url: absoluteUrl("/productos"), lastModified: ultimoCambio },
+    { url: absoluteUrl("/categorias"), lastModified: ultimoCambio },
     ...categorias.map((c) => ({
-      url: urlAbsoluta(urlDeCategoria(c.slug)),
+      url: absoluteUrl(urlDeCategoria(c.slug)),
       lastModified: c.actualizado,
     })),
     ...productos.map((p) => ({
-      url: urlAbsoluta(`/productos/${p.slug}`),
+      url: absoluteUrl(`/productos/${p.slug}`),
       lastModified: p.actualizado,
     })),
     // Sin fecha: sería una consulta más para un dato que nadie usa.
     ...PAGINAS_LEGALES.map((p) => ({
-      url: urlAbsoluta(`/legales/${p.slug}`),
+      url: absoluteUrl(`/legales/${p.slug}`),
     })),
-    { url: urlAbsoluta("/contacto") },
-    { url: urlAbsoluta("/nosotros") },
+    { url: absoluteUrl("/contacto") },
+    { url: absoluteUrl("/nosotros") },
   ];
 }

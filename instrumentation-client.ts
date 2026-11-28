@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 
-import "@/lib/zod-castellano";
+import "@/lib/zod-spanish";
 import { scrubEvent } from "@/lib/sentry-scrub";
 
 Sentry.init({

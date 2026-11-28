@@ -14,8 +14,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { TIPO_FILTRO } from "@/lib/transiciones";
-import { AREA_TACTIL, cn } from "@/lib/utils";
+import { FILTER_TYPE } from "@/lib/transitions";
+import { TOUCH_AREA, cn } from "@/lib/utils";
 
 /**
  * El drawer de los filtros del catálogo, el mismo `Sheet` de los del panel.
@@ -105,12 +105,12 @@ export function DrawerDeFiltros({
             <SheetClose asChild>
               <Link
                 href={hrefLimpiar}
-                transitionTypes={TIPO_FILTRO}
+                transitionTypes={FILTER_TYPE}
                 className={cn(
                   "relative shrink-0 rounded-pill px-1 py-1.5 text-body-sm text-ink-secondary underline underline-offset-2",
                   "transition-colors duration-150 hover:text-brand",
                   "focus-visible:shadow-focus focus-visible:outline-none",
-                  AREA_TACTIL,
+                  TOUCH_AREA,
                 )}
               >
                 Limpiar filtros

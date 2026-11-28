@@ -81,7 +81,7 @@ convertida en trazo, así que no se carga ninguna fuente para dibujarla.
 
 ## Dónde vive
 
-- **`lib/marca.ts`** — la fuente de verdad: un trazo SVG por pieza (marco, A,
+- **`lib/logo.ts`** — la fuente de verdad: un trazo SVG por pieza (marco, A,
   joystick, auriculares, V), la palabra y las proporciones de la horizontal.
   Cada pieza va aparte para poder moverla sola, y la palabra va en cuatro
   partes —«A», «na», «V», «ende»— por lo mismo.
@@ -102,7 +102,7 @@ convertida en trazo, así que no se carga ninguna fuente para dibujarla.
 
 ## Cómo se regeneran los archivos
 
-Si cambia algo en `lib/marca.ts`, en este orden:
+Si cambia algo en `lib/logo.ts`, en este orden:
 
 ```sh
 npx tsx scripts/derivar-logo.mts   # isotipo.svg, logo.png, logo-horizontal.png, favicon.ico

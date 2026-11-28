@@ -14,7 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import type { Escena } from "@/lib/escenas";
+import type { Scene } from "@/lib/scenes";
 import { cn } from "@/lib/utils";
 
 /**
@@ -212,7 +212,7 @@ export function MenuDelTelefono({
 }: {
   userName?: string | null;
   userCara?: React.ReactNode;
-  escena?: Escena | null;
+  escena?: Scene | null;
 }) {
   const activo = useEnlaceActivo();
   const [abierto, setAbierto] = useState(false);

@@ -8,7 +8,7 @@ import { GraficoDeVentas } from "@/components/admin/reportes/graficos";
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { Button } from "@/components/ui/button";
-import { mesEnCurso } from "@/lib/fechas";
+import { currentMonth } from "@/lib/dates";
 import { formatMoney, isZero } from "@/lib/money";
 import { laMarcaDeAguaEstaActiva } from "@/modules/marca-de-agua/queries";
 import { comoVieneElMes, loQueHayParaHacer } from "@/modules/panel/tablero";
@@ -21,7 +21,7 @@ import {
   elModoMantenimiento,
   umbralDeStockBajo,
 } from "@/modules/settings/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Panel" };
 
@@ -31,7 +31,7 @@ export const metadata: Metadata = { title: "Panel" };
  * tablero y el listado no pueden decir cosas distintas.
  */
 export default async function PanelInicio() {
-  await exigirAdmin();
+  await requireAdmin();
 
   // Todo adentro del `Promise.all`: una promesa que arranca afuera y espera
   // detrás de otro `await` queda sin manejar si ese otro falla primero (pasa
@@ -196,7 +196,7 @@ function EsteMes({
         <>
           Este mes{" "}
           <span className="text-body-sm font-normal text-ink-secondary">
-            ({mesEnCurso()})
+            ({currentMonth()})
           </span>
         </>
       }
@@ -234,7 +234,7 @@ function EsteMes({
             puntos={porDia}
             agrupado="dia"
             hasta={hoy}
-            etiqueta={`Lo vendido cada día de ${mesEnCurso()}`}
+            etiqueta={`Lo vendido cada día de ${currentMonth()}`}
             className="aspect-auto h-40 w-full"
           />
         </div>

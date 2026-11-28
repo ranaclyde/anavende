@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getIdentity, getSession } from "@/lib/session";
-import { telefonoLocal } from "@/lib/telefono";
+import { localPhone } from "@/lib/phone";
 import { MAXIMO_DE_DIRECCIONES } from "@/modules/users/direcciones/constantes";
 import {
   listarDirecciones,
@@ -126,7 +126,7 @@ function TarjetaDeDireccion({
             </span>
           </address>
           <p className="text-body-sm text-ink-secondary">
-            Recibe {d.recipientName} · {telefonoLocal(d.phone)}
+            Recibe {d.recipientName} · {localPhone(d.phone)}
           </p>
           {d.notes ? (
             <p className="text-body-sm text-ink-secondary">{d.notes}</p>

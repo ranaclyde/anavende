@@ -13,10 +13,10 @@ import {
   POR_PAGINA,
   leerFiltros,
   urlDeFiltros,
-  type ParametrosDeBusqueda,
+  type SearchParamsRecord,
 } from "@/modules/users/panel/filtros";
 import { contarPorEstado, listarUsuarios } from "@/modules/users/panel/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Usuarios" };
 
@@ -27,9 +27,9 @@ export const metadata: Metadata = { title: "Usuarios" };
 export default async function UsuariosDelPanel({
   searchParams,
 }: {
-  searchParams: Promise<ParametrosDeBusqueda>;
+  searchParams: Promise<SearchParamsRecord>;
 }) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const filtros = leerFiltros(await searchParams);
   const [{ usuarios, total }, conteo] = await Promise.all([

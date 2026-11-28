@@ -38,12 +38,12 @@ const comun = action
 const permitida = action
   .input(sinDatos)
   .auth("customer")
-  .aunConBajaPendiente()
+  .evenWithPendingClosure()
   .handler(async () => "hecho");
 
 // La marca se declara en cualquier orden y sobrevive a `input` y `auth`.
 const permitidaAntes = action
-  .aunConBajaPendiente()
+  .evenWithPendingClosure()
   .input(sinDatos)
   .auth("customer")
   .handler(async () => "hecho");
@@ -74,7 +74,7 @@ describe("con la baja pedida", () => {
     });
   });
 
-  test("las que se declaran con `aunConBajaPendiente` siguen andando", async () => {
+  test("las que se declaran con `evenWithPendingClosure` siguen andando", async () => {
     sesion.actual = unaSesion(true);
     expect(await permitida({})).toEqual({ ok: true, data: "hecho" });
     expect(await permitidaAntes({})).toEqual({ ok: true, data: "hecho" });
@@ -87,7 +87,7 @@ describe("con la baja pedida", () => {
 });
 
 describe("con la baja ya ejecutada (F7.9)", () => {
-  test("ni siquiera las declaradas con `aunConBajaPendiente`", async () => {
+  test("ni siquiera las declaradas con `evenWithPendingClosure`", async () => {
     sesion.actual = unaSesion(true, true);
 
     // Con la baja PEDIDA la excepción existe para retirar el pedido;

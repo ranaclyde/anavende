@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, test } from "vitest";
 
 import { db } from "@/db";
-import { enlaceDeWhatsApp, mensajeDeOrden } from "@/lib/whatsapp";
+import { whatsappLink, orderMessage } from "@/lib/whatsapp";
 import { crearOrdenDesdeCarrito } from "@/modules/orders/crear";
 import { leerOrdenDelComprador } from "@/modules/orders/queries";
 import { limpiar, unaVariante } from "@/tests/apoyo/catalogo";
@@ -136,7 +136,7 @@ describe("el mensaje de WhatsApp del pedido", () => {
   ];
 
   test("lleva el número, el nombre, qué se compró y el total", () => {
-    const mensaje = mensajeDeOrden(1043, "Rosa Pereyra", items, "$ 49.000,00");
+    const mensaje = orderMessage(1043, "Rosa Pereyra", items, "$ 49.000,00");
 
     // En su propio renglón: es lo que se busca en el panel.
     expect(mensaje).toContain("Pedido #1043, a nombre de Rosa Pereyra");
@@ -145,21 +145,21 @@ describe("el mensaje de WhatsApp del pedido", () => {
   });
 
   test("sin color no deja la coma colgando", () => {
-    const mensaje = mensajeDeOrden(1043, "Rosa Pereyra", items, "$ 1,00");
+    const mensaje = orderMessage(1043, "Rosa Pereyra", items, "$ 1,00");
     expect(mensaje).toContain("1 × Mouse M170 (Logitech)\n");
     expect(mensaje).not.toContain("(Logitech), \n");
   });
 
   test("no lleva precios por unidad: para eso está el panel", () => {
-    const mensaje = mensajeDeOrden(1043, "Rosa Pereyra", items, "$ 49.000,00");
+    const mensaje = orderMessage(1043, "Rosa Pereyra", items, "$ 49.000,00");
     // Un solo monto en todo el mensaje, y es el total.
     expect(mensaje.match(/\$/g)).toHaveLength(1);
   });
 
   test("el enlace escapa el salto de línea, el acento y el peso", () => {
-    const enlace = enlaceDeWhatsApp(
+    const enlace = whatsappLink(
       "+5491155550000",
-      mensajeDeOrden(1043, "Rosa Pereyra", items, "$ 49.000,00"),
+      orderMessage(1043, "Rosa Pereyra", items, "$ 49.000,00"),
     );
 
     expect(enlace.startsWith("https://wa.me/5491155550000?text=")).toBe(true);

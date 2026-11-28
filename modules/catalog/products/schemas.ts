@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 
-import { comoMonto, compare, isMoney, money } from "@/lib/money";
+import { normalizeAmount, compare, isMoney, money } from "@/lib/money";
 import {
   LIMITE_DE_TEXTO,
   longitudDeTexto,
@@ -36,7 +36,7 @@ const monto = (mensaje: string) =>
     .string()
     .trim()
     // Acepta coma decimal y punto de miles.
-    .transform(comoMonto)
+    .transform(normalizeAmount)
     .refine(isMoney, { message: mensaje })
     .transform(money);
 

@@ -1,8 +1,8 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { destinoInterno } from "@/lib/destino";
-import { urlDelSitio } from "@/lib/env";
+import { internalRedirectTarget } from "@/lib/redirect-target";
+import { getSiteUrl } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -16,12 +16,12 @@ export async function GET(request: NextRequest) {
 
   // De la configuración y NO de `request.url`: detrás de Traefik y
   // Cloudflare, Next la arma con `0.0.0.0:3000`. En local no se ve.
-  const origin = urlDelSitio();
+  const origin = getSiteUrl();
 
   // Solo destinos internos: un `next` con host convertiría esto en un
   // redirector abierto.
   const nextCrudo = searchParams.get("next");
-  const next = destinoInterno(nextCrudo) ?? "/mi-cuenta";
+  const next = internalRedirectTarget(nextCrudo) ?? "/mi-cuenta";
 
   const errorDelProveedor = searchParams.get("error");
   if (errorDelProveedor) {

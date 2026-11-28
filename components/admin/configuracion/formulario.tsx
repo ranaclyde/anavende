@@ -9,9 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import type { Escena } from "@/lib/escenas";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
-import { telefonoLocal } from "@/lib/telefono";
+import type { Scene } from "@/lib/scenes";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
+import { localPhone } from "@/lib/phone";
 import { guardarLaConfiguracion } from "@/modules/settings/actions";
 import { AYUDA_DEL_UMBRAL, ENTERO } from "@/modules/settings/limites";
 import type { ConfiguracionDelSitio } from "@/modules/settings/queries";
@@ -36,7 +36,7 @@ const FECHAS = [
   { escena: "halloween", nombre: "Halloween", columna: "halloweenScene" },
   { escena: "navidad", nombre: "Navidad", columna: "christmasScene" },
 ] as const satisfies readonly {
-  escena: Escena;
+  escena: Scene;
   nombre: string;
   columna: keyof ConfiguracionDelSitio;
 }[];
@@ -57,12 +57,11 @@ export function FormularioDeConfiguracion({
   /** El que usa el sistema mientras la fila no existe. */
   umbralPorDefecto: number;
   /** Cada período escrito, «Del 1 de diciembre al 7 de enero.». */
-  periodos: Record<Escena, string>;
+  periodos: Record<Scene, string>;
 }) {
   const idBase = useId();
   const [enviando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
 
   /**
    * Lo último que se sabe guardado: lo que devuelve la acción, no lo enviado
@@ -73,7 +72,7 @@ export function FormularioDeConfiguracion({
 
   // Sin el `+549`: el campo ya muestra el +54 (`Input`, `type="tel"`).
   const [whatsapp, setWhatsapp] = useState(
-    telefonoLocal(configuracion?.whatsappNumber ?? ""),
+    localPhone(configuracion?.whatsappNumber ?? ""),
   );
   const [instagram, setInstagram] = useState(configuracion?.instagramUrl ?? "");
   const [facebook, setFacebook] = useState(configuracion?.facebookUrl ?? "");
@@ -85,7 +84,7 @@ export function FormularioDeConfiguracion({
   const [umbral, setUmbral] = useState(
     String(configuracion?.lowStockThreshold ?? umbralPorDefecto),
   );
-  // Sin fila, prendidas: es lo que la tienda está haciendo (`TODAS_PERMITIDAS`).
+  // Sin fila, prendidas: es lo que la tienda está haciendo (`ALL_ALLOWED`).
   const [escenas, setEscenas] = useState<Record<Columna, boolean>>({
     easterScene: configuracion?.easterScene ?? true,
     halloweenScene: configuracion?.halloweenScene ?? true,
@@ -100,7 +99,7 @@ export function FormularioDeConfiguracion({
    */
   const sinCambios =
     guardado !== null &&
-    whatsapp === telefonoLocal(guardado.whatsappNumber) &&
+    whatsapp === localPhone(guardado.whatsappNumber) &&
     instagram === (guardado.instagramUrl ?? "") &&
     facebook === (guardado.facebookUrl ?? "") &&
     email === guardado.adminNotificationEmail &&
@@ -111,8 +110,8 @@ export function FormularioDeConfiguracion({
   // a un id que no existe.
   const campo = (nombre: Campo, conAyuda = true) => ({
     id: `${idBase}-${nombre}`,
-    "aria-invalid": Boolean(errores.campos[nombre]) || undefined,
-    "aria-describedby": errores.campos[nombre]
+    "aria-invalid": Boolean(errores.fields[nombre]) || undefined,
+    "aria-describedby": errores.fields[nombre]
       ? `${idBase}-${nombre}-error`
       : conAyuda
         ? `${idBase}-${nombre}-ayuda`
@@ -129,26 +128,26 @@ export function FormularioDeConfiguracion({
     (evento: React.ChangeEvent<HTMLInputElement>) => {
       poner(evento.target.value);
 
-      if (errores.campos[nombre] || errores.general) {
+      if (errores.fields[nombre] || errores.general) {
         setErrores((previos) => ({
           ...previos,
           general: null,
-          campos: { ...previos.campos, [nombre]: undefined },
+          fields: { ...previos.fields, [nombre]: undefined },
         }));
       }
     };
 
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
     setSeGuardoRecien(false);
 
     // Sin dígitos no hay número que mandar y `NaN` no sobrevive al viaje. El
     // mensaje es el mismo que daría el servidor.
     if (!ENTERO.test(umbral.trim())) {
       setErrores({
-        ...SIN_ERRORES,
-        campos: { lowStockThreshold: AYUDA_DEL_UMBRAL },
+        ...NO_ERRORS,
+        fields: { lowStockThreshold: AYUDA_DEL_UMBRAL },
       });
       document.getElementById(`${idBase}-lowStockThreshold`)?.focus();
       return;
@@ -167,10 +166,10 @@ export function FormularioDeConfiguracion({
       });
 
       if (!resultado.ok) {
-        const nuevos = leerErrores<Campo>(resultado);
+        const nuevos = readErrors<Campo>(resultado);
         setErrores(nuevos);
 
-        const primero = CAMPOS.find((c) => nuevos.campos[c]);
+        const primero = CAMPOS.find((c) => nuevos.fields[c]);
         if (primero) document.getElementById(`${idBase}-${primero}`)?.focus();
         else errorGeneral.current?.focus();
         return;
@@ -179,7 +178,7 @@ export function FormularioDeConfiguracion({
       // Se pisan los campos con lo guardado: el número normalizado confirma
       // que se entendió.
       setGuardado(resultado.data);
-      setWhatsapp(telefonoLocal(resultado.data.whatsappNumber));
+      setWhatsapp(localPhone(resultado.data.whatsappNumber));
       setInstagram(resultado.data.instagramUrl ?? "");
       setFacebook(resultado.data.facebookUrl ?? "");
       setEmail(resultado.data.adminNotificationEmail);
@@ -220,7 +219,7 @@ export function FormularioDeConfiguracion({
               className="sm:max-w-64"
             />
             <FieldError id={`${idBase}-whatsappNumber-error`}>
-              {errores.campos.whatsappNumber}
+              {errores.fields.whatsappNumber}
             </FieldError>
           </div>
 
@@ -251,7 +250,7 @@ export function FormularioDeConfiguracion({
                 className="sm:max-w-96"
               />
               <FieldError id={`${idBase}-${nombre}-error`}>
-                {errores.campos[nombre]}
+                {errores.fields[nombre]}
               </FieldError>
             </div>
           ))}
@@ -312,9 +311,9 @@ export function FormularioDeConfiguracion({
               onChange={escribir("adminNotificationEmail", setEmail)}
               className="sm:max-w-80"
             />
-            {errores.campos.adminNotificationEmail ? (
+            {errores.fields.adminNotificationEmail ? (
               <FieldError id={`${idBase}-adminNotificationEmail-error`}>
-                {errores.campos.adminNotificationEmail}
+                {errores.fields.adminNotificationEmail}
               </FieldError>
             ) : (
               <FieldHint id={`${idBase}-adminNotificationEmail-ayuda`}>
@@ -333,7 +332,7 @@ export function FormularioDeConfiguracion({
                 // La unidad está al lado del campo y no en la etiqueta: sin
                 // esto el lector de pantalla no dice de qué es el número.
                 aria-describedby={
-                  errores.campos.lowStockThreshold
+                  errores.fields.lowStockThreshold
                     ? `${idBase}-lowStockThreshold-error ${idBase}-unidades`
                     : `${idBase}-unidades`
                 }
@@ -354,7 +353,7 @@ export function FormularioDeConfiguracion({
               </span>
             </div>
             <FieldError id={`${idBase}-lowStockThreshold-error`}>
-              {errores.campos.lowStockThreshold}
+              {errores.fields.lowStockThreshold}
             </FieldError>
           </div>
         </Apartado>

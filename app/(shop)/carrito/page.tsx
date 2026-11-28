@@ -18,7 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney, type Money } from "@/lib/money";
-import { FUERA_DEL_INDICE } from "@/lib/seo";
+import { NO_INDEX } from "@/lib/seo";
 import { getIdentity, getSession } from "@/lib/session";
 import { leerCarrito, type ItemDelCarrito } from "@/modules/cart/queries";
 import { revisarCarrito } from "@/modules/cart/revision";
@@ -27,7 +27,7 @@ import { urlDeImagen } from "@/modules/media/subir";
 
 export const metadata: Metadata = {
   title: "Tu carrito",
-  robots: FUERA_DEL_INDICE,
+  robots: NO_INDEX,
 };
 
 export default async function PaginaDelCarrito() {

@@ -142,7 +142,7 @@ Hay dos roles, `customer` y `admin`, en `user_profiles.role` (TS §13).
   `/admin`, `/mi-cuenta`, `/carrito`, `/checkout` u `/orden`. Es una
   comodidad, **no el control de acceso**.
 - **El control de acceso** está en el layout de `/admin` y al principio de
-  cada página del panel (`exigirAdmin()`), en el envoltorio de cada acción y
+  cada página del panel (`requireAdmin()`), en el envoltorio de cada acción y
   en el filtro por usuario de cada consulta del comprador.
 - **Contra las altas falsas** (TS §16): Turnstile en el alta, el ingreso, el
   reenvío y la recuperación, validado por GoTrue; límites de intentos por

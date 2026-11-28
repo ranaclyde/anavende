@@ -1,64 +1,64 @@
 import type { ActionResult } from "@/lib/action";
 
-type ArbolDeErrores = {
+type ErrorTree = {
   errors?: string[];
   properties?: Record<string, { errors?: string[] } | undefined>;
 };
 
-export type ErroresDeFormulario<C extends string = string> = {
+export type FormErrors<C extends string = string> = {
   general: string | null;
-  campos: Partial<Record<C, string>>;
-  codigo: string | null;
-  detalles: Record<string, unknown> | null;
+  fields: Partial<Record<C, string>>;
+  code: string | null;
+  details: Record<string, unknown> | null;
 };
 
-export const SIN_ERRORES: ErroresDeFormulario = {
+export const NO_ERRORS: FormErrors = {
   general: null,
-  campos: {},
-  codigo: null,
-  detalles: null,
+  fields: {},
+  code: null,
+  details: null,
 };
 
 /**
- * Aplana el árbol de `treeifyError` a `{ campo: mensaje }`: un mensaje por
+ * Aplana el árbol de `treeifyError` a `{ field: mensaje }`: un mensaje por
  * campo.
  */
-export function leerErrores<C extends string = string>(
-  resultado: Extract<ActionResult<unknown>, { ok: false }>,
-): ErroresDeFormulario<C> {
-  const detalles = resultado.details ?? null;
-  const arbol = detalles?.fields as ArbolDeErrores | undefined;
+export function readErrors<C extends string = string>(
+  result: Extract<ActionResult<unknown>, { ok: false }>,
+): FormErrors<C> {
+  const details = result.details ?? null;
+  const tree = details?.fields as ErrorTree | undefined;
 
-  const campos: Partial<Record<C, string>> = {};
-  for (const [campo, valor] of Object.entries(arbol?.properties ?? {})) {
-    const primero = valor?.errors?.[0];
-    if (primero) campos[campo as C] = primero;
+  const fields: Partial<Record<C, string>> = {};
+  for (const [field, value] of Object.entries(tree?.properties ?? {})) {
+    const first = value?.errors?.[0];
+    if (first) fields[field as C] = first;
   }
 
   return {
     // Repetido arriba y en el campo parecerían dos problemas distintos.
-    general: Object.keys(campos).length ? null : resultado.message,
-    campos,
-    codigo: resultado.code,
-    detalles,
+    general: Object.keys(fields).length ? null : result.message,
+    fields,
+    code: result.code,
+    details,
   };
 }
 
 /**
- * Los errores de un objeto anidado (`direccion.street`): `leerErrores` aplana
+ * Los errores de un objeto anidado (`direccion.street`): `readErrors` aplana
  * un solo nivel.
  */
-export function erroresDeSeccion<C extends string = string>(
-  resultado: Extract<ActionResult<unknown>, { ok: false }>,
-  seccion: string,
+export function sectionErrors<C extends string = string>(
+  result: Extract<ActionResult<unknown>, { ok: false }>,
+  section: string,
 ): Partial<Record<C, string>> {
-  const arbol = resultado.details?.fields as ArbolDeErrores | undefined;
-  const rama = arbol?.properties?.[seccion] as ArbolDeErrores | undefined;
+  const tree = result.details?.fields as ErrorTree | undefined;
+  const branch = tree?.properties?.[section] as ErrorTree | undefined;
 
-  const campos: Partial<Record<C, string>> = {};
-  for (const [campo, valor] of Object.entries(rama?.properties ?? {})) {
-    const primero = valor?.errors?.[0];
-    if (primero) campos[campo as C] = primero;
+  const fields: Partial<Record<C, string>> = {};
+  for (const [field, value] of Object.entries(branch?.properties ?? {})) {
+    const first = value?.errors?.[0];
+    if (first) fields[field as C] = first;
   }
-  return campos;
+  return fields;
 }

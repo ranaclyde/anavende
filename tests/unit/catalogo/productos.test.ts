@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
 
-import { paraEditar } from "@/lib/money";
+import { toEditable } from "@/lib/money";
 import {
   crearProducto,
   editarProducto,
@@ -52,8 +52,8 @@ describe("el precio (RF-15)", () => {
   });
 
   test("lo guardado se edita como se escribe, sin decimales vacíos", () => {
-    expect(paraEditar("89900.00")).toBe("89900");
-    expect(paraEditar("89900.50")).toBe("89900,50");
+    expect(toEditable("89900.00")).toBe("89900");
+    expect(toEditable("89900.50")).toBe("89900,50");
   });
 
   test("sin descuento, el descuento es cero: no hay oferta (RN-04b)", () => {

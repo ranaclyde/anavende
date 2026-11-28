@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { AnularLaDevolucion } from "@/components/admin/devoluciones/anular";
 import { Badge } from "@/components/ui/badge";
-import { fechaConHora } from "@/lib/fechas";
+import { dateWithTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import type { Devolucion, ItemDevuelto } from "@/modules/returns/queries";
 
@@ -51,7 +51,7 @@ export function TarjetaDeDevolucion({
           <p className="text-caption text-ink-secondary">
             {orden ? `${orden.customerName} · ` : ""}
             <time dateTime={devolucion.creadaEn}>
-              {fechaConHora(devolucion.creadaEn)}
+              {dateWithTime(devolucion.creadaEn)}
             </time>
             {devolucion.autor ? ` · ${devolucion.autor}` : ""}
           </p>
@@ -88,7 +88,7 @@ export function TarjetaDeDevolucion({
             <>
               {" el "}
               <time dateTime={devolucion.anuladaEn}>
-                {fechaConHora(devolucion.anuladaEn)}
+                {dateWithTime(devolucion.anuladaEn)}
               </time>
             </>
           ) : null}

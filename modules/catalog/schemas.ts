@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { slugificar } from "@/lib/slug";
+import { slugify } from "@/lib/slug";
 
 const nombre = z
   .string()
@@ -8,7 +8,7 @@ const nombre = z
   .min(2, "El nombre necesita al menos 2 caracteres.")
   .max(60, "El nombre no puede pasar de 60 caracteres.")
   // Uno hecho solo de signos deja el slug vacío.
-  .refine((v) => slugificar(v).length > 0, {
+  .refine((v) => slugify(v).length > 0, {
     message: "El nombre necesita al menos una letra o un número.",
   });
 

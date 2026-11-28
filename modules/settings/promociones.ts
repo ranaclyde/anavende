@@ -1,4 +1,4 @@
-import { compare, cuota, isZero, type Money } from "@/lib/money";
+import { compare, installment, isZero, type Money } from "@/lib/money";
 
 // Lógica pura: la consulta no depende del producto, así se pide en paralelo con
 // la ficha y esto decide para cada precio.
@@ -51,7 +51,7 @@ export function promocionesParaElPrecio(
       plan: p.plan,
       logoUrl: p.logoUrl,
       cuotas: p.cuotas,
-      cuota: cuota(precioFinal, p.recargo, p.cuotas),
+      cuota: installment(precioFinal, p.recargo, p.cuotas),
       sinRecargo: isZero(p.recargo),
     });
   }

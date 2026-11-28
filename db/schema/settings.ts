@@ -25,7 +25,7 @@ export const siteSettings = pgTable(
     /** Enlace completo y normalizado (`modules/settings/schemas.ts`). */
     facebookUrl: text("facebook_url"),
     instagramUrl: text("instagram_url"),
-    /** Se encienden solas en su período (`lib/escenas.ts`); esto las apaga. */
+    /** Se encienden solas en su período (`lib/scenes.ts`); esto las apaga. */
     halloweenScene: boolean("halloween_scene").notNull().default(true),
     christmasScene: boolean("christmas_scene").notNull().default(true),
     easterScene: boolean("easter_scene").notNull().default(true),

@@ -25,7 +25,7 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import { subirImagen } from "@/modules/media/cliente";
 import {
   crearUnMedioDePago,
@@ -67,8 +67,7 @@ export function EdicionDeMedioDePago({
   const router = useRouter();
   const idBase = useId();
   const [enviando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
   const [nombre, setNombre] = useState(medio?.name ?? "");
   const [descripcion, setDescripcion] = useState(medio?.description ?? "");
   const [logo, setLogo] = useState<AccionDeLogo>(LOGO_SIN_TOCAR);
@@ -76,7 +75,7 @@ export function EdicionDeMedioDePago({
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     iniciar(async () => {
       const resultado = medio
@@ -88,7 +87,7 @@ export function EdicionDeMedioDePago({
         : await crearUnMedioDePago({ name: nombre, description: descripcion });
 
       if (!resultado.ok) {
-        setErrores(leerErrores<Campo>(resultado));
+        setErrores(readErrors<Campo>(resultado));
         return;
       }
 
@@ -157,13 +156,13 @@ export function EdicionDeMedioDePago({
                     autoFocus
                     required
                     maxLength={60}
-                    aria-invalid={!!errores.campos.name || undefined}
+                    aria-invalid={!!errores.fields.name || undefined}
                     aria-describedby={
-                      errores.campos.name ? `${idBase}-e-name` : undefined
+                      errores.fields.name ? `${idBase}-e-name` : undefined
                     }
                   />
                   <FieldError id={`${idBase}-e-name`}>
-                    {errores.campos.name}
+                    {errores.fields.name}
                   </FieldError>
                 </div>
 
@@ -180,16 +179,16 @@ export function EdicionDeMedioDePago({
                     value={descripcion}
                     onChange={(e) => setDescripcion(e.target.value)}
                     maxLength={120}
-                    aria-invalid={!!errores.campos.description || undefined}
+                    aria-invalid={!!errores.fields.description || undefined}
                     aria-describedby={
-                      errores.campos.description
+                      errores.fields.description
                         ? `${idBase}-e-desc`
                         : `${idBase}-ayuda-desc`
                     }
                   />
-                  {errores.campos.description ? (
+                  {errores.fields.description ? (
                     <FieldError id={`${idBase}-e-desc`}>
-                      {errores.campos.description}
+                      {errores.fields.description}
                     </FieldError>
                   ) : (
                     <FieldHint id={`${idBase}-ayuda-desc`}>

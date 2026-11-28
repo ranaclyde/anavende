@@ -3,7 +3,7 @@ import { expect, test } from "./apoyo/test";
 import { datosDePrueba } from "./apoyo/datos";
 
 /**
- * La vuelta después de ingresar no saca de la tienda (`lib/destino.ts`).
+ * La vuelta después de ingresar no saca de la tienda (`lib/redirect-target.ts`).
  * Cualquiera puede mandar un enlace a `/ingresar` con el `volver` que quiera,
  * y `//otro.com` empieza con `/`.
  */

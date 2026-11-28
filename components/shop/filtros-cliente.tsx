@@ -10,7 +10,7 @@ import {
 } from "@/modules/catalog/products/filtros-tienda";
 import { useAvisarFiltrando } from "@/components/shop/filtrando";
 import { Slider } from "@/components/ui/slider";
-import { TIPO_FILTRO } from "@/lib/transiciones";
+import { FILTER_TYPE } from "@/lib/transitions";
 import { cn } from "@/lib/utils";
 
 const ESPERA = 700;
@@ -87,7 +87,7 @@ export function RangoDePrecio({
     iniciar(() => {
       router.replace(
         urlCambiando(filtros, { precioMin: min, precioMax: max }),
-        { scroll: false, transitionTypes: TIPO_FILTRO },
+        { scroll: false, transitionTypes: FILTER_TYPE },
       );
     });
   };

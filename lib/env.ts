@@ -11,7 +11,7 @@ export const hasSupabaseEnvVars = Boolean(
  * El respaldo no es adorno: `next build` corre sin `.env.local` y sin él
  * `new URL()` falla al construir. En producción la variable tiene que estar.
  */
-export function urlDelSitio(): string {
-  const crudo = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  return crudo.replace(/\/+$/, "");
+export function getSiteUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  return raw.replace(/\/+$/, "");
 }

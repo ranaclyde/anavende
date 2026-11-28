@@ -16,7 +16,7 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { leerErrores } from "@/lib/form";
+import { readErrors } from "@/lib/form";
 import { anularUnaDevolucion } from "@/modules/returns/actions";
 import { MAXIMO_DEL_MOTIVO } from "@/modules/returns/schemas";
 
@@ -82,8 +82,8 @@ function Dialogo({
       const r = await anularUnaDevolucion({ returnId, motivo });
       if (!r.ok) {
         // `INVALID_ORDER_STATE`: ya la anuló otra pestaña.
-        const errores = leerErrores<"motivo">(r);
-        setErrorDelMotivo(errores.campos.motivo ?? null);
+        const errores = readErrors<"motivo">(r);
+        setErrorDelMotivo(errores.fields.motivo ?? null);
         setError(errores.general);
         return;
       }

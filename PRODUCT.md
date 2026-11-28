@@ -132,7 +132,7 @@ es una decisión abierta.
 - **Isotipo:** una cuadrícula de cuatro celdas —una **A**, un joystick, unos
   auriculares y una **V**— a trazo burdeos sobre transparente, con versión
   horizontal: la palabra «AnaVende» en Figtree ExtraBold, la letra de la A y la
-  V. Los trazos viven en `lib/marca.ts`; los archivos de `public/marca/` y el
+  V. Los trazos viven en `lib/logo.ts`; los archivos de `public/marca/` y el
   favicon se derivan con `scripts/derivar-logo.mts` (`docs/MARCA.md`).
   **Nunca** se deforma, recolorea, sombrea ni rota, y no se usa por debajo de
   24px salvo en el favicon (DESIGN-REFERENCE §2.3). Lo único que lleva encima

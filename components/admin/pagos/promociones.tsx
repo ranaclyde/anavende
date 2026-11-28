@@ -28,17 +28,17 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { diaCorto, hoyEnArgentina } from "@/lib/fechas";
+import { shortDay, todayInArgentina } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import {
-  comoMonto,
-  cuota,
+  normalizeAmount,
+  installment,
   formatMoney,
   isMoney,
   isZero,
   money,
-  paraEditar,
+  toEditable,
 } from "@/lib/money";
 import {
   cambiarEstadoDePromocion,
@@ -273,14 +273,14 @@ function resumen(
 ): string {
   const cuotas = isZero(p.recargo)
     ? `${p.cuotas} cuotas sin interés`
-    : `${p.cuotas} cuotas con ${paraEditar(p.recargo)} % de recargo`;
+    : `${p.cuotas} cuotas con ${toEditable(p.recargo)} % de recargo`;
   return p.plan ? `${p.plan}: ${cuotas}` : cuotas;
 }
 
 function vigencia(p: PromocionDelPanel): string {
   return p.hasta
-    ? `Del ${diaCorto(p.desde)} al ${diaCorto(p.hasta)}`
-    : `Desde el ${diaCorto(p.desde)}, sin fecha de fin`;
+    ? `Del ${shortDay(p.desde)} al ${shortDay(p.hasta)}`
+    : `Desde el ${shortDay(p.desde)}, sin fecha de fin`;
 }
 
 /** Si hoy se ve. Desactivada gana a la fecha: es lo que ella decidió. */
@@ -307,25 +307,24 @@ function Formulario({
 }) {
   const id = useId();
   const [enviando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
 
   const [plan, setPlan] = useState(promocion?.plan ?? "");
   const [cuotas, setCuotas] = useState(String(promocion?.cuotas ?? 3));
   const [recargo, setRecargo] = useState(
     promocion && !isZero(promocion.recargo)
-      ? paraEditar(promocion.recargo)
+      ? toEditable(promocion.recargo)
       : "",
   );
-  const [desde, setDesde] = useState(promocion?.desde ?? hoyEnArgentina());
+  const [desde, setDesde] = useState(promocion?.desde ?? todayInArgentina());
   const [hasta, setHasta] = useState(promocion?.hasta ?? "");
   const [minimo, setMinimo] = useState(
-    promocion?.montoMinimo ? paraEditar(promocion.montoMinimo) : "",
+    promocion?.montoMinimo ? toEditable(promocion.montoMinimo) : "",
   );
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     const campos = {
       plan,
@@ -342,7 +341,7 @@ function Formulario({
         : await crearUnaPromocion({ paymentMethodId: medio.id, ...campos });
 
       if (!r.ok) {
-        setErrores(leerErrores<Campo>(r));
+        setErrores(readErrors<Campo>(r));
         return;
       }
 
@@ -374,7 +373,7 @@ function Formulario({
                 id={`${id}-plan`}
                 etiqueta="Plan"
                 opcional
-                error={errores.campos.plan}
+                error={errores.fields.plan}
               >
                 <Input
                   id={`${id}-plan`}
@@ -382,12 +381,12 @@ function Formulario({
                   onChange={(e) => setPlan(e.target.value)}
                   maxLength={40}
                   autoFocus
-                  aria-invalid={!!errores.campos.plan || undefined}
+                  aria-invalid={!!errores.fields.plan || undefined}
                   aria-describedby={
-                    errores.campos.plan ? `${id}-plan-e` : `${id}-plan-ayuda`
+                    errores.fields.plan ? `${id}-plan-e` : `${id}-plan-ayuda`
                   }
                 />
-                {errores.campos.plan ? null : (
+                {errores.fields.plan ? null : (
                   <FieldHint id={`${id}-plan-ayuda`}>
                     Como el Plan Z de NaranjaX.
                   </FieldHint>
@@ -398,7 +397,7 @@ function Formulario({
                 <Campo
                   id={`${id}-cuotas`}
                   etiqueta="Cuotas"
-                  error={errores.campos.cuotas}
+                  error={errores.fields.cuotas}
                 >
                   <Input
                     id={`${id}-cuotas`}
@@ -409,16 +408,16 @@ function Formulario({
                     value={cuotas}
                     onChange={(e) => setCuotas(e.target.value)}
                     required
-                    aria-invalid={!!errores.campos.cuotas || undefined}
+                    aria-invalid={!!errores.fields.cuotas || undefined}
                     aria-describedby={
-                      errores.campos.cuotas ? `${id}-cuotas-e` : undefined
+                      errores.fields.cuotas ? `${id}-cuotas-e` : undefined
                     }
                   />
                 </Campo>
                 <Campo
                   id={`${id}-recargo`}
                   etiqueta="Recargo (%)"
-                  error={errores.campos.recargo}
+                  error={errores.fields.recargo}
                 >
                   <Input
                     id={`${id}-recargo`}
@@ -426,16 +425,16 @@ function Formulario({
                     placeholder="0"
                     value={recargo}
                     onChange={(e) => setRecargo(e.target.value)}
-                    aria-invalid={!!errores.campos.recargo || undefined}
+                    aria-invalid={!!errores.fields.recargo || undefined}
                     aria-describedby={
-                      errores.campos.recargo
+                      errores.fields.recargo
                         ? `${id}-recargo-e`
                         : `${id}-recargo-ayuda`
                     }
                   />
                 </Campo>
               </div>
-              {errores.campos.recargo ? null : (
+              {errores.fields.recargo ? null : (
                 <FieldHint id={`${id}-recargo-ayuda`} className="-mt-3">
                   Vacío o 0 es sin interés.
                 </FieldHint>
@@ -447,7 +446,7 @@ function Formulario({
                 <Campo
                   id={`${id}-desde`}
                   etiqueta="Desde"
-                  error={errores.campos.desde}
+                  error={errores.fields.desde}
                 >
                   <Input
                     id={`${id}-desde`}
@@ -455,9 +454,9 @@ function Formulario({
                     value={desde}
                     onChange={(e) => setDesde(e.target.value)}
                     required
-                    aria-invalid={!!errores.campos.desde || undefined}
+                    aria-invalid={!!errores.fields.desde || undefined}
                     aria-describedby={
-                      errores.campos.desde ? `${id}-desde-e` : undefined
+                      errores.fields.desde ? `${id}-desde-e` : undefined
                     }
                   />
                 </Campo>
@@ -465,7 +464,7 @@ function Formulario({
                   id={`${id}-hasta`}
                   etiqueta="Hasta"
                   opcional
-                  error={errores.campos.hasta}
+                  error={errores.fields.hasta}
                 >
                   <Input
                     id={`${id}-hasta`}
@@ -473,16 +472,16 @@ function Formulario({
                     value={hasta}
                     min={desde || undefined}
                     onChange={(e) => setHasta(e.target.value)}
-                    aria-invalid={!!errores.campos.hasta || undefined}
+                    aria-invalid={!!errores.fields.hasta || undefined}
                     aria-describedby={
-                      errores.campos.hasta
+                      errores.fields.hasta
                         ? `${id}-hasta-e`
                         : `${id}-hasta-ayuda`
                     }
                   />
                 </Campo>
               </div>
-              {errores.campos.hasta ? null : (
+              {errores.fields.hasta ? null : (
                 <FieldHint id={`${id}-hasta-ayuda`} className="-mt-3">
                   Las dos fechas cuentan. Sin fecha de fin, no vence.
                 </FieldHint>
@@ -492,21 +491,21 @@ function Formulario({
                 id={`${id}-minimo`}
                 etiqueta="Monto mínimo"
                 opcional
-                error={errores.campos.montoMinimo}
+                error={errores.fields.montoMinimo}
               >
                 <Input
                   id={`${id}-minimo`}
                   inputMode="decimal"
                   value={minimo}
                   onChange={(e) => setMinimo(e.target.value)}
-                  aria-invalid={!!errores.campos.montoMinimo || undefined}
+                  aria-invalid={!!errores.fields.montoMinimo || undefined}
                   aria-describedby={
-                    errores.campos.montoMinimo
+                    errores.fields.montoMinimo
                       ? `${id}-minimo-e`
                       : `${id}-minimo-ayuda`
                   }
                 />
-                {errores.campos.montoMinimo ? null : (
+                {errores.fields.montoMinimo ? null : (
                   <FieldHint id={`${id}-minimo-ayuda`}>
                     Sobre el precio con descuento. Por debajo, no se muestra.
                   </FieldHint>
@@ -603,7 +602,7 @@ function vistaPrevia(cuotas: string, recargo: string, minimo: string) {
   }
   const pct = recargo.replace("%", "").trim().replace(",", ".") || "0";
   if (!isMoney(pct)) return null;
-  const minimoComoMonto = minimo.trim() === "" ? null : comoMonto(minimo);
+  const minimoComoMonto = minimo.trim() === "" ? null : normalizeAmount(minimo);
   const precio =
     minimoComoMonto && isMoney(minimoComoMonto)
       ? money(minimoComoMonto)
@@ -612,7 +611,7 @@ function vistaPrevia(cuotas: string, recargo: string, minimo: string) {
     return {
       precio,
       cuotas: n,
-      cuota: cuota(precio, money(pct), n),
+      cuota: installment(precio, money(pct), n),
       sinRecargo: isZero(pct),
     };
   } catch {

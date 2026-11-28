@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { isMoney } from "@/lib/money";
-import { telefonoArgentino } from "@/lib/telefono";
+import { argentinePhone } from "@/lib/phone";
 
 export const FORMAS_DE_ENTREGA = ["envio", "retiro"] as const;
 
@@ -15,9 +15,9 @@ export const confirmacionSchema = z
       .trim()
       .min(2, "Escribí tu nombre.")
       .max(80, "Ese nombre es demasiado largo."),
-    telefono: telefonoArgentino({
-      requerido: "Necesitamos tu teléfono para coordinar la entrega.",
-      invalido:
+    telefono: argentinePhone({
+      required: "Necesitamos tu teléfono para coordinar la entrega.",
+      invalid:
         "Ese teléfono no parece válido. Escribilo con característica, por ejemplo 2920 55 5555.",
     }),
     entrega: z.enum(FORMAS_DE_ENTREGA, {

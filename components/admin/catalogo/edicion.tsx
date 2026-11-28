@@ -37,8 +37,8 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Input, Textarea } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
-import { slugificar } from "@/lib/slug";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
+import { slugify } from "@/lib/slug";
 import type {
   CategoriaRelacionable,
   CategoriaRelacionada,
@@ -143,8 +143,7 @@ export function EdicionDeItem({
   const router = useRouter();
   const idBase = useId();
   const [enviando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
   const [nombre, setNombre] = useState(item?.name ?? nombreInicial);
   const [hex, setHex] = useState(item?.hexCode ?? HEX_POR_OMISION);
   // Una categoría nueva no nace destacada.
@@ -160,11 +159,11 @@ export function EdicionDeItem({
   const [logo, setLogo] = useState<AccionDeLogo>(LOGO_SIN_TOCAR);
   const [errorDelLogo, setErrorDelLogo] = useState<string | null>(null);
 
-  const direccion = item ? item.slug : slugificar(nombre);
+  const direccion = item ? item.slug : slugify(nombre);
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     const pedidas = relacionadas.map(({ id, reciproca }) => ({
       id,
@@ -196,7 +195,7 @@ export function EdicionDeItem({
             : await CREAR.marca({ name: nombre });
 
       if (!resultado.ok) {
-        setErrores(leerErrores<Campo>(resultado));
+        setErrores(readErrors<Campo>(resultado));
         return;
       }
 
@@ -325,14 +324,14 @@ export function EdicionDeItem({
                   autoFocus
                   required
                   maxLength={60}
-                  aria-invalid={!!errores.campos.name || undefined}
+                  aria-invalid={!!errores.fields.name || undefined}
                   aria-describedby={
-                    errores.campos.name ? `${idBase}-e-name` : `${idBase}-dir`
+                    errores.fields.name ? `${idBase}-e-name` : `${idBase}-dir`
                   }
                 />
-                {errores.campos.name ? (
+                {errores.fields.name ? (
                   <FieldError id={`${idBase}-e-name`}>
-                    {errores.campos.name}
+                    {errores.fields.name}
                   </FieldError>
                 ) : (
                   <FieldHint id={`${idBase}-dir`}>
@@ -365,14 +364,14 @@ export function EdicionDeItem({
                       onChange={(e) => setHex(e.target.value)}
                       spellCheck={false}
                       className="font-mono"
-                      aria-invalid={!!errores.campos.hexCode || undefined}
+                      aria-invalid={!!errores.fields.hexCode || undefined}
                       aria-describedby={
-                        errores.campos.hexCode ? `${idBase}-e-hex` : undefined
+                        errores.fields.hexCode ? `${idBase}-e-hex` : undefined
                       }
                     />
                   </div>
                   <FieldError id={`${idBase}-e-hex`}>
-                    {errores.campos.hexCode}
+                    {errores.fields.hexCode}
                   </FieldError>
                 </div>
               ) : (
@@ -403,12 +402,12 @@ export function EdicionDeItem({
                     maxLength={TOPE_DEL_TEXTO_DE_CATEGORIA}
                     value={texto}
                     onChange={(e) => setTexto(e.target.value)}
-                    aria-invalid={!!errores.campos.description || undefined}
+                    aria-invalid={!!errores.fields.description || undefined}
                     aria-describedby={`${idBase}-texto-ayuda`}
                   />
-                  {errores.campos.description ? (
+                  {errores.fields.description ? (
                     <FieldError id={`${idBase}-texto-ayuda`}>
-                      {errores.campos.description}
+                      {errores.fields.description}
                     </FieldError>
                   ) : (
                     <FieldHint id={`${idBase}-texto-ayuda`}>

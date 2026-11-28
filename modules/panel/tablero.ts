@@ -3,7 +3,7 @@ import "server-only";
 import { sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { ZONA_HORARIA } from "@/lib/fechas";
+import { TIME_ZONE } from "@/lib/dates";
 import type { Money } from "@/lib/money";
 import { contarBajasPendientes } from "@/modules/users/baja/operaciones";
 
@@ -15,8 +15,8 @@ import { contarBajasPendientes } from "@/modules/users/baja/operaciones";
  * ventas de las tres primeras horas del mes caerían en el anterior.
  */
 const INICIO_DEL_MES = sql`
-  (date_trunc('month', now() AT TIME ZONE ${ZONA_HORARIA}))::timestamp
-    AT TIME ZONE ${ZONA_HORARIA}`;
+  (date_trunc('month', now() AT TIME ZONE ${TIME_ZONE}))::timestamp
+    AT TIME ZONE ${TIME_ZONE}`;
 
 export type ParaHacer = {
   ordenesActivas: number;
@@ -108,7 +108,7 @@ export async function comoVieneElMes(): Promise<ElMes> {
                AND o.finalized_at >= mes.inicio) AS ordenes,
            (SELECT count(*)::int FROM products WHERE is_active)
              AS "productosActivos",
-           to_char((SELECT inicio FROM mes) AT TIME ZONE ${ZONA_HORARIA},
+           to_char((SELECT inicio FROM mes) AT TIME ZONE ${TIME_ZONE},
                    'YYYY-MM-DD') AS desde
       FROM mes`);
 

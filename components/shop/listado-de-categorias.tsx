@@ -14,9 +14,9 @@ import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { cn } from "@/lib/utils";
 import {
-  enlaceDeWhatsApp,
-  mensajeDeBusquedaSinResultados,
-  mensajeDeConsultaGeneral,
+  whatsappLink,
+  noResultsMessage,
+  generalInquiryMessage,
 } from "@/lib/whatsapp";
 import {
   repartirCategorias,
@@ -203,8 +203,8 @@ function Cierre({
   const id = useId();
   const mensaje =
     busquedaSinResultados !== null
-      ? mensajeDeBusquedaSinResultados(busquedaSinResultados)
-      : mensajeDeConsultaGeneral();
+      ? noResultsMessage(busquedaSinResultados)
+      : generalInquiryMessage();
 
   return (
     <section aria-labelledby={id} className="flex flex-col items-start gap-3">
@@ -220,7 +220,7 @@ function Cierre({
           </p>
           <Button asChild variant="secondary" className="mt-2">
             <a
-              href={enlaceDeWhatsApp(whatsapp, mensaje)}
+              href={whatsappLink(whatsapp, mensaje)}
               target="_blank"
               rel="noopener noreferrer"
             >

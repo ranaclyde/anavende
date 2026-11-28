@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { brands, categories, colors } from "@/db/schema/catalog";
 import { action } from "@/lib/action";
 import { domainError } from "@/lib/errors";
-import { slugificar } from "@/lib/slug";
+import { slugify } from "@/lib/slug";
 import {
   borrarArchivos,
   clavesDelLogo,
@@ -106,7 +106,7 @@ export const crearUnaMarca = action
     try {
       const [fila] = await db
         .insert(brands)
-        .values({ name: input.name, slug: slugificar(input.name) })
+        .values({ name: input.name, slug: slugify(input.name) })
         .returning({ id: brands.id });
       refrescar();
       return { id: fila.id };
@@ -125,7 +125,7 @@ export const crearUnaCategoria = action
           .insert(categories)
           .values({
             name: input.name,
-            slug: slugificar(input.name),
+            slug: slugify(input.name),
             isFeatured: input.isFeatured,
             description: input.description ?? null,
           })
@@ -151,7 +151,7 @@ export const crearUnColor = action
         .insert(colors)
         .values({
           name: input.name,
-          slug: slugificar(input.name),
+          slug: slugify(input.name),
           hexCode: input.hexCode,
         })
         .returning({ id: colors.id });

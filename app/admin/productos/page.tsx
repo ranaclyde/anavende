@@ -16,7 +16,7 @@ import {
   leerFiltros,
   POR_PAGINA,
   urlDeFiltros,
-  type ParametrosDeBusqueda,
+  type SearchParamsRecord,
 } from "@/modules/catalog/products/filtros";
 import {
   contarPorEstado,
@@ -24,16 +24,16 @@ import {
   opcionesDeProducto,
 } from "@/modules/catalog/products/queries";
 import { umbralDeStockBajo } from "@/modules/settings/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Productos" };
 
 export default async function ProductosDelPanel({
   searchParams,
 }: {
-  searchParams: Promise<ParametrosDeBusqueda>;
+  searchParams: Promise<SearchParamsRecord>;
 }) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const filtros = leerFiltros(await searchParams);
 

@@ -22,12 +22,12 @@ import {
   type FiltrosDeTienda,
 } from "@/modules/catalog/products/filtros-tienda";
 import { formatMoney } from "@/lib/money";
-import { TIPO_FILTRO } from "@/lib/transiciones";
+import { FILTER_TYPE } from "@/lib/transitions";
 import type {
   OpcionDeColor,
   OpcionDeFiltro,
 } from "@/modules/catalog/products/tienda";
-import { AREA_TACTIL, cn } from "@/lib/utils";
+import { TOUCH_AREA, cn } from "@/lib/utils";
 
 /**
  * Filtros del catálogo (RF-02). **Todo son enlaces, no controles**: se abren
@@ -148,13 +148,13 @@ function Casilla({
   return (
     <Link
       href={href}
-      transitionTypes={TIPO_FILTRO}
+      transitionTypes={FILTER_TYPE}
       aria-current={activa ? "true" : undefined}
       className={cn(
         "relative flex w-fit items-center gap-2.5 rounded-pill py-1.5 pr-3 pl-1.5",
         "text-body-sm transition-colors duration-150",
         "focus-visible:shadow-focus focus-visible:outline-none",
-        AREA_TACTIL,
+        TOUCH_AREA,
         activa ? "font-medium text-brand" : "text-ink-secondary hover:text-ink",
       )}
     >
@@ -243,13 +243,13 @@ export function ChipsDeFiltros({
         <li key={p.clave}>
           <Link
             href={p.href}
-            transitionTypes={TIPO_FILTRO}
+            transitionTypes={FILTER_TYPE}
             className={cn(
               "relative flex items-center gap-1.5 rounded-full border border-brand-tint-border bg-brand-tint",
               "py-1.5 pr-2 pl-3 text-caption font-medium whitespace-nowrap text-brand",
               "transition-colors duration-150 hover:border-brand hover:bg-brand hover:text-ink-inverse",
               "focus-visible:shadow-focus focus-visible:outline-none",
-              AREA_TACTIL,
+              TOUCH_AREA,
             )}
           >
             {p.etiqueta}
@@ -263,12 +263,12 @@ export function ChipsDeFiltros({
       <li>
         <Link
           href={urlSinFiltros(filtros)}
-          transitionTypes={TIPO_FILTRO}
+          transitionTypes={FILTER_TYPE}
           className={cn(
             "relative rounded-full px-2 py-1.5 text-caption font-medium text-ink-secondary underline underline-offset-2",
             "transition-colors duration-150 hover:text-brand",
             "focus-visible:shadow-focus focus-visible:outline-none",
-            AREA_TACTIL,
+            TOUCH_AREA,
           )}
         >
           Limpiar todo

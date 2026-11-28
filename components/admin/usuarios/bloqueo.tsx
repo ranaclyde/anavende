@@ -16,7 +16,7 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Textarea } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { leerErrores } from "@/lib/form";
+import { readErrors } from "@/lib/form";
 import {
   bloquearCuenta,
   desbloquearCuenta,
@@ -85,7 +85,7 @@ export function BloqueoDeLaCuenta({
       if (!r.ok) {
         // El motivo vacío vuelve como error del campo; la regla de la última
         // administradora, como mensaje del diálogo. Los dos son VALIDATION.
-        const delCampo = leerErrores<"motivo">(r).campos.motivo;
+        const delCampo = readErrors<"motivo">(r).fields.motivo;
         if (delCampo) setErrorDelMotivo(delCampo);
         else setError(r.message);
         return;

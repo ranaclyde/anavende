@@ -2,13 +2,13 @@
 // escribe, con los mismos nombres y valores.
 
 import {
-  pagina as leerPagina,
-  texto,
-  unaDe,
-  type ParametrosDeBusqueda,
-} from "@/lib/filtros-url";
+  pageParam as leerPagina,
+  paramText,
+  oneOf,
+  type SearchParamsRecord,
+} from "@/lib/url-filters";
 
-export type { ParametrosDeBusqueda };
+export type { SearchParamsRecord };
 
 export const ORDENES = [
   // El que queda cuando no hay nada en la URL.
@@ -82,18 +82,18 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * Nunca falla: un valor que no reconoce queda en el de siempre. Los UUID se
  * validan antes de la consulta: `?marca=hola` haría fallar a Postgres.
  */
-export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeProductos {
-  const orden = unaDe(params.orden, ORDENES, FILTROS_VACIOS.orden);
-  const categoria = texto(params.categoria);
-  const marca = texto(params.marca);
-  const dir = texto(params.dir);
+export function leerFiltros(params: SearchParamsRecord): FiltrosDeProductos {
+  const orden = oneOf(params.orden, ORDENES, FILTROS_VACIOS.orden);
+  const categoria = paramText(params.categoria);
+  const marca = paramText(params.marca);
+  const dir = paramText(params.dir);
 
   return {
-    q: texto(params.q),
+    q: paramText(params.q),
     categoria: UUID.test(categoria) ? categoria : "",
     marca: UUID.test(marca) ? marca : "",
-    estado: unaDe(params.estado, ESTADOS, FILTROS_VACIOS.estado),
-    stock: unaDe(params.stock, FILTROS_DE_STOCK, FILTROS_VACIOS.stock),
+    estado: oneOf(params.estado, ESTADOS, FILTROS_VACIOS.estado),
+    stock: oneOf(params.stock, FILTROS_DE_STOCK, FILTROS_VACIOS.stock),
     orden,
     dir: dir === "asc" || dir === "desc" ? dir : DIRECCION_NATURAL[orden],
     pagina: leerPagina(params.pagina),

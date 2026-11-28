@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { versionDelBuild } from "@/lib/version";
+import { buildVersion } from "@/lib/version";
 
 /**
  * Healthcheck de Docker. **No toca la base a propósito**: un hipo de Postgres
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export function GET() {
   return NextResponse.json(
-    { estado: "ok", version: versionDelBuild() },
+    { estado: "ok", version: buildVersion() },
     { status: 200 },
   );
 }

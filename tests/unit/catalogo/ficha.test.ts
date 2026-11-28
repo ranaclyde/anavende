@@ -5,9 +5,9 @@ import { afterAll, describe, expect, test } from "vitest";
 
 import { db } from "@/db";
 import {
-  enlaceDeWhatsApp,
-  mensajeDeCompra,
-  mensajeDeDisponibilidad,
+  whatsappLink,
+  purchaseMessage,
+  availabilityMessage,
 } from "@/lib/whatsapp";
 import { leerFicha, varianteInicial } from "@/modules/catalog/products/ficha";
 import { limpiar, unProducto } from "@/tests/apoyo/catalogo";
@@ -286,12 +286,12 @@ describe("enlaces de WhatsApp (RF-04, RF-03)", () => {
   };
 
   test("el mensaje de compra lleva cantidad y precio; el de disponibilidad, ninguno", () => {
-    const compra = mensajeDeCompra(producto, 2, "$ 24.500,00");
+    const compra = purchaseMessage(producto, 2, "$ 24.500,00");
     expect(compra).toContain("Cantidad: 2");
     expect(compra).toContain("$ 24.500,00");
     expect(compra).toContain(producto.url);
 
-    const consulta = mensajeDeDisponibilidad(producto);
+    const consulta = availabilityMessage(producto);
     expect(consulta).not.toContain("Cantidad");
     expect(consulta).not.toContain("24.500");
     expect(consulta).toContain("Teclado Mecánico K120 (Logitech)");
@@ -300,14 +300,14 @@ describe("enlaces de WhatsApp (RF-04, RF-03)", () => {
 
   test("un producto sin color no escribe el renglón del color", () => {
     const sinColor = { ...producto, color: null };
-    expect(mensajeDeDisponibilidad(sinColor)).not.toContain("Color:");
+    expect(availabilityMessage(sinColor)).not.toContain("Color:");
   });
 
   /** Sin escapar, el `$` corta el texto en algunos clientes y los saltos de línea se pierden. */
   test("acentos, saltos de línea y el $ viajan escapados", () => {
-    const enlace = enlaceDeWhatsApp(
+    const enlace = whatsappLink(
       "+5491122334455",
-      mensajeDeCompra(producto, 1, "$ 24.500,00"),
+      purchaseMessage(producto, 1, "$ 24.500,00"),
     );
 
     expect(enlace).toContain("%0A"); // salto de línea
@@ -331,7 +331,7 @@ describe("enlaces de WhatsApp (RF-04, RF-03)", () => {
       "+54 9 11 2233-4455",
       "5491122334455",
     ]) {
-      expect(enlaceDeWhatsApp(numero, "hola").startsWith(esperado)).toBe(true);
+      expect(whatsappLink(numero, "hola").startsWith(esperado)).toBe(true);
     }
   });
 });

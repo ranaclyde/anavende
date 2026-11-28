@@ -11,7 +11,7 @@ import { stat } from "node:fs/promises";
 
 import sharp from "sharp";
 
-import { svgDelIsotipo } from "../lib/marca";
+import { markSvg } from "../lib/logo";
 
 const ANCHO = 1200;
 const ALTO = 630;
@@ -23,7 +23,7 @@ const ALTO_DEL_LOGO = 280;
 
 const DESTINO = "public/marca/og.png";
 
-const logo = await sharp(Buffer.from(svgDelIsotipo("#ffffff")), {
+const logo = await sharp(Buffer.from(markSvg("#ffffff")), {
   density: 300,
 })
   .resize({ height: ALTO_DEL_LOGO })

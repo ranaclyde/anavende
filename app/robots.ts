@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { urlAbsoluta } from "@/lib/seo";
+import { absoluteUrl } from "@/lib/seo";
 
 /**
  * **Lo privado del comprador NO está acá, a propósito**: va con `noindex` en
@@ -22,6 +22,6 @@ export default function robots(): MetadataRoute.Robots {
         "/emails",
       ],
     },
-    sitemap: urlAbsoluta("/sitemap.xml"),
+    sitemap: absoluteUrl("/sitemap.xml"),
   };
 }

@@ -13,7 +13,7 @@ import { SiteHeader } from "@/components/shop/site-header";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSession } from "@/lib/session";
 import { contarUnidades } from "@/modules/cart/queries";
-import { escenaDeHoy } from "@/lib/escenas";
+import { todaysScene } from "@/lib/scenes";
 import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
 import { configuracionDeLaTienda } from "@/modules/settings/queries";
 import { hayFavoritoPendiente } from "@/modules/users/favoritos/pendiente";
@@ -48,7 +48,7 @@ export default async function ShopLayout({
       configuracionDeLaTienda().catch(() => undefined),
     ]);
 
-  const escena = tienda ? escenaDeHoy(tienda.escenas) : null;
+  const escena = tienda ? todaysScene(tienda.escenas) : null;
 
   return (
     // Radix exige un proveedor arriba de cualquier tooltip. Va acá y no en la

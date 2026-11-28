@@ -7,7 +7,7 @@ import { IconoFacebook, IconoInstagram } from "@/components/ui/iconos-de-redes";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { OPEN_GRAPH_BASE } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-import { enlaceDeWhatsApp } from "@/lib/whatsapp";
+import { whatsappLink } from "@/lib/whatsapp";
 import { leerLaConfiguracion } from "@/modules/settings/queries";
 
 const DESCRIPCION =
@@ -159,7 +159,7 @@ function canalesDe(
     {
       nombre: "WhatsApp",
       para: "Consultas, pedidos y entregas. Es lo más rápido.",
-      href: enlaceDeWhatsApp(c.whatsappNumber, "Hola, tengo una consulta."),
+      href: whatsappLink(c.whatsappNumber, "Hola, tengo una consulta."),
       accion: "Escribir",
       Icono: IconoWhatsApp,
       externo: true,

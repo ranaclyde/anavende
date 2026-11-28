@@ -5,8 +5,8 @@
  *
  * Sin `server-only` a propósito: la usan formularios del navegador.
  */
-export function destinoInterno(crudo: string | null | undefined) {
-  if (!crudo || !crudo.startsWith("/")) return undefined;
-  if (crudo.startsWith("//") || crudo.startsWith("/\\")) return undefined;
-  return crudo;
+export function internalRedirectTarget(raw: string | null | undefined) {
+  if (!raw || !raw.startsWith("/")) return undefined;
+  if (raw.startsWith("//") || raw.startsWith("/\\")) return undefined;
+  return raw;
 }

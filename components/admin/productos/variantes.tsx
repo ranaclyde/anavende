@@ -58,7 +58,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import {
   agregarUnaVariante,
   editarUnaVariante,
@@ -661,8 +661,7 @@ function EdicionDeVariante({
   // página saltaría hasta ahí antes de bajar a la tarjeta nueva.
   const focoALasFotos = useRef(false);
   const [enviando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
   const [color, setColor] = useState(() => colorInicial(variante));
   const [color2, setColor2] = useState(
     variante?.secondaryColorId ?? SIN_SEGUNDO,
@@ -690,7 +689,7 @@ function EdicionDeVariante({
   if (visto.abierto !== abierto || visto.variante !== variante) {
     setVisto({ abierto, variante });
     if (abierto) {
-      setErrores(SIN_ERRORES);
+      setErrores(NO_ERRORS);
       setColor(colorInicial(variante));
       setColor2(variante?.secondaryColorId ?? SIN_SEGUNDO);
       setStock(String(variante?.stockTotal ?? 0));
@@ -739,12 +738,12 @@ function EdicionDeVariante({
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     if (!color) {
       setErrores({
-        ...SIN_ERRORES,
-        campos: {
+        ...NO_ERRORS,
+        fields: {
           colorId: "Elegí un color, o «Único» si no se vende por color.",
         },
       });
@@ -753,8 +752,8 @@ function EdicionDeVariante({
 
     if (!stockValido) {
       setErrores({
-        ...SIN_ERRORES,
-        campos: {
+        ...NO_ERRORS,
+        fields: {
           stockTotal: "Poné cuántas unidades hay, en números enteros.",
         },
       });
@@ -776,7 +775,7 @@ function EdicionDeVariante({
         : await agregarUnaVariante({ productId, ...datos });
 
       if (!r.ok) {
-        setErrores(leerErrores<Campo>(r));
+        setErrores(readErrors<Campo>(r));
         return;
       }
 
@@ -871,9 +870,9 @@ function EdicionDeVariante({
                           // El segundo no puede repetir al primero.
                           if (v === color2) setColor2(SIN_SEGUNDO);
                         }}
-                        aria-invalid={!!errores.campos.colorId || undefined}
+                        aria-invalid={!!errores.fields.colorId || undefined}
                         aria-describedby={
-                          errores.campos.colorId
+                          errores.fields.colorId
                             ? `${idBase}-e-color`
                             : `${idBase}-ayuda-color`
                         }
@@ -897,9 +896,9 @@ function EdicionDeVariante({
                         sinResultados="No hay ningún color con ese nombre."
                         crear={ofrecerCrear("color")}
                       />
-                      {errores.campos.colorId ? (
+                      {errores.fields.colorId ? (
                         <FieldError id={`${idBase}-e-color`}>
-                          {errores.campos.colorId}
+                          {errores.fields.colorId}
                         </FieldError>
                       ) : (
                         <FieldHint id={`${idBase}-ayuda-color`}>
@@ -927,10 +926,10 @@ function EdicionDeVariante({
                           valor={color2}
                           alCambiar={setColor2}
                           aria-invalid={
-                            !!errores.campos.secondaryColorId || undefined
+                            !!errores.fields.secondaryColorId || undefined
                           }
                           aria-describedby={
-                            errores.campos.secondaryColorId
+                            errores.fields.secondaryColorId
                               ? `${idBase}-e-color2`
                               : `${idBase}-ayuda-color2`
                           }
@@ -959,9 +958,9 @@ function EdicionDeVariante({
                           sinResultados="No hay ningún color con ese nombre."
                           crear={ofrecerCrear("color2")}
                         />
-                        {errores.campos.secondaryColorId ? (
+                        {errores.fields.secondaryColorId ? (
                           <FieldError id={`${idBase}-e-color2`}>
-                            {errores.campos.secondaryColorId}
+                            {errores.fields.secondaryColorId}
                           </FieldError>
                         ) : (
                           <FieldHint id={`${idBase}-ayuda-color2`}>
@@ -982,16 +981,16 @@ function EdicionDeVariante({
                         value={stock}
                         onChange={(e) => setStock(e.target.value)}
                         className="tabular-nums"
-                        aria-invalid={!!errores.campos.stockTotal || undefined}
+                        aria-invalid={!!errores.fields.stockTotal || undefined}
                         aria-describedby={
-                          errores.campos.stockTotal
+                          errores.fields.stockTotal
                             ? `${idBase}-e-stock`
                             : `${idBase}-ayuda-stock`
                         }
                       />
-                      {errores.campos.stockTotal ? (
+                      {errores.fields.stockTotal ? (
                         <FieldError id={`${idBase}-e-stock`}>
-                          {errores.campos.stockTotal}
+                          {errores.fields.stockTotal}
                         </FieldError>
                       ) : (
                         <FieldHint id={`${idBase}-ayuda-stock`}>

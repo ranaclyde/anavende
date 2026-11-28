@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import { cn } from "@/lib/utils";
 import { confirmarPedido } from "@/modules/orders/actions";
 import type { FormaDeEntrega } from "@/modules/orders/entrega";
@@ -76,8 +76,7 @@ export function Checkout({
   const [entrega, setEntrega] = useState<FormaDeEntrega>("envio");
   const [direccionId, setDireccionId] = useState<string | null>(null);
   const [cargando, setCargando] = useState(direcciones.length === 0);
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
 
   // Derivada y no sincronizada con un efecto: si la elegida ya no está (se
   // borró desde otra pestaña) o todavía no llegó, vale la predeterminada.
@@ -97,7 +96,7 @@ export function Checkout({
           : null;
 
   function confirmar() {
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
     iniciar(async () => {
       const r = await confirmarPedido({
         idempotencyKey: clave,
@@ -116,7 +115,7 @@ export function Checkout({
         return;
       }
 
-      setErrores(leerErrores<Campo>(r));
+      setErrores(readErrors<Campo>(r));
       // NOT_FOUND es la dirección elegida, borrada desde otra pestaña: el
       // refresco la saca de la lista y deja elegida la predeterminada.
       if (CAMBIO_EL_CARRITO.has(r.code) || r.code === "NOT_FOUND") {
@@ -143,9 +142,9 @@ export function Checkout({
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 autoComplete="name"
-                aria-invalid={!!errores.campos.nombre || undefined}
+                aria-invalid={!!errores.fields.nombre || undefined}
               />
-              <FieldError>{errores.campos.nombre}</FieldError>
+              <FieldError>{errores.fields.nombre}</FieldError>
             </div>
             <div className="flex flex-1 flex-col gap-2">
               <Label htmlFor="checkout-telefono">Teléfono</Label>
@@ -156,10 +155,10 @@ export function Checkout({
                 autoComplete="tel"
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
-                aria-invalid={!!errores.campos.telefono || undefined}
+                aria-invalid={!!errores.fields.telefono || undefined}
               />
-              {errores.campos.telefono ? (
-                <FieldError>{errores.campos.telefono}</FieldError>
+              {errores.fields.telefono ? (
+                <FieldError>{errores.fields.telefono}</FieldError>
               ) : (
                 <FieldHint>Por acá coordinamos la entrega y el pago.</FieldHint>
               )}
@@ -231,7 +230,7 @@ export function Checkout({
                 </fieldset>
               ) : null}
 
-              <FieldError>{errores.campos.addressId}</FieldError>
+              <FieldError>{errores.fields.addressId}</FieldError>
 
               {cargando ? (
                 <div className="flex flex-col gap-4 rounded-image bg-surface-sunken p-4 sm:p-5">

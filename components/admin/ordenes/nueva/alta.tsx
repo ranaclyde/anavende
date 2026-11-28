@@ -19,17 +19,23 @@ import { AgregarProductos } from "@/components/admin/ordenes/nueva/buscador-vari
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Campo, Opcion } from "@/components/admin/formulario";
-import { hoyEnArgentina } from "@/lib/fechas";
+import { todayInArgentina } from "@/lib/dates";
 import { FieldError } from "@/components/ui/field-error";
 import { Input, Textarea } from "@/components/ui/input";
 import {
-  type ErroresDeFormulario,
-  erroresDeSeccion,
-  leerErrores,
-  SIN_ERRORES,
+  type FormErrors,
+  sectionErrors,
+  readErrors,
+  NO_ERRORS,
 } from "@/lib/form";
-import { comoMonto, formatMoney, isMoney, multiply, sum } from "@/lib/money";
-import { telefonoLocal } from "@/lib/telefono";
+import {
+  normalizeAmount,
+  formatMoney,
+  isMoney,
+  multiply,
+  sum,
+} from "@/lib/money";
+import { localPhone } from "@/lib/phone";
 import { crearLaOrdenManualDelPanel } from "@/modules/orders/actions-manual";
 import type {
   CompradorParaLaOrden,
@@ -70,7 +76,7 @@ export function AltaDeOrdenManual() {
   const idBase = useId();
   const [guardando, iniciar] = useTransition();
   const [errores, setErrores] =
-    useState<ErroresDeFormulario<CampoDelFormulario>>(SIN_ERRORES);
+    useState<FormErrors<CampoDelFormulario>>(NO_ERRORS);
   const [erroresDeDireccion, setErroresDeDireccion] = useState<
     Partial<Record<string, string>>
   >({});
@@ -83,7 +89,7 @@ export function AltaDeOrdenManual() {
   const [entrega, setEntrega] = useState<"envio" | "retiro">("retiro");
   // Finalizada por omisión: lo habitual es anotar una venta ya entregada.
   const [estado, setEstado] = useState<"finalizada" | "activa">("finalizada");
-  const [hoy] = useState(hoyEnArgentina);
+  const [hoy] = useState(todayInArgentina);
   const [fechaDeVenta, setFechaDeVenta] = useState(hoy);
   const [notas, setNotas] = useState("");
 
@@ -119,7 +125,7 @@ export function AltaDeOrdenManual() {
     setCuenta(comprador);
     // Completa lo vacío sin pisar lo ya escrito.
     setNombre((v) => v || comprador.nombre);
-    setTelefono((v) => v || telefonoLocal(comprador.telefono));
+    setTelefono((v) => v || localPhone(comprador.telefono));
     setEmail((v) => v || comprador.email);
     const primera = comprador.direcciones[0];
     if (primera) setDireccionGuardada(primera.id);
@@ -133,13 +139,13 @@ export function AltaDeOrdenManual() {
   const errorGeneral = useRef<HTMLDivElement | null>(null);
 
   function irAlPrimerError(
-    nuevos: ErroresDeFormulario<CampoDelFormulario>,
+    nuevos: FormErrors<CampoDelFormulario>,
     deLaDireccion: Partial<Record<string, string>>,
   ) {
     // El primero que exista: «direccion» e «items» son secciones y no
     // controles, y la dirección escrita no está si se eligió una guardada.
     const candidatos = [
-      ...CAMPOS.filter((c) => nuevos.campos[c]).map((c) => `${idBase}-${c}`),
+      ...CAMPOS.filter((c) => nuevos.fields[c]).map((c) => `${idBase}-${c}`),
       ...CAMPOS_DE_DIRECCION.filter((c) => deLaDireccion[c]).map(
         (c) => `${idBase}-direccion-${c}`,
       ),
@@ -154,7 +160,7 @@ export function AltaDeOrdenManual() {
 
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
     setErroresDeDireccion({});
 
     const elegida = cuenta?.direcciones.find((d) => d.id === direccionGuardada);
@@ -184,8 +190,8 @@ export function AltaDeOrdenManual() {
     iniciar(async () => {
       const r = await crearLaOrdenManualDelPanel(datos);
       if (!r.ok) {
-        const nuevos = leerErrores<CampoDelFormulario>(r);
-        const deLaDireccion = erroresDeSeccion(r, "direccion");
+        const nuevos = readErrors<CampoDelFormulario>(r);
+        const deLaDireccion = sectionErrors(r, "direccion");
         setErrores(nuevos);
         setErroresDeDireccion(deLaDireccion);
         irAlPrimerError(nuevos, deLaDireccion);
@@ -196,7 +202,7 @@ export function AltaDeOrdenManual() {
     });
   }
 
-  const e = errores.campos;
+  const e = errores.fields;
 
   return (
     <form onSubmit={enviar} noValidate className="min-w-0">
@@ -449,7 +455,7 @@ const CAMPOS: CampoDelFormulario[] = [
 
 /** Cero mientras el precio no sea un monto. */
 function subtotalDelRenglon(r: Renglon): string {
-  const precio = comoMonto(r.precio);
+  const precio = normalizeAmount(r.precio);
   return isMoney(precio) ? multiply(precio, r.cantidad) : "0.00";
 }
 
@@ -480,7 +486,7 @@ function deDireccionGuardada(d: {
 
   return {
     recipientName: d.recipientName,
-    phone: telefonoLocal(d.phone),
+    phone: localPhone(d.phone),
     street: d.street,
     number: d.number,
     apartment: d.apartment ?? "",
@@ -573,7 +579,7 @@ function RenglonDeLaOrden({
         </label>
 
         <span className="ml-auto text-body-sm text-ink tabular-nums">
-          {isMoney(comoMonto(precio))
+          {isMoney(normalizeAmount(precio))
             ? formatMoney(subtotalDelRenglon(renglon))
             : "—"}
         </span>

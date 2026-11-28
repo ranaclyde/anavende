@@ -18,10 +18,10 @@ import { RolDelUsuarioEditable } from "@/components/admin/usuarios/rol";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
-import { fechaConHora, fechaCorta } from "@/lib/fechas";
+import { dateWithTime, shortDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
-import { getSession, exigirAdmin } from "@/lib/session";
-import { enlaceDeWhatsApp } from "@/lib/whatsapp";
+import { getSession, requireAdmin } from "@/lib/session";
+import { whatsappLink } from "@/lib/whatsapp";
 import {
   contarAdministradoras,
   leerUsuarioDelPanel,
@@ -35,7 +35,7 @@ type Props = { params: Promise<{ id: string }> };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  await exigirAdmin();
+  await requireAdmin();
   const { id } = await params;
   if (!UUID.test(id)) return { title: "Usuario" };
 
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * un comprador con órdenes no se puede borrar (§5.6).
  */
 export default async function FichaDeUsuario({ params }: Props) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const { id } = await params;
 
@@ -89,7 +89,7 @@ export default async function FichaDeUsuario({ params }: Props) {
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="secondary" size="sm">
               <a
-                href={enlaceDeWhatsApp(
+                href={whatsappLink(
                   usuario.telefono,
                   `¡Hola, ${usuario.firstName}! Te escribo de AnaVende.`,
                 )}
@@ -111,7 +111,7 @@ export default async function FichaDeUsuario({ params }: Props) {
       />
 
       <p className="text-body-sm text-ink-secondary">
-        {usuario.email} · cuenta creada el {fechaCorta(usuario.creadoEn)}
+        {usuario.email} · cuenta creada el {shortDate(usuario.creadoEn)}
       </p>
 
       <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
@@ -142,7 +142,7 @@ export default async function FichaDeUsuario({ params }: Props) {
                 <p className="text-body-sm text-ink">
                   Bloqueada
                   {usuario.bloqueadoEn
-                    ? ` el ${fechaConHora(usuario.bloqueadoEn)}`
+                    ? ` el ${dateWithTime(usuario.bloqueadoEn)}`
                     : ""}
                   {usuario.bloqueadoPor ? ` por ${usuario.bloqueadoPor}` : ""}.
                 </p>
@@ -213,12 +213,12 @@ function LaBaja({ usuario }: { usuario: UsuarioDelPanel }) {
           <p className="text-body-sm text-ink">
             Dada de baja
             {usuario.dadoDeBajaEn
-              ? ` el ${fechaConHora(usuario.dadoDeBajaEn)}`
+              ? ` el ${dateWithTime(usuario.dadoDeBajaEn)}`
               : ""}
             {usuario.dadoDeBajaPor ? ` por ${usuario.dadoDeBajaPor}` : ""}, a
             pedido suyo
             {usuario.bajaPedidaEn
-              ? ` del ${fechaCorta(usuario.bajaPedidaEn)}`
+              ? ` del ${shortDate(usuario.bajaPedidaEn)}`
               : ""}
             .
           </p>
@@ -226,7 +226,7 @@ function LaBaja({ usuario }: { usuario: UsuarioDelPanel }) {
           <p className="text-body-sm text-ink">
             Pidió la baja de su cuenta
             {usuario.bajaPedidaEn
-              ? ` el ${fechaConHora(usuario.bajaPedidaEn)}`
+              ? ` el ${dateWithTime(usuario.bajaPedidaEn)}`
               : ""}
             .
           </p>
@@ -280,7 +280,7 @@ function HistorialDeEstado({
             <p className="text-body-sm text-ink">
               {MOVIMIENTOS[m.evento]}
               {" el "}
-              <time dateTime={m.fecha}>{fechaConHora(m.fecha)}</time>
+              <time dateTime={m.fecha}>{dateWithTime(m.fecha)}</time>
               {/* `actor_user_id` es SET NULL: si se borró esa cuenta, no hay
                   autor. */}
               {m.autor ? ` por ${m.autor}` : ""}.
@@ -351,7 +351,7 @@ function SusOrdenes({ usuario }: { usuario: UsuarioDelPanel }) {
               <EstadoDeLaOrden estado={orden.estado} />
               <span className="text-caption text-ink-secondary tabular-nums">
                 <time dateTime={orden.creadaEn}>
-                  {fechaCorta(orden.creadaEn)}
+                  {shortDate(orden.creadaEn)}
                 </time>{" "}
                 · {orden.unidades}{" "}
                 {orden.unidades === 1 ? "unidad" : "unidades"}

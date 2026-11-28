@@ -5,7 +5,7 @@ import { extendTailwindMerge } from "tailwind-merge";
 // mismo grupo y descarta uno en silencio. Solo hacen falta los prefijos
 // ambiguos. Al agregar un token a `app/globals.css`, agregarlo también acá.
 
-const COLORES = [
+const COLORS = [
   "brand",
   "brand-hover",
   "brand-active",
@@ -30,7 +30,7 @@ const COLORES = [
   "info-tint",
 ];
 
-const TAMANOS = [
+const SIZES = [
   "display",
   "title",
   "heading",
@@ -40,7 +40,7 @@ const TAMANOS = [
   "caption",
 ];
 
-const RADIOS = [
+const RADII = [
   "card",
   "image",
   "modal",
@@ -53,10 +53,10 @@ const RADIOS = [
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
-      "font-size": [{ text: TAMANOS }],
-      "text-color": [{ text: COLORES }],
+      "font-size": [{ text: SIZES }],
+      "text-color": [{ text: COLORS }],
       shadow: [{ shadow: ["brand"] }],
-      rounded: [{ rounded: RADIOS }],
+      rounded: [{ rounded: RADII }],
     },
   },
 });
@@ -70,12 +70,12 @@ export function cn(...inputs: ClassValue[]) {
  * tiene que ser `relative`, y lo que sobresale tiene que caber en la
  * separación con los vecinos: si no, el dedo activa el de al lado.
  */
-export const AREA_TACTIL =
+export const TOUCH_AREA =
   "after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']";
 
 /**
- * Para los controles cortos de los dos lados; `AREA_TACTIL` solo estira a lo
+ * Para los controles cortos de los dos lados; `TOUCH_AREA` solo estira a lo
  * alto.
  */
-export const AREA_TACTIL_CUADRADA =
+export const SQUARE_TOUCH_AREA =
   "after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']";

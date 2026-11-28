@@ -1,13 +1,13 @@
 // No es `server-only`: la consulta lee estos valores y la barra los escribe.
 
 import {
-  fecha,
-  pagina as leerPagina,
-  unaDe,
-  type ParametrosDeBusqueda,
-} from "@/lib/filtros-url";
+  dateParam,
+  pageParam as leerPagina,
+  oneOf,
+  type SearchParamsRecord,
+} from "@/lib/url-filters";
 
-export type { ParametrosDeBusqueda };
+export type { SearchParamsRecord };
 
 /**
  * «Todas» por omisión: una anulada no se borra, y quien la registró por error
@@ -50,16 +50,14 @@ export const FILTROS_VACIOS: FiltrosDeDevoluciones = {
 export const POR_PAGINA = 40;
 
 /** Las fechas dadas vuelta se enderezan en vez de devolver cero resultados. */
-export function leerFiltros(
-  params: ParametrosDeBusqueda,
-): FiltrosDeDevoluciones {
-  const desde = fecha(params.desde);
-  const hasta = fecha(params.hasta);
+export function leerFiltros(params: SearchParamsRecord): FiltrosDeDevoluciones {
+  const desde = dateParam(params.desde);
+  const hasta = dateParam(params.hasta);
   const alReves = desde && hasta && desde > hasta;
 
   return {
-    estado: unaDe(params.estado, ESTADOS, FILTROS_VACIOS.estado),
-    reposicion: unaDe(
+    estado: oneOf(params.estado, ESTADOS, FILTROS_VACIOS.estado),
+    reposicion: oneOf(
       params.reposicion,
       REPOSICIONES,
       FILTROS_VACIOS.reposicion,

@@ -26,8 +26,8 @@ import {
   add,
   formatMoney,
   isZero,
-  porcentaje,
-  variacion,
+  percentOf,
+  percentChange,
   type Money,
 } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,7 @@ import {
   leerPeriodo,
   urlConRanking,
   urlDeExportacion,
-  type ParametrosDeBusqueda,
+  type SearchParamsRecord,
   type Periodo,
   type Rango,
 } from "@/modules/reports/periodo";
@@ -51,7 +51,7 @@ import {
   type ProductoVendido,
   type Totales,
 } from "@/modules/reports/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Reportes" };
 
@@ -63,9 +63,9 @@ export const metadata: Metadata = { title: "Reportes" };
 export default async function Reportes({
   searchParams,
 }: {
-  searchParams: Promise<ParametrosDeBusqueda>;
+  searchParams: Promise<SearchParamsRecord>;
 }) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const periodo = leerPeriodo(await searchParams);
 
@@ -211,7 +211,7 @@ function TotalesDelPeriodo({
         <Total
           titulo="Vendido"
           valor={formatMoney(totales.vendido)}
-          cambio={variacion(totales.vendido, anteriores.vendido)}
+          cambio={percentChange(totales.vendido, anteriores.vendido)}
           antes={antes(formatMoney(anteriores.vendido))}
           nota={
             isZero(totales.devuelto)
@@ -236,7 +236,7 @@ function TotalesDelPeriodo({
           valor={totales.ordenes ? formatMoney(totales.ticket) : "—"}
           cambio={
             totales.ordenes && anteriores.ordenes
-              ? variacion(totales.ticket, anteriores.ticket)
+              ? percentChange(totales.ticket, anteriores.ticket)
               : null
           }
           antes={
@@ -502,8 +502,8 @@ function WebYManual({ origenes }: { origenes: PorOrigen[] }) {
   const total: Money = add(web.vendido, manual.vendido);
   const dibujable =
     !isZero(total) &&
-    porcentaje(web.vendido, total) !== null &&
-    porcentaje(manual.vendido, total) !== null;
+    percentOf(web.vendido, total) !== null &&
+    percentOf(manual.vendido, total) !== null;
 
   return (
     <TarjetaDeSeccion
@@ -517,7 +517,7 @@ function WebYManual({ origenes }: { origenes: PorOrigen[] }) {
 
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {[web, manual].map((o) => {
-          const parte = porcentaje(o.vendido, total);
+          const parte = percentOf(o.vendido, total);
           return (
             <li
               key={o.origen}

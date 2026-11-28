@@ -10,10 +10,10 @@ import {
   urlDeTienda,
   type ParametrosDeBusqueda,
 } from "@/modules/catalog/products/filtros-tienda";
-import { OPEN_GRAPH_BASE, ZONA_DE_ENTREGA } from "@/lib/seo";
+import { OPEN_GRAPH_BASE, DELIVERY_AREA } from "@/lib/seo";
 
 const TITULO = "Productos";
-const DESCRIPCION = `Teclados, mouses, auriculares y cables. ${ZONA_DE_ENTREGA}`;
+const DESCRIPCION = `Teclados, mouses, auriculares y cables. ${DELIVERY_AREA}`;
 
 /**
  * El `canonical` es la dirección normalizada, no la que llegó: si no, cada

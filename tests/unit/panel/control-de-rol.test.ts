@@ -27,14 +27,14 @@ function desde(texto: string, firma: RegExp): string | null {
 }
 
 /**
- * Antes de `await exigirAdmin()` solo puede estar la firma: lo que se leyera
+ * Antes de `await requireAdmin()` solo puede estar la firma: lo que se leyera
  * antes ya habría corrido para quien no es administradora.
  */
 function loPrimeroEsElControl(cuerpo: string): boolean {
   const apertura = cuerpo.search(/\) (?::[^{]*)?\{\n/);
   if (apertura === -1) return false;
   const resto = cuerpo.slice(cuerpo.indexOf("{\n", apertura) + 2);
-  return /^\s*(?:const \w+ = )?await exigirAdmin\(\);/.test(resto);
+  return /^\s*(?:const \w+ = )?await requireAdmin\(\);/.test(resto);
 }
 
 const todas = paginas(RAIZ);

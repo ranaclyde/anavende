@@ -1,20 +1,20 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  domingoDePascua,
-  escenaDeHoy,
-  periodoEscrito,
-  TODAS_PERMITIDAS,
-} from "@/lib/escenas";
+  easterSunday,
+  todaysScene,
+  periodText,
+  ALL_ALLOWED,
+} from "@/lib/scenes";
 
 /**
  * RF-38. Las horas van en UTC a propósito: la fecha que cuenta es la de
  * Argentina (UTC−3), y los bordes son justo donde las dos no coinciden.
  */
 
-const en = (iso: string) => escenaDeHoy(TODAS_PERMITIDAS, new Date(iso));
+const en = (iso: string) => todaysScene(ALL_ALLOWED, new Date(iso));
 
-describe("escenaDeHoy", () => {
+describe("todaysScene", () => {
   test("Halloween: del 1 de octubre al 1 de noviembre, los dos incluidos", () => {
     expect(en("2026-09-30T12:00:00Z")).toBeNull();
     expect(en("2026-10-01T12:00:00Z")).toBe("halloween");
@@ -41,11 +41,11 @@ describe("escenaDeHoy", () => {
   });
 
   test("apagada desde el panel, no se enciende aunque sea su fecha", () => {
-    const sinHalloween = { ...TODAS_PERMITIDAS, halloween: false };
+    const sinHalloween = { ...ALL_ALLOWED, halloween: false };
     expect(
-      escenaDeHoy(sinHalloween, new Date("2026-10-31T12:00:00Z")),
+      todaysScene(sinHalloween, new Date("2026-10-31T12:00:00Z")),
     ).toBeNull();
-    expect(escenaDeHoy(sinHalloween, new Date("2026-12-24T12:00:00Z"))).toBe(
+    expect(todaysScene(sinHalloween, new Date("2026-12-24T12:00:00Z"))).toBe(
       "navidad",
     );
   });
@@ -67,7 +67,7 @@ describe("escenaDeHoy", () => {
   });
 });
 
-describe("domingoDePascua", () => {
+describe("easterSunday", () => {
   test("coincide con el calendario, incluidos los extremos de marzo y abril", () => {
     const fechas: [number, number, number][] = [
       [2008, 3, 23],
@@ -81,27 +81,30 @@ describe("domingoDePascua", () => {
       [2285, 3, 22],
     ];
     for (const [anio, mes, dia] of fechas) {
-      expect(domingoDePascua(anio), String(anio)).toEqual({ mes, dia });
+      expect(easterSunday(anio), String(anio)).toEqual({
+        month: mes,
+        day: dia,
+      });
     }
   });
 });
 
-describe("periodoEscrito", () => {
+describe("periodText", () => {
   test("las fijas, sin año", () => {
-    expect(periodoEscrito("navidad")).toBe("Del 1 de diciembre al 7 de enero.");
+    expect(periodText("navidad")).toBe("Del 1 de diciembre al 7 de enero.");
   });
 
   test("Pascua con su año: la de este, y si ya pasó, la del que viene", () => {
-    expect(periodoEscrito("pascua", new Date("2027-02-10T15:00:00Z"))).toBe(
+    expect(periodText("pascua", new Date("2027-02-10T15:00:00Z"))).toBe(
       "Semana Santa: del 21 al 28 de marzo de 2027.",
     );
-    expect(periodoEscrito("pascua", new Date("2026-10-23T15:00:00Z"))).toBe(
+    expect(periodText("pascua", new Date("2026-10-23T15:00:00Z"))).toBe(
       "Semana Santa: del 21 al 28 de marzo de 2027.",
     );
-    expect(periodoEscrito("pascua", new Date("2028-01-05T15:00:00Z"))).toBe(
+    expect(periodText("pascua", new Date("2028-01-05T15:00:00Z"))).toBe(
       "Semana Santa: del 9 al 16 de abril de 2028.",
     );
-    expect(periodoEscrito("pascua", new Date("2029-01-05T15:00:00Z"))).toBe(
+    expect(periodText("pascua", new Date("2029-01-05T15:00:00Z"))).toBe(
       "Semana Santa: del 25 de marzo al 1 de abril de 2029.",
     );
   });

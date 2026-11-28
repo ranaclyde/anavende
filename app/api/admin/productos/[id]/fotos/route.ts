@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { consumir } from "@/lib/limite";
+import { consume } from "@/lib/rate-limit";
 import { getSession } from "@/lib/session";
 import { fotosDelProducto, zipDeFotos } from "@/modules/media/descargar";
 
@@ -31,10 +31,10 @@ export async function GET(
     return error("No encontramos el producto.", 404);
   }
 
-  const limite = consumir(`fotos-zip:${session.profile.id}`, DESCARGAS);
-  if (!limite.permitido) {
+  const limite = consume(`fotos-zip:${session.profile.id}`, DESCARGAS);
+  if (!limite.allowed) {
     return error(
-      `Demasiadas descargas seguidas. Esperá ${limite.reintentarEnSegundos} segundos.`,
+      `Demasiadas descargas seguidas. Esperá ${limite.retryAfterSeconds} segundos.`,
       429,
     );
   }

@@ -32,7 +32,7 @@ type Ctx<L extends AuthLevel> = L extends "public"
   ? { session: Session | null }
   : { session: Session };
 
-function fallo(
+function failure(
   code: DomainErrorCode,
   message: string,
   details?: Record<string, unknown>,
@@ -44,18 +44,22 @@ class ActionBuilder<TInput, L extends AuthLevel> {
   constructor(
     private readonly schema: z.ZodType<TInput> | null,
     private readonly level: L,
-    private readonly conBajaPendiente = false,
+    private readonly allowsPendingClosure = false,
   ) {}
 
   input<T>(schema: z.ZodType<T>): ActionBuilder<T, L> {
-    return new ActionBuilder<T, L>(schema, this.level, this.conBajaPendiente);
+    return new ActionBuilder<T, L>(
+      schema,
+      this.level,
+      this.allowsPendingClosure,
+    );
   }
 
   auth<N extends AuthLevel>(level: N): ActionBuilder<TInput, N> {
     return new ActionBuilder<TInput, N>(
       this.schema as z.ZodType<TInput> | null,
       level,
-      this.conBajaPendiente,
+      this.allowsPendingClosure,
     );
   }
 
@@ -63,14 +67,14 @@ class ActionBuilder<TInput, L extends AuthLevel> {
    * Con la baja pedida, la cuenta es de solo lectura (RF-34) salvo lo que
    * declara esto.
    */
-  aunConBajaPendiente(): ActionBuilder<TInput, L> {
+  evenWithPendingClosure(): ActionBuilder<TInput, L> {
     return new ActionBuilder<TInput, L>(this.schema, this.level, true);
   }
 
   handler<TOutput>(
     fn: (args: { input: TInput; ctx: Ctx<L> }) => Promise<TOutput>,
   ): (input: TInput) => Promise<ActionResult<TOutput>> {
-    const { schema, level, conBajaPendiente } = this;
+    const { schema, level, allowsPendingClosure } = this;
 
     return async (raw: TInput): Promise<ActionResult<TOutput>> => {
       let session: Session | null = null;
@@ -81,7 +85,7 @@ class ActionBuilder<TInput, L extends AuthLevel> {
         // `getIdentity` está en `cache()` y `getSession` ya la pidió: no es
         // otra verificación.
         if (!session) {
-          return fallo(
+          return failure(
             "FORBIDDEN",
             (await getIdentity())
               ? "Te falta completar tu perfil. Completalo y probá de nuevo."
@@ -90,7 +94,7 @@ class ActionBuilder<TInput, L extends AuthLevel> {
         }
 
         if (session.profile.isBanned) {
-          return fallo("USER_BANNED", "Tu cuenta está bloqueada.", {
+          return failure("USER_BANNED", "Tu cuenta está bloqueada.", {
             reason: session.profile.banReason,
           });
         }
@@ -99,19 +103,19 @@ class ActionBuilder<TInput, L extends AuthLevel> {
         // el pedido. `!= null` a propósito: una fila leída sin esa columna vale
         // `undefined`, y con `!==` toda la tienda quedaría dada de baja.
         if (session.profile.closedAt != null) {
-          return fallo("ACCOUNT_CLOSED", domainMessage("ACCOUNT_CLOSED"));
+          return failure("ACCOUNT_CLOSED", domainMessage("ACCOUNT_CLOSED"));
         }
 
         if (level === "admin" && session.role !== "admin") {
-          return fallo("FORBIDDEN", "No tenés permiso para hacer eso.");
+          return failure("FORBIDDEN", "No tenés permiso para hacer eso.");
         }
 
         if (
           level === "customer" &&
           session.profile.closureRequestedAt !== null &&
-          !conBajaPendiente
+          !allowsPendingClosure
         ) {
-          return fallo(
+          return failure(
             "ACCOUNT_CLOSURE_PENDING",
             domainMessage("ACCOUNT_CLOSURE_PENDING"),
           );
@@ -122,15 +126,15 @@ class ActionBuilder<TInput, L extends AuthLevel> {
 
       let input = raw;
       if (schema) {
-        const resultado = await schema.safeParseAsync(raw);
-        if (!resultado.success) {
-          return fallo(
+        const result = await schema.safeParseAsync(raw);
+        if (!result.success) {
+          return failure(
             "VALIDATION",
             "Revisá los datos: hay algo que no está bien.",
-            { fields: z.treeifyError(resultado.error) },
+            { fields: z.treeifyError(result.error) },
           );
         }
-        input = resultado.data;
+        input = result.data;
       }
 
       try {
@@ -141,7 +145,7 @@ class ActionBuilder<TInput, L extends AuthLevel> {
         return { ok: true, data };
       } catch (e) {
         if (isDomainError(e)) {
-          return fallo(e.code, e.message, e.details);
+          return failure(e.code, e.message, e.details);
         }
 
         // Al cliente, nunca el mensaje de Postgres ni el stack trace. En local
@@ -155,7 +159,7 @@ class ActionBuilder<TInput, L extends AuthLevel> {
           user: session ? { id: session.identity.userId } : undefined,
         });
 
-        return fallo(
+        return failure(
           "INTERNAL",
           "No pudimos completar la acción. Probá de nuevo en un momento.",
         );

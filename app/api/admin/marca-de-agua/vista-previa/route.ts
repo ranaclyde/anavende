@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/db";
 import { variantImages } from "@/db/schema/catalog";
 import { isDomainError } from "@/lib/errors";
-import { consumir } from "@/lib/limite";
+import { consume } from "@/lib/rate-limit";
 import { getSession } from "@/lib/session";
 import { getStorage } from "@/lib/storage";
 import { prepararCapas } from "@/modules/marca-de-agua/service";
@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
     return error("No pudimos armar la vista previa. Actualizá la página.", 404);
   }
 
-  const limite = consumir(`vista-marca:${session.profile.id}`, VISTAS);
-  if (!limite.permitido) {
+  const limite = consume(`vista-marca:${session.profile.id}`, VISTAS);
+  if (!limite.allowed) {
     return error(
-      `Demasiadas vistas seguidas. Esperá ${limite.reintentarEnSegundos} segundos.`,
+      `Demasiadas vistas seguidas. Esperá ${limite.retryAfterSeconds} segundos.`,
       429,
     );
   }

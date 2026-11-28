@@ -3,7 +3,7 @@ import "server-only";
 import { sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db";
-import { ZONA_HORARIA } from "@/lib/fechas";
+import { TIME_ZONE } from "@/lib/dates";
 import type { Money } from "@/lib/money";
 import type { Rango, Ranking } from "@/modules/reports/periodo";
 
@@ -14,8 +14,8 @@ import type { Rango, Ranking } from "@/modules/reports/periodo";
 
 function limites({ desde, hasta }: Rango): { inicio: SQL; fin: SQL } {
   return {
-    inicio: sql`((${desde}::date)::timestamp AT TIME ZONE ${ZONA_HORARIA})`,
-    fin: sql`((${hasta}::date + 1)::timestamp AT TIME ZONE ${ZONA_HORARIA})`,
+    inicio: sql`((${desde}::date)::timestamp AT TIME ZONE ${TIME_ZONE})`,
+    fin: sql`((${hasta}::date + 1)::timestamp AT TIME ZONE ${TIME_ZONE})`,
   };
 }
 
@@ -105,13 +105,13 @@ export async function ventasEnElTiempo(
                                     ${rango.hasta}::timestamp,
                                     ${paso}::interval) AS p),
            v AS (
-             SELECT date_trunc(${unidad}, finalized_at AT TIME ZONE ${ZONA_HORARIA})::date AS dia,
+             SELECT date_trunc(${unidad}, finalized_at AT TIME ZONE ${TIME_ZONE})::date AS dia,
                     sum(total)       AS monto,
                     count(*)::int    AS ordenes
                FROM (${vendidas(rango)}) AS vendidas
               GROUP BY 1),
            d AS (
-             SELECT date_trunc(${unidad}, created_at AT TIME ZONE ${ZONA_HORARIA})::date AS dia,
+             SELECT date_trunc(${unidad}, created_at AT TIME ZONE ${TIME_ZONE})::date AS dia,
                     sum(monto) AS monto
                FROM (${devueltos(rango)}) AS dev
               GROUP BY 1)

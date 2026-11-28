@@ -1,18 +1,18 @@
 import { describe, expect, test } from "vitest";
 
-import { telefonoArgentino, telefonoLocal } from "@/lib/telefono";
+import { argentinePhone, localPhone } from "@/lib/phone";
 
 /** El teléfono argentino: cuántos números, y qué se le dice a quien se equivoca. */
 
-const esquema = telefonoArgentino({
-  requerido: "Falta el teléfono.",
-  invalido: "No parece un teléfono.",
+const esquema = argentinePhone({
+  required: "Falta el teléfono.",
+  invalid: "No parece un teléfono.",
 });
 
 const guardado = (v: string) => esquema.safeParse(v).data;
 const error = (v: string) => esquema.safeParse(v).error?.issues[0]?.message;
 
-describe("telefonoArgentino", () => {
+describe("argentinePhone", () => {
   test.each([
     ["2920 55-5555", "+5492920555555"],
     ["(2920) 555555", "+5492920555555"],
@@ -58,9 +58,9 @@ describe("telefonoArgentino", () => {
   });
 });
 
-describe("telefonoLocal", () => {
+describe("localPhone", () => {
   test("lo guardado vuelve sin el +549, y al guardarlo otra vez es el mismo", () => {
-    expect(telefonoLocal("+5492920555555")).toBe("2920555555");
-    expect(guardado(telefonoLocal("+5492920555555"))).toBe("+5492920555555");
+    expect(localPhone("+5492920555555")).toBe("2920555555");
+    expect(guardado(localPhone("+5492920555555"))).toBe("+5492920555555");
   });
 });

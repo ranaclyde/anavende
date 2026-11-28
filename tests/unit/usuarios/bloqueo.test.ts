@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { db } from "@/db";
-import { leerErrores } from "@/lib/form";
+import { readErrors } from "@/lib/form";
 import { createServiceClient } from "@/lib/supabase/service";
 import { limpiar, unaVariante } from "@/tests/apoyo/catalogo";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
@@ -215,7 +215,7 @@ describe("el motivo es obligatorio (RF-27)", () => {
       expect(r).toMatchObject({ ok: false, code: "VALIDATION" });
       // Va al campo y no como un fallo general: es lo que la pantalla marca.
       expect(
-        r.ok === false && leerErrores<"motivo">(r).campos.motivo,
+        r.ok === false && readErrors<"motivo">(r).fields.motivo,
       ).toBeTruthy();
     }
 

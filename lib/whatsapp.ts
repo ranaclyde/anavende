@@ -1,7 +1,7 @@
 // Sin `server-only`: lo usa la ficha en el cliente. No importa `lib/money.ts`
 // para no meter `decimal.js` en el navegador: los montos llegan formateados.
 
-export type ProductoParaMensaje = {
+export type ProductForMessage = {
   nombre: string;
   marca: string;
   color: string | null;
@@ -9,35 +9,35 @@ export type ProductoParaMensaje = {
   url: string;
 };
 
-function encabezado(p: ProductoParaMensaje): string[] {
-  const lineas = [`${p.nombre} (${p.marca})`];
-  if (p.color) lineas.push(`Color: ${p.color.toLowerCase()}`);
-  return lineas;
+function header(p: ProductForMessage): string[] {
+  const lines = [`${p.nombre} (${p.marca})`];
+  if (p.color) lines.push(`Color: ${p.color.toLowerCase()}`);
+  return lines;
 }
 
-/** RF-04. `precioUnitario` llega formateado: «$ 24.500,00». */
-export function mensajeDeCompra(
-  p: ProductoParaMensaje,
-  cantidad: number,
-  precioUnitario: string,
+/** RF-04. `unitPrice` llega formateado: «$ 24.500,00». */
+export function purchaseMessage(
+  p: ProductForMessage,
+  quantity: number,
+  unitPrice: string,
 ): string {
   return [
     "¡Hola! Quiero comprar esto:",
     "",
-    ...encabezado(p),
-    `Cantidad: ${cantidad}`,
-    `Precio por unidad: ${precioUnitario}`,
+    ...header(p),
+    `Cantidad: ${quantity}`,
+    `Precio por unidad: ${unitPrice}`,
     "",
     p.url,
   ].join("\n");
 }
 
 /** RF-03. Sin cantidad ni precio: es una pregunta por algo que hoy no hay. */
-export function mensajeDeDisponibilidad(p: ProductoParaMensaje): string {
+export function availabilityMessage(p: ProductForMessage): string {
   return [
     "¡Hola! Vi que esto está sin stock y quería saber si va a haber:",
     "",
-    ...encabezado(p),
+    ...header(p),
     "",
     p.url,
   ].join("\n");
@@ -45,30 +45,30 @@ export function mensajeDeDisponibilidad(p: ProductoParaMensaje): string {
 
 // Sin `encodeURIComponent`, un `$` corta el texto en algunos clientes y los
 // saltos de línea se pierden.
-export function enlaceDeWhatsApp(numero: string, mensaje: string): string {
-  const soloDigitos = numero.replace(/\D/g, "");
-  return `https://wa.me/${soloDigitos}?text=${encodeURIComponent(mensaje)}`;
+export function whatsappLink(phone: string, message: string): string {
+  const digits = phone.replace(/\D/g, "");
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
 /** Del snapshot (RN-12). Sin `url`: el producto pudo cambiar desde entonces. */
-export type ItemDeOrdenParaMensaje = {
+export type OrderItemForMessage = {
   nombre: string;
   marca: string;
   color: string | null;
   cantidad: number;
 };
 
-/** RF-12. `nombre` es el del pedido, no el de la cuenta. */
-export function mensajeDeOrden(
-  numero: number,
-  nombre: string,
-  items: ItemDeOrdenParaMensaje[],
+/** RF-12. `customerName` es el del pedido, no el de la cuenta. */
+export function orderMessage(
+  orderNumber: number,
+  customerName: string,
+  items: OrderItemForMessage[],
   total: string,
 ): string {
   return [
     "¡Hola! Acabo de hacer un pedido en la web.",
     "",
-    `Pedido #${numero}, a nombre de ${nombre}`,
+    `Pedido #${orderNumber}, a nombre de ${customerName}`,
     "",
     ...items.map(
       (i) =>
@@ -82,23 +82,23 @@ export function mensajeDeOrden(
 }
 
 /** RF-21: el único de la vendedora al comprador. */
-export function mensajeParaElComprador(numero: number): string {
+export function messageToBuyer(orderNumber: number): string {
   return [
-    `¡Hola! Te escribo de AnaVende por tu pedido #${numero}.`,
+    `¡Hola! Te escribo de AnaVende por tu pedido #${orderNumber}.`,
     "",
     "¿Coordinamos el pago y la entrega?",
   ].join("\n");
 }
 
 /** RF-35. */
-export function mensajeDeBusquedaSinResultados(buscado: string): string {
-  return `¡Hola! Busqué «${buscado.trim()}» entre las categorías y no lo encontré. ¿Lo tienen o piensan traerlo?`;
+export function noResultsMessage(query: string): string {
+  return `¡Hola! Busqué «${query.trim()}» entre las categorías y no lo encontré. ¿Lo tienen o piensan traerlo?`;
 }
 
-export function mensajeDeConsultaGeneral(): string {
+export function generalInquiryMessage(): string {
   return "¡Hola! Quería consultar por algo que no encontré entre las categorías de la tienda.";
 }
 
-export function mensajeDesdeNosotros(): string {
+export function aboutUsMessage(): string {
   return "¡Hola, Ana! Estuve leyendo sobre la tienda y quería hacerte una consulta.";
 }

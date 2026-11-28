@@ -17,7 +17,7 @@ import {
 import { VacioDelPanel } from "@/components/admin/vacio";
 import { EdicionDeMedioDePago } from "@/components/admin/pagos/edicion";
 import { PromocionesDeMedioDePago } from "@/components/admin/pagos/promociones";
-import { PaginacionDelPanel, tramo } from "@/components/admin/paginacion";
+import { PaginacionDelPanel, rangeLabel } from "@/components/admin/paginacion";
 import { Badge } from "@/components/ui/badge";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
@@ -121,11 +121,11 @@ export function ListadoDeMediosDePago({
         <p className="text-body-sm text-ink-secondary">
           {total === 0
             ? "Sin medios de pago"
-            : tramo({
-                pagina,
-                porPagina: POR_PAGINA,
+            : rangeLabel({
+                page: pagina,
+                perPage: POR_PAGINA,
                 total,
-                cosa: { singular: "medio de pago", plural: "medios de pago" },
+                noun: { singular: "medio de pago", plural: "medios de pago" },
               })}
         </p>
         {/* Con la lista vacía el botón lo ofrece el estado vacío: uno de marca

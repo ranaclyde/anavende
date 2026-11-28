@@ -1,5 +1,5 @@
 /**
- * Saca del logo en trazos (`lib/marca.ts`) los archivos que no pueden
+ * Saca del logo en trazos (`lib/logo.ts`) los archivos que no pueden
  * dibujarlo en línea (DESIGN-REFERENCE §2.3).
  *
  *   public/marca/isotipo.svg         el isotipo, burdeos sobre transparente
@@ -15,7 +15,7 @@ import { writeFile } from "node:fs/promises";
 
 import sharp from "sharp";
 
-import { svgDelIsotipo, svgHorizontal } from "../lib/marca";
+import { markSvg, horizontalSvg } from "../lib/logo";
 
 /** `--brand` de DESIGN-REFERENCE §3.1. */
 const BURDEOS = "#832833";
@@ -24,7 +24,7 @@ const BURDEOS = "#832833";
 async function ico(lados: number[]) {
   const pngs = await Promise.all(
     lados.map((lado) =>
-      sharp(Buffer.from(svgDelIsotipo(BURDEOS)), { density: 600 })
+      sharp(Buffer.from(markSvg(BURDEOS)), { density: 600 })
         .resize(lado, lado)
         .png()
         .toBuffer(),
@@ -48,15 +48,15 @@ async function ico(lados: number[]) {
   return Buffer.concat([cabecera, ...pngs]);
 }
 
-await writeFile("public/marca/isotipo.svg", svgDelIsotipo(BURDEOS));
+await writeFile("public/marca/isotipo.svg", markSvg(BURDEOS));
 
-await sharp(Buffer.from(svgDelIsotipo(BURDEOS)), { density: 300 })
+await sharp(Buffer.from(markSvg(BURDEOS)), { density: 300 })
   .resize(512, 512)
   .png({ compressionLevel: 9 })
   .toFile("public/marca/logo.png");
 
 // El correo la muestra a 40 px: al doble, para pantallas de alta densidad.
-await sharp(Buffer.from(svgHorizontal(BURDEOS)), { density: 300 })
+await sharp(Buffer.from(horizontalSvg(BURDEOS)), { density: 300 })
   .resize({ height: 80 })
   .png({ compressionLevel: 9 })
   .toFile("public/marca/logo-horizontal.png");

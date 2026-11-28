@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { normalizar } from "@/lib/texto";
+import { normalizeText } from "@/lib/text";
 import { cn } from "@/lib/utils";
 
 export type OpcionDelSelector = {
@@ -77,13 +77,13 @@ export function SelectorConBuscador({
   const creando = React.useRef(false);
 
   const elegida = opciones.find((o) => o.valor === valor);
-  const buscado = normalizar(termino);
+  const buscado = normalizeText(termino);
   const visibles = buscado
-    ? opciones.filter((o) => normalizar(o.etiqueta).includes(buscado))
+    ? opciones.filter((o) => normalizeText(o.etiqueta).includes(buscado))
     : opciones;
   const nombreNuevo = termino.trim();
   const ofrecerCrear =
-    !!crear && !opciones.some((o) => normalizar(o.etiqueta) === buscado);
+    !!crear && !opciones.some((o) => normalizeText(o.etiqueta) === buscado);
 
   const abrir = (v: boolean) => {
     setAbierto(v);

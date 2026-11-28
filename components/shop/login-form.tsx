@@ -22,9 +22,9 @@ import { FieldError } from "@/components/ui/field-error";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { destinoInterno } from "@/lib/destino";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
-import { enlaceDeWhatsApp } from "@/lib/whatsapp";
+import { internalRedirectTarget } from "@/lib/redirect-target";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
+import { whatsappLink } from "@/lib/whatsapp";
 import { enviarVerificacion, ingresar } from "@/modules/users/actions";
 import type { ProveedorSocial } from "@/modules/users/proveedores";
 
@@ -48,8 +48,7 @@ export function LoginForm({
   const router = useRouter();
   const [enviando, iniciar] = useTransition();
   const [reenviando, iniciarReenvio] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
   const [reenviado, setReenviado] = useState(false);
 
   // Un token por envío, para ingresar o para reenviar la verificación.
@@ -58,16 +57,16 @@ export function LoginForm({
   const idDelAviso = useId();
   const faltaCaptcha = TURNSTILE_ACTIVO && !captcha;
 
-  const bloqueado = errores.codigo === "USER_BANNED";
-  const dadoDeBaja = errores.codigo === "ACCOUNT_CLOSED";
-  const sinVerificar = errores.codigo === "EMAIL_NOT_VERIFIED";
-  const motivo = errores.detalles?.motivo as string | null | undefined;
-  const emailSinVerificar = errores.detalles?.email as string | undefined;
+  const bloqueado = errores.code === "USER_BANNED";
+  const dadoDeBaja = errores.code === "ACCOUNT_CLOSED";
+  const sinVerificar = errores.code === "EMAIL_NOT_VERIFIED";
+  const motivo = errores.details?.motivo as string | null | undefined;
+  const emailSinVerificar = errores.details?.email as string | undefined;
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const datos = new FormData(e.currentTarget);
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
     setReenviado(false);
 
     iniciar(async () => {
@@ -79,12 +78,12 @@ export function LoginForm({
       turnstile.current?.reiniciar();
 
       if (!r.ok) {
-        setErrores(leerErrores<Campo>(r));
+        setErrores(readErrors<Campo>(r));
         return;
       }
 
       // `//otro.com` también empieza con `/`.
-      router.push(destinoInterno(volver) ?? "/");
+      router.push(internalRedirectTarget(volver) ?? "/");
       router.refresh();
     });
   };
@@ -127,9 +126,9 @@ export function LoginForm({
               type="email"
               autoComplete="email"
               required
-              aria-invalid={!!errores.campos.email || undefined}
+              aria-invalid={!!errores.fields.email || undefined}
             />
-            <FieldError>{errores.campos.email}</FieldError>
+            <FieldError>{errores.fields.email}</FieldError>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -148,9 +147,9 @@ export function LoginForm({
               type="password"
               autoComplete="current-password"
               required
-              aria-invalid={!!errores.campos.password || undefined}
+              aria-invalid={!!errores.fields.password || undefined}
             />
-            <FieldError>{errores.campos.password}</FieldError>
+            <FieldError>{errores.fields.password}</FieldError>
           </div>
 
           {/* RF-27: hay que decir por qué. */}
@@ -170,7 +169,7 @@ export function LoginForm({
               {/* Sin número configurado, la frase sola y no un enlace roto. */}
               {whatsapp ? (
                 <a
-                  href={enlaceDeWhatsApp(
+                  href={whatsappLink(
                     whatsapp,
                     "Hola, mi cuenta figura bloqueada y quería consultar.",
                   )}
@@ -205,7 +204,7 @@ export function LoginForm({
               </p>
               {whatsapp ? (
                 <a
-                  href={enlaceDeWhatsApp(
+                  href={whatsappLink(
                     whatsapp,
                     "Hola, había dado de baja mi cuenta y quería volver.",
                   )}

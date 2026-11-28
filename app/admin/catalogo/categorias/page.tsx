@@ -6,13 +6,13 @@ import {
   cuantasPaginas,
   leerPaginaDeCatalogo,
   urlDePagina,
-  type ParametrosDeBusqueda,
+  type SearchParamsRecord,
 } from "@/modules/catalog/filtros-panel";
 import {
   listarCategorias,
   listarRelacionables,
 } from "@/modules/catalog/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Categorías" };
 
@@ -21,9 +21,9 @@ const BASE = "/admin/catalogo/categorias";
 export default async function CategoriasDelCatalogo({
   searchParams,
 }: {
-  searchParams: Promise<ParametrosDeBusqueda>;
+  searchParams: Promise<SearchParamsRecord>;
 }) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const pagina = leerPaginaDeCatalogo(await searchParams);
   const [{ items, total }, relacionables] = await Promise.all([

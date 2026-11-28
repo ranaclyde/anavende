@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import { cambiarContrasena } from "@/modules/users/actions";
 
 type Campo = "actual" | "nueva" | "repetida";
@@ -26,8 +26,7 @@ export function CambiarContrasenaForm({
   tieneContrasena: boolean;
 }) {
   const [guardando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
   // Se fija al guardar: definirla da vuelta `tieneContrasena` al refrescar, y
   // calculado en cada render diría «cambiamos» a quien recién la definió.
   const [listo, setListo] = useState<string | null>(null);
@@ -39,13 +38,13 @@ export function CambiarContrasenaForm({
   const noCoinciden = repetida.length > 0 && nueva !== repetida;
   const errorRepetida = noCoinciden
     ? "Las dos contraseñas tienen que ser iguales."
-    : errores.campos.repetida;
+    : errores.fields.repetida;
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formulario = e.currentTarget;
     const datos = new FormData(formulario);
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
     setListo(null);
 
     iniciar(async () => {
@@ -56,7 +55,7 @@ export function CambiarContrasenaForm({
       });
 
       if (!r.ok) {
-        setErrores(leerErrores<Campo>(r));
+        setErrores(readErrors<Campo>(r));
         return;
       }
 
@@ -98,9 +97,9 @@ export function CambiarContrasenaForm({
               type="password"
               autoComplete="current-password"
               required
-              aria-invalid={!!errores.campos.actual || undefined}
+              aria-invalid={!!errores.fields.actual || undefined}
             />
-            <FieldError>{errores.campos.actual}</FieldError>
+            <FieldError>{errores.fields.actual}</FieldError>
           </div>
         )}
 
@@ -115,13 +114,13 @@ export function CambiarContrasenaForm({
             autoComplete="new-password"
             minLength={8}
             required
-            aria-invalid={!!errores.campos.nueva || undefined}
+            aria-invalid={!!errores.fields.nueva || undefined}
             aria-describedby="nueva-ayuda"
             value={nueva}
             onChange={(e) => setNueva(e.target.value)}
           />
-          {errores.campos.nueva ? (
-            <FieldError id="nueva-ayuda">{errores.campos.nueva}</FieldError>
+          {errores.fields.nueva ? (
+            <FieldError id="nueva-ayuda">{errores.fields.nueva}</FieldError>
           ) : (
             <FieldHint id="nueva-ayuda">Al menos 8 caracteres.</FieldHint>
           )}

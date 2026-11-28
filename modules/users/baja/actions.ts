@@ -18,7 +18,7 @@ export const pedirLaBaja = action
 export const retirarElPedidoDeBaja = action
   .input(sinDatos)
   .auth("customer")
-  .aunConBajaPendiente()
+  .evenWithPendingClosure()
   .handler(async ({ ctx }) => {
     const resultado = await retirarBaja(ctx.session.profile.id);
     refresh();

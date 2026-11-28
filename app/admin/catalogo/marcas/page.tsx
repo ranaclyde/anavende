@@ -6,10 +6,10 @@ import {
   cuantasPaginas,
   leerPaginaDeCatalogo,
   urlDePagina,
-  type ParametrosDeBusqueda,
+  type SearchParamsRecord,
 } from "@/modules/catalog/filtros-panel";
 import { listarMarcas } from "@/modules/catalog/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Marcas" };
 
@@ -18,9 +18,9 @@ const BASE = "/admin/catalogo/marcas";
 export default async function MarcasDelCatalogo({
   searchParams,
 }: {
-  searchParams: Promise<ParametrosDeBusqueda>;
+  searchParams: Promise<SearchParamsRecord>;
 }) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const pagina = leerPaginaDeCatalogo(await searchParams);
   const { items, total } = await listarMarcas(pagina);

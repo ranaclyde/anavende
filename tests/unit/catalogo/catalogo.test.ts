@@ -12,7 +12,7 @@ import {
   leerOpcionesDeFiltro,
   leerPaginaDelCatalogo,
 } from "@/modules/catalog/products/tienda";
-import { slugificar } from "@/lib/slug";
+import { slugify } from "@/lib/slug";
 
 /**
  * Contra Postgres de verdad: si la suma dentro de un grupo, el cruce entre
@@ -30,7 +30,7 @@ const T = `zzt${randomUUID().slice(0, 8)}`;
  * por slug: `buscar` traduce, como lo haría la URL.
  */
 const slugDe = new Map<string, string>();
-const slug = (nombre: string) => slugificar(`${nombre}-${T}`);
+const slug = (nombre: string) => slugify(`${nombre}-${T}`);
 
 const creados = {
   productos: [] as string[],
@@ -315,11 +315,11 @@ describe("el orden de las opciones del filtro", () => {
         tabla === "brands"
           ? await db.execute<{ id: string }>(sql`
               INSERT INTO brands (name, slug)
-              VALUES (${`${nombre} ${T2}`}, ${slugificar(`${nombre}-${T2}`)})
+              VALUES (${`${nombre} ${T2}`}, ${slugify(`${nombre}-${T2}`)})
               RETURNING id`)
           : await db.execute<{ id: string }>(sql`
               INSERT INTO categories (name, slug, is_featured)
-              VALUES (${`${nombre} ${T2}`}, ${slugificar(`${nombre}-${T2}`)}, ${destacada})
+              VALUES (${`${nombre} ${T2}`}, ${slugify(`${nombre}-${T2}`)}, ${destacada})
               RETURNING id`);
       (tabla === "brands" ? creados.marcas : creados.categorias).push(fila.id);
       return fila.id;
@@ -327,7 +327,7 @@ describe("el orden de las opciones del filtro", () => {
     const color = async (nombre: string) => {
       const [fila] = await db.execute<{ id: string }>(sql`
         INSERT INTO colors (name, slug, hex_code)
-        VALUES (${`${nombre} ${T2}`}, ${slugificar(`${nombre}-${T2}`)}, '#1c1e21')
+        VALUES (${`${nombre} ${T2}`}, ${slugify(`${nombre}-${T2}`)}, '#1c1e21')
         RETURNING id`);
       creados.colores.push(fila.id);
       return fila.id;
@@ -520,7 +520,7 @@ describe("la búsqueda tolera errores de tipeo", () => {
   async function unoReal(nombre: string): Promise<void> {
     const [fila] = await db.execute<{ id: string }>(sql`
       INSERT INTO products (name, slug, brand_id, category_id, price)
-      VALUES (${nombre}, ${slugificar(`${nombre}-${T3}`)}, ${marca}, ${catA},
+      VALUES (${nombre}, ${slugify(`${nombre}-${T3}`)}, ${marca}, ${catA},
               '1000.00')
       RETURNING id`);
     creados.productos.push(fila.id);
@@ -529,11 +529,11 @@ describe("la búsqueda tolera errores de tipeo", () => {
   beforeAll(async () => {
     const [fila] = await db.execute<{ id: string }>(sql`
       INSERT INTO brands (name, slug)
-      VALUES (${`Logitech ${T3}`}, ${slugificar(`logitech-${T3}`)})
+      VALUES (${`Logitech ${T3}`}, ${slugify(`logitech-${T3}`)})
       RETURNING id`);
     marca = fila.id;
     creados.marcas.push(marca);
-    slugDe.set(marca, slugificar(`logitech-${T3}`));
+    slugDe.set(marca, slugify(`logitech-${T3}`));
 
     for (const nombre of [
       "Adaptador USB-C a HDMI",

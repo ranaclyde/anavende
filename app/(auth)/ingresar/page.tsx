@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/shop/login-form";
-import { destinoInterno } from "@/lib/destino";
+import { internalRedirectTarget } from "@/lib/redirect-target";
 import { getIdentity, getSession } from "@/lib/session";
 import { numeroDeWhatsApp } from "@/modules/settings/queries";
 import { proveedoresDisponibles } from "@/modules/users/proveedores";
@@ -23,7 +23,7 @@ export default async function Ingresar({
   // Sin perfil (entró con Google y no lo completó) va a completarlo y
   // conserva la vuelta, solo si es un destino interno.
   if (identidad && !sesion) {
-    const interno = destinoInterno(volver);
+    const interno = internalRedirectTarget(volver);
     redirect(
       interno
         ? `/completar-perfil?volver=${encodeURIComponent(interno)}`

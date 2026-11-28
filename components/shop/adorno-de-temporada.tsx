@@ -1,4 +1,4 @@
-import type { Escena } from "@/lib/escenas";
+import type { Scene } from "@/lib/scenes";
 
 /**
  * El adorno del logo en las escenas por fecha (RF-38): un dibujo aparte,
@@ -7,7 +7,7 @@ import type { Escena } from "@/lib/escenas";
  * Toda animación termina antes de los cinco segundos de WCAG 2.2.2: por eso
  * no necesita pausa.
  */
-export function AdornoDeTemporada({ escena }: { escena: Escena }) {
+export function AdornoDeTemporada({ escena }: { escena: Scene }) {
   return (
     <svg
       aria-hidden

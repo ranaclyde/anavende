@@ -177,7 +177,7 @@ público ve una página con un 503 y quien administra ve la tienda normal.
 adorno en el próximo pedido.
 
 **Sumar una fecha especial**: es código, no panel. Lleva su período en
-`lib/escenas.ts`, su adorno en `components/shop/adorno-de-temporada.tsx` y
+`lib/scenes.ts`, su adorno en `components/shop/adorno-de-temporada.tsx` y
 su interruptor en `site_settings`.
 
 **Sumar una administradora**: desde el panel, «Usuarios» → nuevo, que manda

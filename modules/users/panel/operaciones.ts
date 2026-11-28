@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { userProfiles } from "@/db/schema";
-import { urlDelSitio } from "@/lib/env";
+import { getSiteUrl } from "@/lib/env";
 import { domainError } from "@/lib/errors";
 import { createServiceClient } from "@/lib/supabase/service";
 import { borrarArchivosDeFoto } from "@/modules/media/subir";
@@ -17,7 +17,7 @@ import type { RolAsignable } from "@/modules/users/panel/schemas";
 const NUEVA_CONTRASENA = "/recuperar/nueva-contrasena";
 
 function urlDeContrasenaNueva(): string {
-  return `${urlDelSitio()}/api/auth/confirmar?next=${encodeURIComponent(
+  return `${getSiteUrl()}/api/auth/confirmar?next=${encodeURIComponent(
     NUEVA_CONTRASENA,
   )}`;
 }

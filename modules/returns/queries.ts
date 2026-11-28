@@ -3,7 +3,7 @@ import "server-only";
 import { sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db";
-import { ZONA_HORARIA } from "@/lib/fechas";
+import { TIME_ZONE } from "@/lib/dates";
 import type { Money } from "@/lib/money";
 import {
   POR_PAGINA,
@@ -148,11 +148,11 @@ function condiciones(filtros: FiltrosDeDevoluciones): SQL {
 
   if (filtros.desde) {
     partes.push(sql`r.created_at >=
-      (${filtros.desde}::date)::timestamp AT TIME ZONE ${ZONA_HORARIA}`);
+      (${filtros.desde}::date)::timestamp AT TIME ZONE ${TIME_ZONE}`);
   }
   if (filtros.hasta) {
     partes.push(sql`r.created_at <
-      (${filtros.hasta}::date + 1)::timestamp AT TIME ZONE ${ZONA_HORARIA}`);
+      (${filtros.hasta}::date + 1)::timestamp AT TIME ZONE ${TIME_ZONE}`);
   }
 
   return partes.length

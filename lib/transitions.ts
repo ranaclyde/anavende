@@ -6,4 +6,4 @@
  * Filtrar, ordenar y buscar: la grilla reacomoda sus tarjetas. La paginación no
  * lo lleva.
  */
-export const TIPO_FILTRO = ["filtro"];
+export const FILTER_TYPE = ["filtro"];

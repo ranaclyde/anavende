@@ -9,7 +9,7 @@ import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
 import { db } from "@/db";
-import { armarZip } from "@/lib/zip";
+import { buildZip } from "@/lib/zip";
 import {
   fotosDelProducto,
   nombresEnElZip,
@@ -69,14 +69,14 @@ function leer(ruta: string, nombre: string): Buffer {
   ]);
 }
 
-describe("armarZip", () => {
+describe("buildZip", () => {
   test("unzip lo abre, lo verifica y devuelve los mismos bytes", () => {
     const a = Buffer.from("hola");
     const b = Buffer.alloc(70_000, 7);
     const ruta = enDisco(
-      armarZip([
-        { nombre: "marrón/1.jpg", datos: a },
-        { nombre: "2.jpg", datos: b },
+      buildZip([
+        { name: "marrón/1.jpg", data: a },
+        { name: "2.jpg", data: b },
       ]),
     );
 
@@ -92,9 +92,9 @@ describe("armarZip", () => {
   test.each(["", "/raiz.jpg", "../afuera.jpg", "a/../../b.jpg"])(
     "rechaza el nombre «%s»",
     (nombre) => {
-      expect(() => armarZip([{ nombre, datos: Buffer.from("x") }])).toThrow(
-        TypeError,
-      );
+      expect(() =>
+        buildZip([{ name: nombre, data: Buffer.from("x") }]),
+      ).toThrow(TypeError);
     },
   );
 });

@@ -18,7 +18,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { leerErrores } from "@/lib/form";
+import { readErrors } from "@/lib/form";
 import { registrarUnaDevolucion } from "@/modules/returns/actions";
 import { MAXIMO_DEL_MOTIVO } from "@/modules/returns/schemas";
 
@@ -153,9 +153,9 @@ function DialogoDeDevolver({
       if (!r.ok) {
         // `RETURN_EXCEEDS_SOLD` si entre medio se registró otra devolución del
         // mismo renglón.
-        const errores = leerErrores<"motivo" | "items">(r);
-        setErrorDeItems(errores.campos.items ?? null);
-        setErrorDelMotivo(errores.campos.motivo ?? null);
+        const errores = readErrors<"motivo" | "items">(r);
+        setErrorDeItems(errores.fields.items ?? null);
+        setErrorDelMotivo(errores.fields.motivo ?? null);
         setError(errores.general);
         return;
       }

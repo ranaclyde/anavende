@@ -10,14 +10,14 @@ import {
   leerLaConfiguracion,
   UMBRAL_DE_STOCK_BAJO_POR_DEFECTO,
 } from "@/modules/settings/queries";
-import { periodoEscrito } from "@/lib/escenas";
-import { exigirAdmin } from "@/lib/session";
+import { periodText } from "@/lib/scenes";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Configuración" };
 
 /** Los textos legales no están acá: tienen su propio editor (RF-29). */
 export default async function ConfiguracionDelSitio() {
-  await exigirAdmin();
+  await requireAdmin();
 
   // El interruptor se lee de la base, no de la memoria del proxy, para
   // mostrar lo recién guardado.
@@ -42,9 +42,9 @@ export default async function ConfiguracionDelSitio() {
             configuracion={configuracion}
             umbralPorDefecto={UMBRAL_DE_STOCK_BAJO_POR_DEFECTO}
             periodos={{
-              pascua: periodoEscrito("pascua"),
-              halloween: periodoEscrito("halloween"),
-              navidad: periodoEscrito("navidad"),
+              pascua: periodText("pascua"),
+              halloween: periodText("halloween"),
+              navidad: periodText("navidad"),
             }}
           />
 

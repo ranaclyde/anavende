@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import { guardarMisDatos } from "@/modules/users/actions";
 
 type Campo = "firstName" | "lastName" | "phone";
@@ -25,15 +25,14 @@ export function MisDatosForm({
   telefono: string;
 }) {
   const [guardando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
   const [guardado, setGuardado] = useState(false);
   const enPausa = useCuentaEnPausa();
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const datos = new FormData(e.currentTarget);
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
     setGuardado(false);
 
     iniciar(async () => {
@@ -44,7 +43,7 @@ export function MisDatosForm({
       });
 
       if (!r.ok) {
-        setErrores(leerErrores<Campo>(r));
+        setErrores(readErrors<Campo>(r));
         return;
       }
 
@@ -75,9 +74,9 @@ export function MisDatosForm({
               autoComplete="given-name"
               defaultValue={firstName}
               required
-              aria-invalid={!!errores.campos.firstName || undefined}
+              aria-invalid={!!errores.fields.firstName || undefined}
             />
-            <FieldError>{errores.campos.firstName}</FieldError>
+            <FieldError>{errores.fields.firstName}</FieldError>
           </div>
 
           <div className="flex flex-1 flex-col gap-2">
@@ -88,9 +87,9 @@ export function MisDatosForm({
               autoComplete="family-name"
               defaultValue={lastName}
               required
-              aria-invalid={!!errores.campos.lastName || undefined}
+              aria-invalid={!!errores.fields.lastName || undefined}
             />
-            <FieldError>{errores.campos.lastName}</FieldError>
+            <FieldError>{errores.fields.lastName}</FieldError>
           </div>
         </div>
 
@@ -104,10 +103,10 @@ export function MisDatosForm({
             autoComplete="tel"
             defaultValue={telefono}
             required
-            aria-invalid={!!errores.campos.phone || undefined}
+            aria-invalid={!!errores.fields.phone || undefined}
           />
-          {errores.campos.phone ? (
-            <FieldError>{errores.campos.phone}</FieldError>
+          {errores.fields.phone ? (
+            <FieldError>{errores.fields.phone}</FieldError>
           ) : (
             <FieldHint>Por acá coordinamos la entrega y el pago.</FieldHint>
           )}

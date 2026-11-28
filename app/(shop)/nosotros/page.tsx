@@ -13,7 +13,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { OPEN_GRAPH_BASE } from "@/lib/seo";
-import { enlaceDeWhatsApp, mensajeDesdeNosotros } from "@/lib/whatsapp";
+import { whatsappLink, aboutUsMessage } from "@/lib/whatsapp";
 import { leerLaConfiguracion } from "@/modules/settings/queries";
 
 const DESCRIPCION =
@@ -281,7 +281,7 @@ function Cierre({ whatsapp }: { whatsapp: string | null }) {
         {whatsapp ? (
           <Button asChild variant="secondary" size="lg">
             <a
-              href={enlaceDeWhatsApp(whatsapp, mensajeDesdeNosotros())}
+              href={whatsappLink(whatsapp, aboutUsMessage())}
               target="_blank"
               rel="noopener noreferrer"
             >

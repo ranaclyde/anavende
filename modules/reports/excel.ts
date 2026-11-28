@@ -2,12 +2,12 @@ import "server-only";
 
 import ExcelJS from "exceljs";
 
-import { fechaConHora } from "@/lib/fechas";
+import { dateWithTime } from "@/lib/dates";
 import {
-  paraPlanilla,
-  porcentaje,
+  toSpreadsheetNumber,
+  percentOf,
   sum,
-  variacion,
+  percentChange,
   type Money,
 } from "@/lib/money";
 import type { Periodo, Rango } from "@/modules/reports/periodo";
@@ -112,7 +112,7 @@ function cambio(actual: number, anterior: number): number | null {
 }
 
 function cambioDeMonto(actual: Money, anterior: Money): number | null {
-  const v = variacion(actual, anterior);
+  const v = percentChange(actual, anterior);
   return v === null ? null : v / 100;
 }
 
@@ -134,7 +134,7 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
     ["Reportes de ventas — AnaVende"],
     [`Período: del ${nombreDelRango(periodo)}`],
     [`Comparado con: el ${nombreDelRango(periodo.anterior)}`],
-    [`Generado el ${fechaConHora(datos.generada.toISOString())}`],
+    [`Generado el ${dateWithTime(datos.generada.toISOString())}`],
     [
       "Órdenes finalizadas, menos lo devuelto. Las devoluciones restan el día en que se registran.",
     ],
@@ -159,15 +159,15 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
   const indicadores: [string, number, number, number | null, string][] = [
     [
       "Vendido",
-      paraPlanilla(totales.vendido),
-      paraPlanilla(anteriores.vendido),
+      toSpreadsheetNumber(totales.vendido),
+      toSpreadsheetNumber(anteriores.vendido),
       cambioDeMonto(totales.vendido, anteriores.vendido),
       MONEDA,
     ],
     [
       "Devoluciones restadas",
-      paraPlanilla(totales.devuelto),
-      paraPlanilla(anteriores.devuelto),
+      toSpreadsheetNumber(totales.devuelto),
+      toSpreadsheetNumber(anteriores.devuelto),
       null,
       MONEDA,
     ],
@@ -187,8 +187,8 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
     ],
     [
       "Ticket promedio",
-      paraPlanilla(totales.ticket),
-      paraPlanilla(anteriores.ticket),
+      toSpreadsheetNumber(totales.ticket),
+      toSpreadsheetNumber(anteriores.ticket),
       conTicket ? cambioDeMonto(totales.ticket, anteriores.ticket) : null,
       MONEDA,
     ],
@@ -215,7 +215,7 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
     ],
     datos.serie.map((p) => [
       aFecha(p.fecha),
-      paraPlanilla(p.vendido),
+      toSpreadsheetNumber(p.vendido),
       p.ordenes,
     ]),
   );
@@ -236,7 +236,7 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
       p.nombre,
       p.marca,
       p.unidades,
-      paraPlanilla(p.vendido),
+      toSpreadsheetNumber(p.vendido),
     ]),
   );
 
@@ -256,7 +256,7 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
         p.marca,
         c.color ?? "Sin color",
         c.unidades,
-        paraPlanilla(c.vendido),
+        toSpreadsheetNumber(c.vendido),
       ]),
     ),
   );
@@ -273,7 +273,7 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
         { titulo: "Unidades", ancho: 12, formato: ENTERO },
         { titulo: "Vendido", ancho: 18, formato: MONEDA },
       ],
-      filas.map((f) => [f.nombre, f.unidades, paraPlanilla(f.vendido)]),
+      filas.map((f) => [f.nombre, f.unidades, toSpreadsheetNumber(f.vendido)]),
     );
   }
 
@@ -289,10 +289,10 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
       { titulo: "Parte de lo vendido", ancho: 20, formato: PORCENTAJE },
     ],
     datos.origenes.map((o) => {
-      const parte = porcentaje(o.vendido, total);
+      const parte = percentOf(o.vendido, total);
       return [
         NOMBRE_DEL_ORIGEN[o.origen],
-        paraPlanilla(o.vendido),
+        toSpreadsheetNumber(o.vendido),
         o.ordenes,
         parte === null ? null : parte / 100,
       ];

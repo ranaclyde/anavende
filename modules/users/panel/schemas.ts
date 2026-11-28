@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { telefonoArgentino } from "@/lib/telefono";
+import { argentinePhone } from "@/lib/phone";
 
 /**
  * Mensajes propios y no los de `modules/users/schemas.ts`: aquéllos le hablan
@@ -43,9 +43,9 @@ const email = z
   .toLowerCase()
   .pipe(z.email("Ese email no parece válido."));
 
-const telefono = telefonoArgentino({
-  requerido: "Escribí un teléfono para poder coordinar.",
-  invalido:
+const telefono = argentinePhone({
+  required: "Escribí un teléfono para poder coordinar.",
+  invalid:
     "Ese teléfono no parece válido. Escribilo con característica, por ejemplo 11 5555 5555.",
 });
 

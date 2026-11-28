@@ -24,9 +24,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fechaConHora, fechaCorta } from "@/lib/fechas";
+import { dateWithTime, shortDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
-import { enlaceDeWhatsApp, mensajeParaElComprador } from "@/lib/whatsapp";
+import { whatsappLink, messageToBuyer } from "@/lib/whatsapp";
 import { formaDeEntrega } from "@/modules/orders/entrega";
 import {
   leerOrdenDelPanel,
@@ -37,7 +37,7 @@ import {
   devueltasPorRenglon,
   type Devolucion,
 } from "@/modules/returns/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 type Props = { params: Promise<{ numero: string }> };
 
@@ -83,7 +83,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * la cancelada no muestra controles.
  */
 export default async function DetalleDeLaOrden({ params }: Props) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const { numero: crudo } = await params;
 
@@ -134,9 +134,9 @@ export default async function DetalleDeLaOrden({ params }: Props) {
                 Secundario porque el de marca es «Finalizar» (§6.3). */}
             <Button asChild variant="secondary" size="sm">
               <a
-                href={enlaceDeWhatsApp(
+                href={whatsappLink(
                   orden.customerPhone,
-                  mensajeParaElComprador(orden.numero),
+                  messageToBuyer(orden.numero),
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -183,15 +183,15 @@ export default async function DetalleDeLaOrden({ params }: Props) {
       />
 
       <p className="text-body-sm text-ink-secondary">
-        Creada el {fechaConHora(orden.creadaEn)}
+        Creada el {dateWithTime(orden.creadaEn)}
         {orden.finalizadaEn
           ? // Una manual cargada tarde (RF-24) tiene la venta antes de la
             // carga y a las 12:00 inventadas: se dice solo el día.
             new Date(orden.finalizadaEn) < new Date(orden.creadaEn)
-            ? ` · venta del ${fechaCorta(orden.finalizadaEn)}`
-            : ` · finalizada el ${fechaConHora(orden.finalizadaEn)}`
+            ? ` · venta del ${shortDate(orden.finalizadaEn)}`
+            : ` · finalizada el ${dateWithTime(orden.finalizadaEn)}`
           : orden.canceladaEn
-            ? ` · cancelada el ${fechaConHora(orden.canceladaEn)}`
+            ? ` · cancelada el ${dateWithTime(orden.canceladaEn)}`
             : ""}
       </p>
 

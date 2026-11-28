@@ -18,8 +18,8 @@ import {
   variantesDelProducto,
 } from "@/modules/catalog/variants/queries";
 import { laMarcaDeAguaEstaActiva } from "@/modules/marca-de-agua/queries";
-import { urlAbsoluta } from "@/lib/seo";
-import { exigirAdmin } from "@/lib/session";
+import { absoluteUrl } from "@/lib/seo";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Editar producto" };
 
@@ -58,7 +58,7 @@ const ES_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function EditarProducto({ params, searchParams }: Props) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const [{ id }, consulta] = await Promise.all([params, searchParams]);
 
@@ -108,7 +108,7 @@ export default async function EditarProducto({ params, searchParams }: Props) {
                   </a>
                 </Button>
                 <CopiarEnlace
-                  url={urlAbsoluta(`/productos/${producto.slug}`)}
+                  url={absoluteUrl(`/productos/${producto.slug}`)}
                 />
               </>
             ) : null}

@@ -6,10 +6,10 @@ import { notFound } from "next/navigation";
 import { BloquesDeTexto } from "@/components/shop/texto-con-formato";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
-import { fechaLarga } from "@/lib/fechas";
-import { OPEN_GRAPH_BASE, resumenDeMetadatos } from "@/lib/seo";
+import { longDate } from "@/lib/dates";
+import { OPEN_GRAPH_BASE, metaDescription } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-import { enlaceDeWhatsApp } from "@/lib/whatsapp";
+import { whatsappLink } from "@/lib/whatsapp";
 import { leerTextoLegal } from "@/modules/content/legales";
 import { nodosDeMarkdown } from "@/modules/content/markdown";
 import { PAGINAS_LEGALES, paginaLegal } from "@/modules/content/paginas";
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const texto = await leerTextoLegal(pagina.slug);
   const ruta = `/legales/${pagina.slug}`;
   const descripcion = texto
-    ? resumenDeMetadatos(textoPlano(texto.contenido))
+    ? metaDescription(textoPlano(texto.contenido))
     : undefined;
 
   return {
@@ -71,7 +71,7 @@ export default async function PaginaLegal({ params }: Props) {
             <p className="text-body-sm text-ink-secondary">
               Actualizada el{" "}
               <time dateTime={texto.actualizada.toISOString()}>
-                {fechaLarga(texto.actualizada)}
+                {longDate(texto.actualizada)}
               </time>
             </p>
           </header>
@@ -157,7 +157,7 @@ function Contacto({
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <Button asChild variant="secondary">
           <a
-            href={enlaceDeWhatsApp(
+            href={whatsappLink(
               whatsapp,
               `Hola, tengo una consulta sobre «${titulo}».`,
             )}

@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { FormularioDeProducto } from "@/components/admin/productos/formulario";
 import { opcionesDeProducto } from "@/modules/catalog/products/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Nuevo producto" };
 
 export default async function NuevoProducto() {
-  await exigirAdmin();
+  await requireAdmin();
 
   const { marcas, categorias } = await opcionesDeProducto();
 
