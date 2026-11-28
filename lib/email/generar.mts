@@ -1,16 +1,5 @@
-/**
- * Convierte las plantillas de React Email en el HTML que consume GoTrue.
- * TECHNICAL-SPEC §14; tarea F1.8.
- *
- * **Por qué existe este paso.** GoTrue no entiende React: pide las plantillas
- * **por HTTP** contra `SITE_URL` —comprobado en el VPS, no lee archivos— y
- * espera HTML con sus variables Go adentro. Así que la salida va a `public/`,
- * que es lo que el servidor de la aplicación sirve, y de ahí las levanta.
- *
- * **El HTML generado SE COMMITEA.** No es un artefacto intermedio: es lo que
- * se despliega y lo que Supabase descarga. Se regenera con `npm run email` y
- * el diff tiene que revisarse como cualquier otro.
- */
+// GoTrue pide las plantillas por HTTP contra `SITE_URL` (no lee archivos):
+// la salida va a `public/` y se commitea, porque es lo que se despliega.
 import { mkdir, writeFile } from "node:fs/promises";
 import { createElement } from "react";
 import { render } from "react-email";
@@ -22,50 +11,23 @@ import { Verificacion } from "@/lib/email/plantillas/verificacion";
 
 const RUTA = "/api/auth/confirmar";
 
-/**
- * El enlace de E1 y E2.
- *
- * `{{ .RedirectTo }}` es el `emailRedirectTo` que manda la aplicación —o sea
- * `…/api/auth/confirmar?next=…`—; ya trae `?`, por eso se sigue con `&`.
- * `{{ .TokenHash }}` es el token que `verifyOtp` sabe canjear en el servidor.
- *
- * Es el camino que Supabase documenta para aplicaciones que renderizan en el
- * servidor. El otro —`{{ .ConfirmationURL }}`, que pasa por
- * `/auth/v1/verify`— devuelve la sesión en el fragmento de la URL, que nunca
- * llega al servidor.
- */
+// `{{ .RedirectTo }}` ya trae `?next=…`, por eso se sigue con `&`. No
+// `{{ .ConfirmationURL }}`: devuelve la sesión en el fragmento de la URL.
 const desdeElDestino = (tipo: string) =>
   `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=${tipo}`;
 
-/**
- * El enlace de E3, armado desde `{{ .SiteURL }}` en vez del destino.
- *
- * Quien invita es el alta del panel (RF-26, F7.6). Esta plantilla se escribió
- * antes que esa pantalla: si la pantalla no pasaba `redirectTo`,
- * `{{ .RedirectTo }}` salía vacío y el enlace quedaba roto. Armarlo acá lo
- * hace imposible de olvidar, y `invitarUsuario` lo pasa igual.
- */
+// E3 desde `{{ .SiteURL }}`: sin `redirectTo`, `{{ .RedirectTo }}` sale vacío.
 const desdeElSitio = (tipo: string, destino: string) =>
   `{{ .SiteURL }}${RUTA}?next=${encodeURIComponent(destino)}` +
   `&token_hash={{ .TokenHash }}&type=${tipo}`;
 
-/**
- * Lo que va después de «¡Hola» — o nada, si no hay nombre.
- *
- * `{{ .Data }}` es `auth.users.user_metadata`, donde `registrar` guarda
- * `first_name`. Los dos `if` anidados no son adorno: en Go, pedirle un campo a
- * un `.Data` nulo revienta la plantilla entera, y un email de verificación que
- * no sale es una cuenta que no se puede crear. El de afuera comprueba que haya
- * metadatos; el de adentro, que haya nombre.
- *
- * Las altas por invitación (E3, RF-26) lo cargan desde F7.6
- * (`invitarUsuario`); la condición queda para una identidad sin nombre.
- */
+// Los dos `if` anidados no son adorno: en Go, pedirle un campo a un `.Data`
+// nulo revienta la plantilla entera y el email no sale.
 const SALUDO =
   "{{ if .Data }}{{ if .Data.first_name }}, {{ .Data.first_name }}{{ end }}{{ end }}";
 
-/** Valores de mentira para la previsualización: un `token_hash` con la forma y
- *  el largo de uno real, para que el enlace ocupe lo que va a ocupar. */
+// Un `token_hash` con el largo de uno real, para que el enlace ocupe lo que va
+// a ocupar.
 const SITIO_DE_PRUEBA = "http://localhost:3000";
 const enlaceDePrueba = (tipo: string, destino: string) =>
   `${SITIO_DE_PRUEBA}${RUTA}?next=${encodeURIComponent(destino)}` +
@@ -81,12 +43,8 @@ const PLANTILLAS = [
     enlaceDePrueba: enlaceDePrueba("signup", "/mi-cuenta"),
   },
   {
-    // El reenvío de la verificación sale como ENLACE MÁGICO y no como
-    // verificación: `/resend` no registra el desafío PKCE y `signInWithOtp` sí
-    // (ver `mandarVerificacion` en `modules/users/actions.ts`). Para quien lo
-    // recibe es el mismo pedido —«confirmá tu email»—, así que es la misma
-    // plantilla; lo único que cambia es el `type` del enlace. Con `signup`, el
-    // código que GoTrue manda en este email no se canjea.
+    // El reenvío sale como enlace mágico (`/resend` no registra el desafío
+    // PKCE y `signInWithOtp` sí): con `type=signup` no se canjearía.
     archivo: "verificacion-reenvio.html",
     plantilla: Verificacion,
     enlace: desdeElDestino("magiclink"),
@@ -110,17 +68,8 @@ const destino = new URL("../../public/emails/", import.meta.url);
 const destinoVistaPrevia = new URL("vista-previa/", destino);
 await mkdir(destinoVistaPrevia, { recursive: true });
 
-/**
- * E4 no es una plantilla de GoTrue: lo arma y lo manda la aplicación (§14).
- *
- * Por eso **no se escribe en `public/emails/`**, que es de donde Supabase
- * descarga las suyas por HTTP: ahí solo va lo que GoTrue tiene que leer, y un
- * archivo de más en esa carpeta invita a creer que este también se configura
- * en algún lado. Sí se genera la vista previa, que es el único motivo por el
- * que este script sabe de su existencia: sin ella, mirar E4 obliga a confirmar
- * una compra de verdad. Sus valores de muestra viven en la plantilla, junto al
- * diseño que tienen que llenar.
- */
+// E4 lo manda la aplicación, no GoTrue: solo vista previa, fuera de
+// `public/emails/`.
 const SOLO_VISTA_PREVIA = [
   { archivo: "nueva-orden.html", plantilla: NuevaOrden },
 ];
@@ -134,10 +83,8 @@ for (const p of SOLO_VISTA_PREVIA) {
 }
 
 for (const p of PLANTILLAS) {
-  // La de verdad, con las variables de Go. `pretty` NO: el formateador parte
-  // las expresiones al ajustar líneas —vimos `{{ .TokenHash` y `}}` en
-  // renglones distintos— y el enlace es lo único que estos emails tienen que
-  // hacer bien. Lo que se revisa es el `.tsx`, no la salida.
+  // Sin `pretty`: parte las expresiones de Go en renglones distintos y
+  // rompe el enlace.
   const html = await render(
     createElement(p.plantilla, {
       sitio: "{{ .SiteURL }}",
@@ -147,8 +94,7 @@ for (const p of PLANTILLAS) {
   );
   await writeFile(new URL(p.archivo, destino), html, "utf8");
 
-  // La de mirar, con valores reales para que cargue el logo y el enlace se vea
-  // como se va a ver. No se commitea: es andamiaje.
+  // La vista previa no se commitea.
   const vistaPrevia = await render(
     createElement(p.plantilla, {
       sitio: SITIO_DE_PRUEBA,

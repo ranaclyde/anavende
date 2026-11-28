@@ -5,14 +5,7 @@ import { datosDePrueba, sufijo, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 import { POR_PAGINA } from "@/modules/catalog/filtros-panel";
 
-/**
- * Promociones de cuotas por medio de pago — F2.17, RF-40.
- *
- * La administradora carga una desde el panel, con su vista previa, y la ficha
- * la muestra debajo del precio. Con dos, una queda a la vista y la otra detrás
- * de «Ver otras opciones». Una que pide un mínimo que el precio no alcanza no
- * aparece, y una desactivada tampoco.
- */
+/** Promociones de cuotas por medio de pago (RF-40). */
 
 const datos = datosDePrueba();
 const palabra = sufijo();
@@ -47,7 +40,7 @@ test.beforeAll(async () => {
   });
   await datos.unMedioDePago(goCuotas);
   const naranjaId = await datos.unMedioDePago(naranja);
-  // La segunda, por la base: lo que se prueba de ella es cómo se muestra.
+  // La segunda, por la base: de ella se prueba solo cómo se muestra.
   await datos.sql`
     INSERT INTO payment_promotions
            (payment_method_id, plan_name, installments, surcharge_pct,
@@ -62,8 +55,8 @@ test.afterAll(async () => {
 });
 
 /**
- * El medio se creó al final de la lista, así que está en la última página;
- * cuál es depende de cuántos haya en la base local.
+ * El medio se creó al final de la lista: está en la última página, que
+ * depende de cuántos haya en la base local.
  */
 async function abrirPromociones(page: import("@playwright/test").Page) {
   const [{ n }] = await datos.sql<{ n: number }[]>`
@@ -96,7 +89,6 @@ test("se carga en el panel y la ficha la muestra debajo del precio", async ({
   await expect(form.getByText(/6 cuotas de \$\s3\.333,34/)).toBeVisible();
   expect(await hallazgosDeAxe(page, '[role="dialog"]')).toEqual([]);
 
-  // El fin antes del inicio lo dice en su campo.
   await form.getByLabel("Hasta").fill("2020-01-01");
   await form.getByRole("button", { name: "Crear" }).click();
   await expect(
@@ -113,17 +105,14 @@ test("se carga en el panel y la ficha la muestra debajo del precio", async ({
   await lista.getByRole("button", { name: "Cerrar" }).first().click();
   await expect(page.getByText("1 promoción vigente").first()).toBeVisible();
 
-  // La ficha: la de 6 sin interés gana a la de 3 con recargo.
+  // La de 6 sin interés gana a la de 3 con recargo.
   await page.goto(`/productos/${producto.slug}`);
   await expect(
     page.getByText(/^Mismo precio en 6 cuotas de \$\s6\.166,67 con Go Cuotas/),
   ).toBeVisible();
-  // Con recargo y plan: sin «Mismo precio», y «Plan Z de …».
   const naranjaEnLaFicha = /^3 cuotas de \$\s14\.183,34 con Plan Z de Naranja/;
   await expect(page.getByText(naranjaEnLaFicha)).toHaveCount(0);
 
-  // «Ver otras opciones» abre el modal con todas, la destacada incluida:
-  // primero la sin recargo, después la con recargo.
   await page.getByRole("button", { name: "Ver otras opciones" }).click();
   const modal = page.getByRole("dialog", { name: "Cuotas para este producto" });
   await expect(modal).toBeVisible();
@@ -140,8 +129,7 @@ test("se carga en el panel y la ficha la muestra debajo del precio", async ({
   await expect(
     modal.getByRole("heading", { name: "Con recargo" }),
   ).toBeVisible();
-  // Con el fundido de entrada terminado: a mitad, axe mide colores que nadie
-  // llega a leer.
+  // A mitad del fundido de entrada, axe mide colores que nadie llega a leer.
   await page.evaluate(() =>
     Promise.all(
       document
@@ -155,10 +143,8 @@ test("se carga en el panel y la ficha la muestra debajo del precio", async ({
   await expect(modal).toBeHidden();
   expect(await hallazgosDeAxe(page)).toEqual([]);
 
-  // El de $ 5.000 no llega al mínimo de Go Cuotas: queda solo Naranja, y con
-  // una sola no hay «Ver otras opciones», que prometería algo que no hay.
-  // Solo si la base local no tiene otras promociones vigentes: cargadas a
-  // mano, también le aplican a este producto y no hay forma de saber cuántas.
+  // El de $ 5.000 no llega al mínimo de Go Cuotas. Solo si la base local no
+  // tiene otras promociones vigentes: también le aplicarían a este producto.
   const [{ ajenas }] = await datos.sql<{ ajenas: number }[]>`
     SELECT count(*)::int AS ajenas
       FROM payment_promotions pp
@@ -179,7 +165,6 @@ test("se carga en el panel y la ficha la muestra debajo del precio", async ({
     });
   }
 
-  // Desactivada, desaparece de la ficha.
   await abrirPromociones(page);
   await page
     .getByRole("button", { name: "Desactivar 6 cuotas sin interés" })
@@ -187,7 +172,7 @@ test("se carga en el panel y la ficha la muestra debajo del precio", async ({
   await expect(page.getByText("Desactivada", { exact: true })).toBeVisible();
   await page.goto(`/productos/${producto.slug}`);
   await expect(page.getByText(/Go Cuotas/)).toHaveCount(0);
-  // Pasa a la vista la que queda, si no hay una ajena que le gane.
+  // Si no hay una ajena que le gane.
   if (ajenas === 0) {
     await expect(page.getByText(naranjaEnLaFicha)).toBeVisible();
   }

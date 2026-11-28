@@ -7,12 +7,9 @@ import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 import { existe, jpeg } from "@/tests/apoyo/imagenes";
 
 /**
- * F5.9 — La foto de perfil: una sola versión, cuadrada, y sin huérfanos.
- *
- * Contra Storage de verdad, como los logos (`imagenes.test.ts`): lo que puede
- * salir mal es que la foto vieja quede en el bucket al cambiarla o al
- * quitarla, y eso un doble no lo muestra. La ruta que recibe el archivo no se
- * prueba acá —necesita sesión— sino en `tests/e2e/foto-de-perfil.spec.ts`.
+ * La foto de perfil, contra Storage de verdad: un doble no mostraría la foto
+ * vieja que queda en el bucket. La ruta (necesita sesión) se prueba en
+ * `tests/e2e/foto-de-perfil.spec.ts`.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
@@ -59,8 +56,8 @@ describe("la conversión", () => {
     expect({ ancho: v.ancho, alto: v.alto }).toEqual({ ancho: 256, alto: 256 });
   });
 
-  // Con `withoutEnlargement`, como las de producto, una foto chica salía con
-  // su proporción y el círculo la deformaba.
+  // Con `withoutEnlargement` una foto chica conserva su proporción y el
+  // círculo la deforma.
   test("una foto más chica que 256px también sale cuadrada", async () => {
     const p = await procesarImagen(await jpeg(100, 200, 90), TAMANOS_PERFIL);
     const meta = await sharp(p.versiones[0].cuerpo).metadata();
@@ -69,8 +66,7 @@ describe("la conversión", () => {
 
   test("pesa una fracción de una foto de producto", async () => {
     const p = await procesarImagen(await jpeg(3000, 4000, 90), TAMANOS_PERFIL);
-    // Con ruido aleatorio, que es el peor caso para cualquier compresor: una
-    // foto de una cara pesa bastante menos.
+    // Ruido aleatorio: el peor caso para cualquier compresor.
     expect(p.versiones[0].bytes).toBeLessThan(60 * 1024);
   });
 });

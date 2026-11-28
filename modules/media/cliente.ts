@@ -1,18 +1,7 @@
 import { TAMANO_MAXIMO, TIPOS_ACEPTADOS } from "@/modules/media/tamanos";
 
-/**
- * El lado del navegador de la subida — RF-17, §9.1.
- *
- * Acá vive lo que el cliente necesita para subir una imagen, una sola vez: el
- * rechazo temprano y el envío con progreso. Lo tenía el diálogo de marcas
- * desde F2.1; con las variantes de F2.4 pasó a haber un segundo consumidor, y
- * dos copias de la misma regla son dos reglas el día que una se corrige.
- *
- * NO ES UNA BARRERA. El servidor vuelve a mirar todo, y además mira los bytes
- * y no el tipo que declara el navegador (`modules/media/validar.ts`). Esto es
- * una cortesía: contestar sin hacer esperar diez megabytes de subida para
- * decir que el archivo no servía.
- */
+// No es una barrera: el servidor vuelve a validar mirando los bytes
+// (`validar.ts`). Esto evita subir diez megas para enterarse del rechazo.
 
 export function motivoDeRechazo(archivo: File): string | null {
   if (!(TIPOS_ACEPTADOS as readonly string[]).includes(archivo.type)) {
@@ -25,12 +14,7 @@ export function motivoDeRechazo(archivo: File): string | null {
   return null;
 }
 
-/**
- * Las dos fases que ve quien sube, y son distintas de verdad: primero salen
- * los bytes por la red, y después el servidor los convierte a tres tamaños y
- * los sube a Storage (§9.1). En una foto de 8 MB la segunda no es
- * instantánea: quedarse en «100%» sin decir nada parece que se colgó.
- */
+/** «optimizando»: los bytes ya salieron y el servidor convierte y sube a Storage. */
 export type Progreso = {
   fase: "subiendo" | "optimizando";
   porcentaje: number;
@@ -40,20 +24,14 @@ export type ResultadoDeSubida =
   { ok: true; data: unknown } | { ok: false; message: string };
 
 /**
- * Sube un archivo al Route Handler informando el avance.
- *
- * **Con `XMLHttpRequest` y no con `fetch`, a propósito.** `fetch` no expone el
- * progreso de subida: el cuerpo como stream necesita HTTP/2 y `duplex`, y no
- * está en todos los navegadores. RF-17 pide progreso, así que se usa la API
- * que lo da. Es el único `XMLHttpRequest` del proyecto y este comentario es el
- * motivo.
+ * `XMLHttpRequest` y no `fetch`, a propósito: `fetch` no expone el progreso
+ * de subida en todos los navegadores, y RF-17 lo pide.
  */
 export function subirImagen(
   campos: Record<string, string>,
   archivo: File,
   alProgreso?: (p: Progreso) => void,
-  // La foto de perfil (F5.9) va a su propia ruta: la del panel es solo de
-  // administradoras.
+  // La foto de perfil va a su propia ruta: la del panel es solo de administradoras.
   ruta: "/api/admin/upload" | "/api/mi-cuenta/foto" = "/api/admin/upload",
 ): Promise<ResultadoDeSubida> {
   return new Promise((resolve) => {
@@ -74,7 +52,6 @@ export function subirImagen(
       });
     };
 
-    // Terminaron de salir los bytes; el trabajo del servidor recién empieza.
     xhr.upload.onload = () =>
       alProgreso?.({ fase: "optimizando", porcentaje: 100 });
 

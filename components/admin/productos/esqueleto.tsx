@@ -1,21 +1,13 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * El fantasma del formulario de producto — DR §8.
- *
- * Vive acá y no en cada `loading.tsx` porque **lo usan las dos pantallas**,
- * el alta y la edición, y el formulario real también es uno solo
- * (`FormularioDeProducto`). Con una copia por pantalla, el día que el
- * formulario suma una sección hay que acordarse de dos lugares.
- *
- * Es la tarjeta de `formulario.tsx` —datos, y los apartados de precio,
- * descripción y publicación— con su alto real, y la barra de acciones al pie
- * y adentro, como el formulario desde el 2026-11-13.
+ * Lo usan el alta y la edición. Copia la tarjeta de `formulario.tsx` con su
+ * alto real: si el formulario cambia, cambia esto también.
  */
 export function EsqueletoDeFormularioDeProducto() {
   return (
     <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
-      {/* Datos del producto: nombre, y marca y categoría en dos columnas. */}
+      {/* Datos: nombre, marca y categoría. */}
       <Skeleton className="h-6 w-40" />
       <Campo etiqueta="w-20" />
       <div className="grid gap-4 sm:grid-cols-2">
@@ -23,7 +15,7 @@ export function EsqueletoDeFormularioDeProducto() {
         <Campo etiqueta="w-20" />
       </div>
 
-      {/* Precio y descuento, también en dos columnas. */}
+      {/* Precio y descuento. */}
       <Seccion titulo="w-20">
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo etiqueta="w-14" />
@@ -32,7 +24,7 @@ export function EsqueletoDeFormularioDeProducto() {
         <Skeleton className="h-14 w-full rounded-panel-card" />
       </Seccion>
 
-      {/* Descripción: barra de herramientas y caja de texto. */}
+      {/* Descripción. */}
       <Seccion titulo="w-32" ayuda>
         <div className="overflow-hidden rounded-panel-control border border-border">
           <div className="h-11 border-b border-border bg-surface-sunken" />
@@ -40,8 +32,7 @@ export function EsqueletoDeFormularioDeProducto() {
         </div>
       </Seccion>
 
-      {/* Publicación: son DOS casillas —activo y destacado—, y cada una lleva
-          su renglón de ayuda debajo del rótulo. */}
+      {/* Publicación: activo y destacado, cada una con su ayuda. */}
       <Seccion titulo="w-28">
         {["w-44", "w-36"].map((ancho) => (
           <div key={ancho} className="flex items-start gap-3">
@@ -62,13 +53,12 @@ export function EsqueletoDeFormularioDeProducto() {
   );
 }
 
-/** Un apartado: la línea, su título en chico y sus campos. */
 function Seccion({
   titulo,
   ayuda,
   children,
 }: {
-  /** El ancho del título fantasma, para que no midan todos lo mismo. */
+  /** Clase de ancho del título fantasma. */
   titulo: string;
   ayuda?: boolean;
   children: React.ReactNode;

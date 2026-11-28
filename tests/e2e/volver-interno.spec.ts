@@ -3,12 +3,9 @@ import { expect, test } from "./apoyo/test";
 import { datosDePrueba } from "./apoyo/datos";
 
 /**
- * La vuelta después de ingresar no saca de la tienda — §16, `lib/destino.ts`.
- *
- * `volver` viaja en la dirección: cualquiera puede mandar un enlace a nuestro
- * `/ingresar` con el destino que quiera. `//otro.com` empieza con `/` y, hasta
- * el 2026-11-17, el formulario de ingreso lo aceptaba: después de escribir la
- * contraseña en la tienda, la persona terminaba en otro sitio.
+ * La vuelta después de ingresar no saca de la tienda (`lib/destino.ts`).
+ * Cualquiera puede mandar un enlace a `/ingresar` con el `volver` que quiera,
+ * y `//otro.com` empieza con `/`.
  */
 
 const datos = datosDePrueba();

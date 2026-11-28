@@ -9,24 +9,6 @@ import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { Button } from "@/components/ui/button";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
 
-/**
- * La vista previa de la marca — RF-39, TS §9.6.
- *
- * **La arma el servidor, con la misma función que la subida.** Una vista
- * hecha acá con CSS se vería parecida; la del servidor es la que va a
- * quedar. Lo que se manda son las capas que están en pantalla, sin guardar:
- * se prueba antes de guardar, no después.
- *
- * **La foto se achica una vez, acá, a 1400px** —el ancho de `-detail`—,
- * antes de mandarla: cada movimiento de un control pide una vista nueva, y
- * mandar 8 MB por cada una haría que el deslizador se sintiera pegajoso.
- *
- * **Arranca con la última foto de producto que se subió sin marca**, que el
- * servidor lee por su id: una vista previa vacía era media pantalla de caja
- * punteada que no decía nada (2026-11-11). Se cambia por una propia cuando
- * se quiere.
- */
-
 /** Cuánto se espera a que se deje de mover un control antes de pedir. */
 const ESPERA_MS = 300;
 const ANCHO = 1400;
@@ -48,6 +30,12 @@ async function achicar(archivo: File): Promise<Blob> {
   );
 }
 
+/**
+ * La vista previa de la marca — RF-39, TS §9.6. La arma el servidor con la
+ * misma función que la subida, con las capas en pantalla sin guardar. La foto
+ * se achica acá a 1400px antes de mandarla, porque cada movimiento de un
+ * control pide una vista nueva.
+ */
 export function VistaPrevia({
   capas,
   muestra,
@@ -61,8 +49,7 @@ export function VistaPrevia({
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Las capas como texto: el efecto depende de un primitivo y no se dispara
-  // por un arreglo nuevo con los mismos valores.
+  // Como texto: el efecto no se dispara por un arreglo nuevo con los mismos valores.
   const pedido = JSON.stringify(capas);
 
   const muestraId = muestra?.id ?? null;
@@ -109,8 +96,6 @@ export function VistaPrevia({
     };
   }, [foto, muestraId, pedido]);
 
-  // Cada vista se suelta cuando llega la siguiente, y la última al irse de
-  // la pantalla: es la limpieza del efecto que depende de ella.
   useEffect(
     () => () => {
       if (resultado) URL.revokeObjectURL(resultado);
@@ -186,14 +171,12 @@ export function VistaPrevia({
           aria-busy={cargando}
         >
           {resultado ? (
-            // `<img>` y no `next/image`: es un `blob:` recién armado, y el
-            // optimizador no tiene nada que hacer con él.
+            // `<img>` y no `next/image`: es un `blob:` recién armado.
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={resultado}
               alt="La foto de prueba con la marca de agua puesta"
-              // Pegada arriba y ancha, una foto vertical pasaría el alto de
-              // la pantalla y se cortaría el pie, justo donde va el logo.
+              // Con tope de alto: una foto vertical cortaría el pie, donde va el logo.
               className="mx-auto block h-auto max-h-[calc(100dvh-12rem)] w-auto max-w-full"
             />
           ) : (

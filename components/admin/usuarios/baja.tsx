@@ -19,18 +19,9 @@ import {
 } from "@/modules/users/panel/actions";
 
 /**
- * Ejecutar y revertir la baja de una cuenta — FS RF-34, RN-13 · TS §13.5b.
- * Tarea F7.9.
- *
- * **No hay «dar de baja» acá**, y es la decisión que ordena toda la pantalla
- * (2026-09-17): la baja la pide la persona y la administradora la ejecuta. Si
- * este control pudiera iniciarla sería un segundo bloqueo con otro nombre, y
- * alguien leería «te diste de baja» sin haberlo pedido, que es exactamente lo
- * que RN-13 no quiere.
- *
- * **Tampoco pide motivo**, al revés que el bloqueo (F7.7): el motivo ya está
- * escrito y es el del comprador. Lo que el diálogo hace es contar qué va a
- * pasar —se le cierra la sesión, no se borra nada— antes de que sea tarde.
+ * Ejecutar y revertir la baja de una cuenta — RF-34, RN-13, TS §13.5b. No hay
+ * «dar de baja» acá: la baja la pide la persona y la administradora la
+ * ejecuta. No pide motivo: ya lo escribió el comprador.
  */
 export function BajaDeLaCuenta({
   id,
@@ -44,9 +35,8 @@ export function BajaDeLaCuenta({
 }) {
   const [abierto, setAbierto] = useState(false);
   /**
-   * Qué preguntaba el diálogo cuando se abrió, y no `dadoDeBaja` a secas: el
-   * mismo motivo que en el bloqueo (F7.7), donde el diálogo alcanzaba a darse
-   * vuelta mientras se desvanecía.
+   * Qué preguntaba el diálogo al abrirse: si no, se da vuelta mientras se
+   * desvanece (ver `BloqueoDeLaCuenta`).
    */
   const [preguntando, setPreguntando] = useState<"ejecutar" | "revertir">(
     "ejecutar",
@@ -72,8 +62,8 @@ export function BajaDeLaCuenta({
         return;
       }
 
-      // El flotante confirma; la caja de abajo se queda para el caso en que
-      // Auth no respondió, que hay que ir a revisar (§6.15).
+      // El flotante confirma; la caja de abajo se queda si Auth no respondió,
+      // que hay que ir a revisar (DR §6.15).
       avisar(`Diste de baja la cuenta de ${nombre}.`);
 
       setAviso(

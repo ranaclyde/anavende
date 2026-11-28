@@ -1,18 +1,8 @@
 /**
- * Sondeo de Resend — F0.11, TECHNICAL-SPEC §14, V2.
- *
- * F0.11 pide que «un email de verificación llegue a una casilla de verdad», y
- * ese email lo emite GoTrue por SMTP (E1, §14). Antes de tocar la
- * configuración de Supabase conviene separar las dos mitades del problema,
- * porque si falla el conjunto no se sabe cuál de las dos fue:
- *
- *   1. ¿La API key sirve y el dominio está verificado?
- *   2. ¿Resend acepta mandarle a una dirección cualquiera —no solo a la
- *      casilla de la cuenta— desde `RESEND_FROM`?
- *
- * Las dos se responden desde acá, sin VPS y sin instalar el SDK: es la API
- * REST y `fetch` alcanza. Si esto pasa y el registro en producción igual no
- * manda el email, el problema está en el SMTP de Supabase y no en Resend.
+ * Prueba Resend por su cuenta (TECHNICAL-SPEC §14): la clave, el dominio y un
+ * envío real a una casilla cualquiera. Si esto pasa y el alta no manda el
+ * email, el problema está en el SMTP de GoTrue. La clave de Resend es la
+ * misma en local y en producción: el envío sale de verdad.
  *
  *   npx tsx scripts/sondear-resend.mts tu-casilla@gmail.com
  */
@@ -48,7 +38,6 @@ const api = (ruta: string, init?: RequestInit) =>
     },
   });
 
-// ── 1. La clave y el estado del dominio ────────────────────────────────
 console.log("── El dominio (F0.11) ──");
 
 const r = await api("/domains");
@@ -84,7 +73,6 @@ if (remitente) {
   ok(false, "Falta RESEND_FROM en .env.local");
 }
 
-// ── 2. Un envío de verdad ──────────────────────────────────────────────
 if (!destino) {
   console.log(
     "\nℹ️  Sin destinatario no se manda nada. Para probar el envío:\n" +

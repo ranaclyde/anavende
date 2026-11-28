@@ -19,18 +19,13 @@ import {
 } from "@/tests/apoyo/catalogo";
 
 /**
- * F4.1 — las cinco operaciones de stock, contra Postgres de verdad.
- *
- * `TECHNICAL-SPEC.md` §17.1 lo pide así y no con un doble de prueba: lo que se
- * verifica son transacciones y `CHECK` constraints, y un *mock* diría que sí a
- * todo. El «Hecho cuando» de F4.1 son dos cosas —las cinco operaciones, y que
- * cada una escriba en `stock_movements` EN LA MISMA TRANSACCIÓN—, así que cada
- * bloque de acá comprueba las dos.
+ * Contra Postgres de verdad (TECHNICAL-SPEC §17.1): se prueban transacciones y
+ * `CHECK`, que un mock aceptaría siempre. Cada bloque comprueba la operación y
+ * su asiento en `stock_movements`, en la misma transacción.
  */
 
 afterEach(limpiar);
 
-/** Azúcar: casi todo se ejecuta dentro de una transacción de una operación. */
 function enTransaccion<T>(
   fn: (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => Promise<T>,
 ): Promise<T> {
@@ -77,7 +72,6 @@ describe("reservar", () => {
       enTransaccion((tx) => reservar(tx, { variantId, quantity: 2 })),
     ).rejects.toMatchObject({ code: "INSUFFICIENT_STOCK" });
 
-    // Ni el contador se movió ni quedó un asiento a medias.
     expect(await contadores(variantId)).toEqual({
       stockTotal: 5,
       reservedStock: 4,
@@ -139,8 +133,8 @@ describe("liberar", () => {
   test("liberar más de lo reservado NO es un error de negocio", async () => {
     const { variantId } = await unaVariante({ total: 10, reservado: 2 });
 
-    // Nadie tiene que ver esto en pantalla: significa que la orden y el stock
-    // se desincronizaron, y eso se arregla, no se muestra.
+    // Significa que la orden y el stock se desincronizaron: se arregla, no se
+    // muestra en pantalla.
     const fallo = await enTransaccion((tx) =>
       liberar(tx, { variantId, quantity: 3 }),
     ).catch((e: unknown) => e);
@@ -204,9 +198,8 @@ describe("vender", () => {
     });
 
     test("puede dejar el total NEGATIVO, y eso es lo correcto", async () => {
-      // §5.4 decidió no poner CHECK de no-negatividad para no obligar a la
-      // vendedora a mentirle al sistema sobre una venta que ya ocurrió. El
-      // negativo es una señal de discrepancia, no un dato inválido.
+      // Sin CHECK de no-negatividad a propósito (§5.4): el negativo es una
+      // discrepancia de una venta ya ocurrida, no un dato inválido.
       const { variantId } = await unaVariante({ total: 1 });
 
       await enTransaccion((tx) =>
@@ -220,15 +213,8 @@ describe("vender", () => {
     });
 
     test("le descuenta a SU variante y a ninguna otra", async () => {
-      // Este test existe por un error de verdad, encontrado en F7.4 al cargar
-      // la primera orden manual del navegador: se vendieron 2 unidades de un
-      // color y otro color del mismo producto bajó 2 también, sin asiento.
-      //
-      // La causa era de precedencia: la condición de esta operación es la
-      // única con un `OR` adentro, y `WHERE id = X AND a OR b` se lee como
-      // `(id = X AND a) OR b` — la segunda rama actualizaba toda variante que
-      // la cumpliera. Los otros tests no lo veían porque miran una sola
-      // variante, y con una sola no hay nada más que romper.
+      // La condición de `vender` es la única con un `OR`: sin paréntesis,
+      // `WHERE id = X AND a OR b` actualiza otras variantes. Por eso el testigo.
       const vendida = await unaVariante({ total: 10 });
       const testigo = await unaVariante({ total: 3 });
 
@@ -251,9 +237,8 @@ describe("vender", () => {
     });
 
     test("pero no puede dejar el total por debajo de lo comprometido", async () => {
-      // Bajar de 10 a 4 con 6 reservadas está bien; a 3 no, porque esas 6
-      // unidades ya tienen dueño. Sale como resultado del negocio y no como
-      // una violación de integridad que Sentry contaría como incidente.
+      // Las 6 reservadas ya tienen dueño. Sale como error de negocio, no como
+      // violación de integridad que Sentry contaría como incidente.
       const { variantId } = await unaVariante({ total: 10, reservado: 6 });
 
       await expect(
@@ -373,11 +358,8 @@ describe("ajustar", () => {
   });
 
   test("ajusta una variante recién insertada en la MISMA transacción", async () => {
-    // Es exactamente lo que hace el alta de variantes del panel desde F4.1:
-    // la fila nace en cero y el número del formulario entra como movimiento.
-    // El `SELECT … FOR UPDATE` de `ajustar()` tiene que ver una fila que
-    // todavía no commiteó nadie, que es la parte que no se ve leyendo el
-    // código.
+    // Como el alta del panel: el `SELECT … FOR UPDATE` de `ajustar()` tiene que
+    // ver una fila que todavía no se commiteó.
     const productId = await unProducto();
 
     const variantId = await enTransaccion(async (tx) => {
@@ -404,8 +386,7 @@ describe("ajustar", () => {
   });
 
   test("un negativo escrito a mano es un error de tipeo, no una discrepancia", async () => {
-    // RF-16. Que la columna acepte un total negativo (RF-24) es otra cosa:
-    // ahí el negativo lo PRODUCE una venta ya ocurrida.
+    // RF-16. El negativo que acepta la columna (RF-24) lo produce una venta.
     const { variantId } = await unaVariante({ total: 3 });
 
     await expect(
@@ -426,9 +407,8 @@ describe("lo que vale para las cinco", () => {
   });
 
   test("si la transacción se cae, el stock y el asiento se caen juntos", async () => {
-    // §8.3 regla 1: todo o nada. Es la propiedad que hace que el libro mayor
-    // signifique algo — un asiento que sobrevive a un cambio revertido es
-    // peor que no tener libro.
+    // §8.3 regla 1: un asiento que sobrevive a un cambio revertido es peor que
+    // no tener libro.
     const { variantId } = await unaVariante({ total: 10 });
 
     await expect(
@@ -468,9 +448,8 @@ describe("lo que vale para las cinco", () => {
       ["devolucion", 1],
     ]);
 
-    // Cada asiento guarda el estado que dejó, y el último tiene que ser el
-    // estado actual. Es la comprobación que detecta un cambio hecho SIN
-    // asentar, que es la falla que rompe la auditoría entera.
+    // El último asiento tiene que ser el estado actual: así se detecta un
+    // cambio hecho SIN asentar.
     expect(libro.at(-1)).toMatchObject({ stockAfter: 8, reservedAfter: 0 });
   });
 });

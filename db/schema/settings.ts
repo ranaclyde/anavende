@@ -12,13 +12,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-/** Configuración y contenido — TECHNICAL-SPEC §5.9. */
-
-/**
- * Una sola fila, garantizada por el CHECK. Acá viven los valores que la
- * vendedora tiene que poder cambiar sin desplegar (RF-20): el número de
- * WhatsApp, el email de avisos, el umbral de stock bajo y las redes sociales.
- */
+/** Una sola fila, garantizada por el CHECK (RF-20). */
 export const siteSettings = pgTable(
   "site_settings",
   {
@@ -26,26 +20,12 @@ export const siteSettings = pgTable(
     whatsappNumber: text("whatsapp_number").notNull(),
     adminNotificationEmail: text("admin_notification_email").notNull(),
     lowStockThreshold: integer("low_stock_threshold").notNull().default(3),
-    /**
-     * Tienda fuera de servicio para el público, y normal para quien
-     * administra (F2.7b). Lo lee `proxy.ts` en cada pedido que no sea de una
-     * ruta que siempre pasa; ver `modules/settings/mantenimiento.ts`.
-     */
+    /** Lo lee `proxy.ts`; ver `modules/settings/mantenimiento.ts`. */
     maintenanceMode: boolean("maintenance_mode").notNull().default(false),
-    /**
-     * Los perfiles que el pie de la tienda enlaza debajo del logo (2026-10-20).
-     * Opcionales: `null` = esa red no se muestra. Se guardan como enlace
-     * completo y normalizado (`modules/settings/schemas.ts`), así la tienda los
-     * pone en un `href` sin armar nada.
-     */
+    /** Enlace completo y normalizado (`modules/settings/schemas.ts`). */
     facebookUrl: text("facebook_url"),
     instagramUrl: text("instagram_url"),
-    /**
-     * Las escenas por fecha (F9.5, RF-38). Se encienden solas en su período
-     * (`lib/escenas.ts`), y esto es lo que deja apagarlas desde el panel.
-     * `true` por defecto, igual que el respaldo sin fila: una fecha que no se
-     * apagó a propósito se ve.
-     */
+    /** Se encienden solas en su período (`lib/escenas.ts`); esto las apaga. */
     halloweenScene: boolean("halloween_scene").notNull().default(true),
     christmasScene: boolean("christmas_scene").notNull().default(true),
     easterScene: boolean("easter_scene").notNull().default(true),
@@ -59,7 +39,7 @@ export const siteSettings = pgTable(
 export const paymentMethods = pgTable("payment_methods", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  /** La CLAVE en Storage, no la URL — igual que el logo de marca (§9.4). */
+  /** CLAVE en Storage, no URL (§9.4). */
   logoKey: text("logo_key"),
   description: text("description"),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -67,21 +47,8 @@ export const paymentMethods = pgTable("payment_methods", {
 }).enableRLS();
 
 /**
- * Promociones de cuotas de un medio de pago — RF-40, F2.17.
- *
- * Tan informativas como el medio de pago (RN-01): no cambian el precio, no
- * cobran y ninguna orden las nombra. Por eso borrar el medio se las lleva
- * (`cascade`) sin preguntar por nadie más.
- *
- * **El recargo es fijo y en porcentaje** (decisión del 2026-11-13): el que el
- * medio de pago aplica siempre a ese plan. Un plan cuyo recargo depende de la
- * tarjeta no se carga, para no mostrar una cuota que no coincide con la que
- * se termina pagando.
- *
- * **Las fechas son `date` y se comparan contra el día de Argentina**, no
- * contra un instante: «hasta el 30 de noviembre» incluye todo el 30 acá,
- * aunque en UTC ya sea 1 de diciembre. Sin `ends_on`, no vence (el plan Z de
- * Naranja X no tiene fecha de fin).
+ * Promociones de cuotas (RF-40). Las fechas son `date` y se comparan contra el
+ * día de Argentina, no contra un instante. Sin `ends_on`, no vence.
  */
 export const paymentPromotions = pgTable(
   "payment_promotions",
@@ -90,14 +57,10 @@ export const paymentPromotions = pgTable(
     paymentMethodId: uuid("payment_method_id")
       .notNull()
       .references(() => paymentMethods.id, { onDelete: "cascade" }),
-    /**
-     * El plan del medio de pago, cuando no es el medio entero: «Plan Z» de
-     * Naranja X, que es de una de sus tarjetas. La ficha dice «con Plan Z de
-     * NaranjaX». `null` = la promoción es del medio, sin aclaración.
-     */
+    /** «Plan Z» de Naranja X. `null` = la promoción es del medio entero. */
     planName: text("plan_name"),
     installments: integer("installments").notNull(),
-    /** `0` = sin interés. Texto con dos decimales, como los montos (§7.2). */
+    /** Fijo para el plan. `0` = sin interés. */
     surchargePct: numeric("surcharge_pct", { precision: 5, scale: 2 })
       .notNull()
       .default("0"),
@@ -135,7 +98,7 @@ export const paymentPromotions = pgTable(
   ],
 ).enableRLS();
 
-/** Garantías, términos, privacidad y cómo comprar (RF-29). Markdown. */
+/** Markdown (RF-29). */
 export const legalPages = pgTable("legal_pages", {
   id: uuid("id").primaryKey().defaultRandom(),
   slug: text("slug").notNull().unique(),
@@ -147,13 +110,8 @@ export const legalPages = pgTable("legal_pages", {
 }).enableRLS();
 
 /**
- * Marca de agua — RF-39, TECHNICAL-SPEC §9.6.
- *
- * **Tabla propia y no una columna de `site_settings`.** Esa fila la crea la
- * configuración con un WhatsApp y un email que ninguna migración puede
- * inventar, y el interruptor no los tiene: sin fila, prender la marca no
- * tendría dónde escribirse. Acá la fila se crea con el primer cambio.
- * Sin fila, la marca está apagada.
+ * Marca de agua (§9.6). Tabla propia: la fila de `site_settings` exige datos
+ * que el interruptor no tiene. Sin fila, la marca está apagada.
  */
 export const watermarkSettings = pgTable(
   "watermark_settings",
@@ -167,15 +125,12 @@ export const watermarkSettings = pgTable(
   (t) => [check("watermark_settings_singleton", sql`${t.id} = 1`)],
 ).enableRLS();
 
-/**
- * La biblioteca de marcas de agua: imágenes con transparencia, guardadas una
- * sola vez en WEBP sin pérdida (§9.6). Quedan hasta que se borran a mano.
- */
+/** Imágenes con transparencia, en WEBP sin pérdida (§9.6). */
 export const watermarkImages = pgTable("watermark_images", {
   id: uuid("id").primaryKey().defaultRandom(),
-  /** La CLAVE en Storage, sin sufijo (§9.4). */
+  /** CLAVE en Storage, sin sufijo (§9.4). */
   storageKey: text("storage_key").notNull(),
-  /** El nombre del archivo que se subió, para reconocerla en la lista. */
+  /** El nombre del archivo que se subió. */
   name: text("name").notNull(),
   width: integer("width").notNull(),
   height: integer("height").notNull(),
@@ -184,10 +139,7 @@ export const watermarkImages = pgTable("watermark_images", {
     .defaultNow(),
 }).enableRLS();
 
-/**
- * Las capas de la marca, en orden: la primera queda abajo. Borrar la imagen
- * se lleva sus capas (el panel avisa antes).
- */
+/** En orden: la primera queda abajo. */
 export const watermarkLayers = pgTable(
   "watermark_layers",
   {

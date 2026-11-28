@@ -4,17 +4,10 @@ import { join, relative } from "node:path";
 import { describe, expect, test } from "vitest";
 
 /**
- * F10.5 — Cada página del panel controla el rol por su cuenta. TS §13.3, §16.
- *
  * El layout de `/admin` no alcanza: Next renderiza la página en paralelo y
- * sus datos viajan aunque el layout dé 404 (ver `exigirAdmin` en
- * `lib/session.ts`, y `tests/e2e/panel-cerrado.spec.ts`, que prueba el
- * ataque de verdad). Este test es el que impide que una página nueva se
- * agregue sin el control: no hay que acordarse.
- *
- * Mira el texto del archivo y no el comportamiento —eso lo hace el E2E—,
- * así que corre en milisegundos y cubre todas las páginas, incluidas las
- * que el E2E no visita.
+ * sus datos viajan aunque el layout dé 404 (TS §13.3). Este test impide que
+ * una página nueva se agregue sin el control; mira el texto del archivo, y el
+ * ataque de verdad lo prueba `tests/e2e/panel-cerrado.spec.ts`.
  */
 
 const RAIZ = join(process.cwd(), "app", "admin");
@@ -34,9 +27,8 @@ function desde(texto: string, firma: RegExp): string | null {
 }
 
 /**
- * Lo primero que hace la función es `await exigirAdmin()`: antes de él solo
- * puede estar la firma. Si fuera después de leer algo, ese algo ya habría
- * corrido para quien no es administradora.
+ * Antes de `await exigirAdmin()` solo puede estar la firma: lo que se leyera
+ * antes ya habría corrido para quien no es administradora.
  */
 function loPrimeroEsElControl(cuerpo: string): boolean {
   const apertura = cuerpo.search(/\) (?::[^{]*)?\{\n/);

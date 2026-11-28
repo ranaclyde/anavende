@@ -17,11 +17,8 @@ import { listarDirecciones } from "@/modules/users/direcciones/operaciones";
 export const metadata: Metadata = { title: "Nueva dirección" };
 
 /**
- * Cargar una dirección — RF-09, F5.3.
- *
- * Quién la recibe y el teléfono vienen precargados con los de la cuenta:
- * casi siempre es la misma persona, y si no, se cambian. Con 3 direcciones
- * no hay formulario: vuelve a la lista, que dice por qué.
+ * Con el tope de direcciones no hay formulario: vuelve a la lista, que dice
+ * por qué.
  */
 export default async function NuevaDireccion() {
   const sesion = await getSession();
@@ -33,8 +30,8 @@ export default async function NuevaDireccion() {
 
   const { profile } = sesion;
 
-  // Con la baja pedida (F5.8) la libreta se mira y no se cambia: la lista
-  // dice por qué, y guardar lo rechazaría el envoltorio de acciones.
+  // Con la baja pedida la libreta se mira y no se cambia; guardar lo
+  // rechazaría igual el envoltorio de acciones.
   if (profile.closureRequestedAt) redirect("/mi-cuenta/direcciones");
 
   const direcciones = await listarDirecciones(profile.id);

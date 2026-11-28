@@ -9,17 +9,10 @@ import { limpiar, unaVariante } from "@/tests/apoyo/catalogo";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 
 /**
- * F5.6 — la revisión del carrito al abrirlo. RF-08, RN-09 · §5.5.
- *
- * «Hecho cuando»: precio cambiado avisa y toma el vigente; stock reducido
- * ajusta; desactivado se aparta en «Ya no disponible» hasta que el comprador
- * lo quita.
- *
- * Cada aviso se prueba DOS veces: que sale, y que la segunda revisión ya no
- * lo trae. «Se muestran una vez» (RF-08) es la mitad del requisito, y es la
- * mitad que se rompe sin que nadie lo note.
+ * Cada aviso se prueba dos veces: que sale, y que la segunda revisión ya no lo
+ * trae. «Se muestran una vez» (RF-08) es la mitad que se rompe sin que nadie
+ * lo note.
  */
-
 afterEach(async () => {
   await limpiarCompradores();
   await limpiar();
@@ -115,7 +108,6 @@ describe("revisar el carrito", () => {
   });
 
   test("con menos stock baja la cantidad a lo que queda, y avisa una vez", async () => {
-    // El bug que encontraste el 2026-09-12: 3 en el carrito, 1 en stock.
     const { userId } = await unComprador();
     const { variantId, productId } = await unaVariante({ total: 5 });
     await agregar(userId, { variantId, cantidad: 3 });
@@ -179,8 +171,8 @@ describe("revisar el carrito", () => {
        WHERE id = ${agotado.variantId}`);
 
     expect(await revisarCarrito(userId)).toEqual([]);
-    // La cantidad no se toca: bajarla a cero no se puede, y borrarlo sería
-    // destructivo. El comprador puede querer esperar a que vuelva.
+    // La cantidad no se toca: no puede bajar a cero, y borrarlo sería
+    // destructivo; el comprador puede querer esperar a que vuelva.
     expect(await cantidadEnElCarrito(userId, agotado.variantId)).toBe(2);
 
     const carrito = await leerCarrito(userId);
@@ -200,8 +192,8 @@ describe("revisar el carrito", () => {
     await agregar(userId, { variantId: retirado.variantId, cantidad: 2 });
     await agregar(userId, { variantId: otro.variantId, cantidad: 1 });
 
-    // Se desactiva y además cambia de precio: de algo que ya no se vende no
-    // se avisa el precio, se avisa que no se vende.
+    // También cambia de precio: de algo que ya no se vende se avisa eso, no
+    // el precio.
     await db.execute(sql`
       UPDATE products SET is_active = false, price = '1500.00'
        WHERE id = ${retirado.productId}`);
@@ -234,7 +226,7 @@ describe("revisar el carrito", () => {
 
   test("la píldora cuenta lo mismo antes y después de la revisión", async () => {
     // El encabezado y la página se arman a la vez: la cuenta puede correr
-    // antes de que la revisión ajuste la cantidad, y tiene que dar lo mismo.
+    // antes de que la revisión ajuste la cantidad.
     const { userId } = await unComprador();
     const { variantId } = await unaVariante({ total: 5 });
     await agregar(userId, { variantId, cantidad: 3 });

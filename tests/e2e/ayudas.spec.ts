@@ -5,14 +5,9 @@ import { datosDePrueba, sufijo, type Cuenta, type Orden } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * F6.6 — Las guías de la ficha, el checkout y «Mis compras». FS RF-36.
- * F6.7 — Las del panel: la orden, la orden manual, el producto y las
- * devoluciones. FS RF-37.
- *
- * Lo que se prueba es lo que hace que una guía no moleste: **aparece sola la
- * primera vez y nunca más**, se cierra de cualquier forma, el foco entra al
- * globo y vuelve a «Ayuda» al cerrarla, y ese botón la reabre. Más axe
- * sobre el globo abierto, que es un diálogo que no está en `accesibilidad.spec`.
+ * Las guías de la tienda y del panel (FS RF-36, RF-37): **aparecen solas la
+ * primera vez y nunca más**, el foco entra y vuelve a «Ayuda», y axe sobre
+ * el globo, que `accesibilidad.spec` no ve.
  *
  * Los demás E2E arrancan con las guías vistas (`apoyo/test.ts`); este no.
  */
@@ -57,8 +52,7 @@ test.beforeAll(async () => {
     },
   ]);
 
-  // La guía de devoluciones necesita una: sobre una orden finalizada, como
-  // las de verdad (RF-25).
+  // La guía de devoluciones necesita una, sobre una orden finalizada.
   admin = await datos.unaCuenta("Administradora", "admin");
   const entregada = await datos.unaOrden(compradora, [
     {
@@ -100,13 +94,12 @@ test.afterAll(async () => {
 const globo = (page: Page) => page.getByRole("dialog");
 
 /**
- * axe sobre el globo, **con el fundido terminado**: a mitad de los 200 ms el
- * globo es semitransparente y axe mide el contraste contra lo que se ve a
- * través, que no es lo que lee nadie.
+ * **Con el fundido terminado**: a mitad, el globo es semitransparente y axe
+ * mide el contraste contra lo que se ve a través.
  */
 async function axeDelGlobo(page: Page): Promise<string[]> {
-  // Solo las del globo: con sesión, la cara de la cuenta del encabezado se
-  // anima para siempre y esperar a todas las de la página no terminaba nunca.
+  // Solo las del globo: con sesión, la cara del encabezado se anima para
+  // siempre y esperar a todas no terminaría nunca.
   await page.evaluate(() =>
     Promise.all(
       document
@@ -119,10 +112,9 @@ async function axeDelGlobo(page: Page): Promise<string[]> {
 }
 
 /**
- * Espera a que la pantalla esté hidratada sin abrir la guía. El botón existe
- * desde el servidor, así que verlo no alcanza: la guía se decide en un efecto,
- * después de hidratar, y eso no deja rastro en la pantalla cuando decide no
- * abrirse. Un segundo cubre de sobra ese margen en `next dev` ya compilado.
+ * El botón existe desde el servidor, así que verlo no alcanza: la guía se
+ * decide en un efecto después de hidratar, y no deja rastro cuando decide no
+ * abrirse. Un segundo cubre ese margen en `next dev` ya compilado.
  */
 async function sinGuia(page: Page): Promise<void> {
   await expect(page.getByRole("button", { name: "Ayuda" })).toBeVisible();
@@ -143,7 +135,6 @@ test("la ficha: aparece la primera vez, se recorre con teclado y no vuelve", asy
   await page.keyboard.press("Enter");
   await expect(globo(page)).toHaveAccessibleName("Comprá con tu cuenta");
 
-  // Esc la cierra, cuenta como vista y devuelve el foco a quien la reabre.
   await page.keyboard.press("Escape");
   await expect(globo(page)).toBeHidden();
   await expect(page.getByRole("button", { name: "Ayuda" })).toBeFocused();
@@ -151,11 +142,9 @@ test("la ficha: aparece la primera vez, se recorre con teclado y no vuelve", asy
   await page.reload();
   await sinGuia(page);
 
-  // «Ayuda» la vuelve a abrir desde el principio.
   await page.getByRole("button", { name: "Ayuda" }).click();
   await expect(globo(page)).toHaveAccessibleName("Elegí tu color");
 
-  // Hasta el final con «Siguiente» y «Listo».
   for (let i = 0; i < 4; i++) {
     const listo = page.getByRole("button", { name: "Listo" });
     if (await listo.isVisible()) break;
@@ -194,8 +183,8 @@ test("el globo entra a 320px sin desbordar", async ({ page }) => {
   expect((caja?.x ?? 0) + (caja?.width ?? 0)).toBeLessThanOrEqual(320);
   expect(await axeDelGlobo(page)).toEqual([]);
 
-  // La cruz, centrada en su círculo: Driver.js le escribe `display: block` en
-  // línea y, si le gana al `inline-flex`, el ícono se va arriba a la izquierda.
+  // Driver.js le escribe `display: block` en línea a la cruz: si le gana al
+  // `inline-flex`, el ícono se va arriba a la izquierda.
   const cerrar = page.getByRole("button", { name: "Cerrar la guía" });
   const circulo = await cerrar.boundingBox();
   const cruz = await cerrar.locator("svg").boundingBox();
@@ -232,7 +221,6 @@ test("el checkout y «Mis compras» tienen la suya, una vez cada una", async ({
   expect(await axeDelGlobo(page)).toEqual([]);
   await page.keyboard.press("Escape");
 
-  // Vistas las tres, ninguna vuelve.
   await page.goto("/checkout");
   await sinGuia(page);
   await page.goto("/mi-cuenta/compras");
@@ -249,8 +237,8 @@ test("el panel: la orden activa, con teclado, y una vez cada pantalla", async ({
   await expect(page.getByRole("button", { name: "Siguiente" })).toBeFocused();
   expect(await axeDelGlobo(page)).toEqual([]);
 
-  // Los cuatro pasos con el teclado: el foco vuelve a «Siguiente» en cada
-  // uno, y recién ahí el paso está armado para recibir la tecla.
+  // Recién con el foco de vuelta en «Siguiente» el paso está armado para
+  // recibir la tecla.
   for (const titulo of [
     "¿Te pidió algo más?",
     "Avisale los cambios",
@@ -276,7 +264,6 @@ test("el panel: la orden activa, con teclado, y una vez cada pantalla", async ({
   await expect(globo(page)).toHaveAccessibleName("Cada una con su orden");
   await page.keyboard.press("Escape");
 
-  // Vistas las cuatro, ninguna vuelve.
   await page.goto(`/admin/ordenes/${orden.numero}`);
   await sinGuia(page);
   await page.goto("/admin/devoluciones");

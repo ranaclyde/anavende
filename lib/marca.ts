@@ -1,23 +1,10 @@
-/**
- * El logo de AnaVende, en trazos — DESIGN-REFERENCE §2.3, F10.7c.
- *
- * Es la fuente de verdad: los componentes lo dibujan en línea y
- * `scripts/derivar-logo.mts` saca de acá los archivos (SVG, PNG, favicon).
- * Cómo se construyó, y por qué así, está en `docs/MARCA.md`.
- *
- * El isotipo es una caja de 1100×1100: borde de 33, división de 30 y
- * cuatro celdas de 502. La A y la V son de Figtree ExtraBold (800), con alto
- * de mayúscula de 330, centradas en su celda. El joystick y los auriculares
- * salen del logo original, vueltos simétricos y centrados por su caja.
- *
- * Cada pieza va en su propio trazo para poder moverla sola (la animación de
- * la primera carga). Se pintan todas con `fill-rule="evenodd"`.
- */
+// El logo en trazos: fuente de verdad para los componentes y para
+// `scripts/derivar-logo.mts`. Cómo se construyó está en `docs/MARCA.md`. Cada
+// pieza va en su trazo para animarla sola; todas con `fill-rule="evenodd"`.
 
 export const LADO_DEL_ISOTIPO = 1100;
 
 export const PIEZAS = {
-  /** El marco con las cuatro celdas caladas. */
   marco:
     "M18 0h1064a18 18 0 0 1 18 18v1064a18 18 0 0 1-18 18H18a18 18 0 0 1-18-18V18A18 18 0 0 1 18 0m18 33h496l3 3v496l-3 3H36l-3-3V36zm532 0h496l3 3v496l-3 3H568l-3-3V36zM36 565h496l3 3v496l-3 3H36l-3-3V568zm532 0h496l3 3v496l-3 3H568l-3-3V568z",
   a: "M195 449h-80l128-330h82l128 330h-80l-24-63H219zm89-235-40 105h80z",
@@ -31,12 +18,8 @@ export const PIEZAS = {
 export type Pieza = keyof typeof PIEZAS;
 
 /**
- * «AnaVende» en Figtree ExtraBold, convertida en trazo: no depende de que la
- * fuente cargue. Unidades propias: alto de mayúscula 1000, base en 0.
- *
- * Va en cuatro partes —«A», «na», «V», «ende»— ya en su lugar, con el
- * interletrado de la fuente: juntas son la palabra, y separadas la animación
- * del hero puede sacar la A y la V de la grilla y abrir el resto.
+ * «AnaVende» en trazo, con alto de mayúscula 1000 y base en 0. En cuatro
+ * partes ya en su lugar, para que la animación separe la A y la V.
  */
 const PARTES = {
   a: "M254 0L11 0L400-1000L646-1000L1034 0L791 0L719-190L327-190L254 0ZM523-713L401-393L643-393L523-713Z",
@@ -56,8 +39,7 @@ export const PALABRA = {
 };
 
 /**
- * Dónde están la A y la V dentro del isotipo: el centro de su celda y su
- * alto de mayúscula. Es de donde salen en la animación del hero.
+ * El centro de la celda de la A y la V en el isotipo, y su alto de mayúscula.
  */
 export const LETRAS_EN_EL_ISOTIPO = {
   a: [284, 284],
@@ -65,11 +47,7 @@ export const LETRAS_EN_EL_ISOTIPO = {
   mayuscula: 330,
 } as const;
 
-/**
- * La versión horizontal: isotipo y palabra. La mayúscula de la palabra mide
- * el 45 % del alto del isotipo y va centrada en él; la separación es el 30 %.
- * A 32 px de isotipo, mayúscula de 14,4 px y separación de 9,6 px.
- */
+/** Isotipo y palabra: proporciones respecto del alto del isotipo. */
 export const HORIZONTAL = {
   mayuscula: 0.45,
   separacion: 0.3,
@@ -79,13 +57,11 @@ const TRAZOS = Object.values(PIEZAS)
   .map((d) => `<path d="${d}"/>`)
   .join("");
 
-/** El isotipo como archivo SVG, para los scripts que derivan imágenes. */
 export function svgDelIsotipo(color: string) {
   const s = LADO_DEL_ISOTIPO;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s} ${s}"><g fill="${color}" fill-rule="evenodd">${TRAZOS}</g></svg>`;
 }
 
-/** La versión horizontal como archivo SVG. */
 export function svgHorizontal(color: string) {
   const s = LADO_DEL_ISOTIPO;
   const k = (s * HORIZONTAL.mayuscula) / 1000;
@@ -97,12 +73,9 @@ export function svgHorizontal(color: string) {
 }
 
 /**
- * La animación del hero se ve una vez por visita (`marca-del-hero.tsx`).
- * Esta es la clave en `sessionStorage`, y el script que va al principio de
- * `<body>` para que una recarga no la repita: pone `data-marca-vista` en
- * `<html>` antes del primer pintado. Vive acá y no en el componente porque
- * el layout es de servidor y no puede importar valores de un módulo de
- * cliente.
+ * La animación del hero se ve una vez por visita. El script va al principio de
+ * `<body>` y marca `<html>` antes del primer pintado. Fuera del componente: el
+ * layout es de servidor y no puede importar valores de un módulo de cliente.
  */
 export const CLAVE_MARCA_VISTA = "anavende:marca-vista";
 

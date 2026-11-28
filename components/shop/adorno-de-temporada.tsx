@@ -1,22 +1,11 @@
 import type { Escena } from "@/lib/escenas";
 
 /**
- * El adorno del logo en las escenas por fecha — F9.5, RF-38 (2026-10-23).
+ * El adorno del logo en las escenas por fecha (RF-38): un dibujo aparte,
+ * encima del isotipo, que no lo toca (excepción anotada en DR §2.3).
  *
- * **El isotipo no se toca.** §2.3 dice que nunca se deforma, recolorea ni
- * sombrea, y eso sigue valiendo: el adorno es un dibujo aparte, encima, que
- * se va cuando termina la fecha. Es la única excepción a «nada encima del
- * logo», está anotada en §2.3 y tiene dos límites: no tapa más que el borde
- * de la cuadrícula, y el nombre accesible del enlace no cambia.
- *
- * Mide un poco más que el isotipo (40 sobre 32) para que la guirnalda, la
- * araña y las orejas puedan salirse del borde, que es lo que las hace leer
- * como cosas colgadas o asomadas y no como parte del dibujo.
- *
- * **Lo que se mueve, se mueve poco y se queda quieto.** Las luces titilan
- * cuatro veces y quedan prendidas; la araña baja una vez; las orejas asoman
- * una vez. Todo termina antes de los cinco segundos de WCAG 2.2.2, así que no
- * necesita pausa, y con `prefers-reduced-motion` no se mueve.
+ * Toda animación termina antes de los cinco segundos de WCAG 2.2.2: por eso
+ * no necesita pausa.
  */
 export function AdornoDeTemporada({ escena }: { escena: Escena }) {
   return (
@@ -36,7 +25,6 @@ export function AdornoDeTemporada({ escena }: { escena: Escena }) {
   );
 }
 
-/** Rojo, verde, dorado y azul: los de una guirnalda de verdad. */
 const FOCOS = [
   { x: 5.5, y: 9.6, color: "#e23b3b" },
   { x: 11, y: 9.8, color: "#2fb36d" },
@@ -46,10 +34,7 @@ const FOCOS = [
   { x: 34.5, y: 9.8, color: "#2fb36d" },
 ];
 
-/**
- * Tres combas de cable sobre el borde de arriba, con un foco colgando en cada
- * tramo. El halo es el mismo color difuminado: sin él, a 32px son puntos.
- */
+/** El halo es el mismo color difuminado: sin él, a 32px son puntos. */
 function Guirnalda() {
   return (
     <>
@@ -103,11 +88,8 @@ function Guirnalda() {
 }
 
 /**
- * Una telaraña en la esquina de arriba a la izquierda y una araña que baja
- * por afuera del borde. Del lado izquierdo y no del derecho: a la derecha
- * está el nombre, y la araña quedaba pegada a la «A». Se dibuja del lado
- * derecho y se espeja entera, que es más fácil de leer que las coordenadas
- * al revés. En tinta y no en negro, como las sombras del sistema.
+ * Telaraña y araña arriba a la izquierda. Se dibuja del lado derecho y se
+ * espeja entera, que es más fácil de leer que las coordenadas al revés.
  */
 function Arana() {
   return (
@@ -144,12 +126,7 @@ function Arana() {
   );
 }
 
-/**
- * Dos orejas de conejo que asoman por detrás del borde de arriba, sobre la
- * celda del joystick. El recorte las corta en el borde: suben desde atrás del
- * isotipo en vez de deslizarse por encima de él. Blancas con el interior
- * rosado, y un contorno gris para que no se pierdan en el encabezado blanco.
- */
+/** Orejas de conejo; el recorte las hace subir desde atrás del borde. */
 function Orejas() {
   return (
     <>

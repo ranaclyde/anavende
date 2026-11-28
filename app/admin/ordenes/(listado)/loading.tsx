@@ -2,27 +2,14 @@ import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Carga del listado — DR §6.9 y §8: filas fantasma del alto real, no un
- * spinner centrado. Se dibujan también el encabezado, las solapas y la barra
- * de filtros: si aparecieran después, las primeras filas saltarían cien
- * píxeles hacia abajo justo cuando se las está mirando.
- *
- * **Por qué el listado vive en un grupo `(listado)` y no en `ordenes/` a
- * secas.** Un `loading.tsx` envuelve su segmento Y TODOS SUS HIJOS en un
- * Suspense, así que puesto en `ordenes/` también cubría a `[numero]`: la
- * cáscara del panel salía a la calle antes de que la consulta del detalle
- * terminara, y cuando esa consulta no encontraba la orden, el `notFound()`
- * llegaba con la respuesta ya empezada — **200 y una pantalla vacía** en
- * lugar de un 404 con la página de «no encontramos esto». Se vio con
- * Playwright, no con los tests. El grupo no cambia ninguna dirección
- * (`(listado)/page.tsx` sigue siendo `/admin/ordenes`) y deja el esqueleto
- * donde tiene que estar: sobre la tabla y sólo sobre la tabla.
+ * En el grupo `(listado)` y no en `ordenes/`: un `loading.tsx` envuelve
+ * también a sus hijos, y sobre `[numero]` el `notFound()` llegaba con la
+ * respuesta ya empezada (200 vacío en vez de 404). TECHNICAL-SPEC §10.4.
  */
 export default function CargandoOrdenes() {
   return (
     <div className="flex flex-col gap-4">
-      {/* El botón primario va: en esta pantalla está SIEMPRE, y sin él el
-          encabezado se reacomodaba al llegar los datos. */}
+      {/* El botón primario está siempre en la página real. */}
       <EsqueletoDeEncabezado
         titulo="w-32"
         bajada="w-80 max-w-full"

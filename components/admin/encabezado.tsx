@@ -4,27 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/**
- * Encabezado de una pantalla del panel — DR §6.9.
- *
- * Existe porque hasta el 2026-09-21 no existía: las **trece** pantallas del
- * panel lo escribían a mano y habían terminado con cinco formas distintas de
- * la misma cosa. Dos se llevaban peor que el resto:
- *
- * - **El «volver» tenía dos markups.** Cuatro pantallas usaban un botón
- *   terciario; la ficha de producto, un `<Link>` pintado a mano en
- *   `body-sm`/`ink-secondary`. A la vista eran 32px contra 20px, un color
- *   distinto y la mitad del área para el dedo — en la misma posición de la
- *   misma pantalla.
- * - **Los listados alineaban arriba y las fichas al medio.** No eran dos
- *   criterios: es la misma regla mirada en dos formas. Cuando la columna
- *   izquierda son dos renglones —título y bajada— el botón de la derecha se
- *   alinea con el título y no flota en el medio; cuando es uno solo, se
- *   centra. Acá se decide una vez y ninguna pantalla vuelve a elegir.
- *
- * Las piezas opcionales son las que de verdad varían: no toda pantalla vuelve
- * a algún lado, no toda tiene bajada, no toda tiene insignias ni acciones.
- */
+/** Encabezado de una pantalla del panel — DR §6.12. */
 export function EncabezadoDePanel({
   titulo,
   bajada,
@@ -35,25 +15,21 @@ export function EncabezadoDePanel({
 }: {
   titulo: React.ReactNode;
   /**
-   * Lo que va a la izquierda del título, a la altura de las dos líneas. Lo
-   * usa la ficha de un usuario para su cara (F5.9).
+   * Lo que va a la izquierda del título, a la altura de las dos líneas: la
+   * cara de un usuario.
    */
   retrato?: React.ReactNode;
   /** La frase bajo el título. Las fichas no la tienen: ahí el título es un dato. */
   bajada?: React.ReactNode;
   /** A dónde se sale, con el nombre de lo que se abre. */
   volver?: { href: string; etiqueta: string };
-  /** Las píldoras de estado, al lado del título. */
   insignias?: React.ReactNode;
-  /** Lo que se puede hacer desde acá, arriba a la derecha. */
   acciones?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-4">
       {volver ? (
-        // `self-start` para que no se estire a lo ancho de la columna, y
-        // `-ml-3` para que el texto del botón caiga sobre el mismo eje que el
-        // título: el relleno del terciario lo corría tres píxeles.
+        // `-ml-3`: el relleno del terciario corría el texto del eje del título.
         <Button
           asChild
           variant="tertiary"
@@ -72,9 +48,7 @@ export function EncabezadoDePanel({
           bajada ? "items-start" : "items-center"
         }`}
       >
-        {/* Crece y parte su texto en vez de empujar las acciones abajo
-            (F2.15): con una bajada larga, «Ayuda» de Nueva orden caía
-            al renglón siguiente y quedaba en otro lugar que en el resto. */}
+        {/* Crece y parte su texto en vez de empujar las acciones abajo. */}
         <div className="flex min-w-0 flex-1 basis-80 items-center gap-4">
           {retrato}
           <div className="flex min-w-0 flex-col gap-1">
@@ -95,16 +69,8 @@ export function EncabezadoDePanel({
 }
 
 /**
- * El fantasma del encabezado, para los `loading.tsx` — DR §8.
- *
- * Vive **en este archivo** y no en cada esqueleto a propósito: el esqueleto y
- * lo real tienen que medir lo mismo, y la única forma de que no se separen
- * con el tiempo es que se editen en la misma pantalla. Antes no era así, y
- * por eso el esqueleto de la ficha de producto dibujaba el «volver» de 20px
- * cuando el de verdad mide 32.
- *
- * Los anchos van por parámetro porque son lo único que el esqueleto no puede
- * saber: «Panel» y «Nuevo producto» no miden igual.
+ * El fantasma del encabezado, para los `loading.tsx` — DR §8. Vive en este
+ * archivo para que el esqueleto y lo real se editen juntos y midan lo mismo.
  */
 export function EsqueletoDeEncabezado({
   titulo,
@@ -122,7 +88,6 @@ export function EsqueletoDeEncabezado({
   bajada?: string;
   /** El ancho del botón de volver, o nada si la pantalla no vuelve. */
   volver?: string;
-  /** Cuántas píldoras van al lado del título. */
   insignias?: number;
   /** El ancho de cada botón de la derecha. */
   acciones?: string[];

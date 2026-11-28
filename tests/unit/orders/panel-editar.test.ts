@@ -14,23 +14,10 @@ import {
 import { historial, limpiarOrdenes } from "@/tests/apoyo/ordenes";
 
 /**
- * F7.2 y F7.2a — Editar una orden activa desde el panel. RF-22 · TS §8.1.
- *
- * «Hecho cuando»: la vendedora quita renglones y baja cantidades desde la
- * interfaz y la reserva se libera de inmediato (F7.2); y sube cantidades y
- * agrega productos, reservando, sin poder pasarse del stock (F7.2a).
- *
- * **Lo que se prueba acá es la puerta, no la lógica.** Quitar y reducir ya
- * están probados contra Postgres en `editar.test.ts` desde F4.4 —la reserva,
- * el total, el historial, el `FOR UPDATE`—. Lo que F7.2 agrega y puede
- * romperse sin que nadie lo note es el envoltorio: que sólo entre la
- * administradora, que el número de la URL termine en la orden correcta, y que
- * el «quitar el último» siga exigiendo la confirmación explícita de RF-22
- * cuando el pedido llega por acá.
- *
- * La sesión se simula y la base es de verdad, por lo mismo que en
- * `mis-compras.test.ts`: armar una sesión real pediría GoTrue y cookies, y lo
- * que hay que verificar vive en Postgres.
+ * Editar una orden activa desde el panel (RF-22 · TS §8.1). La lógica de
+ * quitar y reducir se prueba en `editar.test.ts`; acá, el envoltorio: permisos,
+ * número de la URL y la confirmación de «quitar el último». Sesión simulada,
+ * base de verdad.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
@@ -42,7 +29,7 @@ vi.mock("@/lib/session", () => ({
 }));
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
 
-/** `refresh()` lanza fuera de una Server Action de verdad (precedente: F5.3). */
+/** `refresh()` lanza fuera de una Server Action de verdad. */
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 
 const {
@@ -109,11 +96,8 @@ async function unaOrdenDe(
     esperado,
   });
 
-  // Los renglones **emparejados con su variante**, no en el orden en que la
-  // base los devuelva. `order_items.created_at` es el instante de la
-  // transacción, así que los de una misma orden empatan y el desempate queda
-  // en el UUID, que es azaroso: `items[0]` podía ser el renglón del otro
-  // producto una vez cada dos corridas. Costó un test en rojo intermitente.
+  // Emparejados con su variante y no por orden: `created_at` es el instante
+  // de la transacción, así que empatan y el desempate por UUID es azaroso.
   const filas = [
     ...(await db.execute<{ id: string; variantId: string }>(sql`
       SELECT id, variant_id AS "variantId"
@@ -135,7 +119,6 @@ describe("quién puede editar", () => {
     });
 
     expect(r).toMatchObject({ ok: false, code: "FORBIDDEN" });
-    // Y la reserva no se movió: el rechazo es antes de tocar nada.
     expect(await contadores(orden.variantes[0])).toMatchObject({
       reservedStock: 2,
     });
@@ -152,8 +135,7 @@ describe("quién puede editar", () => {
       cantidad: 1,
     });
 
-    // Editar la orden de otro es del panel: el comprador cancela la suya
-    // entera (RF-23, F6.5) o no hace nada. No hay un término medio.
+    // El comprador cancela la suya entera (RF-23) o nada.
     expect(r).toMatchObject({ ok: false, code: "FORBIDDEN" });
   });
 });
@@ -178,7 +160,6 @@ describe("quitar un renglón (RF-22)", () => {
       stockTotal: 10,
       reservedStock: 0,
     });
-    // El otro renglón no se tocó.
     expect(await contadores(orden.variantes[1])).toMatchObject({
       reservedStock: 3,
     });
@@ -216,7 +197,6 @@ describe("quitar un renglón (RF-22)", () => {
       reservedStock: 4,
     });
 
-    // Y un número que no existe tampoco encuentra nada.
     const inventada = await quitarItemDeLaOrden({
       numero: 999_999_999,
       itemId: mia.items[0],
@@ -314,9 +294,8 @@ describe("bajar la cantidad (RF-22)", () => {
     const orden = await unaOrdenDe(comprador, [{ stock: 10, cantidad: 2 }]);
 
     comoSesion(ana.userId, "admin");
-    // Bajar a cero es quitar, y quitar puede cancelar la orden: son dos
-    // acciones con dos confirmaciones distintas, y colarse de una a la otra
-    // por un cero sería cancelar sin preguntar.
+    // Bajar a cero es quitar, y quitar puede cancelar: colarse por un cero
+    // sería cancelar sin preguntar.
     const r = await reducirCantidadDelItem({
       numero: orden.numero,
       itemId: orden.items[0],
@@ -417,7 +396,7 @@ describe("sumar desde el panel (RF-22, F7.2a)", () => {
       }),
     ).toMatchObject({ ok: false, code: "FORBIDDEN" });
 
-    // Ni siquiera sobre su propia orden: lo suyo es cancelarla entera (F6.5).
+    // Ni siquiera sobre su propia orden: lo suyo es cancelarla entera.
     comoSesion(comprador.userId, "customer");
     expect(
       await agregarItemALaOrden({
@@ -514,8 +493,7 @@ describe("sumar desde el panel (RF-22, F7.2a)", () => {
 
     expect(r).toMatchObject({ ok: false, code: "INSUFFICIENT_STOCK" });
     if (r.ok) return;
-    // Es la diferencia de fondo con la orden manual de RF-24, que advierte y
-    // deja pasar: ahí la venta ya ocurrió, acá todavía no.
+    // A diferencia de la manual (RF-24), acá la venta todavía no ocurrió.
     expect(r.message).toContain("3 unidades");
     expect(await contadores(orden.variantes[0])).toMatchObject({
       reservedStock: 2,

@@ -1,25 +1,17 @@
 import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/**
- * Carga del listado de usuarios — DR §6.9 y §8: filas fantasma del alto real.
- * Se dibujan también el encabezado y la barra de filtros, así las primeras
- * filas no saltan hacia abajo cuando llegan los datos.
- */
 export default function CargandoUsuarios() {
   return (
     <div className="flex flex-col gap-4">
-      {/* El botón primario va: en esta pantalla está SIEMPRE, y sin él el
-          encabezado se reacomodaba al llegar los datos. */}
+      {/* El botón primario está siempre en la página real. */}
       <EsqueletoDeEncabezado
         titulo="w-32"
         bajada="w-96 max-w-full"
         acciones={["w-36"]}
       />
 
-      {/* La tira de solapas: 40px, los mismos que mide el segmentado real
-          (§6.9). Desde el 2026-09-21 el estado es solapa y no desplegable, así
-          que acá hay una tira más y un campo menos que antes. */}
+      {/* La tira de solapas: 40px, como el segmentado real. */}
       <Skeleton className="h-10 w-96 max-w-full rounded-panel-control" />
 
       <div className="flex flex-col gap-3">

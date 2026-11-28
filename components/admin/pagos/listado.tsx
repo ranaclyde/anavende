@@ -46,14 +46,8 @@ import { POR_PAGINA, urlDePagina } from "@/modules/catalog/filtros-panel";
 import type { MedioDePagoDelPanel } from "@/modules/settings/queries";
 
 /**
- * Medios de pago — RF-19, RN-01, DESIGN-REFERENCE §6.9.
- *
- * **El orden de las filas ES el orden de la tienda.** Por eso se mueve con
- * flechas y no hay una columna con el número de posición: el número sería un
- * segundo lugar donde mirar lo que la lista ya está diciendo, y uno que
- * además hay que mantener a mano.
- *
- * En móvil la tabla se vuelve tarjetas, no scroll horizontal (§6.9).
+ * Medios de pago — RF-19, RN-01, DR §6.9. El orden de las filas es el de la
+ * tienda: se mueve con flechas, sin columna de posición.
  */
 export function ListadoDeMediosDePago({
   items,
@@ -62,18 +56,19 @@ export function ListadoDeMediosDePago({
   paginas,
   base,
 }: {
-  /** Los de ESTA página. Para contar, el estado vacío y el botón va `total`. */
+  /** Los de esta página. Para contar, el estado vacío y el botón va `total`. */
   items: MedioDePagoDelPanel[];
   total: number;
   pagina: number;
   paginas: number;
-  /** La ruta de la solapa. El enlace lo arma acá: una función no cruza de
-      servidor a cliente. */
+  /**
+   * La ruta de la solapa: el enlace se arma acá porque una función no cruza
+   * de servidor a cliente.
+   */
   base: string;
 }) {
-  // «Bajar» se apaga solo en el último de TODOS, no en el último de la página:
-  // el último de la página 1 sí se puede bajar —pasa a la 2—, y apagarlo ahí
-  // sería mentir con un `title` que dice «ya es el último».
+  // «Bajar» se apaga solo en el último de todos: el último de la página 1
+  // pasa a la 2.
   const esElUltimo = (i: number) =>
     pagina === paginas && i === items.length - 1;
 
@@ -82,8 +77,8 @@ export function ListadoDeMediosDePago({
   const [creando, setCreando] = useState(false);
   const [editando, setEditando] = useState<MedioDePagoDelPanel | null>(null);
   const [porBorrar, setPorBorrar] = useState<MedioDePagoDelPanel | null>(null);
-  // El id y no el medio: la fila se busca en `items` en cada render, así el
-  // drawer muestra las promociones que trajo la última revalidación.
+  // El id y no el medio: así el drawer muestra las promociones de la última
+  // revalidación.
   const [conPromociones, setConPromociones] = useState<string | null>(null);
   const medioConPromociones =
     items.find((m) => m.id === conPromociones) ?? null;
@@ -104,9 +99,8 @@ export function ListadoDeMediosDePago({
       cambiarEstadoDeMedioDePago({ id: medio.id, activo: !medio.isActive }),
     );
 
-  // Avisa el borrado y nada más. Mover, activar y desactivar le cambian el
-  // lugar o la insignia a la fila que estás mirando; borrar se la lleva, y
-  // ahí no queda dónde poner la respuesta (§6.15).
+  // Avisa el borrado y nada más: borrar se lleva la fila y no queda dónde
+  // poner la respuesta (DR §6.15).
   const borrar = (medio: MedioDePagoDelPanel) => {
     setPorBorrar(null);
     correr(async () => {
@@ -134,10 +128,8 @@ export function ListadoDeMediosDePago({
                 cosa: { singular: "medio de pago", plural: "medios de pago" },
               })}
         </p>
-        {/* Con la lista vacía este botón no está: el estado vacío ya ofrece
-            el mismo primer paso en el medio de la pantalla, y dos botones de
-            marca iguales a 100px uno del otro se leen como un error (§6.3:
-            una sola por pantalla). */}
+        {/* Con la lista vacía el botón lo ofrece el estado vacío: uno de marca
+            por pantalla (§6.3). */}
         {total === 0 ? null : (
           <Button variant="brand" size="sm" onClick={() => setCreando(true)}>
             <Plus aria-hidden />
@@ -163,8 +155,7 @@ export function ListadoDeMediosDePago({
                 <TableRow className="hover:bg-surface-sunken">
                   <TableHead>Medio de pago</TableHead>
                   <TableHead className="w-28">Estado</TableHead>
-                  {/* Seis botones de 36px y el separador piden unos 240px de
-                      contenido; con el padding de la celda, `w-64`. */}
+                  {/* Seis botones de 36px y el separador: `w-64`. */}
                   <TableHead className="w-64 text-right">
                     <span className="sr-only">Acciones</span>
                   </TableHead>
@@ -236,9 +227,8 @@ export function ListadoDeMediosDePago({
         </>
       )}
 
-      {/* El drawer NO existe mientras está cerrado, y eso no es un ahorro:
-          es lo que garantiza que abra en blanco. Ver el comentario de
-          `EdicionDeMedioDePago`. */}
+      {/* El drawer no existe mientras está cerrado: así abre en blanco (ver
+          `EdicionDeMedioDePago`). */}
       {creando ? (
         <EdicionDeMedioDePago
           medio={null}
@@ -268,10 +258,7 @@ export function ListadoDeMediosDePago({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Borrar «{porBorrar?.name}»</DialogTitle>
-            {/* A diferencia del catálogo, acá borrar siempre se puede: nada
-                referencia a un medio de pago (RN-11 no le cabe). Por eso el
-                diálogo no pregunta si se puede: avisa que no hay vuelta atrás
-                y ofrece la salida que casi siempre es la buena. */}
+            {/* Acá borrar siempre se puede: nada referencia a un medio de pago. */}
             <DialogDescription>
               Se borra con su logo y no hay vuelta atrás. Si solo querés dejar
               de ofrecerlo por un tiempo, desactivalo: queda guardado y no se
@@ -306,18 +293,12 @@ export function ListadoDeMediosDePago({
 function Nombre({ medio }: { medio: MedioDePagoDelPanel }) {
   return (
     <div className="flex min-w-0 items-center gap-2">
-      {/* Chip CLARO en los dos modos (§6.10), igual que el logo de marca: el
-          de Mercado Pago o el de Visa vienen sobre transparente y no son
-          nuestros para repintarlos. El hueco se reserva SIEMPRE, con o sin
-          logo: acá la mayoría va a tener uno, y una fila sin él que corre el
-          nombre a la izquierda rompe la columna.
-          **Apaisado y no cuadrado** (F2.15): los logos de pago son anchos
-          —Visa, Mercado Pago— y en un cuadrado de 32px no se leían. */}
+      {/* Chip claro en los dos modos (DR §6.10). El hueco se reserva siempre,
+          apaisado: los logos de pago son anchos. */}
       <span className="relative grid h-8 w-14 shrink-0 place-items-center overflow-hidden rounded-[6px] border border-border bg-logo-chip">
         {medio.logoUrl ? (
-          // Absoluta: en la celda de la grilla, la altura al 100% no se
-          // resolvía contra los 32px del recuadro, y un logo más alto que
-          // ancho —GoCuotas— salía cortado en vez de achicarse.
+          // Absoluta: en la celda de la grilla la altura al 100% no se resolvía
+          // y un logo más alto que ancho salía cortado.
           <Image
             src={medio.logoUrl}
             alt=""
@@ -342,11 +323,7 @@ function Nombre({ medio }: { medio: MedioDePagoDelPanel }) {
   );
 }
 
-/**
- * Cuántas promociones de cuotas se ven hoy (RF-40). Sin ninguna vigente no
- * dice nada: «0 promociones» en cada fila es ruido para el medio que no las
- * usa.
- */
+/** Cuántas promociones de cuotas se ven hoy (RF-40). Sin ninguna vigente no dice nada. */
 function Vigentes({ medio }: { medio: MedioDePagoDelPanel }) {
   const n = medio.promociones.filter(
     (p) => p.activa && p.estado === "vigente",
@@ -392,10 +369,8 @@ function Acciones({
 }) {
   return (
     <div className="flex items-center justify-end gap-0.5">
-      {/* Las flechas de las puntas quedan DESHABILITADAS y no ocultas: si
-          desaparecieran, los botones de al lado se correrían de fila en fila
-          y habría que volver a buscar «Editar» en cada una. Su motivo lo dice
-          el `title` (§6.3). */}
+      {/* Las flechas de las puntas quedan deshabilitadas y no ocultas, o los
+          botones de al lado se correrían de fila en fila. */}
       <Button
         variant="tertiary"
         size="icon"

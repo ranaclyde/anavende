@@ -15,16 +15,8 @@ import {
 } from "@/tests/apoyo/ordenes";
 
 /**
- * F7.2a — sumar a una orden activa. RF-22 «Criterios — sumar» · TS §8.1, §8.2.
- *
- * «Hecho cuando»: se sube la cantidad de un renglón y se agrega un producto
- * que no estaba, reservando con el `UPDATE` condicional de §8.2; sin stock no
- * se agrega y se dice cuánto hay.
- *
- * **Es la mitad que puede fallar**, y de ahí salen casi todos los tests: la
- * reserva puede no entrar, y cuando no entra nada tiene que quedar a medias —
- * ni el renglón nuevo, ni la cantidad subida, ni una fila de historial
- * contando algo que no pasó.
+ * Sumar a una orden activa (RF-22 · TS §8.1, §8.2). La reserva puede no
+ * entrar, y entonces nada queda a medias: ni renglón, ni cantidad, ni historial.
  */
 
 afterEach(async () => {
@@ -115,7 +107,6 @@ describe("subir la cantidad de un renglón", () => {
     // si pedir menos o cargar stock.
     expect(String((error as Error).message)).toContain("2 unidades");
 
-    // Y no quedó nada a medias: ni la cantidad, ni la reserva, ni el total.
     expect(await contadores(variantId)).toEqual({
       stockTotal: 4,
       reservedStock: 2,

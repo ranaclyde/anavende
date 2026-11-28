@@ -24,24 +24,12 @@ import {
   vaciarElCarrito,
 } from "@/modules/cart/actions";
 
-/**
- * Las partes vivas del carrito — F5.5, RF-08, DESIGN-REFERENCE §7.4.
- *
- * Son islas chicas dentro de una página de servidor: el renglón —foto,
- * nombre, precio, subtotal— se pinta en el servidor, y acá queda solo lo que
- * responde a un clic. El subtotal y el total NO se recalculan en el
- * navegador: la acción refresca la página y vuelven calculados por la base
- * (§7.1), que es la única que suma montos.
- */
+// El subtotal y el total no se recalculan en el navegador: la acción refresca
+// la página y vuelven calculados por la base, la única que suma montos.
 
 /**
- * Cantidad y «Quitar» de un renglón.
- *
- * **La cantidad es optimista**: el número cambia al apretar y no cuando
- * vuelve el servidor, porque esperar un viaje de ida y vuelta para ver un 3
- * en lugar de un 2 se siente como un control roto. Si el servidor lo
- * rechaza, `useOptimistic` vuelve solo al valor de verdad al terminar la
- * transición, y el motivo queda escrito abajo.
+ * La cantidad es optimista: si el servidor la rechaza, `useOptimistic` vuelve
+ * solo al valor de verdad al terminar la transición.
  */
 export function ControlesDelItem({
   variantId,
@@ -55,10 +43,7 @@ export function ControlesDelItem({
   cantidad: number;
   /** El tope del selector: lo disponible, sin bajar de lo que ya hay. */
   maximo: number;
-  /**
-   * Sin stock o ya no disponible (F5.6): no hay cantidad que elegir, y un
-   * selector ahí promete algo que no se puede pedir. Queda solo «Quitar».
-   */
+  /** Sin stock o ya no disponible: queda solo «Quitar». */
   soloQuitar?: boolean;
 }) {
   const [enCurso, iniciar] = useTransition();
@@ -85,11 +70,7 @@ export function ControlesDelItem({
 
   return (
     <div className="flex flex-col gap-1">
-      {/*
-        Un `fieldset` apagado apaga todo lo de adentro —el selector de
-        cantidad y «Quitar»— sin que `Cantidad` tenga que saber de la pausa
-        (F5.8). `contents` para que no cambie el dibujo.
-      */}
+      {/* El `fieldset` apaga todo lo de adentro sin que `Cantidad` sepa de la pausa. */}
       <fieldset
         disabled={enPausa}
         aria-describedby={enPausa ? ID_AVISO_DE_PAUSA : undefined}
@@ -126,14 +107,7 @@ export function ControlesDelItem({
   );
 }
 
-/**
- * Vaciar el carrito, con confirmación.
- *
- * A diferencia de «Quitar», que es un renglón y se vuelve a agregar en dos
- * clics, vaciar se lleva todo lo que la persona fue juntando, y no hay forma
- * de deshacerlo. Una pregunta de más acá cuesta menos que armar el carrito de
- * nuevo.
- */
+/** Con confirmación, a diferencia de «Quitar»: vaciar no se puede deshacer. */
 export function VaciarCarrito({ renglones }: { renglones: number }) {
   const [abierto, setAbierto] = useState(false);
   const [enCurso, iniciar] = useTransition();

@@ -8,38 +8,27 @@ import {
 } from "@/lib/email/base";
 
 /**
- * E1 — Verificación de email (TECHNICAL-SPEC §14, FUNCTIONAL-SPEC RF-05).
- * Lo emite GoTrue al registrarse y al pedir el reenvío.
+ * E1 (TECHNICAL-SPEC §14, RF-05). Lo emite GoTrue.
  *
- * **El enlace no pasa por `/auth/v1/verify`.** Va derecho a
- * `/api/auth/confirmar` con `token_hash`, que es lo que la documentación de
- * Supabase recomienda para aplicaciones que renderizan en el servidor. Por el
- * otro camino la sesión vuelve en el fragmento de la URL (`#access_token=…`),
- * que el navegador nunca le manda al servidor: la cuenta queda confirmada y
- * la sesión se pierde. Nos pasó en producción; está en PROGRESO.md.
- *
- * **No lleva el código de seis dígitos** que trae la plantilla por defecto de
- * Supabase: no hay ninguna pantalla donde escribirlo, y ofrecer una salida que
- * no existe es peor que no ofrecerla.
+ * El enlace va a `/api/auth/confirmar` con `token_hash`, no a
+ * `/auth/v1/verify`: por ahí la sesión vuelve en el fragmento de la URL, que
+ * el servidor nunca recibe, y se pierde. Sin el código de seis dígitos: no
+ * hay dónde escribirlo.
  */
 
 export type PropsDeEnlace = {
   sitio: string;
   enlace: string;
-  /** Lo que va después de «¡Hola». En la plantilla de GoTrue llega una
-   *  condición que resuelve el nombre o no pone nada: ver `generar.mts`. */
+  /** Lo que va después de «¡Hola». */
   saludo: string;
 };
 
 /**
- * Export NOMBRADO y no `export default`, que es la convención de React Email:
- * `generar.mts` es un módulo ES y estos `.tsx` se compilan a CommonJS, así que
- * un `export default` le llega envuelto en el objeto del módulo y React lo
- * rechaza con «Element type is invalid». Los nombrados no pasan por ahí.
+ * Export nombrado y no `default`: `generar.mts` (ES) recibe estos `.tsx`
+ * compilados a CommonJS, y un `default` llega envuelto y React lo rechaza.
  */
 export function Verificacion({
-  // Valores para la previsualización local (`npm run email`). En la plantilla
-  // de GoTrue los reemplazan sus variables.
+  // Para la previsualización local (`npm run email`).
   sitio = "http://localhost:3000",
   enlace = "http://localhost:3000/api/auth/confirmar",
   saludo = ", Matías",

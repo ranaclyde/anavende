@@ -24,12 +24,8 @@ import { exigirAdmin } from "@/lib/session";
 export const metadata: Metadata = { title: "Editar producto" };
 
 /**
- * La guía del producto (F6.7, RF-37): cuál de los tres números manda y qué
- * se escribe al corregir el stock. Las fotos, «Activo» y «Destacado» no
- * entran, porque la pantalla ya los explica al lado.
- *
- * El segundo paso es el que más ahorra: escribir el total ya sin lo
- * reservado deja el stock por debajo del real (objetivo O2).
+ * El segundo paso es el que más ahorra: escribir el total sin lo reservado
+ * deja el stock por debajo del real.
  */
 const PASOS_DEL_PRODUCTO: PasoDeAyuda[] = [
   {
@@ -46,36 +42,18 @@ const PASOS_DEL_PRODUCTO: PasoDeAyuda[] = [
   },
 ];
 
-/** En Next 16 `params` y `searchParams` son asíncronos (§10.2). */
 type Props = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ agregar?: string }>;
 };
 
 /**
- * El alta de un producto termina acá **con el diálogo de «Agregar color» ya
- * abierto**, y eso viaja en la dirección y no en memoria.
- *
- * Un producto sin colores no tiene stock ni fotos, así que no se puede
- * vender: crear el producto es media tarea, y la bajada de «Nuevo producto»
- * ya promete «la pantalla que se abre sola al crearlo». Hasta hoy la promesa
- * era falsa — se llegaba a la ficha con la tarjeta de colores abajo de todo y
- * había que encontrarla.
- *
- * **En la URL y no en un estado que se pasa de una pantalla a otra** (§10.2):
- * así el enlace se puede pegar en cualquier lado —«andá a cargarle un color a
- * esto»—, el atrás funciona, y no hace falta que dos pantallas se pongan de
- * acuerdo sobre algo invisible. Al cerrar el diálogo el parámetro se saca,
- * porque si se quedara, recargar volvería a abrirlo sobre un color ya
- * cargado.
+ * `?agregar=color` abre el diálogo de «Agregar color»: el alta termina acá.
+ * Al cerrarlo el parámetro se saca, o recargar lo volvería a abrir.
  */
 const ABRIR_ALTA_DE_COLOR = "color";
 
-/**
- * La dirección la escribe cualquiera. Sin esta guarda, `/admin/productos/hola`
- * le manda a Postgres algo que no es un uuid y la página revienta con un 500
- * en vez de decir que no existe.
- */
+/** Sin esta guarda, un `id` que no es uuid da un 500 de Postgres y no un 404. */
 const ES_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -86,8 +64,6 @@ export default async function EditarProducto({ params, searchParams }: Props) {
 
   if (!ES_UUID.test(id)) notFound();
 
-  // Las seis consultas no dependen unas de otras: en serie, la página
-  // tardaría la suma de las seis por nada.
   const [producto, opciones, variantes, colores, categoriaConColor, marca] =
     await Promise.all([
       obtenerProducto(id),
@@ -106,12 +82,9 @@ export default async function EditarProducto({ params, searchParams }: Props) {
         titulo={producto.name}
         volver={{ href: "/admin/productos", etiqueta: "Productos" }}
         acciones={
-          // `flex-wrap`: con «Ver en la tienda» son tres, y a 390px no entran
-          // en un renglón. Sin esto, «Copiar enlace» quedaba cortado y la
-          // página se ensanchaba 23px.
+          // `flex-wrap`: a 390px los tres botones no entran en un renglón.
           <div className="flex flex-wrap items-center gap-2">
-            {/* Sin colores no hay stock que explicar: el estado vacío ya dice
-                qué hacer. */}
+            {/* Sin colores no hay stock que explicar. */}
             {variantes.length > 0 ? (
               <AyudaGuiada
                 id="panel-producto"
@@ -119,13 +92,11 @@ export default async function EditarProducto({ params, searchParams }: Props) {
                 tamano="sm"
               />
             ) : null}
-            {/* Los dos, solo con el producto activo: uno inactivo da 404 en
-                la tienda también para quien administra (RN-05). */}
+            {/* Solo activo: uno inactivo da 404 en la tienda también para
+                quien administra (RN-05). */}
             {producto.isActive ? (
               <>
-                {/* Ver cómo quedó cargado, en otra pestaña para no perder lo
-                    que se está editando (pedido del 2026-11-03). El mismo
-                    botón que el de las páginas legales. */}
+                {/* En otra pestaña, para no perder lo que se está editando. */}
                 <Button asChild variant="tertiary" size="sm">
                   <a
                     href={`/productos/${producto.slug}`}
@@ -145,34 +116,11 @@ export default async function EditarProducto({ params, searchParams }: Props) {
         }
       />
 
-      {/* Dos columnas cuando hay lugar para las dos, y una sola cuando no.
-
-          **El formulario conserva el ancho que tiene en el alta**, 1024px, y
-          el stock se queda con el resto. Es lo único que impide el salto que
-          §4.1 existe para evitar: se viene de «Nuevo producto», que es este
-          mismo formulario, y si acá midiera otra cosa los campos cambiarían
-          de tamaño entre una pantalla y la siguiente. Antes el salto era de
-          lugar y se arregló alineando a la izquierda; éste era de ancho, y lo
-          introdujo el paso anterior de este mismo trabajo.
-
-          **La consulta es de contenedor y no de ventana**, y ahí hay una
-          razón concreta: el menú lateral se contrae a pedido y libera 176px.
-          Con una consulta de ventana, contraerlo —que es justo lo que se hace
-          para ganar ancho— no cambiaría nada. `@container` mide lo que de
-          verdad hay.
-
-          **1400px es la suma de lo que hace falta**: 1024 del formulario, 16
-          de separación y 360 del stock, que es lo que necesita una fila de
-          tres fotos. Por debajo van apiladas y las dos topeadas en 1024,
-          exactamente como se veía la pantalla antes de partirla en dos.
-
-          El orden de las columnas es el del DOM en los dos casos, así que el
-          recorrido con teclado no se despega de lo que se ve. */}
+      {/* El formulario conserva el ancho del alta (1024px) para que no salte
+          al venir de «Nuevo producto» (§4.1). 1400px = 1024 + 16 + 360 del
+          stock. Consulta de contenedor para que contraer el menú cuente. */}
       <div className="@container">
-        {/* Apiladas, «Colores y stock» queda al pie (F2.15): en una laptop
-            de 1366px con el menú abierto, a dos pantallas de scroll. El ancho
-            del formulario no se toca —es lo que evita el salto desde el
-            alta—, así que se ofrece el atajo, y solo cuando hace falta. */}
+        {/* Apiladas, «Colores y stock» queda lejos: el atajo, solo entonces. */}
         <a
           href="#colores-y-stock"
           className="mb-4 inline-flex items-center gap-1.5 rounded-panel-control text-body-sm text-ink-secondary transition-colors duration-150 hover:text-ink @min-[1400px]:hidden"
@@ -198,13 +146,8 @@ export default async function EditarProducto({ params, searchParams }: Props) {
             />
           </div>
 
-          {/* Fuera del formulario, y a propósito: cada variante se guarda
-              sola, en el momento. Meterlas adentro obligaría a apretar
-              «Guardar cambios» para que una foto ya subida quedara en firme,
-              y a explicar por qué una imagen que ya está en Storage todavía
-              no cuenta. Que sea hermana y no hija es también lo que permite
-              ponerla en la otra columna sin anidar un `<form>` adentro de
-              otro. */}
+          {/* Fuera del formulario a propósito: cada variante se guarda sola, en
+              el momento, y no se puede anidar un `<form>` en otro. */}
           <div className="min-w-0 @min-[1400px]:flex-1">
             <VariantesDelProducto
               productId={producto.id}

@@ -23,31 +23,15 @@ export type OpcionDelSelector = {
 };
 
 /**
- * Selector de una opción con buscador — DESIGN-REFERENCE §6.6. Tarea F2.11.
+ * Selector con buscador para listas que crecen con el catálogo (DR §6.6); las
+ * cortas van en `Select`. Filtra acá y no en `cmdk` para respetar el orden de
+ * las opciones y comparar sin tildes.
  *
- * **Convive con `Select`, no lo reemplaza.** El `<select>` del navegador
- * sigue siendo lo correcto para las listas cortas —estado, rol, orden—: en el
- * teléfono abre la rueda nativa. Este va donde la lista crece sin techo
- * —marcas, categorías, colores— y donde cada opción necesita mostrar algo
- * más que texto: la rueda nativa no busca por una parte del nombre ni sabe
- * pintar un color.
+ * Con `crear`, «Crear…» está siempre al final, no solo sin resultados, y se
+ * esconde si lo escrito ya existe tal cual.
  *
- * El teclado y el lector de pantalla los pone `cmdk` (flechas, Enter,
- * Escape, `aria-activedescendant`), que era el motivo para no hacer un menú
- * propio. La lista se filtra acá y no en `cmdk`: así respeta el orden en que
- * llegan las opciones —activas primero, de la A a la Z— y compara sin tildes,
- * igual que el buscador de la tienda.
- *
- * **Puede ofrecer crear lo que falta** (F2.13): con `crear`, la lista
- * termina en un renglón «Crear…» que lleva lo escrito. Está siempre, y no
- * solo cuando la búsqueda no encuentra nada: con el catálogo vacío no hay
- * búsqueda que hacer, y quien no sabe que se puede crear desde acá no
- * escribe un nombre para descubrirlo. Se esconde cuando lo escrito ya
- * existe tal cual, que sería crearlo dos veces.
- *
- * **El popover es modal.** Dentro de un diálogo, uno que no lo es deja la
- * rueda del mouse sin efecto sobre la lista: el diálogo bloquea el scroll de
- * todo lo que no sea suyo, y el globo va por portal, afuera del diálogo.
+ * El popover es modal: dentro de un diálogo, uno que no lo es deja la rueda
+ * del mouse sin efecto sobre la lista.
  */
 export function SelectorConBuscador({
   id,
@@ -103,8 +87,7 @@ export function SelectorConBuscador({
 
   const abrir = (v: boolean) => {
     setAbierto(v);
-    // Cada vez que se abre, la lista arranca entera: un filtro que quedó de
-    // la vez anterior escondería las opciones sin que se note por qué.
+    // Un filtro que quedó de la vez anterior escondería opciones sin aviso.
     if (v) {
       setTermino("");
       creando.current = false;
@@ -157,8 +140,7 @@ export function SelectorConBuscador({
 
       <PopoverContent
         align="start"
-        // El ancho del campo, con un piso: en el filtro del listado el campo
-        // mide 192px y un nombre largo no entraría.
+        // El ancho del campo, con un piso para los nombres largos.
         className="w-[max(var(--radix-popover-trigger-width),16rem)] p-0"
         onCloseAutoFocus={(e) => {
           if (creando.current) e.preventDefault();
@@ -167,8 +149,7 @@ export function SelectorConBuscador({
         <Command
           shouldFilter={false}
           loop
-          // Arranca parado sobre lo elegido, así Enter sin moverse no cambia
-          // nada y la lista ya está scrolleada hasta ahí.
+          // Parado sobre lo elegido: Enter sin moverse no cambia nada.
           defaultValue={elegida ? clave(elegida.valor) : undefined}
         >
           <div className="flex items-center gap-2 border-b border-border px-3">
@@ -176,9 +157,8 @@ export function SelectorConBuscador({
               aria-hidden
               className="size-4 shrink-0 text-ink-secondary"
             />
-            {/* Sin anillo de foco propio: el foco llega acá siempre, al abrir,
-                y el globo entero ya es el contorno. El cursor titilando es la
-                señal. */}
+            {/* Sin anillo de foco propio: el foco llega acá siempre al abrir y
+                el globo es el contorno. */}
             <Command.Input
               value={termino}
               onValueChange={setTermino}
@@ -186,9 +166,8 @@ export function SelectorConBuscador({
               className="h-10 min-w-0 flex-1 bg-transparent text-body-sm text-ink outline-none placeholder:text-ink-secondary focus-visible:shadow-none max-md:h-11"
             />
           </div>
-          {/* El scroll va en las opciones y no en toda la lista: así «Crear»
-              queda siempre a la vista debajo, aunque haya cien marcas. Sigue
-              adentro de `Command.List` porque es un renglón más del listbox. */}
+          {/* El scroll va en las opciones para que «Crear» quede siempre a la
+              vista; sigue en `Command.List` porque es parte del listbox. */}
           <Command.List className="p-1">
             <div className="max-h-64 overflow-y-auto overscroll-contain">
               <Command.Empty className="px-2 py-6 text-center text-body-sm text-ink-secondary">
@@ -265,9 +244,8 @@ const RENGLON = cn(
 const CLAVE_DE_CREAR = "crear";
 
 /**
- * La clave de `cmdk` para una opción. No puede ser el valor a secas: la
- * opción «Todas las categorías» vale `""`, y `cmdk` toma una clave vacía como
- * «usá el texto del renglón».
+ * No puede ser el valor a secas: «Todas las categorías» vale `""`, y `cmdk`
+ * toma una clave vacía como «usá el texto del renglón».
  */
 function clave(valor: string): string {
   return `opcion:${valor}`;

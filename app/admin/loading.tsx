@@ -2,17 +2,8 @@ import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Carga del inicio del panel — DR §8. Tarea F7.8.
- *
- * **Es la pantalla de entrada y era la única sin esqueleto**, aunque
- * `page.tsx` espera tres consultas antes de pintar nada: el umbral de stock
- * y, con él, los dos bloques. Hasta el 2026-09-21 quien abría el panel veía
- * el menú y un hueco.
- *
- * Dibuja las dos tarjetas con su alto real para que nada salte al llegar los
- * datos. **Los tres renglones de «Para hacer» son un máximo, no una
- * promesa**: si no hay nada pendiente, el bloque real es una sola línea. Se
- * eligió el caso lleno porque encoger no mueve lo de abajo tanto como crecer.
+ * Los tres renglones de «Para hacer» son el máximo: si no hay nada, el bloque
+ * real es una línea, pero encoger mueve menos lo de abajo que crecer.
  */
 export default function CargandoElPanel() {
   return (

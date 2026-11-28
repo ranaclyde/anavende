@@ -1,15 +1,5 @@
-/**
- * Errores de dominio — TECHNICAL-SPEC §6.3.
- *
- * Un error de dominio es un RESULTADO DEL NEGOCIO esperado, no un incidente:
- * «no hay stock» y «la orden ya está finalizada» son respuestas correctas del
- * sistema. Por eso no van a Sentry (§6.2, paso 6) y por eso tienen un mensaje
- * en castellano listo para mostrar.
- *
- * La UI decide CÓMO presentarlo —cartel, campo, diálogo—, nunca lo redacta.
- * Un mensaje escrito en la vista es un mensaje que el día que la regla cambie
- * queda mintiendo.
- */
+// Errores de dominio (TECHNICAL-SPEC §6.3): resultados esperados, no van a
+// Sentry. La vista decide cómo mostrarlos, nunca redacta el mensaje.
 
 export type DomainErrorCode =
   | "INSUFFICIENT_STOCK" // RF-08, RF-12
@@ -21,20 +11,17 @@ export type DomainErrorCode =
   | "VARIANT_HAS_RESERVATIONS" // RF-16
   | "ENTITY_IN_USE" // RN-11
   | "USER_BANNED" // RF-27
-  | "ACCOUNT_CLOSURE_PENDING" // RF-34: pidió la baja, la cuenta es de solo lectura
-  | "ACCOUNT_CLOSED" // RF-34, RN-13: la baja ya se ejecutó. NO es USER_BANNED
-  | "ACCOUNT_HAS_ACTIVE_ORDERS" // RF-34: con órdenes activas la baja no procede
-  | "TOO_MANY_ATTEMPTS" // §16, F10.5: el tope por persona de ingreso, alta y reenvíos
+  | "ACCOUNT_CLOSURE_PENDING" // RF-34
+  | "ACCOUNT_CLOSED" // RF-34, RN-13. NO es USER_BANNED
+  | "ACCOUNT_HAS_ACTIVE_ORDERS" // RF-34
+  | "TOO_MANY_ATTEMPTS" // §16
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "VALIDATION"
-  /** Lo inesperado. El único que no es un resultado del negocio (§6.3). */
+  /** Lo inesperado: el único que no es un resultado del negocio. */
   | "INTERNAL";
 
-/**
- * Voseo, sin jerga, y siempre con la acción a seguir
- * (DESIGN-REFERENCE §8 y §10).
- */
+// Voseo, sin jerga y con la acción a seguir (DESIGN-REFERENCE §8 y §10).
 const MENSAJES: Record<DomainErrorCode, string> = {
   INSUFFICIENT_STOCK:
     "No queda stock suficiente de ese producto. Ajustá la cantidad y probá de nuevo.",
@@ -69,7 +56,6 @@ const MENSAJES: Record<DomainErrorCode, string> = {
 
 export class DomainError extends Error {
   readonly code: DomainErrorCode;
-  /** Contexto para la vista: qué variante, cuántas unidades quedan, etc. */
   readonly details?: Record<string, unknown>;
 
   constructor(
@@ -88,12 +74,8 @@ export function isDomainError(e: unknown): e is DomainError {
 }
 
 /**
- * Atajo: `throw domainError("INSUFFICIENT_STOCK", { quedan: 2 })`.
- *
- * `message` en las opciones reemplaza al mensaje por omisión del código. Se
- * usa cuando la misma situación necesita decir algo más preciso —«ese email y
- * esa contraseña no coinciden» en vez del genérico de VALIDATION— sin inventar
- * un código nuevo. El resto de las claves son contexto para la vista.
+ * `throw domainError("INSUFFICIENT_STOCK", { quedan: 2 })`. `message`
+ * reemplaza el mensaje del código; el resto es contexto para la vista.
  */
 export function domainError(
   code: DomainErrorCode,

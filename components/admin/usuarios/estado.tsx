@@ -2,12 +2,8 @@ import { Badge } from "@/components/ui/badge";
 import type { RolDeUsuario } from "@/modules/users/panel/queries";
 
 /**
- * Las etiquetas de un usuario en el panel — DR §6.4. Tarea F7.6.
- *
- * **Sólo se etiqueta la excepción**, igual que el origen de una orden (F7.1):
- * casi todas las cuentas son compradores activos, y una etiqueta «Comprador»
- * repetida cuarenta veces por pantalla es ruido. Lo que hay que ver de un
- * vistazo es quién entra al panel y quién no puede entrar a ningún lado.
+ * Las etiquetas de un usuario en el panel — DR §6.4. Solo se etiqueta la
+ * excepción: «Comprador» repetido en cada fila es ruido.
  */
 export function RolDelUsuario({ rol }: { rol: RolDeUsuario }) {
   if (rol !== "admin") return null;
@@ -20,16 +16,9 @@ export function nombreDelRol(rol: RolDeUsuario): string {
 }
 
 /**
- * El estado de la cuenta.
- *
- * **Bloqueado y dado de baja son dos cosas distintas** (RN-13, §13.5b) y por
- * eso son dos etiquetas y no una: el bloqueo lo decide la vendedora (RF-27) y
- * la baja la pide la persona (RF-34). La misma palabra para las dos sería
- * decirle a quien se fue solo que lo echaron.
- *
- * **«Baja pedida» no dice cómo está la cuenta, dice qué falta hacer**: está
- * activa, en solo lectura, esperando que alguien la ejecute (F7.9). Por eso es
- * `warning` y no `danger`, que es el tono de lo que ya no entra.
+ * El estado de la cuenta. Bloqueado y dado de baja son dos etiquetas
+ * (RN-13). «Baja pedida» es `warning`: la cuenta sigue activa, esperando que
+ * alguien la ejecute.
  */
 export function EstadoDelUsuario({
   bloqueado,

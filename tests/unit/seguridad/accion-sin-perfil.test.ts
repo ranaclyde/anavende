@@ -1,16 +1,9 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 /**
- * Una cuenta sin perfil que llama a una acción — §13.4, RF-06.
- *
- * Quien entra con Google tiene cuenta desde la vuelta del proveedor, pero
- * perfil recién al pasar por `/completar-perfil`. En ese rato, para el
- * envoltorio sigue siendo falta de autorización (§13.4): la acción no corre.
- * Lo que cambia es **qué se le dice**: «Necesitás iniciar sesión» a quien ya
- * inició sesión es falso, y no le dice qué hacer.
- *
- * No toca la base: lo que se prueba es la decisión del envoltorio, y la
- * sesión y la identidad son las dos respuestas que la alimentan.
+ * Una cuenta sin perfil (entró con Google y no pasó por `/completar-perfil`)
+ * no corre la acción, como sin sesión (§13.4, RF-06); pero decirle
+ * «Necesitás iniciar sesión» a quien ya inició sesión es falso.
  */
 
 const quien = vi.hoisted(() => ({

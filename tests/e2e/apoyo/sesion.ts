@@ -3,10 +3,9 @@ import type { Page } from "@playwright/test";
 import type { Cuenta } from "./datos";
 
 /**
- * Entra por `/ingresar`, como una persona: la sesión es la de la aplicación
- * y no una simulada. No espera a ningún destino en particular —la
- * administradora y la compradora caen en lugares distintos—, solo a salir de
- * la pantalla de ingreso.
+ * Entra por `/ingresar` con la sesión real de la aplicación. Espera solo a
+ * salir de esa pantalla: la administradora y la compradora caen en lugares
+ * distintos.
  */
 export async function ingresar(page: Page, cuenta: Cuenta): Promise<void> {
   await page.goto("/ingresar");

@@ -21,21 +21,9 @@ import {
 } from "@/modules/users/panel/schemas";
 
 /**
- * Alta de una cuenta desde el panel — FS RF-26. Tarea F7.6.
- *
- * **No se elige contraseña acá, y es lo importante de esta pantalla**: al
- * guardar sale el email E3 y la persona elige la suya. La alternativa —
- * inventarle una y pasársela por WhatsApp— deja la contraseña escrita en un
- * chat y obliga a la vendedora a saberla, que es justo lo que no tiene que
- * pasar.
- *
- * **El teléfono es obligatorio** aunque RF-26 no lo nombre: RF-05 lo pide en
- * las tres vías de alta y sin él no se puede coordinar una entrega (`schemas.ts`).
- *
- * **Es un `<form>` de verdad** desde el 2026-09-22, como el de producto y el
- * de configuración: Enter envía, el navegador lo anuncia como formulario y el
- * foco va al primer campo que falló. Hasta hoy era un `<div>` con botones
- * `onClick`, que se ve igual y se usa peor.
+ * Alta de una cuenta desde el panel — RF-26. No se elige contraseña: al
+ * guardar sale el email E3 y la persona elige la suya. El teléfono es
+ * obligatorio aunque RF-26 no lo nombre: lo pide RF-05.
  */
 export function AltaDeUsuario() {
   const router = useRouter();
@@ -50,12 +38,7 @@ export function AltaDeUsuario() {
   const [phone, setPhone] = useState("");
   const [rol, setRol] = useState<RolAsignable>("customer");
 
-  /**
-   * Adónde va el foco cuando el envío falla. Sin esto queda en el botón, que
-   * no dice cuál de los cinco campos hay que corregir: el mensaje se anuncia
-   * —cada `FieldError` es `role="alert"`— pero anunciar no es llevar hasta el
-   * problema.
-   */
+  /** Adónde va el foco cuando el envío falla: anunciar el error no es llevar hasta él. */
   const errorGeneral = useRef<HTMLDivElement | null>(null);
 
   function irAlPrimerError(nuevos: ErroresDeFormulario<CampoDelAlta>) {
@@ -64,8 +47,7 @@ export function AltaDeUsuario() {
       ? document.getElementById(`${idBase}-${primero}`)
       : null;
 
-    // Sin campo señalado —un email ya usado, que el servidor no cuelga de
-    // ninguno— el foco va al mensaje, que es lo único que explica qué pasó.
+    // Sin campo señalado (un email ya usado) el foco va al mensaje.
     (control ?? errorGeneral.current)?.focus();
   }
 
@@ -89,8 +71,6 @@ export function AltaDeUsuario() {
         return;
       }
 
-      // A su ficha: el alta casi siempre sigue con «y ahora quiero ver cómo
-      // quedó», y ahí está lo que se le puede hacer a esa cuenta.
       avisar(`Creaste la cuenta de ${firstName.trim()} ${lastName.trim()}.`);
       router.push(`/admin/usuarios/${r.data.id}`);
     });
@@ -99,8 +79,7 @@ export function AltaDeUsuario() {
   const e = errores.campos;
 
   return (
-    // Una sola tarjeta con el botón al pie (DESIGN.md, 2026-11-13): eran dos
-    // con la barra afuera.
+    // Una sola tarjeta con el botón al pie (DESIGN.md, «Guardar»).
     <form onSubmit={enviar} noValidate className="min-w-0">
       <TarjetaDeSeccion id="datos-persona" titulo="Datos de la persona">
         <div className="grid gap-3 sm:grid-cols-2">
@@ -169,9 +148,7 @@ export function AltaDeUsuario() {
           <FieldError>{errores.general}</FieldError>
         </div>
 
-        {/* En el panel la acción principal va a la derecha, y el escape queda a
-          mano: cancelar es un enlace y no un botón, porque no hace nada, va a
-          otro lado. */}
+        {/* Cancelar es un enlace: no hace nada, va a otro lado. */}
         <PieDeGuardado>
           <Button asChild variant="tertiary">
             <Link href="/admin/usuarios">Cancelar</Link>
@@ -192,7 +169,7 @@ export function AltaDeUsuario() {
 
 type CampoDelAlta = "firstName" | "lastName" | "email" | "phone" | "rol";
 
-/** El orden en que se leen en pantalla, que es el orden en que se corrigen. */
+/** En el orden en que se leen en pantalla, que es en el que se corrigen. */
 const CAMPOS: CampoDelAlta[] = [
   "firstName",
   "lastName",

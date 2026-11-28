@@ -437,6 +437,7 @@ cuenta ni carrito, y el pie sin los enlaces de la tienda.
 **Criterios de aceptación:**
 - [ ] Rutas protegidas: un no autenticado es redirigido al login y vuelve a la ruta pedida tras loguearse.
 - [ ] El detalle de una orden muestra los ítems con el precio al que se generó la orden (snapshot, RN-12), el estado y los datos de envío.
+- [ ] **El renglón de un pedido no lleva foto.** Sale del snapshot (RN-12), que no guarda imágenes, y traerla del producto de hoy pondría la foto actual al lado del precio de ayer: en una compra vieja, puede ser directamente otro producto.
 - [ ] Desde una orden `activa`, el comprador puede **cancelarla** (RF-23) y **retomar la conversación por WhatsApp**.
 
 > **El historial y el detalle son dos pantallas, y el detalle no es la confirmación** (F6.5, 2026-09-15). `/mi-cuenta/compras` lista, `/mi-cuenta/compras/[numero]` muestra una. La confirmación de RF-12 (`/orden/[numero]`) se queda donde está y con su tono: es el momento de haber comprado, se lee una vez y felicita. Al detalle se vuelve semanas después para otra cosa —ver en qué anda, releer qué se pidió, arrepentirse—, y las dos acciones que ofrece (WhatsApp y cancelar) sólo aparecen mientras la orden está `activa`.
@@ -624,7 +625,7 @@ resalta un elemento y lo explica en un globo. Hay uno por pantalla:
 
 ## 8. Módulo: Panel de administración
 
-Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente acceder recibe 404/403 sin filtración de información.
+Ruta `/admin`, accesible sólo con rol `admin`. Un `customer` que intente acceder recibe **404, no 403**: un panel que responde «prohibido» confirma que existe.
 
 ### RF-14 — Dashboard del panel
 
@@ -1063,6 +1064,7 @@ una acción mueve el stock o no se puede deshacer:
 - [ ] Explica también **cómo arrepentirse de una compra**: cancelar la orden desde «Mis compras» si todavía está activa (RF-23), o pedir la devolución si ya se finalizó (RF-25). Es donde el sitio deja por escrito cómo se ejerce ese derecho.
 - [ ] El aviso de **zona de entrega y retiro** está presente en: home, ficha de producto, carrito y checkout (RN-10). Ninguno nombra a la empresa de mensajería. **El pie no lo lleva desde el 2026-10-21**: en su lugar va el eslogan.
 - [ ] El texto legal es editable desde el panel sin necesidad de un deploy.
+- [ ] El texto de cada página admite hasta **15.000 caracteres**, el triple que una descripción de producto: una política de privacidad que cuenta lo que se guarda en el navegador ya pasa los 5.000. El tope está para que un pegado accidental no publique un libro, no para acotar lo que hay que decir.
 - [ ] **El plazo para arrepentirse es de 10 días corridos desde el pedido, mientras la orden siga activa** (decisión de negocio del 2026-10-16). Casi todas las ventas se entregan en el día, así que en la práctica el plazo lo corta la entrega; después rigen los cambios y devoluciones, que se aceptan solo por falla de fábrica.
 - [ ] **Hay un «Botón de arrepentimiento»** en el pie de todas las páginas, y una tarjeta arriba de «Garantías y devoluciones», que llevan a «Mis compras»: ahí el comprador decide qué pedido cancelar (RF-23). Sin sesión, el ingreso vuelve ahí.
 - [ ] **El contacto de cada página no está en su texto**: sale de la configuración (RF-20), con el email al que llegan los pedidos y el WhatsApp, para que cambiar de casilla sea cambiarla en un solo lugar.

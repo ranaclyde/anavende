@@ -21,12 +21,7 @@ import {
   unaOrdenDeUnItem,
 } from "@/tests/apoyo/ordenes";
 
-/**
- * F4.4 — edición de una orden activa. RF-22 · §8.1.
- *
- * «Hecho cuando»: libera la reserva y recalcula el total; quitar el último
- * ítem equivale a cancelar.
- */
+/** Edición de una orden activa. RF-22 · §8.1. */
 
 afterEach(async () => {
   await limpiarOrdenes();
@@ -65,8 +60,7 @@ describe("quitar un ítem", () => {
     expect(resultado.ordenCancelada).toBe(false);
     expect((await estadoDeLaOrden(orderId)).status).toBe("activa");
 
-    // Las dos unidades vuelven a estar disponibles de inmediato: es el punto
-    // entero de RF-22.
+    // RF-22: vuelven a estar disponibles de inmediato.
     expect(await contadores(a.variantId)).toEqual({
       stockTotal: 10,
       reservedStock: 0,
@@ -75,7 +69,6 @@ describe("quitar un ítem", () => {
       { type: "liberacion", quantity: -2 },
     ]);
 
-    // El otro renglón queda intacto.
     expect(await contadores(b.variantId)).toEqual({
       stockTotal: 10,
       reservedStock: 5,
@@ -122,7 +115,6 @@ describe("quitar el último ítem", () => {
     // La pantalla necesita saber POR QUÉ se negó para poder preguntar.
     expect(fallo.details).toMatchObject({ cancelaLaOrden: true });
 
-    // Y no pasó nada: ni se borró el renglón ni se soltó la reserva.
     expect(await renglonesDeLaOrden(orderId)).toHaveLength(1);
     expect(await contadores(variantId)).toEqual({
       stockTotal: 10,
@@ -152,9 +144,8 @@ describe("quitar el último ítem", () => {
     expect(orden.status).toBe("cancelada");
     expect(orden.cancelledAt).not.toBeNull();
 
-    // UNA sola liberación. Si la cancelación volviera a recorrer los ítems,
-    // liberaría de nuevo lo que ya se soltó y la reserva se iría abajo de
-    // cero — o reventaría contra el CHECK.
+    // UNA sola liberación: si la cancelación volviera a recorrer los ítems,
+    // liberaría de nuevo lo ya soltado.
     expect(await contadores(variantId)).toEqual({
       stockTotal: 10,
       reservedStock: 0,
@@ -344,7 +335,6 @@ test("editar mientras se finaliza: gana una sola", async () => {
     reason: { code: "INVALID_ORDER_STATE" },
   });
 
-  // Se vendieron las 4 y no quedó reserva colgada.
   expect(await contadores(variantId)).toEqual({
     stockTotal: 6,
     reservedStock: 0,

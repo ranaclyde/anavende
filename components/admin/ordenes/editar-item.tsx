@@ -22,27 +22,9 @@ import {
 import type { ItemDeLaOrdenDelPanel } from "@/modules/orders/queries-panel";
 
 /**
- * Editar un renglón de una orden activa — FS RF-22. Tareas F7.2 y F7.2a.
- *
- * **Tres acciones y tres diálogos, no uno con opciones.** Subir, bajar y
- * quitar se parecen —las tres mueven la misma reserva— y son decisiones
- * distintas: una compromete stock y puede no entrar, otra lo libera, y la
- * tercera saca el producto y, si era el único, cancela la orden. El propio
- * dominio las separa y se niega a colarse de una a otra por un número
- * (`editar.ts`). Juntarlas acá en un selector que va de cero a lo que haya
- * devolvería esa confusión por la pantalla.
- *
- * **Las tres preguntan, y las tres dicen qué pasa con el stock**, que es el
- * número con el que se decide. Con una diferencia de fondo entre ellas:
- * bajar y quitar **siempre se pueden**; subir puede no poderse, y entonces el
- * diálogo dice cuántas quedan en vez de fallar y ya.
- *
- * **Quitar no se puede deshacer** (de `cancelada` no se sale, RF-13), pero
- * bajar la cantidad sí: desde F7.2a se vuelve a subir mientras haya stock, y
- * los textos lo dicen así en vez de prometer lo contrario.
- *
- * La isla es chica: la orden entera se pinta en el servidor y acá queda sólo
- * lo que responde al clic.
+ * Subir, bajar y quitar son tres diálogos y no un selector, como en el
+ * dominio (`editar.ts`): una compromete stock, otra lo libera, y la tercera
+ * puede cancelar la orden.
  */
 export function EditarElRenglon({
   numero,
@@ -59,20 +41,15 @@ export function EditarElRenglon({
   >(null);
 
   return (
-    // Lo señala la guía de la orden (F6.7): el primero visible. Mide lo que
-    // sus botones y se corre a la derecha con `ml-auto`, porque a todo el
-    // ancho la guía resaltaba un recuadro vacío a su izquierda.
+    // `w-fit` y `ml-auto`: la guía resalta esta caja, y a todo el ancho
+    // marcaba un recuadro vacío.
     <div
       data-ayuda="ajustar-renglon"
-      // Separados en la tablet (F2.15): a 2px, el «+» y el tacho se tocaban
-      // con el mismo dedo.
+      // Separados en la tablet: a 2px se tocaban con el mismo dedo.
       className="ml-auto flex w-fit items-center gap-0.5 max-lg:gap-2"
     >
-      {/* **Subir está siempre, aunque no haya stock.** Al revés que bajar, acá
-          la razón por la que no se puede no se ve en la pantalla —el
-          disponible es de otra tabla—, y un botón ausente sin explicación
-          deja a quien mira preguntándose si el producto se agotó o si el
-          panel no lo permite. El diálogo lo contesta. */}
+      {/* Subir está siempre, aunque no haya stock: el diálogo dice por qué
+          no se puede. */}
       <Button
         variant="tertiary"
         size="icon"
@@ -83,8 +60,7 @@ export function EditarElRenglon({
         <span className="sr-only">Subir la cantidad de {item.nombre}</span>
       </Button>
 
-      {/* Con una sola unidad no hay a qué bajar: lo único que se puede hacer
-          con ese renglón es quitarlo, y el botón que no sirve no está. */}
+      {/* Con una sola unidad no hay a qué bajar. */}
       {item.cantidad > 1 ? (
         <Button
           variant="tertiary"
@@ -107,12 +83,8 @@ export function EditarElRenglon({
         <span className="sr-only">Quitar {item.nombre} de la orden</span>
       </Button>
 
-      {/* `key` con la cantidad: los dos diálogos arrancan su selector desde
-          `item.cantidad`, y ese estado se calcula una sola vez, al montar.
-          Sin la clave, después de sumar o bajar la tabla mostraba el número
-          nuevo y el diálogo seguía con el viejo — el teclado agregado con 1
-          y subido a 2 abría «bajar» con un 0 escondido detrás del «1» del
-          selector, y el servidor lo rechazaba (2026-09-30). */}
+      {/* `key` con la cantidad: el selector toma `item.cantidad` solo al
+          montar, y sin la clave quedaba con el número viejo. */}
       <DialogoDeSubir
         key={`subir-${item.cantidad}`}
         abierto={abierto === "subir"}
@@ -138,7 +110,6 @@ export function EditarElRenglon({
   );
 }
 
-/** «Auricular Cloud II (negro)», como lo nombra el historial. */
 function nombrar(item: ItemDeLaOrdenDelPanel): string {
   return item.color
     ? `${item.nombre} (${item.color.toLowerCase()})`
@@ -146,11 +117,8 @@ function nombrar(item: ItemDeLaOrdenDelPanel): string {
 }
 
 /**
- * Qué pasa con el stock al soltar `cuantas` unidades de este renglón.
- *
- * Una variante borrada llega con `disponible` en `null` (§5.6): el renglón
- * se lee igual —el snapshot sobrevive— pero no hay contador que mover, y
- * decirlo es mejor que mostrar un número inventado.
+ * Una variante borrada llega con `disponible` en `null` (§5.6): se dice, no
+ * se inventa un número.
  */
 function ImpactoEnElStock({
   item,
@@ -180,18 +148,7 @@ function ImpactoEnElStock({
   );
 }
 
-/**
- * Subir la cantidad de un renglón — RF-22 (F7.2a).
- *
- * **El tope del selector es lo que hay disponible**, no un número grande: si
- * quedan tres, ofrecer diez es ofrecer siete que van a volver como error. Y si
- * no queda ninguna, el diálogo lo dice y no hay nada que elegir — es el «se
- * dice cuánto hay» del requisito, dicho antes de intentar y no después.
- *
- * **El precio no se toca**, y por eso no hay campo de precio: las unidades
- * nuevas van al de este renglón, que es el que el comprador aceptó. Para otro
- * precio existe la orden manual (RF-24).
- */
+/** Las unidades nuevas van al precio que aceptó el comprador. */
 function DialogoDeSubir({
   abierto,
   cerrar,
@@ -207,8 +164,6 @@ function DialogoDeSubir({
   const [error, setError] = useState<string | null>(null);
   const [cantidad, setCantidad] = useState(item.cantidad + 1);
 
-  // `disponible` en `null` es la variante borrada (§5.6): no hay contador que
-  // reservar, así que tampoco hay unidades para ofrecer.
   const hay = item.disponible ?? 0;
   const opciones = Array.from({ length: hay }, (_, i) => item.cantidad + i + 1);
 
@@ -221,9 +176,7 @@ function DialogoDeSubir({
         cantidad,
       });
       if (!r.ok) {
-        // Puede ser INSUFFICIENT_STOCK: entre que se pintó la pantalla y
-        // llegó el clic, otra orden pudo llevarse esas unidades. El mensaje
-        // que arma el dominio dice cuántas quedan ahora.
+        // INSUFFICIENT_STOCK si otra orden se llevó las unidades entre medio.
         setError(r.message);
         return;
       }
@@ -310,11 +263,7 @@ function DialogoDeSubir({
   );
 }
 
-/**
- * Lo que RF-22 pide que la pantalla recuerde: **el sistema no le avisa al
- * comprador**. No hay emails de cambios (FA-07); lo que sí pasa solo es que
- * «Mis compras» le muestra la orden ya cambiada, con su total nuevo.
- */
+/** RF-22: el sistema no le avisa al comprador de los cambios (FA-07). */
 export function AvisoAlComprador() {
   return (
     <p className="rounded-panel-control bg-surface-sunken px-3 py-2 text-caption text-ink-secondary">
@@ -337,8 +286,6 @@ function DialogoDeCantidad({
 }) {
   const [enCurso, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  // Arranca en una menos: es el movimiento que se hace nueve de cada diez
-  // veces, y deja el diálogo listo para confirmar sin tocar el selector.
   const [cantidad, setCantidad] = useState(item.cantidad - 1);
 
   const opciones = Array.from({ length: item.cantidad - 1 }, (_, i) => i + 1);
@@ -355,14 +302,8 @@ function DialogoDeCantidad({
         setError(r.message);
         return;
       }
-      // **Acá sí hay que cerrarlo a mano**, al revés de «Cancelar el pedido»
-      // de la tienda (F6.5): allá el componente desaparecía con el refresco y
-      // el diálogo se iba con él. Bajar la cantidad deja el renglón donde
-      // estaba, así que sin esto el diálogo queda abierto mostrando el número
-      // viejo sobre una tabla que ya se actualizó. Lo encontró el repaso.
-      //
-      // Va después del `await`: para entonces el refresco ya llegó con la
-      // acción, y las dos cosas se pintan juntas.
+      // Hay que cerrarlo a mano: el renglón sigue montado y el diálogo
+      // quedaría abierto con el número viejo.
       avisar(`${nombrar(item)} queda en ${cantidad} en la orden #${numero}.`);
       cerrar();
     });
@@ -387,9 +328,7 @@ function DialogoDeCantidad({
           <Select
             id="cantidad-nueva"
             value={cantidad}
-            // `parseInt` y no `Number`: la regla de lint que prohíbe `Number`
-            // cuida los montos (§7.1), y acá lo que se lee es una cantidad
-            // entera. Escribirlo así deja dicho cuál de las dos cosas es.
+            // `parseInt`: la regla contra `Number` cuida los montos (§7.1).
             onChange={(e) => setCantidad(Number.parseInt(e.target.value, 10))}
             className="w-28"
           >
@@ -451,19 +390,16 @@ function DialogoDeQuitar({
       const r = await quitarItemDeLaOrden({
         numero,
         itemId: item.id,
-        // Lo que la pantalla sabe al pintarse. Quien decide de verdad es el
-        // dominio: si entre medio otra pestaña dejó este renglón como el
-        // único, `quitarItem` se niega y lo explica en vez de cancelar sola.
+        // Si otra pestaña lo dejó como el único, `quitarItem` se niega en vez
+        // de cancelar sola.
         cancelarSiEsElUltimo: esElUnico,
       });
       if (!r.ok) {
         setError(r.message);
         return;
       }
-      // El renglón se va y este componente con él, así que cerrar sería casi
-      // siempre redundante. Casi: si quitar el último canceló la orden, la
-      // pantalla se repinta entera y conviene no depender de en qué orden
-      // desmonta React.
+      // Casi siempre redundante (el renglón se desmonta), pero no hay que
+      // depender del orden en que desmonta React.
       avisar(
         esElUnico
           ? `Quitaste ${nombrar(item)}, que era el único renglón: la orden #${numero} quedó cancelada.`

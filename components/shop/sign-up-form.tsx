@@ -28,11 +28,8 @@ import type { ProveedorSocial } from "@/modules/users/proveedores";
 type Campo = "firstName" | "lastName" | "email" | "phone" | "password";
 
 /**
- * Alta de cuenta — RF-05, TECHNICAL-SPEC §13.4.
- *
- * El envío va a una Server Action, no al `signUp` del cliente: el perfil con
- * teléfono es obligatorio y el alta tiene que poder compensarse si falla a
- * mitad. La validación se repite en el servidor aunque acá ya haya pasado.
+ * Alta de cuenta (RF-05). Va a una Server Action y no al `signUp` del
+ * cliente: el alta tiene que poder compensarse si falla a mitad (TS §13.4).
  */
 export function SignUpForm({
   volver,
@@ -46,7 +43,7 @@ export function SignUpForm({
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
 
-  // F10.5b: el token de Turnstile, uno por envío.
+  // El token de Turnstile, uno por envío.
   const [captcha, setCaptcha] = useState<string | null>(null);
   const turnstile = useRef<ControlDeTurnstile>(null);
   const idDelAviso = useId();
@@ -64,9 +61,7 @@ export function SignUpForm({
         email: String(datos.get("email") ?? ""),
         phone: String(datos.get("phone") ?? ""),
         password: String(datos.get("password") ?? ""),
-        // Para que el enlace del email devuelva a la ficha y no a «Mi
-        // cuenta» (F5.7): el alta es el camino largo, y es el único que pasa
-        // por otra pestaña.
+        // Para que el enlace del email devuelva a la ficha y no a «Mi cuenta».
         volver,
         captcha: captcha ?? undefined,
       });
@@ -99,10 +94,7 @@ export function SignUpForm({
         />
 
         <form onSubmit={enviar} className="flex flex-col gap-5" noValidate>
-          {/* Dos campos y no uno: con un campo libre no hay forma de saber
-              cuál es el nombre de pila, y hace falta saberlo para saludar en
-              los emails (2026-09-10). En una fila desde `sm`, apilados en el
-              teléfono, que es donde dos campos angostos se vuelven incómodos. */}
+          {/* Dos campos: hace falta el nombre de pila para saludar en los emails. */}
           <div className="flex flex-col gap-5 sm:flex-row sm:gap-4">
             <div className="flex flex-1 flex-col gap-2">
               <Label htmlFor="firstName">Nombre</Label>
@@ -169,9 +161,6 @@ export function SignUpForm({
             {errores.campos.phone ? (
               <FieldError id="e-phone">{errores.campos.phone}</FieldError>
             ) : (
-              // RF-05: el teléfono es obligatorio porque es el canal por el
-              // que se coordina la venta. Decir para qué sirve evita que
-              // parezca un dato que pedimos porque sí.
               <FieldHint id="ayuda-phone">
                 Por acá coordinamos la entrega y el pago.
               </FieldHint>

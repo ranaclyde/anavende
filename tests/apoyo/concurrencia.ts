@@ -3,31 +3,11 @@ import { db } from "@/db";
 type Transaccion = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
- * Dos transacciones solapadas de verdad, sobre la misma fila.
- *
- * **Por qué hace falta esto y no alcanza un `Promise.all`.** Lanzar las dos a
- * la vez no garantiza que se solapen: el planificador puede correr la primera
- * entera —incluido el COMMIT— antes de que la segunda abra su conexión. El
- * resultado del test sería idéntico, verde, y no habría probado nada. Un test
- * de condición de carrera que no fuerza la carrera es un test que dice que sí
- * a un sistema roto.
- *
- * **Cómo lo fuerza.** La primera transacción hace su trabajo y **se queda
- * abierta**. Recién ahí arranca la segunda, que al llegar al `UPDATE` de la
- * misma fila se queda esperando el bloqueo. Con las dos en ese estado, la
- * primera commitea; la segunda se despierta, vuelve a evaluar su `WHERE`
- * contra la fila YA cambiada y decide sobre lo que hay ahora, no sobre lo que
- * había cuando arrancó.
- *
- * Ese despertar es exactamente el momento que decide si el sistema vende dos
- * veces la última unidad. Es lo único que este andamiaje existe para poner
- * bajo prueba.
- *
- * La espera de 150 ms es el margen para que la segunda llegue a bloquearse. Si
- * no llegara, la primera commitearía antes y el test volvería a ser el que no
- * prueba nada — pero no daría un falso verde: daría el mismo resultado por el
- * camino secuencial, y ese caso ya está cubierto por los tests de «hacerlo dos
- * veces seguidas».
+ * Dos transacciones solapadas de verdad sobre la misma fila. Un `Promise.all`
+ * no alcanza: la primera puede commitear entera antes de que abra la segunda.
+ * Acá la primera escribe y queda abierta; la segunda se bloquea en el `UPDATE`
+ * y, al commitear la primera, reevalúa su `WHERE` contra la fila ya cambiada.
+ * Los 150 ms son el margen para que la segunda llegue a bloquearse.
  */
 export async function dosALaVez<A, B>(
   primera: (tx: Transaccion) => Promise<A>,
@@ -65,18 +45,9 @@ export async function dosALaVez<A, B>(
 }
 
 /**
- * Lo mismo, para funciones que **abren su propia transacción** y por lo tanto
- * no pueden recibir la de otro — `crearOrdenDesdeCarrito()`, por la
- * idempotencia (§8.5).
- *
- * Acá el solapamiento no se fuerza reteniendo a una de las dos, sino tomando
- * el bloqueo de la fila en disputa desde una TERCERA transacción. Las dos
- * arrancan, hacen su trabajo previo y se quedan las dos esperando esa fila;
- * recién entonces se suelta. Se despiertan una detrás de la otra sobre una
- * fila que ya cambió, que es el instante que hay que poner bajo prueba.
- *
- * La ventaja sobre retener a la primera: ninguna de las dos sabe que está en
- * un test, y las dos llegan al punto de conflicto por su propio camino.
+ * Lo mismo para funciones que abren su propia transacción (como
+ * `crearOrdenDesdeCarrito()`): una tercera transacción retiene el bloqueo de
+ * la fila hasta que las dos quedan esperándola, y recién ahí lo suelta.
  */
 export async function dosCompitiendo<A, B>(
   tomarElBloqueo: (tx: Transaccion) => Promise<void>,

@@ -12,12 +12,8 @@ import {
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 
 /**
- * F5.8 — pedir la baja de la cuenta. RF-34, RN-13 · TS §13.5b.
- *
- * Que con la baja pedida la cuenta sea de solo lectura lo hace cumplir el
- * envoltorio de acciones (`lib/action.ts`, paso 2b), que mira la columna que
- * estas operaciones escriben. El envoltorio no tiene tests propios —necesita
- * una sesión, y las pruebas de dominio no la arman—: está anotado en PROGRESO.
+ * RF-34, RN-13 · TS §13.5b. La solo lectura con la baja pedida la hace
+ * cumplir el envoltorio (`envoltorio-baja.test.ts`).
  */
 
 afterEach(async () => {

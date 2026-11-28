@@ -5,7 +5,7 @@ import { datosDePrueba, sufijo, type ProductoDePrueba } from "./apoyo/datos";
 
 /**
  * La descripción larga de la ficha se pliega con «Mostrar más»; la corta se
- * muestra entera y sin botón (pedido del 2026-11-03).
+ * muestra entera y sin botón.
  */
 
 const datos = datosDePrueba();
@@ -96,8 +96,7 @@ test("plegada, en el teléfono, pasa axe y no ensancha la página", async ({
   page,
 }) => {
   // La ficha de `accesibilidad.spec.ts` tiene una descripción corta y nunca
-  // muestra el botón: se revisa acá, a 320px, que es el ancho más angosto
-  // que se pide.
+  // muestra el botón: se revisa acá, a 320px.
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto(`/productos/${larga.slug}`);
   const seccion = page.getByRole("region", { name: "Sobre el producto" });
@@ -118,8 +117,8 @@ test("la descripción corta se ve entera, sin botón", async ({ page }) => {
   await page.goto(`/productos/${corta.slug}`);
   const seccion = page.getByRole("region", { name: "Sobre el producto" });
   await expect(seccion.getByText("Cable de un metro.")).toBeVisible();
-  // Se espera a que haya medido: sin esto, el botón todavía no existiría
-  // por no haber hidratado, y el test pasaría por el motivo equivocado.
+  // Sin hidratar, el botón todavía no existiría y el test pasaría por el
+  // motivo equivocado.
   await page.waitForLoadState("networkidle");
   await expect(seccion.getByRole("button", { name: /Mostrar/ })).toHaveCount(0);
 });

@@ -56,19 +56,9 @@ import { exigirAdmin } from "@/lib/session";
 export const metadata: Metadata = { title: "Reportes" };
 
 /**
- * Reportes de ventas — FS RF-28 · TS §15. Tarea F9.1.
- *
- * **Lo vendido es lo finalizado, menos lo devuelto**, con la misma definición
- * que «Este mes» en el inicio del panel (F7.8): quien llega desde ahí con el
- * período de fábrica encuentra el mismo número.
- *
- * **Cada reporte es un gráfico con su tabla abajo** (pedido tuyo del
- * 2026-10-15, que RF-28 no pedía). El gráfico contesta de un vistazo —qué
- * día, qué producto, qué categoría—; la tabla tiene los números exactos, las
- * unidades y el desglose por color, y es lo que lee un lector de pantalla.
- *
- * El período vive en la URL (§10.2): se comparte, y el botón atrás vuelve al
- * de antes. La exportación a Excel de RF-28 es F9.2.
+ * Reportes de ventas (RF-28, TS §15). Lo vendido es lo finalizado menos lo
+ * devuelto, la misma definición que «Este mes» en el inicio del panel. Cada
+ * gráfico lleva su tabla, que es lo que lee un lector de pantalla.
  */
 export default async function Reportes({
   searchParams,
@@ -79,7 +69,6 @@ export default async function Reportes({
 
   const periodo = leerPeriodo(await searchParams);
 
-  // Siete lecturas independientes, y ninguna espera a otra.
   const [totales, anteriores, serie, productos, categorias, marcas, origenes] =
     await Promise.all([
       totalesDelPeriodo(periodo),
@@ -94,24 +83,16 @@ export default async function Reportes({
   const huboAlgo = totales.ordenes > 0 || !isZero(totales.devuelto);
 
   return (
-    // **Dos anchos, como la edición de producto** (DESIGN.md, «Layout»): por
-    // debajo de 1100px de contenido, una columna topeada en 1024 como el
-    // tablero; por encima, la pantalla entera en una grilla de dos columnas
-    // (pedido tuyo del 2026-10-15). Los totales van a lo ancho; las demás
-    // secciones, en un bento de dos columnas (abajo).
-    // **Sin tope arriba**, como la edición de producto: un primer intento lo
-    // topeó en 1680px y en un monitor ancho dejaba media columna vacía a la
-    // derecha. **La consulta es de contenedor**, para que contraer el menú
-    // también cuente.
+    // Dos anchos (DESIGN.md, «Layout»). Consulta de contenedor para que
+    // contraer el menú también cuente.
     <div className="@container">
       <div className="flex max-w-admin-form flex-col gap-4 @min-[1100px]:max-w-none">
         <EncabezadoDePanel
           titulo="Reportes"
           bajada="Lo vendido en el período: órdenes finalizadas, menos lo devuelto."
           acciones={
-            // Un `<a>` y no un `Link`: es un archivo, no una pantalla, y el
-            // enrutador del cliente intentaría pintarlo. La URL lleva el
-            // mismo período y el mismo ranking que se están mirando (F9.2).
+            // Un `<a>` y no un `Link`: es un archivo, y el enrutador del
+            // cliente intentaría pintarlo.
             <Button asChild variant="secondary">
               <a href={urlDeExportacion(periodo)} download>
                 <Download aria-hidden />
@@ -130,14 +111,8 @@ export default async function Reportes({
         />
 
         {huboAlgo ? (
-          // **Un bento que se acomoda solo** (pedido tuyo del 2026-10-15):
-          // columnas de CSS y no una grilla, para que cada sección caiga en
-          // la columna que tenga lugar según su alto real. Con una grilla
-          // fija el reparto se decide de antemano, y con pocas categorías o
-          // muchas marcas una columna terminaba mucho más larga que la otra.
-          // El orden de lectura es el del DOM —columna izquierda, después la
-          // derecha—, así que el teclado no se despega de lo que se ve.
-          // `break-inside-avoid` impide que una tarjeta se parta entre dos.
+          // Columnas de CSS y no grilla: cada sección cae donde haya lugar
+          // según su alto real, y el orden del DOM sigue al de lectura.
           <div className="@min-[1100px]:columns-2 @min-[1100px]:gap-4 [&>*]:mb-4 [&>*]:break-inside-avoid [&>*:last-child]:mb-0">
             <TarjetaDeSeccion
               id="en-el-tiempo"
@@ -156,9 +131,7 @@ export default async function Reportes({
               />
             </TarjetaDeSeccion>
 
-            {/* Debajo de las ventas en el tiempo, y no al final: es chica, y
-                al fondo de la segunda columna se perdía (pedido tuyo del
-                2026-10-15). */}
+            {/* Acá y no al final: es chica y al fondo se perdía. */}
             <WebYManual origenes={origenes} />
 
             <MasVendidos periodo={periodo} productos={productos} />
@@ -181,7 +154,6 @@ export default async function Reportes({
             icono={ChartColumn}
             titulo="No hubo ventas en este período"
             accion={
-              // El listado abre en «Activas», que es su solapa de fábrica.
               <Button asChild variant="secondary" size="sm">
                 <Link href="/admin/ordenes">Ver las órdenes activas</Link>
               </Button>
@@ -195,8 +167,6 @@ export default async function Reportes({
     </div>
   );
 }
-
-// ── Totales ─────────────────────────────────────────────────────────────
 
 const DIAS = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
@@ -212,15 +182,7 @@ function nombreDelRango({ desde, hasta }: Rango): string {
   return desde === hasta ? DIAS.format(a) : DIAS.formatRange(a, b);
 }
 
-/**
- * Los cuatro totales de RF-28, cada uno con el período anterior al lado.
- *
- * **La comparación lleva flecha, signo y el número de antes**, y el cambio
- * va en verde si sube y en rojo si baja; sin cambio queda en gris (pedido tuyo
- * del 2026-10-15). Son los semánticos de DESIGN.md, «la regla del estado», y
- * el color nunca dice solo para dónde fue: la flecha y el signo también lo
- * dicen. **«contra $ X» queda en gris**: es la referencia, no el resultado.
- */
+/** El color nunca dice solo para dónde fue: también la flecha y el signo. */
 function TotalesDelPeriodo({
   periodo,
   totales,
@@ -230,8 +192,7 @@ function TotalesDelPeriodo({
   totales: Totales;
   anteriores: Totales;
 }) {
-  // Sin nada antes, no hay contra qué: se dice una vez por total, en vez de
-  // «+∞ %» o «0 % contra $ 0».
+  // Sin nada antes se dice eso, en vez de «+∞ %» o «0 % contra $ 0».
   const huboAntes = anteriores.ordenes > 0 || !isZero(anteriores.devuelto);
   const antes = (valor: string) => (huboAntes ? valor : null);
 
@@ -347,8 +308,6 @@ function Total({
   );
 }
 
-// ── Más vendidos ────────────────────────────────────────────────────────
-
 /** «Negro 3 · Blanco 1», si el producto tiene colores que separar. */
 function desgloseDeColores(p: ProductoVendido): string | null {
   const conColor = p.colores.filter((c) => c.color);
@@ -462,8 +421,6 @@ function MasVendidos({
   );
 }
 
-// ── Por categoría y por marca ───────────────────────────────────────────
-
 /** Cuántas barras entran en el gráfico; la tabla las tiene todas. */
 const BARRAS_AGRUPADAS = 8;
 
@@ -533,8 +490,6 @@ function Agrupadas({
     </TarjetaDeSeccion>
   );
 }
-
-// ── Web contra manual ───────────────────────────────────────────────────
 
 const NOMBRE_DEL_ORIGEN = {
   web: "Web",

@@ -11,39 +11,16 @@ import {
 } from "@/modules/media/tamanos";
 import { validarArchivo } from "@/modules/media/validar";
 
-/**
- * Conversión y redimensionado — TECHNICAL-SPEC §9.0, §9.2; RF-17.
- *
- * sharp TRANSFORMA, no almacena: de acá salen cuatro buffers en memoria —tres
- * WEBP para la pantalla y un JPEG para la vista previa al compartir (F3.9)— y
- * nada toca el disco. El original no se guarda ni se sirve nunca.
- *
- * Se convierte al subir y no al servir (§9.0): transformar sobre la marcha
- * obligaría a conservar el archivo de 8 MB, que es justamente lo que se
- * quiere evitar.
- */
+// Se convierte al subir y no al servir (TECHNICAL-SPEC §9.0): el original no
+// se guarda ni se sirve nunca.
 
-/**
- * El mismo `--brand` de DESIGN-REFERENCE §3.1 que usa la tarjeta de marca
- * (`scripts/derivar-og.mts`). Que las dos vistas previas —la del sitio y la
- * de una ficha— compartan fondo es lo que hace que se lean como del mismo
- * lugar cuando caen una debajo de la otra en un chat.
- */
+/** El `--brand` de DESIGN-REFERENCE §3.1, el mismo fondo de `scripts/derivar-og.mts`. */
 const FONDO_OG = { r: 0x83, g: 0x28, b: 0x33, alpha: 1 };
 
 /**
- * La memoria del servidor APP — F10.6, TECHNICAL-SPEC §2.4, R3. Los dos
- * ajustes valen para todo el proceso, no solo para esta subida: el
- * optimizador de `/_next/image` usa el mismo sharp, y por eso `next.config.ts`
- * le pide lo mismo (`imgOptConcurrency`, `imgOptOperationCache`) — si no, al
- * cargarse pisaría estos valores con los suyos.
- *
- * - **Un hilo de libvips por imagen.** En Linux con glibc, que es la imagen
- *   Debian de producción, sharp ya arranca en 1; en la Mac arranca en la
- *   cantidad de núcleos. Fijarlo deja a los dos iguales.
- * - **Sin la caché de operaciones de libvips** (50 MB por omisión): cada foto
- *   se procesa una sola vez, así que lo cacheado nunca se vuelve a usar.
- *
+ * Para la memoria del servidor (TECHNICAL-SPEC R3). Vale para todo el proceso:
+ * `/_next/image` usa el mismo sharp, y `next.config.ts` le pide lo mismo
+ * (`imgOptConcurrency`, `imgOptOperationCache`) o pisaría estos valores.
  * La otra mitad es `MALLOC_ARENA_MAX=2` en el `Dockerfile`.
  */
 sharp.concurrency(1);
@@ -59,32 +36,22 @@ export type Version = {
 
 export type ImagenProcesada = {
   versiones: Version[];
-  /** Los del tamaño mayor de la tabla que se haya usado (§9.2). */
+  /** Los de la versión de galería más ancha. */
   ancho: number;
   alto: number;
   bytes: number;
 };
 
-/**
- * `tamanos` se pasa porque no toda imagen quiere los mismos: el logo de marca
- * usa dos y no tres (§9.2). Lo que NO cambia con el destino es todo lo demás
- * —validación, orientación, WEBP, descarte del EXIF—, y por eso vive acá una
- * sola vez.
- */
 export async function procesarImagen(
   entrada: Buffer,
   tamanos: readonly Tamano[] = TAMANOS,
-  /**
-   * Las capas de la marca de agua (RF-39, §9.6), o nada. Solo las fotos de
-   * producto la pasan; se aplica a las versiones de `SUFIJOS_CON_MARCA`.
-   */
+  /** Solo las fotos de producto; se aplica a `SUFIJOS_CON_MARCA`. */
   marca: readonly CapaLista[] = [],
 ): Promise<ImagenProcesada> {
   validarArchivo(entrada);
 
-  // Segunda puerta, después de los magic bytes: un archivo con la firma
-  // correcta y el contenido corrupto pasa la primera y muere acá. Mejor un
-  // mensaje claro que una excepción de la biblioteca a mitad de camino.
+  // Segunda puerta, después de los magic bytes: firma correcta y contenido
+  // corrupto mueren acá con un mensaje claro.
   let original;
   try {
     original = await sharp(entrada).metadata();
@@ -98,25 +65,17 @@ export async function procesarImagen(
     });
   }
 
-  // **Una versión después de la otra, no en paralelo** (F10.6): cada una lee
-  // el original entero, así que en paralelo el pico de memoria se multiplica
-  // por la cantidad de versiones y lo que se gana en tiempo es poco.
+  // Una versión tras otra: cada una lee el original entero, y en paralelo el
+  // pico de memoria se multiplica.
   const versiones: Version[] = [];
   for (const { sufijo, ancho, alto, calidad, formato, cuadrado } of tamanos) {
-    // `autoOrient` aplica la orientación del EXIF ANTES de redimensionar:
-    // una foto sacada con el teléfono de costado se guarda derecha. Es el
-    // único dato del EXIF que sobrevive — al no llamar a `keepMetadata`,
-    // sharp descarta el resto, y ahí viven la marca del teléfono y las
-    // coordenadas de dónde se sacó la foto (§9.2, §16).
+    // `autoOrient` antes de redimensionar. Sin `keepMetadata`, sharp descarta
+    // el resto del EXIF, incluidas las coordenadas (§16).
     const recortada = sharp(entrada)
       .autoOrient()
       .resize(
         alto
-          ? // La versión de Open Graph va a un lienzo FIJO de 1200×630: es
-            // la proporción que todos recortan igual, y una foto cuadrada
-            // metida ahí sin relleno saldría cortada de arriba y de abajo.
-            // `contain` la deja entera y centrada sobre el burdeos, igual
-            // que la tarjeta de marca de `scripts/derivar-og.mts`.
+          ? // `og`: lienzo fijo; `contain` deja la foto entera sobre el burdeos.
             {
               width: ancho,
               height: alto,
@@ -125,15 +84,10 @@ export async function procesarImagen(
               withoutEnlargement: true,
             }
           : cuadrado
-            ? // La foto de perfil (F5.9): un cuadrado lleno, recortado
-              // donde sharp encuentra lo que más llama la atención —piel,
-              // contraste—, que en una foto de alguien suele ser la cara.
-              // Centrado, un retrato vertical perdía la frente.
-              //
-              // **Sin `withoutEnlargement`**: con él, una foto más chica que
-              // 256px no se toca y sale con su proporción —100×200 sigue
-              // siendo 100×200—, y el círculo la deforma. Agrandar una foto
-              // diminuta la ablanda un poco; deformarla se ve peor.
+            ? // `attention` suele encontrar la cara; centrado, un retrato
+              // vertical perdía la frente. Sin `withoutEnlargement`: una foto
+              // de menos de 256px saldría con su proporción y el círculo la
+              // deformaría.
               {
                 width: ancho,
                 height: ancho,
@@ -143,9 +97,8 @@ export async function procesarImagen(
             : { width: ancho, fit: "inside", withoutEnlargement: true },
       );
 
-    // Con marca, la versión se redimensiona primero a píxeles crudos y la
-    // marca se pega encima: el tamaño de cada capa sale del tamaño final, que
-    // recién se conoce acá (`ponerMarca`).
+    // Con marca, primero a píxeles crudos: el tamaño de cada capa sale del
+    // tamaño final.
     const conMarca =
       marca.length > 0 && formato !== "jpeg" && SUFIJOS_CON_MARCA.has(sufijo);
     const lista = conMarca
@@ -157,8 +110,7 @@ export async function procesarImagen(
 
     const { data, info } = await (
       formato === "jpeg"
-        ? // Sin canal alfa: un PNG con fondo transparente sale sobre el
-          // burdeos y no sobre negro, que es a lo que cae JPEG solo.
+        ? // Sin aplanar, JPEG pone negro donde había transparencia.
           lista.flatten({ background: FONDO_OG }).jpeg({ quality: calidad })
         : lista.webp({ quality: calidad })
     ).toBuffer({ resolveWithObject: true });
@@ -166,29 +118,16 @@ export async function procesarImagen(
     versiones.push({
       sufijo,
       cuerpo: data,
-      // Del resultado, no del cálculo: con `withoutEnlargement` una imagen
-      // de 300px de ancho sale de 300px en los tres tamaños, y suponer 1400
-      // dejaría la base mintiendo sobre lo que hay en Storage.
+      // Del resultado, no del cálculo: con `withoutEnlargement` puede ser más chica.
       ancho: info.width,
       alto: info.height,
       bytes: info.size,
     });
   }
 
-  // El mayor se busca por ancho y no por un sufijo fijo: con dos tablas de
-  // tamaños distintas, «el más grande» no siempre se llama igual.
-  //
-  // **Pero las de lienzo fijo no juegan**, y esto es lo que se llevó puesto
-  // agregar la versión `og` de F3.9: su lienzo mide 1200×630 aunque la foto
-  // que lleva adentro sea de 300px, así que una foto chica la habría
-  // convertido en «la más grande» y `variant_images` habría guardado 1200×630
-  // como medidas de una imagen de 300×200. La galería habría reservado un
-  // lugar que la foto no ocupa.
-  //
-  // El respaldo de abajo tampoco es por las dudas:
-  // `scripts/derivar-og-productos.mts` llama con `TAMANOS_OG` sola —solo
-  // quiere rehacer esa versión— y ahí NO hay ninguna de galería. Sin él,
-  // reducir un arreglo vacío revienta.
+  // Las de lienzo fijo (`og`) no cuentan: con una foto chica, 1200×630 pasaría
+  // por la más grande. El respaldo no sobra: `derivar-og-productos.mts` pasa
+  // solo `TAMANOS_OG`, y reducir un arreglo vacío revienta.
   const deGaleria = new Set(
     tamanos.filter((t) => !t.alto).map((t) => t.sufijo),
   );

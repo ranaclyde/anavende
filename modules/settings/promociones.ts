@@ -1,23 +1,13 @@
 import { compare, cuota, isZero, type Money } from "@/lib/money";
 
-/**
- * Qué promociones de cuotas muestra una ficha, y cuál va primero — RF-40,
- * F2.17.
- *
- * Lógica pura, sin base: la consulta trae las vigentes de toda la tienda una
- * vez por pedido (`promocionesVigentes`), y esto decide para un precio. Así
- * se prueba sin Postgres y la consulta no depende del producto, que es lo
- * que deja pedirla en paralelo con la ficha.
- */
+// Lógica pura: la consulta no depende del producto, así se pide en paralelo con
+// la ficha y esto decide para cada precio.
 
-/** Una promoción vigente, como la trae la consulta. */
 export type PromocionVigente = {
   id: string;
-  /** El nombre del medio de pago, como lo lee el comprador. */
   medio: string;
-  /** «Plan Z». `null` = la promoción es del medio entero. */
+  /** `null` = la promoción es del medio entero. */
   plan: string | null;
-  /** El logo del medio, ya resuelto. `null` = no tiene. */
   logoUrl: string | null;
   cuotas: number;
   /** Porcentaje con dos decimales: `"0.00"` = sin interés. */
@@ -25,7 +15,6 @@ export type PromocionVigente = {
   montoMinimo: Money | null;
 };
 
-/** Lo que la ficha dibuja de cada una. */
 export type PromocionDeLaFicha = {
   id: string;
   medio: string;
@@ -37,27 +26,15 @@ export type PromocionDeLaFicha = {
 };
 
 export type PromocionesDeLaFicha = {
-  /** La que va debajo del precio. `null` = no hay ninguna que aplique. */
   destacada: PromocionDeLaFicha | null;
-  /**
-   * Todas las que aplican, la destacada incluida, para el modal: primero las
-   * sin recargo y después las con recargo, cada grupo **de menos a más
-   * cuotas** (decisión del 2026-11-16). Los empates, en el orden de los
-   * medios de pago.
-   */
+  /** Primero las sin recargo; cada grupo de menos a más cuotas. */
   todas: PromocionDeLaFicha[];
 };
 
 /**
- * Filtra por monto mínimo, calcula la cuota y elige la destacada:
- *
- * 1. **La de más cuotas sin recargo**: es la que más alivia y la que no
- *    tiene letra chica.
- * 2. Si ninguna es sin recargo, **la de cuota más baja**.
- *
- * Los empates los gana la que llegó primero, que es el orden de los medios
- * de pago en el panel: lo que la vendedora puso arriba, va arriba.
- * `vigentes` tiene que venir en ese orden (lo da la consulta).
+ * Destacada: la de más cuotas sin recargo; si no hay, la de cuota más baja.
+ * Los empates los gana la primera, así que `vigentes` tiene que venir en el
+ * orden de los medios de pago.
  */
 export function promocionesParaElPrecio(
   vigentes: readonly PromocionVigente[],
@@ -96,7 +73,7 @@ export function promocionesParaElPrecio(
   return { destacada, todas };
 }
 
-/** ¿`a` le gana a `b`? Estricto: en un empate se queda la que estaba. */
+/** Estricto: en un empate se queda la que estaba. */
 function mejor(a: PromocionDeLaFicha, b: PromocionDeLaFicha): boolean {
   if (a.sinRecargo !== b.sinRecargo) return a.sinRecargo;
   if (a.sinRecargo) return a.cuotas > b.cuotas;

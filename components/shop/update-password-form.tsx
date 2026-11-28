@@ -20,9 +20,8 @@ import { definirContrasena } from "@/modules/users/actions";
 type Campo = "nueva" | "repetida";
 
 /**
- * Definición de una contraseña nueva (RF-05).
- * También es el destino del email E3, cuando la administradora crea una
- * cuenta desde el panel (RF-30, F9.4).
+ * Definición de una contraseña nueva (RF-05). También es el destino del email
+ * E3, cuando la administradora crea una cuenta desde el panel (RF-30).
  */
 export function UpdatePasswordForm() {
   const [password, setPassword] = useState("");

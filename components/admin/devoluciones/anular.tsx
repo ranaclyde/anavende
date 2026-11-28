@@ -20,22 +20,8 @@ import { leerErrores } from "@/lib/form";
 import { anularUnaDevolucion } from "@/modules/returns/actions";
 import { MAXIMO_DEL_MOTIVO } from "@/modules/returns/schemas";
 
-/**
- * Anular una devolución — FS RF-25. Tarea F7.5.
- *
- * **Es la única corrección que existe**, y por eso está donde se ve la
- * devolución y no detrás de un menú: RF-25 dice que una devolución registrada
- * no se edita, se anula y se vuelve a cargar. Un renglón de más, la cantidad
- * equivocada o el producto que no era se arreglan así.
- *
- * **Anular no deshace la devolución: la corrige.** Lo que se había repuesto
- * sale del stock, el cupo del renglón vuelve a estar libre —de modo que se
- * puede cargar bien— y el asiento anulado se queda a la vista con su motivo.
- * Eso es lo que lo distingue de borrarlo, que es lo que no se hace.
- */
 export function AnularLaDevolucion({
   returnId,
-  /** Lo que vuelve a salir del stock, para decirlo antes de confirmar. */
   repuestas,
 }: {
   returnId: string;
@@ -46,10 +32,8 @@ export function AnularLaDevolucion({
 
   return (
     <>
-      {/* Terciario y no contorno rojo (F2.15): va en cada tarjeta del
-          listado, y once contornos rojos seguidos eran la columna de alertas
-          que el panel quiere evitar. Pide confirmación, y el diálogo dice qué
-          le pasa al stock: el peso lo pone ahí, no acá. */}
+      {/* Terciario y no contorno rojo: va en cada tarjeta, y el peso lo pone
+          el diálogo de confirmación. */}
       <Button
         variant="tertiary"
         size="sm"
@@ -97,8 +81,7 @@ function Dialogo({
     iniciar(async () => {
       const r = await anularUnaDevolucion({ returnId, motivo });
       if (!r.ok) {
-        // `INVALID_ORDER_STATE` es la que ya anuló otra pestaña: el dominio
-        // pide actualizar la página, y decirlo es mejor que un error a secas.
+        // `INVALID_ORDER_STATE`: ya la anuló otra pestaña.
         const errores = leerErrores<"motivo">(r);
         setErrorDelMotivo(errores.campos.motivo ?? null);
         setError(errores.general);

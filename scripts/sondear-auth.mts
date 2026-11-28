@@ -1,16 +1,8 @@
 /**
- * Sondeo de la Admin API de Auth — equivalente local de F0.12 y V3/V3b.
- *
- * Responde tres preguntas que la especificación da por sentadas y de las que
- * depende el diseño de F1.7:
- *
- *   1. ¿Un usuario sin email confirmado PUEDE iniciar sesión? RF-05 dice que
- *      sí («puede iniciar sesión pero no puede confirmar órdenes»). Si GoTrue
- *      lo impide, RF-05 o la configuración tienen que cambiar.
- *   2. ¿Qué error exacto recibe un usuario BLOQUEADO al intentar entrar?
- *      De eso depende cómo se detecta el bloqueo para mostrar el motivo
- *      (RF-27, §13.5).
- *   3. ¿`generateLink` manda el email o solo devuelve el enlace?
+ * Sondeo de la Admin API de GoTrue contra el stack local (lee `.env.local` y
+ * el Mailpit del 54324): si un usuario sin confirmar puede entrar (RF-05),
+ * qué error recibe uno bloqueado (RF-27) y si `generateLink` manda el email.
+ * Crea un usuario de sonda y lo borra al final; el de `generateLink` queda.
  */
 import { createClient } from "@supabase/supabase-js";
 

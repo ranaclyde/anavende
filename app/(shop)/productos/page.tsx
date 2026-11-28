@@ -16,21 +16,9 @@ const TITULO = "Productos";
 const DESCRIPCION = `Teclados, mouses, auriculares y cables. ${ZONA_DE_ENTREGA}`;
 
 /**
- * Metadatos del catálogo — F3.9, RNF-04.
- *
- * **Dependen de los filtros**, y por eso son una función y no un objeto: la
- * misma pantalla es la portada del catálogo o el resultado de una búsqueda
- * según lo que traiga la dirección, y las dos cosas no se anuncian igual.
- *
- * Dos instrucciones, y las dos salen de `catalogoIndexable`:
- *
- *   · **El `canonical` es la dirección NORMALIZADA**, no la que llegó.
- *     `urlDeTienda` reescribe los filtros en su orden, sin repetidos y sin lo
- *     que vale lo de siempre, así que `?marca=a&marca=a&orden=relevancia` y
- *     `?marca=a` declaran la misma página. Sin eso, cada forma de escribir el
- *     mismo filtro es una página distinta.
- *   · **`noindex, follow` en todo lo filtrado.** El motivo entero está en
- *     `catalogoIndexable`; acá solo se aplica.
+ * El `canonical` es la dirección normalizada, no la que llegó: si no, cada
+ * forma de escribir el mismo filtro sería otra página. Lo filtrado va con
+ * `noindex, follow` (el motivo está en `catalogoIndexable`).
  */
 export async function generateMetadata({
   searchParams,
@@ -56,38 +44,16 @@ export async function generateMetadata({
   };
 }
 
-/**
- * Catálogo — F3.8, RF-02, §7.2, §10.2.
- *
- * Todo el estado vive en la URL: filtros, orden y página. Eso es lo que hace
- * que el botón atrás funcione, que el enlace se pueda mandar por WhatsApp tal
- * como se está viendo, y que esta pantalla no necesite ni una línea de estado
- * de cliente para lo que muestra.
- *
- * La columna de filtros de 260px que pedía §7.2 se reemplazó por la barra con
- * panel desplegable del canvas aprobado en F3.8. §7.2 quedó actualizada.
- */
 export default async function Catalogo({
   searchParams,
 }: {
-  // En Next 16 `searchParams` es una promesa.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
   const filtros = leerFiltrosDeTienda(await searchParams);
   const datos = await leerElCatalogo(filtros);
 
-  /*
-   * El título dice qué se está mirando, no siempre «Productos».
-   *
-   * Con una búsqueda puesta, un encabezado genérico obliga a mirar los chips
-   * para saber por qué hay nueve resultados. El `<h1>` es lo primero que
-   * anuncia un lector de pantalla al llegar: que diga el término buscado es la
-   * diferencia entre orientarse y tener que explorar la página.
-   */
-  // Con UNA categoría elegida el título la nombra; con dos vuelve a ser
-  // genérico. «Teclados y Mouses» arriba de una grilla que además está
-  // filtrada por marca y por precio promete un recorte que no es el que hay:
-  // para eso están los chips, que los muestran todos.
+  // Con dos o más categorías el título vuelve a ser genérico: nombrarlas
+  // prometería un recorte que no es el que hay (los chips lo muestran entero).
   const unicaCategoria =
     filtros.categoria.length === 1
       ? datos.opciones.categorias.find((c) => c.slug === filtros.categoria[0])

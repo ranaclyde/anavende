@@ -5,20 +5,8 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { domainError } from "@/lib/errors";
 
-/**
- * Pedir y retirar la baja de la cuenta — FS RF-34, RN-13 · TS §13.5b. Tarea
- * F5.8.
- *
- * **El comprador pide, la administradora ejecuta** (F7.9). Pedirla deja la
- * cuenta en solo lectura (decisión del 2026-09-14): lo hace cumplir el
- * envoltorio de acciones, que mira `closure_requested_at`. Mientras no se
- * ejecutó, el comprador puede retirarla.
- *
- * **Sin email a la administradora** (decisión del 2026-09-14): el E5 de RF-30
- * quedó descartado. La baja pedida aparece como pendiente en el panel.
- *
- * Como en el resto del módulo, todo recibe el `userId` de la sesión (§13.8).
- */
+// El comprador pide y la administradora ejecuta (§13.5b). Todo recibe el
+// `userId` de la sesión (§13.8).
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -37,15 +25,10 @@ async function ordenesActivasDe(
   ];
 }
 
-/**
- * Las órdenes que impiden la baja (RF-34). La pantalla las pide ANTES de
- * ofrecer el botón: con órdenes activas no se ofrece uno que va a fallar.
- */
 export function ordenesActivas(userId: string): Promise<OrdenActiva[]> {
   return ordenesActivasDe(db, userId);
 }
 
-/** «la #12», «la #12 y la #15», «la #12, la #15 y la #20». */
 function listar(ordenes: OrdenActiva[]): string {
   const nombres = ordenes.map((o) => `la #${o.numero}`);
   return nombres.length > 1
@@ -53,15 +36,6 @@ function listar(ordenes: OrdenActiva[]): string {
     : nombres[0];
 }
 
-/**
- * «Tenés 1 orden activa (la #12)…»: cuántas y cuáles, y qué hacer (RF-34).
- *
- * **Desde F6.5 «Mis compras» existe**, así que el camino que nombra se puede
- * recorrer: se entra por el menú de la cuenta, se abre el pedido y se cancela
- * desde el detalle. Va nombrada y no enlazada porque este texto es el cuerpo
- * de un aviso y no una pantalla: meterle un enlace adentro obligaría a
- * devolver JSX desde un módulo que hoy devuelve una frase.
- */
 export function mensajeDeOrdenesActivas(ordenes: OrdenActiva[]): string {
   const cuantas =
     ordenes.length === 1
@@ -71,27 +45,15 @@ export function mensajeDeOrdenesActivas(ordenes: OrdenActiva[]): string {
 }
 
 /**
- * Pedir la baja.
- *
- * **Bloquea al comprador** mientras cuenta sus órdenes activas: sin el
- * bloqueo, una orden confirmada en paralelo (F6.1) entraría después de
- * contar y la baja quedaría pedida con una orden abierta. `NO KEY` para no
- * frenar a quien inserte un carrito o un favorito, que referencian la fila.
- *
- * **Pedirla dos veces no pisa el motivo**: devuelve el pedido que ya estaba.
- * Pasa con un doble clic o con dos pestañas, y el motivo que vale es el
- * primero.
- *
- * Una administradora no se da de baja desde la tienda: su cuenta sostiene el
- * panel, y RF-26 ya le impide bloquearse a sí misma por lo mismo.
+ * Bloquea al comprador mientras cuenta sus órdenes activas: si no, una orden
+ * confirmada en paralelo entraría después de contar. `NO KEY` no frena a quien
+ * inserte un carrito o un favorito. Pedirla dos veces no pisa el motivo.
  */
 export async function pedirBaja(
   userId: string,
   motivo: string,
 ): Promise<{ pedidaEl: string }> {
-  // `pedidaEl` es texto y no `Date`: con SQL crudo, el driver devuelve las
-  // fechas como las escribe Postgres. Nadie la usa para calcular; quien
-  // muestra la fecha la lee del perfil, que drizzle sí convierte.
+  // `pedidaEl` es texto: con SQL crudo, el driver no convierte las fechas.
   return db.transaction(async (tx) => {
     const [perfil] = await tx.execute<{
       role: string;
@@ -131,16 +93,9 @@ export async function pedirBaja(
 }
 
 /**
- * Retirar el pedido. **Retirar lo que no está pedido no es un error**, por lo
- * mismo que pedir dos veces.
- *
- * **Una baja ya ejecutada no se deshace desde acá** (F7.9): el `closed_at IS
- * NULL` del `WHERE` es toda la regla. Volver se le pide a la administradora
- * (RF-34), y sin esa condición quien fuera dado de baja podría reabrirse la
- * cuenta solo —el envoltorio de acciones deja pasar ésta con la baja pedida, y
- * es justo la que no tiene que poder—. Que llegue hasta acá es difícil, no
- * imposible: la sesión se cierra en la próxima ruta privada, y hasta entonces
- * el token emitido sigue sirviendo (§13.3).
+ * El `closed_at IS NULL` es toda la regla que impide que alguien dado de baja
+ * se reabra la cuenta solo: el envoltorio deja pasar esta acción, y el token
+ * emitido sigue sirviendo hasta la próxima ruta privada (§13.3).
  */
 export async function retirarBaja(
   userId: string,
@@ -159,13 +114,6 @@ export async function retirarBaja(
   return { retirada: filas.length > 0 };
 }
 
-/**
- * Para el panel: cuántas bajas esperan que alguien las atienda (F7.8, F7.9).
- *
- * **Pendientes, no dadas de baja**: una vez ejecutada deja de ser algo que
- * hacer, y seguir contándola dejaría el panel avisando para siempre de un
- * trabajo que ya está hecho.
- */
 export async function contarBajasPendientes(): Promise<number> {
   const [fila] = await db.execute<{ n: number }>(sql`
     SELECT count(*)::int AS n

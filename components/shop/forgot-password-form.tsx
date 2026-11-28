@@ -22,10 +22,8 @@ import { Label } from "@/components/ui/label";
 import { pedirRecuperacion } from "@/modules/users/actions";
 
 /**
- * Pedido de recuperación de contraseña (RF-05).
- *
- * Pasa por `pedirRecuperacion`, en el servidor (F10.5): la respuesta es la
- * misma haya o no una cuenta con ese email (RF-06).
+ * Pedido de recuperación de contraseña (RF-05). La respuesta es la misma haya
+ * o no una cuenta con ese email.
  */
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -33,7 +31,7 @@ export function ForgotPasswordForm() {
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  // F10.5b: el token de Turnstile, uno por envío.
+  // El token de Turnstile, uno por envío.
   const [captcha, setCaptcha] = useState<string | null>(null);
   const turnstile = useRef<ControlDeTurnstile>(null);
   const idDelAviso = useId();

@@ -17,14 +17,8 @@ export const metadata: Metadata = {
     template: `%s · ${NOMBRE_DEL_SITIO}`,
   },
   description: DESCRIPCION,
-  /*
-   * El respaldo de la vista previa, para las pantallas que no declaran la
-   * suya (F3.9). **Sin `url`**: cada página es una dirección distinta y un
-   * `og:url` heredado apuntaría a la raíz desde todas.
-   *
-   * La imagen no está acá: la pone `app/opengraph-image.png`, que Next suma
-   * solo a lo que no traiga imagen propia.
-   */
+  // Sin `url`: heredado, apuntaría a la raíz desde todas las páginas. La
+  // imagen la pone `app/opengraph-image.png`.
   openGraph: {
     ...OPEN_GRAPH_BASE,
     title: NOMBRE_DEL_SITIO,
@@ -37,19 +31,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // El modo oscuro vive solo en /admin (DESIGN-REFERENCE §3.2): la raíz
-  // no declara data-theme y la tienda es siempre clara.
   return (
-    // `suppressHydrationWarning` cubre SOLO los atributos de <html>, y hace
-    // falta: el script anti-destello del panel escribe `data-theme` antes de
-    // que React hidrate (DESIGN-REFERENCE §3.2), así que el servidor y el
-    // cliente difieren a propósito. Sin esto, cada visita al panel deja una
-    // advertencia en la consola que después tapa las de verdad.
+    // `suppressHydrationWarning` hace falta: el script anti-destello del panel
+    // escribe `data-theme` antes de que React hidrate. Cubre SOLO a <html>.
     <html lang="es-AR" className={inter.variable} suppressHydrationWarning>
       <body>
-        {/* La animación del hero se ve una vez por visita: si ya se vio en
-            esta pestaña, el atributo va antes del primer pintado y una
-            recarga no la repite (`marca-del-hero.tsx`). */}
+        {/* Antes del primer pintado, para que una recarga no repita la
+            animación del hero (`marca-del-hero.tsx`). */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_MARCA_VISTA }} />
         {children}
       </body>

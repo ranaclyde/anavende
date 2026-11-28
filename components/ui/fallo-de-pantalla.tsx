@@ -8,26 +8,12 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 /**
- * Lo que se ve cuando falla UNA pantalla — DESIGN-REFERENCE §8 y §10, F10.7.
+ * El fallo de una pantalla, para los `error.tsx` de la tienda y del panel.
+ * Se manda a Sentry a mano: una frontera de render no pasa por
+ * `onRequestError`.
  *
- * Lo usan los `error.tsx` de la tienda y del panel. Hasta F10.7 no había
- * ninguno, así que cualquier pantalla que fallara —la base que no contesta,
- * por ejemplo— caía en `global-error.tsx`, que reemplaza el sitio entero: sin
- * encabezado, sin menú, sin carrito. Con esto el error queda en el lugar del
- * contenido y lo demás sigue andando.
- *
- * Dice lo mismo que el global —qué pasó, que no es culpa de quien lo ve, y
- * qué hacer—, con «Probar de nuevo», que vuelve a pedir los datos (`retry`,
- * Next 16.3). El error se manda a Sentry a mano por la misma razón que en el
- * global: una frontera de render no pasa por `onRequestError`.
- *
- * **Salvo cuando el sitio se actualizó** (2026-11-17). Una página abierta
- * antes de un despliegue llama a las Server Actions con los códigos de su
- * build, y el servidor nuevo no los reconoce: no falló nada de nuestro lado,
- * la página quedó vieja. «Probar de nuevo» repetiría la misma llamada vieja,
- * así que el botón recarga la página entera. Y no va a Sentry: es lo
- * esperable después de cada despliegue, y reportarlo es ruido que tapa los
- * errores de verdad.
+ * Si el sitio se actualizó con la página abierta, el botón recarga entera
+ * —reintentar repetiría la llamada vieja— y no va a Sentry: es esperable.
  */
 export function FalloDePantalla({
   error,

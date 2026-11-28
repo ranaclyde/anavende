@@ -30,9 +30,8 @@ import {
 } from "@/modules/media/tamanos";
 
 /**
- * Sube todas las versiones y, si alguna falla, borra las que ya habían
- * subido. Devuelve las claves subidas para que quien llama pueda limpiarlas
- * si lo que falla es lo que viene DESPUÉS —el INSERT o el UPDATE—.
+ * Si una versión falla, borra las ya subidas. Devuelve las claves para que
+ * quien llama las limpie si falla lo que viene después.
  */
 async function subirVersiones(
   base: string,
@@ -44,9 +43,8 @@ async function subirVersiones(
   try {
     for (const v of versiones) {
       const key = clave(base, v.sufijo);
-      // El tipo sale de la tabla y no está escrito acá: desde F3.9 no todas
-      // las versiones son WEBP, y un JPEG servido como `image/webp` es
-      // exactamente el archivo que WhatsApp se niega a dibujar.
+      // El tipo sale de la tabla: un JPEG servido como `image/webp` es lo que
+      // WhatsApp no dibuja.
       await store.put(key, v.cuerpo, tipoDe(v.sufijo));
       subidas.push(key);
     }
@@ -57,39 +55,19 @@ async function subirVersiones(
   }
 }
 
-/**
- * Borra sin quejarse. Se usa en los caminos de limpieza, donde la excepción
- * que importa es otra: perder el archivo es peor que perder el motivo.
- */
+/** Borra sin quejarse: en la limpieza, la excepción que importa es otra. */
 async function borrarClaves(claves: string[]): Promise<void> {
   const store = almacenamiento();
   await Promise.all(claves.map((k) => store.delete(k).catch(() => {})));
 }
 
-/** Las claves de todas las versiones de una base, según su tabla de tamaños. */
 function clavesDe(base: string, tamanos: readonly Tamano[]): string[] {
   return tamanos.map((t) => clave(base, t.sufijo));
 }
 
 /**
- * Publicación de una imagen de variante — TECHNICAL-SPEC §9.1; RF-17.
- *
- * El proceso es SÍNCRONO: cuando esta función vuelve, o la imagen está
- * entera en Storage y en la base, o no quedó nada de ella en ningún lado. No
- * existe el estado «procesando», y por eso tampoco existe la pantalla que
- * habría que dibujar para explicarlo.
- *
- * **Lo que se cuida es que no queden huérfanos.** Hay dos formas de terminar
- * a medias y las dos se limpian:
- *
- *   · Falla la subida del segundo o del tercer tamaño → se borran los que ya
- *     habían subido.
- *   · Suben los tres y falla el INSERT → se borran los tres. Un archivo en
- *     Storage sin fila que lo nombre no lo encuentra nadie y no lo borra
- *     nadie: ocupa lugar para siempre.
- *
- * Si la limpieza también falla, gana el error original: es el que explica qué
- * pasó. El fallo de la limpieza se registra aparte.
+ * Síncrona (TECHNICAL-SPEC §9.1): al volver, la imagen está entera en Storage
+ * y en la base, o no quedó nada. Si la limpieza falla, gana el error original.
  */
 
 export type ImagenPublicada = {
@@ -112,10 +90,8 @@ export async function publicarImagenDeVariante({
   archivo: Buffer;
   altText?: string | null;
 }): Promise<ImagenPublicada> {
-  // Todo lo que hay que saber ANTES de convertir, en una sola consulta: a qué
-  // producto pertenece la variante, si está reutilizando las imágenes de otra
-  // y cuántas tiene. Procesar tres tamaños para después decir que no entraba
-  // es trabajo tirado, y en una imagen de 8 MB no es trabajo despreciable.
+  // Todo lo que hay que saber antes de convertir, para no procesar una foto
+  // de 8 MB que después no entra.
   const [estado] = await db.execute<{
     productId: string;
     imagesSourceId: string | null;
@@ -131,17 +107,13 @@ export async function publicarImagenDeVariante({
 
   if (!estado) throw domainError("NOT_FOUND");
 
-  // El `productId` llega del formulario y la clave de Storage se arma con él
-  // (§9.2). Sin esta comprobación, un id equivocado guardaría el archivo bajo
-  // una carpeta que no le corresponde: la fila apuntaría a un lugar donde
-  // nadie lo va a buscar el día que haya que borrarlo.
+  // El `productId` llega del formulario y arma la clave de Storage: sin esto,
+  // el archivo quedaría en una carpeta donde nadie lo busca al borrar.
   if (estado.productId !== productId) {
     throw domainError("NOT_FOUND");
   }
 
   // Una variante que reutiliza las de otra no muestra las propias (§9.5).
-  // Aceptar la subida dejaría un archivo que ocupa lugar y no se ve en
-  // ninguna pantalla, que es la definición de basura.
   if (estado.imagesSourceId) {
     throw domainError("VALIDATION", {
       message:
@@ -155,15 +127,10 @@ export async function publicarImagenDeVariante({
     });
   }
 
-  // La marca de agua se lee en cada subida (RF-39, §9.6): prenderla o
-  // cambiarla vale desde la próxima foto. Solo las fotos de producto la
-  // piden; logos, categorías y perfiles no pasan por acá.
   const marca = await marcaParaSubir();
   const procesada = await procesarImagen(archivo, undefined, marca);
 
-  // El id se genera acá y no lo devuelve la base: la clave de Storage lo
-  // necesita antes de que exista la fila, y pedirle a Postgres un UUID suelto
-  // para después usarlo sería una ida y vuelta de más.
+  // El id se genera acá porque la clave de Storage lo necesita antes de la fila.
   const imageId = crypto.randomUUID();
   const base = claveBase(productId, variantId, imageId);
 
@@ -179,8 +146,6 @@ export async function publicarImagenDeVariante({
         width: procesada.ancho,
         height: procesada.alto,
         bytes: procesada.bytes,
-        // Se agrega al final. Reordenar es una acción aparte (RF-17), no un
-        // efecto de subir.
         sortOrder: estado.n,
         hasWatermark: marca.length > 0,
       })
@@ -201,16 +166,8 @@ export async function publicarImagenDeVariante({
 }
 
 /**
- * Renumera las imágenes de una variante a 0, 1, 2… respetando el orden que
- * ya tenían.
- *
- * NO ES COSMÉTICA. `sortOrder` cumple dos papeles a la vez: es el orden de la
- * galería y es de dónde sale el número de la próxima imagen que se suba
- * —`publicarImagenDeVariante` usa la CANTIDAD—. Borrar la primera de tres
- * dejaría [1, 2] y la siguiente subida volvería a ser 2: dos imágenes con el
- * mismo número y un orden que pasa a depender de cuál devuelva antes la base.
- * Con la principal siendo «la que está en 0» (RF-17), eso es la portada del
- * producto cambiando sola.
+ * No es cosmética: la próxima subida toma la cantidad como `sortOrder`, y con
+ * huecos dos imágenes quedarían con el mismo número y la portada cambiaría sola.
  */
 async function renumerar(variantId: string): Promise<void> {
   await db.execute(sql`
@@ -227,10 +184,8 @@ async function renumerar(variantId: string): Promise<void> {
 }
 
 /**
- * RF-17: eliminar una imagen la quita del almacenamiento, no solo del
- * listado. Primero se borra la fila y después los archivos: al revés, un
- * fallo entre medio dejaría una fila apuntando a archivos que ya no están
- * —una imagen rota en la ficha—, que es peor que un archivo que nadie mira.
+ * Primero la fila y después los archivos: al revés, un fallo en el medio
+ * dejaría una imagen rota en la ficha.
  */
 export async function borrarImagenDeVariante(imageId: string): Promise<void> {
   const [fila] = await db
@@ -245,25 +200,13 @@ export async function borrarImagenDeVariante(imageId: string): Promise<void> {
 
   await renumerar(fila.variantId);
 
-  // La fila ya no está, así que la vendedora ya no ve la imagen. Si algún
-  // archivo sobrevive es basura, no una falla que valga cortar la operación y
-  // mostrarle un error a alguien que hizo lo correcto.
+  // La fila ya no está: si algún archivo sobrevive es basura, no un error.
   await borrarClaves(clavesDe(fila.storageKey, TAMANOS));
 }
 
 /**
- * Reordenar y elegir la principal — RF-16, RF-17.
- *
- * **La principal es la que está en la posición 0, y no hay columna que lo
- * diga.** Con una bandera `is_primary` habría dos fuentes para la misma
- * pregunta y un estado imposible que igual hay que programar: dos principales,
- * o ninguna. Elegir la principal es mover una imagen al frente, que es
- * exactamente lo que se ve en la pantalla.
- *
- * Llega el ORDEN COMPLETO y no un «movida de aquí para allá»: si la lista que
- * manda el navegador no es exactamente el conjunto que hay en la base, se
- * rechaza entera. Aplicar un orden parcial sobre datos que cambiaron en otra
- * pestaña dejaría la galería en un orden que nadie pidió.
+ * La principal es la de la posición 0 (TECHNICAL-SPEC §5.4). Llega el orden
+ * completo: si no coincide con lo que hay en la base, se rechaza entero.
  */
 export async function reordenarImagenesDeVariante(
   variantId: string,
@@ -289,14 +232,8 @@ export async function reordenarImagenesDeVariante(
       });
     }
 
-    // Una sentencia y no una por imagen: con cinco filas la diferencia no se
-    // nota, pero una tras otra deja la galería medio ordenada si la tercera
-    // falla, y ese es el estado que después nadie entiende.
-    //
-    // Los ids van como PARÁMETROS, armando la lista con `sql.join`. Pegarlos
-    // en el texto de la consulta —aunque acaben de comprobarse contra la
-    // base— es la forma de escribir una inyección que hoy no lo es y mañana
-    // sí, el día que alguien afloje la comprobación de arriba.
+    // Una sentencia y no una por imagen, para no dejar la galería a medio
+    // ordenar. Los ids van como parámetros aunque ya se comprobaron.
     const orden = sql.join(
       ids.map((id, i) => sql`(${id}::uuid, ${i}::int)`),
       sql`, `,
@@ -311,9 +248,8 @@ export async function reordenarImagenesDeVariante(
 }
 
 /**
- * Las claves de Storage de todas las imágenes de una variante, para borrarlas
- * cuando la variante se va. Se leen ANTES del DELETE: después las filas ya no
- * están —`variant_images` cae por cascada— y las claves se fueron con ellas.
+ * Se leen antes del DELETE: después `variant_images` cae por cascada y las
+ * claves se van con ella.
  */
 export async function clavesDeVariante(variantId: string): Promise<string[]> {
   const filas = await db
@@ -324,11 +260,6 @@ export async function clavesDeVariante(variantId: string): Promise<string[]> {
   return filas.flatMap((f) => clavesDe(f.storageKey, TAMANOS));
 }
 
-/**
- * Lo mismo para un producto entero: todas las imágenes de todas sus
- * variantes. Es lo que le faltaba a «borrar un producto» para no dejar en
- * Storage archivos que ya no nombra ninguna fila (RF-15, RF-17).
- */
 export async function clavesDeProducto(productId: string): Promise<string[]> {
   const filas = await db.execute<{ storageKey: string }>(sql`
     SELECT i.storage_key AS "storageKey"
@@ -339,49 +270,22 @@ export async function clavesDeProducto(productId: string): Promise<string[]> {
   return filas.flatMap((f) => clavesDe(f.storageKey, TAMANOS));
 }
 
-/** La URL pública de un tamaño concreto (§9.3). */
 export function urlDeImagen(storageKey: string, sufijo: string): string {
   return almacenamiento().publicUrl(clave(storageKey, sufijo));
 }
 
 /**
- * La vista previa al compartir, servida desde el dominio de la tienda — la
- * excepción a §9.4 del 2026-10-19.
- *
- * Con el `-og.jpg` en el subdominio de Storage, WhatsApp no la dibujaba: el
- * teléfono mostraba el título sin la foto y Escritorio, el enlace pelado. La
- * home, con su foto en `anavende.com.ar`, se veía entera en los dos. La
- * entrega la hace `app/vista-previa/[...clave]/route.ts`.
- *
- * Es relativa a propósito: `metadataBase` (`app/layout.tsx`) la completa.
+ * Desde el dominio de la tienda y no de Storage (TECHNICAL-SPEC §9.4): desde
+ * Storage WhatsApp no la dibujaba. Relativa a propósito: la completa
+ * `metadataBase`.
  */
 export function rutaDeVistaPrevia(storageKey: string): string {
   return `/vista-previa/${clave(storageKey, "og")}`;
 }
 
-// ── Logos: marca (RF-18), medio de pago (RF-19) e imagen de categoría ───
-//
-// La imagen de categoría (FA-21) entró después y por la misma puerta: no es
-// un logo, pero tiene exactamente su forma —una por fila, en una columna, y
-// la nueva borra a la anterior—, así que es un destino más de la tabla y no
-// una tercera copia de la secuencia.
-//
-// Se parecen a la imagen de variante y no son iguales, por dos motivos que se
-// notan en el código:
-//
-//   · Es UNO por fila, así que vive en una columna y no en una tabla. No hay
-//     orden, no hay tope, no hay id propio que devolver.
-//   · Poner un logo nuevo REEMPLAZA al anterior, y el anterior hay que
-//     borrarlo. Es la diferencia que más fácil se olvida: sin eso, cada
-//     corrección de logo deja un juego de archivos que nadie muestra y nadie
-//     encuentra.
-//
-// Las dos entidades comparten LAS TRES OPERACIONES y, sobre todo, el ORDEN en
-// que hay que hacerlas —que es lo único delicado de todo esto—. Por eso hay
-// una sola implementación y una tabla que dice, por destino, cómo se lee y
-// cómo se escribe su columna. Copiarla para la segunda entidad habría sido
-// tener dos veces la misma secuencia y descubrir la diferencia el día que una
-// de las dos deje archivos sueltos.
+// Logos: marca, medio de pago e imagen de categoría. Uno por fila, en una
+// columna, y el nuevo reemplaza y borra al anterior. Una sola implementación
+// porque lo delicado es el orden: subir, apuntar la fila, recién ahí borrar.
 
 const LOGOS: Record<
   DestinoDeLogo,
@@ -415,8 +319,7 @@ const LOGOS: Record<
           .from(paymentMethods)
           .where(eq(paymentMethods.id, id))
       )[0]?.logoKey,
-    // `payment_methods` no tiene `updated_at` (§5.9): es una tabla de
-    // configuración que se lee entera y no se sincroniza con nada.
+    // `payment_methods` no tiene `updated_at` (§5.9).
     escribir: async (id, logoKey) =>
       (
         await db
@@ -445,11 +348,7 @@ const LOGOS: Record<
   },
 };
 
-/**
- * `undefined` = la fila no existe. `null` = existe y no tiene logo. Son dos
- * respuestas distintas y las dos importan: la primera es un error, la segunda
- * es lo normal en una marca recién creada.
- */
+/** `undefined` = la fila no existe; `null` = existe y no tiene logo. */
 async function claveActual(
   destino: DestinoDeLogo,
   id: string,
@@ -481,10 +380,8 @@ export async function publicarLogo({
     throw e;
   }
 
-  // Recién ahora: el anterior se borra DESPUÉS de que la fila apunte al
-  // nuevo. Al revés, un fallo entre medio dejaría la fila apuntando a
-  // archivos borrados —un logo roto en el panel—, que es peor que un archivo
-  // de más durante unos milisegundos.
+  // El anterior se borra después de que la fila apunte al nuevo: al revés, un
+  // fallo en el medio dejaría un logo roto.
   if (anterior) {
     await borrarClaves(clavesDe(anterior, TAMANOS_LOGO));
   }
@@ -493,12 +390,8 @@ export async function publicarLogo({
 }
 
 /**
- * Quitar el logo: la fila se queda sin él y los archivos se van (RF-18,
- * RF-19).
- *
- * La clave se lee ANTES del UPDATE. Pedirla con `returning` devolvería el
- * valor nuevo —`null`, que es justo el que se acaba de escribir— y los
- * archivos quedarían en Storage sin nada que los nombre.
+ * La clave se lee antes del UPDATE: `returning` devolvería el valor nuevo,
+ * `null`, y los archivos quedarían sin nada que los nombre.
  */
 export async function quitarLogo(
   destino: DestinoDeLogo,
@@ -514,10 +407,7 @@ export async function quitarLogo(
   await borrarClaves(clavesDe(anterior, TAMANOS_LOGO));
 }
 
-/**
- * Los archivos del logo de una fila, para borrarlos cuando la fila se va. Se
- * leen ANTES del DELETE: después ya no está y la clave se perdió con ella.
- */
+/** Se leen antes del DELETE: después la clave se perdió con la fila. */
 export async function clavesDelLogo(
   destino: DestinoDeLogo,
   id: string,
@@ -526,12 +416,10 @@ export async function clavesDelLogo(
   return actual ? clavesDe(actual, TAMANOS_LOGO) : [];
 }
 
-/** Borra archivos sueltos de Storage. Para los caminos de limpieza. */
 export async function borrarArchivos(claves: string[]): Promise<void> {
   await borrarClaves(claves);
 }
 
-/** La URL del logo, en el tamaño pedido. `null` si la fila no tiene. */
 export function urlDeLogo(
   logoKey: string | null,
   sufijo: "thumb" | "card" = "thumb",
@@ -539,13 +427,8 @@ export function urlDeLogo(
   return logoKey ? almacenamiento().publicUrl(clave(logoKey, sufijo)) : null;
 }
 
-// ── Foto de perfil — F5.9 ───────────────────────────────────────────────
-//
-// Tiene la forma de un logo —una por fila, en una columna, y la nueva borra a
-// la anterior— y por eso sigue su mismo orden: subir, apuntar la fila, y
-// recién ahí borrar la vieja. No entra en la tabla `LOGOS` porque no es del
-// catálogo: la escribe cada persona sobre su propia cuenta, con otra ruta y
-// otro control de acceso (`app/api/mi-cuenta/foto/route.ts`).
+// Foto de perfil: el mismo orden que un logo, pero fuera de `LOGOS` porque la
+// escribe cada persona sobre su cuenta, con otra ruta y otro control de acceso.
 
 async function fotoActual(userId: string): Promise<string | null | undefined> {
   const [fila] = await db
@@ -587,18 +470,13 @@ export async function publicarFotoDePerfil({
     throw e;
   }
 
-  // Después de apuntar a la nueva, por lo mismo que el logo: al revés, un
-  // fallo entre medio dejaría la cuenta mostrando una foto rota.
+  // Después de apuntar a la nueva, como en el logo.
   if (anterior) await borrarClaves(clavesDe(anterior, TAMANOS_PERFIL));
 
   return { avatarKey: base };
 }
 
-/**
- * Quitar la foto: la cuenta vuelve a su blobatar y el archivo se va. Lo usan
- * «Quitar foto» de «Mi cuenta» y la baja ejecutada (decisión del 2026-10-26).
- * Sin foto no hace nada.
- */
+/** La usan «Quitar foto» y la baja ejecutada. Sin foto no hace nada. */
 export async function quitarFotoDePerfil(userId: string): Promise<void> {
   const anterior = await fotoActual(userId);
   if (!anterior) return;
@@ -607,16 +485,11 @@ export async function quitarFotoDePerfil(userId: string): Promise<void> {
   await borrarClaves(clavesDe(anterior, TAMANOS_PERFIL));
 }
 
-/**
- * Los archivos de una foto que la fila ya dejó de nombrar. Para quien la saca
- * de la cuenta dentro de su propia transacción —la baja ejecutada— y borra
- * los archivos recién después de confirmarla.
- */
+/** Para la baja ejecutada, que borra los archivos después de confirmar su transacción. */
 export async function borrarArchivosDeFoto(avatarKey: string): Promise<void> {
   await borrarClaves(clavesDe(avatarKey, TAMANOS_PERFIL));
 }
 
-/** La URL de la foto de perfil, o `null` si la cuenta no tiene. */
 export function urlDeFotoDePerfil(avatarKey: string | null): string | null {
   return avatarKey
     ? almacenamiento().publicUrl(clave(avatarKey, TAMANOS_PERFIL[0].sufijo))

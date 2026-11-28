@@ -7,24 +7,14 @@ import { domainError } from "@/lib/errors";
 import { TOPE_POR_ITEM } from "@/modules/cart/schemas";
 
 /**
- * Operaciones del carrito — FS RF-08 · TS §5.5, §13.8. Tarea F5.5.
+ * Todas reciben el `userId` de la sesión y ninguna el id del carrito: sin RLS,
+ * es la única barrera entre carritos (§13.8).
  *
- * **Todas reciben el `userId` y ninguna el id del carrito.** Sin RLS, el
- * filtro por la identidad de la sesión es la única barrera entre el carrito
- * de un comprador y el de otro (§13.8). Si una operación aceptara un
- * `cartId`, bastaría con cambiarlo para tocar un carrito ajeno; el `userId`
- * sale de la sesión y nunca del cliente, así que no hay nada que cambiar.
+ * El carrito no reserva stock (RF-08); controlar lo disponible al agregar es
+ * cortesía, la garantía es la reconfirmación de §8.4.
  *
- * **El carrito no reserva stock** (RF-08): eso pasa al confirmar (§8.4). Lo
- * que sí se controla es no dejar pedir más de lo que hay, para que el
- * comprador se entere al agregar y no al confirmar. Es cortesía, no garantía:
- * entre agregar y confirmar alguien más puede comprar, y para eso está la
- * reconfirmación de §8.4.
- *
- * **Agregar y cambiar la cantidad bloquean la fila del carrito.** Las dos
- * leen lo que hay antes de escribir, y sin el bloqueo dos pestañas agregando
- * a la vez leerían «hay 2», escribirían 3 cada una y se perdería una unidad.
- * El bloqueo es sobre el carrito de ESE comprador: no frena a nadie más.
+ * Agregar y cambiar la cantidad bloquean la fila del carrito: leen antes de
+ * escribir, y dos pestañas a la vez perderían una unidad.
  */
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -32,11 +22,8 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type LineaDelCarrito = { variantId: string; cantidad: number };
 
 /**
- * El carrito del comprador, creado si no existía, y bloqueado.
- *
- * El `DO UPDATE` y no un `DO NOTHING`: el `UPDATE` es lo que toma el bloqueo
- * de fila cuando el carrito ya existe, y es también lo único que hace que el
- * `RETURNING` devuelva algo en ese caso.
+ * `DO UPDATE` y no `DO NOTHING`: el `UPDATE` toma el bloqueo de fila si el
+ * carrito ya existe, y hace que el `RETURNING` devuelva algo.
  */
 async function crearOBloquear(tx: Tx, userId: string): Promise<string> {
   const [carrito] = await tx.execute<{ id: string }>(sql`
@@ -63,13 +50,7 @@ async function cantidadActual(
   return fila?.quantity ?? 0;
 }
 
-/**
- * Lo que se puede vender de una variante, o el error de por qué no.
- *
- * El `greatest(…, 0)` es RF-24: el stock puede quedar NEGATIVO por una venta
- * cargada sobre unidades que el sistema no tenía. Es una discrepancia de la
- * vendedora, y para quien compra es lo mismo que cero.
- */
+/** El `greatest(…, 0)`: un disponible negativo (RF-24) es, para quien compra, cero. */
 async function disponibleDe(tx: Tx, variantId: string): Promise<number> {
   const [v] = await tx.execute<{ seVende: boolean; disponible: number }>(sql`
     SELECT v.is_active AND p.is_active AS "seVende",
@@ -80,8 +61,7 @@ async function disponibleDe(tx: Tx, variantId: string): Promise<number> {
 
   if (!v) throw domainError("NOT_FOUND");
 
-  // El mensaje por omisión dice «lo sacamos de tu carrito», que es el caso
-  // de F5.6. Acá todavía no entró.
+  // El mensaje por omisión dice «lo sacamos de tu carrito»; acá todavía no entró.
   if (!v.seVende) {
     throw domainError("PRODUCT_UNAVAILABLE", {
       message: "Ese producto ya no está disponible.",
@@ -91,11 +71,6 @@ async function disponibleDe(tx: Tx, variantId: string): Promise<number> {
   return v.disponible;
 }
 
-/**
- * «No alcanza», dicho con el número que sirve: cuántas quedan y cuántas ya
- * tiene. Un «no hay stock suficiente» a secas deja a la persona probando
- * cantidades hasta que una entre.
- */
 function noAlcanza(disponible: number, enElCarrito: number) {
   const tope = Math.min(disponible, TOPE_POR_ITEM);
 
@@ -108,9 +83,7 @@ function noAlcanza(disponible: number, enElCarrito: number) {
 
   const message =
     tope === 0
-      ? // Sin «este color»: hay productos que no se venden por color, y desde
-        // F5.7 este mensaje se lee seguido —quien se registra para comprar
-        // tarda minutos, y en esos minutos el stock se mueve—.
+      ? // Sin «este color»: hay productos que no se venden por color.
         "Se quedó sin stock."
       : enElCarrito > 0
         ? `${cuantas} y ya tenés ${enElCarrito} en el carrito.`
@@ -123,13 +96,7 @@ function noAlcanza(disponible: number, enElCarrito: number) {
   });
 }
 
-/**
- * Agregar una variante. Si ya estaba, suma en el mismo renglón: el UNIQUE
- * `(cart_id, variant_id)` de §5.5 dice que una variante es un renglón.
- *
- * Devuelve cuántas quedaron en el carrito, que es lo que la ficha le dice a
- * quien acaba de agregar.
- */
+/** Si la variante ya estaba, suma en el mismo renglón (UNIQUE de §5.5). */
 export async function agregar(
   userId: string,
   { variantId, cantidad }: LineaDelCarrito,
@@ -144,8 +111,7 @@ export async function agregar(
       throw noAlcanza(disponible, enElCarrito);
     }
 
-    // Quien agrega está mirando la ficha, con el precio a la vista: ése pasa a
-    // ser el «visto» (F5.6), también cuando el renglón ya existía.
+    // El precio a la vista pasa a ser el «visto», también si el renglón ya existía.
     await tx.execute(sql`
       INSERT INTO cart_items (cart_id, variant_id, quantity, last_seen_price)
       SELECT ${cartId}, v.id, ${nueva}, p.final_price
@@ -161,11 +127,8 @@ export async function agregar(
 }
 
 /**
- * Cambiar la cantidad de un renglón.
- *
- * **Bajar se puede siempre**, aunque el stock ya no alcance para lo que
- * queda: rechazar que alguien pase de 4 a 3 porque ahora hay 1 lo dejaría sin
- * forma de acercarse a lo que hay. Solo se controla lo disponible al subir.
+ * Bajar se puede siempre, aunque el stock ya no alcance: si no, quien tiene 4
+ * y quedan 1 no podría acercarse. Solo se controla lo disponible al subir.
  */
 export async function cambiarCantidad(
   userId: string,
@@ -196,11 +159,7 @@ export async function cambiarCantidad(
   });
 }
 
-/**
- * Quitar un renglón. **Quitar algo que ya no está no es un error**: pasa con
- * un doble clic o con dos pestañas abiertas, y la respuesta correcta es que
- * el carrito quede sin eso, que es como ya está.
- */
+/** Quitar algo que ya no está no es un error (doble clic, dos pestañas). */
 export async function quitar(
   userId: string,
   variantId: string,
@@ -217,10 +176,7 @@ export async function quitar(
   return { quitado: filas.length > 0 };
 }
 
-/**
- * Vaciar. Se van los renglones y el carrito queda: es uno por usuario
- * (§5.5), y borrarlo solo obligaría a crearlo de nuevo en el próximo agregar.
- */
+/** Se van los renglones y el carrito queda: es uno por usuario (§5.5). */
 export async function vaciar(userId: string): Promise<{ quitados: number }> {
   const filas = [
     ...(await db.execute<{ id: string }>(sql`

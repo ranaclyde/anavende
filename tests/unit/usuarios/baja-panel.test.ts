@@ -10,32 +10,23 @@ import { CAPTCHA_DE_PRUEBA } from "@/tests/apoyo/captcha";
 import { existe, jpeg } from "@/tests/apoyo/imagenes";
 
 /**
- * F7.9 — Ejecutar y revertir bajas de cuenta. RF-34, RF-26, RN-13 · TS §13.5b.
- *
- * «Hecho cuando»: las bajas pendientes se ven con su motivo y se ejecutan;
- * ejecutar cierra las sesiones y deja registrado quién y cuándo; al intentar
- * entrar, la persona ve un mensaje **distinto del bloqueo**; revertir la
- * devuelve con todo lo suyo; el filtro por estado distingue los tres.
- *
- * **Habla con el GoTrue del stack local**, por lo mismo que F7.7: lo que puede
- * romperse en silencio es que `user_profiles` y `auth.users` queden
- * desincronizados, y el mensaje distinto —lo único que RN-13 pide y GoTrue no
- * sabe— sólo se ve con un ingreso de verdad, porque esa capa contesta
- * `user_banned` para las dos cosas.
+ * RF-34, RF-26, RN-13 · TS §13.5b. Habla con el GoTrue del stack local: lo
+ * que se rompe en silencio es que `user_profiles` y `auth.users` se
+ * desincronicen, y el mensaje distinto del bloqueo solo se ve con un ingreso
+ * de verdad, porque GoTrue contesta `user_banned` para las dos cosas.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
 vi.mock("@/lib/session", () => ({
   getSession: async () => sesion.actual,
-  // Sin sesión es sin cuenta: lo de una cuenta sin perfil lo prueba
-  // `tests/unit/seguridad/accion-sin-perfil.test.ts`.
+  // La cuenta sin perfil se prueba en `seguridad/accion-sin-perfil.test.ts`.
   getIdentity: async () => null,
 }));
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 vi.mock("next/navigation", () => ({ redirect: () => undefined }));
 
-/** El cliente del servidor, sin cookies — igual que en F7.7 y por lo mismo. */
+/** El cliente del servidor sin cookies: `cookies()` no existe fuera de un pedido. */
 vi.mock("@/lib/supabase/server", async () => {
   const { createClient } = await import("@supabase/supabase-js");
   return {
@@ -174,8 +165,7 @@ describe("ejecutar la baja (RF-34)", () => {
     const otro = await unComprador();
     comoSesion(ana.userId, "admin");
 
-    // Es la decisión del 2026-09-17: acá no hay «dar de baja» a nadie. Para
-    // sacar a alguien por decisión de la vendedora está el bloqueo (RF-27).
+    // Acá no se da de baja a nadie: para sacar a alguien está el bloqueo (RF-27).
     expect(await ejecutarBajaDeCuenta({ id: otro.userId })).toMatchObject({
       ok: false,
       code: "INVALID_ORDER_STATE",
@@ -209,8 +199,7 @@ describe("ejecutar la baja (RF-34)", () => {
     ]);
   });
 
-  // F5.9, decisión del 2026-10-26: la foto es un dato personal y se va con
-  // la baja. El archivo también, no solo la referencia.
+  // La foto es un dato personal: se va con la baja, el archivo también.
   test("se lleva la foto de perfil, de la base y de Storage", async () => {
     const ana = await unComprador();
     const otro = await unComprador();
@@ -412,7 +401,7 @@ describe("las dos capas quedan sincronizadas (§13.5b)", () => {
     });
     expect(r).toMatchObject({ ok: false, code: "ACCOUNT_CLOSED" });
     expect(r.ok === false && r.code).not.toBe("USER_BANNED");
-    // La fecha de la baja, solo con la contraseña correcta (F10.5).
+    // La fecha de la baja, solo con la contraseña correcta.
     expect(
       await ingresar({
         email: cuenta.email,
@@ -421,7 +410,6 @@ describe("las dos capas quedan sincronizadas (§13.5b)", () => {
       }),
     ).toMatchObject({ ok: false, code: "VALIDATION" });
 
-    // Y revertida, vuelve a entrar con la misma contraseña de siempre.
     await revertirBajaDeCuenta({ id: cuenta.id });
     expect(
       await ingresar({
@@ -467,8 +455,7 @@ describe("lo que el panel lee (RF-26)", () => {
 
     await ejecutarBajaDeCuenta({ id: otro.userId });
     const ejecutada = await leerUsuarioDelPanel(otro.userId);
-    // Ejecutada deja de ser trabajo por hacer y pasa a ser un estado: las dos
-    // etiquetas no se muestran juntas.
+    // Las dos etiquetas no se muestran juntas.
     expect(ejecutada).toMatchObject({ bajaPedida: false, dadoDeBaja: true });
     expect(ejecutada?.dadoDeBajaEn).not.toBeNull();
     expect(ejecutada?.dadoDeBajaPor).toBe(
@@ -500,8 +487,6 @@ describe("lo que el panel lee (RF-26)", () => {
     expect(bajas).toContain(seFue.userId);
     expect(bajas).not.toContain(pide.userId);
 
-    // Y quien pidió la baja sigue siendo una cuenta activa; quien ya se fue,
-    // no.
     const activos = await ids("activos");
     expect(activos).toContain(pide.userId);
     expect(activos).not.toContain(seFue.userId);

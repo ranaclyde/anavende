@@ -22,21 +22,7 @@ import { formatMoney } from "@/lib/money";
 import { agregarItemALaOrden } from "@/modules/orders/actions-panel";
 import type { VarianteParaLaOrden } from "@/modules/orders/queries-manual";
 
-/**
- * Agregar a una orden activa un producto que no estaba — FS RF-22. Tarea F7.2a.
- *
- * **El buscador es el mismo de la orden manual** (F7.4), y por eso esta tarea
- * se planificó después de aquélla: escribirlo dos veces era lo que había que
- * evitar. Lo que cambia es lo que pasa al elegir — allá se arma una lista con
- * precio editable, acá se confirma una reserva contra una orden que ya existe.
- *
- * **Un diálogo con dos pasos** (2026-09-30): buscar, y después cuántas y qué
- * pasa con el stock. Hasta entonces el buscador se abría dentro de la tabla,
- * empujaba el pedido hacia abajo con cada búsqueda, y al elegir abría un
- * diálogo encima: dos superficies para una sola acción. Ahora el segundo paso
- * reemplaza al primero dentro del mismo diálogo, y «Volver» regresa a la
- * búsqueda sin perderla.
- */
+/** Un diálogo con dos pasos: buscar la variante, y después cuántas. */
 export function AgregarALaOrden({ numero }: { numero: number }) {
   const [abierto, setAbierto] = useState(false);
   const [elegida, setElegida] = useState<VarianteParaLaOrden | null>(null);
@@ -62,8 +48,7 @@ export function AgregarALaOrden({ numero }: { numero: number }) {
         </Button>
 
         <DialogContent className={ALTO_DEL_DIALOGO}>
-          {/* Un solo título a la vez: Radix les da a los dos el mismo id, y
-              el diálogo se nombra con el del paso en que está. */}
+          {/* Un solo título a la vez: Radix les da a los dos el mismo id. */}
           {elegida === null ? (
             <DialogHeader>
               <DialogTitle>
@@ -76,8 +61,7 @@ export function AgregarALaOrden({ numero }: { numero: number }) {
             </DialogHeader>
           ) : null}
 
-          {/* El buscador se esconde y no se desmonta: «Volver» tiene que
-              encontrar lo que se había buscado, no un campo vacío. */}
+          {/* Se esconde y no se desmonta: «Volver» conserva la búsqueda. */}
           <div
             hidden={elegida !== null}
             className="flex min-h-0 flex-1 flex-col"
@@ -91,8 +75,7 @@ export function AgregarALaOrden({ numero }: { numero: number }) {
               numero={numero}
               variante={elegida}
               volver={() => {
-                // Sincrónico, para que el buscador ya esté visible cuando se
-                // le devuelve el foco: escondido no se puede enfocar.
+                // Sincrónico: escondido, el buscador no se puede enfocar.
                 flushSync(() => setElegida(null));
                 document.getElementById(campo)?.focus();
               }}
@@ -106,13 +89,8 @@ export function AgregarALaOrden({ numero }: { numero: number }) {
 }
 
 /**
- * Cuántas y qué pasa con el stock, antes de confirmar — RF-22.
- *
- * **El tope es el disponible de hoy**, leído por el buscador: ofrecer más
- * sería ofrecer un error. Si no queda nada, se dice y no hay nada que elegir.
- * Quien decide de verdad es el `UPDATE` condicional de §8.2, porque entre que
- * se buscó y se confirmó otra orden pudo llevarse esas unidades; cuando eso
- * pasa, el mensaje que vuelve dice cuántas quedan ahora.
+ * El tope es el disponible leído al buscar; el que decide es el `UPDATE`
+ * condicional (TS §8.2), porque otra orden pudo llevarse las unidades.
  */
 function PasoDeCantidad({
   numero,
@@ -143,10 +121,7 @@ function PasoDeCantidad({
         setError(r.message);
         return;
       }
-      // Los cuatro movimientos de ítems avisan, y el motivo no es que la
-      // pantalla no cambie —el renglón y el total cambian a la vista— sino
-      // que **cada uno escribe en el libro de stock**, que es lo único que
-      // no se ve desde acá: agregar reserva unidades y quitar las libera.
+      // Avisa porque mueve el stock, que no se ve desde acá.
       avisar(
         `Agregaste ${cantidad === 1 ? "1 unidad" : `${cantidad} unidades`} de ${variante.nombre}${
           variante.color ? ` (${variante.color.toLowerCase()})` : ""
@@ -178,8 +153,7 @@ function PasoDeCantidad({
               Cantidad
             </label>
             <Select
-              // El botón que llevó a este paso desapareció con el buscador:
-              // el foco tiene que aterrizar en algún lado, y es acá.
+              // El botón que trajo hasta acá desapareció con el buscador.
               autoFocus
               id="cantidad-agregar"
               value={cantidad}
@@ -213,8 +187,7 @@ function PasoDeCantidad({
         </p>
       )}
 
-      {/* `mt-auto`: el diálogo tiene alto fijo por el buscador, y sin esto
-          los botones quedarían flotando a media altura. */}
+      {/* `mt-auto`: el diálogo tiene alto fijo por el buscador. */}
       <DialogFooter className="mt-auto">
         <Button
           variant="tertiary"

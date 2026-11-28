@@ -11,46 +11,14 @@ import {
 } from "@/modules/stock/operaciones";
 
 /**
- * Edición de una orden activa — FS RF-22 · TS §8.1.
- * Tareas F4.4 (quitar y reducir) y F7.2a (sumar y agregar).
+ * Edición de una orden activa (RF-22). Quitar libera y no falla; sumar reserva
+ * y, si no alcanza, se niega (no advierte como la orden manual).
  *
- * La vendedora ajusta la orden contra lo que se terminó acordando por
- * WhatsApp, y eso va en los dos sentidos: quita lo que no puede entregar, y
- * suma lo que el comprador pidió después.
+ * La orden se bloquea con `FOR UPDATE` antes de mirarle el estado: sin eso,
+ * otra transacción podría finalizarla en el medio y se liberaría una reserva
+ * que la venta ya consumió.
  *
- * **Las dos mitades no son simétricas, y por eso llegaron en tareas
- * distintas.** Quitar siempre se puede: libera una reserva y no puede fallar,
- * y lo que se libera vuelve a estar disponible de inmediato —una unidad
- * apartada para algo que ya se sabe que no se entrega es una unidad que no se
- * le puede vender a nadie—. Sumar **puede no poderse**: hay que reservar, y el
- * stock puede no estar. Ahí no se advierte y se deja pasar como en la orden
- * manual (RF-24, donde la venta ya ocurrió): se niega y se dice cuánto hay,
- * porque reservar de más rompe el invariante que evita vender dos veces la
- * misma unidad (§8.1).
- *
- * Tres reglas, y las tres se hacen cumplir acá:
- *
- * **Sólo órdenes activas.** La orden se bloquea con `FOR UPDATE` antes de
- * mirarle el estado. Sin ese bloqueo, entre leer «está activa» y liberar la
- * reserva, otra transacción puede finalizarla: se descontaría el stock por la
- * cantidad vieja y además se liberaría una reserva que la venta ya consumió.
- *
- * **Quitar el último ítem cancela la orden** (RF-22), y no en silencio: hay
- * que pedirlo explícitamente. Si no se pide, la función se niega y avisa que
- * eso es lo que va a pasar, para que la pantalla pueda preguntar. Una orden
- * que se cancela sola porque alguien quitó un renglón es una orden cancelada
- * por accidente.
- *
- * **El total se recalcula en SQL** (§7.1), nunca restando en JavaScript.
- *
- * ── El historial ────────────────────────────────────────────────────────
- *
- * RF-22 pide que el cambio «quede registrado en el historial de la orden», y
- * el único historial que existe es `order_status_history`. Una edición no es
- * un cambio de estado, así que se escribe como `activa → activa` con el motivo
- * contando qué pasó. Es un uso ensanchado de esa tabla y queda dicho: la
- * alternativa era una segunda tabla de historial, y entonces la pantalla de la
- * orden tendría que unir dos líneas de tiempo para mostrar una.
+ * Las ediciones se anotan en `order_status_history` como `activa → activa`.
  */
 
 type Contexto = {
@@ -66,7 +34,6 @@ type ItemVivo = {
   colorName: string | null;
 };
 
-/** Bloquea la orden y exige que esté activa. Todo lo demás depende de esto. */
 async function exigirOrdenActiva(
   tx: Transaccion,
   orderId: string,
@@ -85,8 +52,8 @@ async function exigirOrdenActiva(
 }
 
 async function elItem(tx: Transaccion, ctx: Contexto): Promise<ItemVivo> {
-  // El `order_id` en el WHERE no es redundante: sin él, un id de ítem de otra
-  // orden editaría esa otra orden con los permisos de esta.
+  // El `order_id` no es redundante: sin él, un ítem de otra orden se editaría
+  // con el bloqueo y los chequeos de esta.
   const [item] = await tx.execute<ItemVivo>(sql`
     SELECT variant_id   AS "variantId",
            quantity,
@@ -132,28 +99,21 @@ async function anotarEnElHistorial(
        ${args.actorUserId ?? null})`);
 }
 
-/** «Teclado Mecánico (Negro)», para que el historial se lea sin ir a buscar ids. */
+/** «Teclado Mecánico (Negro)». */
 function nombrar(item: ItemVivo): string {
   return item.colorName
     ? `${item.productName} (${item.colorName})`
     : item.productName;
 }
 
-// ── Quitar un ítem (RF-22) ──────────────────────────────────────────────
-
 export type ResultadoDeQuitar = {
-  /** `true` si era el último y la orden quedó cancelada. */
   ordenCancelada: boolean;
 };
 
 export async function quitarItem(
   tx: Transaccion,
   args: Contexto & {
-    /**
-     * Tiene que venir en `true` para que quitar el ÚLTIMO ítem cancele la
-     * orden. Es la «confirmación explícita» de RF-22, hecha cumplir por el
-     * dominio y no sólo dibujada en la pantalla.
-     */
+    /** Sin `true`, quitar el último ítem se rechaza en vez de cancelar la orden. */
     permitirCancelar?: boolean;
     reason?: string | null;
   },
@@ -174,9 +134,7 @@ export async function quitarItem(
   await tx.execute(sql`
     DELETE FROM order_items WHERE id = ${args.orderItemId}`);
 
-  // Se libera DESPUÉS de borrar el renglón y con la cantidad que tenía. Una
-  // variante ya borrada llega con `variant_id` en NULL y no hay nada que
-  // liberar (§5.6).
+  // Se libera después de borrar el renglón; ver la cancelación de abajo.
   if (item.variantId) {
     await liberar(tx, {
       variantId: item.variantId,
@@ -188,9 +146,8 @@ export async function quitarItem(
   }
 
   if (esElUltimo) {
-    // Una orden sin ítems no es una orden: se cancela. `cancelarOrden` no
-    // tiene ya nada que liberar —el único ítem se fue recién— y por eso el
-    // orden importa: al revés, liberaría dos veces.
+    // El renglón ya se borró, así que `cancelarOrden` no tiene nada que
+    // liberar. Al revés, se liberaría dos veces.
     await cancelarOrden(tx, {
       orderId: args.orderId,
       actorUserId: args.actorUserId,
@@ -212,16 +169,12 @@ export async function quitarItem(
   return { ordenCancelada: false };
 }
 
-// ── Reducir la cantidad de un ítem (RF-22) ──────────────────────────────
-
 export async function reducirCantidad(
   tx: Transaccion,
   args: Contexto & { nuevaCantidad: number; reason?: string | null },
 ): Promise<void> {
   if (!Number.isInteger(args.nuevaCantidad) || args.nuevaCantidad < 1) {
-    // Bajar a cero es quitar el ítem, y quitar el ítem puede cancelar la
-    // orden: son dos acciones distintas con dos confirmaciones distintas, y
-    // colarse de una a la otra por un cero sería cancelar sin preguntar.
+    // Bajar a cero sería quitar el ítem, y podría cancelar la orden sin preguntar.
     throw domainError("VALIDATION", {
       message:
         "La cantidad tiene que ser de uno para arriba. Para sacarlo del todo, quitá el producto.",
@@ -232,10 +185,7 @@ export async function reducirCantidad(
   const item = await elItem(tx, args);
 
   if (args.nuevaCantidad > item.quantity) {
-    // Esta función reduce, y sólo reduce. Sumar es otra cosa —hay que
-    // reservar, y el stock puede no estar—, así que es su propia operación:
-    // **F7.2a** (RF-22, «Criterios — sumar»). Hasta que exista, acá se
-    // rechaza en vez de dejar pasar un número más grande sin reservar nada.
+    // Subir tiene que reservar: es `aumentarCantidad`.
     throw domainError("VALIDATION", {
       message: `No se pueden agregar unidades desde acá: la orden tiene ${item.quantity} y solo se puede bajar.`,
     });
@@ -268,9 +218,6 @@ export async function reducirCantidad(
   });
 }
 
-// ── Sumar (RF-22, «Criterios — sumar») ──────────────────────────────────
-
-/** Lo mismo que al reducir: una orden no lleva diez mil unidades de nada. */
 const MAXIMO_POR_RENGLON = 9999;
 
 function exigirCantidad(cantidad: number, que: string): void {
@@ -285,16 +232,7 @@ function exigirCantidad(cantidad: number, que: string): void {
   }
 }
 
-/**
- * Reserva, y si no alcanza dice **cuánto hay** — RF-22 lo pide con esas
- * palabras: «si no hay stock disponible, no se agrega, y se dice cuánto hay».
- *
- * El mensaje de siempre (`INSUFFICIENT_STOCK`) habla de «ese producto» y de
- * revisar el carrito, porque nació para el comprador. Acá quien lee está
- * mirando una orden concreta y necesita dos datos para decidir: cuál es y
- * cuántas quedan. El disponible se lee **después** de que la reserva falló,
- * que es cuando hace falta, y no antes de cada intento.
- */
+/** Si la reserva no alcanza, el `INSUFFICIENT_STOCK` dice cuál es y cuántas quedan. */
 async function reservarODecirCuantoHay(
   tx: Transaccion,
   args: {
@@ -332,18 +270,7 @@ async function reservarODecirCuantoHay(
   }
 }
 
-/**
- * Subir la cantidad de un renglón que ya está — RF-22 (F7.2a).
- *
- * **La diferencia se reserva, y el precio del renglón no se toca**: las
- * unidades nuevas van al precio que ya tiene esa línea, que es el que el
- * comprador vio y aceptó. Cambiarlo sería cambiar el trato desde el panel.
- *
- * Es la contracara de `reducirCantidad` y vive aparte por lo mismo que aquélla
- * se niega a subir: son dos operaciones con riesgos distintos —una libera y la
- * otra puede fallar— y juntarlas en una sola que mire el signo escondería que
- * una de las dos puede dejar el trabajo a medias.
- */
+/** Reserva la diferencia; las unidades nuevas van al precio del renglón. */
 export async function aumentarCantidad(
   tx: Transaccion,
   args: Contexto & { nuevaCantidad: number },
@@ -362,9 +289,7 @@ export async function aumentarCantidad(
   const deMas = args.nuevaCantidad - item.quantity;
   if (deMas === 0) return;
 
-  // Una variante borrada (§5.6) deja el renglón con `variant_id` en NULL: el
-  // snapshot se lee igual, pero no hay contador que reservar. Sumar unidades
-  // de algo que ya no existe sería comprometer stock inexistente.
+  // Variante borrada: no hay contador donde reservar.
   if (!item.variantId) {
     throw domainError("VALIDATION", {
       message: `«${nombrar(item)}» ya no está en el catálogo, así que no se le pueden sumar unidades.`,
@@ -395,26 +320,14 @@ export async function aumentarCantidad(
 }
 
 export type ResultadoDeAgregar = {
-  /** `true` si la variante ya estaba y se sumó sobre su renglón (RF-22). */
+  /** `true` si la variante ya estaba y se sumó sobre su renglón. */
   sumadoAlRenglon: boolean;
-  /** Con cuántas unidades quedó ese renglón. */
   cantidad: number;
 };
 
 /**
- * Agregar a la orden un producto que no estaba — RF-22 (F7.2a).
- *
- * **Si ya está, suma sobre su renglón** en vez de crear un segundo renglón
- * igual, que es lo mismo que hace el carrito (RF-08): dos líneas del mismo
- * color y el mismo precio son una sola cosa contada dos veces, y para la
- * vendedora que prepara el pedido es una trampa.
- *
- * **Y entonces las unidades van al precio de ESE renglón**, no al del catálogo
- * de hoy: el precio del renglón es el que se acordó para esa línea. Sale solo
- * de delegar en `aumentarCantidad`, que no toca el precio.
- *
- * **Un producto nuevo entra al precio vigente**, con su descuento aplicado
- * (RN-04b), y queda congelado como cualquier otro renglón (RN-12).
+ * Si la variante ya está, suma sobre su renglón y a su precio; si no, entra
+ * un renglón nuevo al precio vigente.
  */
 export async function agregarItem(
   tx: Transaccion,
@@ -428,9 +341,7 @@ export async function agregarItem(
   exigirCantidad(args.cantidad, "La cantidad");
   await exigirOrdenActiva(tx, args.orderId);
 
-  // El más viejo si hubiera dos: una orden manual puede haber cargado la
-  // misma variante en dos renglones a precios distintos (F7.4), y en ese caso
-  // sumar sobre el primero es lo previsible.
+  // Una orden manual puede tener la misma variante en dos renglones: el más viejo.
   const [existente] = await tx.execute<{ id: string; quantity: number }>(sql`
     SELECT id, quantity
       FROM order_items

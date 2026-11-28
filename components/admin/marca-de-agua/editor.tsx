@@ -26,25 +26,19 @@ import type { MarcaDeAguaDelPanel } from "@/modules/marca-de-agua/queries";
 import { MAXIMO_DE_CAPAS } from "@/modules/media/capas-de-marca";
 
 /**
- * La pantalla de la marca de agua — RF-39, TS §9.6.
- *
- * **Las capas se editan en pantalla y se guardan juntas**, con la vista
- * previa mirando lo que está en pantalla: se prueba antes de guardar. El
- * interruptor, en cambio, surte efecto en el acto y va aparte, como el modo
- * mantenimiento: activar no es un valor más de un formulario.
+ * La pantalla de la marca de agua — RF-39, TS §9.6. Las capas se guardan
+ * juntas y la vista previa mira lo que está en pantalla; el interruptor surte
+ * efecto en el acto y va aparte.
  */
 export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
   const guardadas = JSON.stringify(marca.capas);
   const [capas, setCapas] = useState<CapaEnPantalla[]>(() =>
     conClave(marca.capas),
   );
-  // Con dos capas o más se pliegan y se abre una por vez, como los colores
-  // del producto (2026-11-13): abiertas todas, la lista era larga y costaba
-  // ver cuál era cuál. Arranca abierta la primera.
+  // Con dos capas o más se pliegan y se abre una por vez.
   const [abierta, setAbierta] = useState(() => capas[0]?.clave ?? "");
-  // Lo del servidor cambió —se guardó, o borrar una imagen se llevó su
-  // capa—: la pantalla pasa a mostrar eso. Durante el render y no en un
-  // efecto, para no pintar primero lo viejo.
+  // Lo del servidor cambió (se guardó, o borrar una imagen se llevó su capa).
+  // Durante el render y no en un efecto, para no pintar primero lo viejo.
   const [ultimasVistas, setUltimasVistas] = useState(guardadas);
   if (ultimasVistas !== guardadas) {
     setUltimasVistas(guardadas);
@@ -120,8 +114,6 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
       "Lo que se pone sobre las fotos de productos que subís mientras está activada, para que no se puedan usar en otro lado.",
   };
 
-  // Sin imágenes no hay nada que armar, probar ni activar: la pantalla es
-  // solo el primer paso (2026-11-11).
   if (marca.biblioteca.length === 0) {
     return (
       <div className="flex w-full max-w-admin-form flex-col gap-4">
@@ -133,8 +125,7 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
 
   return (
     <div className="flex w-full flex-col gap-4">
-      {/* El estado y su botón van en el encabezado y no en una tarjeta: es
-          lo que se mira primero, y surte efecto solo, sin «Guardar». */}
+      {/* El interruptor va en el encabezado: surte efecto solo, sin «Guardar». */}
       <EncabezadoDePanel
         {...encabezado}
         insignias={
@@ -159,10 +150,8 @@ export function EditorDeMarcaDeAgua({ marca }: { marca: MarcaDeAguaDelPanel }) {
         }
       />
 
-      {/* Dos mitades iguales desde 56rem de contenido (896px), como Reportes: a la
-          izquierda se arma —imágenes, capas y «Guardar» al pie, en una sola
-          tarjeta porque se guarda junto— y a la derecha se mira. Apiladas,
-          la vista previa va después. */}
+      {/* Dos mitades iguales (DESIGN.md, «Guardar»): a la izquierda se arma y
+          a la derecha se mira. */}
       <div className="@container">
         <div className="grid max-w-admin-form items-start gap-4 @min-[56rem]:max-w-none @min-[56rem]:grid-cols-2">
           <div className="flex min-w-0 flex-col gap-6 rounded-panel-card border border-border bg-surface p-4">
@@ -287,10 +276,9 @@ function conClave(capas: MarcaDeAguaDelPanel["capas"]): CapaEnPantalla[] {
 }
 
 /**
- * Activar o desactivar — RF-39. Surte efecto en la próxima subida.
- *
- * **No se activa con cambios sin guardar**: activaría la marca guardada, que
- * no es la que está en pantalla, y la primera foto saldría con otra cosa.
+ * Activar o desactivar — RF-39. Surte efecto en la próxima subida. No se
+ * activa con cambios sin guardar: la primera foto saldría con la marca
+ * guardada, no con la que está en pantalla.
  */
 function Interruptor({
   activa,

@@ -11,31 +11,19 @@ import { publicarImagenDeVariante, publicarLogo } from "@/modules/media/subir";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
 
 /**
- * Subida de imágenes — TECHNICAL-SPEC §9.1; RF-17.
- *
- * **Por qué un Route Handler y no una Server Action.** Las Server Actions
- * serializan su entrada; mandarle 8 MB de binario significa convertirlo a
- * base64 y crecerlo un tercio por el camino. Un Route Handler recibe el
- * `multipart/form-data` como stream y le entrega a sharp los bytes tal cual
- * llegaron. Es la única mutación del proyecto que no pasa por el envoltorio
- * de §6.2, así que las garantías que ese envoltorio da —rol, validación,
- * traducción de errores, Sentry solo para lo inesperado— se repiten acá a
- * mano, en el mismo orden.
+ * Route Handler y no Server Action: una acción pasaría el binario a base64
+ * (§9.1). No pasa por el envoltorio de §6.2, así que sus controles —rol,
+ * validación, traducción de errores, Sentry— se repiten acá a mano.
  *
  * Corre en Node, no en Edge: sharp es un binario nativo.
  */
 export const runtime = "nodejs";
 
-/** 30 subidas por minuto y por administradora (§16). */
 const SUBIDAS = { tope: 30, ventanaMs: 60_000 };
 
 /**
- * Un solo punto de entrada para toda imagen, con el destino discriminado.
- *
- * Dos rutas separadas duplicarían lo único que de verdad importa acá —el
- * control de rol, el corte por tamaño y la traducción de errores—, y el día
- * que una de las dos copias se olvidara de uno de los tres no fallaría: se
- * abriría.
+ * Una sola ruta para toda imagen: una copia de los controles que se olvidara
+ * de uno no fallaría, se abriría.
  */
 const entrada = z.discriminatedUnion("destino", [
   z.object({
@@ -56,7 +44,6 @@ const entrada = z.discriminatedUnion("destino", [
     destino: z.literal("categoria"),
     categoryId: z.uuid(),
   }),
-  // RF-39: una imagen para la biblioteca de marcas de agua.
   z.object({
     destino: z.literal("marca-de-agua"),
   }),
@@ -65,10 +52,7 @@ const entrada = z.discriminatedUnion("destino", [
 export async function POST(request: NextRequest) {
   const session = await getSession();
 
-  // 404 y no 403: un `customer` que sondea el panel no recibe la confirmación
-  // de que la ruta existe (§13.3, RF-14). El texto tampoco la confirma, y le
-  // sirve a la administradora a la que se le venció la sesión: al actualizar,
-  // el panel la manda a ingresar (F10.7).
+  // 404 y no 403, y un texto que no confirma que la ruta exista (§13.3).
   if (session?.role !== "admin" || session.profile.isBanned) {
     return NextResponse.json(
       {
@@ -80,9 +64,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Antes de leer el cuerpo: una subida rechazada no llega a cargarse en
-  // memoria. El tope cubre de sobra cargar un producto entero de un tirón
-  // —cinco fotos por color— y frena un bucle (`lib/limite.ts`).
+  // Antes de leer el cuerpo: una subida rechazada no llega a memoria.
   const limite = consumir(`subida:${session.profile.id}`, SUBIDAS);
   if (!limite.permitido) {
     return NextResponse.json(
@@ -139,8 +121,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Se corta por tamaño ANTES de traer el cuerpo a memoria: `arrayBuffer()`
-  // sobre un archivo de 300 MB lo carga entero para después rechazarlo.
+  // Por tamaño ANTES de `arrayBuffer()`, que carga el archivo entero.
   if (archivo.size > TAMANO_MAXIMO) {
     const mb = (archivo.size / 1024 / 1024).toFixed(1);
     return NextResponse.json(
@@ -183,9 +164,8 @@ export async function POST(request: NextRequest) {
                   altText: campos.data.altText,
                 });
 
-    // Invalidar acá es la mitad del trabajo: una Server Action refresca al
-    // cliente con su respuesta, pero un `fetch` a un Route Handler no. La
-    // otra mitad es el `router.refresh()` de quien llama.
+    // Un `fetch` a un Route Handler no refresca al cliente como una Server
+    // Action: la otra mitad es el `router.refresh()` de quien llama.
     revalidatePath(
       campos.data.destino === "variante"
         ? "/admin/productos"
@@ -197,8 +177,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, data }, { status: 201 });
   } catch (e) {
-    // Un archivo que no era una imagen es un resultado esperado, no un
-    // incidente: se responde y no se reporta (§6.3).
+    // Esperado, no un incidente: no va a Sentry (§6.3).
     if (isDomainError(e)) {
       return NextResponse.json(
         { ok: false, code: e.code, message: e.message },

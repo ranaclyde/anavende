@@ -10,27 +10,16 @@ import {
   type FiltrosDeDevoluciones,
 } from "@/modules/returns/filtros";
 
-/**
- * Lecturas de devoluciones para el panel — FS RF-25. Tarea F7.5.
- *
- * Son del panel y de nadie más: no hay ninguna pantalla del comprador que las
- * muestre. Su «Mis compras» sigue diciendo lo que compró (RN-12), y lo que se
- * devolvió se coordina por WhatsApp, como el resto de la posventa.
- *
- * **Los montos salen casteados a `::text`**: `json_build_object` convertiría un
- * `numeric` a número de JavaScript y ahí se pierden centavos (`Money` es una
- * cadena de punta a punta, §6).
- */
+// Los montos salen como `::text`: `json_build_object` convertiría el `numeric`
+// a número de JavaScript y se perderían centavos.
 
 export type EstadoDeDevolucion = "registrada" | "anulada";
 
 export type ItemDevuelto = {
-  /** El renglón de la orden del que salió, para cruzarlo con la tabla. */
   orderItemId: string;
   nombre: string;
   color: string | null;
   cantidad: number;
-  /** `true` volvió al stock; `false` se descartó (RF-25). */
   repone: boolean;
   motivo: string | null;
 };
@@ -45,26 +34,16 @@ export type Devolucion = {
   creadaEn: string;
   anuladaEn: string | null;
   unidades: number;
-  /**
-   * Lo que esas unidades valían **en esa orden** (RN-12), que es lo que hay que
-   * devolverle a quien compró: el precio de hoy puede ser otro.
-   */
+  /** Al precio de esa orden (RN-12), no al de hoy. */
   monto: Money;
   items: ItemDevuelto[];
 };
 
-/** En el listado general, además, de qué orden es y de quién. */
 export type DevolucionDelListado = Devolucion & {
   numero: number;
   customerName: string;
 };
 
-/**
- * Los ítems de la devolución, con el nombre del snapshot del renglón.
- *
- * Ordenados como los de la orden —producto y color—, así la lista de la
- * devolución se lee contra la tabla de arriba sin ir y venir.
- */
 const ITEMS = sql`
   (SELECT coalesce(
             json_agg(
@@ -107,13 +86,8 @@ const CAMPOS = sql`
   ${ITEMS}`;
 
 /**
- * Las devoluciones de una orden, de la más nueva a la más vieja.
- *
- * **Por número de orden y no por `id`**, para que la pantalla del detalle la
- * pida **en paralelo** con la orden misma (§rendimiento): pedir primero la
- * orden para sacarle el `id` y recién después las devoluciones sería una
- * cascada en la pantalla que más se abre del panel. Una orden sin devoluciones
- * —que son casi todas— contesta con una lista vacía y no cuesta nada.
+ * Por número de orden y no por `id`, para que el detalle la pida en paralelo
+ * con la orden y no en cascada.
  */
 export async function devolucionesDeLaOrden(
   numero: number,
@@ -130,13 +104,8 @@ export async function devolucionesDeLaOrden(
 }
 
 /**
- * Cuántas unidades de cada renglón ya se devolvieron, contando **sólo las
- * devoluciones registradas**.
- *
- * Es el mismo criterio del tope de `registrar.ts` (`status = 'registrada'`), y
- * por eso se calcula acá a partir de lo que ya se leyó y no con otra consulta:
- * anular libera el cupo, y dos lugares que cuenten distinto darían una
- * pantalla que ofrece devolver lo que el dominio después rechaza.
+ * Solo cuenta las registradas, el mismo criterio del tope de `registrar.ts`:
+ * si contaran distinto, la pantalla ofrecería lo que el dominio rechaza.
  */
 export function devueltasPorRenglon(
   devoluciones: readonly Devolucion[],
@@ -157,13 +126,8 @@ export function devueltasPorRenglon(
 }
 
 /**
- * El `WHERE` del listado, compartido por las filas y por el conteo: son dos
- * consultas que tienen que contestar sobre el mismo conjunto.
- *
- * **El rango de fechas incluye el día de `hasta` entero y va `AT TIME ZONE` a
- * la zona del negocio**, por lo mismo que el de órdenes: el servidor corre en
- * UTC, y sin esto una devolución de las 22:00 de un lunes se mostraría como
- * del lunes y se contaría en el martes.
+ * Compartido por las filas y el conteo. El rango va `AT TIME ZONE` a la zona
+ * del negocio e incluye el día de `hasta` entero: el servidor corre en UTC.
  */
 function condiciones(filtros: FiltrosDeDevoluciones): SQL {
   const partes: SQL[] = [];
@@ -174,8 +138,6 @@ function condiciones(filtros: FiltrosDeDevoluciones): SQL {
     );
   }
 
-  // «Con reposición» es la que repone algo, aunque no sea todo; «sin» es la
-  // que no repone nada (`filtros.ts`).
   if (filtros.reposicion !== "todas") {
     const reponeAlgo = sql`EXISTS (SELECT 1 FROM return_items ri
                                     WHERE ri.return_id = r.id AND ri.restocks)`;
@@ -198,11 +160,6 @@ function condiciones(filtros: FiltrosDeDevoluciones): SQL {
     : sql`WHERE true`;
 }
 
-/**
- * El listado, de la más nueva a la más vieja, y cuántas hay en total.
- *
- * Paginado por lo mismo que las órdenes: las devoluciones se acumulan solas.
- */
 export async function listarDevoluciones(
   filtros: FiltrosDeDevoluciones,
 ): Promise<{ devoluciones: DevolucionDelListado[]; total: number }> {
@@ -226,12 +183,7 @@ export async function listarDevoluciones(
   return { devoluciones: [...filas], total: conteo.total };
 }
 
-/**
- * Cuántas hay de cada estado, para las solapas (F2.15). Es del total y no
- * del filtro puesto, como en órdenes: una solapa es un indicador, no un
- * resultado más. Sirve además para distinguir «vacío» de «sin resultados»
- * (§8): sin ninguna de las dos, no hay ninguna.
- */
+/** Del total, no del filtro puesto: una solapa es un indicador. */
 export async function contarDevolucionesPorEstado(): Promise<{
   registradas: number;
   anuladas: number;

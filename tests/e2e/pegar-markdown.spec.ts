@@ -4,12 +4,9 @@ import { datosDePrueba, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * Pegar Markdown escrito como texto en la descripción — RF-15.
- *
  * La conversión está probada en `tests/unit/content/pegar-markdown.test.ts`;
- * acá se prueba lo que solo existe en el navegador: que el pegado de verdad
- * pase por el plugin, también cuando el portapapeles trae HTML de un editor
- * de código, y que deshacer lo revierta.
+ * acá, lo que solo existe en el navegador: que el pegado pase por el plugin,
+ * también con HTML de un editor de código, y que deshacer lo revierta.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -100,7 +97,7 @@ test("sin marcas, cada renglón queda por su lado", async ({ page }) => {
 
   await expect(editor).toContainText("Cable");
   await expect(editor.locator("ul")).toHaveCount(0);
-  // Lexical pega los renglones como párrafos o con saltos de línea: lo que
-  // importa es que no se unieron en uno.
+  // Lexical los pega como párrafos o con saltos de línea: importa que no se
+  // unieron en uno.
   await expect(editor).not.toContainText("Incluye: Cable");
 });

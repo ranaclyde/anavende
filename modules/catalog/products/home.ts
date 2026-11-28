@@ -15,52 +15,27 @@ import {
   type FilaDeTarjeta,
 } from "@/modules/catalog/products/tienda";
 
-/**
- * Lo que la home necesita — RF-01, §7.1. Tarea F3.7.
- *
- * **Una sola llamada y no seis**, porque las seis consultas son independientes
- * entre sí salvo una: las secciones por categoría y la sección de «más
- * categorías» necesitan saber cuáles son las destacadas. Así que va en dos
- * tandas —primero las categorías, después todo lo demás en paralelo— y no en
- * seis viajes encadenados.
- *
- * **Las tarjetas salen del mismo par de fragmentos que el catálogo**
- * (`COLUMNAS_DE_TARJETA` y `UNIONES_DE_TARJETA`): una segunda definición de
- * «qué necesita una tarjeta» terminaría mostrando otra portada o otro stock
- * para el mismo producto según la pantalla.
- */
+// Las tarjetas usan los mismos fragmentos que el catálogo, para que un producto
+// no muestre otra portada u otro stock según la pantalla.
 
-/** El tope de §7.1: con más, la fila de chips deja de leerse como un atajo. */
 export const CATEGORIAS_EN_LA_HOME = 7;
 
-/** Una fila de la grilla de escritorio (§7.1). Si no llena, no se rellena. */
+/** Una fila de la grilla de escritorio. Si no llena, no se rellena. */
 export const POR_SECCION = 4;
 
-/**
- * Cuántos productos se traen por categoría destacada: los de su sección.
- * Hasta el 2026-10-19 eran ocho, porque el hero usaba los primeros cinco con
- * foto; desde que el hero tiene imágenes propias, ya no los necesita.
- */
 const POR_CATEGORIA = POR_SECCION;
 
-/** Cuántas se nombran abajo. No es un listado: es una muestra con salida. */
 export const MAS_CATEGORIAS = 8;
 
 export type CategoriaDeLaHome = {
   id: string;
-  /** Para los enlaces a su página, `/categorias/<slug>` (F3.11). */
   slug: string;
   nombre: string;
   productos: ProductoEnTarjeta[];
 };
 
-/** Cuántas categorías muestra el hero por día (F10.7d, DR §7.1). */
 export const CATEGORIAS_DEL_HERO = 6;
 
-/**
- * Una de las categorías del hero (F10.7d, TS §10.5): su foto (FA-21) ya
- * resuelta en `-card`, o `null`, y cuántos productos activos tiene.
- */
 export type CategoriaDelHero = {
   id: string;
   slug: string;
@@ -72,14 +47,9 @@ export type CategoriaDelHero = {
 export type MedioDePagoDeLaHome = {
   id: string;
   nombre: string;
-  /** Ya resuelta: la clave de Storage no le sirve a nadie en el cliente. */
   logoUrl: string;
 };
 
-/**
- * «Más categorías» (FA-21). `imagenUrl` ya resuelta, o `null`: la imagen es
- * opcional y la tarjeta tiene que verse prolija sin ella.
- */
 export type CategoriaEnTarjeta = {
   id: string;
   slug: string;
@@ -88,20 +58,18 @@ export type CategoriaEnTarjeta = {
 };
 
 export type DatosDeLaHome = {
-  /** Las destacadas, hasta siete: son los chips Y las secciones. */
+  /** Son los chips y las secciones. */
   destacadas: CategoriaDeLaHome[];
   destacados: ProductoEnTarjeta[];
   ofertas: ProductoEnTarjeta[];
-  /** Las demás activas, para la sección del pie. */
   masCategorias: CategoriaEnTarjeta[];
-  /** Las del hero de hoy: seis sorteadas entre todas las que tienen productos. */
+  /** Sorteadas por día entre todas las que tienen productos. */
   delHero: CategoriaDelHero[];
   mediosDePago: MedioDePagoDeLaHome[];
 };
 
 export async function leerHome(): Promise<DatosDeLaHome> {
-  // Las destacadas primero: de sus ids dependen las otras dos consultas de
-  // categorías. Entre destacadas desempata el nombre (§5.4).
+  // Primero: de sus ids dependen otras consultas. El resto va en paralelo.
   const destacadas = await db.execute<{
     id: string;
     slug: string;
@@ -125,9 +93,7 @@ export async function leerHome(): Promise<DatosDeLaHome> {
   ] = await Promise.all([
     productosPorCategoria(ids),
 
-    // «Destacados» es la bandera de RF-20, y adentro va lo último cargado:
-    // es la sección que la vendedora usa para mover lo que le interesa hoy,
-    // así que lo nuevo tiene que subir solo.
+    // Lo último cargado primero, para que lo nuevo suba solo.
     db.execute<FilaDeTarjeta>(sql`
         SELECT ${COLUMNAS_DE_TARJETA}
           FROM products p
@@ -137,8 +103,6 @@ export async function leerHome(): Promise<DatosDeLaHome> {
          ORDER BY p.created_at DESC, p.id
          LIMIT ${POR_SECCION}`),
 
-    // «En oferta»: primero el descuento más grande, que es lo que hace que
-    // la sección valga la pena mirarla.
     db.execute<FilaDeTarjeta>(sql`
         SELECT ${COLUMNAS_DE_TARJETA}
           FROM products p
@@ -148,8 +112,7 @@ export async function leerHome(): Promise<DatosDeLaHome> {
          ORDER BY p.discount DESC, p.id
          LIMIT ${POR_SECCION}`),
 
-    // Las que no están arriba, **y sólo si tienen algo que mostrar**: una
-    // categoría vacía nombrada en la home es un enlace a un «no hay nada».
+    // Las que no están arriba y tienen algún producto activo.
     db.execute<{
       id: string;
       slug: string;
@@ -165,16 +128,14 @@ export async function leerHome(): Promise<DatosDeLaHome> {
          ORDER BY immutable_unaccent(lower(c.name))
          LIMIT ${MAS_CATEGORIAS}`),
 
-    // Sólo los que tienen logo (§7.1): un nombre suelto en una fila de
-    // logos se lee como una imagen que no cargó.
+    // Solo los que tienen logo: un nombre suelto se lee como imagen rota.
     db.execute<{ id: string; nombre: string; logoKey: string }>(sql`
         SELECT id, name AS nombre, logo_key AS "logoKey"
           FROM payment_methods
          WHERE is_active AND logo_key IS NOT NULL
          ORDER BY sort_order, immutable_unaccent(lower(name))`),
 
-    // El hero (F10.7d, TS §10.5): todas las que tienen algo activo, con la
-    // cuenta. Son decenas de filas; el sorteo del día se hace acá abajo.
+    // El hero: todas las que tienen algo activo; el sorteo se hace abajo.
     db.execute<{
       id: string;
       slug: string;
@@ -222,15 +183,7 @@ export async function leerHome(): Promise<DatosDeLaHome> {
   };
 }
 
-/**
- * Los productos de varias categorías, **en una sola consulta**.
- *
- * Una consulta por categoría serían siete viajes a la base para dibujar una
- * pantalla; `row_number()` sobre la partición de categoría trae las filas de
- * cada una y se recorta afuera. Dentro de cada sección: los destacados arriba
- * y después alfabético, que es el mismo orden público del catálogo (§10.2) y
- * evita que la home y el listado muestren dos primeros distintos.
- */
+/** Una sola consulta para todas, en el mismo orden público del catálogo. */
 async function productosPorCategoria(
   ids: readonly string[],
 ): Promise<Map<string, FilaDeTarjeta[]>> {

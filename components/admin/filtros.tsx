@@ -7,41 +7,10 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 /**
- * Las tres piezas que comparten las barras de filtros del panel — órdenes,
- * usuarios, productos y devoluciones.
+ * El campo de búsqueda de los listados del panel — DR §6.2.1.
  *
- * Estaban copiadas: el buscador tres veces, el rango de fechas dos y el
- * contador cuatro. Cada copia era correcta; el problema es que ninguna sabía
- * de las otras, así que un arreglo hecho en una se quedaba ahí — y la próxima
- * pantalla con filtros iba a nacer sin ninguno.
- */
-
-/**
- * El campo de búsqueda de los listados del panel — DR §6.2 y §6.9.
- *
- * Estaba **copiado literal en las tres barras de filtros** —órdenes, usuarios
- * y productos—, unas cuarenta líneas cada una, con los dos manejadores
- * (`buscar` y `limpiarBusqueda`) idénticos carácter por carácter. Lo único que
- * cambiaba era el rótulo y el marcador. Lo peor de tenerlo copiado no era el
- * largo: era que **las tres copias cargan tres arreglos que no se ven**, y que
- * la próxima pantalla con buscador iba a nacer sin alguno de ellos.
- *
- * Los tres arreglos, que ahora viven acá una sola vez:
- *
- * 1. **`admin:pl-9` además de `pl-9`.** `Input` trae su propio `admin:px-3`,
- *    que le gana a un `pl-*` suelto —misma especificidad, y las variantes van
- *    después—, así que sin repetirlo en la escala del panel **la lupa se
- *    apoya sobre la primera letra**.
- * 2. **La cruz del navegador se retira.** `type="search"` dibuja la suya, que
- *    no se puede enfocar con el teclado ni tiene nombre accesible; acá la
- *    limpieza es un botón propio.
- * 3. **`role="search"` envuelve la búsqueda y nada más.** Alrededor de toda
- *    la barra anunciaría los filtros como parte del buscador, que es
- *    justamente lo que no son.
- *
- * **El texto lo gobierna quien lo usa**, y no este componente: es parte del
- * estado de la barra —«Limpiar todo» también lo borra— y esconderlo acá
- * adentro dejaría ese botón sin forma de vaciar el campo.
+ * El texto lo gobierna quien lo usa: «Limpiar todo» de la barra también lo
+ * borra.
  */
 export function BuscadorDelPanel({
   etiqueta,
@@ -56,10 +25,7 @@ export function BuscadorDelPanel({
   marcador: string;
   texto: string;
   alEscribir: (texto: string) => void;
-  /**
-   * Con lo que hay que buscar, ya recortado. Se llama al enviar y también al
-   * limpiar, con la cadena vacía: para la barra son la misma operación.
-   */
+  /** Se llama al enviar y al limpiar (con `""`), ya recortado. */
   alBuscar: (texto: string) => void;
 }) {
   const campo = useRef<HTMLInputElement>(null);
@@ -102,15 +68,13 @@ export function BuscadorDelPanel({
           type="button"
           onClick={() => {
             alEscribir("");
-            // El foco vuelve al campo: quien limpió va a escribir otra cosa,
-            // y el botón que acaba de tocar dejó de existir — sin esto el
-            // foco se cae al `<body>`.
+            // El foco vuelve al campo: el botón que se acaba de tocar deja de
+            // existir y el foco se caería al `<body>`.
             campo.current?.focus();
             alBuscar("");
           }}
           className={cn(
-            // 44px en el teléfono (F2.15): está en la barra de órdenes, que
-            // es lo que el panel garantiza ahí.
+            // 44px en el teléfono.
             "absolute top-1/2 right-1 grid size-8 -translate-y-1/2 place-items-center max-md:right-0 max-md:size-11",
             "rounded-panel-control text-ink-tertiary transition-colors duration-150",
             "hover:bg-surface-sunken hover:text-ink",
@@ -121,8 +85,7 @@ export function BuscadorDelPanel({
         </button>
       )}
 
-      {/* Enter alcanza; el botón existe para que el formulario tenga un envío
-          explícito y el lector de pantalla sepa cómo se manda. */}
+      {/* Envío explícito para que el lector de pantalla sepa cómo se manda. */}
       <button type="submit" className="sr-only">
         Buscar
       </button>
@@ -130,17 +93,7 @@ export function BuscadorDelPanel({
   );
 }
 
-/**
- * El rango de fechas de los listados — copiado idéntico en órdenes y en
- * devoluciones.
- *
- * **Se apilan en el teléfono, y no es un gusto:** un campo de fecha nativo no
- * baja de unos 130px, y dos con sus rótulos en una línea de 390px desbordaban
- * la pantalla 156px hacia la derecha. Lo encontró el repaso de F7.1.
- *
- * **No hay botón de limpiar:** el navegador manda `""` al borrar la fecha, que
- * es exactamente el valor de «sin filtro».
- */
+/** El rango de fechas de los listados — DR §6.2.1. */
 export function RangoDeFechas({
   desde,
   hasta,
@@ -151,19 +104,15 @@ export function RangoDeFechas({
   hasta: string;
   alCambiar: (cambio: { desde: string } | { hasta: string }) => void;
   /**
-   * Qué fecha se está recortando, cuando depende de dónde se esté parado. En
-   * órdenes cambia con la solapa (F7.8): en «Finalizadas» el rango mira cuándo
-   * se entregó y no cuándo se cargó. Sin decirlo, la misma pareja de campos da
-   * resultados distintos y nadie sabe por qué (§8). Devoluciones no lo pasa
-   * porque ahí hay una sola fecha posible.
+   * Qué fecha se está recortando, cuando depende de la solapa: en órdenes
+   * finalizadas, la de entrega y no la de carga.
    */
   porQueFecha?: string;
 }) {
   const id = useId();
 
   return (
-    // En el teléfono, las dos fechas lado a lado y no apiladas (F2.15): eran
-    // dos renglones enteros antes de la primera orden.
+    // En el teléfono, las dos fechas lado a lado y no apiladas.
     <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:items-center">
       <Campo
         id={`${id}-desde`}
@@ -221,14 +170,7 @@ function Campo({
   );
 }
 
-/**
- * Cuántos quedaron — el renglón de abajo de las cuatro barras.
- *
- * **Se anuncia** (`aria-live`): quien no ve la lista tiene que enterarse igual
- * de cuántos quedaron (§9). Mientras la navegación está en curso dice
- * «Buscando…» y se atenúa, porque el número de atrás ya no es el de ahora y
- * dejarlo firme sería mentir por un instante.
- */
+/** Cuántos quedaron, anunciado — DR §6.2.1. */
 export function ContadorDeResultados({
   pendiente,
   children,
@@ -240,9 +182,7 @@ export function ContadorDeResultados({
   return (
     <p
       aria-live="polite"
-      // Sin `opacity` mientras busca (§3.1, 2026-09-22): apagar el texto lo
-      // bajaba a 2,6:1 justo cuando dice algo. Que esté buscando ya lo dice
-      // la palabra, que es lo que se anuncia además por `aria-live`.
+      // Sin `opacity` mientras busca: bajaba el contraste a 2,6:1.
       className="text-body-sm text-ink-secondary"
     >
       {pendiente ? "Buscando…" : children}

@@ -17,16 +17,9 @@ import { rechazaLlamada } from "@/tests/apoyo/errores";
 import { almacen, existe, jpeg } from "@/tests/apoyo/imagenes";
 
 /**
- * F2.2 — la canalización de imágenes contra Storage de verdad. RF-17,
- * §9.1, §9.2, §9.4.
- *
- * Migrado de `scripts/verificar-imagenes.mts` (F4.0b).
- *
- * No prueba el Route Handler —eso necesita sesión de admin— sino las FUNCIONES
- * que lo sostienen, que es donde vive todo lo que puede salir mal: la
- * conversión, los tres tamaños, y sobre todo la limpieza cuando algo falla a
- * mitad. Un huérfano en Storage no lo encuentra nadie y no lo borra nadie:
- * ocupa lugar para siempre y no hay pantalla donde se note.
+ * La canalización de imágenes contra Storage de verdad (RF-17, §9.1, §9.2,
+ * §9.4). Prueba las funciones y no el Route Handler, que necesita sesión de
+ * admin; sobre todo, que no queden huérfanos en Storage, que nadie ve.
  */
 
 describe("conversión (§9.2)", () => {
@@ -34,9 +27,8 @@ describe("conversión (§9.2)", () => {
   let procesada: Awaited<ReturnType<typeof procesarImagen>>;
 
   beforeAll(async () => {
-    // Calidad 100 y ruido: el criterio de F2.2 habla de «un JPG de 8 MB», y
-    // con un color plano de 3000×2000 el archivo pesaría 40 KB. La prueba
-    // pasaría sin haber ejercitado nada de lo que pesa.
+    // Calidad 100 y ruido: con un color plano el JPG pesaría 40 KB y no
+    // ejercitaría nada de lo que pesa.
     grande = await jpeg(3000, 2000, 100);
     procesada = await procesarImagen(grande);
   });
@@ -55,14 +47,12 @@ describe("conversión (§9.2)", () => {
     ),
   )("%s: es WEBP y mide %ipx de ancho", (sufijo, ancho) => {
     const v = procesada.versiones.find((x) => x.sufijo === sufijo)!;
-    // «RIFF» son los cuatro primeros bytes de un WEBP. Mirar la extensión
-    // no probaría nada: la pone quien guarda.
+    // «RIFF» abre todo WEBP; la extensión la pone quien guarda.
     expect(v.cuerpo.subarray(0, 4).toString("ascii")).toBe("RIFF");
     expect(v.ancho).toBe(ancho);
   });
 
-  // F3.9: la única que NO es WEBP, y por eso se prueba aparte. Si esta
-  // afirmación se cae, la ficha vuelve a compartirse sin foto.
+  // La única que NO es WEBP: si esto se cae, la ficha se comparte sin foto.
   test("og: es JPEG y mide exactamente 1200×630", () => {
     const og = procesada.versiones.find((x) => x.sufijo === "og")!;
     // FF D8 FF: los tres primeros bytes de todo JPEG.
@@ -102,8 +92,7 @@ describe("`withoutEnlargement` (§9.2)", () => {
     expect(anchoDe("detail")).toBe(300);
   });
 
-  // La `og` es la excepción y tiene que serlo: su lienzo es fijo, así que una
-  // foto de 300px sale centrada sobre el burdeos y no estirada.
+  // La `og` tiene lienzo fijo: la foto chica sale centrada, no estirada.
   test("la og igual sale de 1200×630, con la foto chica centrada", () => {
     expect(anchoDe("og")).toBe(1200);
   });
@@ -119,10 +108,9 @@ describe("EXIF (§9.2, §16)", () => {
   /**
    * Orientación 6 = «rotar 90°»: una foto apaisada que hay que mostrar de pie.
    *
-   * Se escribe con `withMetadata({orientation})` y NO con
-   * `withExif({IFD0:{Orientation}})`. La segunda parece la obvia y no sirve:
-   * deja el archivo en `orientation: 1`, y entonces el test pasaría siempre
-   * porque no habría nada que rotar. Costó un fallo descubrirlo.
+   * Con `withMetadata({orientation})` y NO con
+   * `withExif({IFD0:{Orientation}})`: esa deja `orientation: 1` y el test
+   * pasaría sin nada que rotar.
    */
   const rotada = () =>
     sharp({
@@ -315,13 +303,11 @@ describe("publicación y limpieza (§9.1, §9.4)", () => {
   });
 
   /**
-   * R3 del plan: qué queda cuando Storage falla a mitad. La respuesta correcta
-   * no es «casi nada»: es NADA. Ni archivos ni fila.
+   * Si Storage falla a mitad no queda nada: ni archivos ni fila.
    *
-   * La variante vacía va en OTRO producto a propósito:
-   * `variant_product_color_key` impide dos variantes sin color en el mismo
-   * producto, y reusar la anterior —que ya tiene sus cinco— haría fallar la
-   * prueba por el tope y no por lo que se quiere probar. Ya pasó una vez.
+   * La variante vacía va en OTRO producto: `variant_product_color_key` impide
+   * dos sin color en el mismo, y reusar la que ya tiene cinco fallaría por el
+   * tope.
    */
   describe("sin huérfanos cuando falla a mitad", () => {
     test("una subida cortada en el tercer tamaño no deja nada", async () => {
@@ -505,9 +491,7 @@ describe("publicación y limpieza (§9.1, §9.4)", () => {
 
       await borrarImagenDeVariante(publicada.id);
 
-      // Se deriva de la tabla y no se escriben tres `false`: el día que
-      // F3.9 sumó la cuarta versión, una lista a mano habría dejado pasar un
-      // `-og.jpg` huérfano en Storage sin que nadie se enterara.
+      // Derivado de la tabla: una lista a mano no vería una versión nueva.
       expect(await Promise.all(claves.map(existe))).toEqual(
         TAMANOS.map(() => false),
       );

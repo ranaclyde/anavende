@@ -2,13 +2,9 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { z } from "zod";
 
 /**
- * F5.8 y F7.9 — la baja pedida deja la cuenta de solo lectura, y la baja
- * ejecutada la deja afuera de todo. RF-34 · TS §6.2, paso 2b.
- *
- * Lo prueba el envoltorio y no cada acción, porque es ahí donde vive la
- * regla: una acción nueva queda cubierta sola. La sesión se simula —armarla
- * de verdad pediría GoTrue y cookies—, que es lo único que el envoltorio lee
- * de afuera.
+ * La baja pedida deja la cuenta de solo lectura, y la ejecutada la deja
+ * afuera de todo. RF-34 · TS §6.2, paso 2b. Se prueba en el envoltorio porque
+ * ahí vive la regla; la sesión se simula.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
@@ -94,9 +90,8 @@ describe("con la baja ya ejecutada (F7.9)", () => {
   test("ni siquiera las declaradas con `aunConBajaPendiente`", async () => {
     sesion.actual = unaSesion(true, true);
 
-    // Es la diferencia entre las dos situaciones: con la baja PEDIDA la
-    // excepción existe para poder retirar el pedido; ejecutada, esa es
-    // justamente la que no tiene que poder. La cuenta ya no está.
+    // Con la baja PEDIDA la excepción existe para retirar el pedido;
+    // ejecutada, la cuenta ya no está.
     expect(await comun({})).toMatchObject({
       ok: false,
       code: "ACCOUNT_CLOSED",
@@ -114,8 +109,8 @@ describe("con la baja ya ejecutada (F7.9)", () => {
     delete sinLaColumna.profile.closedAt;
     sesion.actual = sinLaColumna;
 
-    // La comprobación se inclina hacia dejar pasar: con `!== null`, un
-    // `undefined` dejaba a toda la tienda afuera de su cuenta.
+    // Se inclina hacia dejar pasar: con `!== null`, un `undefined` dejaría a
+    // toda la tienda afuera de su cuenta.
     expect(await comun({})).toEqual({ ok: true, data: "hecho" });
   });
 });

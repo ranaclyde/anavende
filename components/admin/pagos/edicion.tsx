@@ -36,7 +36,7 @@ import type { MedioDePagoDelPanel } from "@/modules/settings/queries";
 
 type Campo = "name" | "description";
 
-/** Lo mismo que el logo de marca, por el mismo camino (§9.1). */
+/** Lo mismo que el logo de marca, por el Route Handler (TS §9.1). */
 async function subirLogo(id: string, archivo: File): Promise<string | null> {
   const r = await subirImagen(
     { destino: "medio-de-pago", paymentMethodId: id },
@@ -46,24 +46,13 @@ async function subirLogo(id: string, archivo: File): Promise<string | null> {
 }
 
 /**
- * Alta y edición de un medio de pago — RF-19.
+ * Alta y edición de un medio de pago, en un drawer — RF-19, DR §6.14.3. No hay
+ * campo de orden: se agrega al final y se mueve desde el listado.
  *
- * Un drawer, como el resto de las solapas del catálogo (DR §6.14.3): son la
- * misma pantalla y se tienen que comportar igual aunque este sea corto.
- *
- * No hay campo de orden: al crear se agrega al final y se mueve desde el
- * listado, que es donde se ve contra qué se lo está ordenando. Un número de
- * posición dentro del diálogo obligaría a recordar el de los demás.
- *
- * **Se monta cuando se abre y se desmonta al cerrar** (lo decide el
- * listado), y por eso el estado arranca de las props y no hay ningún efecto
- * que lo reponga. Mantenerlo montado y limpiarlo al abrir parece lo mismo y
- * no lo es: el cierre ocurre dentro de una transición —la acción todavía
- * está revalidando—, así que hay un rato en que la pantalla muestra el
- * diálogo con los valores viejos. Si en ese rato se vuelve a abrir, el
- * efecto no ve ningún cambio de props que lo dispare y el formulario
- * arranca con lo que se escribió la vez anterior. Pasó: un medio de pago se
- * guardó con la descripción del anterior.
+ * Se monta al abrirse y se desmonta al cerrar, y por eso el estado arranca de
+ * las props sin efecto que lo reponga. Limpiarlo al abrir no alcanza: el
+ * cierre ocurre dentro de una transición que todavía revalida, y reabrir ahí
+ * arrancaba con lo escrito la vez anterior.
  */
 export function EdicionDeMedioDePago({
   medio,
@@ -103,24 +92,18 @@ export function EdicionDeMedioDePago({
         return;
       }
 
-      // El logo va después de guardar el nombre, y por dos caminos distintos:
-      // subirlo necesita mandar un archivo, así que va por el Route Handler
-      // (§9.1); quitarlo es un booleano y va por una Server Action.
       if (logo.tipo !== "mantener") {
         const id = medio?.id ?? resultado.data.id;
 
         if (logo.tipo === "reemplazar") {
           const fallo = await subirLogo(id, logo.archivo);
           if (!fallo) {
-            // El Route Handler invalida la caché del servidor, pero un
-            // `fetch` —a diferencia de una Server Action— no trae la vista
-            // nueva de vuelta. Sin esto el logo está guardado y el listado
-            // sigue mostrando la fila sin él.
+            // Un `fetch`, a diferencia de una Server Action, no trae la vista
+            // nueva: sin esto el listado sigue mostrando la fila sin el logo.
             router.refresh();
           }
           if (fallo) {
-            // El medio de pago YA se guardó. Decirlo tal cual es más honesto
-            // que fingir que no pasó nada o que falló todo.
+            // El medio de pago ya se guardó: queda abierto con el error del logo.
             setErrorDelLogo(
               medio
                 ? fallo
@@ -153,9 +136,7 @@ export function EdicionDeMedioDePago({
           <SheetTitle>
             {medio ? "Editar medio de pago" : "Nuevo medio de pago"}
           </SheetTitle>
-          {/* RN-01 dicho en la primera línea: nada de esto cobra. Es lo que
-              evita que alguien espere que agregar «Mercado Pago» habilite un
-              pago en la web. */}
+          {/* RN-01 dicho en la primera línea: nada de esto cobra. */}
           <SheetDescription>
             Se muestra en la tienda para que el comprador sepa cómo puede pagar.
             No cobra nada: el pago se coordina por WhatsApp.

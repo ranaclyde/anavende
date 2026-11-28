@@ -26,14 +26,8 @@ import { getIdentity, getSession } from "@/lib/session";
 export const metadata: Metadata = { title: "Mi cuenta" };
 
 /**
- * «Mis datos» — RF-07, F5.2. El saludo, «Cerrar sesión» y el menú de
- * secciones están en el layout desde F5.3.
- *
- * **Dos columnas desde `xl`, una por debajo.** Con el menú al costado, a
- * 1024px cada tarjeta quedaría de unos 350px, y Nombre y Apellido —que van
- * uno al lado del otro— no entran cómodos. Cada tarjeta mide lo que su
- * contenido (`items-start`): igualarlas en alto dejaría los botones a
- * distinta altura.
+ * Dos columnas recién desde `xl`: con el menú al costado, a 1024px Nombre y
+ * Apellido no entran cómodos uno al lado del otro.
  */
 export default async function MiCuenta({
   searchParams,
@@ -41,13 +35,12 @@ export default async function MiCuenta({
   searchParams: Promise<{ contrasena?: string }>;
 }) {
   const sesion = await getSession();
-  // Quien viene de definir la contraseña desde el enlace de recuperación
-  // llega acá sin otra señal de que salió bien: la pantalla no cambia (§6.15,
-  // F10.7). Se dice en la tarjeta de la contraseña, como el «Listo» de cambiarla.
+  // Quien viene de definir la contraseña desde el enlace de recuperación no
+  // tiene otra señal de que salió bien: se dice en la tarjeta de la contraseña.
   const { contrasena } = await searchParams;
 
   if (!sesion) {
-    // Hay identidad pero no perfil: falta completarlo (§13.4).
+    // Hay identidad pero no perfil: falta completarlo.
     if (await getIdentity()) redirect("/completar-perfil");
     redirect("/ingresar?volver=/mi-cuenta");
   }
@@ -64,7 +57,7 @@ export default async function MiCuenta({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
-          {/* Arriba de todo, que es donde se busca (F5.9). */}
+          {/* Arriba de todo, que es donde se busca. */}
           <FotoDePerfil
             cara={<CaraAnimada cuenta={profile} tamano={96} arriba />}
             fotoActual={profile.avatarKey}
@@ -104,7 +97,7 @@ export default async function MiCuenta({
         </CardContent>
       </Card>
 
-      {/* RF-34 es de compradores: una administradora no se da de baja. */}
+      {/* Una administradora no se da de baja (RF-34 es de compradores). */}
       {sesion.role === "customer" ? (
         <BajaDeLaCuenta
           pedidaEl={profile.closureRequestedAt}
@@ -123,15 +116,9 @@ const FECHA = new Intl.DateTimeFormat("es-AR", {
 });
 
 /**
- * La baja de la cuenta — RF-34, F5.8.
- *
- * **A la vista y no escondida**: RF-34 es un requisito legal y pide un acceso
- * visible. Va al final, a lo ancho, con su propio `id` porque el pie de la
- * tienda enlaza acá (pedido del 2026-09-14). `scroll-mt` para que el
- * encabezado fijo no la tape al llegar.
- *
- * Pedida, cuenta desde cuándo y con qué motivo, y ofrece retirarla: la
- * cuenta está en pausa, y ésta es la salida que el aviso de arriba promete.
+ * A la vista y no escondida: RF-34 pide un acceso visible. El `id` es porque
+ * el pie de la tienda enlaza acá; `scroll-mt`, para que no la tape el
+ * encabezado fijo.
  */
 function BajaDeLaCuenta({
   pedidaEl,
@@ -188,21 +175,10 @@ function BajaDeLaCuenta({
 }
 
 /**
- * El email, en un recuadro con la forma de los campos de al lado pero sobre
- * `--canvas`: se lee como un dato que no se edita sin tener que decirlo
- * (pedido del 2026-09-13). Es un `input` de solo lectura y no un texto
- * suelto, así el lector de pantalla lo anuncia como tal y se puede copiar.
- * **El texto no se agrisa**: un email en gris claro es un email que cuesta
- * leer, y lo que tiene que decir «no editable» es el fondo, no la letra.
- *
- * **Verificado es un tilde verde** (`--success`), no azul: el azul es el
- * tilde de las redes sociales, que certifica a una persona, no un email.
- * **Sin verificar es ámbar y dice «Sin verificar»**: el rojo en esta tienda
- * es error de formulario (§6.6), y un ícono solo, sin palabra, no le dice a
- * nadie qué le falta. En los dos, el color no es el único portador (§9).
- *
- * En la práctica el ámbar casi no se ve: sin verificar no se puede entrar
- * (RF-05). Está para que un estado raro de la cuenta no se dibuje como bueno.
+ * Un `input` de solo lectura y no texto suelto: el lector de pantalla lo
+ * anuncia y se puede copiar. «No editable» lo dice el fondo; la letra no se
+ * agrisa. Sin verificar casi no se ve (no se puede entrar así), pero un estado
+ * raro de la cuenta no tiene que dibujarse como bueno.
  */
 function EmailDeLaCuenta({
   email,
