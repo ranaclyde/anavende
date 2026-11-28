@@ -209,7 +209,7 @@ en la página, porque ahí se mueve al pasar el mouse
   Resend. Las plantillas están en `lib/email/`, y `npm run email` las
   convierte en el HTML que GoTrue descarga de `public/emails/`.
 - **El aviso de nueva orden a Ana** (E4) lo manda la tienda por la API de
-  Resend (`lib/email/enviar.ts`). Sale después de que la orden quedó
+  Resend (`lib/email/send.ts`). Sale después de que la orden quedó
   guardada, y un fallo de envío nunca la revierte: queda registrado en
   Sentry.
 

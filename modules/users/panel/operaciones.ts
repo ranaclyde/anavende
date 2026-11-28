@@ -47,7 +47,7 @@ export async function invitarUsuario(
         full_name: `${datos.firstName} ${datos.lastName}`,
         first_name: datos.firstName,
       },
-      // E3 no usa este destino (ver `lib/email/generar.mts`); se manda igual.
+      // E3 no usa este destino (ver `lib/email/generate.mts`); se manda igual.
       redirectTo: urlDeContrasenaNueva(),
     },
   );

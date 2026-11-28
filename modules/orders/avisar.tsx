@@ -7,12 +7,12 @@ import { sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import type { ShippingAddressSnapshot } from "@/db/schema/orders";
-import { enviarEmail, type Email } from "@/lib/email/enviar";
+import { sendEmail, type Email } from "@/lib/email/send";
 import {
-  NuevaOrden,
-  type ItemDelAviso,
-  type PropsDeNuevaOrden,
-} from "@/lib/email/plantillas/nueva-orden";
+  NewOrder,
+  type NoticeItem,
+  type NewOrderProps,
+} from "@/lib/email/templates/new-order";
 import { formatMoney, type Money } from "@/lib/money";
 import { formaDeEntrega } from "@/modules/orders/entrega";
 import { emailDeAvisos } from "@/modules/settings/queries";
@@ -40,9 +40,9 @@ export async function avisarNuevaOrden(orderId: string): Promise<boolean> {
   try {
     const aviso = await armarElAviso(orderId);
     if (!aviso) return false;
-    return await enviarEmail(aviso);
+    return await sendEmail(aviso);
   } catch (e) {
-    // `enviarEmail` ya reporta lo suyo: esto atrapa la lectura y el render.
+    // `sendEmail` ya reporta lo suyo: esto atrapa la lectura y el render.
     console.error(`[email] No se pudo avisar la orden ${orderId}:`, e);
     return false;
   }
@@ -53,7 +53,7 @@ export async function armarElAviso(orderId: string): Promise<Email | null> {
   const datos = await datosDelAviso(orderId);
   if (!datos) return null;
   const { props, ...sobre } = datos;
-  return { ...sobre, html: await render(<NuevaOrden {...props} />) };
+  return { ...sobre, html: await render(<NewOrder {...props} />) };
 }
 
 /**
@@ -63,7 +63,7 @@ export async function armarElAviso(orderId: string): Promise<Email | null> {
  */
 export async function datosDelAviso(
   orderId: string,
-): Promise<(Omit<Email, "html"> & { props: PropsDeNuevaOrden }) | null> {
+): Promise<(Omit<Email, "html"> & { props: NewOrderProps }) | null> {
   const [casilla, orden] = await Promise.all([
     emailDeAvisos(),
     leerOrdenParaElAviso(orderId),
@@ -79,19 +79,19 @@ export async function datosDelAviso(
   if (!orden) return null;
 
   return {
-    para: casilla,
-    asunto: `Pedido #${orden.numero} de ${orden.customerName} — ${formatMoney(orden.total)}`,
-    referencia: `orden #${orden.numero}`,
+    to: casilla,
+    subject: `Pedido #${orden.numero} de ${orden.customerName} — ${formatMoney(orden.total)}`,
+    reference: `orden #${orden.numero}`,
     props: {
-      sitio: SITIO,
-      numero: orden.numero,
-      comprador: orden.customerName,
-      telefono: orden.customerPhone,
+      site: SITIO,
+      orderNumber: orden.numero,
+      customer: orden.customerName,
+      phone: orden.customerPhone,
       email: orden.customerEmail,
       items: orden.items.map(comoItemDelAviso),
       total: formatMoney(orden.total),
-      entrega: comoEntrega(orden.shippingAddress),
-      enlace: `${SITIO}/admin/ordenes/${orden.numero}`,
+      delivery: comoEntrega(orden.shippingAddress),
+      link: `${SITIO}/admin/ordenes/${orden.numero}`,
     },
   };
 }
@@ -146,15 +146,13 @@ async function leerOrdenParaElAviso(
   return fila ?? null;
 }
 
-function comoItemDelAviso(
-  item: OrdenParaElAviso["items"][number],
-): ItemDelAviso {
+function comoItemDelAviso(item: OrdenParaElAviso["items"][number]): NoticeItem {
   return {
-    nombre: item.nombre,
-    marca: item.marca,
+    name: item.nombre,
+    brand: item.marca,
     color: item.color,
-    cantidad: item.cantidad,
-    precioUnitario: formatMoney(item.precioUnitario),
+    quantity: item.cantidad,
+    unitPrice: formatMoney(item.precioUnitario),
     subtotal: formatMoney(item.subtotal),
   };
 }

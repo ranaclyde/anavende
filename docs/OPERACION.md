@@ -157,7 +157,7 @@ y se entra a <http://localhost:8000> con el usuario y la contraseña del
 dashboard. Ctrl+C cierra el túnel.
 
 **Cambiar una plantilla de email de la cuenta** (confirmación, recuperación,
-invitación, reenvío): se edita en `lib/email/plantillas/`, se corre
+invitación, reenvío): se edita en `lib/email/templates/`, se corre
 `npm run email` y se commitea el HTML que queda en `public/emails/`. GoTrue
 descarga las plantillas de la tienda por URL, así que llegan con el
 despliegue. En local se ven en Mailpit (<http://localhost:54324>).

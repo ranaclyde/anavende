@@ -23,7 +23,7 @@
     "dev:stack": "supabase start",
     "dev:stack:stop": "supabase stop",
     "sondear:resend": "tsx scripts/sondear-resend.mts",
-    "email": "tsx lib/email/generar.mts",
+    "email": "tsx lib/email/generate.mts",
     "prepare": "husky"
   },
   "dependencies": {
