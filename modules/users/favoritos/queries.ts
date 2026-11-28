@@ -13,23 +13,11 @@ import {
   type FilaDeTarjeta,
 } from "@/modules/catalog/products/tienda";
 
-/**
- * Lecturas de favoritos — RF-10 · TS §5.5, §13.8. Tarea F5.4.
- *
- * Todas filtran por `favorites.user_id` con el id de la sesión.
- */
+// Todas filtran por `favorites.user_id` con el id de la sesión.
 
 /**
- * Los productos guardados, para pintar los corazones del catálogo.
- *
- * Todos y no solo los de la página que se está mirando: son los que la
- * persona fue guardando a mano, así que la lista es corta, y filtrarla por
- * los ids de la página obligaría a esperar esa consulta para lanzar esta.
- * Así corren en paralelo.
- *
- * Con `cache()` (F8.4): la ficha la pide para los recomendados y para
- * «Vistos recientemente», que son dos componentes distintos, y es la misma
- * consulta del mismo pedido.
+ * Todos y no solo los de la página, para correr en paralelo con el catálogo.
+ * Con `cache()`: dos componentes de la ficha la piden en el mismo pedido.
  */
 export const idsDeFavoritos = cache(async function idsDeFavoritos(
   userId: string,
@@ -52,26 +40,13 @@ export async function esFavorito(
 }
 
 export type Favorito = ProductoEnTarjeta & {
-  /**
-   * `false` si la vendedora lo desactivó después de que se guardara. Se
-   * queda en la lista como «No disponible» (RF-10), sin enlace: la ficha de
-   * un producto inactivo es un 404 (RN-05).
-   */
+  /** `false`: «No disponible» y sin enlace, la ficha sería un 404. */
   activo: boolean;
 };
 
 /**
- * Una página de «Favoritos», con los mismos datos que la tarjeta del
- * catálogo: precio y stock VIGENTES, porque se leen del producto en el
- * momento (RF-10). El último guardado va primero, que es el que se viene a
- * buscar.
- *
- * **Paginada de a 24, como el catálogo** (§10.2). No hay tope de favoritos,
- * y cada producto trae su portada, sus colores y su stock: sin `LIMIT`, una
- * lista de cientos se volvía una página de cientos de tarjetas.
- *
- * El conteo va en paralelo y no como función de ventana: con una página
- * pasada del final, la ventana no devolvería ninguna fila de donde leerlo.
+ * El conteo va aparte y no como función de ventana: con una página pasada del
+ * final, la ventana no devolvería ninguna fila de donde leerlo.
  */
 export async function leerFavoritos(
   userId: string,

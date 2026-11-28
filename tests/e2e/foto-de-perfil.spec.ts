@@ -7,15 +7,8 @@ import { datosDePrueba, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * F5.9 — La foto de perfil, de punta a punta.
- *
- * La compradora arranca con su blobatar, sube una foto desde «Mis datos», la
- * ve en el encabezado de la tienda, la administradora la ve en el listado y
- * en la ficha, y al quitarla la cuenta vuelve al blobatar y Storage se queda
- * sin el archivo.
- *
- * Lo que distingue una cosa de la otra es el `src`: el blobatar es un `data:`
- * que arma el servidor, y la foto es un archivo bajo `usuarios/{id}/`.
+ * La foto de perfil, de punta a punta. La foto es un archivo bajo
+ * `usuarios/{id}/`; el blobatar, un SVG en la página.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -35,7 +28,7 @@ test.afterAll(async () => {
   await sql.end();
 });
 
-/** Una «foto de celular»: vertical, más grande que 256 y con algo adentro. */
+/** Vertical, más grande que 256 y con algo adentro, como una de celular. */
 async function unaFoto(): Promise<Buffer> {
   return sharp({
     create: {
@@ -57,10 +50,9 @@ async function unaFoto(): Promise<Buffer> {
 }
 
 /**
- * La cara del encabezado: el `img` dentro del enlace a la cuenta. **La que se
- * ve**: mientras llega el HTML en streaming, el encabezado está dos veces en
- * el DOM —el de Suspense y uno escondido que React después pone en su
- * lugar—, y con el refresco de después de subir pasa lo mismo.
+ * **La que se ve**: mientras llega el HTML en streaming, y tras el refresco
+ * de después de subir, el encabezado está dos veces en el DOM (el de
+ * Suspense y uno escondido que React después pone en su lugar).
  */
 function caraDelEncabezado(page: Page) {
   return page
@@ -68,10 +60,7 @@ function caraDelEncabezado(page: Page) {
     .filter({ visible: true });
 }
 
-/**
- * El blobatar del encabezado: SVG en la página y no `<img>` —`.mo-root` es su grupo de adentro—, porque se mueve
- * al pasar el mouse (`CaraAnimada`).
- */
+/** Es SVG y no `<img>` porque se mueve; `.mo-root` es su grupo de adentro. */
 function blobatarDelEncabezado(page: Page) {
   return page
     .locator('header a[href="/mi-cuenta"] svg .mo-root')
@@ -103,11 +92,6 @@ test("sin foto, la cuenta se ve con su blobatar", async ({ page }) => {
   );
 });
 
-/**
- * Se mueve al pasar el mouse por la píldora de la cuenta, no solo por el
- * dibujo, y quieto con «reducir movimiento». Lo que se mira es el `transform`
- * del SVG: en reposo no tiene, y al moverse sube y crece.
- */
 test("el blobatar se mueve al pasar el mouse, y no con «reducir movimiento»", async ({
   page,
 }) => {
@@ -120,7 +104,7 @@ test("el blobatar se mueve al pasar el mouse, y no con «reducir movimiento»", 
     bicho.evaluate((el) => getComputedStyle(el).transform);
   expect(await transformacion()).toBe("none");
 
-  // Sobre el nombre, a la derecha del dibujo: es la píldora la que lo mueve.
+  // Sobre el nombre, no el dibujo: es la píldora entera la que lo mueve.
   await page
     .locator('header a[href="/mi-cuenta"]')
     .filter({ visible: true })
@@ -176,7 +160,6 @@ test("sube una foto y se ve en la tienda y en el panel", async ({
   const meta = await sharp(Buffer.from(archivo)).metadata();
   expect([meta.format, meta.width, meta.height]).toEqual(["webp", 256, 256]);
 
-  // La administradora la ve en el listado y en la ficha.
   const ana = await otroNavegador(browser);
   await ingresar(ana, admin);
   await ana.goto(`/admin/usuarios?q=${encodeURIComponent(compradora.email)}`);
@@ -184,7 +167,6 @@ test("sube una foto y se ve en la tienda y en el panel", async ({
     ana.locator(`tr:has(a[href="/admin/usuarios/${compradora.id}"]) img`),
   ).toHaveAttribute("src", src!);
 
-  // En la ficha, tocarla la abre ampliada en un diálogo, sin salir de ahí.
   await ana.goto(`/admin/usuarios/${compradora.id}`);
   await ana.getByRole("button", { name: /Ver la foto de Compradora/ }).click();
   const dialogo = ana.getByRole("dialog", { name: /Foto de Compradora/ });

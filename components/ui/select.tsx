@@ -4,20 +4,9 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Selector de una opción — DESIGN-REFERENCE §6.6.
- *
- * Es el `<select>` del navegador y no un menú propio, a propósito: en el
- * teléfono abre la rueda nativa, que se maneja con el pulgar y ya sabe
- * escribir para buscar. Un menú hecho a mano tendría que reimplementar eso
- * —y el teclado, y el lector de pantalla— para verse igual.
- *
- * **Es para las listas cortas y cerradas.** Las que crecen con el catálogo
- * —marca, categoría, color— van en `SelectorConBuscador` desde F2.11: con
- * veinte opciones o más hace falta buscar por una parte del nombre, y un
- * color necesita mostrarse además de nombrarse.
- *
- * Comparte alto, radio, borde y anillo de foco con `Input`: en el formulario
- * van uno al lado del otro y cualquier diferencia se nota.
+ * El `<select>` nativo, para listas cortas y cerradas: en el teléfono abre la
+ * rueda del sistema. Las que crecen con el catálogo van en
+ * `SelectorConBuscador`. Comparte alto, radio y borde con `Input`.
  */
 function Select({
   className,

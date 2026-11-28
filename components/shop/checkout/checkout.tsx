@@ -29,10 +29,8 @@ export type DireccionDelCheckout = {
 };
 
 /**
- * Lo que dice «lo que viste ya no es lo que hay» (§8.4 paso 3): la página se
- * vuelve a armar con lo vigente, y los avisos de arriba cuentan qué cambió.
- * Es la reconfirmación de RF-11: el mensaje queda junto al botón, y confirmar
- * otra vez ya manda los precios nuevos.
+ * «Lo que viste ya no es lo que hay» (TECHNICAL-SPEC §8.4 paso 3): se refresca
+ * la página, y confirmar otra vez ya manda los precios nuevos.
  */
 const CAMBIO_EL_CARRITO = new Set([
   "PRICE_CHANGED",
@@ -41,17 +39,7 @@ const CAMBIO_EL_CARRITO = new Set([
 ]);
 
 /**
- * Las partes vivas del checkout — F6.1, RF-11.
- *
- * **Nombre y teléfono valen para este pedido** (aceptado el 2026-09-14):
- * van al snapshot de la orden y no cambian la cuenta. Quien compra para otra
- * persona no tiene por qué pisar sus propios datos, y los de la cuenta se
- * cambian en «Mis datos». El email no se edita: es el de la sesión.
- *
- * **Arranca en «Que me lo envíen»** (aceptado el 2026-09-14), con la
- * dirección predeterminada elegida: es el caso de casi todos, y cambiar a
- * retiro es un toque. Sin direcciones, el formulario para cargar una aparece
- * abierto ahí mismo.
+ * Nombre y teléfono van a la orden y no cambian la cuenta.
  *
  * No es un `<form>`: el de la dirección nueva vive adentro, y un formulario
  * no puede contener a otro. Confirmar lee el estado.
@@ -91,17 +79,13 @@ export function Checkout({
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
 
-  // La elegida se deriva en cada dibujo y no se sincroniza con un efecto: si
-  // la que estaba elegida ya no está —se borró desde otra pestaña—, o todavía
-  // no llegó —recién cargada, esperando el refresco—, vale la primera, que es
-  // la predeterminada.
+  // Derivada y no sincronizada con un efecto: si la elegida ya no está (se
+  // borró desde otra pestaña) o todavía no llegó, vale la predeterminada.
   const elegida =
     direcciones.find((d) => d.id === direccionId)?.id ??
     direcciones[0]?.id ??
     null;
 
-  // Lo que falta, en el orden en que se lo resuelve. Visible debajo del botón
-  // (RF-11: «con la razón visible»).
   const motivo = !emailVerificado
     ? "Confirmá tu email para poder hacer el pedido."
     : nombre.trim() === ""
@@ -125,9 +109,8 @@ export function Checkout({
       });
 
       if (r.ok) {
-        // `replace`: volver atrás desde la orden no tiene que traer de nuevo
-        // un checkout que ya se usó. Y el refresco pone al día la píldora del
-        // carrito del encabezado, que la navegación sola no toca.
+        // `replace`: volver atrás no tiene que traer un checkout ya usado. El
+        // refresco pone al día la píldora del carrito, que la navegación no toca.
         router.replace(`/orden/${r.data.numero}`);
         router.refresh();
         return;
@@ -198,9 +181,8 @@ export function Checkout({
 
         <Seccion id="entrega-titulo" titulo="Entrega">
           {/*
-            La guía señala las dos opciones y no la sección: con el envío
-            elegido, la sección trae el formulario de la dirección y en el
-            teléfono mide más que la pantalla.
+            La guía señala las opciones y no la sección: con el envío, la
+            sección mide más que la pantalla del teléfono.
           */}
           <fieldset className="flex flex-col gap-3" data-ayuda="entrega">
             <legend className="sr-only">¿Cómo querés recibirlo?</legend>
@@ -375,7 +357,7 @@ function Seccion({
 }: {
   id: string;
   titulo: string;
-  /** El paso de la ayuda guiada que la señala (F6.6). */
+  /** El paso de la ayuda guiada que la señala. */
   ayuda?: string;
   children: ReactNode;
 }) {
@@ -394,12 +376,8 @@ function Seccion({
 }
 
 /**
- * Una opción de una lista: la forma de entrega, o la dirección.
- *
- * Es un `<input type="radio">` de verdad y a la vista, como en el selector de
- * color de la ficha: el recorrido con flechas, el agrupado por nombre y el
- * anuncio de «1 de 2» salen del navegador. La tarjeta entera es la etiqueta,
- * así que se elige tocando en cualquier parte.
+ * Un radio de verdad y a la vista: las flechas y el anuncio de «1 de 2» salen
+ * del navegador. La tarjeta entera es la etiqueta.
  */
 function Opcion({
   nombre,
@@ -438,10 +416,6 @@ function Opcion({
   );
 }
 
-/**
- * RF-11: un email sin verificar no confirma, «con acción para reenviar la
- * verificación». El enlace vuelve al checkout (F5.7).
- */
 function SinVerificar({ email }: { email: string }) {
   const [reenviando, iniciar] = useTransition();
   const [reenviado, setReenviado] = useState(false);

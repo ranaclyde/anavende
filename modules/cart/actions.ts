@@ -16,20 +16,8 @@ import {
   soloVariante,
 } from "@/modules/cart/schemas";
 
-/**
- * Las acciones del carrito — RF-08 · TS §6.2. Tarea F5.5.
- *
- * Son `customer`: sin sesión no existe carrito (RF-08), y el envoltorio
- * rechaza antes de llegar acá. El `userId` sale de la sesión y nunca de la
- * entrada (§13.8).
- *
- * **`refresh()` y no `revalidatePath`.** Nada de lo que muestra el carrito
- * está cacheado: el carrito, la ficha y el encabezado leen la sesión, así que
- * son dinámicos siempre (§12). Lo que hay que actualizar es la pantalla que
- * ya está abierta —el número del encabezado después de agregar desde la
- * ficha, el total después de cambiar una cantidad—, y `refresh()` hace eso y
- * nada más.
- */
+// `refresh()` y no `revalidatePath`: nada del carrito está cacheado (lee la
+// sesión), lo que hay que actualizar es la pantalla abierta.
 
 export const agregarAlCarrito = action
   .input(lineaDelCarrito)
@@ -68,17 +56,8 @@ export const vaciarElCarrito = action
   });
 
 /**
- * «Iniciá sesión para comprar»: anotar qué se estaba comprando — F5.7, RF-08.
- *
- * Es `public` porque el que la llama todavía no tiene sesión: es la única
- * acción del carrito que no la exige, y no toca la base. Lo único que hace es
- * dejar la nota (`modules/cart/pendiente.ts`); después el botón lleva a
- * `/ingresar`.
- *
- * **No valida que la variante exista.** Podría, pero sería un viaje a la base
- * para adelantar un rechazo que igual va a ocurrir donde tiene que ocurrir:
- * al retomar, con el stock del momento —que es otro, un rato después— y con
- * el mensaje que el comprador necesita leer.
+ * Es `public` porque quien la llama todavía no tiene sesión. No valida la
+ * variante: el rechazo ocurre al retomar, con el stock de ese momento.
  */
 export const recordarCompraPendiente = action
   .input(lineaDelCarrito)
@@ -89,16 +68,8 @@ export const recordarCompraPendiente = action
   });
 
 /**
- * Retomar lo que quedó pendiente, ya con sesión — F5.7, RF-08.
- *
- * **La entrada no dice qué agregar, y no es un olvido**: sale de la cookie,
- * que la escribió el servidor. Si viniera del cliente, esta acción sería un
- * «agregá esto al carrito» con otro nombre, y quien la llame elige el
- * producto y la cantidad. Lo único que el cliente decide acá es *cuándo*
- * preguntar.
- *
- * Sin nada pendiente devuelve `retomado: false` en vez de un error: que no
- * haya nada que retomar es lo normal, no una falla.
+ * La entrada no dice qué agregar, a propósito: sale de la cookie que escribió
+ * el servidor. Si viniera del cliente, sería un «agregá esto» con otro nombre.
  */
 export const retomarCompraPendiente = action
   .input(sinDatos)
@@ -107,8 +78,7 @@ export const retomarCompraPendiente = action
     const pendiente = await tomar();
     if (!pendiente) return { retomado: false as const };
 
-    // Si esto tira, la cookie ya se borró: el intento no se repite solo, y el
-    // envoltorio devuelve el motivo —«Quedan 2 unidades…»— para mostrarlo.
+    // Si esto tira, la cookie ya se borró: el intento no se repite.
     const { cantidad } = await agregar(ctx.session.profile.id, pendiente);
     refresh();
 

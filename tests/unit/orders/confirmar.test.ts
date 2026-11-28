@@ -6,22 +6,17 @@ import { domainError } from "@/lib/errors";
 import { leerErrores } from "@/lib/form";
 
 /**
- * F6.1 — la acción que confirma el pedido. RF-11 · TS §6.2, §8.4.
- *
- * Lo que se prueba acá es lo que la acción agrega sobre la creación de orden,
- * que ya tiene sus tests contra Postgres (`crear.test.ts`): el email
- * verificado, la dirección que solo pide el envío, y qué le pasa a la
- * creación. La sesión y la creación se simulan, como en el test del
- * envoltorio: armar una sesión de verdad pediría GoTrue y cookies.
+ * La acción que confirma el pedido (RF-11 · TS §6.2, §8.4), sobre la creación
+ * que ya prueba `crear.test.ts`. Sesión y creación simuladas: una sesión de
+ * verdad pediría GoTrue y cookies.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
 const crear = vi.hoisted(() => ({ fn: vi.fn() }));
 
 vi.mock("@/lib/session", () => ({ getSession: async () => sesion.actual }));
-// RF-11 se mira en `auth.users` desde F10.5; acá sale de la misma sesión
-// simulada. Que la base y no la sesión es lo que manda lo prueba
-// `tests/unit/usuarios/verificacion.test.ts`.
+// RF-11 se mira en `auth.users`; acá sale de la sesión simulada. Que manda la
+// base lo prueba `tests/unit/usuarios/verificacion.test.ts`.
 vi.mock("@/modules/users/verificacion", () => ({
   emailConfirmado: async () =>
     (sesion.actual as { identity: { emailVerified: boolean } }).identity

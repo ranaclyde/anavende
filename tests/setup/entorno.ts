@@ -4,40 +4,16 @@ import { parseEnv } from "node:util";
 import { afterAll } from "vitest";
 
 import { cerrarConexion } from "@/db";
-// La extensión va a la vista porque el archivo es `.mts`: lo permite
-// `allowImportingTsExtensions` en el tsconfig, que está justamente por esto.
+// Con extensión porque es `.mts` (`allowImportingTsExtensions` en el tsconfig).
 import {
   dondeApunta,
   esApiDelStackLocal,
   esStackLocal,
 } from "@/scripts/solo-local.mts";
 
-/**
- * Lo que corre antes de cada archivo de test — TECHNICAL-SPEC §17.1.
- *
- * Hace tres cosas, y la del medio es la que importa.
- */
-
-// 1. El entorno sale de `.env.test`, NUNCA de `.env.local`.
-//
-// Desde el 2026-09-05 `.env.local` apunta al servidor DATA de producción
-// (§18.2). Si estos tests lo leyeran, reservarían y venderían stock en el
-// catálogo de verdad.
-//
-// NO SE USA `process.loadEnvFile`, y el motivo está comprobado: esa función
-// respeta lo que ya está en el entorno, así que un `export DATABASE_URL=…`
-// suelto en la terminal —o heredado de otra herramienta— le ganaría al
-// archivo. Acá el archivo tiene que ganar siempre. `parseEnv` es el mismo
-// parser que usa Node por dentro, sin dependencia nueva.
-//
-// EL ARCHIVO NO ESTÁ EN EL REPOSITORIO, por decisión tuya del 2026-09-07: lo
-// que se commitea es `.env.test.example`, con los valores vacíos. Las claves
-// del stack local no son secretas —vienen fijas en el CLI de Supabase— y aun
-// así una clave en el repositorio es una clave en el repositorio.
-//
-// El precio es este `catch`: en un clon nuevo hay que armar el archivo antes
-// de que `npm test` corra. Vale que el error lo diga con los dos comandos
-// exactos, y no con un ENOENT sobre una ruta.
+// El entorno sale de `.env.test`, no de `.env.local`. No con
+// `process.loadEnvFile`: respeta lo que ya está en el entorno, y un
+// `DATABASE_URL` exportado en la terminal le ganaría al archivo.
 const archivo = new URL("../../.env.test", import.meta.url);
 
 let contenido: string;
@@ -54,18 +30,7 @@ try {
 
 Object.assign(process.env, parseEnv(contenido));
 
-// 2. Y si aun así apuntara a otro lado, no se corre nada.
-//
-// La regla de «esto es el stack local» es la misma que usan los scripts de
-// verificación, importada, no copiada: loopback y el puerto 54322 de
-// `supabase/config.toml`. Vale recordar por qué mira el puerto y no solo el
-// host: el acceso a producción va por un túnel SSH, y a través de un túnel
-// producción se ve como `127.0.0.1`.
-//
-// No hay escape por variable de entorno, y esa es la diferencia con
-// `soloLocal()`. Un script de verificación contra producción tiene un caso
-// legítimo algún día; una batería de tests que crea órdenes y las cancela,
-// ninguno.
+// Sin escape por variable de entorno: estos tests venden y cancelan stock.
 const url = process.env.DATABASE_URL;
 
 if (!url) {
@@ -85,21 +50,8 @@ if (!esStackLocal(url)) {
   );
 }
 
-// 2b. Y lo mismo con Storage, que es la OTRA puerta.
-//
-// Desde el 2026-09-07 `.env.test` lleva también la URL y las claves de la API
-// del stack local: los tests migrados de F2.2, F2.4 y F2.6 suben y borran
-// archivos de verdad, porque §17.1 pide Storage real y no un doble.
-//
-// Apuntar bien la base no dice NADA de Storage: son dos puertas distintas, el
-// 54322 y el 54321. Sin esta comprobación, una `SUPABASE_SERVICE_ROLE_KEY` de
-// producción pegada acá al lado de una `DATABASE_URL` local dejaría los tests
-// subiendo archivos de prueba al bucket de Ana con todo en verde — y los
-// huérfanos en Storage no los encuentra ni los borra nadie.
-//
-// Es lo que reemplaza al «NO LLEVA NI UNA VARIABLE MÁS» que el archivo decía
-// antes: la regla no cambió de sentido, cambió de lugar. Un comentario pide;
-// esto impide.
+// Una base local no dice nada de Storage (54322 frente a 54321): sin esto,
+// los tests podrían subir archivos al bucket de producción, todo en verde.
 const api = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 if (!api || !esApiDelStackLocal(api)) {
@@ -113,12 +65,7 @@ if (!api || !esApiDelStackLocal(api)) {
   );
 }
 
-// 3. Al terminar, cerrar el pool.
-//
-// `db` abre hasta diez conexiones y las mantiene vivas. Un proceso de test
-// que las deja abiertas no termina: Vitest se queda esperando y hay que
-// matarlo a mano, que es exactamente el tipo de fricción por la que un día
-// los tests dejan de correrse.
+// Con el pool abierto, Vitest no termina.
 afterAll(async () => {
   await cerrarConexion();
 });

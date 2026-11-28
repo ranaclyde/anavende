@@ -1,27 +1,12 @@
 /**
- * Borra las cuentas que nunca confirmaron el email — F10.5b, TECHNICAL-SPEC
- * §16 («las cuentas sin verificar se borran a las 48 horas»).
+ * Borra las cuentas que nunca confirmaron el email (TECHNICAL-SPEC §16) y
+ * libera ese email. Corre como tarea programada de Coolify, adentro del
+ * contenedor de la tienda, contra la base de producción:
+ * `node scripts/limpiar-cuentas.mjs`.
  *
- * **Para qué:** quien registra una dirección ajena —por error o para
- * molestar— deja ese email tomado, y la dueña de verdad no podría crear su
- * cuenta («Ya hay una cuenta con ese email», RF-05). A las 48 horas el email
- * se libera. Y las altas de un robot que pasara el captcha no se acumulan.
- *
- * **Qué se borra:** cuentas de `auth.users` sin `email_confirmed_at`, creadas
- * hace más de 48 horas. **Qué no:** las que invitó la administradora desde el
- * panel (`invited_at`, F7.6), que quedan sin confirmar hasta que la persona
- * elige su contraseña —eso lo decide Ana, decisión tuya del 2026-10-17—, y
- * cualquier cuenta con órdenes, que sin verificar no debería tener ninguna
- * (RF-11) pero que no se borra a ciegas. Borrar en `auth.users` se lleva en
- * cascada el perfil, el carrito, las direcciones y los favoritos.
- *
- * **Cómo corre:** como tarea programada de Coolify, adentro del contenedor de
- * la tienda: `node scripts/limpiar-cuentas.mjs`. Es `.mjs` por lo mismo que
- * `migrar.mjs`: en la imagen no hay TypeScript. La lógica está en
- * `limpiarCuentasSinVerificar` para que la pruebe
- * `tests/unit/usuarios/limpieza.test.ts` contra la base local.
- *
- * El log dice cuántas borró, nunca cuáles: son emails de personas.
+ * BORRA de `auth.users`, con cascada a perfil, carrito, direcciones y
+ * favoritos. No toca las invitadas desde el panel (`invited_at`) ni las que
+ * tienen órdenes. El log dice cuántas, nunca cuáles: son emails de personas.
  */
 import { pathToFileURL } from "node:url";
 

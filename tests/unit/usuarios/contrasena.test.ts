@@ -6,12 +6,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { coincideLaContrasena } from "@/modules/users/contrasena";
 
 /**
- * F10.5b — La contraseña se compara en la base, contra el hash de GoTrue.
- *
- * Es lo que usan el ingreso de una cuenta bloqueada y «Mis datos» al pedir la
- * actual, desde que con el captcha prendido no se le puede preguntar a GoTrue
- * ingresando. Contra una cuenta de verdad, creada por la API de GoTrue: el
- * hash es el que GoTrue escribió, no uno armado a mano.
+ * La contraseña se compara en la base contra el hash de GoTrue: con el
+ * captcha prendido no se le puede preguntar a GoTrue ingresando. La cuenta se
+ * crea por la API de GoTrue, para que el hash sea el que GoTrue escribió.
  */
 
 const creadas: string[] = [];

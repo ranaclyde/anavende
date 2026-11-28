@@ -12,11 +12,8 @@ import { soloIdSchema } from "@/modules/users/direcciones/schemas";
 export const metadata: Metadata = { title: "Editar dirección" };
 
 /**
- * Editar una dirección — RF-09, F5.3.
- *
- * Una dirección ajena, eliminada o que no existe es la misma página: 404
- * (§17.2, caso 6). Decir «es de otra persona» confirmaría que el id existe.
- * Un id que no tiene forma de uuid ni llega a la base.
+ * Una dirección ajena, eliminada o inexistente da el mismo 404: decir «es de
+ * otra persona» confirmaría que el id existe.
  */
 export default async function EditarDireccion({
   params,
@@ -35,7 +32,7 @@ export default async function EditarDireccion({
 
   if (!soloIdSchema.safeParse({ id }).success) notFound();
 
-  // Con la baja pedida (F5.8) la libreta se mira y no se cambia.
+  // Con la baja pedida la libreta se mira y no se cambia.
   if (sesion.profile.closureRequestedAt) redirect("/mi-cuenta/direcciones");
 
   const d = await leerDireccion(sesion.profile.id, id);

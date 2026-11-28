@@ -7,16 +7,6 @@ import { Button } from "@/components/ui/button";
 import { FILTROS_VACIOS, urlDeFiltros } from "@/modules/returns/filtros";
 import type { DevolucionDelListado } from "@/modules/returns/queries";
 
-/**
- * Listado de devoluciones — FS RF-25. Tarea F7.5.
- *
- * **Es un componente de servidor**, como el listado de órdenes: los filtros y
- * la paginación son enlaces, y lo único que se toca de una devolución —
- * anularla— es su propia isla adentro de la tarjeta.
- *
- * Va de la más nueva a la más vieja y no se ordena por columna: una devolución
- * se mira cuando acaba de pasar, o se busca por fecha.
- */
 export function ListadoDeDevoluciones({
   devoluciones,
 }: {
@@ -41,10 +31,7 @@ export function ListadoDeDevoluciones({
   );
 }
 
-/**
- * Sin resultados (§8), que no es lo mismo que vacío: hay devoluciones y
- * ninguna coincide con estos filtros.
- */
+/** Sin resultados (§8): hay devoluciones, pero ninguna con estos filtros. */
 function SinResultados() {
   return (
     <VacioDelPanel
@@ -61,11 +48,8 @@ function SinResultados() {
 }
 
 /**
- * Estado vacío de verdad (§8): todavía no se registró ninguna devolución.
- *
- * **La acción que sugiere es ir a las órdenes finalizadas**, porque una
- * devolución no empieza acá: empieza en la orden que se devuelve. Es la misma
- * razón por la que esta pantalla no tiene un botón de «nueva».
+ * Vacío de verdad (§8). Sugiere las órdenes finalizadas porque una devolución
+ * empieza en la orden; por eso tampoco hay botón de «nueva».
  */
 export function SinDevoluciones() {
   return (

@@ -22,32 +22,19 @@ import {
 } from "@/modules/users/favoritos/actions";
 
 /**
- * Guardar en favoritos — F5.4, RF-10, DESIGN-REFERENCE §6.1, §7.3.
- *
- * **La misma acción, dibujada distinto a propósito** (§7.3): en la tarjeta es
- * el corazón solo, arriba a la derecha de la imagen, porque en una grilla es
- * lo único que entra; en la ficha es el botón «Guardar», al lado de
- * «Compartir», porque ahí hay lugar para la palabra. En las dos: contorno sin
- * marcar y relleno `--brand` marcado —el burdeos y no un rosa: §1.2 decidió
- * un solo color saturado—.
- *
- * **El estado no se dice solo con el relleno** (RF-10, §9): la etiqueta dice
- * qué va a pasar al tocarlo —«Guardar…» o «Quitar…»— y una región viva
- * anuncia lo que pasó.
- *
- * **Sin sesión es un enlace a ingresar**, como «Iniciá sesión para comprar»
- * (F5.7): anota qué se quería guardar y, al volver, queda guardado (RF-05).
+ * Guardar en favoritos (RF-10): corazón solo en la tarjeta, botón «Guardar»
+ * en la ficha. Sin sesión es un enlace a ingresar que anota qué se quería
+ * guardar y lo guarda al volver (RF-05).
  */
 
 type Forma = "corazon" | "guardar";
 
 type Props = {
   productId: string;
-  /** Para la etiqueta: «Guardar Teclado K120 en favoritos». */
   nombre: string;
   marcado: boolean;
   conSesion: boolean;
-  /** A dónde volver después de ingresar, relativa (RF-10: sin perder la navegación). */
+  /** A dónde volver después de ingresar, relativa. */
   volver: string;
   forma: Forma;
 };
@@ -61,11 +48,9 @@ export function BotonFavorito({ conSesion, ...props }: Props) {
 }
 
 /**
- * `latidos` cuenta las veces que se marcó desde que se montó: cada una cambia
- * la `key` del envoltorio y el pulso vuelve a empezar. En cero no late, así
- * que un corazón que ya venía lleno de la base no se mueve al cargar. Late el
- * envoltorio y no el SVG: un `transform` sobre el `<svg>` no siempre se
- * acelera por hardware.
+ * Cada latido cambia la `key` y reinicia el pulso; en cero no late, así no se
+ * mueve al cargar. Late el envoltorio: un `transform` sobre el `<svg>` no
+ * siempre se acelera por hardware.
  */
 function Corazon({
   marcado,
@@ -93,11 +78,7 @@ function Corazon({
   );
 }
 
-/**
- * El círculo de la tarjeta: 36px a la vista y 44 de área táctil (§6.1, §9),
- * con la superficie al 92% detrás, porque la foto de abajo puede ser de
- * cualquier color.
- */
+/** 36px a la vista y 44 de área táctil (`AREA`). */
 const CIRCULO =
   "grid size-9 place-items-center rounded-full bg-surface/92 text-ink shadow-sm group-focus-visible/favorito:shadow-focus motion-safe:transition-transform motion-safe:group-active/favorito:scale-90";
 
@@ -111,17 +92,12 @@ function Alternar({
   forma,
 }: Omit<Props, "conSesion">) {
   const [, iniciar] = useTransition();
-  // Con la baja pedida (F5.8) se ve el estado, pero no se cambia.
+  // Con la baja pedida se ve el estado, pero no se cambia.
   const pausa = propsDePausa(useCuentaEnPausa());
 
-  /*
-   * El estado propio manda, y sigue al del servidor solo cuando ése cambia.
-   * Guardar no refresca la pantalla (ver `modules/users/favoritos/actions`),
-   * así que el servidor no se entera de cada toque; pero al retomar un
-   * favorito pendiente sí refresca, y ahí el corazón tiene que llenarse. Se
-   * resuelve al pintar y no con un efecto, que dibujaría un cuadro con el
-   * valor viejo.
-   */
+  // El estado propio manda y sigue al del servidor solo cuando ése cambia:
+  // guardar no refresca, pero retomar un pendiente sí. Al pintar y no con un
+  // efecto, que dibujaría un cuadro con el valor viejo.
   const [delServidor, setDelServidor] = useState(marcado);
   const [actual, setActual] = useState(marcado);
   if (marcado !== delServidor) {
@@ -133,10 +109,8 @@ function Alternar({
   const [error, setError] = useState<string | null>(null);
   const [latidos, setLatidos] = useState(0);
 
-  // Optimista: el corazón se llena al tocarlo, no cuando vuelve el servidor.
-  // Si el servidor lo rechaza, vuelve a como estaba y el motivo queda escrito.
-  // Late solo al marcar (2026-10-20): desmarcar es el mismo toque, y si los
-  // dos latieran el movimiento no diría cuál de las dos cosas pasó.
+  // Optimista: si el servidor lo rechaza, vuelve y el motivo queda escrito.
+  // Late solo al marcar, para que el movimiento diga cuál de las dos pasó.
   function alternar() {
     const nuevo = !actual;
     setActual(nuevo);
@@ -158,8 +132,6 @@ function Alternar({
   return (
     <div className={cn("relative", forma === "guardar" && "flex flex-1")}>
       {forma === "corazon" ? (
-        // El ícono solo no dice qué hace: el tooltip lo dice para quien ve,
-        // y la etiqueta con el nombre del producto, para quien escucha.
         <Tooltip>
           <TooltipTrigger asChild>
             <button
@@ -196,9 +168,8 @@ function Alternar({
         >
           <Corazon marcado={actual} latidos={latidos} />
           {/*
-            Lo que se ve es el estado —«Guardado»— y lo que se oye además dice
-            qué pasa al tocarlo. El nombre accesible empieza por el texto a la
-            vista, así quien maneja la voz puede decir «Guardado» y acertar.
+            El nombre accesible empieza por el texto a la vista, para quien
+            maneja con la voz.
           */}
           {actual ? (
             <>
@@ -213,10 +184,7 @@ function Alternar({
         </Button>
       )}
 
-      {/*
-        La región viva existe SIEMPRE, vacía hasta que haya algo que decir: un
-        lector de pantalla solo anuncia cambios de una región que ya estaba.
-      */}
+      {/* Siempre montada: el lector solo anuncia cambios de una región que ya estaba. */}
       <p aria-live="polite" className="sr-only">
         {anuncio}
       </p>
@@ -233,10 +201,8 @@ function Alternar({
 }
 
 /**
- * Sin sesión: un enlace a ingresar que, al pasar, deja anotado qué se quería
- * guardar. La llamada no se espera, por lo mismo que en «Iniciá sesión para
- * comprar» (`components/shop/ficha/compra.tsx`): la navegación es blanda y la
- * cookie llega mucho antes de que alguien termine de escribir la contraseña.
+ * La anotación no se espera: la navegación es blanda y la cookie llega antes
+ * de que alguien termine de escribir la contraseña.
  */
 function IngresarParaGuardar({
   productId,
@@ -281,21 +247,14 @@ function IngresarParaGuardar({
 }
 
 /**
- * Retoma el favorito anotado antes de ingresar (RF-05). Lo monta el layout de
- * la tienda solo cuando hay uno, así que funciona en la pantalla a la que se
- * vuelva: el catálogo, con sus filtros, o la ficha.
- *
- * **Si falla, no dice nada.** Lo único que puede salir mal es que el producto
- * se haya desactivado mientras la persona ingresaba; el corazón queda vacío,
- * que es la verdad, y no hay otra cosa que ofrecerle. El carrito sí lo cuenta
- * (F5.7) porque ahí se pierde una compra, y acá no se pierde nada.
+ * Retoma el favorito anotado antes de ingresar (RF-05); lo monta el layout
+ * solo cuando hay uno. Si falla no dice nada: el corazón vacío ya es la verdad.
  */
 export function RetomarFavorito() {
   const yaSePidio = useRef(false);
 
   useEffect(() => {
-    // Un `ref`: en desarrollo React monta dos veces, y dos llamadas a la vez
-    // alcanzan a leer la misma cookie antes de que la primera la borre.
+    // En desarrollo React monta dos veces, y dos llamadas leerían la misma cookie.
     if (yaSePidio.current) return;
     yaSePidio.current = true;
     void retomarFavoritoPendiente({});

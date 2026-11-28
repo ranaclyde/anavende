@@ -11,24 +11,9 @@ import { borrarArchivosDeFoto } from "@/modules/media/subir";
 import { contarAdministradoras } from "@/modules/users/panel/queries";
 import type { RolAsignable } from "@/modules/users/panel/schemas";
 
-/**
- * Gestión de usuarios desde el panel — FS RF-26 · TS §13.2, §13.4. Tarea F7.6.
- *
- * **Es el único lugar de la aplicación que administra cuentas ajenas**, y por
- * eso todo pasa por el cliente de SERVICIO: crear una identidad, cambiarle los
- * metadatos o pedir una recuperación para otra persona no se puede hacer con
- * la sesión de quien lo pide.
- *
- * **No hay «eliminar usuario», y es a propósito** (§5.6, F4.5b): un comprador
- * con órdenes no se borra ni se puede borrar —`orders.user_id` es `RESTRICT`—.
- * Lo que existe es bloquear (RF-27, F7.7) y dar de baja (RF-34, F7.9).
- *
- * **La baja se EJECUTA acá y se PIDE en `modules/users/baja`**, que es el lado
- * del comprador. Están separadas porque son dos permisos distintos sobre la
- * misma columna, y vive de este lado lo que pasa por `.auth("admin")`.
- */
+// Cuentas ajenas: todo va por el cliente de servicio. No hay «eliminar
+// usuario» a propósito (§5.6): `orders.user_id` es `RESTRICT`.
 
-/** A dónde lleva el enlace de los emails que se disparan desde acá. */
 const NUEVA_CONTRASENA = "/recuperar/nueva-contrasena";
 
 function urlDeContrasenaNueva(): string {
@@ -45,29 +30,10 @@ export type DatosDeAlta = {
   rol: RolAsignable;
 };
 
-/**
- * Alta por invitación — RF-26: «crear usuario enviándole un email para definir
- * su contraseña».
- *
- * **Se invita, no se crea con contraseña.** `inviteUserByEmail` dispara E3
- * —la plantilla ya estaba escrita desde F1.8, esperando esta pantalla— y deja
- * que la persona elija su contraseña: la alternativa sería inventarle una y
- * mandársela por algún lado, que es peor de todas las maneras posibles.
- *
- * **El `first_name` va en los metadatos** porque es lo único con lo que los
- * emails de GoTrue saben saludar (`{{ .Data.first_name }}`). Sin eso, E3 llega
- * con «¡Hola!» a secas — la plantilla lo contempla, pero acá sí sabemos el
- * nombre.
- *
- * **Y si el perfil falla, se borra la identidad** (§13.4, paso 3): o quedan
- * los dos o ninguno. Una identidad sin perfil es alguien que puede entrar y
- * con quien la aplicación no sabe qué hacer.
- */
+/** Si el perfil falla, se borra la identidad: los dos o ninguno (§13.4). */
 export async function invitarUsuario(
   datos: DatosDeAlta,
 ): Promise<{ id: string }> {
-  // El email ya usado se contesta como error del campo y no como un fallo de
-  // la plataforma: es el error que más se va a cometer en esta pantalla.
   const [existente] = await db.execute<{ id: string }>(sql`
     SELECT id FROM user_profiles WHERE lower(email) = lower(${datos.email})`);
 
@@ -81,16 +47,14 @@ export async function invitarUsuario(
         full_name: `${datos.firstName} ${datos.lastName}`,
         first_name: datos.firstName,
       },
-      // E3 arma su enlace desde `{{ .SiteURL }}` y no usa este destino
-      // (`lib/email/generar.mts` explica por qué). Se manda igual: el día que
-      // la plantilla cambie de criterio, el enlace ya viene con a dónde ir.
+      // E3 no usa este destino (ver `lib/email/generar.mts`); se manda igual.
       redirectTo: urlDeContrasenaNueva(),
     },
   );
 
   if (error || !data?.user) {
-    // Puede haber una identidad en `auth.users` sin perfil —un alta social a
-    // medias (§13.4)—, y entonces la comprobación de arriba no la vio.
+    // Una identidad sin perfil (alta social a medias) no la ve la consulta
+    // de arriba.
     if (error?.code === "email_exists" || error?.status === 422) {
       throw emailRepetido();
     }
@@ -124,14 +88,6 @@ function emailRepetido() {
   });
 }
 
-/**
- * Editar nombre, apellido y teléfono de otra persona — RF-26.
- *
- * El email no se toca (lo explica `schemas.ts`), y el rol tiene su propia
- * operación: cambiar quién entra al panel no es lo mismo que corregir un
- * teléfono mal tipeado, y meterlos en el mismo «Guardar» hace que una decisión
- * viaje escondida adentro de la otra.
- */
 export async function editarUsuario(datos: {
   id: string;
   firstName: string;
@@ -151,9 +107,7 @@ export async function editarUsuario(datos: {
 
   if (filas.length === 0) throw domainError("NOT_FOUND");
 
-  // Los emails de GoTrue saludan con `first_name` de `user_metadata`: sin
-  // esto, a quien le corrigen el nombre acá lo sigue saludando con el viejo.
-  // Va por el cliente de servicio porque la cuenta es de otra persona.
+  // Los emails de GoTrue saludan con `user_metadata`, no con el perfil.
   const { error } = await createServiceClient().auth.admin.updateUserById(
     datos.id,
     {
@@ -164,24 +118,13 @@ export async function editarUsuario(datos: {
     },
   );
 
-  // **No se deshace lo guardado ni se falla por esto**: el perfil es lo que
-  // la tienda usa, y decirle «no pudimos» a quien sí guardó sería mentirle.
-  // Se devuelve para que la acción lo reporte, como hace «Mis datos» (F5.2).
+  // No se falla por esto: el perfil ya se guardó. La acción lo reporta.
   return { errorDeMetadatos: error?.message ?? null };
 }
 
 /**
- * Cambiar el rol — RF-26, con las dos reglas que impiden quedarse afuera.
- *
- * **La primera la pide el requisito**: la administradora no puede quitarse a
- * sí misma el rol. Es la que evita el clic distraído que deja a quien lo hizo
- * sin panel en la pantalla siguiente.
- *
- * **La segunda no está escrita en RF-26 y es la misma trampa por otro camino**:
- * quitarle el rol a la *última* administradora deja la tienda sin nadie que
- * pueda entrar, y recuperarla es un `UPDATE` a mano en la base —está contado
- * en PROGRESO, porque ya pasó—. Se rechaza igual, y con un mensaje que explica
- * qué hacer: primero nombrar a otra.
+ * Además de RF-26 (no quitarse el rol a sí misma), no se le quita a la última
+ * administradora: la tienda quedaría sin panel hasta un `UPDATE` a mano.
  */
 export async function cambiarRolDeUsuario(datos: {
   id: string;
@@ -193,8 +136,6 @@ export async function cambiarRolDeUsuario(datos: {
 
   if (!usuario) throw domainError("NOT_FOUND");
 
-  // Sin cambio no hay nada que hacer, y decirlo evita una fila de auditoría
-  // futura que no cuenta nada.
   if (usuario.role === datos.rol) return { cambiado: false };
 
   if (datos.id === datos.actorId) {
@@ -222,22 +163,9 @@ export async function cambiarRolDeUsuario(datos: {
 }
 
 /**
- * Restablecer la contraseña — RF-26: «dispara el email de recuperación».
- *
- * **Manda E2, el mismo email que sale de «¿Olvidaste tu contraseña?»**, y no
- * una contraseña nueva: la vendedora no llega a saber la contraseña de nadie,
- * que es lo que corresponde y además lo que el sistema ya sabía hacer.
- *
- * **Va por un cliente suelto, sin cookies.** Con el cliente del servidor, el
- * desafío PKCE quedaría registrado contra la sesión de quien aprieta el botón
- * —la administradora— y no contra el navegador de la persona que va a abrir el
- * enlace. E2 viaja con `token_hash`, que `/api/auth/confirmar` canjea sin
- * depender de ninguna cookie.
- *
- * **Y con la clave de servicio** (F10.5b): con el captcha prendido, GoTrue
- * pide un token de Turnstile para `/recover`, salvo a quien llama con la clave
- * de servicio (`verifyCaptcha`, en `internal/api/middleware.go`). Esto lo
- * dispara la administradora desde el panel, no una persona desde la tienda.
+ * Por un cliente sin cookies: con el del servidor, el desafío PKCE quedaría
+ * contra el navegador de la administradora y no el de quien abre el enlace.
+ * Y con la clave de servicio, que GoTrue exime del captcha en `/recover`.
  */
 export async function mandarRecuperacion(id: string): Promise<{
   email: string;
@@ -254,10 +182,6 @@ export async function mandarRecuperacion(id: string): Promise<{
 
   if (!usuario) throw domainError("NOT_FOUND");
 
-  // A una cuenta bloqueada no se le manda a elegir contraseña: no va a poder
-  // entrar igual (RF-27), y el email la invitaría a intentarlo. Con la baja
-  // ejecutada pasa lo mismo, y es peor: a alguien que se fue por su cuenta, un
-  // email para elegir contraseña le llega como si nada hubiera pasado.
   if (usuario.isBanned || usuario.dadoDeBaja) {
     throw domainError("VALIDATION", {
       message: usuario.dadoDeBaja
@@ -281,27 +205,9 @@ export async function mandarRecuperacion(id: string): Promise<{
 }
 
 /**
- * Bloquear una cuenta — FS RF-27 · TS §13.5. Tarea F7.7.
- *
- * **Primero la base y después Supabase Auth, y el orden es la decisión.** Si
- * GoTrue falla, la cuenta queda marcada y el envoltorio de acciones (§6.2) ya
- * la frena, aunque todavía pueda iniciar sesión. Al revés —GoTrue primero— un
- * fallo de la base dejaría a alguien afuera **sin motivo registrado**, que es
- * exactamente lo que RF-27 no admite.
- *
- * **La sesión que ya estaba abierta la cierra `proxy.ts`**, en el próximo
- * pedido a una ruta privada: un JWT emitido no se puede revocar y el
- * `admin.signOut` del SDK pide el token de esa persona, que no tenemos
- * (`modules/users/acceso.ts` lo cuenta entero).
- *
- * **El motivo no es una nota interna: es lo que la persona lee al intentar
- * entrar** (`components/shop/login-form.tsx`, desde F1.7). La restricción
- * `ban_has_reason` impide guardarlo vacío, y el `UPDATE` y la fila del
- * historial viajan en la misma transacción, como pide P5.
- *
- * **Bloquear lo ya bloqueado no hace nada**, igual que cambiar un rol al que
- * ya está: es el doble clic y las dos pestañas, y una segunda fila de
- * historial contaría un bloqueo que no ocurrió.
+ * Primero la base y después GoTrue, y el orden no se cambia (§13.5): al revés,
+ * un fallo de la base dejaría a alguien afuera sin motivo registrado. La
+ * sesión abierta la cierra `proxy.ts`.
  */
 export async function bloquearUsuario(datos: {
   id: string;
@@ -317,8 +223,8 @@ export async function bloquearUsuario(datos: {
   }
 
   const yaEstaba = await db.transaction(async (tx) => {
-    // Se bloquea la fila mientras se decide: sin esto, dos pedidos a la vez
-    // escriben dos filas de historial para un solo bloqueo.
+    // Sin el `FOR NO KEY UPDATE`, dos pedidos a la vez escribirían dos filas
+    // de historial.
     const [usuario] = await tx.execute<{
       role: string;
       isBanned: boolean;
@@ -334,10 +240,7 @@ export async function bloquearUsuario(datos: {
     if (!usuario) throw domainError("NOT_FOUND");
     if (usuario.isBanned) return true;
 
-    // **Una cuenta dada de baja no se bloquea** (F7.9). Ya no puede entrar, y
-    // las dos marcas juntas dejan a la pantalla de ingreso decidiendo cuál de
-    // los dos mensajes da: el de RN-13 —«te fuiste»— o el del bloqueo. Que no
-    // se puedan cruzar es más barato que elegir bien cada vez.
+    // Las dos marcas juntas dejarían al ingreso sin saber qué mensaje dar.
     if (usuario.dadoDeBaja) {
       throw domainError("VALIDATION", {
         message:
@@ -346,9 +249,6 @@ export async function bloquearUsuario(datos: {
       });
     }
 
-    // La misma regla que el rol (F7.6) por el mismo motivo: bloquear a la
-    // última administradora deja la tienda sin nadie que entre al panel, y
-    // salir de ahí es un UPDATE a mano en la base.
     if (usuario.role === "admin" && (await contarAdministradoras()) <= 1) {
       throw domainError("VALIDATION", {
         message:
@@ -381,17 +281,6 @@ export async function bloquearUsuario(datos: {
   };
 }
 
-/**
- * Desbloquear — RF-27: «se puede desbloquear, quedando también registrado».
- *
- * **El registro es la fila del historial y no las columnas**: acá se limpian
- * las cuatro, porque `ban_has_reason` no admite un motivo sin bloqueo. Sin la
- * tabla, desbloquear borraría toda huella de que el bloqueo existió (§5.3).
- *
- * **No pide motivo.** RF-27 lo exige para bloquear —es lo que la persona lee
- * al intentar entrar— y no para lo contrario: a quien vuelve a entrar no hay
- * nada que explicarle.
- */
 export async function desbloquearUsuario(datos: {
   id: string;
   actorId: string;
@@ -428,27 +317,9 @@ export async function desbloquearUsuario(datos: {
 }
 
 /**
- * Ejecutar una baja pedida — FS RF-34, RN-13 · TS §13.5b. Tarea F7.9.
- *
- * **Solo se ejecuta lo que el comprador pidió** (decisión tuya del
- * 2026-09-17), y lo sostiene el `CHECK` `closed_was_requested`: acá no hay
- * forma de dar de baja a alguien que no lo pidió. Para sacar a alguien por
- * decisión de la vendedora está el bloqueo (RF-27), que además exige un motivo
- * y se lo muestra. Si se pudieran las dos cosas desde el mismo lugar,
- * «se fue sola» dejaría de querer decir eso.
- *
- * **El motivo no se pide ni se pisa**: el que queda es el que escribió la
- * persona al pedirla, y es el que va a la fila del historial. La
- * administradora ejecuta, no redacta.
- *
- * **El mismo orden que el bloqueo, y por el mismo motivo**: primero la base
- * —donde queda registrado quién y cuándo, que es lo que RF-34 pide— y después
- * Supabase Auth. Al revés, un fallo de la base dejaría a alguien afuera sin
- * registro de nada.
- *
- * Ejecutar lo ya ejecutado no hace nada, igual que bloquear lo bloqueado.
- *
- * **Y se lleva la foto de perfil** (F5.9): revertir la baja no la trae.
+ * Solo lo que el comprador pidió (`CHECK` `closed_was_requested`, §13.5b).
+ * Mismo orden que el bloqueo: primero la base, después GoTrue. Se lleva la
+ * foto, y revertir la baja no la trae.
  */
 export async function ejecutarBaja(datos: {
   id: string;
@@ -472,9 +343,7 @@ export async function ejecutarBaja(datos: {
     if (!usuario) throw domainError("NOT_FOUND");
     if (usuario.yaEsta) return null;
 
-    // Pudo retirarlo mientras la administradora miraba la ficha: es una
-    // pantalla que se deja abierta, y el pedido lo retira la persona cuando
-    // quiere. Se dice qué pasó, no «no se pudo».
+    // Pudo retirarlo mientras la administradora miraba la ficha.
     if (!usuario.pedida) {
       throw domainError("INVALID_ORDER_STATE", {
         message:
@@ -483,9 +352,7 @@ export async function ejecutarBaja(datos: {
       });
     }
 
-    // La foto se va con la baja (decisión tuya del 2026-10-26): es un dato
-    // personal, y RN-13 protege el historial, no la cara. En la misma
-    // sentencia que la marca, así no hay cuenta dada de baja con foto.
+    // En la misma sentencia que la marca: no hay cuenta dada de baja con foto.
     await tx.execute(sql`
       UPDATE user_profiles
          SET closed_at  = now(),
@@ -503,8 +370,7 @@ export async function ejecutarBaja(datos: {
 
   if (!hecha) return { ejecutada: false, errorDeAuth: null };
 
-  // Los archivos, recién con la transacción confirmada: borrarlos antes y que
-  // la transacción fallara dejaría una cuenta activa con la foto rota.
+  // Recién después del commit: antes, un rollback dejaría la foto rota.
   if (hecha.foto) await borrarArchivosDeFoto(hecha.foto);
 
   return {
@@ -514,19 +380,8 @@ export async function ejecutarBaja(datos: {
 }
 
 /**
- * Revertir una baja ejecutada — RF-34: «la persona vuelve con su historial,
- * sus direcciones y sus favoritos intactos». Tarea F7.9.
- *
- * **Vuelve entera, no a medias**: se limpian la ejecución y también el pedido
- * con su motivo, así que la cuenta queda como cualquier otra. Dejarle el
- * pedido puesto la devolvería a solo lectura, que es un estado que nadie
- * eligió: quien pidió la baja fue la persona, y si vuelve es porque lo
- * arreglaron.
- *
- * **Nada que restaurar**: la baja nunca borró nada (§5.6). Es una marca, y
- * sacarla alcanza.
- *
- * El motivo que se limpia no se pierde: quedó en la fila `baja` del historial.
+ * Limpia también el pedido y su motivo, o la cuenta volvería a solo lectura.
+ * El motivo queda en la fila `baja` del historial.
  */
 export async function revertirBaja(datos: {
   id: string;
@@ -563,33 +418,14 @@ export async function revertirBaja(datos: {
   return { revertida: true, errorDeAuth: await sincronizarAuth(datos.id) };
 }
 
-/**
- * Cien años, que es lo que §13.5 eligió para decir «para siempre»: GoTrue
- * guarda una fecha (`banned_until`) y no un booleano, así que un cierre sin
- * fin se escribe como uno muy largo.
- */
+/** Cien años: GoTrue guarda una fecha (`banned_until`), no un booleano. */
 const SIN_VENCIMIENTO = "876000h";
 
 /**
- * Dejar a Supabase Auth de acuerdo con el perfil, y lo que pasa si no contesta.
- *
- * **No recibe qué escribir: lo deduce.** `ban_duration` es lo único que GoTrue
- * entiende y **el bloqueo y la baja comparten esa misma llave** (§13.5b), así
- * que quien levante una tiene que mirar la otra antes: desbloquear a alguien
- * que además está dado de baja, escribiendo `none` a ciegas, le devolvería el
- * ingreso a una cuenta que no puede entrar. Con las dos marcas leídas del
- * perfil ese cruce no se puede escribir mal.
- *
- * **No se reintenta ni se deshace lo guardado.** Con la marca en el perfil, la
- * cuenta ya no puede operar —toda Server Action relee el perfil (§13.3)—, así
- * que el peor caso es alguien bloqueado que todavía puede iniciar sesión y no
- * hacer nada. Se devuelve el error para que la pantalla lo diga y Sentry lo
- * anote: «quedó bloqueada» a secas sería mentira.
- *
- * **Lo que sí hace acá el bloqueo de GoTrue**: el token de refresco deja de
- * canjearse (`user_banned`), así que la sesión no se renueva. Lo que no hace
- * es invalidar el token de acceso que ya está emitido —se verifica localmente
- * (§13.3)—, y de eso se encarga el proxy. Medido el 2026-09-16.
+ * No recibe qué escribir: lo deduce del perfil, porque bloqueo y baja
+ * comparten `ban_duration` (§13.5b) y escribir `none` a ciegas al desbloquear
+ * le devolvería el ingreso a una cuenta dada de baja. No se reintenta: se
+ * devuelve el error para que la pantalla lo diga (§13.5).
  */
 async function sincronizarAuth(id: string): Promise<string | null> {
   const [perfil] = await db.execute<{ afuera: boolean }>(sql`

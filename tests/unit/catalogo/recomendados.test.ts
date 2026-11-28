@@ -10,20 +10,13 @@ import {
 import { enTransaccionRevertida, type Tx } from "@/tests/apoyo/transaccion";
 
 /**
- * F8.2 y F8.3 — RF-32, TS §11.2: los dos bloques de recomendados de la ficha
- * y «Completá tu setup» del carrito.
+ * Lo que se prueba es el orden: con los productos correctos en el orden
+ * equivocado no hay error, hay un agotado donde había uno con stock.
  *
- * Lo que se prueba es el ORDEN, porque es lo único que puede salir mal en
- * silencio: un bloque con los productos correctos en el orden equivocado no
- * da error, muestra un agotado donde había uno con stock, o un teclado en
- * «También te puede interesar» de otro teclado.
- *
- * **Cada test apaga los destacados de la base adentro de su transacción.** El
- * nivel 2 de los complementos son los destacados de TODO el catálogo, y la
- * base de desarrollo tiene los del seed: sin esto, el resultado dependería de
- * con qué se sembró la última vez. Se revierte con el resto.
+ * Cada test apaga los destacados de la base dentro de su transacción: el
+ * nivel 2 de los complementos son los destacados de todo el catálogo, y la
+ * base local tiene los del seed.
  */
-
 /** La variante de un producto de prueba: el carrito guarda variantes. */
 async function varianteDe(tx: Tx, productoId: string): Promise<string> {
   const [f] = await tx.execute<{ id: string }>(sql`
@@ -31,13 +24,12 @@ async function varianteDe(tx: Tx, productoId: string): Promise<string> {
   return f.id;
 }
 
-/** Los nombres que se crearon, para leer el resultado sin mirar ids. */
 const nombres = (lista: { nombre: string }[]) => lista.map((p) => p.nombre);
 
 async function preparar(tx: Tx) {
   await tx.execute(sql`UPDATE products SET is_featured = false`);
   const sufijo = randomUUID().slice(0, 8);
-  // `now()` es el mismo para toda la transacción: sin fechas a mano, «más
+  // `now()` es el mismo en toda la transacción: sin fechas a mano, «más
   // recientes» empataría siempre y decidiría el id, que es al azar.
   let minuto = 0;
 
@@ -227,7 +219,6 @@ describe("«También te puede interesar», uno de cada relacionada", () => {
 
       const { complementos } = await leerRecomendados(h350, tx);
 
-      // Antes eran los cuatro primeros mouses: Micros y Teclados no salían.
       expect(nombres(complementos.productos)).toEqual([
         "Mouse C",
         "Micro",

@@ -1,16 +1,9 @@
 import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/**
- * Carga de los reportes — DR §8. Tarea F9.1.
- *
- * El período, los totales y el gráfico de ventas con su alto real: es lo que
- * entra en la primera pantalla, y lo de abajo llega antes de que se scrollee.
- */
 export default function CargandoReportes() {
   return (
-    // El mismo marco que la página: una columna de 1024 o, desde 1100px de
-    // contenido, todo el ancho. Así nada cambia de ancho al llegar los datos.
+    // El mismo marco que la página, para que nada cambie de ancho.
     <div className="@container">
       <div className="flex max-w-admin-form flex-col gap-4 @min-[1100px]:max-w-none">
         <EsqueletoDeEncabezado titulo="w-28" bajada="w-80 max-w-full" />
@@ -39,8 +32,7 @@ export default function CargandoReportes() {
           </div>
         </section>
 
-        {/* El arranque del bento: ventas por día y más vendidos, que en
-            pantalla ancha quedan lado a lado. */}
+        {/* El arranque del bento: ventas por día y más vendidos. */}
         <div className="grid grid-cols-1 gap-4 @min-[1100px]:grid-cols-2 @min-[1100px]:items-start">
           <section className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
             <Skeleton className="h-6 w-32" />

@@ -2,35 +2,14 @@ import { Column, Row, Section, Text } from "react-email";
 
 import { Boton, COLOR, Marco, Menor, Parrafo } from "@/lib/email/base";
 
-/**
- * E4 — Nueva orden recibida (TECHNICAL-SPEC §14, FUNCTIONAL-SPEC RF-30).
- * Tarea F6.4. Lo emite **nuestra aplicación**, no GoTrue.
- *
- * **Es el único de los cuatro que no le habla a un comprador**, y eso cambia
- * casi todo. Los otros tres piden una acción de quien los recibe y por eso son
- * una carta: saludan, explican y cierran. Este es un **aviso de trabajo** —lo
- * abre Ana, quizá desde el teléfono, para saber si tiene que ponerse a
- * preparar un pedido—, así que lo importante va arriba y sin rodeos: quién
- * compró, qué, cuánto y cómo se entrega.
- *
- * **Por eso lleva el detalle entero y no un «entrá al panel».** Un email que
- * obliga a abrir otra cosa para saber si hay que hacer algo no sirve de aviso.
- * El enlace está igual, para lo que el email no puede hacer: cambiar el
- * estado, editar el pedido.
- *
- * **Y no lleva enlaces de contacto al comprador.** El teléfono va como texto
- * —es lo que se copia al WhatsApp— y ya está: un `mailto:` y un `wa.me` al
- * lado del botón del panel serían tres acciones compitiendo en un aviso que
- * tiene una sola.
- */
+// E4 (TECHNICAL-SPEC §14, RF-30): lo emite la aplicación, no GoTrue.
 
 export type ItemDelAviso = {
   nombre: string;
   marca: string;
-  /** El del snapshot. `null` si el producto no viene en colores. */
   color: string | null;
   cantidad: number;
-  /** Ya formateado: acá no se hace aritmética de dinero (§7.1). */
+  /** Ya formateado: acá no se hace aritmética de dinero. */
   precioUnitario: string;
   subtotal: string;
 };
@@ -40,13 +19,10 @@ export type PropsDeNuevaOrden = {
   numero: number;
   comprador: string;
   telefono: string;
-  /** `null` si la orden no guardó email. La columna lo permite. */
   email: string | null;
   items: ItemDelAviso[];
   total: string;
-  /** Ya resuelta: «Envío a …» o «Retira en el punto de entrega». */
   entrega: string;
-  /** A dónde manda el botón: el detalle de la orden en el panel (F7.1). */
   enlace: string;
 };
 
@@ -69,9 +45,9 @@ const ITEMS_DE_MUESTRA: ItemDelAviso[] = [
   },
 ];
 
-/** Export nombrado, como las otras tres: ver la nota en `verificacion.tsx`. */
+/** Export nombrado: ver `verificacion.tsx`. */
 export function NuevaOrden({
-  // Valores para la previsualización local (`npm run email`).
+  // Para la previsualización local (`npm run email`).
   sitio = "http://localhost:3000",
   numero = 1043,
   comprador = "Rosa Pereyra",
@@ -85,8 +61,6 @@ export function NuevaOrden({
   return (
     <Marco
       sitio={sitio}
-      // Lo que se lee en la bandeja sin abrir: cuánto y de quién, que es lo
-      // que decide si esto se mira ahora o después.
       adelanto={`${total} · ${comprador} · pedido #${numero}`}
       pie={
         <Menor>
@@ -149,13 +123,8 @@ const CELDA = {
   color: COLOR.texto,
 } as const;
 
-/**
- * Los datos del pedido, en dos columnas.
- *
- * `Row`/`Column` de React Email son una tabla de verdad, que es lo único que
- * alinea igual en Gmail y en Outlook. Con `div` y porcentajes, el motor de
- * Word apila las columnas.
- */
+// `Row`/`Column` son una tabla de verdad: con `div`, Outlook apila las
+// columnas.
 function Datos({ filas }: { filas: [string, string][] }) {
   return (
     <Section style={{ margin: "0 0 4px" }}>
@@ -181,13 +150,6 @@ function Datos({ filas }: { filas: [string, string][] }) {
   );
 }
 
-/**
- * Un renglón del pedido.
- *
- * El color va pegado al nombre y no en una columna propia: una variante sin
- * color dejaría el hueco, y en 560px de ancho una columna vacía se lee como
- * un dato que falta.
- */
 function Renglon({ item }: { item: ItemDelAviso }) {
   return (
     <Row>

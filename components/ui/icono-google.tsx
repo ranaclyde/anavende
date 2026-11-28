@@ -1,19 +1,9 @@
 import { cn } from "@/lib/utils";
 
 /**
- * La «G» de Google — F1.7, para el botón de ingreso.
- *
- * **Dibujada a mano**, por lo mismo que la de WhatsApp (`icono-whatsapp.tsx`):
- * `lucide-react` no trae marcas, y una segunda librería de íconos por una
- * sola forma no se justifica.
- *
- * **En sus cuatro colores, siempre**: es lo que piden las pautas de marca de
- * Google para el botón de ingreso, y lo que la gente reconoce de un vistazo
- * como «esto entra con Google», igual que el verde de WhatsApp. Por eso no
- * usa `currentColor`. Va sobre el botón secundario, blanco, que es el fondo
- * para el que está pensada.
- *
- * `aria-hidden` fijo: el botón dice «con Google» con todas las letras.
+ * Dibujada a mano: `lucide-react` no trae marcas. En sus cuatro colores y no
+ * en `currentColor`, como piden las pautas de Google; va sobre fondo blanco.
+ * `aria-hidden` porque el botón dice «con Google» en texto.
  */
 export function IconoGoogle({ className }: { className?: string }) {
   return (

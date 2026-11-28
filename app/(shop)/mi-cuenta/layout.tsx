@@ -7,22 +7,14 @@ import { caraDe } from "@/modules/users/avatar";
 import { getSession } from "@/lib/session";
 import { FUERA_DEL_INDICE } from "@/lib/seo";
 
-/**
- * Ninguna de estas pantallas va al índice de un buscador (F3.9). Va en el
- * layout y no en cada página: los metadatos se heredan campo por campo, así
- * que alcanza con declararlo una vez y las páginas siguen poniendo su título.
- */
+// En el layout alcanza: los metadatos se heredan campo por campo y las
+// páginas siguen poniendo su título.
 export const metadata: Metadata = { robots: FUERA_DEL_INDICE };
 
 /**
- * «Mi cuenta»: el saludo, «Cerrar sesión» y el menú de secciones, compartidos
- * por todas — RF-07. Nace con F5.3 (2026-09-13).
- *
- * **No es la guardia.** Sin sesión deja pasar la página tal cual, y la
- * página redirige al ingreso con SU `volver`: el layout no sabe en qué
- * ruta está, y quien pidió «Direcciones» tiene que volver a «Direcciones», no
- * a «Mis datos». Tampoco sería suficiente: un layout no se vuelve a ejecutar
- * al navegar entre sus páginas.
+ * **No es la guardia.** Sin sesión deja pasar la página, que redirige al
+ * ingreso con su propio `volver` (el layout no sabe en qué ruta está). Tampoco
+ * alcanzaría: un layout no se vuelve a ejecutar al navegar entre sus páginas.
  */
 export default async function LayoutDeLaCuenta({
   children,
@@ -35,8 +27,7 @@ export default async function LayoutDeLaCuenta({
   return (
     <div className="mx-auto flex max-w-shop flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        {/* La cara al lado del saludo (F5.9): en todas las secciones, y no
-            solo en «Mis datos», que es donde se cambia. */}
+        {/* En todas las secciones, no solo en «Mis datos». */}
         <div className="flex min-w-0 items-center gap-3">
           <Avatar src={caraDe(sesion.profile)} tamano={40} arriba />
           <h1 className="text-title text-ink">

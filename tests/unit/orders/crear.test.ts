@@ -28,12 +28,7 @@ import {
 import { dosCompitiendo } from "@/tests/apoyo/concurrencia";
 import { historial, limpiarOrdenes } from "@/tests/apoyo/ordenes";
 
-/**
- * F4.3 — creación de orden desde el carrito. RF-11, RF-12 · §8.4, §8.5.
- *
- * «Hecho cuando»: el procedimiento de §8.4 completo, y dos envíos con la misma
- * clave devuelven LA MISMA orden.
- */
+/** Creación de orden desde el carrito. RF-11, RF-12 · §8.4, §8.5. */
 
 afterEach(async () => {
   await limpiarOrdenes();
@@ -133,7 +128,6 @@ describe("el camino que tiene que funcionar", () => {
       compra(comprador, [{ variantId, unitPrice: "1000.00", quantity: 2 }]),
     );
 
-    // Todo el catálogo cambia después de la compra.
     await db.execute(sql`
       UPDATE products SET name = 'Otro nombre', price = '99999.00'
        WHERE id = ${productId}`);
@@ -144,7 +138,6 @@ describe("el camino que tiene que funcionar", () => {
       quantity: 2,
       subtotal: "2000.00",
     });
-    // El nombre y el precio son los de cuando compró, no los de ahora.
     expect(item.productName).not.toBe("Otro nombre");
     expect((await laOrden(orderId)).total).toBe("2000.00");
   });
@@ -226,7 +219,7 @@ describe("idempotencia (§8.5)", () => {
     expect(segunda.orderNumber).toBe(primera.orderNumber);
     expect(segunda.yaExistia).toBe(true);
 
-    // Y sobre todo: se reservó UNA vez. Es el punto entero de la clave.
+    // Se reservó UNA vez: es el punto de la clave.
     expect(await contadores(variantId)).toEqual({
       stockTotal: 10,
       reservedStock: 2,
@@ -298,7 +291,6 @@ describe("idempotencia (§8.5)", () => {
       );
     });
 
-    // Y lo suyo quedó como estaba: el carrito lleno y nada reservado de más.
     expect(await contadores(variantId)).toEqual({
       stockTotal: 10,
       reservedStock: 1,
@@ -363,9 +355,7 @@ describe("reconfirmación: lo que cambió mientras miraba (§8.4 paso 3)", () =>
       ]),
     ).catch((e: unknown) => e)) as DomainError;
 
-    // Hay dos problemas y se avisa del que hay que resolver primero: algo que
-    // ya no se vende. Avisar del precio de otra cosa antes mandaría a la
-    // persona por el camino largo.
+    // Con dos problemas, se avisa primero del que ya no se vende.
     expect(fallo.code).toBe("PRODUCT_UNAVAILABLE");
     expect(fallo.details).toMatchObject({
       items: [{ variantId: muerto.variantId }],
@@ -460,16 +450,13 @@ describe("lo que impide crear la orden", () => {
     ).rejects.toMatchObject({
       code: "INSUFFICIENT_STOCK",
       details: { variantId },
-      // Dice cuál y qué hacer; no «ajustá la cantidad», que la pantalla ya
-      // ajusta sola al volver a armarse (F6.2).
+      // Dice cuál y qué hacer; la cantidad la ajusta sola la pantalla.
       message: expect.stringContaining(
         "Revisá el resumen y confirmá otra vez.",
       ),
     });
 
-    // Todo o nada (§8.3 regla 1): ni orden, ni ítems, ni asiento, ni carrito
-    // vaciado. Vaciar el carrito de una compra que no se hizo sería la peor
-    // versión de este error.
+    // Todo o nada (§8.3 regla 1), carrito incluido.
     const [{ n }] = await db.execute<{ n: number }>(sql`
       SELECT count(*)::int AS n FROM orders WHERE user_id = ${comprador.userId}`);
     expect(n).toBe(0);
@@ -528,8 +515,8 @@ describe("lo que impide crear la orden", () => {
 });
 
 test("dos compradores sobre la última unidad: una orden y un rechazo", async () => {
-  // La Compuerta F4, vista desde el checkout. Las dos peticiones se quedan
-  // esperando la misma fila y se despiertan una detrás de la otra.
+  // La Compuerta F4 desde el checkout: la fila bloqueada deja a las dos
+  // esperando, y se despiertan una detrás de la otra.
   const { variantId } = await unaVariante({ total: 1 });
   const uno = await unComprador();
   const otro = await unComprador();
@@ -560,14 +547,12 @@ test("dos compradores sobre la última unidad: una orden y un rechazo", async ()
   expect(rechazadas).toHaveLength(1);
   expect(rechazadas[0].reason).toMatchObject({ code: "INSUFFICIENT_STOCK" });
 
-  // La unidad se vendió una sola vez.
   expect(await contadores(variantId)).toEqual({
     stockTotal: 1,
     reservedStock: 1,
   });
   expect(await movimientos(variantId)).toHaveLength(1);
 
-  // Y el que perdió conserva su carrito.
   const perdedor = resultados[0].status === "rejected" ? uno : otro;
   expect(await itemsEnElCarrito(perdedor.cartId)).toBe(1);
 });

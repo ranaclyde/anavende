@@ -1,12 +1,4 @@
-/**
- * Solapas, filtros y búsqueda del listado de órdenes del panel — RF-21, §10.2.
- * Tarea F7.1.
- *
- * **No es `server-only`**, por lo mismo que `catalog/products/filtros.ts`: el
- * estado del listado vive en la URL, así que la consulta tiene que leerlo y la
- * barra tiene que escribirlo. Con una copia de cada lado, el día que uno
- * cambie el otro deja de encontrar y no lo dice.
- */
+// Sin `server-only`: la consulta lee los filtros de la URL y la barra los escribe.
 
 import {
   fecha,
@@ -17,24 +9,8 @@ import {
 } from "@/lib/filtros-url";
 import type { EstadoOrden } from "@/modules/orders/estados";
 
-/**
- * Leer un valor de la URL sin fallar nunca es de `lib/filtros-url.ts`: lo
- * comparte con el listado de devoluciones (F7.5), y una segunda definición de
- * «qué es una fecha válida en la URL» es la que un día deja de coincidir.
- */
 export type { ParametrosDeBusqueda };
 
-/**
- * Las solapas de RF-21, y por qué son solapas y no un `<select>` más.
- *
- * Son la pregunta que la vendedora se hace al abrir la pantalla —«¿qué tengo
- * que preparar?»— y no un filtro entre otros. Escondida en una lista
- * desplegable, esa pregunta cuesta dos clics; a la vista, cambiar de solapa es
- * uno solo y además se ve en cuál está parada.
- *
- * **La que viene de fábrica es «Activas»**: el listado se abre en lo que hay
- * por hacer, no en el archivo histórico. `/admin/ordenes` a secas es eso.
- */
 export const SOLAPAS = [
   { valor: "activas", etiqueta: "Activas", estado: "activa" },
   { valor: "finalizadas", etiqueta: "Finalizadas", estado: "finalizada" },
@@ -48,7 +24,6 @@ export const SOLAPAS = [
 
 export type Solapa = (typeof SOLAPAS)[number]["valor"];
 
-/** El estado que filtra cada solapa. `null` en «Todas». */
 export function estadoDeLaSolapa(solapa: Solapa): EstadoOrden | null {
   return SOLAPAS.find((s) => s.valor === solapa)!.estado;
 }
@@ -66,7 +41,7 @@ export type FiltrosDeOrdenes = {
   /** Número de orden, nombre o email del comprador. */
   q: string;
   origen: FiltroDeOrigen;
-  /** `AAAA-MM-DD` o `""`. Es lo que escribe y lee un `<input type="date">`. */
+  /** `AAAA-MM-DD` o `""`, como un `<input type="date">`. */
   desde: string;
   hasta: string;
   pagina: number;
@@ -81,28 +56,12 @@ export const FILTROS_VACIOS: FiltrosDeOrdenes = {
   pagina: 1,
 };
 
-/**
- * Cuántas por página.
- *
- * **La tienda pagina de a 24 y acá son 40**, y la diferencia no es un
- * descuido: allá cada renglón es una tarjeta con foto en una grilla, y acá es
- * una fila de 44px en una tabla que se recorre con la vista (§6.9). Cuarenta
- * filas entran en dos pantallas de escritorio; veinticuatro obligarían a
- * paginar un martes cualquiera.
- */
+/** Distinto de los 24 de la tienda a propósito: acá son filas de tabla, no tarjetas. */
 export const POR_PAGINA = 40;
 
 /**
- * Lee los filtros de la URL sin fallar nunca.
- *
- * Mismo criterio que el listado de productos: un valor que no se reconoce se
- * descarta y queda el de siempre. La URL es editable a mano y compartible, y
- * un listado que devuelve un error porque alguien borró media palabra del
- * enlace es un callejón sin salida.
- *
- * **Las fechas dadas vuelta se enderezan** en vez de devolver cero
- * resultados: pedir «del 30 al 1» es evidentemente un rango, y contestarlo con
- * una tabla vacía es dejar a quien pregunta creyendo que no hubo ventas.
+ * Lee los filtros de la URL sin fallar nunca: lo que no se reconoce queda en
+ * el valor de siempre, y un rango de fechas dado vuelta se endereza.
  */
 export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeOrdenes {
   const desde = fecha(params.desde);
@@ -120,13 +79,7 @@ export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeOrdenes {
   };
 }
 
-/**
- * La URL que representa estos filtros.
- *
- * Lo que coincide con el valor de siempre NO se escribe: la dirección de un
- * listado sin tocar es `/admin/ordenes` a secas, y la de uno filtrado dice
- * exactamente qué se cambió.
- */
+/** Lo que coincide con el valor de siempre no se escribe en la URL. */
 export function urlDeFiltros(
   filtros: FiltrosDeOrdenes,
   base = "/admin/ordenes",
@@ -143,7 +96,7 @@ export function urlDeFiltros(
   return cadena ? `${base}?${cadena}` : base;
 }
 
-/** Si hay algo que limpiar: la búsqueda y los filtros, no la solapa. */
+/** La solapa no cuenta como filtro. */
 export function hayFiltros(filtros: FiltrosDeOrdenes): boolean {
   return (
     filtros.q !== "" ||
@@ -153,10 +106,7 @@ export function hayFiltros(filtros: FiltrosDeOrdenes): boolean {
   );
 }
 
-/**
- * Limpia la búsqueda y los filtros, y **conserva la solapa**: quien está
- * mirando las canceladas y limpia los filtros quiere seguir en canceladas.
- */
+/** Conserva la solapa. */
 export function sinFiltros(filtros: FiltrosDeOrdenes): FiltrosDeOrdenes {
   return { ...FILTROS_VACIOS, solapa: filtros.solapa };
 }

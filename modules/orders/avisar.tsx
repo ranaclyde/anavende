@@ -18,34 +18,14 @@ import { formaDeEntrega } from "@/modules/orders/entrega";
 import { emailDeAvisos } from "@/modules/settings/queries";
 
 /**
- * E4, el aviso de nueva orden a la administradora — FS RF-30 · TS §14.
- * Tarea F6.4.
- *
- * **Va después del COMMIT y nunca lo revierte** (§8.4 paso 10, RF-12). Todo lo
- * que puede salir mal acá —que no haya casilla configurada, que Resend esté
- * caído, que la orden se haya borrado en el medio— termina en `false` y en un
- * registro, nunca en una excepción que suba: para el comprador la orden ya
- * está hecha, y un error en su pantalla no le diría nada que pueda resolver.
- *
- * Por eso la función entera va envuelta en un `try`. Es el único lugar del
- * proyecto donde eso es lo correcto y no una forma de tapar errores: acá
- * *nada* justifica romper la confirmación de una compra que ya ocurrió.
+ * E4, el aviso de nueva orden a la administradora (RF-30). Va después del
+ * COMMIT y nunca lo revierte: todo fallo termina en `false` y un registro,
+ * nunca en una excepción que suba al comprador.
  */
 
 /**
- * Agendar el aviso para después de la respuesta, sin que nada de eso pueda
- * romper la confirmación de la compra.
- *
- * **El `try` es por `after` y no por el email.** `after()` lanza si lo llaman
- * fuera de una petición, y el envoltorio de acciones convierte cualquier
- * excepción en un `INTERNAL` que el comprador ve como «no pudimos completar la
- * acción» — con la orden ya creada, el stock reservado y el carrito vacío. Es
- * exactamente lo que RF-30 prohíbe: un fallo del aviso no puede volverse un
- * fallo de la operación.
- *
- * Que hoy eso solo pase en los tests es justamente el motivo por el que
- * conviene que esté: la garantía no puede depender de que el único llamador
- * siga estando donde está.
+ * El `try` es por `after()`, que lanza fuera de una petición: el envoltorio lo
+ * convertiría en un error para el comprador con la orden ya creada.
  */
 export function avisarSinBloquear(orderId: string): void {
   try {
@@ -62,19 +42,13 @@ export async function avisarNuevaOrden(orderId: string): Promise<boolean> {
     if (!aviso) return false;
     return await enviarEmail(aviso);
   } catch (e) {
-    // Importa que quede, no que se lea acá: `enviarEmail` ya reporta lo suyo,
-    // así que esto solo atrapa lo que pase ANTES —la lectura, el render—.
+    // `enviarEmail` ya reporta lo suyo: esto atrapa la lectura y el render.
     console.error(`[email] No se pudo avisar la orden ${orderId}:`, e);
     return false;
   }
 }
 
-/**
- * El email listo para mandar, o `null` si no hay a quién o qué mandar.
- *
- * Está separado del envío porque es la mitad que tiene las decisiones y
- * ninguna red: `enviarEmail` es un `fetch` con dos campos.
- */
+/** `null` si no hay a quién o qué mandar. */
 export async function armarElAviso(orderId: string): Promise<Email | null> {
   const datos = await datosDelAviso(orderId);
   if (!datos) return null;
@@ -83,20 +57,9 @@ export async function armarElAviso(orderId: string): Promise<Email | null> {
 }
 
 /**
- * Todo lo que decide este módulo, **sin renderizar**: a quién le llega, qué
- * dice el asunto y qué valores entran en la plantilla.
- *
- * **Está partido en dos por los tests, y vale la pena decir por qué.** El
- * `render` de React Email necesita `react-dom/server`, que bajo la condición
- * `react-server` no existe — y los tests corren con esa condición puesta
- * porque medio proyecto lleva `server-only` (ver `vitest.config.mts`). En la
- * aplicación no pasa: Next resuelve el paquete bien y el email se arma
- * entero; se comprobó confirmando un pedido de verdad contra el stack local.
- *
- * Antes que aflojar la condición del harness para un solo archivo, se partió
- * acá: lo que puede romperse en silencio son los datos —un campo que deja de
- * llegar, un monto sin formatear—, y eso es justo lo que queda probado. La
- * plantilla se mira, que es como se revisa un email.
+ * Los datos del aviso sin renderizar. Está separado de `armarElAviso` por los
+ * tests: corren con la condición `react-server`, donde `render` no funciona
+ * (ver `vitest.config.mts`).
  */
 export async function datosDelAviso(
   orderId: string,
@@ -106,9 +69,7 @@ export async function datosDelAviso(
     leerOrdenParaElAviso(orderId),
   ]);
 
-  // Sin fila en `site_settings` no hay a dónde mandarlo (§5.9). No es un
-  // error: es una tienda que todavía no se terminó de configurar, y la
-  // pantalla de Configuración ya lo dice.
+  // No es un error: la tienda todavía no se configuró.
   if (!casilla) {
     console.warn(
       `[email] Sin email de avisos configurado: no se avisa la orden ${orderId}.`,
@@ -119,7 +80,6 @@ export async function datosDelAviso(
 
   return {
     para: casilla,
-    // El número primero: es lo que se busca cuando hay veinte en la bandeja.
     asunto: `Pedido #${orden.numero} de ${orden.customerName} — ${formatMoney(orden.total)}`,
     referencia: `orden #${orden.numero}`,
     props: {
@@ -131,26 +91,12 @@ export async function datosDelAviso(
       items: orden.items.map(comoItemDelAviso),
       total: formatMoney(orden.total),
       entrega: comoEntrega(orden.shippingAddress),
-      // El enlace directo al detalle que pide RF-30. Hasta F7.1 llevaba al
-      // inicio del panel, porque la pantalla no existía y todos los avisos de
-      // esa ventana habrían dado 404.
-      //
-      // Va por NÚMERO y no por `id`: es la dirección que tiene el panel
-      // (`/admin/ordenes/[numero]`), la misma que se lee en el asunto del
-      // email, y la única que alguien puede tipear si el botón falla.
       enlace: `${SITIO}/admin/ordenes/${orden.numero}`,
     },
   };
 }
 
-/**
- * `NEXT_PUBLIC_SITE_URL` y no el encabezado `Host` de la petición.
- *
- * El email se arma dentro de `after()`, cuando la respuesta ya salió, y sobre
- * todo: lo abre otra persona en otro momento. Un enlace armado con el host de
- * quien compró apuntaría a donde entró él, que detrás del proxy no siempre es
- * el dominio público.
- */
+/** No el `Host` de la petición: detrás del proxy no siempre es el dominio público. */
 const SITIO = process.env.NEXT_PUBLIC_SITE_URL ?? "https://anavende.com.ar";
 
 type OrdenParaElAviso = {
@@ -170,12 +116,7 @@ type OrdenParaElAviso = {
   }[];
 };
 
-/**
- * Por `id` y sin filtrar por comprador, al revés que todo lo demás en
- * `queries.ts`: acá no hay una sesión que pueda estar pidiendo algo ajeno. El
- * `id` viene de la orden que esta misma petición acaba de crear, y quien lee
- * es el servidor para avisarle a la administradora.
- */
+/** Sin filtrar por comprador: el `id` viene de la orden que esta petición acaba de crear. */
 async function leerOrdenParaElAviso(
   orderId: string,
 ): Promise<OrdenParaElAviso | null> {
@@ -205,7 +146,6 @@ async function leerOrdenParaElAviso(
   return fila ?? null;
 }
 
-/** Los montos se formatean acá y llegan hechos a la plantilla (§7.1). */
 function comoItemDelAviso(
   item: OrdenParaElAviso["items"][number],
 ): ItemDelAviso {
@@ -219,13 +159,6 @@ function comoItemDelAviso(
   };
 }
 
-/**
- * Una línea que diga a dónde va, o que se retira.
- *
- * **Lleva la dirección entera, con piso y aclaraciones**: es lo que Ana copia
- * para el mensajero, y un dato que falta ahí es un viaje perdido. El retiro no
- * dice dónde porque el punto de entrega lo pasa ella (RN-10).
- */
 function comoEntrega(direccion: ShippingAddressSnapshot | null): string {
   if (formaDeEntrega({ shippingAddress: direccion }) === "retiro") {
     return "Retira en el punto de entrega";

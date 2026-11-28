@@ -24,12 +24,9 @@ import { limpiar, unaVariante } from "@/tests/apoyo/catalogo";
 import { rechazaLlamada } from "@/tests/apoyo/errores";
 
 /**
- * F2.16 — La biblioteca, las capas y el interruptor, contra la base y
- * Storage de verdad (RF-39, TS §9.6).
- *
- * La marca es UNA para toda la tienda, así que el test guarda cómo estaba y
- * la deja igual al terminar: contra el stack local puede haber una armada a
- * mano para probar el panel.
+ * Marca de agua contra la base y Storage de verdad (RF-39, TS §9.6). Es UNA
+ * para toda la tienda: el test la deja como estaba, que en el stack local
+ * puede haber una armada a mano.
  */
 
 let antes: { activa: boolean; capas: CapaGuardada[] };

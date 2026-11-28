@@ -17,21 +17,9 @@ import { leerLaConfiguracion } from "@/modules/settings/queries";
 
 type Props = { params: Promise<{ slug: string }> };
 
-/**
- * Las páginas legales — RF-29, F9.3. Garantías, términos, privacidad y cómo
- * comprar, con el texto que la vendedora edita en /admin/legales.
- *
- * El texto pasa otra vez por el sanitizador al pintarse (§16, segunda
- * pasada) y se dibuja como elementos de React, igual que la descripción de
- * producto. Lo que NO está en el texto, y es a propósito:
- *
- * - **El contacto**, que sale de la configuración (RF-20): el email al que
- *   llegan los pedidos y el WhatsApp. Escrito en el Markdown, cambiar de
- *   casilla obligaría a acordarse de editar cuatro páginas.
- * - **El botón de arrepentimiento**, en «Garantías y devoluciones». RF-29
- *   pide que esa página diga cómo arrepentirse; el botón es lo que lo hace,
- *   y un enlace no sobrevive al Markdown acotado.
- */
+// El contacto y el botón de arrepentimiento no van en el Markdown a propósito:
+// el contacto sale de la configuración, y un enlace no sobrevive al Markdown
+// acotado.
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const pagina = paginaLegal(slug);
@@ -61,7 +49,6 @@ export default async function PaginaLegal({ params }: Props) {
   const pagina = paginaLegal(slug);
   if (!pagina) notFound();
 
-  // En paralelo: el contacto no depende del texto.
   const [texto, configuracion] = await Promise.all([
     leerTextoLegal(pagina.slug),
     leerLaConfiguracion(),
@@ -91,11 +78,7 @@ export default async function PaginaLegal({ params }: Props) {
 
           {pagina.slug === "garantias" ? <Arrepentimiento /> : null}
 
-          {/*
-            18px (DR §3.3: «Body Large… texto legal»). Es una página para
-            leer de corrido, no para escanear, y en el teléfono 16px de
-            texto gris largo cansa.
-          */}
+          {/* 18px: se lee de corrido, y en el teléfono 16px de gris cansa (DR §3.3). */}
           <div className="flex flex-col gap-5 text-body-lg text-ink-secondary">
             <BloquesDeTexto
               nodos={nodos}
@@ -122,10 +105,8 @@ export default async function PaginaLegal({ params }: Props) {
 }
 
 /**
- * El «botón de arrepentimiento». Lleva a «Mis compras», donde el pedido
- * activo se cancela (RF-23, RF-34); sin sesión, el ingreso vuelve ahí.
- * Va arriba y no al final del texto: quien llega a esta página para
- * arrepentirse no tiene que leer la garantía entera para encontrarlo.
+ * Va arriba y no al final: quien llega para arrepentirse no tiene que leer la
+ * garantía entera para encontrarlo.
  */
 function Arrepentimiento() {
   return (
@@ -198,10 +179,6 @@ function Contacto({
   );
 }
 
-/**
- * Las otras tres, a la derecha en escritorio y al final en el teléfono:
- * quien vino por la garantía suele seguir por cómo comprar.
- */
 function OtrasPaginas({ actual }: { actual: string }) {
   return (
     <nav aria-label="Información" className="lg:w-60 lg:shrink-0">
@@ -233,7 +210,6 @@ function OtrasPaginas({ actual }: { actual: string }) {
   );
 }
 
-/** Para la descripción de los metadatos: el texto sin la sintaxis. */
 function textoPlano(markdown: string): string {
   return markdown.replace(/[*#_]/g, "").replace(/^- /gm, "");
 }

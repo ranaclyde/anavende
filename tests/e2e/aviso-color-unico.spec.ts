@@ -4,9 +4,8 @@ import { datosDePrueba, sufijo, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * 2026-11-05: en una categoría donde casi todo tiene color, un producto con
- * la variante «Único» muestra un aviso, y al editar esa variante la ayuda
- * explica cuándo usar «Único».
+ * En una categoría donde casi todo tiene color, un producto con la variante
+ * «Único» muestra un aviso, y al editarla la ayuda explica cuándo usarla.
  */
 
 const datos = datosDePrueba();

@@ -7,20 +7,9 @@ import type { TooltipValueType } from "recharts";
 import { cn } from "@/lib/utils";
 
 /**
- * El gráfico de shadcn/ui (`npx shadcn add chart`), sobre Recharts — F9.1.
- *
- * **Dos cambios contra el original, y los dos son del proyecto:**
- *
- * 1. **Sin `<style dangerouslySetInnerHTML>`.** El original escribe una hoja
- *    por gráfico para tener un color por tema; acá no hace falta, porque los
- *    tokens (`--ink`, `--ink-secondary`…) ya se redefinen solos bajo
- *    `[data-theme="dark"]`. Los colores viajan como variables en el `style`
- *    del contenedor. TS §16 quiere el HTML crudo lejos del contenido, y esto
- *    no suma un segundo `dangerouslySetInnerHTML` al único que hay, el
- *    script de tema del layout del panel.
- * 2. **Los nombres de color son los de DESIGN.md**: `ink-secondary` donde el
- *    original dice `muted-foreground`, `surface` donde dice `background`. Sin
- *    monoespaciada —Inter es la única familia— y con `tabular-nums`.
+ * El gráfico de shadcn, sin su `<style dangerouslySetInnerHTML>`: los tokens
+ * ya cambian solos con el tema, y los colores van como variables en el
+ * `style` del contenedor. Los nombres de color son los de DESIGN.md.
  */
 
 export type ChartConfig = Record<

@@ -6,13 +6,9 @@ import { motivoDel } from "@/tests/apoyo/errores";
 import { enTransaccionRevertida, type Tx } from "@/tests/apoyo/transaccion";
 
 /**
- * F8.1 — RF-31, TS §11.1: las categorías relacionadas y su reciprocidad.
- *
- * Se prueba `guardarRelaciones` y no la Server Action —eso necesita sesión—,
- * porque lo que puede salir mal está acá: que una recíproca no cree la
- * inversa, que destildarla no la borre, o que quitar una dirigida se lleve la
- * del otro lado. Ninguna de las tres da error: dan recomendaciones de más o
- * de menos, que nadie ve hasta que mira una ficha.
+ * `guardarRelaciones` y no la Server Action: una recíproca que no crea la
+ * inversa, o una dirigida que al quitarse se lleva la del otro lado, no dan
+ * error; dan recomendaciones de más o de menos.
  */
 
 async function unaCategoria(

@@ -598,6 +598,8 @@ CREATE TABLE favorites (
 
 **El carrito no existe sin sesión** (RF-08): no hay tabla ni cookie de carrito anónimo. `cart_items` guarda cantidad, nunca precio: el precio siempre se lee del producto en el momento de mostrar (RN-09).
 
+> **La compra pendiente (RF-08) va en una cookie** (`carrito_pendiente`, una hora, `httpOnly`, `SameSite=Lax`), que escribe el servidor cuando el visitante aprieta «Iniciá sesión para comprar». No va en la dirección de vuelta (`?agregar=…`): eso convertiría un enlace en una escritura, y cualquiera podría mandar uno que le agregue cosas al carrito a quien lo abra con la sesión puesta. Tampoco va en `sessionStorage`: el enlace del email de verificación abre otra pestaña, y es justo el visitante nuevo el que se perdería. `Lax` y no `Strict` porque el regreso desde el email es una navegación desde otro sitio. Se borra **antes** de intentar agregar: si falla por stock, no se reintenta en cada visita a la ficha. En otro dispositivo la cookie no llega, y está bien: ahí el botón ya dice «Agregá al carrito».
+
 **`last_seen_price` es la única excepción, y no contradice la regla** (F5.6, 2026-09-12). Es el precio final que el comprador **vio** la última vez, y existe solo para poder decirle «el precio de *X* pasó de $A a $B» (RN-09, RF-08): sin recordar $A no hay forma de avisar que cambió. **Nunca entra en un subtotal, un total ni una orden** —eso sigue saliendo de `products.final_price`—, así que no hay precio congelado que se pueda cobrar mal. Se escribe cada vez que el comprador ve el precio: al agregar y al revisar el carrito. La migración `0013` carga el precio vigente en los renglones que ya existían, para que nadie vea un aviso de un cambio que no presenció.
 
 ### 5.6 Órdenes
@@ -1006,6 +1008,13 @@ Si `rowCount = 0`, no había stock suficiente: se lanza `INSUFFICIENT_STOCK` y l
 3. **Auditoría dentro de la transacción.** Cada cambio escribe su fila en `stock_movements` (§5.8) antes del `COMMIT`. Si el movimiento no se puede escribir, el cambio de stock tampoco ocurre.
 4. **Nada externo adentro.** No se envían emails ni se llama a Sentry dentro de la transacción: se hace después del `COMMIT`.
 5. **Revalidación al final.** `revalidateTag` se invoca después del `COMMIT`, nunca antes.
+6. **El estado de la orden se cambia antes que el stock.** Finalizar y cancelar son un `UPDATE orders … WHERE status = 'activa'`, y va primero: dos «Finalizar» simultáneos dan un ganador y un `INVALID_ORDER_STATE`, y el perdedor corta antes de tocar el stock. Con un `SELECT` para mirar el estado y un `UPDATE` después, los dos pasarían el chequeo y el stock se descontaría dos veces. Editar una orden activa (RF-22) no cambia el estado, así que bloquea la orden con `SELECT … FOR UPDATE` antes de mirarlo: sin eso, otra transacción puede finalizarla en el medio y se liberaría una reserva que la venta ya consumió.
+
+> **Un solo lugar escribe los contadores: `modules/stock/operaciones.ts`.** Ni siquiera el ABM de variantes, que ajusta stock desde el panel, toca `stock_total` por su cuenta: llama a `ajustar()`. Un segundo lugar que escriba los contadores es un segundo lugar que puede olvidarse del asiento de la regla 3.
+
+> **El estado del asiento sale del `RETURNING`, no de una segunda consulta.** `stock_after` y `reserved_after` tienen que ser los valores que dejó *esa* sentencia. Releerlos después es leer un número que otra transacción ya pudo haber movido, y el libro quedaría contando una historia que no pasó.
+
+> **El ajuste es la excepción a §8.2, y usa `SELECT … FOR UPDATE`.** Su asiento lleva la **diferencia** entre el valor nuevo y el anterior, y un `UPDATE` a secas no devuelve el anterior. Leerlo sin bloquear deja una ventana en la que otra transacción lo mueve, y el libro queda descuadrado por exactamente lo que pasó en el medio. Se puede pagar ese bloqueo porque lo dispara la vendedora desde el panel, de a una variante por vez, y no el camino caliente de la reserva. Un ajuste que no cambia el número no se asienta —llenaría el libro de filas en cero cada vez que alguien guarda el formulario sin tocar el stock—, pero `updated_at` se actualiza igual.
 
 ### 8.4 Confirmación de orden, paso a paso (RF-12)
 
@@ -1094,6 +1103,8 @@ valida tipo y tamaño  ──────▶ verifica rol admin
 | `-thumb` | 200 px | 75 | Miniaturas de galería y panel |
 | `-card` | 600 px | 78 | Tarjetas de catálogo y recomendados |
 | `-detail` | 1400 px | 82 | Galería de la ficha |
+
+> **La vista previa al compartir (`-og`, 1200 × 630, calidad 82) es la excepción al WEBP: sale en JPEG** (`{imageId}-og.jpg`), porque WhatsApp no dibuja vistas previas en WEBP: con los metadatos completos mostraba el título y el precio, pero no la foto. Va sobre un lienzo fijo con `fit: contain` y fondo burdeos (`--brand`), y no lleva marca de agua (§9.6). No cuenta como «el tamaño mayor» que se guarda en `variant_images`: su lienzo mide 1200 × 630 aunque la foto sea chica.
 
 ```
 productos/{productId}/{variantId}/{imageId}-thumb.webp
@@ -1409,6 +1420,14 @@ Los similares siguen la misma forma: misma categoría con `final_price BETWEEN $
 
 El orden es **determinístico** (nada de `RANDOM()`): así los resultados son cacheables y estables entre recargas, y los tests pueden afirmar sobre ellos.
 
+> **Cómo quedó implementada** (`modules/catalog/products/recomendados.ts`). Cada bloque es **una sola consulta**: la cascada es un orden por nivel, no una serie de consultas.
+>
+> - **El stock manda sobre el nivel.** RF-32 dice que los agotados solo se usan si no alcanza el cupo, así que el orden empieza por «tiene stock» y recién después mira el nivel. El SQL de arriba ordenaba el stock adentro de cada nivel, y así un agotado del nivel 1 le ganaba el lugar a un destacado con stock del 2; manda la especificación funcional.
+> - **Los complementos se reparten por vueltas** entre las relacionadas: el mejor de cada una en su orden, después el segundo de cada una. Ordenadas «todas las de la primera, después las de la segunda», con Mouses primera y seis mouses el bloque era cuatro mouses. El cupo crece con las relacionadas que aportan algo: cuatro como mínimo y una por relacionada hasta ocho.
+> - **Los destacados del nivel 2 son de otra categoría** que la del producto: en la ficha de un teclado, otro teclado es una alternativa (va a «Productos similares»), no un complemento.
+> - **Un producto no sale en los dos bloques**: si se repite, se lo queda «También te puede interesar».
+> - **«Completá tu setup»** parte de todas las categorías del carrito (una relacionada con dos toma la mejor de sus posiciones) y **excluye esas categorías en todos los niveles**, no solo los productos: con un mouse adentro, otro mouse no completa nada. Recibe también las variantes que ya no se venden, porque siguen a la vista en «Ya no disponible».
+
 ### 11.3 Vistos recientemente (RF-33)
 
 Los IDs de los últimos 10 productos vistos se guardan en una **cookie** del navegador (`vistos`, 90 días, `SameSite=Lax`), del más reciente al más viejo. La escribe el navegador al abrir una ficha; el servidor la lee, consulta los datos vigentes de esos productos descartando los inactivos, y dibuja el bloque con la página. **No se persiste nada en la base ni se requiere sesión**, y los precios que se muestran son siempre los actuales: la cookie guarda solo ids.
@@ -1495,18 +1514,26 @@ Se usan dos clientes de `@supabase/ssr`, porque el manejo de cookies difiere:
 
 Consecuencia honesta: **la verificación local ahorra la ida a la red en las guardias de página, no en las mutaciones.** Las mutaciones pagan una consulta a `user_profiles` por la LAN, y es el precio correcto por tener el estado fresco.
 
+> **`email_verified` no sale del token para confirmar una orden.** En esta versión de GoTrue viaja solo dentro de `user_metadata`, que el propio usuario puede escribir con `updateUser({ data })`. Para mostrar un aviso alcanza la sesión; para dejar confirmar, se lee `email_confirmed_at` de `auth.users` (`modules/users/verificacion.ts`).
+
 ### 13.4 Alta de usuarios
 
-**Registro con email y contraseña** (RF-05) — Server Action propia, no el `signUp` del cliente, porque el perfil es obligatorio:
+**Registro con email y contraseña** (RF-05) — Server Action propia, porque el perfil es obligatorio: el formulario no llama a GoTrue desde el navegador.
 
 ```
-1. admin.createUser({ email, password })       → id
+1. auth.signUp({ email, password, data: { first_name, full_name } })
+                                    → id, y GoTrue manda E1 en la misma llamada
 2. INSERT user_profiles (id, nombre, email, teléfono, role='customer')
 3. Si (2) falla → admin.deleteUser(id) y se informa el error
-4. Se dispara el email de verificación
 ```
 
 El paso 3 es una **compensación explícita**: sin ella quedaría una identidad sin perfil, que es un usuario que puede entrar y con el que la aplicación no sabe qué hacer.
+
+> **Hasta el 2026-09-05 el paso 1 era `admin.createUser`, y E1 salía después con un reenvío.** No funcionaba: `/resend` descarta el `code_challenge` de `@supabase/ssr`, el enlace volvía por el flujo implícito (`#access_token=…`), que nunca llega al servidor, y la confirmación terminaba en «enlace inválido» con la cuenta ya verificada. `signUp` sí registra el desafío. Eso trae tres consecuencias:
+>
+> - **Un email repetido no da error.** `signUp` oculta a propósito que la cuenta existe y devuelve un usuario sin `identities`; es la única señal para el mensaje que pide RF-05.
+> - **Si el correo no sale, no queda cuenta.** `signUp` falla entero, también cuando GoTrue llega a su tope de emails por hora (F10.5b). Antes el alta sobrevivía a un problema de correo y se resolvía con el reenvío, pero con un enlace que no servía.
+> - **El nombre para saludar viaja en `user_metadata`** (`first_name`), porque es lo único que leen las plantillas de GoTrue (`{{ .Data }}`).
 
 **Alta por Google** (RF-06) — acá GoTrue crea la identidad en el callback, antes de que intervengamos. Por eso:
 
@@ -1519,7 +1546,11 @@ Callback de OAuth → ¿existe user_profiles para este id?
 
 Esa pantalla ya era necesaria: ningún proveedor social entrega teléfono (RF-06). Sirve para las dos cosas.
 
+> **Lo que traemos de Google va en `app_metadata`, no en `user_metadata`.** La segunda la escribe el propio usuario: podría dejar ahí cualquier dirección para que el servidor la baje (SSRF). Por lo mismo, solo se aceptan fotos de `*.googleusercontent.com` por HTTPS, también después de una redirección.
+
 **Sin perfil no se opera.** Una identidad sin fila en `user_profiles` puede navegar, pero no confirmar órdenes ni acceder al panel del comprador. El envoltorio de Server Actions (§6.2) lo trata como falta de autorización.
+
+> **El reenvío no usa `auth.resend()`.** El `/resend` de GoTrue descarta el `code_challenge` que manda `@supabase/ssr`, no deja fila en `auth.flow_state`, y el enlace vuelve por el flujo implícito (`#access_token=…`): el fragmento nunca llega al servidor y `/api/auth/confirmar` contesta «enlace inválido». Por eso el reenvío va por `signInWithOtp` con `shouldCreateUser: false`, que sí deja la fila.
 
 ### 13.5 Bloqueo con motivo (RF-27)
 
@@ -1643,6 +1674,7 @@ Toda tabla nueva lleva `.enableRLS()`. `tests/unit/seguridad/roles-de-la-api.tes
 
 - **SMTP propio es obligatorio.** El emisor por omisión de Supabase envía 2 mensajes por hora y solo a direcciones autorizadas: no sirve para producción. Resend se configura como proveedor SMTP en Supabase, algo que su documentación contempla de forma explícita.
 - Las plantillas de E1, E2 y E3 se escriben con React Email y se convierten al HTML que lee GoTrue (`npm run email`); **E4 usa React Email** directo. Las cuatro comparten layout y previsualización local.
+- **Las plantillas de GoTrue tienen cuatro trampas.** El enlace va derecho a `/api/auth/confirmar` con `token_hash` y no pasa por `/auth/v1/verify`: por ahí la sesión vuelve en el fragmento de la URL, que el servidor nunca recibe, y la cuenta queda confirmada sin sesión. El reenvío de la verificación sale como `magiclink`, porque `/resend` no registra el desafío PKCE. E3 arma el enlace desde `{{ .SiteURL }}` y no desde `{{ .RedirectTo }}`, que sale vacío si quien invita no pasa `redirectTo`. Y el saludo pregunta dos veces —`{{ if .Data }}{{ if .Data.first_name }}`—: en Go, pedirle un campo a un `.Data` nulo revienta la plantilla y el email no sale. El HTML que lee GoTrue se genera sin `pretty`, que parte las expresiones de Go en dos renglones.
 - El envío ocurre **siempre después del commit** y **nunca bloquea** la operación de negocio: un fallo de Resend se registra en Sentry y la orden queda creada igual (RF-12). **E4 sale con `after()`**, o sea después de la respuesta y no solo fuera de la transacción (F6.4): renderizar el HTML y hablar con Resend son un par de segundos que no tienen por qué pasar con el comprador esperando. **Agendarlo tampoco puede fallar:** `after()` lanza si lo llaman fuera de una petición, y sin atajarlo esa excepción viajaría por el envoltorio de acciones y el comprador vería un error con la orden ya creada.
 - **E4 no se manda dos veces por la misma orden.** Un reintento con la misma clave de idempotencia devuelve la orden que ya existía (§8.5) y no dispara un segundo aviso.
 - **E4 no sale si no hay casilla configurada**, y en ese caso la pantalla de confirmación tampoco le dice al comprador que se avisó a la vendedora. La fila de `site_settings` puede no existir (§5.9) y no hay dirección de respaldo razonable.
@@ -1741,7 +1773,7 @@ Las pruebas de stock y órdenes corren contra una **Postgres real en Docker**, n
 | Entornos | **Solo producción** más el desarrollo local |
 | Despliegue | Automático desde `main`: el push dispara el **webhook de GitHub** y Coolify construye y levanta la imagen. **Sin CI**: no hay workflow de GitHub Actions ni registro de imágenes |
 | **Dónde se compila** | **En el servidor APP**, con el Dockerfile, cuando Coolify recibe el webhook. Se decidió el 2026-09-09, apartándose de lo que pedía esta tabla —compilar en CI y que Coolify solo descargara la imagen—. Ese pedido tenía dos motivos: `next build` con Turbopack es exigente en memoria y hay fallas de *out of memory* reportadas por debajo de 4 GB, y la caché de build consume disco, que es el recurso más escaso (§2.4). **El servidor APP se aprovisionó con 4 GB**, y con eso el primero deja de mandar; el segundo lo contiene la limpieza programada de Docker (§2.4, R11). A cambio, **la configuración vive en un solo lugar**: compilando en CI, las variables de construcción estarían en GitHub y los secretos en Coolify, dos lugares que se desincronizan el día que cambia un dominio. **Lo que lo sostiene, y no se quita:** 4 GB de swap en el servidor APP —el 2026-09-13 una sola construcción sin swap lo dejó trancado— y Coolify con **una construcción simultánea** por servidor —el 2026-09-11 dos seguidas lo tumbaron—. **Si vuelve a quedarse sin memoria**, primero un tope de heap para `next build` en el Dockerfile, y después pasar a CI: es agregar un workflow que construya y publique la imagen, y el Dockerfile no cambia |
-| Migraciones | `drizzle-kit migrate` en el arranque del contenedor, antes de levantar el servidor. Instancia única: no hay riesgo de migraciones concurrentes |
+| Migraciones | `scripts/migrar.mjs` en el arranque del contenedor, antes de levantar el servidor: si falla, el contenedor no arranca. Usa el migrador de `drizzle-orm` y no `drizzle-kit migrate`, que es dependencia de desarrollo y arrastra esbuild a la imagen; lee la misma carpeta y lleva la cuenta en la misma tabla (`drizzle.__drizzle_migrations`). Instancia única: no hay riesgo de migraciones concurrentes |
 | TLS | Let's Encrypt, gestionado por Coolify |
 | Base de datos | Supabase en el servidor DATA, alcanzada por la **IP privada**. `DATABASE_URL` apunta a la LAN, nunca a una IP pública |
 | Red | LAN virtual de DonWeb entre APP y DATA. **Firewall local obligatorio en ambos**: el firewall virtual de DonWeb no cubre la interfaz privada |

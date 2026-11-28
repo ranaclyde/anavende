@@ -4,10 +4,7 @@ import { z } from "zod";
 import "@/lib/zod-castellano";
 import { cambioDeContrasenaSchema } from "@/modules/users/schemas";
 
-/**
- * F10.7 — Lo que Zod diría por su cuenta sale en castellano, y un mensaje
- * propio del esquema le sigue ganando. DESIGN-REFERENCE §10.
- */
+/** DESIGN-REFERENCE §10. */
 describe("los mensajes de respaldo de Zod", () => {
   test("la contraseña actual demasiado larga ya no dice «Too big»", () => {
     const r = cambioDeContrasenaSchema.safeParse({

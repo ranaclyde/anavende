@@ -1,10 +1,7 @@
 import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/**
- * Carga de la marca de agua — DESIGN-REFERENCE §8: la forma real, con la
- * vista previa al costado en el mismo umbral que la pantalla.
- */
+/** La vista previa va al costado en el mismo umbral que la pantalla. */
 export default function CargandoMarcaDeAgua() {
   return (
     <div className="flex w-full flex-col gap-4">

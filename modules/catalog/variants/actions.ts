@@ -26,32 +26,14 @@ import {
   soloVariante,
 } from "@/modules/catalog/variants/schemas";
 
-/**
- * Variantes de color — RF-16, RF-17, RN-11, RN-11b, §8.1, §8.3, §9.5.
- *
- * Cuatro reglas viven acá porque no se ven en el formulario:
- *
- *   · **Cambiar el stock escribe en el libro mayor** (§8.3, regla 3). El
- *     ajuste de la vendedora es una de las operaciones de stock de §8.1, no
- *     un campo más. **Desde F4.1 lo hace `ajustar()`**, en `modules/stock`,
- *     igual que las otras cuatro: acá no se escribe `stock_total` ni se
- *     inserta un movimiento a mano. Un segundo lugar que toque el contador es
- *     un segundo lugar que puede olvidarse del asiento, y ahí se pierde la
- *     única forma de auditar la discrepancia.
- *   · **RN-11b, la parte de los colores.** Un producto activo no puede tener
- *     variantes activas de un color inactivo.
- *   · **No se quita una variante con stock reservado** (RF-16), y el mensaje
- *     dice qué órdenes la usan. Si no hay reservas pero alguna orden la
- *     nombra, se desactiva en vez de borrarse (RN-11), igual que un producto.
- *   · **Reutilizar imágenes es un solo salto** (§9.5): la fuente tiene que
- *     ser del mismo producto y no puede estar reutilizando a su vez.
- */
+// El stock se cambia solo con `ajustar()` de `modules/stock`, que asienta el
+// movimiento (TECHNICAL-SPEC §8.3): acá no se escribe `stock_total`.
 
 function refrescar() {
   revalidatePath("/admin/productos", "layout");
 }
 
-/** Postgres devuelve 23505; Drizzle envuelve el error (mismo caso que RF-18). */
+/** Drizzle envuelve el 23505 de Postgres: hay que recorrer la cadena de `cause`. */
 function esDuplicado(e: unknown): boolean {
   let actual: unknown = e;
   for (let i = 0; i < 5 && actual; i++) {
@@ -67,11 +49,7 @@ function esDuplicado(e: unknown): boolean {
   return false;
 }
 
-/**
- * El índice único es la combinación de colores SIN ORDEN: un color —o una
- * combinación de dos— por producto, y la variante única también. El mensaje
- * habla de lo que la vendedora ve —un color repetido— y no del índice.
- */
+/** El índice único es la combinación de colores sin orden, por producto. */
 function siEsDuplicado(e: unknown): never {
   if (esDuplicado(e)) {
     throw domainError("VALIDATION", {
@@ -82,25 +60,15 @@ function siEsDuplicado(e: unknown): never {
   throw e;
 }
 
-/**
- * RN-11b, la parte que le toca a las variantes: un producto ACTIVO no puede
- * tener variantes ACTIVAS de un color INACTIVO.
- *
- * Se consulta con el color que se va a guardar, no con el guardado: al
- * editar, el color puede estar cambiando en la misma operación.
- */
+/** RN-11b, con el color que se va a guardar: al editar puede estar cambiando. */
 async function verificarColor(
   productId: string,
   colorId: string | null,
   secondaryColorId: string | null,
   varianteActiva: boolean,
 ) {
-  // Sin color no hay nada que comprobar: la variante única no depende del
-  // catálogo de colores.
   if (!colorId || !varianteActiva) return;
 
-  // Con dos colores se miran los dos: una variante «Negro/Rojo» con el rojo
-  // inactivo cae en RN-11b igual que una variante «Rojo».
   const [fila] = await db.execute<{
     productoActivo: boolean;
     colorActivo: boolean | null;
@@ -115,8 +83,7 @@ async function verificarColor(
 
   if (!fila) throw domainError("NOT_FOUND");
 
-  // `null` = el color no existe. La clave foránea lo rechazaría igual, pero
-  // con un error de integridad en vez de una frase.
+  // `null` = el color no existe.
   if (
     fila.colorActivo === null ||
     (secondaryColorId && fila.segundoActivo === null)
@@ -136,8 +103,6 @@ async function verificarColor(
     });
   }
 }
-
-// ── Alta ────────────────────────────────────────────────────────────────
 
 export const agregarUnaVariante = action
   .input(crearVariante)
@@ -162,17 +127,12 @@ export const agregarUnaVariante = action
             productId: input.productId,
             colorId: input.colorId,
             secondaryColorId: input.secondaryColorId,
-            // Nace en cero: el número que escribió la vendedora entra abajo,
-            // como movimiento.
+            // Nace en cero: el stock entra abajo, como movimiento.
             isActive: input.isActive,
             sortOrder: n,
           })
           .returning({ id: productVariants.id });
 
-        // El stock inicial es un ajuste como cualquier otro (§8.1): entra al
-        // libro mayor en la misma transacción que lo crea. Sin esto, el día
-        // que un número no cuadre, la primera carga sería justamente el
-        // movimiento que no está.
         await ajustar(tx, {
           variantId: fila.id,
           nuevoTotal: input.stockTotal,
@@ -190,13 +150,11 @@ export const agregarUnaVariante = action
     }
   });
 
-// ── Edición ─────────────────────────────────────────────────────────────
-
 export const editarUnaVariante = action
   .input(editarVariante)
   .auth("admin")
   .handler(async ({ input, ctx }) => {
-    // Sólo el producto: el stock ya no se lee acá. Ver el comentario de abajo.
+    // El stock no se lee acá: lo decide `ajustar()` con la fila bloqueada.
     const [actual] = await db.execute<{ productId: string }>(sql`
       SELECT product_id AS "productId"
         FROM product_variants WHERE id = ${input.id}`);
@@ -222,18 +180,8 @@ export const editarUnaVariante = action
           })
           .where(eq(productVariants.id, input.id));
 
-        /**
-         * El stock lo mueve `ajustar()` y nadie más (F4.1). Además del
-         * asiento, se lleva puesta una carrera que este código tenía: el
-         * stock reservado se leía FUERA de la transacción, así que entre esa
-         * lectura y el UPDATE otra orden podía reservar unidades y el «no
-         * puede bajar de N» se decidía contra un N viejo. Cuando eso pasaba,
-         * el que rechazaba era el CHECK `reserved_within_total` —con un error
-         * de integridad, que sale como INTERNAL y llega a Sentry como si
-         * fuera un incidente en vez de como lo que es: un resultado del
-         * negocio con una frase que lo explica—. `ajustar()` bloquea la fila
-         * y decide contra el número de verdad.
-         */
+        // No leer el reservado afuera de la transacción: otra orden puede
+        // reservar en el medio y el CHECK saltaría como INTERNAL.
         await ajustar(tx, {
           variantId: input.id,
           nuevoTotal: input.stockTotal,
@@ -249,15 +197,7 @@ export const editarUnaVariante = action
     }
   });
 
-// ── Reponer desde el listado (RF-16, RF-20, §8.3) ───────────────────────
-
-/**
- * Los colores de un producto con su stock, para el globo de «Reponer».
- *
- * Es una lectura y va por acción igual que los buscadores del alta manual:
- * una ruta paralela sería otra puerta que asegurar por separado (§6.2), y
- * acá el envoltorio le pone la misma guardia `admin` que a la escritura.
- */
+/** Una lectura por acción, para que la guarde el mismo envoltorio `admin`. */
 export const leerParaReponer = action
   .input(soloProducto)
   .auth("admin")
@@ -265,25 +205,7 @@ export const leerParaReponer = action
     variantes: await variantesParaReponer(input.productId),
   }));
 
-/**
- * Poner el stock de varios colores de una vez — RF-16, §8.3.
- *
- * **Una sola transacción para todo el producto.** Si el tercer color falla
- * —porque tiene más reservado de lo que se le quiere dejar—, no puede quedar
- * el primero guardado y el resto no: la vendedora vería números a medias y no
- * sabría cuáles. O entran los cuatro o no entra ninguno.
- *
- * **El stock lo mueve `ajustar()` y nadie más** (F4.1, §8.3 regla 3): además
- * de escribir el contador, asienta el movimiento en el libro con quién lo
- * hizo. Un segundo lugar que toque `stock_total` es un segundo lugar que
- * puede olvidarse del asiento, y ahí se pierde la única forma de auditar una
- * discrepancia. Por eso esta acción **no escribe una sola columna de stock**:
- * arma la lista y se la pasa.
- *
- * La nota dice de dónde vino, y no es decorativa: en el libro, un ajuste
- * hecho al pasar desde el listado y uno hecho abriendo la ficha se leen igual
- * si nadie los distingue.
- */
+/** Una sola transacción: o entran todos los colores o ninguno. */
 export const reponerStock = action
   .input(reposicion)
   .auth("admin")
@@ -292,9 +214,7 @@ export const reponerStock = action
       SELECT id FROM product_variants WHERE product_id = ${input.productId}`);
     const permitidas = new Set(suyas.map((v) => v.id));
 
-    // El producto llega del cliente y las variantes también: sin esto, una
-    // petición armada a mano podría mover el stock de OTRO producto pasando
-    // su id acá adentro.
+    // Sin esto, una petición armada a mano movería el stock de otro producto.
     for (const ajuste of input.ajustes) {
       if (!permitidas.has(ajuste.variantId)) throw domainError("NOT_FOUND");
     }
@@ -314,8 +234,6 @@ export const reponerStock = action
     return { cuantos: input.ajustes.length };
   });
 
-// ── Baja (RF-16, RN-11) ─────────────────────────────────────────────────
-
 export const eliminarUnaVariante = action
   .input(soloVariante)
   .auth("admin")
@@ -334,9 +252,7 @@ export const eliminarUnaVariante = action
 
     if (!actual) throw domainError("NOT_FOUND");
 
-    // RF-16: no se puede quitar una variante con stock reservado, y hay que
-    // decir QUÉ ÓRDENES la usan. Un «no se puede» sin el dónde deja a la
-    // vendedora buscando a mano entre las órdenes activas.
+    // Con stock reservado no se quita, y se dice qué órdenes la usan (RF-16).
     if (actual.reservedStock > 0) {
       const numeros = await db.execute<{ orderNumber: number }>(sql`
         SELECT DISTINCT o.order_number AS "orderNumber"
@@ -355,10 +271,7 @@ export const eliminarUnaVariante = action
       });
     }
 
-    // RN-11, el mismo final doble que «eliminar» un producto: una orden
-    // histórica que la nombra la sigue mostrando, así que se desactiva. Y un
-    // carrito también (F5.6): borrada, la cascada la sacaría de ahí sin
-    // aviso; desactivada, el comprador la ve apartada (RF-08).
+    // Con órdenes o carritos se desactiva en vez de borrar (RN-11).
     if (actual.ordenes > 0 || actual.carritos > 0) {
       await db
         .update(productVariants)
@@ -374,8 +287,8 @@ export const eliminarUnaVariante = action
       };
     }
 
-    // Las claves se leen ANTES del DELETE: `variant_images` cae por cascada y
-    // con ella la única referencia a los archivos (RF-17).
+    // Antes del DELETE: la cascada borra `variant_images`, la única referencia
+    // a los archivos en Storage.
     const archivos = await clavesDeVariante(input.id);
 
     const filas = await db
@@ -385,9 +298,7 @@ export const eliminarUnaVariante = action
 
     if (!filas.length) throw domainError("NOT_FOUND");
 
-    // Después del DELETE y sin poder fallar hacia afuera: la variante ya no
-    // existe, y un archivo que sobreviva es basura, no un motivo para decirle
-    // a la vendedora que no se pudo borrar algo que sí se borró.
+    // Después del DELETE y sin fallar hacia afuera: la variante ya se borró.
     if (archivos.length) await borrarArchivos(archivos);
 
     refrescar();
@@ -398,8 +309,6 @@ export const eliminarUnaVariante = action
       carritos: 0,
     };
   });
-
-// ── Reutilizar las imágenes de otra variante (RF-16, §9.5) ──────────────
 
 export const reutilizarImagenes = action
   .input(fuenteDeImagenes)
@@ -443,10 +352,8 @@ export const reutilizarImagenes = action
         });
       }
 
-      // §9.5: UN SOLO SALTO. Con cadenas, resolver las imágenes de la ficha
-      // dejaría de ser un `LEFT JOIN` y pasaría a ser un recorrido con un
-      // ciclo posible: A reutiliza de B, B de C, C de A, y la consulta que
-      // pinta la galería no termina nunca.
+      // Un solo salto (TECHNICAL-SPEC §9.5): las consultas lo resuelven con un
+      // `coalesce`, y una cadena podría cerrar un ciclo.
       if (fuente.imagesSourceId) {
         throw domainError("VALIDATION", {
           message:
@@ -460,13 +367,7 @@ export const reutilizarImagenes = action
         });
       }
 
-      /**
-       * Reutilizar exige NO TENER PROPIAS, y no es un capricho: §9.5 dice que
-       * la variante con fuente muestra las de la fuente, así que las propias
-       * quedarían pagando lugar en Storage sin verse en ninguna pantalla.
-       * Basura invisible es la peor clase de basura. Se piden borradas
-       * primero, que además es una decisión explícita de quien la toma.
-       */
+      // Con fuente, las propias no se verían nunca y quedarían en Storage.
       if (actual.propias > 0) {
         throw domainError("VALIDATION", {
           message: `Este color tiene ${actual.propias === 1 ? "una foto propia" : `${actual.propias} fotos propias`}. Borrá${actual.propias === 1 ? "la" : "las"} para poder usar las de otro.`,
@@ -483,14 +384,7 @@ export const reutilizarImagenes = action
     return { id: input.id, sourceId: input.sourceId };
   });
 
-// ── Imágenes: orden, principal y baja (RF-17) ───────────────────────────
-
-/**
- * Reordenar por arrastre y ELEGIR LA PRINCIPAL son la misma operación: la
- * principal es la que queda en la posición 0. Por eso hay una sola acción y
- * no dos — con una bandera aparte habría dos respuestas para la misma
- * pregunta y un estado imposible que igual habría que programar.
- */
+/** También elige la principal: es la que queda en la posición 0. */
 export const ordenarImagenes = action
   .input(ordenDeImagenes)
   .auth("admin")

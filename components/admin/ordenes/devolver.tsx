@@ -22,43 +22,22 @@ import { leerErrores } from "@/lib/form";
 import { registrarUnaDevolucion } from "@/modules/returns/actions";
 import { MAXIMO_DEL_MOTIVO } from "@/modules/returns/schemas";
 
-/**
- * Registrar una devolución de una orden finalizada — FS RF-25. Tarea F7.5.
- *
- * **Vive en el detalle de la orden y no en una pantalla propia**, porque una
- * devolución es siempre contra una orden: acá están los renglones, las
- * cantidades vendidas y lo que ya se devolvió, que es todo lo que hay que
- * mirar para decidir. Una pantalla aparte habría empezado por un buscador de
- * órdenes que no existe, para terminar mostrando esta misma tabla.
- *
- * **Sólo aparece si la orden está finalizada y queda algo por devolver.** Lo
- * primero es de RF-25 —lo que todavía no se entregó se edita (RF-22) o se
- * cancela (RF-23)—; lo segundo evita el diálogo que se abre para decir que no
- * hay nada, que es el que sobra.
- *
- * **Cada renglón decide si repone**, que es la pregunta de fondo del
- * requisito: el producto volvió sano y vuelve a la góndola, o volvió roto y se
- * descarta. La misma devolución puede tener de las dos, y por eso la pregunta
- * es por renglón y no por devolución.
- */
+/** Sólo si la orden está finalizada y queda algo por devolver (RF-25). */
 export type RenglonParaDevolver = {
   id: string;
   nombre: string;
   color: string | null;
-  /** Lo vendido en ese renglón (el snapshot, RN-12). */
   cantidad: number;
-  /** Lo ya devuelto en devoluciones **registradas**: las anuladas liberan cupo. */
+  /** Sólo devoluciones registradas: las anuladas liberan cupo. */
   yaDevueltas: number;
-  /** El stock total de hoy, que es el que sube al reponer. `null` si la variante ya no está. */
+  /** El total, que sube al reponer. `null` si la variante ya no está. */
   stock: number | null;
 };
 
-/** Lo que queda por devolver de un renglón — el tope de RF-25. */
 function porDevolver(item: RenglonParaDevolver): number {
   return item.cantidad - item.yaDevueltas;
 }
 
-/** «Auricular Cloud II (negro)», como lo nombran el historial y los diálogos. */
 function nombrar(item: RenglonParaDevolver): string {
   return item.color
     ? `${item.nombre} (${item.color.toLowerCase()})`
@@ -80,9 +59,7 @@ export function DevolverDeLaOrden({
   items: RenglonParaDevolver[];
 }) {
   const [abierto, setAbierto] = useState(false);
-  // El diálogo se monta de nuevo en cada apertura: sin esto, una devolución
-  // registrada dejaría sus casillas marcadas y su motivo escrito esperando a
-  // la siguiente, que es de otra cosa.
+  // Se monta de nuevo en cada apertura, para no arrastrar lo de la anterior.
   const [aperturas, setAperturas] = useState(0);
 
   return (
@@ -129,8 +106,6 @@ function DialogoDeDevolver({
   const campo = useId();
 
   const devolubles = items.filter((item) => porDevolver(item) > 0);
-  // Con un solo renglón devolvible no hay nada que elegir: viene marcado y el
-  // diálogo queda listo para confirmar. Con varios, marcar es la decisión.
   const unoSolo = devolubles.length === 1;
 
   const [elecciones, setElecciones] = useState<Record<string, Eleccion>>(() =>
@@ -139,11 +114,7 @@ function DialogoDeDevolver({
         item.id,
         {
           elegido: unoSolo,
-          // Todo lo que queda por devolver: en el caso corriente —un renglón
-          // de una unidad— deja el selector en su único valor posible.
           cantidad: porDevolver(item),
-          // **Repone de fábrica**: lo habitual es que el producto vuelva en
-          // condiciones. Lo otro es la excepción, y pide explicarse.
           repone: true,
           motivo: "",
         },
@@ -180,9 +151,8 @@ function DialogoDeDevolver({
       });
 
       if (!r.ok) {
-        // `RETURN_EXCEEDS_SOLD` llega acá cuando entre que se abrió el diálogo
-        // y llegó el clic se registró otra devolución del mismo renglón: el
-        // mensaje del dominio dice cuántas quedan por devolver.
+        // `RETURN_EXCEEDS_SOLD` si entre medio se registró otra devolución del
+        // mismo renglón.
         const errores = leerErrores<"motivo" | "items">(r);
         setErrorDeItems(errores.campos.items ?? null);
         setErrorDelMotivo(errores.campos.motivo ?? null);
@@ -263,11 +233,7 @@ function DialogoDeDevolver({
           </p>
         )}
 
-        {/*
-          Lo mismo que recuerdan los diálogos de editar (RF-22, FA-07): el
-          sistema no le manda nada al comprador. Acá importa más todavía,
-          porque una devolución suele venir con plata de por medio.
-        */}
+        {/* El sistema no le avisa al comprador (FA-07). */}
         <p className="rounded-panel-control bg-surface-sunken px-3 py-2 text-caption text-ink-secondary">
           El comprador no recibe ningún aviso, y en «Mis compras» va a seguir
           viendo la orden como se entregó. Lo del dinero se arregla por fuera.
@@ -291,13 +257,7 @@ function DialogoDeDevolver({
   );
 }
 
-/**
- * Un renglón elegible.
- *
- * **La cantidad y el destino sólo se ven si el renglón está elegido**: con
- * cinco productos en la orden, cinco selectores y cinco casillas apagadas son
- * una pantalla que hay que leer entera para descubrir que no dice nada.
- */
+/** La cantidad y el destino sólo se ven si el renglón está elegido. */
 function RenglonDevuelto({
   item,
   eleccion,
@@ -318,9 +278,7 @@ function RenglonDevuelto({
         <Checkbox
           id={id}
           checked={eleccion.elegido}
-          // Con un solo renglón devolvible, desmarcarlo deja una devolución
-          // vacía: no hay otra cosa que devolver, así que la casilla no se
-          // toca y el diálogo se confirma o se cierra.
+          // Con un solo renglón, desmarcarlo dejaría una devolución vacía.
           disabled={soloUno}
           onCheckedChange={(v) => alCambiar({ elegido: v === true })}
           className="mt-0.5"
@@ -370,9 +328,8 @@ function RenglonDevuelto({
               <Checkbox
                 id={`${id}-repone`}
                 checked={eleccion.repone}
-                // Una variante borrada (§5.6) no tiene contador que mover: la
-                // devolución se registra igual —RF-28 la necesita— y reponerla
-                // no significa nada.
+                // Variante borrada (§5.6): se registra igual, para RF-28,
+                // pero no hay stock que reponer.
                 disabled={item.stock === null}
                 onCheckedChange={(v) => alCambiar({ repone: v === true })}
               />
@@ -387,9 +344,7 @@ function RenglonDevuelto({
             </div>
           </div>
 
-          {/* El motivo del renglón aparece **sólo cuando no repone**: ahí dice
-              algo que el motivo general no dice. En una devolución normal
-              sería un campo más para dejar vacío. */}
+          {/* El motivo del renglón, sólo cuando no repone. */}
           {!eleccion.repone && item.stock !== null ? (
             <Input
               value={eleccion.motivo}

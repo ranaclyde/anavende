@@ -18,15 +18,8 @@ import {
 import type { Ficha } from "@/modules/catalog/products/ficha";
 
 /**
- * F3.9 — RNF-04.
- *
- * **Todo lo de este archivo es silencioso cuando falla**, que es el motivo de
- * probarlo: un `canonical` de más, un `noindex` donde no va o un JSON-LD mal
- * armado no rompen ninguna pantalla, no aparecen en la consola y no se ven
- * mirando el sitio. Se enteraría Google, meses después.
- *
- * No toca la base: son funciones puras. Lo que sí la toca —el mapa del
- * sitio— está en `mapa-del-sitio.test.ts`.
+ * RNF-04. Todo lo de este archivo falla en silencio: un `canonical` de más, un
+ * `noindex` donde no va o un JSON-LD mal armado no se ven mirando el sitio.
  */
 
 function unaFicha(cambios: Partial<Ficha> = {}): Ficha {
@@ -60,8 +53,8 @@ function unaFicha(cambios: Partial<Ficha> = {}): Ficha {
 
 describe("resumenDeMetadatos", () => {
   test("aplasta los saltos de línea y los espacios repetidos", () => {
-    // Es la forma exacta en que llega una descripción escrita en el panel:
-    // con renglones. En un `<meta>` un renglón es un espacio.
+    // Así llega una descripción escrita en el panel; en un `<meta>` un
+    // renglón es un espacio.
     expect(resumenDeMetadatos("Un  teclado\n\n  mecánico ")).toBe(
       "Un teclado mecánico",
     );
@@ -78,8 +71,7 @@ describe("resumenDeMetadatos", () => {
 
     expect(resumen.length).toBeLessThanOrEqual(155);
     expect(resumen.endsWith("…")).toBe(true);
-    // Lo que importa: la última palabra está entera. Con un corte a secas
-    // terminaría en «palab…».
+    // Con un corte a secas terminaría en «palab…».
     expect(resumen).toMatch(/palabra…$/);
   });
 
@@ -89,8 +81,7 @@ describe("resumenDeMetadatos", () => {
   });
 
   test("una palabra sola larguísima se corta igual", () => {
-    // Sin este caso, un texto sin espacios saldría entero: el corte por
-    // palabra no encontraría dónde cortar y devolvería todo.
+    // Sin espacios, el corte por palabra no encuentra dónde cortar.
     const resumen = resumenDeMetadatos("a".repeat(400));
     expect(resumen.length).toBeLessThanOrEqual(155);
   });
@@ -138,7 +129,7 @@ describe("catalogoIndexable", () => {
     expect(catalogoIndexable(con({ orden: "precio-asc" }))).toBe(false);
   });
 
-  // F3.11: la categoría de la página no es un filtro.
+  // La categoría de la página no es un filtro.
   test("la página de una categoría sin filtrar sí; con un filtro, no", () => {
     expect(catalogoIndexable(con({ seccion: "teclados" }))).toBe(true);
     expect(catalogoIndexable(con({ seccion: "teclados", pagina: 2 }))).toBe(
@@ -241,7 +232,6 @@ describe("datos estructurados del sitio", () => {
       potentialAction: { target: { urlTemplate: string } };
     };
 
-    // Si `filtros-tienda.ts` cambiara el nombre del parámetro, esto lo dice.
     expect(datos.potentialAction.target.urlTemplate).toBe(
       urlAbsoluta("/productos?q={search_term_string}"),
     );

@@ -5,20 +5,14 @@ import postgres from "postgres";
 import sharp from "sharp";
 
 /**
- * Los datos de los recorridos de F10.2 — TS §17.2, casos 1 a 5.
+ * Cada archivo de `tests/e2e` arma sus datos y los borra al terminar: los E2E
+ * corren contra la base que lee `next dev`.
  *
- * Cada archivo de `tests/e2e` arma lo suyo y lo borra al terminar, como el de
- * aislamiento (`compradores.ts`): los E2E corren contra la base que lee
- * `next dev`, y no tienen que depender del catálogo sembrado ni dejar nada
- * que después aparezca en una pantalla.
+ * **Es una fábrica y no un módulo con la conexión arriba**: los archivos
+ * corren en el mismo proceso (`workers: 1`) y comparten los módulos, así que
+ * el primero que cerrara la conexión se la cerraría también al siguiente.
  *
- * **Es una fábrica y no un módulo con la conexión arriba** porque los
- * archivos corren uno detrás del otro en el mismo proceso (`workers: 1`) y
- * comparten los módulos importados: si la conexión fuera de este módulo, el
- * primero que la cerrara al terminar se la cerraría también al siguiente.
- *
- * Habla con la base por su cuenta, sin `@/db`: ese módulo lleva
- * `server-only`, y este archivo corre en el proceso de Playwright.
+ * Sin `@/db`: ese módulo lleva `server-only` y esto corre en Playwright.
  */
 
 const supabase = createClient(
@@ -86,14 +80,13 @@ export function datosDePrueba() {
     return fila.id;
   }
 
-  /** Una variante «Único», sin color (RF-16). */
+  /** Una variante «Único», sin color. */
   async function unaVarianteUnica(productoId: string, stock = 1) {
     await sql`
       INSERT INTO product_variants (product_id, color_id, stock_total)
       VALUES (${productoId}, NULL, ${stock})`;
   }
 
-  /** La dirección de su página (F3.11) va por slug, y el slug lo pone esto. */
   async function slugDeCategoria(id: string): Promise<string> {
     const [fila] = await sql<{ slug: string }[]>`
       SELECT slug FROM categories WHERE id = ${id}`;
@@ -109,7 +102,6 @@ export function datosDePrueba() {
     return { id: fila.id, nombre, slug };
   }
 
-  /** Un producto publicado, con una variante por color y su stock. */
   async function unProducto({
     nombre,
     marca,
@@ -151,9 +143,8 @@ export function datosDePrueba() {
   }
 
   /**
-   * Una cuenta con contraseña y el email ya verificado, para entrar por
-   * `/ingresar` como en el test de aislamiento. El rol es el del perfil: es
-   * lo único que separa a la administradora de una compradora (§5.3).
+   * Con el email ya verificado, para entrar por `/ingresar`. El rol del
+   * perfil es lo único que separa a la administradora de una compradora.
    */
   async function unaCuenta(
     nombre: string,
@@ -179,9 +170,8 @@ export function datosDePrueba() {
   }
 
   /**
-   * Una orden web activa con sus renglones, **y el stock reservado**, que es
-   * lo que habría dejado el checkout (§8.4): sin la reserva, finalizarla no
-   * tendría qué descontar.
+   * Una orden web activa **con el stock reservado**, como la deja el
+   * checkout: sin la reserva, finalizarla no tendría qué descontar.
    */
   async function unaOrden(
     cuenta: Cuenta,
@@ -227,9 +217,8 @@ export function datosDePrueba() {
   }
 
   /**
-   * Un medio de pago con logo, que es lo que hace aparecer la hilera de la
-   * portada (`components/shop/home/pagos.tsx`): sin logo no entra. Se sube
-   * solo la miniatura, que es la única que la hilera pide.
+   * Sin logo, un medio de pago no entra en la hilera de la portada. Se sube
+   * solo la miniatura, la única que la hilera pide.
    */
   async function unMedioDePagoConLogo(nombre: string): Promise<void> {
     const base = `e2e/logo-${sufijo()}`;
@@ -250,7 +239,7 @@ export function datosDePrueba() {
     creados.mediosDePago.push({ id: fila.id, archivo });
   }
 
-  /** Un medio de pago sin logo, al final de la lista (RF-19, RF-40). */
+  /** Sin logo, al final de la lista. */
   async function unMedioDePago(nombre: string): Promise<string> {
     const [fila] = await sql<{ id: string }[]>`
       INSERT INTO payment_methods (name, sort_order)
@@ -261,20 +250,15 @@ export function datosDePrueba() {
     return fila.id;
   }
 
-  /**
-   * Para borrar al final una cuenta que el test no creó por la API sino por
-   * la pantalla de alta.
-   */
+  /** Para borrar al final lo que se creó por una pantalla y no por acá. */
   function anotarUsuario(id: string): void {
     creados.usuarios.push(id);
   }
 
-  /** Lo mismo, para un producto creado desde el panel. */
   function anotarProducto(id: string): void {
     creados.productos.push(id);
   }
 
-  /** Y para lo que se creó desde un selector del panel (F2.13). */
   function anotarDelCatalogo(
     lista: "marcas" | "categorias" | "colores",
     id: string,
@@ -283,9 +267,8 @@ export function datosDePrueba() {
   }
 
   /**
-   * Las fotos de un producto, en los cuatro tamaños (`modules/media`). El
-   * storage no tiene carpetas de verdad: se listan las de cada variante y se
-   * borra lo que hay adentro.
+   * El storage no tiene carpetas de verdad: se lista cada variante y se borra
+   * lo que hay adentro.
    */
   async function borrarFotos(productId: string): Promise<void> {
     const raiz = `productos/${productId}`;
@@ -305,10 +288,7 @@ export function datosDePrueba() {
     }
   }
 
-  /**
-   * La foto de perfil que haya quedado de una cuenta (F5.9). Borrar la
-   * cuenta se lleva la fila, no el archivo de Storage.
-   */
+  /** Borrar la cuenta se lleva la fila, no el archivo de Storage. */
   async function borrarFotoDePerfil(userId: string): Promise<void> {
     const carpeta = `usuarios/${userId}`;
     const { data: archivos, error } = await bucket.list(carpeta);
@@ -322,11 +302,9 @@ export function datosDePrueba() {
   }
 
   /**
-   * La casilla del E4 se cambia mientras dura el archivo (decisión tuya del
-   * 2026-10-17): un pedido confirmado le avisa a la vendedora por Resend, con
-   * la clave de verdad de `.env.local`. `delivered@resend.dev` es la
-   * dirección de prueba de Resend: acepta el envío y no se lo entrega a
-   * nadie. Gasta uno del cupo por corrida, y el aviso igual se ejercita.
+   * Un pedido confirmado avisa por Resend con la clave real de `.env.local`:
+   * `delivered@resend.dev` acepta el envío y no se lo entrega a nadie. Gasta
+   * uno del cupo por corrida.
    */
   async function casillaDeAvisosDePrueba(): Promise<void> {
     const [fila] = await sql<{ email: string }[]>`
@@ -339,14 +317,13 @@ export function datosDePrueba() {
        WHERE id = 1`;
   }
 
-  /** El número al que apuntan los enlaces de WhatsApp, solo los dígitos. */
+  /** Solo los dígitos. */
   async function numeroDeWhatsApp(): Promise<string> {
     const [fila] = await sql<{ numero: string }[]>`
       SELECT whatsapp_number AS numero FROM site_settings WHERE id = 1`;
     return fila.numero.replace(/\D/g, "");
   }
 
-  /** Borra un archivo suelto del bucket (la marca de agua, F2.16). */
   async function borrarArchivo(clave: string): Promise<void> {
     const { error } = await bucket.remove([clave]);
     if (error) throw error;
@@ -355,8 +332,7 @@ export function datosDePrueba() {
   /**
    * Las órdenes antes que las cuentas, por el CHECK `web_order_has_user`, y
    * antes que los productos, porque sus renglones apuntan a las variantes.
-   * Borrar la cuenta en GoTrue se lleva en cascada el perfil, el carrito,
-   * las direcciones y los favoritos.
+   * Borrar la cuenta en GoTrue se lleva en cascada el resto.
    */
   async function desarmar(): Promise<void> {
     if (casillaOriginal !== null) {
@@ -390,7 +366,7 @@ export function datosDePrueba() {
       await sql`DELETE FROM colors WHERE id = ${id}`;
     }
     for (const { id, archivo } of creados.mediosDePago.splice(0)) {
-      // Se lleva sus promociones de cuotas (RF-40) por la clave en cascada.
+      // Se lleva sus promociones de cuotas en cascada.
       await sql`DELETE FROM payment_methods WHERE id = ${id}`;
       if (archivo === null) continue;
       const { error } = await bucket.remove([archivo]);

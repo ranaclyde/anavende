@@ -21,20 +21,17 @@ const BASE = "/admin/catalogo/categorias";
 export default async function CategoriasDelCatalogo({
   searchParams,
 }: {
-  // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
   await exigirAdmin();
 
   const pagina = leerPaginaDeCatalogo(await searchParams);
-  // Las dos en paralelo: las relacionables no dependen de la página.
   const [{ items, total }, relacionables] = await Promise.all([
     listarCategorias(pagina),
     listarRelacionables(),
   ]);
 
-  // Pedir una página que ya no existe —un enlace viejo, o borrar el último de
-  // la última— lleva a la última que sí existe, como en los otros listados.
+  // Una página que ya no existe lleva a la última que sí.
   const paginas = cuantasPaginas(total);
   if (pagina > paginas) redirect(urlDePagina(BASE, paginas));
 

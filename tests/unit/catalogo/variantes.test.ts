@@ -20,25 +20,9 @@ import { rechazaLlamada } from "@/tests/apoyo/errores";
 import { existe, jpeg } from "@/tests/apoyo/imagenes";
 
 /**
- * F2.4 — RF-16, RF-17, RN-11b, §5.4, §8.1, §9.2, §9.5. Contra Postgres y
- * contra Storage de verdad.
- *
- * Migrado de `scripts/verificar-variantes.mts` (F4.0b).
- *
- * Lo que se prueba es lo que NO se ve leyendo el código:
- *
- *   · Que el orden de las imágenes se mantenga consistente después de borrar
- *     una del medio. Es el error que F2.4 arregló: `sort_order` es a la vez el
- *     orden de la galería y el número de la próxima subida, y borrar la
- *     primera de tres dejaba dos imágenes con el mismo número — o sea, la
- *     portada del producto cambiando sola.
- *   · Que borrar un producto se lleve los archivos de todas sus variantes.
- *   · Que las restricciones de la base sean las que uno cree que son.
- *
- * Los bloques de abajo son SECUENCIALES: comparten un producto y van
- * construyendo sobre él, igual que el flujo real del panel.
+ * Contra Postgres y contra Storage de verdad. Los bloques de «contra la base»
+ * son secuenciales: comparten un producto y construyen sobre él.
  */
-
 describe("validación (RF-16)", () => {
   const base = { productId: crypto.randomUUID(), colorId: null };
 
@@ -49,9 +33,8 @@ describe("validación (RF-16)", () => {
   });
 
   /**
-   * La columna admite negativos —§5.4, es la señal de discrepancia de RF-24—
-   * pero ESCRIBIRLO A MANO no es eso: el negativo tiene que llegar por una
-   * venta que descontó de más, no por alguien tipeando −3 en un formulario.
+   * La columna admite negativos (RF-24), pero el negativo tiene que llegar por
+   * una venta que descontó de más, no tipeado en un formulario.
    */
   test("un stock negativo escrito a mano se rechaza, aunque la columna lo admita", () => {
     expect(crearVariante.safeParse({ ...base, stockTotal: -3 }).success).toBe(
@@ -127,9 +110,8 @@ describe("contra la base y contra Storage", () => {
   });
 
   afterAll(async () => {
-    // Las imágenes que hayan quedado se van por su propia función, que borra
-    // fila Y archivos: un DELETE en cascada se llevaría las filas y dejaría
-    // los archivos en el bucket sin nada que los nombre.
+    // Por su propia función, que borra fila y archivos: la cascada se llevaría
+    // las filas y dejaría los archivos en el bucket sin nada que los nombre.
     const restantes = await db.execute<{ id: string }>(sql`
       SELECT i.id FROM variant_images i
         JOIN product_variants v ON v.id = i.variant_id
@@ -161,9 +143,8 @@ describe("contra la base y contra Storage", () => {
     });
 
     /**
-     * La variante única entra por el COALESCE del índice. Sin él, dos filas
-     * con `color_id` NULL no chocarían —en SQL, NULL nunca es igual a NULL— y
-     * un producto podría terminar con dos variantes «Único».
+     * La variante única choca por el COALESCE del índice: sin él, dos `color_id`
+     * NULL no chocarían, porque en SQL NULL nunca es igual a NULL.
      */
     test("dos variantes SIN color en un producto se rechazan", async () => {
       await db.execute(
@@ -191,8 +172,8 @@ describe("contra la base y contra Storage", () => {
     });
 
     test("un stock total negativo se acepta (RF-24, §5.4)", async () => {
-      // No es un error: es la SEÑAL de que el stock del sistema y el del
-      // depósito no coinciden. Prohibirlo escondería la discrepancia.
+      // Es la señal de que el stock del sistema y el del depósito no
+      // coinciden: prohibirlo escondería la discrepancia.
       await db.execute(
         sql`UPDATE product_variants SET stock_total = -2 WHERE id = ${vBlanco}`,
       );
@@ -229,9 +210,8 @@ describe("contra la base y contra Storage", () => {
         UPDATE product_variants SET images_source_id = ${vNegro}
          WHERE id = ${vBlanco}`);
 
-      // §9.5 permite UN salto, no una cadena: si la que presta pudiera además
-      // tener propias, «de dónde salen las fotos de esta variante» dejaría de
-      // tener una sola respuesta.
+      // §9.5 permite un salto, no una cadena: las fotos de una variante tienen
+      // que salir de un solo lugar.
       await rechazaLlamada(() =>
         publicarImagenDeVariante({
           productId: producto,
@@ -276,7 +256,6 @@ describe("contra la base y contra Storage", () => {
     });
 
     test("«hacer principal» deja la elegida en la posición 0", async () => {
-      // Elegir la principal es mover al frente: la tercera pasa a ser la 0.
       const orden = (await posiciones()).map((x) => x.id);
       await reordenarImagenesDeVariante(vNegro, [orden[2], orden[0], orden[1]]);
 
@@ -300,13 +279,9 @@ describe("contra la base y contra Storage", () => {
     });
 
     /**
-     * EL ERROR QUE F2.4 ARREGLÓ, y el motivo de todo este bloque.
-     *
-     * Sin la renumeración: se borra la primera de tres, quedan [1, 2], y la
-     * próxima subida —que se numeraba con la CANTIDAD, que es 2— vuelve a ser
-     * 2. Dos imágenes en la misma posición, y el orden de la galería pasando a
-     * depender de cuál devuelva antes Postgres: la portada del producto
-     * cambiando sola entre dos recargas.
+     * Sin renumerar, borrar la primera de tres deja [1, 2] y la próxima subida,
+     * numerada por la cantidad, vuelve a ser 2: dos imágenes en la misma
+     * posición y la portada cambiando sola entre recargas.
      */
     test("borrar la principal renumera las que quedan a 0 y 1, y se lleva sus archivos", async () => {
       const antes = await posiciones();
@@ -318,8 +293,8 @@ describe("contra la base y contra Storage", () => {
       await borrarImagenDeVariante(antes[0].id);
 
       expect((await posiciones()).map((x) => x.n)).toEqual([0, 1]);
-      // De la tabla, no tres `false` a mano: con la versión `og` de F3.9 son
-      // cuatro, y una lista fija habría dejado pasar un archivo sin borrar.
+      // De la tabla y no una lista fija: si se suma un tamaño, una lista a
+      // mano dejaría pasar un archivo sin borrar.
       expect(await Promise.all(claves.map(existe))).toEqual(
         TAMANOS.map(() => false),
       );
@@ -334,8 +309,8 @@ describe("contra la base y contra Storage", () => {
 
       const conLaCuarta = await posiciones();
       expect(conLaCuarta.map((x) => x.n)).toEqual([0, 1, 2]);
-      // Al final y no al frente: reordenar es otra acción, y una subida que
-      // se pusiera de portada cambiaría la vitrina sin que nadie lo pida.
+      // Al final y no al frente: una subida que se pusiera de portada
+      // cambiaría la vitrina sin que nadie lo pida.
       expect(conLaCuarta.at(-1)!.id).toBe(cuarta.id);
     });
   });
@@ -357,10 +332,9 @@ describe("contra la base y contra Storage", () => {
     });
 
     /**
-     * El camino completo de `eliminarUnProducto`: LEER, borrar la fila, borrar
-     * los archivos. Sin la primera lectura, el DELETE en cascada se lleva
-     * `variant_images` y con ella la única referencia a los archivos, que
-     * quedan en el bucket para siempre sin nada que los nombre.
+     * El camino de `eliminarUnProducto`: leer las claves antes de borrar la
+     * fila, porque la cascada se lleva `variant_images` y con ella la única
+     * referencia a los archivos.
      */
     test("borrar el producto deja Storage sin ninguno de sus archivos", async () => {
       await db.delete(products).where(inArray(products.id, [producto]));
@@ -380,16 +354,14 @@ describe("contra la base y contra Storage", () => {
   });
 
   /**
-   * Variantes de dos colores (2026-10-05): «Negro/Blanco». Lo que se prueba es
-   * lo que sostiene la base —el orden no cuenta, el segundo necesita primero
-   * y no lo repite— y lo que arma la vista `variant_colors`.
+   * «Negro/Blanco»: lo que sostiene la base (el orden no cuenta, el segundo
+   * necesita primero y no lo repite) y lo que arma la vista `variant_colors`.
    */
   describe("dos colores", () => {
     let vMixta = "";
     let p3 = "";
 
-    // Producto propio: el de arriba ya lo borró «borrar se lleva los
-    // archivos».
+    // Producto propio: «borrar se lleva los archivos» ya borró el de arriba.
     beforeAll(async () => {
       p3 = await unaFila(sql`
         INSERT INTO products (name, slug, brand_id, category_id, price)
@@ -517,8 +489,8 @@ describe("contra la base y contra Storage", () => {
       await db.execute(
         sql`UPDATE product_variants SET is_active = false WHERE id = ${vActiva}`,
       );
-      // Las dos cifras responden preguntas distintas: `activos` decide si se
-      // puede DESACTIVAR el color, `total` si se puede BORRAR.
+      // `activos` decide si se puede desactivar el color; `total`, si se puede
+      // borrar.
       expect(await uso(negro)).toEqual({ activos: 0, total: 1 });
     });
   });

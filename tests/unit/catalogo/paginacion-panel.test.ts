@@ -14,12 +14,8 @@ import {
 import { listarMediosDePago } from "@/modules/settings/queries";
 
 /**
- * La paginación de las cuatro pantallas de Catálogo — §6.9, §10.2. 2026-09-18.
- *
- * Lo que se prueba no es que pagine —con 3 o 4 filas y un tope de 40 no hay
- * segunda página— sino las dos cosas que ROMPEN cuando aparezca: que el total
- * sea el de la tabla y no el del arreglo, y que pedir una página que no existe
- * devuelva vacío en vez de fallar.
+ * Con 3 o 4 filas y un tope de 40 no hay segunda página: se prueba que el
+ * total sea el de la tabla y que una página que no existe dé vacío.
  */
 
 const LISTADOS = [
@@ -44,10 +40,7 @@ describe("la URL de una página", () => {
     expect(leerPaginaDeCatalogo({ pagina: "0" })).toBe(1);
     expect(leerPaginaDeCatalogo({ pagina: "-4" })).toBe(1);
     expect(leerPaginaDeCatalogo({ pagina: "hola" })).toBe(1);
-    // Un decimal se TRUNCA, no se descarta: `parseInt` corta en el punto. Es
-    // la conducta que ya tenían los otros tres listados —sale de la misma
-    // `pagina()` de `lib/filtros-url`— y no molesta: `?pagina=2.5` lleva a la
-    // 2, que es la única lectura razonable de eso.
+    // Un decimal se trunca, no se descarta: `parseInt` corta en el punto.
     expect(leerPaginaDeCatalogo({ pagina: "2.5" })).toBe(2);
     // Un parámetro repetido llega como arreglo y se toma el primero.
     expect(leerPaginaDeCatalogo({ pagina: ["7", "9"] })).toBe(7);

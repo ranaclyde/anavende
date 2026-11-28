@@ -54,15 +54,9 @@ import { conQuien } from "@/modules/settings/promociones";
 import { CUOTAS_MAXIMAS, CUOTAS_MINIMAS } from "@/modules/settings/schemas";
 
 /**
- * Las promociones de cuotas de un medio de pago — RF-40, F2.17.
- *
- * **Un drawer con dos vistas, la lista y el formulario**, y no un drawer
- * encima de otro: una promoción se entiende contra las demás del mismo medio
- * («ya cargué la de 3, falta la de 6»), y volver a la lista después de
- * guardar es volver a donde se estaba.
- *
- * La lista sale de las props, que el listado refresca solo después de cada
- * acción (`revalidatePath`): no hay copia local que pueda quedar vieja.
+ * Las promociones de cuotas de un medio de pago — RF-40. Un drawer con dos
+ * vistas, la lista y el formulario, y no uno encima de otro. La lista sale de
+ * las props: no hay copia local que pueda quedar vieja.
  */
 export function PromocionesDeMedioDePago({
   medio,
@@ -87,8 +81,7 @@ export function PromocionesDeMedioDePago({
             alCerrar={alCerrar}
           />
         ) : (
-          // La `key` monta un formulario nuevo por promoción: el estado
-          // arranca de las props y no hay efecto que lo reponga (ver
+          // La `key` monta un formulario nuevo por promoción (ver
           // `EdicionDeMedioDePago`).
           <Formulario
             key={enFormulario === "nueva" ? "nueva" : enFormulario.id}
@@ -101,8 +94,6 @@ export function PromocionesDeMedioDePago({
     </Sheet>
   );
 }
-
-/* ── La lista ─────────────────────────────────────────────────────────── */
 
 function Lista({
   medio,
@@ -276,7 +267,6 @@ function Lista({
   );
 }
 
-/** «3 cuotas sin interés», «6 cuotas con 15 % de recargo». */
 /** «3 cuotas sin interés», «Plan Z: 3 cuotas con 15 % de recargo». */
 function resumen(
   p: Pick<PromocionDelPanel, "plan" | "cuotas" | "recargo">,
@@ -293,18 +283,13 @@ function vigencia(p: PromocionDelPanel): string {
     : `Desde el ${diaCorto(p.desde)}, sin fecha de fin`;
 }
 
-/**
- * Lo que la vendedora necesita saber de un vistazo: si hoy se ve. Apagada
- * gana a la fecha, porque es lo que ella decidió.
- */
+/** Si hoy se ve. Desactivada gana a la fecha: es lo que ella decidió. */
 function Estado({ promocion: p }: { promocion: PromocionDelPanel }) {
   if (!p.activa) return <Badge tone="neutral">Desactivada</Badge>;
   if (p.estado === "vigente") return <Badge tone="success">Vigente</Badge>;
   if (p.estado === "programada") return <Badge tone="info">Programada</Badge>;
   return <Badge tone="neutral">Vencida</Badge>;
 }
-
-/* ── El formulario ────────────────────────────────────────────────────── */
 
 type Campo = "plan" | "cuotas" | "recargo" | "desde" | "hasta" | "montoMinimo";
 
@@ -317,7 +302,6 @@ function Formulario({
   alVolver,
 }: {
   medio: MedioDePagoDelPanel;
-  /** `null` = alta. */
   promocion: PromocionDelPanel | null;
   alVolver: () => void;
 }) {
@@ -608,11 +592,9 @@ function Campo({
 }
 
 /**
- * La cuota de ejemplo, con la misma cuenta que la ficha (`cuota`). Con el
- * mínimo cargado se calcula sobre él, que es el producto más barato que la
- * va a mostrar; si no, sobre un precio redondo. `null` mientras lo escrito
- * todavía no es un número: la vista previa espera en vez de mostrar un error
- * que el campo ya va a decir.
+ * La cuota de ejemplo, con la misma cuenta que la ficha (`cuota`): sobre el
+ * mínimo si lo hay, si no sobre un precio redondo. `null` mientras lo escrito
+ * no es un número.
  */
 function vistaPrevia(cuotas: string, recargo: string, minimo: string) {
   const n = Number.parseInt(cuotas, 10);

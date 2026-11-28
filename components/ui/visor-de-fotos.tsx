@@ -7,18 +7,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-/**
- * El visor de fotos en grande (§6.8) y su tira de miniaturas.
- *
- * Nació en la galería de la ficha (`components/shop/ficha/galeria.tsx`) y se
- * sacó acá el 2026-11-05 para que el panel amplíe las fotos de un color con
- * el MISMO visor, en vez de un segundo que se comporte distinto.
- */
+/** El visor de fotos en grande (DR §6.8), compartido por la ficha y el panel. */
 
-/**
- * Lo único que el visor necesita de una foto. La ficha le pasa sus imágenes
- * tal cual (`ImagenDeFicha` tiene esto y más); el panel arma estas tres.
- */
 export type FotoDelVisor = {
   /** La versión `detail` (1400px, §9.2): el zoom 1:1 mira este archivo. */
   grande: string;
@@ -36,9 +26,8 @@ function sinMovimiento(): boolean {
 }
 
 /**
- * La columna de miniaturas, de la galería de la ficha y del visor
- * (`compacta`). En la ficha se dibuja aunque haya una sola foto: ver el
- * comentario de `Galeria` sobre el salto de la imagen al cambiar de color.
+ * De la ficha y del visor (`compacta`). En la ficha se dibuja aunque haya una
+ * sola foto (ver `Galeria`).
  */
 export function Miniaturas({
   imagenes,
@@ -67,8 +56,7 @@ export function Miniaturas({
             onClick={() => onElegir(i)}
             aria-current={i === actual ? "true" : undefined}
             className={cn(
-              // El borde no es decorativo: los periféricos vienen
-              // fotografiados sobre blanco, y una miniatura blanca sobre una
+              // El borde no es decorativo: una foto de fondo blanco sobre
               // superficie blanca no se ve.
               "relative block overflow-hidden rounded-panel-image",
               "border border-border bg-surface transition-shadow duration-150",
@@ -95,33 +83,16 @@ export function Miniaturas({
   );
 }
 
-// ── Visor ampliado (§6.8) ───────────────────────────────────────────────
-
 type Medida = { w: number; h: number };
 
 /**
- * La foto en grande, con su propia tira de miniaturas y sus flechas.
+ * Dos niveles: encuadrada y a tamaño real, recorrible con el mouse. La foto
+ * está siempre a su tamaño natural y `transform` la encoge o la corre: con la
+ * misma estructura en los dos estados, el navegador interpola sin salto y la
+ * foto no se ve borrosa al ampliar.
  *
- * **Dos niveles y no uno.** El primero muestra la foto entera, encuadrada en
- * la pantalla; el segundo la muestra a su TAMAÑO REAL de píxeles y se recorre
- * moviendo el mouse. Eso es lo que hace falta para mirar de cerca la textura
- * de una tecla o lo que dice una etiqueta: encuadrar la foto en la pantalla
- * es, casi siempre, achicarla.
- *
- * **La transición es una sola transformación, no dos imágenes.** La foto está
- * SIEMPRE puesta a su tamaño natural y es `transform` quien la encoge para
- * encuadrarla —`scale(k)`— o la deja en 1:1 y la corre —`translate(x,y)`—.
- * Como las dos formas tienen la misma estructura, el navegador interpola
- * entre ellas y el paso de una a otra es continuo. Cambiar `width` en vez de
- * `transform` habría dado el salto que estamos tratando de sacar, y escalar
- * una imagen ya encuadrada la habría dejado borrosa justo cuando se la quiere
- * mirar de cerca.
- *
- * **Es un `<img>` y no `next/image`**, que es la única excepción del
- * proyecto. El optimizador de Next devuelve el ancho que él elige, y acá el
- * ancho ES el dato: «tamaño real» significa el archivo `-detail` que generó
- * §9.2, no una recompresión de ancho desconocido. Además, sin ese ancho
- * conocido no habría con qué calcular la escala.
+ * Es un `<img>` y no `next/image` (TS, la única excepción): el zoom depende
+ * del ancho real del archivo, y el optimizador elige otro.
  */
 export function Visor({
   imagenes,
@@ -148,9 +119,8 @@ export function Visor({
   const img = imagenes[Math.min(actual, imagenes.length - 1)] as
     FotoDelVisor | undefined;
 
-  // El encuadre se CALCULA y no se mide: medir el `<img>` obligaría a pintar
-  // una vez para leer su tamaño y otra para acomodarlo, y el primer cuadro
-  // sería la foto en el lugar equivocado.
+  // Se calcula y no se mide: medir obligaría a pintar un cuadro con la foto
+  // en el lugar equivocado.
   const hueco = { w: ventana.w * 0.72, h: ventana.h * 0.8 };
   const escala =
     natural && ventana.w
@@ -160,9 +130,7 @@ export function Visor({
     ? { w: Math.round(natural.w * escala), h: Math.round(natural.h * escala) }
     : null;
 
-  // Si la foto ya entra a 1:1 no hay nada que ampliar, y el cursor no debe
-  // prometerlo. Pasa con las fotos chicas que sube la vendedora desde el
-  // teléfono, que es un caso real y no uno de laboratorio.
+  // Si ya entra a 1:1 no hay nada que ampliar, y el cursor no debe prometerlo.
   const ampliable = escala < 0.98;
 
   function medirVentana() {
@@ -186,32 +154,28 @@ export function Visor({
       setCorrimiento({ x: 0, y: 0 });
       return;
     }
-    // Entra centrado en DONDE se hizo clic: quien apuntó a la etiqueta del
-    // producto espera ver la etiqueta, no el centro geométrico de la foto.
+    // Entra centrado donde se hizo clic.
     setCorrimiento(ubicar(e, natural, encuadre));
     setZoom(true);
   }
 
   function recorrer(e: React.MouseEvent) {
     if (!zoom || !natural || !encuadre) return;
-    // Sin transición mientras se recorre: con ella, la foto persigue al mouse
-    // con 200ms de retraso y se siente pegajosa.
+    // Sin transición mientras se recorre: con ella la foto persigue al mouse.
     setAnimando(false);
     setCorrimiento(ubicar(e, natural, encuadre));
   }
 
   function irA(i: number) {
     if (i < 0 || i > imagenes.length - 1) return;
-    // La foto nueva tiene su propio tamaño: dejar el anterior puesto la
-    // encuadraría con la escala de la anterior.
+    // Sin esto, la nueva se encuadraría con la escala de la anterior.
     setNatural(null);
     setZoom(false);
     setCorrimiento({ x: 0, y: 0 });
     onElegir(i);
   }
 
-  // Sin fotos no hay nada que mostrar. Pasa en el panel —un color recién
-  // agregado— y el JSX de abajo lee `img` aunque el diálogo esté cerrado.
+  // Pasa con un color recién agregado; el JSX lee `img` aunque esté cerrado.
   if (!img) return null;
 
   return (
@@ -230,8 +194,7 @@ export function Visor({
     >
       <DialogContent
         closeLabel="Cerrar la galería"
-        // `max-h-none`: la galería fija su alto y el tope de 85svh del
-        // diálogo la achicaría. Acá la caja ES la pantalla.
+        // `max-h-none`: el tope de alto del diálogo achicaría la galería.
         className="h-[calc(100dvh-2rem)] max-h-none w-[calc(100vw-2rem)] max-w-none gap-0 overflow-hidden p-0"
         onKeyDown={(e) => {
           if (e.key === "ArrowLeft") irA(actual - 1);
@@ -242,12 +205,8 @@ export function Visor({
           {descripcion} — foto {actual + 1} de {imagenes.length}
         </DialogTitle>
 
-        {/*
-          Clic en cualquier lugar que no sea un control cierra. Es lo que ya
-          hace el fondo oscuro de cualquier modal, y acá el modal ocupa la
-          pantalla entera: sin esto, el único camino de salida sería la cruz
-          de 32px de la esquina.
-        */}
+        {/* Clic fuera de un control cierra: el modal ocupa la pantalla y
+            si no la única salida sería la cruz. */}
         <div
           onClick={() => onAbrir(false)}
           className="relative flex h-full w-full items-center justify-center"
@@ -284,12 +243,7 @@ export function Visor({
                   : "cursor-default",
             )}
           >
-            {/*
-              `<img>` a propósito, no `next/image` — ver el comentario del
-              componente. El ancho real del archivo es el dato que hace
-              funcionar el zoom, y el optimizador lo reemplaza por el que
-              elige él.
-            */}
+            {/* `<img>` a propósito: ver el comentario del componente. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={img.grande}

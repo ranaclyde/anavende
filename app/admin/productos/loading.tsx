@@ -1,13 +1,7 @@
 import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/**
- * Carga del listado — DESIGN-REFERENCE §6.9 y §8: filas fantasma del alto
- * real, no un spinner centrado. Se dibujan también el encabezado y la barra
- * de filtros, que es la parte que más se nota: si aparecieran después, los
- * primeros resultados saltarían 90px hacia abajo justo cuando se los está
- * mirando.
- */
+/** También el encabezado y los filtros: si llegaran después, las filas saltarían. */
 export default function CargandoProductos() {
   return (
     <div className="flex flex-col gap-4">

@@ -16,24 +16,14 @@ import {
   leerIds,
 } from "@/modules/catalog/products/vistos-cookie";
 
-/**
- * «Vistos recientemente» — F8.4, RF-33, TS §11.3. La cookie y por qué es una
- * cookie: `vistos-cookie.ts`.
- */
-
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-/** RF-33: con menos de dos, el bloque no se muestra. */
+/** Con menos de dos, el bloque no se muestra (RF-33). */
 export const MINIMO_DE_VISTOS = 2;
 
 /**
- * Las tarjetas de esos ids, **en el orden de la lista** —el más reciente
- * primero— y con lo vigente: precio, stock y foto de ahora, no de cuando se
- * visitó (RF-33).
- *
- * Los inactivos se descartan acá y no de la cookie: si la vendedora reactiva
- * el producto, vuelve a aparecer. Lo mismo un id que ya no existe, que
- * simplemente no cruza con nada.
+ * En el orden de la lista. Los inactivos se descartan acá y no de la cookie:
+ * si la vendedora reactiva el producto, vuelve a aparecer.
  */
 export async function tarjetasDeVistos(
   ids: readonly string[],
@@ -60,7 +50,6 @@ export async function tarjetasDeVistos(
   return filas.length < MINIMO_DE_VISTOS ? [] : filas.map(aTarjeta);
 }
 
-/** Los vistos de quien hace el pedido, leídos de su cookie. */
 export async function leerVistos(
   excluir: string | null = null,
 ): Promise<ProductoEnTarjeta[]> {

@@ -1,47 +1,20 @@
 /**
- * Catálogo de demostración para construir F3 — 26 productos, más el número
- * de WhatsApp sin el cual la ficha no tiene acción.
+ * Catálogo de demostración para el stack local, con configuración y medios de
+ * pago para que la tienda se pueda mirar entera. Las fotos pasan por la
+ * canalización real (sharp y Storage).
  *
  *   npm run seed            # siembra
  *   npm run seed:limpiar    # borra lo que sembró, y nada más
  *
- * **Por qué existe, y por qué es un script y no un test.** F3 son pantallas:
- * tarjeta, catálogo, ficha, home. Sin productos no hay nada que mirar, y el
- * catálogo real es de Ana y todavía no existe (F2.8). Esto llena el hueco
- * mientras tanto, y se va de un comando.
- *
- * **Lo que NO reemplaza.** F3.3 pide el umbral de similitud «calibrado con el
- * catálogo real», y eso es literal: calibrarlo contra 26 nombres que elegimos
- * nosotros daría un número que no sirve para 200 productos de verdad. Lo mismo
- * la Compuerta F3 —«una persona ajena encuentra un producto concreto»—, que
- * contra un catálogo propio se aprueba sola. Las dos siguen esperando a Ana.
- *
- * **También siembra el número de WhatsApp, y esa parte es de F3.6.** Sin él
- * la ficha se dibuja sin su acción principal, que es como no verla: la carga
- * la vendedora (F2.7) y en una base recién levantada no existe. Se escribe
- * SOLO si no hay fila, y `--limpiar` se la lleva SOLO si sigue siendo la del
- * seed — en cuanto alguien la editó desde el panel es suya. Los tests de
- * configuración BORRAN esa fila, así que después de `npm test` hay que
- * volver a sembrar; es la misma convivencia que ya tiene el catálogo, y el
- * arreglo de fondo es separar las dos bases.
- *
- * **Las imágenes son de verdad**, no URLs de un servicio de placeholders: pasan
- * por `publicarImagenDeVariante`, o sea por sharp, los tres tamaños y Storage.
- * Es lo que hace que la grilla se vea con los pesos y las proporciones que va a
- * tener, y que el `next/image` de la tienda esté leyendo lo que va a leer.
+ * Los tests de configuración borran la fila de `site_settings`: después de
+ * `npm test` hay que volver a sembrar.
  */
 import sharp from "sharp";
 
 process.loadEnvFile(".env.local");
 
-// ── Las dos puertas ────────────────────────────────────────────────────
-//
-// Esto escribe filas y sube archivos. Contra producción entraría inventario de
-// mentira en el catálogo de Ana, con fotos en el bucket — y un archivo huérfano
-// en Storage no lo encuentra nadie y no lo borra nadie.
-//
-// Se comprueban las DOS, base y Storage, porque apuntar bien una no dice nada
-// de la otra. Es la misma regla que usan los tests, importada y no copiada.
+// Escribe filas y sube archivos: contra producción entraría en el catálogo
+// real. Se comprueban base y Storage, porque una no dice nada de la otra.
 const { esApiDelStackLocal, esStackLocal, dondeApunta } =
   await import("./solo-local.mts");
 
@@ -74,34 +47,14 @@ const PREFIJO = "demo-";
 const RESIDUO = "^(producto|marca|rubro)-[0-9a-f]{8}$";
 
 /**
- * La configuración mínima para que la tienda se pueda MIRAR entera.
- *
- * Sin el número de WhatsApp no se dibuja ni un botón de F3.6 —la ficha se ve
- * sin su acción principal, que es como no verla— y sin medios de pago falta
- * el bloque de RF-03. Las dos cosas las carga la vendedora en F2.7 y F2.6, y
- * en una base recién levantada no existen: `site_settings` no la escribe
- * ninguna migración (§5.9).
- *
- * El número es evidentemente falso a propósito: si algún día esto corriera
- * donde no debe, se nota en el acto en vez de mandar mensajes a alguien.
- *
- * **Los medios de pago SÍ se siembran desde el 2026-09-22**, y hasta ese día
- * no: el listado de RF-19 se ordena globalmente, y `pagos.test.ts` movía sus
- * tres filas contando desde el principio de la tabla, así que con filas
- * sembradas encima «subir el primero no cambia nada» cambiaba algo. **Eso ya
- * está arreglado en el test**, que toma el primero DE LA TABLA y compara con
- * `endsWith` justamente porque la base local puede tener medios cargados de
- * antes. Se siembran ahora porque la home dibuja su hilera y sólo con los que
- * tienen logo (§7.1): sin filas con imagen, esa franja no se puede mirar.
+ * Sin WhatsApp la ficha no tiene su acción, y ninguna migración escribe
+ * `site_settings` (§5.9). El número es falso a propósito: si esto corriera
+ * donde no debe, no le llegaría nada a nadie.
  */
 const CONFIGURACION = {
   whatsapp: "+5491100000000",
   email: "demo@anavende.invalid",
 };
-
-// ─────────────────────────────────────────────────────────────────────────
-// Limpieza
-// ─────────────────────────────────────────────────────────────────────────
 
 async function limpiar() {
   const productos = await sql<{ id: string; slug: string }[]>`
@@ -124,9 +77,7 @@ async function limpiar() {
     pagos: 0,
   };
 
-  // Los medios de pago que siguen siendo los del seed. Los archivos primero,
-  // por lo mismo que las fotos: después del DELETE la clave se perdió con la
-  // fila y los tres tamaños quedan en el bucket sin nada que los nombre.
+  // Los archivos primero, como con las fotos: la clave se va con la fila.
   const pagos = await sql<{ id: string }[]>`
     SELECT id FROM payment_methods WHERE description = ${MARCA_DE_DEMO}`;
 
@@ -146,8 +97,7 @@ async function limpiar() {
     await sql`DELETE FROM products WHERE id = ANY(${productos.map((p) => p.id)})`;
   }
 
-  // Marcas, categorías y colores: solo los que quedaron SIN USO. Un `Logitech`
-  // cargado a mano no se toca aunque el seed también lo use.
+  // Solo los que quedaron sin uso: un `Logitech` cargado a mano no se toca.
   const enUso = sql`SELECT 1 FROM products p WHERE p.brand_id = b.id`;
   borrados.marcas = (
     await sql`DELETE FROM brands b
@@ -167,9 +117,7 @@ async function limpiar() {
                RETURNING c.id`
   ).length;
 
-  // La configuración de demostración se borra SOLO si sigue siendo la que
-  // escribió el seed. En cuanto alguien la editó desde el panel es suya, y
-  // llevársela sería apagarle la tienda por correr una limpieza de catálogo.
+  // Solo si sigue siendo la del seed: si alguien la editó, no se toca.
   borrados.configuracion = (
     await sql`DELETE FROM site_settings
                WHERE id = 1
@@ -181,11 +129,7 @@ async function limpiar() {
   return borrados;
 }
 
-/**
- * La configuración, solo si no hay. Nunca pisa lo que ya está: quien guardó
- * la pantalla de configuración eligió ese número, y volver a sembrar no
- * puede deshacerlo.
- */
+/** Solo si no hay: nunca pisa la configuración que alguien guardó. */
 async function sembrarConfiguracion() {
   const [fila] = await sql<{ id: number }[]>`
     INSERT INTO site_settings (id, whatsapp_number, admin_notification_email)
@@ -196,19 +140,7 @@ async function sembrarConfiguracion() {
   return { configuracion: Boolean(fila) };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Imágenes
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Una foto de relleno con el nombre del producto escrito encima.
- *
- * Rellenos con el nombre a la vista y no rectángulos de color: con 26 productos
- * en una grilla, una tarjeta que no dice cuál es no sirve para juzgar el
- * layout. El fondo es acromático a propósito (DESIGN-REFERENCE §11: «dejar que
- * la foto del producto ponga el color»), con el tono variando por índice para
- * que las tarjetas se distingan sin meter un segundo color saturado.
- */
+/** Una foto de relleno con el nombre escrito, en gris (DESIGN-REFERENCE §11). */
 async function foto(titulo: string, subtitulo: string, tono: number) {
   const claro = 88 - (tono % 5) * 6;
   const svg = `
@@ -229,22 +161,9 @@ async function foto(titulo: string, subtitulo: string, tono: number) {
 const escapar = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-// ─────────────────────────────────────────────────────────────────────────
-// El catálogo
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * Las categorías del catálogo de demostración, y cuáles están **destacadas**.
- *
- * Importa desde el 2026-09-22, porque la home las usa de tres formas (§7.1):
- * las destacadas son los chips de arriba —**con tope de siete**— y son las que
- * tienen sección propia con producto adentro; las demás llenan la sección de
- * «Más categorías» de abajo.
- *
- * **Son ocho destacadas a propósito, no siete**: ordenadas por nombre, la que
- * queda afuera es «Webcams», y sin una octava el tope no se puede ver
- * funcionar. Y hay cuatro sin destacar para que la sección de abajo tenga qué
- * mostrar.
+ * Ocho destacadas a propósito: la home muestra siete (§7.1), y así el tope se
+ * ve funcionar. Las no destacadas llenan «Más categorías».
  */
 const CATEGORIAS: { nombre: string; destacada: boolean }[] = [
   { nombre: "Auriculares", destacada: true },
@@ -262,20 +181,9 @@ const CATEGORIAS: { nombre: string; destacada: boolean }[] = [
 ];
 
 /**
- * Los medios de pago de RF-19, que hasta el 2026-09-22 no se sembraban.
- *
- * Ahora sí, porque la home dibuja su hilera y **sólo con los que tienen logo**
- * (§7.1): sin filas con imagen, esa franja no se puede mirar. «Efectivo» va a
- * propósito **sin logo**, que es el caso que la hilera tiene que saber dejar
- * afuera sin dejar un hueco.
- *
- * Los logos son inventados —una píldora con el nombre escrito—, como las fotos
- * de los productos: pasan por la misma canalización de §9.4, así que lo que se
- * mira son los pesos y las proporciones que va a tener.
- *
- * **La marca de que son del seed es la descripción**, igual que el número de
- * WhatsApp: `--limpiar` se lleva sólo las filas que siguen diciendo lo que el
- * seed escribió. En cuanto alguien las editó desde el panel (F2.6) son suyas.
+ * La descripción marca las filas del seed: `--limpiar` solo se lleva las que
+ * siguen diciendo esto. «Efectivo» va sin logo a propósito: la hilera de la
+ * home (§7.1) tiene que saber dejarlo afuera.
  */
 const MARCA_DE_DEMO = "Cargado por el seed de demostración.";
 
@@ -303,16 +211,12 @@ type Semilla = {
 };
 
 /**
- * Los primeros nueve existen por un ESTADO que alguna pantalla de F3 tiene que
- * poder mostrar; los demás son volumen para que la grilla y la paginación se
- * vean con el peso real. La paginación es de 24 por página (§10.2), así que 26
- * es el mínimo que produce una segunda página.
+ * Los primeros nueve cubren un estado de la tienda cada uno; el resto es
+ * volumen para que haya segunda página (24 por página, §10.2).
  */
 const CATALOGO: Semilla[] = [
-  // ── Los nueve que cubren estados ──
   {
-    // Con descuento + destacado + varios colores + varias fotos: el que
-    // ejercita casi toda la ficha (F3.5) y la etiqueta de oferta (F3.1).
+    // Descuento, destacado, varios colores y fotos: casi toda la ficha.
     nombre: "Teclado Mecánico K120",
     marca: "Logitech",
     categoria: "Teclados",
@@ -338,7 +242,7 @@ const CATALOGO: Semilla[] = [
     variantes: [{ color: "Negro", stock: 0, fotos: 1 }],
   },
   {
-    // SIN FOTOS: el estado que nadie prueba y siempre aparece.
+    // Sin fotos.
     nombre: "Cable USB-C a USB-C 2 m",
     marca: "Genérica",
     categoria: "Cables",
@@ -382,7 +286,7 @@ const CATALOGO: Semilla[] = [
     ],
   },
   {
-    // Nombre con acento: «mecanico» tiene que encontrarlo (F3.3).
+    // Nombre con acento: «mecanico» tiene que encontrarlo.
     nombre: "Teclado Mecánico Kumara K552",
     marca: "Redragon",
     categoria: "Teclados",
@@ -406,7 +310,7 @@ const CATALOGO: Semilla[] = [
     ],
   },
   {
-    // INACTIVO: no tiene que aparecer en la tienda, y la ficha da 404 (F3.5).
+    // Inactivo: no aparece en la tienda y la ficha da 404.
     nombre: "Mouse Cobra Pro",
     marca: "Redragon",
     categoria: "Mouses",
@@ -416,7 +320,6 @@ const CATALOGO: Semilla[] = [
     variantes: [{ color: "Negro", stock: 6, fotos: 1 }],
   },
 
-  // ── Volumen, para que la grilla y la paginación pesen ──
   ...relleno(),
 ];
 
@@ -440,10 +343,7 @@ function relleno(): Semilla[] {
     ["Cable de red Cat6 3 m", "Genérica", "Cables", 3900],
     ["Cable Thunderbolt 4", "Genérica", "Cables", 22900, 1900],
 
-    // ── Las cuatro categorías destacadas que se sumaron el 2026-09-22 ──
-    // Cuatro productos cada una: la home dibuja **una fila** por sección
-    // (§7.1), y la grilla de escritorio es de cuatro. Con tres, la sección se
-    // ve a medio llenar en el único ancho donde más se la mira.
+    // Cuatro por destacada: la fila de la home en escritorio es de cuatro.
     ["Monitor AOC 24 pulgadas", "AOC", "Monitores", 189000],
     ["Monitor AOC 27 Curvo", "AOC", "Monitores", 289000, 20000],
     ["Monitor Gamer 165 Hz", "AOC", "Monitores", 344000],
@@ -461,10 +361,7 @@ function relleno(): Semilla[] {
     ["Webcam Brio 4K", "Logitech", "Webcams", 214000, 18000],
     ["Webcam con Aro de Luz", "Genérica", "Webcams", 37800],
 
-    // ── Las cuatro SIN destacar: son las de «Más categorías» ──
-    // Dos cada una, que es suficiente para que la categoría exista de verdad
-    // —el chip del catálogo, el filtro, la ficha— sin sumar tiempo de seed
-    // para una sección que muestra nombres y no productos.
+    // Dos por categoría sin destacar: «Más categorías» muestra solo nombres.
     ["Adaptador USB-C a HDMI", "Genérica", "Adaptadores", 12400],
     ["Adaptador Jack 3,5 a USB", "Genérica", "Adaptadores", 6900],
     ["Alfombrilla Fury S", "HyperX", "Alfombrillas", 14300],
@@ -492,8 +389,6 @@ function relleno(): Semilla[] {
   }));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-
 const slug = (s: string) =>
   PREFIJO +
   s
@@ -503,7 +398,6 @@ const slug = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-/** Crea si no está, y devuelve el id en los dos casos. */
 async function idDe(
   tabla: "brands" | "categories" | "colors",
   nombre: string,
@@ -571,18 +465,10 @@ async function sembrar() {
   return n;
 }
 
-/**
- * El logo inventado de un medio de pago: una píldora con el nombre.
- *
- * Horizontal y no cuadrado, porque es la forma que tiene un logo de medio de
- * pago de verdad y es lo que la hilera de la home tiene que saber acomodar.
- */
+/** Un logo inventado, horizontal como los de verdad. */
 async function logoDePago(nombre: string, tono: number) {
   const matiz = (tono * 67) % 360;
-  // El dibujo ocupa casi todo el lienzo: el logo termina dentro de una caja
-  // de 96×48 en la home, y con márgenes generosos el nombre llegaba ahí
-  // ilegible. Los de verdad —los que cargó la vendedora— no tienen aire de
-  // sobra tampoco.
+  // Casi sin margen: en la home termina en una caja de 96×48.
   const ancho = 600;
   const alto = 200;
   const cuerpo = Math.min(
@@ -604,14 +490,8 @@ async function logoDePago(nombre: string, tono: number) {
 }
 
 /**
- * Los medios de pago, **sólo los que falten por nombre**.
- *
- * No «si la tabla está vacía»: la base local ya tenía tres cargados a mano
- * desde el panel (F2.6), con sus logos de verdad, y un seed que se saltea
- * entero por eso dejaría la hilera de la home con tres piezas. No «todos»:
- * volver a sembrar duplicaría los de alguien. Lo que falta, entonces, y cada
- * uno al final de la lista — el orden lo acomoda la vendedora, que es de quien
- * es esa decisión (RF-19).
+ * Solo los que falten por nombre, al final de la lista: no duplica ni
+ * reordena los que alguien cargó desde el panel.
  */
 async function sembrarMediosDePago() {
   let creados = 0;
@@ -642,8 +522,6 @@ async function sembrarMediosDePago() {
   return { pagos: creados, logos };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-
 const modo = process.argv[2] === "--limpiar" ? "limpiar" : "sembrar";
 
 if (modo === "limpiar") {
@@ -662,9 +540,7 @@ if (modo === "limpiar") {
   const cuantos = await sembrar();
   const config = await sembrarConfiguracion();
 
-  // La bandera se escribe desde `CATEGORIAS` y en los dos sentidos: sembrar
-  // dos veces con una categoría que dejó de estar destacada tiene que
-  // apagarla, o la home seguiría dibujando una sección que ya no va.
+  // En los dos sentidos: una categoría que dejó de estar destacada se apaga.
   await sql`
     UPDATE categories SET is_featured = true
      WHERE lower(name) = ANY(${CATEGORIAS.filter((c) => c.destacada).map((c) => c.nombre.toLowerCase())})`;

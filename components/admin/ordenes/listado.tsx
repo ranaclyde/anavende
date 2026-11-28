@@ -25,22 +25,6 @@ import {
 } from "@/modules/orders/filtros-panel";
 import type { OrdenDelListado } from "@/modules/orders/queries-panel";
 
-/**
- * Listado de órdenes del panel — RF-21, DR §6.9. Tarea F7.1.
- *
- * **Es un componente de servidor**, al revés del listado de productos: acá no
- * hay nada que tocar. Las solapas, los filtros y la paginación son enlaces, y
- * las acciones sobre una orden —editarla (F7.2), finalizarla o cancelarla
- * (F7.3)— viven en el detalle, con el pedido enfrente. Mandar esta tabla al
- * navegador sería pagar JavaScript por una lista de enlaces.
- *
- * En móvil la tabla se vuelve tarjetas, no scroll horizontal (§6.9).
- *
- * **No se ordena por columna.** El listado va siempre de la más nueva a la
- * más vieja, que es como se trabaja: lo que llegó hoy es lo que hay que
- * atender. Buscar una vieja es la búsqueda y el rango de fechas, no ordenar
- * quince mil filas al revés.
- */
 export function ListadoDeOrdenes({
   ordenes,
   filtros,
@@ -102,9 +86,7 @@ export function ListadoDeOrdenes({
         </Table>
       </div>
 
-      {/* Móvil: la tarjeta entera es el enlace. Es la única acción que tiene
-          el renglón, y un área táctil del alto de la tarjeta se acierta con
-          el pulgar (§9). */}
+      {/* Móvil: la tarjeta entera es el enlace. */}
       <ul className="flex flex-col gap-2 md:hidden">
         {ordenes.map((orden) => (
           <li key={orden.numero}>
@@ -143,13 +125,7 @@ export function ListadoDeOrdenes({
   );
 }
 
-/**
- * El comprador: el nombre del pedido arriba y el email debajo.
- *
- * El nombre es el del **snapshot**, no el de la cuenta (RN-12, F6.1): quien
- * compró para un tercero puso los datos del tercero, y con esa persona es con
- * quien hay que coordinar. El email puede faltar en una orden manual (RF-24).
- */
+/** El nombre del snapshot, no el de la cuenta (RN-12). */
 function Comprador({ orden }: { orden: OrdenDelListado }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
@@ -166,21 +142,14 @@ function Comprador({ orden }: { orden: OrdenDelListado }) {
 }
 
 /**
- * La fecha, formateada **en el servidor y en la zona del negocio**
- * (`lib/fechas.ts`). Hacerlo en el navegador significa que el servidor pinta
- * una cosa y la hidratación pinta otra, que es el parpadeo que §8 pide
- * evitar; y sin zona explícita, una orden de las 22:00 aparecería con la
- * fecha del día siguiente.
+ * En el servidor y en la zona del negocio: en el navegador, la hidratación
+ * no coincidiría.
  */
 function Fecha({ iso }: { iso: string }) {
   return <time dateTime={iso}>{fechaCorta(iso)}</time>;
 }
 
-/**
- * Sin resultados (§8), que no es lo mismo que vacío: acá hay órdenes y
- * ninguna coincide. Se repite el término buscado —para ver el error de tipeo
- * sin volver al campo— y se ofrece limpiar los filtros de una.
- */
+/** Sin resultados (§8): hay órdenes, pero ninguna coincide. */
 function SinResultados({ filtros }: { filtros: FiltrosDeOrdenes }) {
   return (
     <VacioDelPanel
@@ -206,20 +175,12 @@ function SinResultados({ filtros }: { filtros: FiltrosDeOrdenes }) {
   );
 }
 
-/**
- * Estado vacío de verdad (§8): no hay ninguna orden todavía, en ninguna
- * solapa. No ofrece «cargar la primera» porque la orden manual es F7.4: hasta
- * entonces, las órdenes las hace la tienda y acá no hay ningún primer paso
- * que dar.
- */
 export function SinOrdenes() {
   return (
     <VacioDelPanel
       icono={Receipt}
       titulo="Todavía no hay ninguna orden."
       accion={
-        /* La acción sugerida que pide §6.9: sin órdenes web todavía, cargar
-           una a mano es lo único que se puede hacer desde esta pantalla. */
         <Button asChild variant="secondary" size="sm">
           <Link href="/admin/ordenes/nueva">
             <Plus aria-hidden />

@@ -13,11 +13,8 @@ import { returnStatus } from "./enums";
 import { orderItems, orders } from "./orders";
 import { userProfiles } from "./users";
 
-/** Devoluciones — TECHNICAL-SPEC §5.7, RF-25. */
-
 export const returns = pgTable("returns", {
   id: uuid("id").primaryKey().defaultRandom(),
-  // RESTRICT: una orden con devoluciones no se borra.
   orderId: uuid("order_id")
     .notNull()
     .references(() => orders.id, { onDelete: "restrict" }),
@@ -44,7 +41,7 @@ export const returnItems = pgTable(
       .notNull()
       .references(() => orderItems.id, { onDelete: "restrict" }),
     quantity: integer("quantity").notNull(),
-    /** false = producto defectuoso: no vuelve al stock (RF-25). */
+    /** false = defectuoso: no vuelve al stock. */
     restocks: boolean("restocks").notNull(),
     reason: text("reason"),
   },

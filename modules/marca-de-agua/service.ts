@@ -16,20 +16,13 @@ import { MAXIMO_DE_CAPAS } from "@/modules/media/marca-de-agua";
 import { clave } from "@/modules/media/tamanos";
 import { validarArchivo } from "@/modules/media/validar";
 
-/**
- * La marca de agua del lado de la base y de Storage — RF-39, TS §9.6.
- *
- * La composición vive en `modules/media/marca-de-agua.ts` y no sabe de dónde
- * salen las capas; esto es lo que las guarda, las lee y las entrega listas.
- */
+// La composición vive en `modules/media/marca-de-agua.ts`; esto guarda, lee y
+// entrega las capas (TECHNICAL-SPEC §9.6).
 
-/** La única versión de cada imagen de la biblioteca: `…/{id}-marca.webp`. */
 export const SUFIJO_DE_MARCA = "marca";
 
-/** Las imágenes se guardan a este ancho como mucho (§9.6). */
 const ANCHO_MAXIMO = 2000;
 
-/** `marcas-de-agua/{imageId}` — la base, sin sufijo (§9.2). */
 export function claveDeMarcaDeAgua(imageId: string): string {
   return `marcas-de-agua/${imageId}`;
 }
@@ -38,15 +31,9 @@ export function archivoDeMarca(base: string): string {
   return clave(base, SUFIJO_DE_MARCA);
 }
 
-/* ── Lectura de las imágenes, con memoria ─────────────────────────────── */
-
 /**
- * Los bytes de las imágenes ya leídas de Storage, por clave.
- *
- * **Se pueden recordar sin miedo**: la clave lleva un UUID nuevo por imagen y
- * una imagen de la biblioteca no se reemplaza nunca, así que lo que está
- * bajo una clave no cambia. Cargar un producto con cinco fotos por color
- * lee la marca una vez y no quince. Tope chico: son cuatro capas como mucho.
+ * Se puede recordar sin invalidar: la clave lleva un UUID por imagen y una
+ * imagen de la biblioteca no se reemplaza nunca.
  */
 const recordadas = new Map<string, Buffer>();
 const TOPE_RECORDADAS = 8;
@@ -62,8 +49,6 @@ async function bytesDe(storageKey: string): Promise<Buffer> {
   recordadas.set(storageKey, bytes);
   return bytes;
 }
-
-/* ── Interruptor ──────────────────────────────────────────────────────── */
 
 /** Sin fila, la marca está apagada (§5.9). */
 export async function estaActiva(): Promise<boolean> {
@@ -82,10 +67,7 @@ async function escribirActiva(activa: boolean): Promise<void> {
       SET enabled = EXCLUDED.enabled, updated_at = now()`);
 }
 
-/**
- * Prender o apagar. **Prender sin capas no se puede** (RF-39): el panel diría
- * «activada» y las fotos saldrían limpias.
- */
+/** Prender sin capas no se puede: diría «activada» y las fotos saldrían limpias. */
 export async function activarMarca(activa: boolean): Promise<boolean> {
   if (activa) {
     const [{ n }] = await db
@@ -101,8 +83,6 @@ export async function activarMarca(activa: boolean): Promise<boolean> {
   return activa;
 }
 
-/* ── Biblioteca ───────────────────────────────────────────────────────── */
-
 export type ImagenDeMarca = {
   id: string;
   storageKey: string;
@@ -111,11 +91,7 @@ export type ImagenDeMarca = {
   height: number;
 };
 
-/**
- * Subir una imagen a la biblioteca. **Solo PNG o WEBP**: son los que guardan
- * la transparencia, y una marca en JPG sería un recuadro blanco tapando la
- * foto. Se guarda una sola vez, en WEBP sin pérdida (§9.6).
- */
+/** Solo PNG o WEBP: un JPG no tiene transparencia y taparía la foto. */
 export async function subirImagenDeMarca(
   archivo: Buffer,
   nombre: string,
@@ -151,8 +127,6 @@ export async function subirImagenDeMarca(
       .values({
         id,
         storageKey: base,
-        // El nombre es para reconocerla en la lista, no un dato: se corta
-        // y se le saca la extensión.
         name:
           nombre
             .replace(/\.[a-z0-9]+$/i, "")
@@ -170,9 +144,8 @@ export async function subirImagenDeMarca(
 }
 
 /**
- * Borrar una imagen de la biblioteca. Se lleva sus capas (`ON DELETE
- * CASCADE`); si con eso no queda ninguna, la marca se apaga —prendida y sin
- * capas diría «activada» sin poner nada—. Devuelve si se apagó.
+ * Se lleva sus capas (`ON DELETE CASCADE`); si no queda ninguna, la marca se
+ * apaga. Devuelve si se apagó.
  */
 export async function borrarImagenDeMarca(
   id: string,
@@ -197,8 +170,8 @@ export async function borrarImagenDeMarca(
     return { storageKey: fila.storageKey, seApago };
   });
 
-  // Después de la fila, como en el resto (§9.1): un archivo de más es
-  // basura; una fila sin archivo es una capa rota.
+  // Después de la fila (§9.1): un archivo de más es basura; una fila sin
+  // archivo es una capa rota.
   await almacenamiento()
     .delete(archivoDeMarca(resultado.storageKey))
     .catch(() => {});
@@ -207,15 +180,9 @@ export async function borrarImagenDeMarca(
   return { seApago: resultado.seApago };
 }
 
-/* ── Capas ────────────────────────────────────────────────────────────── */
-
 export type CapaGuardada = Capa & { imageId: string };
 
-/**
- * Reemplaza todas las capas por las que llegan, en ese orden. Llega la lista
- * COMPLETA, como el orden de las fotos: se guarda lo que se ve en pantalla.
- * Sin capas, la marca se apaga.
- */
+/** Llega la lista completa y reemplaza todas las capas. Sin capas, la marca se apaga. */
 export async function guardarCapas(
   capas: readonly CapaGuardada[],
 ): Promise<{ seApago: boolean }> {
@@ -263,13 +230,7 @@ export async function guardarCapas(
   });
 }
 
-/* ── Lo que usa la subida y la vista previa ───────────────────────────── */
-
-/**
- * Las capas con los bytes de su imagen, para `procesarImagen`. Sirve también
- * para la vista previa, que manda capas sin guardar: por eso recibe la lista
- * y no la lee.
- */
+/** Recibe la lista y no la lee porque la vista previa manda capas sin guardar. */
 export async function prepararCapas(
   capas: readonly CapaGuardada[],
 ): Promise<CapaLista[]> {
@@ -317,11 +278,7 @@ export async function leerCapas(): Promise<CapaGuardada[]> {
     .orderBy(asc(watermarkLayers.sortOrder));
 }
 
-/**
- * La marca que lleva una foto que se sube AHORA: sus capas si está activa, o
- * ninguna. Se lee en cada subida (§9.6): prenderla o cambiarla surte efecto
- * en la siguiente, sin nada que invalidar.
- */
+/** Se lee en cada subida: un cambio surte efecto en la siguiente sin invalidar nada. */
 export async function marcaParaSubir(): Promise<CapaLista[]> {
   if (!(await estaActiva())) return [];
   return prepararCapas(await leerCapas());

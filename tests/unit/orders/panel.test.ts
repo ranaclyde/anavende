@@ -28,16 +28,9 @@ import {
 } from "@/modules/orders/queries-panel";
 
 /**
- * F7.1 — Listado y detalle de órdenes en el panel. RF-21 · TS §5.6.
- *
- * «Hecho cuando»: las solapas, los filtros y la búsqueda traen lo que dicen, y
- * el detalle muestra el pedido con su historial.
- *
- * **La base es de verdad y es la misma que usa el desarrollo**, así que puede
- * tener órdenes de antes. Estas consultas no filtran por usuario —el panel las
- * ve todas—, de modo que cada test se acota a las suyas buscando por un
- * apellido único: así las afirmaciones son sobre lo que el test creó y no
- * sobre lo que había.
+ * Listado y detalle de órdenes en el panel (RF-21 · TS §5.6). La base es la
+ * del desarrollo y el panel no filtra por usuario: cada test se acota a sus
+ * órdenes con un apellido único.
  */
 
 afterEach(async () => {
@@ -89,7 +82,6 @@ async function ordenDe(
 describe("los filtros de la URL", () => {
   test("sin parámetros arranca en «Activas», página 1", () => {
     expect(leerFiltros({})).toEqual(FILTROS_VACIOS);
-    // Y esos valores NO se escriben: la dirección queda limpia.
     expect(urlDeFiltros(FILTROS_VACIOS)).toBe("/admin/ordenes");
   });
 
@@ -208,8 +200,6 @@ describe("el listado", () => {
     const comprador = await unComprador();
     const web = await ordenDe(comprador, { nombre: `Rosa ${apodo}` });
 
-    // Una manual, que es lo que va a cargar F7.4. Se escribe a mano porque
-    // todavía no hay función que las cree.
     const [manual] = await db.execute<{ numero: number }>(sql`
       INSERT INTO orders (origin, status, customer_name, customer_phone)
       VALUES ('manual', 'activa', ${`Vecina ${apodo}`}, '+5492920111111')
@@ -260,10 +250,8 @@ describe("el listado", () => {
       nombre: `Rosa ${apodo}`,
     });
 
-    // Cargada a fin de febrero y entregada en marzo: es la orden que el
-    // tablero del inicio (F7.8) cuenta como venta de marzo, porque RF-28 dice
-    // que la venta ocurre cuando se entrega. Si el rango mirara `created_at`,
-    // ese número abriría un listado donde no está.
+    // Cargada en febrero y entregada en marzo: el tablero del inicio la cuenta
+    // en marzo (RF-28), y el listado tiene que coincidir.
     await db.transaction((tx) => finalizarOrden(tx, { orderId }));
     await db.execute(sql`
       UPDATE orders
@@ -379,8 +367,7 @@ describe("el detalle", () => {
     expect(orden.total).toBe("2000.00");
     expect(orden.shippingAddress).toMatchObject({ street: "Av. Siempreviva" });
 
-    // La cuenta del comprador es OTRO dato que el nombre del pedido: el del
-    // pedido vale sólo para ese pedido (F6.1).
+    // La cuenta del comprador es OTRO dato que el nombre del pedido.
     expect(orden.cuenta).toMatchObject({ id: comprador.userId });
     expect(orden.cuenta!.nombre).not.toBe(orden.customerName);
   });

@@ -1,7 +1,6 @@
 /**
- * Sin acentos y sin mayúsculas: «AURICULARES», «aurícu» y «auriculares»
- * tienen que encontrar lo mismo. Es la misma regla que el catálogo aplica en
- * la base con `immutable_unaccent(lower(…))`, escrita para el navegador.
+ * La misma regla que el catálogo aplica en la base con
+ * `immutable_unaccent(lower(…))`.
  */
 export function normalizar(texto: string): string {
   return texto

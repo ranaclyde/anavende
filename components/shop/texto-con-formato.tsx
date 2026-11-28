@@ -7,12 +7,9 @@ import type {
 import { Fragment } from "react";
 
 /**
- * El Markdown acotado de §16 pintado como elementos de React — RF-15, RF-29.
- *
- * Lo comparten la descripción del producto (`ficha/descripcion.tsx`) y las
- * páginas legales: un formato, un sanitizador, un renderizador. Recibe el
- * árbol YA filtrado por `nodosDeMarkdown`; filtrar es de quien llama, que es
- * un Server Component, porque el sanitizador es `server-only`.
+ * El Markdown acotado pintado como elementos de React. Recibe el árbol ya
+ * filtrado por `nodosDeMarkdown`: el sanitizador es `server-only`, así que
+ * filtra quien llama.
  */
 
 export type Subtitulo = {
@@ -37,10 +34,8 @@ export function BloquesDeTexto({
 }
 
 /**
- * Los cuatro bloques que sobreviven al filtro de §16: párrafo, subtítulo,
- * lista con viñetas y lista numerada. El `default` no es defensivo de más —
- * es lo que hace que agregar un tipo al filtro mañana no pinte nada raro
- * mientras nadie escriba su caso acá.
+ * Los bloques que sobreviven al filtro. El `default` hace que un tipo nuevo
+ * en el filtro no pinte nada hasta que se escriba su caso.
  */
 function Bloque({
   nodo,
@@ -58,10 +53,7 @@ function Bloque({
       );
 
     case "heading": {
-      // El nivel lo decide la página y no el texto: en la ficha el subtítulo
-      // es `h3` —el nombre del producto es el `h1` y «Sobre el producto» el
-      // `h2`—, y en una página legal es `h2`, porque ahí no hay nada en el
-      // medio. El filtro ya normalizó la profundidad guardada.
+      // El nivel lo decide la página y no el texto.
       const Etiqueta = subtitulo.nivel;
       return (
         <Etiqueta className={subtitulo.className}>
@@ -92,9 +84,7 @@ function Items({ nodo, subtitulo }: { nodo: List; subtitulo: Subtitulo }) {
       {nodo.children.map((item, i) => (
         <li key={i}>
           {/*
-            Un ítem contiene BLOQUES, no texto: el filtro deja adentro
-            párrafos y hasta otra lista. Se recorre igual que el nivel de
-            arriba, y el párrafo suelto no lleva `<p>` propio para que la
+            Un ítem contiene bloques. El párrafo va sin `<p>`, para que la
             viñeta no quede separada de su renglón.
           */}
           {item.children.map((hijo, j) =>
@@ -110,7 +100,6 @@ function Items({ nodo, subtitulo }: { nodo: List; subtitulo: Subtitulo }) {
   );
 }
 
-/** Lo que vive dentro de un renglón: texto, salto, negrita y cursiva. */
 function EnLinea({ nodos }: { nodos: readonly PhrasingContent[] }) {
   return (
     <>

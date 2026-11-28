@@ -3,10 +3,8 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { proveedoresDisponibles } from "@/modules/users/proveedores";
 
 /**
- * F1.7 — Qué botones de ingreso social se muestran.
- *
- * El primero va contra el GoTrue del stack local, que no tiene ninguno
- * prendido: es la prueba de que la dirección, la clave y la forma de la
+ * El primero va contra el GoTrue del stack local, que no tiene ningún
+ * proveedor prendido: prueba que la dirección, la clave y la forma de la
  * respuesta son las de verdad. Los demás reemplazan `fetch`, porque prender
  * Google en el stack local pediría credenciales reales.
  */

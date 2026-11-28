@@ -12,39 +12,22 @@ import { CAPTCHA_DE_PRUEBA } from "@/tests/apoyo/captcha";
 import { limpiarOrdenes, unaOrdenActiva } from "@/tests/apoyo/ordenes";
 
 /**
- * F7.7 — Bloqueo con razón. RF-27 · TS §5.3, §13.5.
- *
- * «Hecho cuando»: motivo obligatorio garantizado por el `CHECK` de la base; se
- * bloquea en Supabase Auth **y** se cierran las sesiones activas; al intentar
- * entrar, la persona ve el motivo registrado.
- *
- * **Habla con el GoTrue del stack local**, como los de F7.6 y por un motivo
- * más fuerte todavía: el bloqueo vive en dos lados —`user_profiles` y
- * `auth.users`— y lo que puede romperse en silencio es que queden
- * desincronizados. Un doble no probaría nada de eso; el ingreso rechazado con
- * su motivo, que es el criterio que RF-27 le promete a la persona, tampoco.
+ * RF-27 · TS §5.3, §13.5. Habla con el GoTrue del stack local: el bloqueo
+ * vive en `user_profiles` y en `auth.users`, y lo que se rompe en silencio es
+ * que se desincronicen.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
 vi.mock("@/lib/session", () => ({
   getSession: async () => sesion.actual,
-  // Sin sesión es sin cuenta: lo de una cuenta sin perfil lo prueba
-  // `tests/unit/seguridad/accion-sin-perfil.test.ts`.
+  // La cuenta sin perfil se prueba en `seguridad/accion-sin-perfil.test.ts`.
   getIdentity: async () => null,
 }));
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 vi.mock("next/navigation", () => ({ redirect: () => undefined }));
 
-/**
- * El cliente del servidor, sin cookies — sólo para probar el ingreso.
- *
- * `modules/users/actions` arma su cliente con `cookies()` de Next, que fuera
- * de un pedido no existe. Lo que se prueba acá no es el manejo de cookies —de
- * eso se ocupa `@supabase/ssr`— sino que GoTrue rechace a la cuenta bloqueada
- * y que ese rechazo llegue a la pantalla **con el motivo**, que es lo que
- * RF-27 promete y lo único que GoTrue no sabe.
- */
+/** El cliente del servidor sin cookies: `cookies()` no existe fuera de un pedido. */
 vi.mock("@/lib/supabase/server", async () => {
   const { createClient } = await import("@supabase/supabase-js");
   return {
@@ -96,10 +79,7 @@ afterEach(async () => {
 
 const CONTRASENA = "bloqueo-12345678";
 
-/**
- * Una cuenta con identidad de GoTrue y contraseña: la única forma de probar
- * que el bloqueo impide entrar, que es lo que RF-27 promete.
- */
+/** Una cuenta con identidad de GoTrue y contraseña, para probar el ingreso. */
 async function unaCuentaDeVerdad(): Promise<{ id: string; email: string }> {
   const email = `bloqueo-${randomUUID().slice(0, 8)}@ejemplo.test`;
   const { data, error } = await createServiceClient().auth.admin.createUser({
@@ -183,11 +163,8 @@ describe("quién puede bloquear", () => {
   });
 
   test("a la última administradora tampoco", async () => {
-    // Como en el cambio de rol (F7.6): la regla habla de CUÁNTAS QUEDAN, así
-    // que hay que dejar una sola en toda la base. Las que ya estaban se
-    // devuelven a su rol al terminar — la base de desarrollo es la misma con
-    // la que se mira el panel, y dejarla sin administradoras deja a quien la
-    // use afuera.
+    // La regla habla de CUÁNTAS QUEDAN: se deja una sola en toda la base y las
+    // demás vuelven a su rol al terminar, o la base local queda sin ninguna.
     const previas = await db.execute<{ id: string }>(sql`
       SELECT id FROM user_profiles WHERE role = 'admin'`);
 
@@ -337,8 +314,7 @@ describe("desbloquear (RF-27)", () => {
       autor: null,
     });
 
-    // Y acá está el registro que RF-27 pide: sin la tabla, lo de arriba sería
-    // todo lo que queda, y no diría que el bloqueo existió.
+    // El registro que RF-27 pide: sin la tabla, nada diría que el bloqueo existió.
     const historial = await elHistorial(otro.userId);
     expect(historial).toHaveLength(2);
     expect(historial[0]).toEqual({
@@ -406,8 +382,8 @@ describe("las dos capas quedan sincronizadas (§13.5)", () => {
     // por qué. El texto sale de `ban_reason`, que GoTrue no guarda.
     expect(r.ok === false && r.details?.motivo).toBe("Pagos rebotados");
 
-    // Con otra contraseña, nada: ni que está bloqueada ni el motivo. GoTrue
-    // contesta `user_banned` igual, así que esto es la aplicación (F10.5).
+    // Con otra contraseña, ni que está bloqueada ni el motivo. GoTrue
+    // contesta `user_banned` igual, así que esto es la aplicación.
     const ajena = await ingresar({
       email: cuenta.email,
       password: "otra-cosa",
@@ -416,7 +392,6 @@ describe("las dos capas quedan sincronizadas (§13.5)", () => {
     expect(ajena).toMatchObject({ ok: false, code: "VALIDATION" });
     expect(JSON.stringify(ajena)).not.toContain("Pagos rebotados");
 
-    // Y después de desbloquear, vuelve a entrar con la misma contraseña.
     await desbloquearCuenta({ id: cuenta.id });
     expect(
       await ingresar({

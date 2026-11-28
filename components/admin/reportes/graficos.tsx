@@ -25,24 +25,12 @@ import {
 import type { PuntoDeVentas } from "@/modules/reports/queries";
 
 /**
- * Los gráficos de los reportes y del inicio del panel — RF-28, RF-14. F9.1.
- *
- * **Acromáticos, a propósito** (DESIGN.md, «la regla de una sola voz»): el
- * burdeos es la acción y la identidad, y una barra no es ninguna de las dos.
- * Las barras van en `--ink-secondary` —4,9:1 sobre blanco, 7:1 en oscuro, por
- * encima del 3:1 que piden los gráficos— y la que se señala sube a `--ink`.
- * Los dos tokens ya se redefinen en modo oscuro, así que el gráfico no tiene
- * un tema propio que mantener.
- *
- * **Los montos llegan como texto y se convierten acá, sólo para dibujar**
- * (`paraDibujar`): las sumas ya vinieron hechas de SQL, y el número exacto que
- * se lee —en el globo y en las tablas— sale siempre de `formatMoney`.
+ * Colores y reglas: DR §6.16. Los montos se pasan a número solo para dibujar
+ * (`paraDibujar`); el número que se lee sale siempre de `formatMoney`.
  */
 
 const BARRA = "var(--ink-secondary)";
 const BARRA_SENALADA = "var(--ink)";
-
-// ── Ventas en el tiempo ─────────────────────────────────────────────────
 
 const DIA = new Intl.DateTimeFormat("es-AR", {
   weekday: "long",
@@ -76,13 +64,6 @@ type ColumnaDeVentas = {
   ordenes: number;
 };
 
-/**
- * Lo vendido por día —o por mes—, en columnas.
- *
- * **Los días que todavía no llegaron no tienen columna**, ni siquiera una en
- * cero: el inicio dibuja el mes entero para que se vea cuánto falta, y un cero
- * el 28 cuando hoy es 15 diría que ese día no se vendió nada.
- */
 export function GraficoDeVentas({
   puntos,
   agrupado,
@@ -94,7 +75,6 @@ export function GraficoDeVentas({
   agrupado: "dia" | "mes";
   /** El último día con datos; los posteriores van sin columna. */
   hasta?: string;
-  /** Qué muestra, para un lector de pantalla. */
   etiqueta: string;
   className?: string;
 }) {
@@ -112,9 +92,8 @@ export function GraficoDeVentas({
         className={className ?? "aspect-auto h-56 w-full"}
         aria-hidden
       >
-        {/* Sin la capa de teclado de Recharts: el gráfico está fuera del
-            árbol de accesibilidad, y su lugar en el orden del foco no
-            llevaba a nada. Lo que dice está en la tabla. */}
+        {/* Sin la capa de teclado de Recharts: con `aria-hidden`, su parada
+            de foco no lleva a nada. */}
         <BarChart
           accessibilityLayer={false}
           data={datos}
@@ -184,8 +163,7 @@ export function GraficoDeVentas({
         </BarChart>
       </ChartContainer>
 
-      {/* El gráfico es para la vista; esto, para quien no la usa. Los mismos
-          números, sin las columnas vacías del final del mes. */}
+      {/* La tabla para lectores de pantalla. */}
       <figcaption className="sr-only">
         <table>
           <caption>{etiqueta}</caption>
@@ -209,12 +187,9 @@ export function GraficoDeVentas({
   );
 }
 
-// ── Rankings: más vendidos, por categoría y por marca ──────────────────
-
 export type BarraDeRanking = {
   id: string;
   nombre: string;
-  /** Lo que mide la barra: el monto o las unidades. */
   valor: Money | number;
   /** Lo que se escribe al final de la barra. */
   etiqueta: string;
@@ -224,7 +199,6 @@ const configDeRanking = {
   valor: { label: "Vendido", color: BARRA },
 } satisfies ChartConfig;
 
-/** Cuánto entra de un nombre al costado de su barra antes del «…». */
 const LARGO_DEL_NOMBRE = 18;
 
 function recortar(nombre: string): string {
@@ -233,12 +207,7 @@ function recortar(nombre: string): string {
     : nombre;
 }
 
-/**
- * El nombre al costado de la barra, **en un solo renglón**. Recharts parte el
- * texto del eje en varios cuando no entra en el ancho, y «Auricular Cloud S…»
- * quedaba en dos renglones apretados contra la barra de abajo. El nombre
- * entero va en el `<title>`, que el navegador muestra al pasar el mouse.
- */
+/** En un renglón: Recharts parte en varios el texto del eje que no entra. */
 function NombreAlCostado({
   x,
   y,
@@ -263,19 +232,6 @@ function NombreAlCostado({
   );
 }
 
-/**
- * Barras horizontales, de mayor a menor.
- *
- * **Horizontales porque las etiquetas son nombres**: «Auriculares inalámbricos
- * gamer» debajo de una columna se escribe en diagonal o no se escribe. El
- * nombre largo se recorta al costado y entero está en el globo y en la tabla
- * de abajo, que es la que se lee con un lector de pantalla —por eso el
- * gráfico va `aria-hidden`—.
- *
- * **El monto va escrito al final de cada barra**: en un ranking de diez la
- * pregunta es «¿cuánto?», y obligar a pasar el dedo por cada una para
- * saberlo es esconder la respuesta.
- */
 export function GraficoDeRanking({
   barras,
   medida,
@@ -348,8 +304,6 @@ export function GraficoDeRanking({
   );
 }
 
-// ── Web contra manual ───────────────────────────────────────────────────
-
 const WEB = "var(--ink)";
 const MANUAL = "var(--ink-tertiary)";
 
@@ -359,17 +313,8 @@ const configDeOrigen = {
 } satisfies ChartConfig;
 
 /**
- * Una sola barra partida en dos: qué parte de lo vendido llegó por la web y
- * qué parte se cargó a mano — RF-28.
- *
- * **Dos grises que se distinguen por luminosidad**, `--ink` y
- * `--ink-tertiary`: los dos pasan 3:1 contra la tarjeta en claro y en oscuro,
- * y entre ellos no hay matiz que un daltónico pueda confundir. Igual **cada
- * parte lleva su nombre escrito** al lado, en la leyenda de abajo: el color
- * nunca es lo único que dice cuál es cuál.
- *
- * Los negativos se dibujan en cero —un período flojo con una devolución
- * grande puede dar menos que nada— y el número de verdad está escrito igual.
+ * Lo vendido por la web contra lo cargado a mano. Un período con devoluciones
+ * puede dar negativo: se dibuja en cero y el número real va escrito igual.
  */
 export function BarraWebYManual({
   web,
@@ -407,7 +352,7 @@ export function BarraWebYManual({
           fill="var(--color-web)"
           radius={[4, 0, 0, 4]}
         >
-          {/* Un borde del color de la tarjeta separa las dos partes (2px). */}
+          {/* Separa las dos partes. */}
           <Cell stroke="var(--surface)" strokeWidth={2} />
         </Bar>
         <Bar

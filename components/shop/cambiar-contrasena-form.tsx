@@ -14,12 +14,9 @@ import { cambiarContrasena } from "@/modules/users/actions";
 type Campo = "actual" | "nueva" | "repetida";
 
 /**
- * Cambiar la contraseña, o definirla — RF-07, RF-06. Tarea F5.2.
- *
- * Quien ya tiene una la cambia **dando la actual**: la sesión sola no alcanza,
- * porque cualquiera que encuentre la cuenta abierta en otro dispositivo podría
- * dejar a la dueña afuera. Quien entró solo por Google o Facebook no tiene
- * ninguna que dar, y la define (RF-06).
+ * Cambiar la contraseña, dando la actual, o definirla si se entró solo con un
+ * proveedor social (RF-06). La sesión sola no alcanza: alguien con la cuenta
+ * abierta en otro dispositivo podría dejar a la dueña afuera.
  */
 export function CambiarContrasenaForm({
   email,
@@ -31,15 +28,14 @@ export function CambiarContrasenaForm({
   const [guardando, iniciar] = useTransition();
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
-  // El texto se fija al guardar: definirla da vuelta `tieneContrasena` —la
-  // página se refresca y pasa a pedir la actual— y un mensaje calculado en
-  // cada render diría «cambiamos» a quien recién la definió.
+  // Se fija al guardar: definirla da vuelta `tieneContrasena` al refrescar, y
+  // calculado en cada render diría «cambiamos» a quien recién la definió.
   const [listo, setListo] = useState<string | null>(null);
   const [nueva, setNueva] = useState("");
   const [repetida, setRepetida] = useState("");
   const enPausa = useCuentaEnPausa();
 
-  // La confirmación es la única que se valida mientras se escribe (§6.6).
+  // La única que se valida mientras se escribe (§6.6).
   const noCoinciden = repetida.length > 0 && nueva !== repetida;
   const errorRepetida = noCoinciden
     ? "Las dos contraseñas tienen que ser iguales."
@@ -64,7 +60,6 @@ export function CambiarContrasenaForm({
         return;
       }
 
-      // Una contraseña no se deja escrita en pantalla después de guardarla.
       formulario.reset();
       setNueva("");
       setRepetida("");
@@ -88,7 +83,7 @@ export function CambiarContrasenaForm({
         hidden
       />
 
-      {/* Con la baja pedida (F5.8) la contraseña no se cambia. */}
+      {/* Con la baja pedida, la contraseña no se cambia. */}
       <fieldset
         disabled={enPausa}
         aria-describedby={enPausa ? ID_AVISO_DE_PAUSA : undefined}

@@ -21,23 +21,8 @@ export const metadata: Metadata = { title: "Favoritos" };
 const RUTA = "/mi-cuenta/favoritos";
 
 /**
- * Favoritos — RF-10. Tarea F5.4.
- *
- * **Lista o tarjetas**, a elección, con la lista por omisión y la elección
- * recordada en una cookie (pedido del 2026-09-14). Las tarjetas son las del
- * catálogo (§6.1); el renglón dice lo mismo en menos alto.
- *
- * **Paginada de a 24**, con la misma paginación por enlaces que el catálogo:
- * no hay tope de favoritos, y sin paginar una lista larga cargaba todo.
- *
- * **Desde acá no se agrega al carrito** (decisión del 2026-09-14): el
- * favorito es del producto y no del color, así que tocarlo lleva a la ficha,
- * donde se elige color y cantidad. RF-10 quedó corregido.
- *
- * **Quitar no saca el favorito en el acto**: el corazón se vacía y el
- * producto se queda hasta la próxima visita. Quien lo quitó sin querer lo
- * vuelve a tocar y listo; si desapareciera, tendría que ir a buscarlo al
- * catálogo.
+ * Quitar no saca el favorito en el acto: el corazón se vacía y el producto se
+ * queda hasta la próxima visita, para poder volver a tocarlo si fue sin querer.
  */
 
 type Props = {
@@ -58,7 +43,6 @@ function leerPagina(valor: string | string[] | undefined): number {
 }
 
 export default async function Favoritos({ searchParams }: Props) {
-  // Independientes entre sí: la sesión, la página pedida y la vista.
   const [sesion, consulta, vista] = await Promise.all([
     getSession(),
     searchParams,
@@ -76,9 +60,8 @@ export default async function Favoritos({ searchParams }: Props) {
   });
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
-  // Una página que ya no existe —se quitaron favoritos, o un enlace viejo—
-  // lleva a la última que sí. Acá no hay filtros que explicar, como en el
-  // catálogo: solo hay menos favoritos que antes.
+  // Una página que ya no existe (se quitaron favoritos, o un enlace viejo)
+  // lleva a la última que sí.
   if (pagina > paginas) redirect(urlDePagina(paginas));
 
   const corazon = (f: Favorito) => (
@@ -138,7 +121,6 @@ export default async function Favoritos({ searchParams }: Props) {
   );
 }
 
-/** §8: «Todavía no tenés favoritos» + «Explorar el catálogo». */
 function SinFavoritos() {
   return (
     <div className="flex flex-col items-center gap-3 rounded-card bg-surface px-6 py-16 text-center shadow-md">

@@ -9,17 +9,9 @@ import { telefonoLocal } from "@/lib/telefono";
 import { guardarDatosDelUsuario } from "@/modules/users/panel/actions";
 
 /**
- * Corregir los datos de una cuenta — FS RF-26. Tarea F7.6.
- *
- * **El email no está**, y es la misma decisión de «Mis datos» (F5.2): lo
- * guarda GoTrue, cambiarlo exige confirmar la dirección nueva con un email que
- * RF-30 no tiene, y la copia de `user_profiles` quedaría desincronizada. Se
- * muestra al lado, de solo lectura, para que se vea que existe y no parezca
- * que falta.
- *
- * **El rol no está tampoco**, y vive en su propia tarjeta: dar o quitar acceso
- * al panel no es corregir un teléfono mal tipeado, y un «Guardar» que hiciera
- * las dos cosas dejaría viajar la decisión grande escondida adentro de la chica.
+ * Corregir los datos de una cuenta — RF-26. El email no está: lo guarda
+ * GoTrue, cambiarlo exige confirmar la dirección nueva y la copia de
+ * `user_profiles` quedaría desincronizada. El rol va en su propia tarjeta.
  */
 export function EditarDatosDelUsuario({
   usuario,
@@ -41,13 +33,9 @@ export function EditarDatosDelUsuario({
   const [phone, setPhone] = useState(telefonoLocal(usuario.telefono));
 
   /**
-   * Con qué se compara para saber si hay algo sin guardar.
-   *
-   * **No son las props**, y esa fue la trampa: el esquema normaliza el
-   * teléfono, así que después de guardar «11 4444 3333» el perfil dice
-   * `+5491144443333` y el campo seguiría marcando cambios pendientes para
-   * siempre. Se guarda lo que el servidor confirmó, que es lo que de verdad
-   * hay en la base. Lo encontró el repaso.
+   * Con qué se compara para saber si hay algo sin guardar: lo que confirmó el
+   * servidor, no las props. El esquema normaliza el teléfono, y con las props
+   * quedarían cambios pendientes para siempre.
    */
   const [guardadoEnLaBase, setGuardadoEnLaBase] = useState({
     firstName: usuario.firstName,
@@ -77,8 +65,7 @@ export function EditarDatosDelUsuario({
         return;
       }
 
-      // Los campos pasan a mostrar lo que quedó guardado: el teléfono, con su
-      // forma normalizada y sin el `+549` que el campo ya muestra.
+      // Los campos muestran lo guardado: el teléfono normalizado, sin el `+549`.
       const guardados = { ...r.data, phone: telefonoLocal(r.data.phone) };
       setFirstName(guardados.firstName);
       setLastName(guardados.lastName);
@@ -130,8 +117,7 @@ export function EditarDatosDelUsuario({
       )}
 
       <div className="flex items-center justify-end gap-3">
-        {/* Se anuncia: quien no ve el botón tiene que enterarse igual de que
-            el cambio quedó (§9). Desaparece al volver a tocar un campo. */}
+        {/* Se anuncia (§9). Desaparece al volver a tocar un campo. */}
         {guardado ? (
           <p aria-live="polite" className="text-caption text-success">
             Datos guardados.
@@ -140,8 +126,6 @@ export function EditarDatosDelUsuario({
         <Button
           variant="brand"
           size="sm"
-          // Sin cambios no hay nada que guardar, y un botón vivo que no hace
-          // nada enseña a desconfiar del resto.
           disabled={!cambio}
           loading={guardando}
           loadingLabel="Guardando"

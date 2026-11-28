@@ -8,14 +8,9 @@ import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 import { limpiarOrdenes } from "@/tests/apoyo/ordenes";
 
 /**
- * F7.4 — la puerta del alta manual. RF-24 · TS §6.2.
- *
- * El dominio está probado en `manual.test.ts`: qué contador se mueve, el
- * negativo de §5.4, el todo o nada. Acá se prueba lo que agrega la capa de
- * acciones y puede romperse sin que nadie lo note: **quién puede cargar una
- * venta**, qué hace la validación con lo que escribe una persona —la coma
- * decimal, el email vacío, el teléfono— y la regla que RF-24 subraya: **con
- * envío, la dirección es obligatoria**.
+ * La puerta del alta manual (RF-24 · TS §6.2); el dominio va en
+ * `manual.test.ts`. Acá: quién puede cargar una venta, la validación de lo que
+ * escribe una persona y que con envío la dirección sea obligatoria.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
@@ -241,8 +236,7 @@ describe("con envío, la dirección es obligatoria (RF-24)", () => {
     if (!r.ok) return;
     creadas.push(r.data.numero);
 
-    // La provincia y el código postal NO se preguntan: se deducen de la
-    // localidad, con la misma función que usa la libreta (F5.3).
+    // La provincia y el CP NO se preguntan: se deducen de la localidad.
     const quedo = (await leerOrdenDelPanel(r.data.numero))!;
     expect(quedo.shippingAddress).toMatchObject({
       street: "Av. Siempreviva",
@@ -343,8 +337,8 @@ describe("los buscadores", () => {
 });
 
 /**
- * F7.4b — la fecha de la venta (RF-24, 2026-11-25). Una venta se puede cargar
- * tarde, y los reportes la tienen que contar en su día, no en el de la carga.
+ * Una venta se puede cargar tarde: los reportes la cuentan en su día, no en el
+ * de la carga.
  */
 describe("la fecha de la venta (RF-24)", () => {
   /** `AAAA-MM-DD` de hace `dias` días, en Argentina. */
@@ -400,7 +394,6 @@ describe("la fecha de la venta (RF-24)", () => {
     const r = await cargar(variantId, { fechaDeVenta: haceDias(-1) });
 
     expect(r).toMatchObject({ ok: false, code: "VALIDATION" });
-    // Y el stock no se movió: no hubo orden.
     expect((await contadores(variantId)).stockTotal).toBe(5);
   });
 

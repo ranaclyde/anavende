@@ -1,10 +1,6 @@
 /**
- * El buzón del stack local — TS §17.2, caso 2.
- *
- * `supabase start` levanta un Mailpit (`[local_smtp]` en
- * `supabase/config.toml`) y GoTrue le manda ahí los emails de verificación en
- * vez de al mundo. El test lee el enlace de este buzón para confirmar la
- * cuenta igual que lo haría una persona.
+ * El Mailpit que levanta `supabase start` (`[local_smtp]` en
+ * `supabase/config.toml`): GoTrue deja ahí los emails de verificación.
  */
 
 const BUZON = "http://127.0.0.1:54324/api/v1";
@@ -31,7 +27,6 @@ export async function enlaceDelEmail(para: string): Promise<string> {
   throw new Error(`No llegó ningún email a ${para} en 10 segundos.`);
 }
 
-/** Borra lo que le llegó a `para`, para no dejar nada en el buzón. */
 export async function vaciarBuzon(para: string): Promise<void> {
   const consulta = encodeURIComponent(`to:"${para}"`);
   await fetch(`${BUZON}/search?query=${consulta}`, { method: "DELETE" });

@@ -2,7 +2,7 @@
 
 import { FalloDePantalla } from "@/components/ui/fallo-de-pantalla";
 
-/** Una pantalla de la tienda que falló, con el encabezado puesto (§8). */
+/** Dentro del layout de la tienda: el fallo sale con el encabezado puesto. */
 export default function ErrorDeLaTienda(props: {
   error: Error & { digest?: string };
   retry: () => void;

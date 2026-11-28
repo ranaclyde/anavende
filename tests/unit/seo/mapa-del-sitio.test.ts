@@ -7,15 +7,9 @@ import { db } from "@/db";
 import { productosDelMapa } from "@/modules/catalog/products/mapa-del-sitio";
 
 /**
- * F3.9 — el mapa del sitio, contra Postgres de verdad.
- *
- * Lo que hay que verificar es SQL, y es silencioso: un `WHERE is_active` que
- * falte no rompe nada: publica en el mapa del sitio direcciones que devuelven
- * 404, y eso se entera Google antes que nadie.
- *
- * **Acotado a lo que crea este archivo.** La base de desarrollo tiene el
- * catálogo sembrado, así que contar filas sin acotar daría un número que
- * depende de cuándo se corrió el seed.
+ * Contra Postgres de verdad: un `WHERE is_active` que falte no rompe nada,
+ * publica direcciones que devuelven 404. Acotado a lo que crea este archivo,
+ * porque la base de desarrollo tiene el catálogo sembrado.
  */
 
 const T = `zzmapa${randomUUID().slice(0, 8)}`;
@@ -72,18 +66,15 @@ test("el activo entra al mapa y el desactivado no", async () => {
     .map((p) => p.slug)
     .filter((s) => s.endsWith(T));
 
-  // RN-05: la ficha de un producto desactivado devuelve 404. Ofrecerla en el
-  // mapa del sitio es pedirle a Google que registre un error nuestro.
+  // RN-05: la ficha de un producto desactivado devuelve 404.
   expect(slugs).toEqual([`activo-${T}`]);
 });
 
 test("la fecha sale en el formato que pide `lastmod`, no como la escribe Postgres", async () => {
   const fila = (await productosDelMapa()).find((p) => p.slug === `activo-${T}`);
 
-  // Éste es el test que importa de todo el archivo. Postgres devuelve
-  // `2026-09-22 23:16:33.078552+00` —con un espacio en el medio y sin `T`— y
-  // Next escribe en el mapa lo que reciba: un `<lastmod>` así lo descartan
-  // todos los buscadores, y nadie avisa.
+  // Postgres devuelve `2026-09-22 23:16:33.078552+00` (con espacio y sin `T`)
+  // y Next lo escribe tal cual: un `<lastmod>` así lo descartan los buscadores.
   expect(fila?.actualizado).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
 
   // Y es la fecha de verdad, no una cadena cualquiera con la forma correcta.

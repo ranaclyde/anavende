@@ -9,61 +9,27 @@ import { compare, type Money } from "@/lib/money";
 import { reservar } from "@/modules/stock/operaciones";
 
 /**
- * Creación de orden desde el carrito — FS RF-11, RF-12 · TS §8.4, §8.5.
- * Tarea F4.3.
+ * Creación de orden desde el carrito: el procedimiento de TECHNICAL-SPEC §8.4.
  *
- * Es el procedimiento de §8.4, en ese orden y por ese motivo:
- *
- *     1. Releer el carrito con FOR UPDATE
- *     2. Releer precios, disponibilidad y estado del catálogo
- *     3. ¿Cambió algo respecto de lo que el comprador vio? → se pide reconfirmar
- *     4. INSERT orders          (snapshot del comprador y la dirección)
- *     5. INSERT order_items     (snapshot de nombre, marca, color y precio)
- *     6. Reservar, ordenado por variant_id
- *     7. UPDATE orders.total = SUM(subtotal), en SQL
- *     8. INSERT order_status_history (NULL → activa)
- *     9. DELETE cart_items
- *
- * **Abre su propia transacción en vez de recibir una**, al revés que el resto
- * del módulo, y es por la idempotencia: cuando dos peticiones con la misma
- * clave chocan contra el índice único, la que pierde queda con la transacción
- * abortada y hay que **leer de nuevo** la orden que ganó para devolverla. Una
- * transacción abortada no puede consultar nada, así que esa relectura tiene
- * que pasar afuera.
- *
- * **Lo que NO se hace acá:** el email E4 y el `revalidateTag` van DESPUÉS del
- * COMMIT (§8.3 regla 4 y 5), en la capa de acciones. Un email adentro de la
- * transacción la mantiene abierta mientras se habla con Resend, y si el envío
- * falla se revierte una orden que el comprador ya dio por hecha. Tampoco se
- * comprueba el email verificado de RF-11 ni el permiso: eso vive en
- * `lib/action.ts`, que es quien tiene la sesión.
+ * Abre su propia transacción, al revés que el resto del módulo: si pierde la
+ * carrera del índice único de idempotencia, la transacción queda abortada y la
+ * relectura de la orden ganadora tiene que hacerse afuera (§8.5).
  */
 
-/** Lo que el comprador vio en el resumen, y contra lo que se compara (§8.4 paso 3). */
+/** Lo que el comprador vio en el resumen (§8.4 paso 3). */
 export type ItemEsperado = {
   variantId: string;
-  /** El precio final YA con descuento, tal como se le mostró. */
+  /** El precio final, ya con descuento. */
   unitPrice: Money;
-  /**
-   * Cuántas vio. Sin esto, un «+» en otra pestaña crearía la orden con otra
-   * cantidad y otro total que el del resumen (F6.2).
-   */
   quantity: number;
 };
 
-/**
- * Cómo se entrega (RF-11, 2026-09-14): **solo el envío lleva dirección**. La
- * orden no guarda la forma de entrega aparte: se deduce de `shipping_address`
- * (`modules/orders/entrega.ts`), así que un retiro es una orden sin dirección.
- */
 export type Entrega = { tipo: "envio"; addressId: string } | { tipo: "retiro" };
 
 export type DatosDeCompra = {
   userId: string;
-  /** Generada al abrir el checkout, no al confirmar (§8.5). */
   idempotencyKey: string;
   entrega: Entrega;
-  // Snapshot del comprador (RN-12): la orden se lee igual dentro de un año.
   customerName: string;
   customerEmail: string | null;
   customerPhone: string;
@@ -73,7 +39,7 @@ export type DatosDeCompra = {
 export type OrdenCreada = {
   orderId: string;
   orderNumber: number;
-  /** `true` si la clave ya había creado esta orden: fue un reintento (§8.5). */
+  /** `true` si fue un reintento con la misma clave. */
   yaExistia: boolean;
 };
 
@@ -88,7 +54,7 @@ type FilaDelCarrito = {
   varianteActiva: boolean;
 };
 
-/** Postgres devuelve 23505 y Drizzle lo envuelve, igual que en el catálogo. */
+/** El 23505 de Postgres puede venir envuelto en `cause` por Drizzle. */
 function esDuplicado(e: unknown): boolean {
   let actual: unknown = e;
   for (let i = 0; i < 5 && actual; i++) {
@@ -104,12 +70,7 @@ function esDuplicado(e: unknown): boolean {
   return false;
 }
 
-/**
- * Solo entre las órdenes de quien pide (F10.5): con la clave de otro, sin el
- * filtro, devolvía el número de una orden ajena. Si alguien la manda igual,
- * el índice único frena el INSERT y no encuentra nada suyo: un error, sin
- * nada de la otra orden.
- */
+/** Filtra por `user_id`: con la clave de otro no se puede ver una orden ajena. */
 async function buscarPorClave(
   clave: string,
   userId: string,
@@ -126,16 +87,13 @@ async function buscarPorClave(
 export async function crearOrdenDesdeCarrito(
   datos: DatosDeCompra,
 ): Promise<OrdenCreada> {
-  // El camino barato del reintento: si la clave ya creó una orden, se
-  // devuelve y no se abre nada. No alcanza por sí solo —dos peticiones a la
-  // vez pasan las dos por acá sin encontrar nada—, y para eso está el índice
-  // único más abajo.
+  // Atajo del reintento. No alcanza solo: dos peticiones simultáneas pasan
+  // por acá sin encontrar nada, y las frena el índice único (ver el `catch`).
   const yaCreada = await buscarPorClave(datos.idempotencyKey, datos.userId);
   if (yaCreada) return yaCreada;
 
   try {
     return await db.transaction(async (tx) => {
-      // ── 1. El carrito, bloqueado ───────────────────────────────────────
       const [carrito] = await tx.execute<{ id: string }>(sql`
         SELECT id FROM carts WHERE user_id = ${datos.userId}`);
 
@@ -145,13 +103,8 @@ export async function crearOrdenDesdeCarrito(
         });
       }
 
-      // ── 2. Precios, disponibilidad y estado, de una sola consulta ──────
-      //
-      // `FOR UPDATE OF ci` bloquea SOLO las filas del carrito (§8.4 paso 1):
-      // bloquear también el catálogo trabaría a toda la tienda mientras
-      // alguien confirma. Y `ORDER BY variant_id` es §8.3 regla 2 — el orden
-      // determinístico que impide que dos órdenes con los mismos productos se
-      // traben mutuamente.
+      // `FOR UPDATE OF ci`: solo el carrito; bloquear el catálogo trabaría a
+      // toda la tienda. `ORDER BY variant_id` evita deadlocks (§8.3).
       const enElCarrito = [
         ...(await tx.execute<FilaDelCarrito>(sql`
           SELECT ci.variant_id     AS "variantId",
@@ -178,13 +131,9 @@ export async function crearOrdenDesdeCarrito(
         });
       }
 
-      // ── 3. ¿Cambió algo respecto de lo que vio? ────────────────────────
       revisarQueSigaSiendoLoQueVio(datos.esperado, enElCarrito);
 
-      // ── 4. La orden, con el snapshot del comprador y la dirección ──────
-      //
-      // Con retiro no hay dirección, y ese NULL ES el dato: la forma de
-      // entrega no tiene columna propia (2026-09-14).
+      // Con retiro la dirección queda NULL, y eso marca la forma de entrega.
       const direccion =
         datos.entrega.tipo === "envio"
           ? await snapshotDeDireccion(tx, datos.userId, datos.entrega.addressId)
@@ -201,7 +150,6 @@ export async function crearOrdenDesdeCarrito(
            ${datos.idempotencyKey})
         RETURNING id, order_number AS "orderNumber"`);
 
-      // ── 5 y 6. Los ítems y sus reservas, en el orden que ya trae ───────
       for (const item of enElCarrito) {
         await tx.execute(sql`
           INSERT INTO order_items
@@ -212,9 +160,7 @@ export async function crearOrdenDesdeCarrito(
              ${item.brandName}, ${item.colorName}, ${item.finalPrice},
              ${item.quantity})`);
 
-        // Acá se decide quién se queda con la última unidad (§8.2). Si no
-        // alcanza, la excepción revierte la orden entera: todo o nada
-        // (§8.3 regla 1).
+        // Si no alcanza, la excepción revierte la orden entera.
         await reservar(tx, {
           variantId: item.variantId,
           quantity: item.quantity,
@@ -222,9 +168,7 @@ export async function crearOrdenDesdeCarrito(
           actorUserId: datos.userId,
           note: "Orden confirmada",
         }).catch((e: unknown) => {
-          // El mensaje de siempre dice «ese producto» y pide ajustar la
-          // cantidad; acá se sabe cuál es, y la pantalla la ajusta sola al
-          // volver a armarse (F5.6). Sigue siendo INSUFFICIENT_STOCK (F6.2).
+          // Mismo código, con el nombre del producto en el mensaje.
           if (isDomainError(e) && e.code === "INSUFFICIENT_STOCK") {
             const nombre = item.colorName
               ? `${item.productName} (${item.colorName.toLowerCase()})`
@@ -238,23 +182,17 @@ export async function crearOrdenDesdeCarrito(
         });
       }
 
-      // ── 7. El total, sumado EN SQL ─────────────────────────────────────
-      //
-      // §7.1: los montos son `numeric(12,2)` y se suman en la base. Un
-      // `reduce` en JavaScript sobre estos mismos números perdería centavos, y
-      // ese error no se ve hasta que una orden no cierra.
+      // En SQL: un `reduce` en JavaScript perdería centavos (§7.1).
       await tx.execute(sql`
         UPDATE orders
            SET total = (SELECT COALESCE(SUM(subtotal), 0)
                           FROM order_items WHERE order_id = ${orden.id})
          WHERE id = ${orden.id}`);
 
-      // ── 8. El historial arranca acá ────────────────────────────────────
       await tx.execute(sql`
         INSERT INTO order_status_history (order_id, from_status, to_status)
         VALUES (${orden.id}, NULL, 'activa')`);
 
-      // ── 9. El carrito se vacía ─────────────────────────────────────────
       await tx.execute(sql`
         DELETE FROM cart_items WHERE cart_id = ${carrito.id}`);
 
@@ -265,8 +203,7 @@ export async function crearOrdenDesdeCarrito(
       };
     });
   } catch (e) {
-    // El otro camino de la idempotencia: otra petición con la misma clave
-    // ganó la carrera mientras esta armaba su orden. La suya es la buena.
+    // Otra petición con la misma clave ganó la carrera: se devuelve la suya.
     if (esDuplicado(e)) {
       const ganadora = await buscarPorClave(datos.idempotencyKey, datos.userId);
       if (ganadora) return ganadora;
@@ -276,15 +213,8 @@ export async function crearOrdenDesdeCarrito(
 }
 
 /**
- * El paso 3 de §8.4, que es la reconfirmación de RF-11.
- *
- * Se juntan TODAS las diferencias antes de largar el error, no la primera:
- * quien está por confirmar tiene que ver de una lo que cambió, no descubrirlo
- * de a un producto por intento.
- *
- * Lo no disponible pesa más que lo caro: si hay algo que ya no se vende, ese
- * es el problema a resolver primero, y avisar del precio de otra cosa antes
- * sería mandar a la persona por el camino largo.
+ * La reconfirmación de §8.4 paso 3. Junta todas las diferencias, no la
+ * primera; lo no disponible se avisa antes que un cambio de precio.
  */
 function revisarQueSigaSiendoLoQueVio(
   esperado: readonly ItemEsperado[],
@@ -318,17 +248,13 @@ function revisarQueSigaSiendoLoQueVio(
     const loVisto = visto.get(item.variantId);
 
     if (loVisto === undefined) {
-      // Está en el carrito y no en el resumen: se agregó desde otra pestaña
-      // después de abrir el checkout. Confirmar así le cobraría algo que
-      // nunca vio.
+      // Agregado desde otra pestaña después de abrir el checkout.
       sinVer.push(item.variantId);
       continue;
     }
 
     visto.delete(item.variantId);
 
-    // Un «+» o un «−» desde otra pestaña: el precio es el mismo, pero el
-    // total ya no es el del resumen.
     if (loVisto.quantity !== item.quantity) {
       cambiosDeCantidad.push({
         variantId: item.variantId,
@@ -357,9 +283,8 @@ function revisarQueSigaSiendoLoQueVio(
     });
   }
 
-  // Lo que sobró en `visto` estaba en el resumen y ya no está en el carrito;
-  // lo de `sinVer`, al revés; y las cantidades, lo mismo a medias. Las tres
-  // cosas son el mismo aviso: el carrito no es el que estás mirando.
+  // Lo que sobró en `visto` se quitó del carrito. Agregados, quitados y
+  // cantidades son el mismo aviso: el carrito no es el que estás mirando.
   if (sinVer.length > 0 || visto.size > 0 || cambiosDeCantidad.length > 0) {
     throw domainError("PRICE_CHANGED", {
       agregados: sinVer,
@@ -380,9 +305,7 @@ async function snapshotDeDireccion(
   userId: string,
   addressId: string,
 ): Promise<ShippingAddressSnapshot> {
-  // Del usuario, y no borrada. Sin el `user_id` en el WHERE, alguien podría
-  // mandarse a enviar a la dirección de otro con sólo cambiar el id (§13.8:
-  // sin RLS, el filtro en la aplicación es la única barrera).
+  // Sin el `user_id` se podría usar la dirección de otro cambiando el id (§13.8).
   const [d] = await tx.execute<ShippingAddressSnapshot>(sql`
     SELECT recipient_name AS "recipientName",
            phone,
@@ -400,7 +323,5 @@ async function snapshotDeDireccion(
 
   if (!d) throw domainError("NOT_FOUND");
 
-  // Se copia, no se referencia (RN-12): la orden tiene que leerse igual
-  // aunque mañana se edite o se borre la dirección.
   return d;
 }

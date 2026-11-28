@@ -2,43 +2,29 @@ import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Carga de la configuración — DESIGN-REFERENCE §8: la forma real del
- * contenido, no un spinner.
- *
- * Las medidas y las separaciones son las MISMAS que las de la pantalla de
- * verdad —encabezado con `gap-1`, campos con `gap-1.5`, tarjetas con
- * `gap-4`—, que es lo único que hace que no salte cuando llegan los datos.
- * Un esqueleto con la forma parecida y el aire distinto es un salto igual,
- * solo que más difícil de ver de dónde viene.
+ * Medidas y separaciones iguales a las de la pantalla real: si el aire cambia,
+ * salta al llegar los datos.
  */
 export default function CargandoConfiguracion() {
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EsqueletoDeEncabezado titulo="w-40" bajada="w-full max-w-md" />
 
-      {/* Contacto: el WhatsApp, Instagram y Facebook. Sus ayudas ocupan dos
-          renglones y la de los avisos uno: es la diferencia que más se nota
-          si el esqueleto la ignora. */}
+      {/* Contacto: sus ayudas ocupan dos renglones. */}
       <Tarjeta
         campos={["sm:max-w-64", "sm:max-w-96", "sm:max-w-96"]}
         lineasDeAyuda={2}
       />
-      {/* Avisos: el email y el umbral, que es angosto y lleva «unidades» al
-          lado. Antes los tres campos medían `max-w-72`, que no es el ancho de
-          ninguno. */}
+      {/* Avisos: el email y el umbral, angosto. */}
       <Tarjeta campos={["sm:max-w-80", "w-20"]} lineasDeAyuda={1} />
 
-      {/* La barra real lleva el estado de guardado a la izquierda de todo, y
-          `items-center gap-3`. Sin el texto, el botón quedaba solo y el
-          renglón cambiaba de alto al llegar los datos. */}
+      {/* El estado de guardado a la izquierda, o el renglón cambia de alto. */}
       <div className="flex items-center justify-end gap-3">
         <Skeleton className="mr-auto h-5 w-28" />
         <Skeleton className="h-9 w-36 rounded-panel-control" />
       </div>
 
-      {/* Modo mantenimiento: la tercera tarjeta, que el esqueleto no dibujaba.
-          Está FUERA del formulario, debajo de la barra de acciones, así que
-          al llegar los datos aparecía un bloque entero de la nada. */}
+      {/* Modo mantenimiento, fuera del formulario. */}
       <div className="flex flex-col gap-4 rounded-panel-card border border-border bg-surface p-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -58,7 +44,6 @@ function Tarjeta({
   campos,
   lineasDeAyuda,
 }: {
-  /** El ancho de cada campo, con el de la pantalla real. */
   campos: string[];
   lineasDeAyuda: number;
 }) {

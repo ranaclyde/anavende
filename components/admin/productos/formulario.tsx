@@ -55,11 +55,7 @@ import type {
   ProductoParaEditar,
 } from "@/modules/catalog/products/queries";
 
-/**
- * En el ORDEN EN QUE SE VEN. No es cosmético: al fallar el envío el foco va
- * al primero de esta lista que tenga error, y «el primero» tiene que ser el
- * que está más arriba en la pantalla, no el que quedó primero en el tipo.
- */
+/** En el orden en que se ven: el foco va al primero con error. */
 const CAMPOS = [
   "name",
   "sku",
@@ -72,7 +68,6 @@ const CAMPOS = [
 
 type Campo = (typeof CAMPOS)[number];
 
-/** Lo que sobrevive a una recarga (`useBorrador`). */
 type Borrador = {
   nombre: string;
   sku: string;
@@ -82,30 +77,17 @@ type Borrador = {
   descuento: string;
   destacado: boolean;
   activo: boolean;
-  /** `null` si no se tocó: así no se pisa la guardada con la misma. */
+  /** `null` si no se tocó. */
   descripcion: string | null;
 };
 
-/**
- * El precio final que se muestra mientras se escribe (RF-15, RN-04b).
- *
- * En la base esto es la columna generada `final_price` y no se recalcula
- * nunca (§7.1). Acá se calcula porque todavía no hay fila que consultar, y se
- * devuelve **el estado completo** —no solo el número— porque el formulario
- * necesita distinguir tres situaciones: no hay datos, hay oferta, y el
- * descuento no entra.
- */
+/** En la base es la columna generada `final_price`; acá todavía no hay fila. */
 type Vista =
   | { estado: "incompleto" }
   | { estado: "sin-oferta"; precio: string }
   | { estado: "oferta"; precio: string; final: string }
   | { estado: "descuento-invalido" };
 
-/**
- * El «$» adentro del campo, a la izquierda: dice que es un monto en pesos sin
- * que haga falta escribirlo, y no se envía —es parte del dibujo, como el +54
- * del teléfono—.
- */
 function CampoDePesos({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative">
@@ -121,7 +103,6 @@ function CampoDePesos({ children }: { children: React.ReactNode }) {
 }
 
 function calcularVista(precio: string, descuento: string): Vista {
-  // Lo mismo que entiende el servidor: coma decimal y punto de miles.
   const p = comoMonto(precio);
   const d = comoMonto(descuento.trim() || "0");
 
@@ -138,12 +119,8 @@ function calcularVista(precio: string, descuento: string): Vista {
 }
 
 /**
- * Las opciones del selector — RN-11b.
- *
- * Se ofrecen las ACTIVAS, más la que el producto ya tenga puesta aunque esté
- * inactiva. Sin esa excepción, abrir un producto inactivo de marca inactiva
- * mostraría el selector en otra marca y guardar se la cambiaría sin que nadie
- * lo hubiera pedido.
+ * Las activas más la elegida aunque esté inactiva: sin ella, guardar le
+ * cambiaría la marca a un producto de marca inactiva (RN-11b).
  */
 function opcionesDelSelector(
   todas: OpcionDeCatalogo[],
@@ -178,8 +155,7 @@ export function FormularioDeProducto({
   const [sku, setSku] = useState(producto?.sku ?? "");
   const [marcaId, setMarcaId] = useState(producto?.brandId ?? "");
   const [categoriaId, setCategoriaId] = useState(producto?.categoryId ?? "");
-  // Como se escribe y no como lo guarda la base (F2.15): «89900», no
-  // «89900.00», que en es-AR se lee como un error de tipeo.
+  // «89900» y no «89900.00», que en es-AR se lee como error de tipeo.
   const [precio, setPrecio] = useState(
     producto ? paraEditar(producto.price) : "",
   );
@@ -193,13 +169,6 @@ export function FormularioDeProducto({
   const [descripcionTocada, setDescripcionTocada] = useState(false);
   const tocarDescripcion = useCallback(() => setDescripcionTocada(true), []);
 
-  /**
-   * Si lo que hay en pantalla es lo guardado (F2.15). En la ficha conviven
-   * dos formas de guardar —los datos con este botón, cada color al
-   * instante— y sin decirlo se podía cambiar el precio, bajar a cargar
-   * fotos e irse con el precio sin guardar. Mismo patrón que Configuración:
-   * «Guardado» y el botón apagado. Se calcula al pintar, sin efecto.
-   */
   const sinCambios =
     producto !== null &&
     !descripcionTocada &&
@@ -223,12 +192,7 @@ export function FormularioDeProducto({
   const hayCambios = producto ? !sinCambios : algoEscrito;
   useAvisoAlSalir(!enviando && hayCambios);
 
-  /**
-   * Crear una marca o una categoría sin salir del producto (F2.13). Lo que
-   * se crea acá se suma a las opciones que vinieron del servidor: guardarla
-   * no repinta esta pantalla, y sin esto quedaría elegida una marca que el
-   * selector no conoce.
-   */
+  // Lo creado acá se suma a las opciones: guardarlo no repinta esta pantalla.
   const [creando, setCreando] = useState<{
     tipo: "marca" | "categoria";
     nombre: string;
@@ -238,18 +202,9 @@ export function FormularioDeProducto({
     categoria: OpcionDeCatalogo[];
   }>({ marca: [], categoria: [] });
 
-  /**
-   * La descripción NO es estado de React: vive adentro del editor y se lee al
-   * enviar. Guardarla acá obligaría a repintar el formulario entero con cada
-   * tecla, para un valor que nadie mira hasta que se guarda.
-   */
+  // La descripción no es estado de React: se lee del editor al enviar.
   const editor = useRef<LexicalEditor | null>(null);
 
-  /**
-   * Lo escrito sobrevive a una recarga (2026-11-17). El caso que lo pidió:
-   * un despliegue con este formulario abierto deja «Guardar» fallando hasta
-   * recargar, y recargar borraba todo lo cargado.
-   */
   const borrador = useBorrador<Borrador>({
     clave: `producto:${producto?.id ?? "nuevo"}`,
     hayCambios,
@@ -278,13 +233,6 @@ export function FormularioDeProducto({
     },
   });
 
-  /**
-   * Adónde va el foco cuando el envío falla. Sin esto queda en el botón de
-   * guardar, que no dice nada: quien navega por teclado o con lector de
-   * pantalla se entera de que algo salió mal y no de dónde. El mensaje se
-   * anuncia igual —cada `FieldError` es `role="alert"`—, pero anunciar no es
-   * llevar hasta el problema.
-   */
   const errorGeneral = useRef<HTMLDivElement | null>(null);
 
   function irAlPrimerError(nuevos: ErroresDeFormulario<Campo>) {
@@ -294,8 +242,7 @@ export function FormularioDeProducto({
       document.getElementById(`${idBase}-${primero}`)?.focus();
       return;
     }
-    // Sin campo señalado —RN-11b, un nombre repetido que el servidor no pudo
-    // atribuir— el foco va al mensaje, que es lo único que explica qué pasó.
+    // Sin campo señalado, el foco va al mensaje general.
     errorGeneral.current?.focus();
   }
 
@@ -335,11 +282,9 @@ export function FormularioDeProducto({
           ? await editarUnProducto({ id: producto.id, ...datos })
           : await crearUnProducto(datos);
       } catch (error) {
-        // Hubo un despliegue con el formulario abierto (2026-11-17): esta
-        // página tiene los códigos de las acciones del build anterior. Se
-        // ataja acá y no en la pantalla de error porque esa reemplaza al
-        // formulario, y con él se iría lo escrito antes de poder guardarlo.
-        // Así queda a la vista, y «Recargar» lo guarda y lo repone.
+        // Un despliegue con el formulario abierto deja acciones del build
+        // anterior. Se ataja acá y no en la pantalla de error, que reemplaza
+        // al formulario y se llevaría lo escrito.
         if (unstable_isUnrecognizedActionError(error)) {
           avisarVersionNueva();
           return;
@@ -356,24 +301,8 @@ export function FormularioDeProducto({
 
       borrador.descartar();
 
-      // Al EDITAR vuelve al listado: guardar y quedarse en el formulario deja
-      // la duda de si se guardó. Al CREAR sigue en la pantalla del producto
-      // recién hecho, que es donde están los colores, el stock y las fotos
-      // (F2.4): un producto sin variantes no se puede vender, así que mandar
-      // al listado sería cortar el trabajo justo antes de la mitad.
-      //
-      // Y llega con `?agregar=color`, que abre el alta del primer color sola.
-      // La bajada de esta pantalla lo promete —«la pantalla que se abre sola
-      // al crearlo»— y hasta hoy no era cierto: se aterrizaba en la ficha con
-      // la tarjeta de colores abajo de todo, que es la mitad del trabajo
-      // escondida al pie de la página.
-      // Al editar, el aviso va ANTES de empujar y no después: el listado no
-      // distingue el producto que se acaba de guardar, así que sin esto
-      // guardar no confirma nada. Es el caso que DR §6.15 llama flotante.
-      //
-      // Al crear, no lleva: lo confirma el drawer del primer color, en su
-      // lugar (F2.14). El aviso flotante caía justo encima del pie del
-      // drawer y tapaba «Agregar» los cuatro segundos en que más se lo busca.
+      // Al editar avisa: el listado no distingue lo guardado. Al crear no: lo
+      // confirma el drawer del primer color, y el aviso le taparía «Agregar».
       if (producto) avisar(`Guardaste los cambios de «${nombre.trim()}».`);
 
       router.push(
@@ -385,7 +314,7 @@ export function FormularioDeProducto({
     });
   }
 
-  /** Las recién creadas van arriba: es la que se busca ahora. */
+  /** Las recién creadas van arriba. */
   const conCreadas = (
     todas: OpcionDeCatalogo[],
     tipo: "marca" | "categoria",
@@ -406,12 +335,9 @@ export function FormularioDeProducto({
 
   return (
     <>
-      {/* Una sola tarjeta con «Guardar» al pie (DESIGN.md, 2026-11-13): eran
-          cuatro con la barra afuera, y al lado está «Colores y stock», que
-          se guarda solo. Con el botón suelto no se sabía qué guardaba. */}
+      {/* Una sola tarjeta con «Guardar» al pie (DESIGN.md). */}
       <form onSubmit={enviar} noValidate className="min-w-0">
-        {/* En su lugar y no flotante: tiene que seguir a la vista mientras se
-            revisa lo recuperado, y está arriba de lo que se recuperó. */}
+        {/* En su lugar y no flotante: sigue a la vista mientras se revisa. */}
         {borrador.recuperado ? (
           <p
             role="status"
@@ -422,7 +348,7 @@ export function FormularioDeProducto({
           </p>
         ) : null}
 
-        {/* ── Qué es ────────────────────────────────────────────────── */}
+        {/* Qué es. */}
         <TarjetaDeSeccion id="datos" titulo="Datos del producto">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={campo("name").id}>Nombre</Label>
@@ -437,9 +363,7 @@ export function FormularioDeProducto({
               {errores.campos.name}
             </FieldError>
 
-            {/* La dirección se muestra para leer, no para completar: «slug» es
-              jerga (§10). Al renombrar no cambia, y el aviso lo dice acá en
-              vez de dejar que se descubra después. */}
+            {/* La dirección se lee, no se completa: «slug» es jerga. */}
             {producto ? (
               <FieldHint>
                 Enlace:{" "}
@@ -454,9 +378,7 @@ export function FormularioDeProducto({
                 </span>
               </FieldHint>
             ) : (
-              // El ejemplo va acá y no adentro del campo (F2.15): como texto
-              // de ejemplo parecía un nombre ya cargado, y con un error
-              // debajo se contradecían.
+              // Acá y no como marcador: adentro parecía un nombre ya cargado.
               <FieldHint>
                 Por ejemplo: «Teclado mecánico K120 retroiluminado».
               </FieldHint>
@@ -522,7 +444,7 @@ export function FormularioDeProducto({
             </div>
           </div>
 
-          {/* ── Cuánto sale ─────────────────────────────────────────── */}
+          {/* Cuánto sale. */}
           <Apartado id="precio" titulo="Precio y oferta">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
@@ -530,9 +452,8 @@ export function FormularioDeProducto({
                 <CampoDePesos>
                   <Input
                     {...campo("price")}
-                    // `inputMode` y no `type="number"`: el número del navegador
-                    // sube y baja con la rueda del mouse sobre un precio, y en
-                    // castellano acepta el punto como separador de miles.
+                    // No `type="number"`: la rueda del mouse cambia el valor,
+                    // y en castellano el punto es separador de miles.
                     inputMode="decimal"
                     value={precio}
                     onChange={(e) => setPrecio(e.target.value)}
@@ -570,7 +491,7 @@ export function FormularioDeProducto({
             <ResumenDePrecio vista={vista} />
           </Apartado>
 
-          {/* ── Cómo se cuenta ──────────────────────────────────────── */}
+          {/* Cómo se cuenta. */}
           <Apartado
             id="descripcion"
             titulo="Descripción"
@@ -593,7 +514,7 @@ export function FormularioDeProducto({
             </FieldError>
           </Apartado>
 
-          {/* ── Dónde se ve ─────────────────────────────────────────── */}
+          {/* Dónde se ve. */}
           <Apartado id="publicacion" titulo="Publicación">
             <label className="flex items-start gap-3">
               <Checkbox
@@ -634,18 +555,10 @@ export function FormularioDeProducto({
             <FieldError>{errores.general}</FieldError>
           </div>
 
-          {/* En el panel la acción principal va a la derecha, y el escape queda a
-          mano: cancelar es un enlace y no un botón, porque no hace nada, va a
-          otro lado. */}
+          {/* «Cancelar» es un enlace: no hace nada, va a otro lado. */}
           <PieDeGuardado>
-            {/* Por qué «Guardar» está apagado, o que hay algo por guardar
-              (§8), como en Configuración. Un producto nuevo no lleva: no
-              hay nada guardado de qué hablar.
-
-              En el teléfono va en su propio renglón, arriba de los botones:
-              en uno solo con «Cancelar» y «Guardar cambios», «Cambios sin
-              guardar» se partía en tres y «Guardado» volvía a quedar pegado a
-              «Cancelar». Vacía, en el alta, no deja un renglón en blanco. */}
+            {/* En el teléfono, en su propio renglón; vacía, en el alta, no
+              deja uno en blanco. */}
             <EstadoDeGuardado
               estado={
                 producto === null
@@ -672,10 +585,8 @@ export function FormularioDeProducto({
         </TarjetaDeSeccion>
       </form>
 
-      {/* Afuera del `<form>`, aunque el drawer vaya por portal: en React los
-        eventos suben por el árbol de componentes y no por el DOM, y el
-        «Crear» del drawer enviaría también el producto. Se monta al abrir
-        y se desmonta al cerrar, como en Catálogo, así arranca limpio. */}
+      {/* Afuera del `<form>` aunque vaya por portal: en React los eventos
+        suben por el árbol de componentes, y «Crear» enviaría el producto. */}
       {creando ? (
         <EdicionDeItem
           tipo={creando.tipo}
@@ -709,12 +620,7 @@ export function FormularioDeProducto({
   );
 }
 
-/**
- * El precio final, en vivo (RF-15).
- *
- * Ocupa siempre el mismo alto: si apareciera y desapareciera, los campos de
- * abajo saltarían mientras se escribe.
- */
+/** Siempre del mismo alto, para que los campos de abajo no salten. */
 function ResumenDePrecio({ vista }: { vista: Vista }) {
   return (
     <div
@@ -746,12 +652,7 @@ function ResumenDePrecio({ vista }: { vista: Vista }) {
           <span className="text-body-sm tabular-nums text-ink-secondary line-through">
             {formatMoney(vista.precio)}
           </span>
-          {/*
-            NO va «Ahorrás $ X». Esta vista previa dice «Se muestra», así que
-            tiene que mostrar lo que el comprador ve y nada más — y desde
-            RN-04c la tienda muestra dos números. Además repetía el descuento
-            que Ana acaba de tipear tres campos más arriba.
-          */}
+          {/* Sin «Ahorrás $ X»: la tienda no lo muestra (RN-04c). */}
         </div>
       )}
     </div>

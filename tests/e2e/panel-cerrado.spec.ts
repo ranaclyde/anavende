@@ -4,25 +4,20 @@ import { datosDePrueba, sufijo, type Cuenta, type Orden } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * F10.5 — Un comprador no lee nada del panel. TS §13.3, §16.
+ * Un comprador no lee nada del panel (TS §13.3, §16). Next renderiza el
+ * layout y la página en paralelo, así que un control de rol solo en el
+ * layout de `/admin` no alcanza:
  *
- * **Es el ataque que se encontró en el repaso de seguridad, repetido tal
- * cual.** Hasta F10.5 el rol se controlaba solo en el layout de `/admin`, y
- * Next renderiza el layout y la página en paralelo:
+ * - Pidiendo la página, el 404 llega **con los datos de la página adentro
+ *   del HTML**.
+ * - Repitiendo la navegación interna (RSC, con `Next-Router-State-Tree`), el
+ *   layout ni corre: 200 y la página entera.
  *
- * - Un comprador pidiendo `/admin/usuarios` recibía un 404, **pero con los
- *   datos de la página adentro del HTML**: el email de otra cuenta estaba en
- *   la respuesta.
- * - Repitiendo la petición que hace el navegador al navegar dentro del panel
- *   (RSC, con `Next-Router-State-Tree`), el layout ni corría: 200 y la página
- *   entera.
+ * Por eso se mira el contenido de la respuesta y no el código. La marca es el
+ * nombre único de una tercera cuenta, que solo aparece si el panel la listó.
  *
- * Se mira el contenido de la respuesta y no el código: un 404 que trae los
- * datos es justamente lo que pasaba. La marca es el nombre —único— de una tercera
- * cuenta, que solo puede aparecer si el panel la listó.
- *
- * Las cabeceras de la navegación se capturan de una administradora de verdad,
- * porque no son secretas: cualquiera que haya visto el panel las conoce.
+ * Las cabeceras de la navegación se capturan de una administradora porque no
+ * son secretas: cualquiera que haya visto el panel las conoce.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -65,9 +60,8 @@ test.afterAll(async () => {
 });
 
 /**
- * Las páginas del panel que muestran datos de la tercera cuenta. El inicio
- * no está: muestra números y no nombres, así que no hay marca que buscar. Que
- * todas las páginas tengan el control lo dice `control-de-rol.test.ts`.
+ * Las que muestran datos de la tercera cuenta; el inicio muestra solo
+ * números. Que todas tengan el control lo dice `control-de-rol.test.ts`.
  */
 function paginas(): string[] {
   return [
@@ -107,7 +101,6 @@ test("un comprador no la ve, ni pidiendo la página ni navegando", async ({
   page,
   browser,
 }) => {
-  // Las cabeceras de una navegación verdadera dentro del panel.
   await ingresar(page, admin);
   await page.goto("/admin");
   const capturadas: Record<string, Record<string, string>> = {};

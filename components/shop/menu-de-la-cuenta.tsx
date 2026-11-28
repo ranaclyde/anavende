@@ -7,25 +7,9 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 /**
- * Las secciones de «Mi cuenta» — RF-07. Nace con F5.3 (2026-09-13).
- *
- * Solo las que existen: una entrada que lleva a una página vacía promete
- * algo que no hay. Favoritos llegó con F5.4 y Compras con F6.5.
- *
- * **En el teléfono es una barra de pestañas de ancho parejo** (2026-09-14):
- * ícono arriba, nombre abajo, y el ancho repartido entre las que haya. Era
- * una fila de pastillas que se deslizaba, y con la tercera entrada la activa
- * quedaba cortada en el borde sin nada que avisara que seguía. Se descartó
- * dejar que bajaran a una segunda fila: dos filas de navegación se leen
- * desordenadas. `grid-flow-col auto-cols-fr` reparte el ancho sin contar
- * entradas, así que Compras entra sola: con cuatro son unos 89px cada una,
- * y «Direcciones» sigue entrando.
- *
- * Desde `lg`, la columna al costado de siempre.
- *
- * Siguen siendo enlaces y no un componente de pestañas: cada sección es una
- * página con su propia dirección, y el atrás y los enlaces compartidos tienen
- * que funcionar.
+ * Las secciones de «Mi cuenta» (RF-07): pestañas de ancho parejo en el
+ * teléfono y columna desde `lg`. Enlaces y no un componente de pestañas:
+ * cada sección es una página con su dirección.
  */
 const SECCIONES = [
   { href: "/mi-cuenta", etiqueta: "Mis datos", Icono: UserRound },
@@ -53,10 +37,7 @@ export function MenuDeLaCuenta() {
                 href={href}
                 aria-current={activa ? "page" : undefined}
                 className={cn(
-                  // Teléfono: la pestaña. 56px de alto, por encima de los
-                  // 44 táctiles de §9.
                   "flex min-h-14 flex-col items-center justify-center gap-1 rounded-image px-1 py-2 text-caption font-medium transition-colors duration-150",
-                  // Desde `lg`: la pastilla de la columna, como era.
                   "lg:h-11 lg:min-h-0 lg:flex-row lg:justify-start lg:gap-2 lg:rounded-pill lg:border lg:px-4 lg:py-0 lg:text-body-sm",
                   activa
                     ? "bg-surface text-ink shadow-sm lg:border-border lg:shadow-none"

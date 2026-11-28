@@ -2,12 +2,9 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 /**
- * De dónde se pueden servir imágenes — TECHNICAL-SPEC §9.3.
- *
- * Se deriva de `NEXT_PUBLIC_SUPABASE_URL` en vez de escribirse a mano: el
- * subdominio de Storage cambia entre el stack local y producción (F0.3), y
- * una lista fija obligaría a acordarse de editarla el día del despliegue —el
- * día en que las imágenes dejarían de verse sin decir por qué—.
+ * Se deriva de `NEXT_PUBLIC_SUPABASE_URL` y no se escribe a mano: el
+ * subdominio de Storage cambia entre local y producción, y una lista fija
+ * dejaría las imágenes rotas en silencio el día del despliegue.
  */
 function origenesDeImagen(): NonNullable<
   NextConfig["images"]
@@ -22,8 +19,8 @@ function origenesDeImagen(): NonNullable<
         protocol: url.protocol.replace(":", "") as "http" | "https",
         hostname: url.hostname,
         port: url.port || undefined,
-        // Solo el prefijo público de Storage. Sin esta ruta, `remotePatterns`
-        // habilitaría el host entero, incluidas las APIs de Auth.
+        // Sin esta ruta, `remotePatterns` habilitaría el host entero,
+        // incluidas las APIs de Auth.
         pathname: "/storage/v1/object/public/**",
       },
     ];
@@ -34,11 +31,6 @@ function origenesDeImagen(): NonNullable<
 
 const enProduccion = process.env.NODE_ENV === "production";
 
-/**
- * El origen de Supabase, para la CSP: Storage sirve las fotos y el navegador
- * le habla a Auth en las pantallas de contraseña (`lib/supabase/client.ts`).
- * Sale de la misma variable que `origenesDeImagen`, por el mismo motivo.
- */
 function origenDeSupabase(): string {
   try {
     return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
@@ -48,37 +40,15 @@ function origenDeSupabase(): string {
 }
 
 /**
- * La política de contenido — TECHNICAL-SPEC §16, F10.5.
+ * CSP fija, sin *nonce* (TECHNICAL-SPEC §16): Next hidrata con scripts en
+ * línea y sin *nonce* por pedido la única forma de dejarlos pasar es
+ * `'unsafe-inline'`.
  *
- * **Fija y no con *nonce*** (decisión tuya del 2026-10-17, como pide §16):
- * Next escribe scripts dentro del HTML para hidratar, y sin un *nonce* por
- * pedido la única forma de dejarlos pasar es `'unsafe-inline'`. Eso no frena
- * un script inyectado, pero hoy no hay por dónde inyectarlo —React escapa
- * todo y el texto con formato pasa por el sanitizador de
- * `modules/content/markdown.ts`—, y el *nonce* obligaba a generar cada página
- * en cada pedido. Lo que sí hace esta política:
- *
- * - **Nadie mete la tienda en un iframe** (`frame-ancestors`): sin eso, otro
- *   sitio podría tapar el checkout con su botón y hacer que el clic caiga en
- *   «Confirmar pedido».
- * - **Ningún formulario manda datos afuera** (`form-action`), y un `<base>`
- *   inyectado no puede redirigir las rutas relativas (`base-uri`).
- * - **Scripts, imágenes y conexiones solo de los orígenes que se usan**: el
- *   propio, y Supabase para Auth. Las fotos llegan por `/_next/image`, que
- *   es el propio sitio; Supabase queda en `img-src` para una que se pida
- *   directo al Storage. Sentry entra por `/monitoring`, también el propio
- *   sitio (`tunnelRoute`, abajo).
- *
- * `blob:` en `img-src` es la vista previa de una foto antes de subirla
- * (`URL.createObjectURL`). `'unsafe-eval'` va solo en `next dev`: React lo
- * usa para reconstruir las pilas de error, y en producción no lo usa nadie.
- * `upgrade-insecure-requests` va solo en producción: en local el Storage es
- * `http://127.0.0.1:54321` y forzarlo a HTTPS rompería todas las fotos.
- *
- * **Turnstile (F10.5b)** carga su script y dibuja su iframe desde
- * `https://challenges.cloudflare.com`: es el único origen de afuera en
- * `script-src` y en `frame-src`, y solo se usa en las pantallas de cuenta
- * (`components/shop/turnstile.tsx`).
+ * - `blob:` en `img-src`: la vista previa de una foto antes de subirla.
+ * - `'unsafe-eval'` solo en `next dev`: React lo usa para las pilas de error.
+ * - `upgrade-insecure-requests` solo en producción: en local Storage es
+ *   `http://127.0.0.1:54321` y forzar HTTPS rompería las fotos.
+ * - Turnstile es el único origen de afuera en `script-src` y `frame-src`.
  */
 const TURNSTILE = "https://challenges.cloudflare.com";
 
@@ -101,13 +71,9 @@ function politicaDeContenido(): string {
 }
 
 /**
- * Las cabeceras de seguridad — TECHNICAL-SPEC §16, F10.5.
- *
- * `X-Frame-Options` repite lo que ya dice `frame-ancestors`, para los
- * navegadores que no leen CSP. HSTS dura un año y **sin `preload`**: entrar a
- * la lista de los navegadores es fácil y salir lleva meses, y no hace falta
- * para que funcione. Tampoco lleva `includeSubDomains`: el dominio tiene
- * subdominios de Resend que no son sitios, y no hay por qué atarlos.
+ * HSTS sin `preload` (salir de la lista de los navegadores lleva meses) y sin
+ * `includeSubDomains` (el dominio tiene subdominios de Resend que no son
+ * sitios).
  */
 const cabecerasDeSeguridad = [
   { key: "Content-Security-Policy", value: politicaDeContenido() },
@@ -125,63 +91,28 @@ const cabecerasDeSeguridad = [
 
 const nextConfig: NextConfig = {
   // Sin `cacheComponents` en el MVP: TECHNICAL-SPEC §2.3 y §12.
-  // Se activa después, con medición previa, no antes.
 
   /**
-   * Los metadatos van SIEMPRE dentro del `<head>` — F3.9, RNF-04.
-   *
-   * Por omisión, Next no espera a `generateMetadata`: manda el `<head>` vacío,
-   * sigue con la página y pega los `<meta>` al final del `<body>`. Solo hace la
-   * excepción de esperar si reconoce el User-Agent como bot, y su lista incluye
-   * `WhatsApp`.
-   *
-   * **El problema es que esa lista no alcanza.** WhatsApp Escritorio no se
-   * anuncia como `WhatsApp/…` sino como un navegador, así que cae del lado
-   * equivocado, lee un `<head>` sin nada y dibuja el enlace pelado: ni foto, ni
-   * nombre, ni precio. Verificado en producción el 2026-09-22, la misma URL
-   * cambiando solo el User-Agent: con `WhatsApp/…` el `<title>` sale en el byte
-   * 6.934 y el `</head>` cierra en el 10.672; con uno de navegador, el
-   * `<title>` cae en el 47.547 y el `</head>` ya cerró en el 4.486.
-   *
-   * De toda la tienda la única afectada era la ficha, que es justo la que se
-   * comparte: es la única cuyos metadatos leen la base. La home y el catálogo
-   * los resuelven sin consultar nada y por eso nunca se rompieron.
-   *
-   * `/.*​/` es la forma que documenta Next para apagarlo del todo. **Acá no
-   * cuesta un viaje más a la base**: `leerFicha` está envuelta en `cache()` de
-   * React y la página la necesita igual antes de dibujar nada, así que lo único
-   * que cambia es que el HTML sale después de esa consulta y no antes.
+   * Metadatos siempre dentro del `<head>`. Por omisión Next solo los espera
+   * para los User-Agent que reconoce como bot, y WhatsApp Escritorio se
+   * anuncia como navegador: recibía un `<head>` vacío y mostraba el enlace sin
+   * vista previa. No cuesta otra consulta: `leerFicha` está en `cache()`.
    */
   htmlLimitedBots: /.*/,
 
   /**
-   * El contenedor de producción — TECHNICAL-SPEC §18.1.
-   *
-   * `next build` traza con `@vercel/nft` qué archivos necesita realmente cada
-   * página y escribe en `.next/standalone` un servidor mínimo con SOLO esos
-   * pedazos de `node_modules`. La imagen pasa de más de un giga a unos cientos
-   * de megas, y eso acá no es cosmético: Coolify guarda una imagen por
-   * despliegue y el disco es el recurso más escaso de los dos servidores
-   * (§2.4, riesgo R11).
-   *
-   * **`server.js` NO copia `public` ni `.next/static`**: eso lo hace el
-   * Dockerfile a mano. Sin esas dos copias la tienda levanta perfecta y se ve
-   * sin estilos ni imágenes, que parece un problema de CSS y es un `cp` que
-   * falta.
+   * `server.js` NO copia `public` ni `.next/static`: lo hace el Dockerfile.
+   * Sin esas copias la tienda levanta sin estilos ni imágenes.
    */
   output: "standalone",
 
   /**
-   * Solo el gancho de pre-push lo cambia, para compilar en
-   * `.next-verificacion`. Un `next build` sobre `.next` con `next dev`
-   * levantado le pisó la caché al servidor de desarrollo el 2026-09-18, ya con
-   * Next 16 (PROGRESO, «Una hora perdida…»). En el `Dockerfile` no está
-   * definida y queda `.next`, que es donde la imagen va a buscar el build.
+   * Solo el gancho de pre-push lo cambia: un `next build` sobre `.next` con
+   * `next dev` levantado le pisa la caché al servidor de desarrollo. El
+   * Dockerfile no lo define y la imagen busca el build en `.next`.
    */
   distDir: process.env.NEXT_DIST_DIR || ".next",
 
-  // `x-powered-by: Next.js` le dice a cualquiera con qué está hecho el sitio,
-  // que es lo primero que se busca para saber qué vulnerabilidad probar.
   poweredByHeader: false,
 
   async headers() {
@@ -192,40 +123,23 @@ const nextConfig: NextConfig = {
     remotePatterns: origenesDeImagen(),
 
     /**
-     * SOLO EN DESARROLLO, y el nombre asustador está puesto por algo.
-     *
-     * Next 16 se niega a que su optimizador busque una imagen en una IP
-     * privada: es la defensa contra usarlo como puente para pedir direcciones
-     * internas (SSRF). En local eso choca de frente con el stack, que sirve
-     * Storage desde `127.0.0.1:54321`, y el panel muestra el ícono de imagen
-     * rota sin ninguna pista en pantalla — el motivo sale por la consola del
-     * servidor.
-     *
-     * En producción queda apagado y el problema no existe: el subdominio de
-     * Storage resuelve a una IP pública. **Si algún día `NEXT_PUBLIC_SUPABASE_URL`
-     * apuntara a la IP de la LAN privada entre los dos servidores (§2.2), esto
-     * volvería a fallar, y ahí sí en producción.** La entrega al navegador
-     * tiene que salir por el subdominio público (§9.4).
+     * SOLO EN DESARROLLO. Next 16 no deja que el optimizador pida a una IP
+     * privada (defensa contra SSRF), y el stack local sirve Storage desde
+     * `127.0.0.1:54321`. Si `NEXT_PUBLIC_SUPABASE_URL` apuntara a la LAN
+     * privada entre los servidores, fallaría en producción (§9.4).
      */
     dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
-    // `images.qualities` NO se declara todavía. En Next 16 su valor por
-    // omisión pasó a ser `[75]`, y hay que declarar cualquier otra calidad
-    // que se use; pero las calidades de §9.2 —75, 78, 82— son las de sharp
-    // al GENERAR los archivos, no las que `next/image` usaría al volver a
-    // comprimirlos. Confundirlas acá dejaría un número sin dueño. Se decide
-    // en F3, con el primer `next/image` real delante.
+    // `images.qualities` no se declara: las calidades de §9.2 son las de
+    // sharp al generar los archivos, no las de `next/image`.
   },
 
-  // Solo afecta a `next dev`: permite abrir el sitio por IP —127.0.0.1 o la
-  // de la LAN— para probarlo desde el teléfono. Sin esto Next bloquea el
-  // recargado en caliente entre orígenes, la página llega SIN JavaScript y
-  // los formularios parecen rotos por un motivo que no se ve.
+  // Solo `next dev`: sin esto Next bloquea el recargado en caliente al abrir
+  // el sitio por IP y la página llega sin JavaScript.
   allowedDevOrigins: ["127.0.0.1", "192.168.68.107"],
 
-  // El optimizador de `/_next/image` usa el mismo sharp que la subida de
-  // fotos, y al cargarse fija sus valores para TODO el proceso: sin esto
-  // pisaría los de `modules/media/procesar.ts` (F10.6). Un hilo de libvips y
-  // sin su caché de operaciones; lo ya optimizado lo guarda Next en disco.
+  // El optimizador carga el mismo sharp que la subida de fotos y fija sus
+  // valores para todo el proceso: sin esto pisaría los de
+  // `modules/media/procesar.ts`.
   experimental: {
     imgOptConcurrency: 1,
     imgOptOperationCache: false,
@@ -233,20 +147,8 @@ const nextConfig: NextConfig = {
 };
 
 /**
- * Sentry al construir — F1.15, TECHNICAL-SPEC §19.
- *
- * Lo que agrega es la subida de los *source maps*: sin ellos, un error de
- * producción llega con el código minificado —`a.b is not a function` en la
- * línea 1 de un archivo con nombre de hash— y no hay forma de saber dónde
- * pasó. Después de subirlos los BORRA del build (`deleteSourcemapsAfterUpload`
- * viene prendido), así que el código fuente no queda servido al público.
- *
- * **Sin `SENTRY_AUTH_TOKEN` no sube nada y el build termina igual**, con un
- * aviso. Es lo que pasa en desarrollo y en `DATABASE_URL= npx next build`, y
- * es lo que tiene que pasar: la clave solo existe en Coolify. Organización,
- * proyecto y clave llegan por variables de entorno y no escritos acá porque el
- * repositorio es público —los dos primeros no son secretos, pero así viven
- * juntos con el tercero, en un solo lugar—.
+ * Sube los *source maps* y los borra del build. Sin `SENTRY_AUTH_TOKEN` no
+ * sube nada y el build termina igual: la clave solo existe en Coolify.
  */
 export default withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
@@ -254,26 +156,15 @@ export default withSentryConfig(nextConfig, {
   authToken: process.env.SENTRY_AUTH_TOKEN,
 
   /*
-   * Los eventos del navegador salen hacia la propia tienda y de ahí a Sentry.
-   * Directo a `sentry.io` los frenan los bloqueadores de publicidad, y un
-   * error que no llega es uno que no existe. `proxy.ts` excluye esta ruta:
-   * pasar por la sesión de Supabase en cada evento no sirve de nada, y en modo
-   * mantenimiento recibiría un 503 justo cuando más interesa enterarse.
+   * Directo a `sentry.io` los eventos los frenan los bloqueadores. `proxy.ts`
+   * excluye esta ruta: en modo mantenimiento recibiría un 503.
    */
   tunnelRoute: "/monitoring",
 
-  // Sube también los mapas de lo que no es nuestro —dependencias, internos
-  // de Next—: el build tarda más, pero la pila se lee entera.
   widenClientFileUpload: true,
 
-  /*
-   * Siempre con log, no solo en CI como trae la guía. El build que importa es
-   * el de Coolify, que no define `CI`: con `!process.env.CI` el plugin callaba
-   * ahí todo —la subida y también el motivo cuando no sube—, y el primer
-   * despliegue no subió ningún mapa sin dejar una sola línea que dijera por
-   * qué (2026-09-28).
-   */
+  // Coolify no define `CI`: con `!process.env.CI` el plugin callaba también
+  // el motivo cuando no sube los mapas.
   silent: false,
-  // Sin datos de uso del propio plugin hacia Sentry.
   telemetry: false,
 });

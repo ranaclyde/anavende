@@ -5,21 +5,10 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { urlDeImagen } from "@/modules/media/subir";
 
-/**
- * Lecturas de variantes para el panel — RF-16, §9.5.
- *
- * **Dos consultas y no una por variante.** Las variantes salen en una y todas
- * las imágenes del producto en otra; el reenvío de §9.5 —una variante que
- * reutiliza las imágenes de otra— se resuelve acá con las filas ya en
- * memoria. Pedir las imágenes variante por variante sería N+1 en la pantalla
- * que más se usa del panel.
- */
-
 export type ImagenDeVariante = {
   id: string;
-  /** Ya resuelta: la vista recibe una URL, nunca una clave (§9.4). */
   url: string;
-  /** La versión `detail` (1400px), para verla en grande en el visor. */
+  /** La versión `detail`, para el visor. */
   grande: string;
   altText: string | null;
   sortOrder: number;
@@ -29,36 +18,32 @@ export type ImagenDeVariante = {
 
 export type VarianteDelPanel = {
   id: string;
-  /** `null` = variante única: el producto no se vende por color (RF-16). */
+  /** `null` = variante única. */
   colorId: string | null;
-  /** El segundo de una variante de dos colores; `null` = de un solo color. */
+  /** `null` = de un solo color. */
   secondaryColorId: string | null;
-  /** «Negro/Rojo» si es de dos (la vista `variant_colors`). */
   colorName: string | null;
   colorHex: string | null;
   colorHex2: string | null;
-  /**
-   * RN-11b: un color inactivo no puede estar en una variante activa. Con dos
-   * colores, es el de los dos.
-   */
+  /** Con dos colores, es el de los dos (RN-11b). */
   colorIsActive: boolean | null;
   stockTotal: number;
   reservedStock: number;
-  /** `stock_total − reserved_stock` (§8.1). Puede ser negativo (RF-24). */
+  /** Puede ser negativo (RF-24). */
   disponible: number;
   isActive: boolean;
-  /** De qué variante reutiliza las imágenes; `null` = usa las propias (§9.5). */
+  /** De qué variante reutiliza las imágenes; `null` = usa las propias. */
   imagesSourceId: string | null;
   fuenteColorName: string | null;
-  /** Cuántas variantes reutilizan LAS DE ESTA. Si es > 0, borrarla las deja sin. */
+  /** Cuántas reutilizan las de esta. Si es > 0, borrarla las deja sin. */
   prestadaA: number;
-  /** Las suyas, estén o no a la vista. Decide si puede pasar a reutilizar. */
+  /** Estén o no a la vista. Decide si puede pasar a reutilizar. */
   propias: number;
-  /** Órdenes que la nombran. Si hay alguna, borrar la desactiva (RN-11). */
+  /** Si hay alguna, borrar la desactiva (RN-11). */
   ordenes: number;
-  /** Carritos donde está. Si hay alguno, borrar también la desactiva (F5.6). */
+  /** Si hay alguno, borrar también la desactiva. */
   carritos: number;
-  /** Las que se muestran: las propias, o las de la fuente (§9.5). */
+  /** Las propias, o las de la fuente. */
   imagenes: ImagenDeVariante[];
 };
 
@@ -128,11 +113,7 @@ export async function variantesDelProducto(
     const lista = porVariante.get(i.variantId) ?? [];
     lista.push({
       id: i.id,
-      // La miniatura de 200px alcanza para el recuadro del panel incluso en
-      // una pantalla del doble de densidad. `-card` pesaría tres veces más
-      // para mostrarse a 96px (§9.2).
       url: urlDeImagen(i.storageKey, "thumb"),
-      // Solo se descarga si se abre el visor: es una URL, no una foto.
       grande: urlDeImagen(i.storageKey, "detail"),
       altText: i.altText,
       sortOrder: i.sortOrder,
@@ -144,39 +125,26 @@ export async function variantesDelProducto(
 
   return variantes.map((v) => ({
     ...v,
-    // §9.5, tal cual: un solo salto, sin cadenas. Si la fuente no tiene
-    // ninguna, esta tampoco muestra ninguna — y eso se ve en la pantalla.
+    // Un solo salto, sin cadenas (TECHNICAL-SPEC §9.5).
     imagenes: porVariante.get(v.imagesSourceId ?? v.id) ?? [],
   }));
 }
 
-/** Lo mínimo para el globo de «Reponer» del listado: ni imágenes ni conteos. */
 export type VarianteParaReponer = {
   id: string;
-  /** `null` = variante única: el producto no se vende por color (RF-16). */
+  /** `null` = variante única. */
   colorName: string | null;
   colorHex: string | null;
   colorHex2: string | null;
   stockTotal: number;
   reservedStock: number;
-  /** `stock_total − reserved_stock` (§8.1). Puede ser negativo (RF-24). */
+  /** Puede ser negativo (RF-24). */
   disponible: number;
 };
 
 /**
- * Las variantes de un producto, para reponer desde el listado.
- *
- * **Se lee al abrir el globo y no con el listado**: son cuarenta productos por
- * página y se repone uno o dos. Traerlas todas de entrada sería mandar al
- * navegador el inventario entero para que se usen dos renglones.
- *
- * Deliberadamente **no trae las imágenes ni los conteos de órdenes y
- * carritos** que sí trae `variantesDelProducto`: acá no se borra ni se
- * reordena nada, solo se escribe un número.
- *
- * **Van también las inactivas.** Una variante desactivada sigue teniendo
- * stock y sigue contando en el total del listado; esconderla acá haría que
- * los números del globo no sumaran los de la fila.
+ * Para el globo de «Reponer», que se lee al abrirlo. Van también las inactivas:
+ * cuentan en el total del listado, y sin ellas el globo no sumaría lo de la fila.
  */
 export async function variantesParaReponer(
   productId: string,
@@ -207,12 +175,8 @@ export type OpcionDeColor = {
 };
 
 /**
- * Los colores del selector de variantes.
- *
- * Vienen TODOS, con su estado, por el mismo motivo que las marcas del
- * formulario de producto: una variante inactiva puede tener un color
- * inactivo, y traer solo los activos dejaría el selector en blanco al abrirla
- * y le cambiaría el color al guardar.
+ * Todos, con su estado: una variante inactiva puede tener un color inactivo, y
+ * sin él el selector quedaría en blanco y guardar se lo cambiaría.
  */
 export async function opcionesDeColor(): Promise<OpcionDeColor[]> {
   return db.execute<OpcionDeColor>(sql`
@@ -221,28 +185,11 @@ export async function opcionesDeColor(): Promise<OpcionDeColor[]> {
      ORDER BY is_active DESC, immutable_unaccent(lower(name))`);
 }
 
-/**
- * Cuántos productos con color hacen falta en una categoría para que avisar
- * tenga sentido. Con dos o tres productos cargados, «la mayoría» es una
- * casualidad.
- */
 export const MINIMO_CON_COLOR = 3;
 
 /**
- * La categoría del producto, si en ella **se vende por color** — 2026-11-05.
- *
- * Es para el aviso de «Único» (`variantes.tsx`): una variante sin color no
- * aparece cuando alguien filtra por color, y en una categoría donde los
- * demás productos tienen color eso suele ser un error de carga —un teclado
- * que viene solo en negro, cargado como «Único»—.
- *
- * **Se deduce de lo cargado, no se configura** (decisión tuya): la mayoría de
- * los productos activos de la categoría, sin contar este, tienen alguna
- * variante con color, y son al menos `MINIMO_CON_COLOR`. En una categoría de
- * memorias RAM, casi todas «Único», no avisa nunca. Una categoría nueva no avisa
- * hasta tener con qué comparar.
- *
- * Devuelve el nombre, para decirlo en el aviso, o `null`.
+ * El nombre de la categoría si la mayoría de sus otros productos activos, y al
+ * menos `MINIMO_CON_COLOR`, tienen alguna variante con color; si no, `null`.
  */
 export async function categoriaQueSeVendePorColor(
   productId: string,

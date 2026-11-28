@@ -18,16 +18,9 @@ import type { Escena } from "@/lib/escenas";
 import { cn } from "@/lib/utils";
 
 /**
- * La navegación de la tienda — DESIGN-REFERENCE §5.1 (2026-10-21).
- *
- * Cuatro destinos: por dónde se recorre lo que hay, y Contacto (pedido del
- * 2026-10-21). Lo demás —ayuda, legales— vive en el pie. El menú del
- * teléfono lleva los mismos, para que la tienda no cambie de mapa según la
- * pantalla.
- *
- * «Ofertas» es el catálogo con el filtro de descuento puesto (RN-04b): no es
- * otra pantalla, así que «Productos» se marca sólo cuando ese filtro no está.
- * La ficha cuenta como catálogo: se llega desde ahí.
+ * La navegación de la tienda (DESIGN-REFERENCE §5.1), la misma en escritorio
+ * y en el teléfono. «Ofertas» es el catálogo con el filtro de descuento, así
+ * que «Productos» se marca solo cuando ese filtro no está.
  */
 const ENLACES = [
   {
@@ -39,7 +32,6 @@ const ENLACES = [
   {
     href: "/categorias",
     etiqueta: "Categorías",
-    // La página de cada categoría también (F3.11): se llega desde ahí.
     activo: (ruta: string) =>
       ruta === "/categorias" || ruta.startsWith("/categorias/"),
   },
@@ -61,27 +53,13 @@ function useEnlaceActivo(): number {
   return ENLACES.findIndex((e) => e.activo(ruta, oferta));
 }
 
-/** Los bordes de la píldora, medidos desde los dos lados de la lista. */
+/** Los bordes de la píldora, medidos desde cada lado de la lista. */
 type Caja = { izq: number; der: number; haciaLaDerecha: boolean };
 
 /**
- * Los enlaces de escritorio, con la píldora que **viaja como una gota**
- * (pedido del 2026-10-21, sobre la idea del GooeyNav de React Bits).
- *
- * **El estiramiento son dos bordes con dos tiempos**: el que va adelante llega
- * en 220ms y el de atrás en 560ms, así que en el medio del viaje la píldora
- * se alarga y al llegar se recoge. Sin filtro SVG ni biblioteca: `left` y
- * `right` con transiciones distintas según hacia dónde va.
- *
- * **Sigue al mouse y al foco**, y vuelve a la página en la que se está al
- * salir de la lista: así anticipa a dónde lleva el clic. Si la página no es
- * ninguna de las tres —la home, el carrito— la píldora no está, y aparece
- * donde se apunta en vez de llegar viajando desde la nada.
- *
- * Al hacer clic suelta una ráfaga de puntos burdeos que se apagan en dos
- * tercios de segundo: es la confirmación de que el clic llegó mientras carga la página.
- * Con `prefers-reduced-motion` no hay ráfaga, y la regla global de
- * `globals.css` deja la píldora saltando de un lugar a otro.
+ * Los enlaces de escritorio, con una píldora que sigue al mouse y al foco y
+ * viaja como una gota: el borde de adelante llega antes que el de atrás, así
+ * que se estira en el viaje. Al hacer clic suelta una ráfaga de puntos.
  */
 export function NavegacionPrincipal() {
   const activo = useEnlaceActivo();
@@ -91,15 +69,12 @@ export function NavegacionPrincipal() {
   const lista = useRef<HTMLUListElement>(null);
   const enlaces = useRef<(HTMLAnchorElement | null)[]>([]);
   const [caja, setCaja] = useState<Caja | null>(null);
-  // La primera vez que aparece no viaja: se enciende en su lugar. La última
-  // caja con la píldora a la vista dice desde dónde viene, y se olvida al
-  // apagarse.
+  // La primera vez que aparece no viaja: se enciende en su lugar.
   const [viaja, setViaja] = useState(false);
   const ultima = useRef<Caja | null>(null);
 
-  // Se mide antes de pintar: con un efecto común se vería un cuadro con la
-  // píldora en el enlace anterior. Y se vuelve a medir si la lista cambia de
-  // ancho, que pasa cuando termina de cargar la fuente.
+  // Antes de pintar, o se vería un cuadro con la píldora en el enlace
+  // anterior. Se remide si la lista cambia de ancho al cargar la fuente.
   useLayoutEffect(() => {
     const ul = lista.current;
     if (!ul) return;
@@ -147,8 +122,6 @@ export function NavegacionPrincipal() {
       punto.style.left = `${x - 4}px`;
       punto.style.top = `${y - 4}px`;
       ul.appendChild(punto);
-      // Repartidos en círculo con un poco de azar, más anchos que altos:
-      // la píldora es ancha y la ráfaga sale de sus bordes.
       const angulo = (i / 8) * Math.PI * 2 + Math.random() * 0.4;
       const radio = 26 + Math.random() * 16;
       const dx = Math.cos(angulo) * (lugar.width / 2 + radio * 0.6);
@@ -231,15 +204,7 @@ export function NavegacionPrincipal() {
   );
 }
 
-/**
- * El menú del teléfono: por debajo de `md` los enlaces no entran al lado
- * del logo. Sale por la izquierda porque ahí está el botón que lo abre, y
- * porque la izquierda es la navegación (DESIGN.md, «Drawers»).
- *
- * Los mismos enlaces que en escritorio, y abajo de todo, fija, la cuenta —que
- * en el teléfono ya no está en la fila— (pedido del 2026-10-21): es donde se
- * la busca en un menú, y no se corre si algún día se suman enlaces.
- */
+/** El menú del teléfono, con la cuenta fija abajo de todo. */
 export function MenuDelTelefono({
   userName,
   userCara = null,

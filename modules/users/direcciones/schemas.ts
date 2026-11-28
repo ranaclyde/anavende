@@ -8,15 +8,7 @@ import {
 } from "@/modules/users/direcciones/constantes";
 import type { DatosDeDireccion } from "@/modules/users/direcciones/operaciones";
 
-/**
- * Validación de una dirección — RF-09, F5.3. Corre en el servidor, dentro
- * del envoltorio de acciones (§6.2).
- *
- * Los mensajes dicen qué escribir, no qué está mal: «Escribí la calle» y no
- * «Calle inválida».
- */
-
-/** Texto opcional: vacío se guarda como `null`, no como una cadena vacía. */
+/** Vacío se guarda como `null`, no como una cadena vacía. */
 const opcional = (max: number, mensaje: string) =>
   z
     .string()
@@ -58,7 +50,6 @@ const campos = z.object({
     30,
     "Eso es demasiado largo para un piso o departamento.",
   ),
-  /** Una de `LOCALIDADES` u `OTRA_LOCALIDAD`: lo mira `problemasDeUbicacion`. */
   localidad: z.string(),
   otraLocalidad: opcional(60, "Ese nombre es demasiado largo."),
   provinciaDeOtra: z.string().optional(),
@@ -71,13 +62,7 @@ export type Ubicacion = {
   provinciaDeOtra?: string;
 };
 
-/**
- * La localidad tiene que ser de la zona, y «Otra localidad cercana» necesita
- * nombre y provincia. Es una función aparte, y no un `superRefine` escrito
- * dos veces, porque la usan el alta y la edición — y desde F7.4, también la
- * dirección de una orden manual (RF-24), que no se guarda en ninguna libreta
- * pero se entrega en la misma zona.
- */
+/** La usan el alta, la edición y la dirección de una orden manual (RF-24). */
 export function problemasDeUbicacion(v: Ubicacion) {
   const problemas: { campo: keyof Ubicacion; mensaje: string }[] = [];
 
@@ -119,17 +104,9 @@ export const edicionDeDireccionSchema = campos
 
 export const soloIdSchema = z.object({ id: z.uuid() });
 
-/**
- * De lo que eligió el comprador a lo que se guarda: ciudad, provincia y
- * código postal. Las tres columnas de `addresses` siguen existiendo; lo que
- * cambió el 2026-09-13 es que dos de ellas ya no se preguntan.
- */
 export function aDatosDeDireccion(
   v: z.output<typeof campos>,
 ): DatosDeDireccion {
-  // Campo por campo y no con un `...resto`: los tres de la ubicación no se
-  // guardan como vienen —los reemplaza `ubicacionGuardada`— y descartarlos
-  // desestructurando deja tres variables que nadie usa.
   return {
     label: v.label,
     recipientName: v.recipientName,
@@ -142,15 +119,7 @@ export function aDatosDeDireccion(
   };
 }
 
-/**
- * De la localidad elegida a las tres columnas que se guardan.
- *
- * Vive aparte de `aDatosDeDireccion` porque la orden manual (F7.4) necesita
- * esta mitad y no la otra: arma un snapshot, no una fila de `addresses`. Que
- * la deducción esté escrita una sola vez es lo que evita que un día la
- * libreta y las órdenes manuales pongan códigos postales distintos para la
- * misma localidad.
- */
+/** Aparte porque la orden manual la usa para su snapshot (RF-24). */
 export function ubicacionGuardada(v: Ubicacion): {
   city: string;
   province: string;

@@ -8,11 +8,9 @@ import { PAGINAS_LEGALES } from "@/modules/content/paginas";
 import { textoLegal } from "@/modules/content/schemas";
 
 /**
- * F9.3 — RF-29, §16.
- *
- * Como el de configuración, escribe de verdad: `escribirTextoLegal` abre su
- * propia conexión y una transacción de test no la vería. Se guarda el texto
- * de «Cómo comprar» antes y se repone al final.
+ * Escribe de verdad: `escribirTextoLegal` abre su propia conexión y una
+ * transacción de test no la vería. El texto de «Cómo comprar» se guarda antes
+ * y se repone al final.
  */
 
 const valido = (entrada: unknown) => textoLegal.safeParse(entrada);
@@ -24,8 +22,8 @@ describe("las páginas que crea la migración", () => {
       const texto = await leerTextoLegal(slug);
 
       expect(texto).not.toBeNull();
-      // Lo que sembró la migración es lo mismo que el sanitizador dejaría:
-      // la primera vez que la vendedora guarde sin tocar nada, no cambia.
+      // Igual a lo que dejaría el sanitizador: guardar sin tocar nada no
+      // cambia el texto.
       expect(sanitizarMarkdown(texto!.contenido)).toBe(texto!.contenido);
     },
   );

@@ -26,47 +26,17 @@ import { exigirAdmin } from "@/lib/session";
 export const metadata: Metadata = { title: "Panel" };
 
 /**
- * Inicio del panel — FS RF-14 · DR §6.9. Tarea F7.8.
- *
- * **Dos bloques, dos preguntas, y ningún número repetido** (decisión tuya del
- * 2026-09-17). RF-14 pide cuatro indicadores y, desde tu pedido del
- * 2026-09-14, también «qué hay pendiente al entrar»; dos de los tres
- * pendientes son dos de los cuatro indicadores. Puestos como siete tarjetas,
- * la pantalla decía el mismo número dos veces y no contestaba ninguna de las
- * dos cosas. Así, arriba va lo que pide acción —con verbo y enlace— y abajo lo
- * que solo se mira.
- *
- * **Arriba de todo, la tienda abierta o cerrada** (pedido tuyo del
- * 2026-10-14): es el mismo interruptor de Configuración, y va primero porque
- * con la tienda cerrada nada de lo de abajo importa tanto.
- *
- * **Debajo, la marca de agua activada o desactivada** (pedido tuyo del
- * 2026-11-13), con el camino a su pantalla.
- *
- * **Sin notificaciones**, como RF-14 pide: esto se ve al abrir el panel y no
- * persigue a nadie.
- *
- * **Cada número abre el listado que lo produjo.** El mes se recorta en la
- * consulta y el enlace viaja con esa misma fecha (`modules/panel/tablero.ts`),
- * así no puede pasar que el tablero diga 5 y el listado muestre 7.
- *
- * **Debajo de los números del mes, lo vendido día por día** (pedido tuyo del
- * 2026-10-15, con F9.1). Sale de la misma consulta que Reportes, y las
- * columnas suman exactamente el «Vendido» de arriba: es la misma definición.
+ * Inicio del panel (RF-14, DR §6.9). Cada número enlaza al listado que lo
+ * produjo con la misma fecha de corte (`modules/panel/tablero.ts`), así el
+ * tablero y el listado no pueden decir cosas distintas.
  */
 export default async function PanelInicio() {
   await exigirAdmin();
 
-  // El umbral hace falta ANTES de contar el stock, así que ése es el único
-  // encadenado, y se encadena adentro: las tres lecturas arrancan juntas y
-  // ninguna espera a otra que no necesita. El estado de la tienda se lee de
-  // la base y no de la memoria del proxy, como en Configuración: recién
-  // cambiado, tiene que decir lo que quedó.
-  //
-  // **Nada queda suelto antes del `await`.** Una promesa que arranca afuera
-  // del `Promise.all` y espera detrás de otro `await` no tiene quién la
-  // atienda si ese otro falla primero: su rechazo sale como no manejado. Pasó
-  // en el build, que intenta pintar esta página sin base.
+  // Todo adentro del `Promise.all`: una promesa que arranca afuera y espera
+  // detrás de otro `await` queda sin manejar si ese otro falla primero (pasa
+  // en el build, que pinta esta página sin base). El modo mantenimiento se lee
+  // de la base, no de la memoria del proxy, para mostrar lo recién guardado.
   const hoy = hoyEnLaZona();
   const [paraHacer, mes, mantenimiento, porDia, marcaDeAgua] =
     await Promise.all([
@@ -92,18 +62,7 @@ export default async function PanelInicio() {
   );
 }
 
-/**
- * Lo que espera que alguien lo atienda.
- *
- * **Sin nada pendiente es una sola línea**, no tres renglones en cero: «no hay
- * nada» se dice una vez. Lo de antes —un bloque que aparecía sólo con bajas
- * pedidas— tenía el mismo criterio y se queda con él.
- *
- * **El orden es el de la urgencia y no el de las secciones del menú**: las
- * órdenes tienen a alguien esperando del otro lado, el stock es plata que se
- * deja de vender, y una baja pedida puede esperar a mañana sin que nadie se
- * enoje.
- */
+/** Ordenado por urgencia, no por el menú: órdenes, stock y bajas pedidas. */
 function ParaHacer({
   datos,
 }: {
@@ -118,8 +77,7 @@ function ParaHacer({
         <ul className="flex flex-col divide-y divide-border">
           <Pendiente
             cuantos={ordenesActivas}
-            // El listado se abre en «Activas», que es su solapa de fábrica
-            // (F7.1): por eso el enlace no lleva ningún parámetro.
+            // Sin parámetros: el listado ya abre en «Activas».
             href="/admin/ordenes"
             accion="Ver las órdenes"
           >
@@ -133,12 +91,8 @@ function ParaHacer({
             href="/admin/productos?estado=activos&stock=reponer"
             accion="Ver los productos"
           >
-            {/* El cero se nombra aparte porque es lo urgente de lo mismo:
-                RF-20 los junta en una sola pregunta —«¿qué hay que
-                comprar?»— y lo que ya no se puede vender no espera igual que
-                lo que está por acabarse. **Cuando están todos en cero se dice
-                una sola vez**: «23 para reponer, 23 sin stock» son dos
-                maneras de decir lo mismo en el mismo renglón. */}
+            {/* Sin stock se nombra aparte (RF-20); si todos están en cero, se
+                dice una sola vez. */}
             {sinStock === paraReponer ? (
               <span className="text-danger">
                 {paraReponer === 1
@@ -196,10 +150,8 @@ function Pendiente({
 }) {
   if (cuantos === 0) return null;
 
-  // Sin `flex-wrap`: en el teléfono el «Ver» se caía a un renglón propio
-  // cuando el texto era largo y a veces no, según cuánto midiera cada frase, y
-  // la lista quedaba dispareja. Ahora el texto envuelve y el botón se queda al
-  // lado. Lo encontró el repaso con Playwright.
+  // Sin `flex-wrap`: envuelve el texto y el «Ver» se queda al lado, para que
+  // la lista no quede dispareja en el teléfono.
   return (
     <li className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
       <p className="min-w-0 flex-1 text-body-sm text-ink">{children}</p>
@@ -215,10 +167,8 @@ function Pendiente({
 }
 
 /**
- * Cómo viene el mes — los indicadores «fríos» de RF-14.
- *
- * **Nombra el mes.** El 1° a la mañana estos números caen a cero de golpe, y
- * sin decir cuál se está contando eso se lee como que algo se rompió.
+ * Nombra el mes: el 1° los números caen a cero, y sin decir cuál se cuenta
+ * parece que algo se rompió.
  */
 function EsteMes({
   datos,
@@ -251,8 +201,7 @@ function EsteMes({
         </>
       }
     >
-      {/* Una lista y no un `<dl>`: los tres son enlaces, y un `<a>` no puede
-          colgar directo de un `<dl>` —sólo `dt`, `dd` y `div`—. */}
+      {/* Una lista y no un `<dl>`: un `<a>` no puede colgar de un `<dl>`. */}
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Numero
           titulo="Vendido"
@@ -299,13 +248,7 @@ function EsteMes({
   );
 }
 
-/**
- * Un número con su nombre, enlazado al listado que lo produce (RF-14).
- *
- * **El enlace envuelve todo el bloque** y no un «ver» al costado: acá no hay
- * nada más que tocar, y un rectángulo entero es un blanco más grande que tres
- * palabras —que es lo que más se agradece desde el teléfono—.
- */
+/** El enlace envuelve todo el bloque: un blanco más grande en el teléfono. */
 function Numero({
   titulo,
   valor,

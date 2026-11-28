@@ -15,15 +15,8 @@ import { returns } from "./returns";
 import { userProfiles } from "./users";
 
 /**
- * Libro mayor de stock — TECHNICAL-SPEC §5.8.
- *
- * Es la tabla que responde «¿por qué esta variante tiene este stock?» cuando
- * el número no cuadre, que es la pregunta que inevitablemente aparece en
- * producción.
- *
- * SE ESCRIBE EN LA MISMA TRANSACCIÓN QUE EL CAMBIO DE STOCK, SIN EXCEPCIÓN
- * (§8.3). Un asiento que se escribe «después» es un asiento que un día no se
- * escribe, y ahí se pierde la única forma de auditar la discrepancia.
+ * Libro mayor de stock (§5.8). SE ESCRIBE EN LA MISMA TRANSACCIÓN QUE EL
+ * CAMBIO DE STOCK, SIN EXCEPCIÓN (§8.3).
  */
 export const stockMovements = pgTable(
   "stock_movements",
@@ -35,7 +28,7 @@ export const stockMovements = pgTable(
     type: stockMovementType("type").notNull(),
     /** Con signo, según el efecto del movimiento. */
     quantity: integer("quantity").notNull(),
-    /** stock_total resultante, para poder cuadrar el libro (F4.6). */
+    /** stock_total resultante, para poder cuadrar el libro. */
     stockAfter: integer("stock_after").notNull(),
     /** reserved_stock resultante. */
     reservedAfter: integer("reserved_after").notNull(),
@@ -49,22 +42,8 @@ export const stockMovements = pgTable(
       onDelete: "set null",
     }),
     note: text("note"),
-    /**
-     * `clock_timestamp()`, NO `now()` — y es la diferencia entre tener orden
-     * y no tenerlo (F4.1, 2026-09-06).
-     *
-     * `now()` devuelve el momento en que ARRANCÓ la transacción y no se mueve
-     * hasta que termina, así que varios movimientos escritos en la misma
-     * transacción —reservar y vender, o los dos ítems de una devolución—
-     * quedan con el timestamp idéntico. Con el índice `(variant_id,
-     * created_at DESC)` de §5.8 eso significa que el libro los devuelve en un
-     * orden cualquiera, y el libro existe justamente para reconstruir qué
-     * pasó y en qué orden.
-     *
-     * `clock_timestamp()` avanza sentencia a sentencia. Además es lo que un
-     * asiento de auditoría tiene que guardar: cuándo ocurrió el movimiento,
-     * no cuándo alguien abrió la transacción que lo contiene.
-     */
+    // clock_timestamp() y no now(): now() es el inicio de la transacción, y
+    // dos movimientos de una misma transacción quedarían sin orden.
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`clock_timestamp()`),

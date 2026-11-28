@@ -22,11 +22,8 @@ import type { ImagenDeLaBiblioteca } from "@/modules/marca-de-agua/queries";
 import { ANCLAS, type Ancla, type Modo } from "@/modules/media/capas-de-marca";
 
 /**
- * Una capa de la marca de agua — RF-39, TS §9.6.
- *
- * Los controles que no aplican a la forma elegida **no se muestran**, en vez
- * de quedar apagados: «Margen» con «Cubrir» no significa nada, y un control
- * gris obliga a preguntarse por qué.
+ * Los controles que no aplican a la forma elegida no se muestran, en vez de
+ * quedar apagados.
  */
 
 const FORMAS: { modo: Modo; titulo: string; detalle: string }[] = [
@@ -112,8 +109,7 @@ export function EditorDeCapa({
   );
   const cuerpo = <Cuerpo id={id} capa={capa} alCambiar={alCambiar} />;
 
-  // Plegada, la cabecera dice lo justo para reconocerla sin abrirla:
-  // la imagen, el número y dónde va. Mover y quitar quedan a mano igual.
+  // Plegada, la cabecera dice lo justo para reconocerla sin abrirla.
   if (plegable) {
     return (
       <AccordionItem value={capa.clave} asChild>
@@ -257,7 +253,6 @@ function Acciones({
   );
 }
 
-/** Los controles de la capa. */
 function Cuerpo({
   id,
   capa,
@@ -297,9 +292,7 @@ function Cuerpo({
               · {NOMBRE_DEL_LUGAR[capa.anchor].toLowerCase()}
             </span>
           </legend>
-          {/* Una foto en chiquito con nueve lugares: se entiende mirándola,
-              sin leer los nombres, que igual están para el lector de
-              pantalla. Cada casilla mide 44px, el área táctil de §9. */}
+          {/* Nueve casillas de 44px, el área táctil de §9; los nombres, para el lector. */}
           <div className="grid w-fit grid-cols-3 gap-1 rounded-panel-control border border-border bg-surface-sunken p-1">
             {ANCLAS.map((ancla) => (
               <label
@@ -381,8 +374,7 @@ function Deslizador({
   alCambiar: (v: number) => void;
 }) {
   return (
-    // El tope va en el renglón entero y no en el deslizador: así el valor
-    // de la derecha termina donde termina la barra.
+    // El tope va en el renglón entero: así el valor termina donde la barra.
     <div className="flex max-w-md flex-col gap-1.5">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-body-sm font-medium text-ink">{etiqueta}</span>
