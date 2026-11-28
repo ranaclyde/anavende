@@ -11,7 +11,7 @@ import { ingresar } from "./apoyo/sesion";
 
 /**
  * Con más de tres colores, cada uno se pliega y se abre de a uno; con tres o
- * menos se ven enteros (pedido del 2026-11-03).
+ * menos se ven enteros.
  */
 
 const datos = datosDePrueba();
@@ -75,7 +75,6 @@ test("con cinco colores se abre uno por vez, y arranca el primero", async ({
   for (const i of [1, 2, 3, 4]) {
     await expect(disparador(i)).toHaveAttribute("aria-expanded", "false");
   }
-  // Abierto: editar y sacar. Cerrado: ni los botones ni las fotos.
   await expect(
     page.getByRole("button", { name: `Editar ${color(0)}` }),
   ).toBeVisible();
@@ -85,7 +84,6 @@ test("con cinco colores se abre uno por vez, y arranca el primero", async ({
   await expect(
     page.locator(`#color-${cinco.variantes[1].id} [data-agregar-fotos]`),
   ).toBeHidden();
-  // El stock se ve igual con el color cerrado.
   await expect(
     page.locator(`#color-${cinco.variantes[1].id}`).getByText("5 disponibles"),
   ).toBeVisible();
@@ -108,11 +106,9 @@ test("con cinco colores se abre uno por vez, y arranca el primero", async ({
     page.getByRole("button", { name: `Editar ${color(0)}` }),
   ).toHaveCount(0);
 
-  // Tocar el abierto lo cierra: quedan todos cerrados.
   await disparador(2).click();
   await expect(disparador(2)).toHaveAttribute("aria-expanded", "false");
 
-  // Con el teclado: flecha abajo pasa al siguiente, Enter lo abre.
   await disparador(2).focus();
   await page.keyboard.press("ArrowDown");
   await expect(disparador(3)).toBeFocused();
@@ -143,8 +139,8 @@ test("con tres colores se ven enteros, sin plegar", async ({ page }) => {
 test("plegados, en el teléfono y en oscuro, pasan axe y no ensanchan la página", async ({
   page,
 }) => {
-  // La ficha que revisa `accesibilidad.spec.ts` tiene pocos colores y nunca
-  // los pliega: se revisa acá, en el ancho y el tema donde más se rompe.
+  // La ficha de `accesibilidad.spec.ts` tiene pocos colores y nunca los
+  // pliega: se revisa acá, en el ancho y el tema donde más se rompe.
   await page.addInitScript(() =>
     localStorage.setItem("anavende:admin-theme", "dark"),
   );

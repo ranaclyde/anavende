@@ -4,17 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
 
 /**
- * Los datos del test de aislamiento — F10.1, TS §17.2 caso 6.
+ * Los datos del test de aislamiento (TS §17.2 caso 6). Dos compradores con
+ * cuenta real en GoTrue y **lo mismo**: dos direcciones, un pedido activo y
+ * el producto compartido en carrito y favoritos. B tiene además un producto
+ * que A no tiene, para mirar que no aparece en las pantallas de A.
  *
- * Dos compradores de verdad: con cuenta en GoTrue y contraseña, porque el
- * test entra por la pantalla de ingreso y la sesión es la de la aplicación,
- * no una simulada. Cada uno tiene **lo mismo**: dos direcciones, un pedido
- * activo, el producto compartido en el carrito y en favoritos. B tiene además
- * un producto que A no tiene en ningún lado, para poder mirar que en las
- * pantallas de A no aparece.
- *
- * Habla con la base por su cuenta, sin `@/db`: ese módulo lleva
- * `server-only`, y este archivo corre en el proceso de Playwright.
+ * Sin `@/db`: ese módulo lleva `server-only` y esto corre en Playwright.
  */
 
 export type Producto = { productId: string; variantId: string; nombre: string };
@@ -177,9 +172,8 @@ export async function armarEscenario(): Promise<Escenario> {
 }
 
 /**
- * Las órdenes antes que las cuentas, por el CHECK `web_order_has_user` (ver
- * `tests/apoyo/compradores.ts`). Borrar la cuenta en GoTrue se lleva en
- * cascada el perfil, el carrito, las direcciones y los favoritos.
+ * Las órdenes antes que las cuentas, por el CHECK `web_order_has_user`.
+ * Borrar la cuenta en GoTrue se lleva en cascada el resto.
  */
 export async function desarmarEscenario(): Promise<void> {
   for (const id of creados.usuarios.splice(0)) {
@@ -198,8 +192,6 @@ export async function desarmarEscenario(): Promise<void> {
   }
   await sql.end();
 }
-
-// ── Lo que se mira en la base después de cada intento ───────────────────
 
 export async function laDireccion(id: string) {
   const [fila] = await sql`

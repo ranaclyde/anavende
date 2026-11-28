@@ -11,33 +11,24 @@ import {
 } from "./apoyo/compradores";
 
 /**
- * F10.1 — Aislamiento entre compradores. TS §13.8, §17.2 caso 6, R13.
+ * Aislamiento entre compradores (TS §13.8, §17.2 caso 6). **Bloqueante de la
+ * Compuerta F10.** No hay RLS: el filtro por el comprador de la sesión,
+ * escrito en cada consulta, es la única barrera entre los datos de uno y los
+ * de otro.
  *
- * **Bloqueante de la Compuerta F10.** No hay RLS (§13.8): el filtro por el
- * comprador de la sesión, escrito en cada consulta, es la única barrera entre
- * los datos de uno y los de otro. Este test es lo que comprueba que no tiene
- * agujeros.
+ * La compradora A intenta llegar a lo de B por las dos puertas que hay:
  *
- * La compradora A tiene sesión e intenta llegar a lo de B de las dos formas
- * que existen:
+ * - **Por la URL**, con el ID de B: tiene que ser 404, igual que algo que no
+ *   existe.
+ * - **Por las acciones**: se captura una llamada verdadera de A sobre lo
+ *   suyo y **se repite cambiando el ID por el de B**. Se verifica en la base
+ *   que lo de B quedó como estaba.
  *
- * - **Por la dirección**, con el ID de B en la URL: la orden y la dirección.
- *   Tiene que ser 404, igual que algo que no existe.
- * - **Por las acciones**, que es la otra puerta: el carrito y los favoritos
- *   no tienen pantalla con ID, y las direcciones y la orden se modifican por
- *   acciones que reciben uno. Se hace lo que haría alguien que mira la red:
- *   **se captura una llamada verdadera de A sobre lo suyo y se repite
- *   cambiando el ID por el de B**. Lo que se verifica es la base: lo de B
- *   quedó como estaba.
+ * Cada negativa va con su control (lo de A sí se ve, la acción sí cambió lo
+ * de A): un 404 que también le saliera a A no probaría nada.
  *
- * Cada negativa va con su control —lo propio de A sí se ve, y la acción
- * capturada sí cambió lo de A—: un 404 que también le saliera a A sobre lo
- * suyo no probaría nada.
- *
- * El carrito y los favoritos se direccionan por variante y por producto, no
- * por un ID propio (`modules/cart/actions.ts`, `modules/users/favoritos`):
- * «el carrito de otro» no se puede nombrar. Lo que sí se puede intentar es
- * quitar algo que **B** tiene, y eso es lo que se prueba.
+ * El carrito y los favoritos se direccionan por variante y producto, no por
+ * un ID propio: lo que se intenta es quitar algo que **B** tiene.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -61,7 +52,6 @@ test.afterAll(async () => {
   await desarmarEscenario();
 });
 
-/** Hace lo que dispara la acción y devuelve el pedido que salió. */
 async function capturar(disparar: () => Promise<unknown>): Promise<Request> {
   const [pedido] = await Promise.all([
     pagina.waitForRequest(
@@ -75,10 +65,10 @@ async function capturar(disparar: () => Promise<unknown>): Promise<Request> {
 
 /**
  * El mismo pedido, con la misma sesión, cambiando un valor del cuerpo. Las
- * acciones contestan 200 aun cuando rechazan (`lib/action.ts`), así que lo
- * que se mira es el `ok: false` y, sobre todo, la base. Quitar del carrito o
- * de favoritos algo que no se tiene no es un error —no queda nada que
- * quitar—, y por eso esas dos repeticiones no esperan el rechazo.
+ * acciones contestan 200 aun cuando rechazan (`lib/action.ts`): se mira el
+ * `ok: false` y, sobre todo, la base. Quitar del carrito o de favoritos algo
+ * que no se tiene no es un error, y por eso esas repeticiones no esperan el
+ * rechazo.
  */
 async function repetir(
   pedido: Request,
@@ -89,7 +79,7 @@ async function repetir(
   const cuerpo = pedido.postData() ?? "";
   expect(cuerpo, "el valor a cambiar viaja en el pedido").toContain(de);
 
-  // La sesión la pone el contexto, como en el pedido original.
+  // La cookie de sesión la pone el contexto, como en el pedido original.
   const {
     cookie,
     "content-length": largo,
@@ -132,7 +122,6 @@ test("el carrito y los favoritos muestran solo lo propio", async () => {
     await expect(pagina.getByText(soloDeB.nombre)).toHaveCount(0);
   }
 
-  // Y lo de B tampoco aparece en el listado de compras ni de direcciones.
   await pagina.goto("/mi-cuenta/compras");
   await expect(pagina.getByText(`#${e.a.orden.numero}`).first()).toBeVisible();
   await expect(pagina.getByText(`#${e.b.orden.numero}`)).toHaveCount(0);
@@ -145,14 +134,12 @@ test("no se edita, ni se predetermina, ni se elimina una dirección ajena", asyn
     await laDireccion(b.direcciones[1]),
   ];
 
-  // Editar: se guarda la propia sin cambios y se repite sobre la de B.
   await pagina.goto(`/mi-cuenta/direcciones/${a.direcciones[1]}`);
   const edicion = await capturar(() =>
     pagina.getByRole("button", { name: "Guardar dirección" }).click(),
   );
   await repetir(edicion, a.direcciones[1], b.direcciones[1]);
 
-  // Predeterminar: la de B que no lo es tiene que seguir sin serlo.
   await pagina.goto("/mi-cuenta/direcciones");
   const predeterminar = await capturar(() =>
     pagina
@@ -164,7 +151,7 @@ test("no se edita, ni se predetermina, ni se elimina una dirección ajena", asyn
     .toBe(true);
   await repetir(predeterminar, a.direcciones[1], b.direcciones[1]);
 
-  // Eliminar: se elimina «Casa» de A, que ya no es la predeterminada.
+  // «Casa» ya no es la predeterminada, así que se puede eliminar.
   await pagina.getByRole("button", { name: "Eliminar «Casa»" }).click();
   const eliminacion = await capturar(() =>
     pagina
@@ -214,8 +201,6 @@ test("quitar del carrito y de favoritos toca solo lo propio", async () => {
   await expect
     .poll(() => variantesEnElCarrito(a.userId))
     .not.toContain(compartido.variantId);
-  // Repetido con lo que solo tiene B. A no lo tiene, así que no hay nada que
-  // quitar: la acción contesta bien y lo que dice si hubo fuga es la base.
   await repetir(quitar, compartido.variantId, soloDeB.variantId, {
     rechazada: false,
   });

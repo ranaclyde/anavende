@@ -5,16 +5,8 @@ import { datosDePrueba, sufijo, type Color, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * F10.2 — La administradora carga un producto con dos colores y fotos, y
- * aparece publicado. TS §17.2, caso 3; FS RF-14 a RF-16; TS §9.
- *
- * Todo por las pantallas del panel: el alta, los dos colores con su stock y
- * **una foto de verdad en cada uno**, que pasa por sharp y se guarda en el
- * storage del stack local en sus cuatro tamaños. Después, con otro navegador
- * y sin sesión, se busca el producto en la tienda: tiene que aparecer, con
- * los dos colores en la ficha y la foto de cada uno cargando.
- *
- * Las fotos se borran del storage al terminar (`borrarFotos`).
+ * La administradora carga un producto con dos colores y **una foto de verdad
+ * en cada uno**, y aparece publicado en la tienda (TS §17.2, caso 3).
  */
 
 test.describe.configure({ mode: "serial" });
@@ -48,11 +40,7 @@ function foto(fondo: string): Promise<Buffer> {
     .toBuffer();
 }
 
-/**
- * Elige en un selector con buscador (`SelectorConBuscador`) como lo haría
- * alguien: abre, escribe una parte del nombre y toca la opción. La lista va
- * por portal, así que se busca en la página y no dentro del diálogo.
- */
+/** La lista va por portal: se busca en la página y no dentro del diálogo. */
 async function elegir(page: Page, selector: Locator, opcion: string) {
   await selector.click();
   await page.keyboard.type(opcion.slice(0, 5));
@@ -71,7 +59,6 @@ async function agregarColor(page: Page, color: Color, stock: number) {
   await dialogo.getByRole("button", { name: "Agregar" }).click();
   await expect(dialogo).toBeHidden();
 
-  // F2.14: agregar un color lleva a sus fotos, que es lo que le falta.
   const fotos = page
     .getByRole("region", { name: "Colores y stock" })
     .getByRole("listitem")
@@ -106,7 +93,6 @@ test("la administradora carga un producto y aparece publicado", async ({
 }) => {
   await ingresar(page, admin);
 
-  // El alta: datos y precio. Los colores se cargan en la pantalla siguiente.
   await page.goto("/admin/productos/nuevo");
   await page.getByRole("textbox", { name: "Nombre" }).fill(nombre);
   await elegir(page, page.getByRole("combobox", { name: "Marca" }), marca);
@@ -122,8 +108,7 @@ test("la administradora carga un producto y aparece publicado", async ({
   const productId = new URL(page.url()).pathname.split("/").pop()!;
   datos.anotarProducto(productId);
 
-  // Dos colores, cada uno con su stock y su foto. El diálogo del primero se
-  // abre solo al llegar.
+  // El diálogo del primer color se abre solo al llegar.
   await agregarColor(page, rojo, 3);
   await subirFoto(page, rojo, "#CC2222");
 
@@ -131,7 +116,6 @@ test("la administradora carga un producto y aparece publicado", async ({
   await agregarColor(page, verde, 2);
   await subirFoto(page, verde, "#22AA44");
 
-  // En la base: activo, dos variantes con su stock y una foto cada una.
   const variantes = await datos.sql<
     { color: string; stock_total: number; fotos: number }[]
   >`
@@ -148,7 +132,6 @@ test("la administradora carga un producto y aparece publicado", async ({
     { color: verde.nombre, stock_total: 2, fotos: 1 },
   ]);
 
-  // En la tienda, desde otro navegador y sin sesión.
   const visitante = await (await browser.newContext()).newPage();
   try {
     await visitante.goto(`/productos?q=${palabra}`);
@@ -172,8 +155,8 @@ test("la administradora carga un producto y aparece publicado", async ({
         .click();
       await expect(visitante.getByText(disponibles)).toBeVisible();
 
-      // La foto de ese color, y que cargó: un `<img>` con la dirección de
-      // un archivo que no está en el storage también tiene `alt`.
+      // Que cargó: un `<img>` con un archivo que no está en el storage
+      // también tiene `alt`.
       const imagen = visitante
         .getByRole("list", {
           name: `Fotos de ${nombre} ${marca}, ${color.nombre.toLowerCase()}`,

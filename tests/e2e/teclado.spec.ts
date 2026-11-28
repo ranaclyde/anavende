@@ -9,14 +9,9 @@ import {
 } from "./apoyo/datos";
 
 /**
- * F10.3 — Una compra entera sin mouse. DESIGN-REFERENCE §9: «todo flujo de
- * compra completable sin mouse», y el foco visible en todo lo que lo toma.
- *
- * Se entra, se elige el color, la cantidad, se agrega, se va al carrito, al
- * checkout y se confirma **solo con Tab, flechas, Enter y espacio**: el test
- * no hace un solo `click()`. Y en cada parada del Tab se mira que el foco se
- * vea —el anillo de `--shadow-focus` o un contorno—, que es lo que axe no
- * puede revisar.
+ * Una compra entera sin mouse (DESIGN-REFERENCE §9): **solo Tab, flechas,
+ * Enter y espacio**, ni un `click()`. En cada parada del Tab se mira que el
+ * foco se vea, que es lo que axe no puede revisar.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -58,23 +53,20 @@ test.afterAll(async () => {
   await datos.desarmar();
 });
 
-/** Las paradas del Tab donde el foco no se ve, para el informe final. */
 const sinFoco: string[] = [];
 
 /**
- * Si el elemento con foco se distingue: el anillo (`box-shadow`) o un
- * contorno de color. El contorno transparente de `globals.css` no cuenta:
- * existe para el alto contraste de Windows, y en la pantalla no se ve.
- *
- * Un control escondido —un radio dentro de su tarjeta— pinta el foco en la
- * tarjeta, así que también se miran los dos de arriba.
+ * El contorno transparente de `globals.css` no cuenta: es para el alto
+ * contraste de Windows y en la pantalla no se ve. Un control escondido (un
+ * radio en su tarjeta) pinta el foco en la tarjeta: se miran los dos de
+ * arriba.
  */
 async function seVeElFoco(page: Page): Promise<string | null> {
   return page.evaluate(() => {
     const activo = document.activeElement as HTMLElement | null;
     if (!activo || activo === document.body) return null;
-    // Turnstile es de Cloudflare: su iframe vive en un shadow DOM cerrado, y
-    // desde afuera el foco se ve como un `<div>` vacío al lado del token.
+    // El iframe de Turnstile vive en un shadow DOM cerrado: desde afuera el
+    // foco se ve como un `<div>` vacío al lado del token.
     if (activo.parentElement?.querySelector('[name="cf-turnstile-response"]'))
       return null;
 
@@ -99,7 +91,6 @@ async function seVeElFoco(page: Page): Promise<string | null> {
   });
 }
 
-/** Tab hasta que el foco llegue a `objetivo`, revisando cada parada. */
 async function tabularHasta(page: Page, objetivo: Locator, limite = 80) {
   for (let i = 0; i < limite; i++) {
     await page.keyboard.press("Tab");
@@ -113,7 +104,6 @@ async function tabularHasta(page: Page, objetivo: Locator, limite = 80) {
 test("una compra entera con el teclado, con el foco a la vista", async ({
   page,
 }) => {
-  // Ingreso.
   await page.goto("/ingresar");
   await tabularHasta(page, page.getByLabel("Email"));
   await page.keyboard.type(compradora.email);
@@ -125,7 +115,6 @@ test("una compra entera con el teclado, con el foco a la vista", async ({
   await page.keyboard.press("Enter");
   await page.waitForURL((url) => !url.pathname.startsWith("/ingresar"));
 
-  // La ficha: el segundo color con las flechas, y dos unidades.
   await page.goto(`/productos/${teclado.slug}`);
   const primero = page.getByRole("radio", {
     name: teclado.variantes[0].color.nombre,
@@ -148,13 +137,11 @@ test("una compra entera con el teclado, con el foco a la vista", async ({
   await page.keyboard.press("Enter");
   await page.waitForURL(/\/carrito$/);
 
-  // El carrito.
   const continuar = page.getByRole("link", { name: "Continuar con el pedido" });
   await tabularHasta(page, continuar);
   await page.keyboard.press("Enter");
   await page.waitForURL(/\/checkout$/);
 
-  // El checkout, con la dirección guardada.
   const confirmar = page.getByRole("button", { name: "Confirmar pedido" });
   await expect(confirmar).toBeEnabled();
   await tabularHasta(page, confirmar);
