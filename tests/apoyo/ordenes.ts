@@ -5,19 +5,8 @@ import { db } from "@/db";
 import { unaVariante } from "./catalogo";
 
 /**
- * Órdenes de prueba para F4.
- *
- * **Siempre `origin = 'manual'`**, y no es una preferencia: el CHECK
- * `web_order_has_user` exige `user_id` en toda orden web (§5.6), y un
- * `user_profiles` exige a su vez una fila en `auth.users`. Armar una identidad
- * de Supabase para probar una transición de estado sería traer medio GoTrue a
- * un test de dominio. La máquina de estados no mira el origen.
- *
- * No hace falta limpiar acá: las órdenes se crean contra los productos de
- * `catalogo.ts`, y `limpiar()` borra el producto, que se lleva la orden por
- * `order_items.order_id ON DELETE CASCADE`… salvo la fila de `orders`, que no
- * cuelga de ningún producto. Por eso `limpiarOrdenes()` existe y se llama en
- * el mismo `afterEach`.
+ * Siempre `origin = 'manual'`: una orden web exige usuario (CHECK
+ * `web_order_has_user`), y la máquina de estados no mira el origen.
  */
 
 const creadas: string[] = [];
@@ -33,14 +22,7 @@ export type OrdenPrueba = {
   items: ItemPedido[];
 };
 
-/**
- * Una orden `activa` con sus ítems, y las variantes ya con la reserva puesta.
- *
- * La reserva se escribe DIRECTO en los contadores, sin pasar por `reservar()`:
- * acá se prepara un escenario, no se prueba una operación. Si el escenario se
- * armara con la función que después se verifica, un fallo de la operación
- * podría esconderse detrás de un escenario que salió igual de mal.
- */
+/** No toca los contadores: la reserva se arma antes, con `unaVariante`. */
 export async function unaOrdenActiva(
   items: readonly ItemPedido[],
 ): Promise<OrdenPrueba> {
@@ -66,7 +48,6 @@ export async function unaOrdenActiva(
   return { orderId: orden.id, items: [...items] };
 }
 
-/** Atajo para el caso de siempre: una variante, un ítem, todo cuadrado. */
 export async function unaOrdenDeUnItem(stock: {
   total: number;
   cantidad: number;
@@ -81,12 +62,7 @@ export async function unaOrdenDeUnItem(stock: {
   return { orderId, variantId };
 }
 
-/**
- * Las fechas vuelven como TEXTO, no como `Date`: con SQL crudo el driver no
- * sabe qué tipo es cada columna y no las convierte. Da igual para lo que se
- * comprueba —que estén puestas o en nulo—, pero el tipo tiene que decir la
- * verdad o el test afirma algo que no es.
- */
+/** Las fechas vuelven como texto: con SQL crudo el driver no las convierte. */
 export async function estadoDeLaOrden(orderId: string): Promise<{
   status: string;
   finalizedAt: string | null;
@@ -104,7 +80,6 @@ export async function estadoDeLaOrden(orderId: string): Promise<{
   return fila;
 }
 
-/** Los renglones con su id, que es lo que la edición de RF-22 recibe. */
 export async function renglonesDeLaOrden(
   orderId: string,
 ): Promise<{ id: string; variantId: string | null; quantity: number }[]> {
@@ -121,7 +96,6 @@ export async function renglonesDeLaOrden(
   ];
 }
 
-/** El total, tal como quedó guardado en la orden. */
 export async function totalDeLaOrden(orderId: string): Promise<string> {
   const [fila] = await db.execute<{ total: string }>(sql`
     SELECT total FROM orders WHERE id = ${orderId}`);
@@ -151,11 +125,8 @@ export async function historial(
 }
 
 /**
- * Se llama desde el mismo `afterEach` que `limpiar()`.
- *
- * Las devoluciones se borran primero: `returns.order_id` es **RESTRICT** a
- * propósito (§5.7) —una orden con devoluciones no se borra—, así que la
- * cascada no las alcanza y el DELETE de la orden falla.
+ * Borrar el producto no se lleva la fila de `orders`. Las devoluciones van
+ * primero: `returns.order_id` es RESTRICT (§5.7).
  */
 export async function limpiarOrdenes(): Promise<void> {
   for (const id of creadas.splice(0)) {
