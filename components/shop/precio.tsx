@@ -2,45 +2,21 @@ import { formatMoney, isPositive, type Money } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 /**
- * Precio — F3.2, DESIGN-REFERENCE §6.7, RN-02, RN-04b.
- *
- * Componente propio y no tres clases sueltas repetidas en cada pantalla: el
- * precio aparece en la tarjeta, en la ficha, en el carrito y en la orden, y
- * una oferta que en un lugar se ve burdeos y en otro no es la clase de
- * inconsistencia que nadie reporta y todos notan.
- *
- * **No formatea: usa `formatMoney`.** Los montos viajan como texto (`Money`)
- * de punta a punta —§7.2— y `lib/money.ts` es la ÚNICA capa donde se
- * convierten a número, solo para mostrarlos. Un `Intl.NumberFormat` acá sería
- * un segundo formateador con su propia opinión sobre los decimales, y además
- * construido en cada render: en una grilla de 24 productos, 24 veces.
- *
- * Es un Server Component: no tiene estado ni eventos, así que no hay motivo
- * para mandar su código al navegador.
+ * Precio (DESIGN-REFERENCE §6.7). Formatea solo con `formatMoney`: es la única
+ * capa que convierte los montos a número (RN-02).
  */
 
 type Props = {
   /** Precio de lista, antes del descuento. */
   precio: Money;
-  /** Monto descontado (RN-04b: monto, nunca porcentaje). `"0.00"` si no hay. */
+  /** Monto descontado, nunca porcentaje (RN-04b). `"0.00"` si no hay. */
   descuento: Money;
-  /** `precio − descuento`, calculado en la base (columna generada §5.4). */
+  /** `precio − descuento`, columna generada en la base. */
   precioFinal: Money;
-  /**
-   * `tarjeta` en la grilla, `ficha` en el detalle del producto (§7.3, donde el
-   * precio sube a 24px y es lo primero que se lee después del nombre).
-   *
-   * Las dos muestran **los mismos dos números** —cuánto valía y cuánto vale—:
-   * lo que cambia es la disposición, no la información. El renglón «Ahorrás
-   * $ X» se fue de las dos por decisión del 2026-09-08 (DR §14).
-   */
   tamano?: "tarjeta" | "ficha";
   /**
-   * Solo para `tarjeta`: el tachado en su propio renglón, arriba del final, y
-   * ese renglón **reservado aunque no haya oferta** (2026-10-20). Es lo que usa
-   * la tarjeta de producto: en una grilla, que el tachado subiera solo en
-   * algunas tarjetas dejaba los precios de una misma fila a distinta altura.
-   * El carrito y los favoritos lo siguen teniendo al lado.
+   * Solo para `tarjeta`: el tachado en su propio renglón, reservado aunque no
+   * haya oferta, para que los precios de una fila queden a la misma altura.
    */
   apilado?: boolean;
   className?: string;
@@ -57,18 +33,6 @@ export function Precio({
   const hayOferta = isPositive(descuento);
   const enFicha = tamano === "ficha";
 
-  /*
-   * DOS NÚMEROS, ACÁ Y EN LA FICHA. La tarjeta llegó a mostrar la píldora
-   * «−$ 9.900» sobre la imagen, el final, el tachado y «Ahorrás $ 9.900»: la
-   * misma cifra dos veces para comunicar una sola oferta. Quedan los dos que
-   * dicen cosas distintas —cuánto valía y cuánto vale—, y el tachado va
-   * primero, como se lee un cartel de oferta.
-   *
-   * Lo que separa las dos variantes es la DISPOSICIÓN. En la grilla el precio
-   * tiene que entrar en una línea en una columna angosta; en la ficha es lo
-   * primero que se lee después del nombre, sube a 28px y el tachado pasa
-   * abajo, donde no le compite.
-   */
   if (!enFicha && apilado) {
     return (
       <div className={cn("@container flex min-w-0 flex-col", className)}>
@@ -78,23 +42,14 @@ export function Precio({
             {formatMoney(precio)}
           </s>
         ) : (
-          // El renglón vacío ocupa lo mismo que el tachado: así el precio
-          // final cae a la misma altura en toda la fila.
           <span aria-hidden className="text-caption">
             &nbsp;
           </span>
         )}
         <p
           className={cn(
-            /*
-              18px mientras la tarjeta tenga lugar, y menos cuando no: un
-              precio de siete cifras —«$ 1.250.000,00», un monitor— mide 7,3
-              veces el tamaño de la letra, y a 18px no entra en la tarjeta de
-              un teléfono de 360 o 320px (se salía del borde). Se mide contra
-              el ancho de la tarjeta y no contra el número, así que todas las
-              de una fila quedan del mismo tamaño. Piso de 14px, que a 320px
-              todavía entra. Desde 390px es siempre 18.
-            */
+            // Contra el ancho de la tarjeta: a 18px, siete cifras no entran en
+            // un teléfono de 320px. Así toda la fila queda del mismo tamaño.
             "text-[clamp(0.875rem,13cqi,1.125rem)] leading-[1.45] font-medium tracking-[-0.015em] tabular-nums",
             hayOferta ? "text-brand" : "text-ink",
           )}
@@ -113,15 +68,7 @@ export function Precio({
           className,
         )}
       >
-        {/*
-          El tachado va PRIMERO, como se lee un cartel de oferta: «valía tanto,
-          ahora tanto». Con el final adelante, el tachado parece una aclaración
-          al pie y se pierde el contraste entre los dos.
-
-          `<s>` y no una clase: el tachado ES la información —«este precio ya no
-          rige»— y un lector de pantalla no ve `line-through`. El «Antes:»
-          oculto evita que se lean dos precios seguidos sin decir cuál es cuál.
-        */}
+        {/* `<s>` y no una clase: un lector de pantalla no ve `line-through`. */}
         {hayOferta ? (
           <s className="text-caption text-ink-secondary tabular-nums">
             <span className="sr-only">Antes: </span>
@@ -129,15 +76,10 @@ export function Precio({
           </s>
         ) : null}
 
-        {/*
-          `tabular-nums`: sin esto las columnas de precios de la grilla bailan,
-          porque en Inter el «1» es más angosto que el «8».
-        */}
+        {/* Precio final. */}
         <p
           className={cn(
             "text-body font-semibold tabular-nums",
-            // El burdeos es de la marca y de lo accionable (§11). Acá señala
-            // una oferta vigente, la única excepción que §6.7 le concede.
             hayOferta ? "text-brand" : "text-ink",
           )}
         >
@@ -151,10 +93,7 @@ export function Precio({
     <div className={cn("flex flex-col gap-0.5", className)}>
       <p
         className={cn(
-          // 28px y medium, por encima del título de 24 (2026-10-20, pedido
-          // tuyo): en semibold y al mismo tamaño que el nombre del producto
-          // competían. No hay un token entre `title` y `display`, que es solo
-          // del hero, así que va el tamaño a mano con el tracking de `title`.
+          // A mano: no hay token entre `title` y `display`.
           "text-[1.75rem] leading-[1.15] font-medium tracking-[-0.03em] tabular-nums",
           hayOferta ? "text-brand" : "text-ink",
         )}
@@ -162,12 +101,7 @@ export function Precio({
         {formatMoney(precioFinal)}
       </p>
 
-      {/*
-        El descuento NO se enuncia: se muestra. El tachado debajo del final
-        dice cuánto bajó sin obligar a leer un tercer número, y jamás se
-        expresa como porcentaje (RN-04b) — «11% off» hay que calcularlo
-        mentalmente sobre un monto que todavía no se leyó.
-      */}
+      {/* Nunca como porcentaje (RN-04b). */}
       {hayOferta ? (
         <s className="text-caption text-ink-secondary tabular-nums">
           <span className="sr-only">Antes: </span>

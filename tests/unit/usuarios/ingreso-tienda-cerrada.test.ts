@@ -16,17 +16,11 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { CAPTCHA_DE_PRUEBA } from "@/tests/apoyo/captcha";
 
 /**
- * Con la tienda cerrada, entrar es solo para administradoras — decisión tuya
- * del 2026-10-26.
- *
- * Contra el GoTrue del stack local, como `bloqueo.test.ts`: lo que se prueba
- * es que una contraseña correcta de compradora **no** deje la sesión abierta,
- * y eso solo lo dice GoTrue. La vuelta de Google usa la misma
- * `laTiendaEstaCerradaPara`; lo que no se puede probar acá es el intercambio
- * con Google, que necesita una cuenta real (pasos de prueba del PR).
- *
- * Escribe el interruptor de verdad y lo repone al terminar, como
- * `mantenimiento.test.ts`.
+ * Con la tienda cerrada, entrar es solo para administradoras. Contra el
+ * GoTrue del stack local: que una contraseña correcta de compradora no deje
+ * la sesión abierta solo lo dice GoTrue. La vuelta de Google usa la misma
+ * `laTiendaEstaCerradaPara`, pero el intercambio necesita una cuenta real.
+ * Escribe el interruptor de verdad y lo repone al terminar.
  */
 
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));

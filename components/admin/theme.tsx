@@ -7,14 +7,9 @@ import { crearPreferencia } from "@/lib/preferencia-local";
 import { cn } from "@/lib/utils";
 
 /**
- * Modo oscuro del panel — DESIGN-REFERENCE §3.2, §5.2, §12.1.
- *
- * EL MODO OSCURO SOLO EXISTE EN /admin: la tienda es siempre clara. Por eso
- * no se usa una biblioteca de temas —todas escriben en <html> y se quedan
- * pegadas al salir del panel— sino un atributo que se pone al entrar y se
- * saca al irse.
- *
- * Se persiste en el navegador de cada persona: la vendedora elige una vez.
+ * Modo oscuro del panel — DR §3.2. Solo existe en /admin: no se usa una
+ * biblioteca de temas porque escriben en `<html>` y se quedan pegadas al
+ * salir del panel. Un atributo se pone al entrar y se saca al irse.
  */
 
 const CLAVE = "anavende:admin-theme";
@@ -23,9 +18,8 @@ const preferencia = crearPreferencia(CLAVE);
 export type Tema = "light" | "dark";
 
 /**
- * Script que corre ANTES de pintar, para que el panel no aparezca claro y
- * salte a oscuro. Es la única forma de evitar el destello: cualquier efecto
- * de React ya llega tarde.
+ * Corre antes de pintar, para que el panel no aparezca claro y salte a
+ * oscuro: un efecto de React ya llega tarde.
  */
 export const scriptDeTema = `
 try {
@@ -58,17 +52,13 @@ export function ThemeToggle({
     () => null,
   );
 
-  // Se APLICA, no solo se recuerda. El script de bloqueo de arriba corre
-  // una vez, en la primera carga del documento; volver al panel desde la
-  // tienda es una navegación de cliente, sin recarga, y ahí el script no
-  // vuelve a correr. Sin esto la preferencia queda guardada y desatendida:
-  // el panel aparece claro con `dark` en el almacenamiento.
+  // Se aplica, no solo se recuerda: volver al panel desde la tienda es una
+  // navegación de cliente y el script de arriba no vuelve a correr.
   useEffect(() => {
     if (tema !== null) aplicar(tema);
   }, [tema]);
 
-  // Al salir del panel el atributo se retira: la tienda no hereda el modo
-  // oscuro cuando se navega desde acá sin recargar.
+  // Al salir del panel se retira, o la tienda hereda el modo oscuro.
   useEffect(
     () => () => document.documentElement.removeAttribute("data-theme"),
     [],
@@ -78,8 +68,7 @@ export function ThemeToggle({
     preferencia.escribir(tema === "dark" ? "light" : "dark");
   };
 
-  // Hasta saber qué eligió la persona no se dibuja el estado, para no
-  // afirmar uno equivocado durante un instante.
+  // Hasta saber qué eligió la persona no se dibuja el estado.
   const esOscuro = tema === "dark";
 
   return (

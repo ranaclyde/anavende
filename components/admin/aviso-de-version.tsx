@@ -11,21 +11,9 @@ const CADA = 2 * 60 * 1000;
 const RESPIRO = 15 * 1000;
 
 /**
- * Avisa que hubo un despliegue mientras el panel estaba abierto
- * (2026-11-17, `lib/version.ts`).
- *
- * Esta página se pintó con `version`; `/api/salud` dice cuál sirve el
- * servidor ahora. Si difieren, las Server Actions de esta página ya no
- * existen y el próximo «Guardar» va a fallar: se avisa antes, con un aviso
- * que no se va hasta recargar.
- *
- * Se pregunta cada dos minutos con la pestaña a la vista y al volver a ella,
- * que es cuando más probable es que algo haya cambiado: una pestaña del panel
- * puede quedar abierta días. Oculta no pregunta. Una vez que avisó, deja de
- * preguntar: no hay nada más que averiguar.
- *
- * Sin `version` —`next dev`, o el archivo que no se pudo leer— no se arma, y
- * tampoco en desarrollo, donde cada guardado de un archivo es un build.
+ * Avisa que hubo un despliegue mientras el panel estaba abierto: las Server
+ * Actions de esta página ya no existen y el próximo «Guardar» va a fallar. El
+ * aviso no se va hasta recargar. Sin `version`, o en desarrollo, no se arma.
  */
 export function AvisoDeVersion({ version }: { version: string | null }) {
   useEffect(() => {

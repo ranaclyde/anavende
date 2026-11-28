@@ -17,15 +17,8 @@ import {
 } from "@/modules/users/direcciones/schemas";
 
 /**
- * Las acciones de la libreta de direcciones — RF-09 · TS §6.2. Tarea F5.3.
- *
- * Son `customer`, y el `userId` sale de la sesión y nunca de la entrada
- * (§13.8): el id que llega es el de la dirección, y la operación lo cruza
- * con el comprador.
- *
- * Agregar y editar no refrescan: el formulario vuelve a la lista, que se
- * dibuja de nuevo al llegar. Las otras dos se usan desde la lista misma, y
- * `refresh()` es lo que la pone al día.
+ * El `userId` sale de la sesión y nunca de la entrada (§13.8). Agregar y
+ * editar no refrescan: el formulario vuelve a la lista, que se dibuja de nuevo.
  */
 
 export const guardarDireccionNueva = action

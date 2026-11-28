@@ -4,9 +4,7 @@ import { cookies, headers } from "next/headers";
 import { cabecerasParaGoTrue } from "@/lib/supabase/cliente-ip";
 
 /**
- * Especially important if using Fluid compute: Don't put this client in a
- * global variable. Always create a new client within each function when using
- * it.
+ * No guardarlo en una variable global: uno nuevo en cada función que lo use.
  */
 export async function createClient() {
   const cookieStore = await cookies();
@@ -15,8 +13,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
-      // Para que GoTrue cuente los intentos por comprador y no por tienda
-      // (`cliente-ip.ts`, F10.5).
+      // Para que GoTrue cuente los intentos por comprador y no por tienda.
       global: { headers: cabecerasParaGoTrue(await headers()) },
       cookies: {
         getAll() {
@@ -28,9 +25,8 @@ export async function createClient() {
               cookieStore.set(name, value, options),
             );
           } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have proxy refreshing
-            // user sessions.
+            // Llamado desde un Server Component, que no puede escribir cookies:
+            // se ignora porque el proxy renueva la sesión.
           }
         },
       },

@@ -10,35 +10,15 @@ import {
 } from "@/modules/stock/operaciones";
 
 /**
- * Devoluciones — FS RF-25 · TS §5.7, §8.1. Tarea F4.5.
- *
- * Se registran contra una orden **finalizada**: lo que todavía no se entregó
- * no se devuelve, se edita (RF-22) o se cancela (RF-23).
- *
- * Cada ítem dice si **repone** —producto en condiciones, vuelve al stock— o
- * **no repone** —defectuoso o descartado, se registra y no toca ningún
- * contador—. Que la devolución sin reposición no mueva stock no la vuelve
- * invisible: queda en `returns` para los reportes de RF-28, donde las
- * devoluciones se descuentan de las ventas netas.
- *
- * **Una devolución no se edita: se anula y se vuelve a cargar** (RF-25). Por
- * eso `anularDevolucion` revierte lo que repuso, y por eso lo anulado deja de
- * contar para el tope de «no más de lo vendido».
- *
- * ── Por qué se bloquea la orden ────────────────────────────────────────
- *
- * El tope de RF-25 —nunca más de lo vendido ni de lo ya devuelto— se calcula
- * sumando las devoluciones que ya existen. Dos devoluciones simultáneas sobre
- * el mismo renglón leerían las dos la misma suma, las dos darían que entra, y
- * entre las dos devolverían más de lo que se vendió. El `FOR UPDATE` sobre la
- * orden las pone en fila: es la misma carrera del stock, resuelta en el mismo
- * lugar donde se decide.
+ * Devoluciones (RF-25, TECHNICAL-SPEC §5.7). El `FOR UPDATE` sobre la orden
+ * pone en fila dos devoluciones simultáneas: si no, las dos leerían la misma
+ * suma de lo ya devuelto y entre ambas superarían lo vendido.
  */
 
 export type ItemADevolver = {
   orderItemId: string;
   quantity: number;
-  /** `false` = defectuoso: se registra y NO vuelve al stock (RF-25). */
+  /** `false` = defectuoso: se registra y no vuelve al stock. */
   restocks: boolean;
   reason?: string | null;
 };
@@ -78,13 +58,7 @@ async function exigirOrdenFinalizada(
   }
 }
 
-/**
- * Lo vendido y lo ya devuelto de cada renglón, en una sola consulta.
- *
- * `r.status = 'registrada'` es lo que hace que anular libere el cupo: una
- * devolución anulada deja de contar contra el tope, que es lo que RF-25 quiere
- * al decir «se anula y se vuelve a cargar».
- */
+/** `r.status = 'registrada'`: lo anulado deja de contar contra el tope. */
 async function renglones(
   tx: Transaccion,
   orderId: string,
@@ -124,8 +98,8 @@ export async function registrarDevolucion(
 
   const ids = datos.items.map((i) => i.orderItemId);
   if (new Set(ids).size !== ids.length) {
-    // Dos renglones para el mismo ítem se validarían por separado contra el
-    // mismo tope y pasarían los dos. Se pide una línea por producto.
+    // Dos renglones del mismo ítem se validarían por separado contra el mismo
+    // tope y pasarían los dos.
     throw domainError("VALIDATION", {
       message: "Hay un producto repetido. Poné una sola línea por producto.",
     });
@@ -145,8 +119,7 @@ export async function registrarDevolucion(
 
   for (const item of datos.items) {
     const renglon = vendidos.get(item.orderItemId);
-    // No está en la orden, o es de otra: sin el `order_id` en la consulta de
-    // arriba se podría devolver contra la orden de cualquiera.
+    // El `order_id` en la consulta impide devolver contra una orden ajena.
     if (!renglon) throw domainError("NOT_FOUND");
 
     const disponibleParaDevolver = renglon.vendidas - renglon.yaDevueltas;
@@ -187,8 +160,6 @@ export async function registrarDevolucion(
         (${devolucion.id}, ${item.orderItemId}, ${item.quantity},
          ${item.restocks}, ${item.reason ?? null})`);
 
-    // Sin reposición no hay movimiento de stock, y eso es lo correcto: el
-    // producto volvió roto y no hay nada que vender (§8.1).
     if (item.restocks && renglon.variantId) {
       await reponer(tx, {
         variantId: renglon.variantId,
@@ -203,22 +174,13 @@ export async function registrarDevolucion(
   return { returnId: devolucion.id };
 }
 
-// ── Anular (RF-25) ──────────────────────────────────────────────────────
-
-/**
- * Revierte el efecto en stock y libera el cupo: lo anulado deja de contar
- * contra el tope de «no más de lo vendido», así que la devolución se puede
- * volver a cargar bien.
- *
- * Sólo lo que había repuesto se revierte. Lo defectuoso nunca entró al stock,
- * así que no hay nada que sacar.
- */
+/** Solo se revierte lo que había repuesto; lo defectuoso nunca entró al stock. */
 export async function anularDevolucion(
   tx: Transaccion,
   args: { returnId: string; voidReason: string; actorUserId?: string | null },
 ): Promise<void> {
-  // Condicional, como toda transición: dos anulaciones simultáneas dan una
-  // ganadora, y la perdedora no llega a revertir el stock por segunda vez.
+  // Condicional: de dos anulaciones simultáneas, la perdedora no revierte el
+  // stock por segunda vez.
   const filas = await tx.execute<{ id: string }>(sql`
     UPDATE returns
        SET status = 'anulada',

@@ -24,16 +24,12 @@ import {
 } from "@/modules/catalog/products/categorias";
 
 /**
- * El buscador y las tres secciones de la página de categorías — RF-35,
- * DR §7.6. Tarea F3.10.
+ * El buscador y las secciones de la página de categorías (RF-35). Filtra en el
+ * navegador: ya vinieron todas con la página.
  *
- * **Filtra en el navegador**: son decenas de categorías y ya vinieron todas
- * con la página, así que cada letra no tiene por qué ir a la base.
- *
- * **La búsqueda va a la dirección con `history.replaceState`** y no con el
- * router: así el enlace se comparte con el filtro puesto, el atrás no tiene
- * que deshacer letra por letra, y escribir no le pide al servidor que vuelva
- * a pintar la página (Next sincroniza `useSearchParams` con la API nativa).
+ * La búsqueda va a la dirección con `history.replaceState` y no con el
+ * router, para que escribir no le pida al servidor que vuelva a pintar (Next
+ * sincroniza `useSearchParams` con la API nativa).
  */
 export function ListadoDeCategorias({
   categorias,
@@ -43,7 +39,7 @@ export function ListadoDeCategorias({
 }: {
   categorias: CategoriaDeLaPagina[];
   topeDeDestacadas: number;
-  /** El número de la configuración (RF-20), o `null` si no hay. */
+  /** El número de la configuración, o `null` si no hay. */
   whatsapp: string | null;
   /** El `?q=` con que se llegó: la primera pintura ya viene filtrada. */
   busquedaInicial: string;
@@ -84,9 +80,7 @@ export function ListadoDeCategorias({
             <label htmlFor={id} className="sr-only">
               Buscar una categoría
             </label>
-            {/* La píldora de §6.2 sin el botón de enviar: acá no hay nada
-                que enviar, filtra mientras se escribe. La lupa a la
-                izquierda es lo que dice que es un buscador. */}
+            {/* Sin botón de enviar: filtra mientras se escribe. */}
             <div className="relative w-full max-w-140">
               <Search
                 aria-hidden
@@ -104,8 +98,7 @@ export function ListadoDeCategorias({
                   "h-12 w-full rounded-pill border border-border bg-surface pl-13 text-body text-ink",
                   "transition-colors duration-150 placeholder:text-ink-secondary focus:border-border-strong",
                   busqueda ? "pr-12" : "pr-5",
-                  // La cruz del navegador se retira: la limpieza es un
-                  // botón propio y accesible, como en el de productos.
+                  // La cruz nativa se cambia por un botón accesible.
                   "[&::-webkit-search-cancel-button]:appearance-none",
                 )}
               />
@@ -120,8 +113,7 @@ export function ListadoDeCategorias({
                 </button>
               ) : null}
             </div>
-            {/* Se anuncia al escribir: quien no ve la lista se entera de
-                cuántas quedaron sin tener que recorrerla. */}
+            {/* Se anuncia al escribir cuántas quedaron. */}
             <p aria-live="polite" className="text-body-sm text-ink-secondary">
               {total === 1 ? "1 categoría" : `${total} categorías`}
             </p>
@@ -188,7 +180,6 @@ function Seccion({
   );
 }
 
-/** Una por fila en el teléfono, dos en tableta, tres en escritorio (§7.6). */
 function ListaEnFila({ children }: { children: React.ReactNode }) {
   return (
     <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -198,12 +189,9 @@ function ListaEnFila({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * El cierre de §7.6: siempre al final, y **con una búsqueda que no encontró
- * nada, es el estado vacío** —el «no está» termina en una conversación y no
- * en una pantalla en blanco—, con lo que se escribió en el mensaje.
- *
- * Sin número configurado no se dibuja ningún botón de WhatsApp (RF-04): un
- * `wa.me/` sin destino abre WhatsApp en la nada. Queda el enlace a Contacto.
+ * El cierre, siempre al final; con una búsqueda sin resultados hace de estado
+ * vacío. Sin número configurado no hay botón de WhatsApp: un `wa.me/` sin
+ * destino abre WhatsApp en la nada.
  */
 function Cierre({
   whatsapp,

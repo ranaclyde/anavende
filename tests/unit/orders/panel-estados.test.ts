@@ -16,22 +16,9 @@ import {
 } from "@/tests/apoyo/ordenes";
 
 /**
- * F7.3 — Finalizar y cancelar desde el panel. RF-23, RF-13 · TS §8.1.
- *
- * «Hecho cuando»: finalizar pide confirmación mostrando el impacto en stock.
- * La confirmación es del diálogo; lo que se prueba acá es que lo que el
- * diálogo promete sea lo que la acción hace.
- *
- * **Otra vez la puerta y no la lógica.** La máquina de estados está probada
- * contra Postgres en `estados.test.ts` desde F4.2 —el `UPDATE` condicional,
- * los contadores, el historial, las dos transiciones simultáneas—. Lo que
- * F7.3 agrega y puede romperse sin que nadie lo note es el envoltorio: que
- * sólo entre la administradora, que el número de la URL lleve a la orden
- * correcta, que el motivo opcional no termine guardado como cadena vacía, y
- * que una orden ya resuelta no admita una segunda vuelta (RF-13).
- *
- * **Y una cosa más, que no es del panel**: que el comprador vea quién le
- * canceló el pedido. Hasta F7.3 el único que podía cancelar era él.
+ * Finalizar y cancelar desde el panel (RF-23, RF-13 · TS §8.1): que la acción
+ * haga lo que el diálogo promete. La máquina de estados se prueba en
+ * `estados.test.ts`; acá, el envoltorio y que el comprador vea quién canceló.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
@@ -43,7 +30,7 @@ vi.mock("@/lib/session", () => ({
 }));
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
 
-/** `refresh()` lanza fuera de una Server Action de verdad (precedente: F5.3). */
+/** `refresh()` lanza fuera de una Server Action de verdad. */
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 
 const { cancelarLaOrden, finalizarLaOrden } =
@@ -109,7 +96,6 @@ describe("quién puede resolver una orden", () => {
       code: "FORBIDDEN",
     });
 
-    // Y el rechazo es antes de tocar nada: la reserva sigue donde estaba.
     expect(await contadores(orden.variantId)).toEqual({
       stockTotal: 10,
       reservedStock: 2,
@@ -130,8 +116,7 @@ describe("quién puede resolver una orden", () => {
       ok: false,
       code: "FORBIDDEN",
     });
-    // Cancelar por el panel tampoco: lo suyo es `cancelarMiOrden` (F6.5),
-    // que busca por dueño además de por número (§13.8).
+    // Lo suyo es `cancelarMiOrden`, que busca también por dueño (§13.8).
     expect(await cancelarLaOrden({ numero: orden.numero })).toMatchObject({
       ok: false,
       code: "FORBIDDEN",
@@ -302,8 +287,7 @@ describe("cancelar desde el panel (RF-23)", () => {
 
     const quedo = (await leerOrdenDelPanel(orden.numero))!;
     expect(quedo.estado).toBe("cancelada");
-    // Y el historial dice que NO fue el comprador: es lo que distingue esto
-    // de un arrepentimiento (RF-23, F7.1).
+    // NO fue el comprador: lo distingue de un arrepentimiento (RF-23).
     expect(quedo.historial.at(-1)).toMatchObject({
       hacia: "cancelada",
       motivo: "No contestó",

@@ -23,12 +23,8 @@ import { limpiar, unaVariante, unProducto } from "@/tests/apoyo/catalogo";
 import { jpeg, png } from "@/tests/apoyo/imagenes";
 
 /**
- * F2.18 — Las fotos de un producto en un zip.
- *
- * El zip se arma a mano (`lib/zip.ts`), así que lo abren el `unzip` del
- * sistema —que verifica los CRC— y el `zipfile` de Python, y no el mismo
- * código que lo escribió: si los dos se equivocaran
- * igual, el test pasaría con un zip que nadie más puede abrir.
+ * El zip se arma a mano (`lib/zip.ts`), así que lo abren `unzip` (verifica los
+ * CRC) y el `zipfile` de Python, no el mismo código que lo escribió.
  */
 
 const carpeta = mkdtempSync(join(tmpdir(), "zip-"));

@@ -8,17 +8,10 @@ import {
 } from "./apoyo/datos";
 
 /**
- * F10.2 — Buscar, filtrar, abrir la ficha y pedir por WhatsApp. TS §17.2,
- * caso 1; FS RF-01 a RF-04.
- *
- * Es el camino de quien no tiene cuenta, que es el más común: la tienda vende
- * por WhatsApp, y todo lo que hace falta para llegar ahí es encontrar el
- * producto. Por eso el test no entra a ninguna cuenta.
- *
- * Dos productos con la misma palabra en el nombre, para que la búsqueda
- * traiga los dos y **el filtro tenga algo que sacar**: si la búsqueda trajera
- * uno solo, un filtro que no hiciera nada también pasaría. Los dos comparten
- * un color, y el otro color lo tiene uno solo.
+ * Buscar, filtrar, abrir la ficha y pedir por WhatsApp, sin cuenta (TS
+ * §17.2, caso 1). Dos productos con la misma palabra para que **el filtro
+ * tenga algo que sacar**: con uno solo, un filtro que no hiciera nada también
+ * pasaría.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -64,8 +57,7 @@ test.afterAll(async () => {
 test("visitante busca, filtra, abre la ficha y arma el WhatsApp", async ({
   page,
 }) => {
-  // Buscar desde la portada. Tiene su propio buscador, y mientras se ve, el
-  // del encabezado no se dibuja (`SearchBox`, prop `principal`).
+  // Mientras se ve el buscador de la portada, el del encabezado no se dibuja.
   await page.goto("/");
   await page
     .getByRole("main")
@@ -89,14 +81,12 @@ test("visitante busca, filtra, abre la ficha y arma el WhatsApp", async ({
       .sort(),
   ).toEqual([auricular.nombre, parlante.nombre].sort());
 
-  // Filtrar por el color que tiene uno solo.
   await page.getByRole("button", { name: /^Filtros/ }).click();
   await page
     .getByRole("link", { name: `${coral.nombre} — aplicar este filtro` })
     .click();
   await expect(page).toHaveURL(new RegExp(`color=${coral.slug}`));
-  // El drawer queda abierto al tocar un filtro, a propósito
-  // (`drawer-de-filtros.tsx`): se cierra con el botón que dice cuántos quedan.
+  // El drawer queda abierto al tocar un filtro, a propósito.
   await page.getByRole("button", { name: "Ver 1 producto" }).click();
   await expect(page.getByRole("status")).toHaveText("1 producto");
   await expect(resultados.getByRole("heading", { level: 3 })).toHaveText([
@@ -110,8 +100,7 @@ test("visitante busca, filtra, abre la ficha y arma el WhatsApp", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: parlante.nombre }),
   ).toBeVisible();
-  // La ficha abre en el primer color, aunque se haya llegado filtrando por
-  // otro: la tarjeta no lleva el `?color=`. Se elige, como haría la persona.
+  // La tarjeta no lleva el `?color=`: la ficha abre en el primer color.
   await expect(page.getByRole("radio", { name: grafito.nombre })).toBeChecked();
   // El radio es `sr-only`: lo que se toca es la esfera, que es su `<label>`.
   await page
@@ -122,7 +111,6 @@ test("visitante busca, filtra, abre la ficha y arma el WhatsApp", async ({
   await expect(page.getByRole("radio", { name: coral.nombre })).toBeChecked();
   await expect(page).toHaveURL(new RegExp(`color=${coral.slug}`));
 
-  // Dos unidades, y el enlace lleva lo que se está viendo.
   await page.getByRole("button", { name: "Agregar uno" }).click();
   await expect(page.getByRole("spinbutton", { name: "Cantidad" })).toHaveValue(
     "2",

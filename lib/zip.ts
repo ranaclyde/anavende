@@ -1,23 +1,10 @@
 import { crc32 } from "node:zlib";
 
-/**
- * Un zip sin compresión (método STORE) — F2.18.
- *
- * **Sin dependencia**: lo único que mete en un zip la tienda son fotos en
- * JPG, que ya vienen comprimidas, y comprimirlas de nuevo gasta procesador
- * para ganar nada. Sin compresión el formato es un encabezado por archivo,
- * un índice al final y el CRC-32, que Node trae desde la 22
- * (`zlib.crc32`). Una librería de zip entera para esto pesaría más que el
- * problema.
- *
- * Los nombres van en UTF-8 y lo dicen (bit 11 de las banderas): «marrón/1.jpg»
- * se abre bien en Windows, macOS y el teléfono. Sin ZIP64: el armado se
- * niega antes de pasar de 4 GB o de 65.535 archivos, que es diez mil veces
- * lo que entra en un producto.
- */
+// Zip sin compresión (STORE) y sin ZIP64: solo lleva JPG, que ya vienen
+// comprimidos. Los nombres en UTF-8, marcado con el bit 11 de las banderas.
 
 export type ArchivoDelZip = {
-  /** Con `/` para las carpetas: `"negro/1.jpg"`. Sin `/` al principio. */
+  /** `"negro/1.jpg"`, sin `/` al principio. */
   nombre: string;
   datos: Buffer;
 };
@@ -26,11 +13,8 @@ const UTF8 = 0x0800;
 const VERSION = 20; // 2.0: lo mínimo para carpetas, sin compresión.
 const TOPE = 0xffffffff;
 
-/**
- * Fecha y hora de MS-DOS, que es lo que guarda el zip. **En hora de
- * Argentina**, que no tiene horario de verano: el contenedor corre en UTC y
- * el zip no guarda zona, así que se vería tres horas corrido.
- */
+// En hora de Argentina (sin horario de verano): el zip no guarda zona y el
+// contenedor corre en UTC.
 function fechaDos(fecha: Date): { hora: number; dia: number } {
   const ar = new Date(fecha.getTime() - 3 * 60 * 60 * 1000);
   return {

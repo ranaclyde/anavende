@@ -2,11 +2,7 @@ import { z } from "zod";
 
 import { ANCLAS, MAXIMO_DE_CAPAS, MODOS } from "@/modules/media/capas-de-marca";
 
-/**
- * Las capas que llegan del panel — RF-39. Los topes son los mismos CHECK de
- * la tabla (`watermark_layers`): fallar acá da un mensaje; fallar en la base,
- * un error.
- */
+/** Los topes son los mismos CHECK de `watermark_layers`: acá dan un mensaje, en la base un error. */
 export const capa = z.object({
   imageId: z.uuid(),
   mode: z.enum(MODOS),

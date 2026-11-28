@@ -7,7 +7,6 @@ import { DatosEstructurados } from "@/components/seo/datos-estructurados";
 import { BotonFavorito } from "@/components/shop/favorito";
 import { HeroDeLaHome } from "@/components/shop/home/hero";
 import { HileraDePagos } from "@/components/shop/home/pagos";
-// PRUEBA sin commitear: los heros con fotos (`?hero=a` a `?hero=g`).
 import {
   GrillaDeLaHome,
   SeccionDeLaHome,
@@ -34,13 +33,11 @@ const DESCRIPCION =
   "Insumos informáticos nuevos, en caja: teclados, mouses, auriculares, cables y accesorios. Entrega en Viedma, Carmen de Patagones y alrededores.";
 
 export const metadata: Metadata = {
-  // Sin `title`: el layout pone «AnaVende» de base y le agrega « · AnaVende»
-  // a todo lo demás (`app/layout.tsx`). Con uno propio acá la pestaña decía
+  // Sin `title`: con uno propio el `template` del layout raíz haría
   // «AnaVende · AnaVende».
   description: DESCRIPCION,
-  // F3.9: la home es la única página del sitio que puede ser «/» y también
-  // «/?algo», porque es a donde llega cualquier enlace con parámetros de
-  // campaña pegados. El canónico las junta a todas en una.
+  // Los enlaces con parámetros de campaña llegan acá: el canónico junta
+  // todas las «/?algo» en una.
   alternates: { canonical: "/" },
   openGraph: {
     ...OPEN_GRAPH_BASE,
@@ -51,30 +48,12 @@ export const metadata: Metadata = {
 };
 
 /**
- * Home — RF-01, §7.1. Tarea F3.7.
- *
- * **Lo que la pantalla contesta es «¿qué hay acá?»**, y por eso las categorías
- * aparecen tres veces y hacen tres cosas distintas: en el hero son producto a
- * la vista, arriba son chips —un atajo para quien ya sabe qué busca— y en el
- * medio son secciones con producto adentro, para quien no. La de abajo es la
- * cuarta cara: el resto del catálogo, donde lo que importa no es cada producto
- * sino que existan.
- *
- * **Cada bloque desaparece solo si no tiene qué mostrar**, y eso no es un
- * adorno defensivo: es lo que protege a esta pantalla del riesgo P1 del plan.
- * Hoy se mira contra un catálogo sembrado y mañana contra el de Ana, que va a
- * tener otra forma —otras categorías, otra cantidad, quizá ninguna oferta—.
- * Una home que se cae a pedazos cuando cambia el catálogo habría que
- * rehacerla; ésta se acomoda.
- *
- * **«Vistos recientemente»** (F8.4, RF-33) va entre «En oferta» y los medios
- * de pago, donde lo prevé §7.1. Llega por `<Suspense>`: es del visitante y no
- * del catálogo, y la home no lo espera.
+ * Cada bloque desaparece solo si no tiene qué mostrar: no es un adorno
+ * defensivo, es lo que deja que la home se acomode a cualquier catálogo.
+ * «Vistos recientemente» llega por `<Suspense>`: es del visitante y la home no
+ * lo espera.
  */
 export default async function Home() {
-  // Independientes: los favoritos son del visitante y el catálogo no es de
-  // nadie. Encadenarlas sumaría un viaje a la pantalla de entrada, que es la
-  // que más caro paga cada milisegundo (RNF-03).
   const [datos, favoritos] = await Promise.all([
     leerHome(),
     getIdentity().then((i) => (i ? idsDeFavoritos(i.userId) : null)),
@@ -82,27 +61,19 @@ export default async function Home() {
 
   const guardados = new Set(favoritos ?? []);
 
-  /**
-   * La primera sección que se dibuja: «Destacados» si tiene algo, si no la
-   * primera categoría con productos, y si tampoco, las ofertas. Su primera
-   * fila es la única que se carga sin diferir (abajo).
-   */
+  // Su primera fila es la única que se carga sin diferir.
   const primeraSeccion =
     datos.destacados.length > 0
       ? "destacados"
       : (datos.destacadas.find((c) => c.productos.length > 0)?.id ?? "ofertas");
 
-  /** La tarjeta es la misma de todas las pantallas (§6.1), con su corazón. */
   const tarjetas = (productos: (typeof datos)["destacados"], seccion: string) =>
     productos.map((producto, i) => (
       <li key={producto.slug}>
         <TarjetaProducto
           producto={producto}
-          // La primera fila no puede ir DIFERIDA (2026-10-05): en tableta y
-          // escritorio sus tarjetas miden 205–248px de lado, más que
-          // cualquier pieza del hero, así que el LCP es una de ellas, y diferida
-          // llegaba tarde. Va sin diferir y sin prioridad alta (F10.4: ver
-          // `inmediata`). Cuatro es el ancho de la grilla.
+          // La primera fila no puede ir diferida: en tableta y escritorio el
+          // LCP es una de sus tarjetas. Cuatro es el ancho de la grilla.
           inmediata={seccion === primeraSeccion && i < 4}
           accionFavorito={
             <BotonFavorito
@@ -120,12 +91,8 @@ export default async function Home() {
 
   return (
     <>
-      {/* ── El hero (F10.7d, §7.1): a todo el ancho y pegado al encabezado,
-          fuera del contenedor. Las categorías del día, ya sorteadas. ── */}
+      {/* A todo el ancho y fuera del contenedor. */}
       <HeroDeLaHome
-        // Los chips, pegados al buscador en la computadora y debajo de las
-        // fotos en el teléfono (§7.1). Desde el 2026-11-20 van en el hero:
-        // abajo, sueltos, dejaban la mitad izquierda vacía.
         chips={
           datos.destacadas.length > 0 ? (
             <nav aria-label="Categorías destacadas" className="w-full">
@@ -137,21 +104,13 @@ export default async function Home() {
                       className="flex h-11 items-center gap-2 rounded-pill border border-border bg-surface px-4 text-body-sm font-medium text-ink shadow-sm transition-colors duration-150 hover:border-brand hover:text-brand sm:pl-2 sm:pr-4"
                     >
                       {/*
-                    La inicial es del boceto y es decoración: el nombre está
-                    al lado, así que un lector de pantalla no tiene por qué
-                    escuchar «T, Teclados».
-
-                    Y va en gris, no en burdeos: siete discos de marca en
-                    fila son siete cosas en burdeos que no son la acción de
-                    la pantalla, y ésa es la regla de una sola voz (§3.1).
-                    El burdeos del hero es el botón del buscador, y uno solo.
+                    Decoración: el lector de pantalla no tiene por qué escuchar
+                    «T, Teclados». En gris y no en burdeos: una sola voz (§3.1).
                   */}
                       <span
                         aria-hidden
-                        // Desde `sm`: a 390px los siete chips con disco pasan
-                        // de dos renglones a cuatro, y cuatro renglones de
-                        // atajos ya no son un atajo. Sin el disco entran tres
-                        // por renglón.
+                        // Desde `sm`: a 390px, con disco, los chips pasan de
+                        // dos renglones a cuatro.
                         className="hidden size-7 place-items-center rounded-full bg-canvas text-caption text-ink-secondary sm:grid"
                       >
                         {categoria.nombre.slice(0, 1)}
@@ -176,37 +135,24 @@ export default async function Home() {
           placeholder="¿Qué estás buscando hoy?"
           className="w-full max-w-[520px]"
         />
-        {/* Debajo del buscador y chica a propósito: es la aclaración, no el
-            mensaje. */}
+        {/* Chica a propósito: es la aclaración, no el mensaje. */}
         <p className="text-caption font-normal text-ink-secondary sm:text-body-sm">
           Productos nuevos, cerrados y en su empaque original. Elegí y armá tu
           pedido.
         </p>
       </HeroDeLaHome>
       <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8">
-        {/*
-        F3.9 — quién vende y dónde se busca. Van en la home y no en el layout
-        a propósito: son la declaración del sitio, y repetirla en cada pantalla
-        sería decir trescientas veces lo mismo.
-      */}
+        {/* En la home y no en el layout: es la declaración del sitio, una vez. */}
         <DatosEstructurados datos={[organizacion(), sitio()]} />
 
-        {/* ── El aviso de zona, debajo del hero ──────────────────────── */}
+        {/* El aviso de zona. */}
         <section className="flex flex-col items-center gap-5 pb-10 text-center">
-          {/* ── El aviso de zona (RN-10) ─────────────────────────────── */}
-          {/*
-          Va ACÁ ARRIBA, pegado a los chips: hasta dónde llevamos es lo primero
-          que alguien de Viedma necesita saber para decidir si esta tienda le
-          sirve. El pie del sitio lo repite en todas las pantallas y por eso
-          acá se dice en una línea —la versión larga, con el retiro en el punto
-          de entrega, la sigue diciendo el pie—.
-        */}
+          {/* RN-10. */}
+          {/* Arriba: hasta dónde llevamos decide si la tienda sirve. La versión
+              larga está en el pie. */}
           <p className="flex w-full items-start justify-center gap-2.5 rounded-card bg-surface p-4 text-left text-body-sm text-ink-secondary shadow-sm">
-            {/* El ícono va en gris por la misma regla: es un ícono general, no
-              una acción (§3.1). Lo que pesa en este renglón es la zona, y ésa
-              está en tinta plena. */}
-            {/* Arriba y no al medio: en el teléfono el texto va en tres
-                renglones, y el camión al medio quedaba suelto. */}
+            {/* En gris: es un ícono general, no una acción (§3.1). */}
+            {/* Arriba y no al medio: en el teléfono el texto va en tres renglones. */}
             <Truck aria-hidden className="size-5 shrink-0 text-ink-secondary" />
             <span>
               <span className="font-medium text-ink">
@@ -218,7 +164,7 @@ export default async function Home() {
         </section>
 
         <div className="flex flex-col gap-16 pb-4 sm:gap-20">
-          {/* ── Destacados: lo que la vendedora quiere empujar hoy ───── */}
+          {/* Destacados. */}
           {datos.destacados.length > 0 ? (
             <SeccionDeLaHome titulo="Destacados">
               <GrillaDeLaHome>
@@ -227,12 +173,10 @@ export default async function Home() {
             </SeccionDeLaHome>
           ) : null}
 
-          {/* ── Los medios de pago, justo después de lo primero que se
-            mira (2026-10-19, pedido tuyo): cómo se paga es una duda de
-            entrada, y al fondo de la página no llegaba casi nadie. ─────── */}
+          {/* Cómo se paga es una duda de entrada: al fondo no llegaba casi nadie. */}
           <HileraDePagos medios={datos.mediosDePago} />
 
-          {/* ── Una sección por categoría destacada ──────────────────── */}
+          {/* Una sección por categoría destacada. */}
           {datos.destacadas.map((categoria) =>
             categoria.productos.length === 0 ? null : (
               <SeccionDeLaHome
@@ -268,13 +212,8 @@ export default async function Home() {
             <VistosRecientemente ruta="/" />
           </Suspense>
 
-          {/* ── Más categorías, con la salida a la página de todas ────── */}
-          {/*
-          TARJETAS con imagen y nombre, como pide el boceto. La imagen es un
-          campo propio de la categoría (FA-21), cargado en el panel, y es
-          opcional: las que no tienen muestran su inicial en el mismo recuadro,
-          así que la fila no se desarma con categorías sin imagen mezcladas.
-        */}
+          {/* Más categorías. */}
+          {/* Sin imagen, la inicial en el mismo recuadro: la fila no se desarma. */}
           {datos.masCategorias.length > 0 ? (
             <SeccionDeLaHome
               titulo="Más categorías"

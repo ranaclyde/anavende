@@ -22,13 +22,6 @@ import type { SlugLegal } from "@/modules/content/paginas";
 
 type Campo = "contenido";
 
-/**
- * El texto de una página legal — RF-29, F9.3.
- *
- * El mismo editor que la descripción de producto, con el mismo formato y el
- * mismo sanitizador del lado del servidor (§16). Guardar se queda en la
- * pantalla: no hay listado al que volver, y el aviso confirma lo que pasó.
- */
 export function FormularioDeTextoLegal({
   slug,
   titulo,
@@ -46,13 +39,9 @@ export function FormularioDeTextoLegal({
   const [errores, setErrores] =
     useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
   const [enviando, iniciar] = useTransition();
-  // «Guardar» apagado hasta que se escriba algo (F2.15), como en
-  // Configuración: antes estaba siempre prendido, y guardar sin cambios
-  // movía la fecha de «Última modificación» sin que nada hubiera cambiado.
+  // Guardar sin cambios movería la fecha de «Última modificación».
   const [tocado, setTocado] = useState(false);
   const tocar = useCallback(() => setTocado(true), []);
-  // Guardar se queda en la pantalla: la barra dice «Actualizado» hasta que
-  // se vuelva a escribir.
   const [seGuardoRecien, setSeGuardoRecien] = useState(false);
   useAvisoAlSalir(tocado && !enviando);
 
@@ -82,7 +71,6 @@ export function FormularioDeTextoLegal({
   }
 
   return (
-    // «Guardar» adentro de la tarjeta y al pie (DESIGN.md, 2026-11-13).
     <form onSubmit={enviar} noValidate className="min-w-0">
       <TarjetaDeSeccion
         id={`${idDelCampo}-titulo`}

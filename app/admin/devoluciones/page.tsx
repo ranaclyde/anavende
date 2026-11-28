@@ -25,12 +25,7 @@ import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Devoluciones" };
 
-/**
- * La guía de devoluciones (F6.7, RF-37), con al menos una cargada: sin
- * ninguna, el estado vacío ya dice dónde se registran. «Anular» es opcional
- * porque una anulada no lo tiene, y puede no quedar ninguna vigente en la
- * página.
- */
+/** «Anular» es opcional: puede no haber ninguna vigente en la página. */
 const PASOS_DE_DEVOLUCIONES: PasoDeAyuda[] = [
   {
     elemento: "orden-de-la-devolucion",
@@ -54,27 +49,18 @@ const PASOS_DE_DEVOLUCIONES: PasoDeAyuda[] = [
 ];
 
 /**
- * Listado de devoluciones — FS RF-25. Tarea F7.5.
- *
- * Es la pantalla de consulta de RF-25: qué volvió, de qué orden, cuánto, si
- * volvió al stock y por qué. **No se registra nada desde acá**: una devolución
- * es siempre contra una orden, y se carga desde su detalle, que es donde están
- * los renglones y las cantidades.
- *
- * El estado del listado —estado, reposición, rango de fechas y página— vive en
- * la URL (§10.2), así que se comparte y el botón atrás deshace un filtro.
+ * Solo consulta (RF-25): una devolución se registra desde el detalle de su
+ * orden.
  */
 export default async function DevolucionesDelPanel({
   searchParams,
 }: {
-  // En Next 16 `searchParams` es una promesa; el acceso sincrónico se quitó.
   searchParams: Promise<ParametrosDeBusqueda>;
 }) {
   await exigirAdmin();
 
   const filtros = leerFiltros(await searchParams);
 
-  // Independientes: encadenarlas agregaría una ida a la base por carga.
   const [{ devoluciones, total }, conteo] = await Promise.all([
     listarDevoluciones(filtros),
     contarDevolucionesPorEstado(),
@@ -87,8 +73,7 @@ export default async function DevolucionesDelPanel({
   };
 
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
-  // Una página que ya no existe —un enlace viejo, o filtrar estando en la 3—
-  // lleva a la última que sí.
+  // Una página que ya no existe lleva a la última que sí.
   if (filtros.pagina > paginas) {
     redirect(urlDeFiltros({ ...filtros, pagina: paginas }));
   }
@@ -109,17 +94,12 @@ export default async function DevolucionesDelPanel({
         }
       />
 
-      {/* Sin una sola devolución, los filtros no tienen sobre qué operar:
-          tres controles arriba de un cartel que dice «todavía no hay
-          ninguna» son ruido, no ayuda (§8). */}
+      {/* Sin ninguna, no se muestran los filtros (§8). */}
       {!hayAlguna ? (
         <SinDevoluciones />
       ) : (
         <>
-          {/* El estado en solapas con su número, como órdenes y usuarios
-              (F2.15): antes era un selector, el único listado del panel que
-              lo resolvía distinto. «Todas» sigue siendo la de fábrica —que
-              las anuladas se vean es una decisión de F7.5, `filtros.ts`—. */}
+          {/* «Todas» es la de fábrica (`filtros.ts`). */}
           <SolapasDelPanel
             etiqueta="Filtrar por estado"
             variante="segmentado"

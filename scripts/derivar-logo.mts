@@ -1,15 +1,13 @@
 /**
  * Saca del logo en trazos (`lib/marca.ts`) los archivos que no pueden
- * dibujarlo en línea — DESIGN-REFERENCE §2.3, F10.7c.
+ * dibujarlo en línea (DESIGN-REFERENCE §2.3).
  *
  *   public/marca/isotipo.svg         el isotipo, burdeos sobre transparente
  *   public/marca/logo.png            el mismo, 512×512 (datos estructurados)
  *   public/marca/logo-horizontal.png isotipo y palabra, para los correos
  *   app/favicon.ico                  16, 32 y 48 px
  *
- * La pestaña, los correos y Google no dibujan un componente de React: por eso
- * existen estos archivos. Se derivan en vez de mantenerse a mano para que no
- * se separen del logo si cambia. Después de correrlo, `derivar-og.mts`.
+ * Después de correrlo, `derivar-og.mts`.
  *
  *   npx tsx scripts/derivar-logo.mts
  */
@@ -22,7 +20,7 @@ import { svgDelIsotipo, svgHorizontal } from "../lib/marca";
 /** `--brand` de DESIGN-REFERENCE §3.1. */
 const BURDEOS = "#832833";
 
-/** Un .ico con PNG adentro: lo aceptan todos los navegadores desde 2010. */
+/** Un .ico con PNG adentro. */
 async function ico(lados: number[]) {
   const pngs = await Promise.all(
     lados.map((lado) =>
@@ -57,8 +55,7 @@ await sharp(Buffer.from(svgDelIsotipo(BURDEOS)), { density: 300 })
   .png({ compressionLevel: 9 })
   .toFile("public/marca/logo.png");
 
-// El correo la muestra a 40 px de alto: se guarda al doble para pantallas
-// de alta densidad.
+// El correo la muestra a 40 px: al doble, para pantallas de alta densidad.
 await sharp(Buffer.from(svgHorizontal(BURDEOS)), { density: 300 })
   .resize({ height: 80 })
   .png({ compressionLevel: 9 })

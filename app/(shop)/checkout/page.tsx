@@ -20,15 +20,10 @@ import { listarDirecciones } from "@/modules/users/direcciones/operaciones";
 
 export const metadata: Metadata = {
   title: "Confirmá tu pedido",
-  // F3.9: es de una persona y de un momento, no del sitio.
   robots: FUERA_DEL_INDICE,
 };
 
-/**
- * La guía del checkout (F6.6, RF-36): cómo se recibe, cómo se paga y qué
- * hace confirmar. Los medios de pago son opcionales porque la sección no
- * existe sin ninguno cargado.
- */
+// Los medios de pago son opcionales: sin ninguno cargado la sección no existe.
 const PASOS_DEL_CHECKOUT: PasoDeAyuda[] = [
   {
     elemento: "entrega",
@@ -52,25 +47,10 @@ const PASOS_DEL_CHECKOUT: PasoDeAyuda[] = [
 ];
 
 /**
- * El checkout — FS RF-11 · TS §8.4, §8.5. Tarea F6.1.
- *
- * Una sola página con secciones: tus datos, cómo lo recibís (envío o retiro,
- * decisión del 2026-09-14), medios de pago y el resumen con «Confirmar
- * pedido». Solo el envío pide dirección.
- *
- * **Se llega con el carrito en regla, o se vuelve a él.** Vacío, con algo sin
- * stock o que ya no se vende, manda al carrito, que es la pantalla que sabe
- * explicar cada caso. Con la baja pedida (F5.8) también: ahí el botón está
- * apagado y dice por qué.
- *
- * **Revisa el carrito al abrirse, como el carrito** (F5.6): un precio que
- * cambió se avisa arriba y el resumen ya muestra el vigente. Si cambia
- * DESPUÉS, mientras la persona completa los datos, lo ataja la creación de
- * la orden (§8.4 paso 3) y la pantalla se vuelve a armar con lo nuevo.
- *
- * **La clave de idempotencia nace acá** (§8.5): una por cada vez que se arma
- * la página. Un doble clic o un reintento del navegador llevan la misma y
- * devuelven la misma orden.
+ * Con el carrito fuera de regla, o la baja pedida, vuelve al carrito: es la
+ * pantalla que sabe explicar cada caso. Un precio que cambia después de abrir
+ * lo ataja la creación de la orden (TS §8.4). La clave de idempotencia es una
+ * por cada vez que se arma la página: un doble clic devuelve la misma orden.
  */
 export default async function PaginaDelCheckout() {
   const sesion = await getSession();
@@ -83,9 +63,8 @@ export default async function PaginaDelCheckout() {
   const { profile, identity } = sesion;
   if (profile.closureRequestedAt != null) redirect("/carrito");
 
-  // La revisión antes de leer el carrito, como en el carrito: lo que se
-  // muestra tiene que ser lo ya ajustado. Las direcciones y los medios de
-  // pago no dependen de eso, así que van en paralelo con la revisión.
+  // La revisión va antes de leer el carrito: lo que se muestra tiene que ser
+  // lo ya ajustado.
   const [avisos, direcciones, mediosDePago] = await Promise.all([
     revisarCarrito(profile.id),
     listarDirecciones(profile.id),
@@ -169,11 +148,8 @@ export default async function PaginaDelCheckout() {
 }
 
 /**
- * Los ítems y el total (RF-11, sección 3). Se dibuja en el servidor y entra
- * al formulario ya armado: el navegador no necesita las fotos ni los precios
- * para nada más que mostrarlos, y los montos no se suman ahí (§7.1).
- *
- * **El total no incluye envío** (RN-10): se coordina y se paga aparte.
+ * Se dibuja en el servidor y entra armado al formulario: los montos no se
+ * suman en el navegador (§7.1).
  */
 function Resumen({
   items,

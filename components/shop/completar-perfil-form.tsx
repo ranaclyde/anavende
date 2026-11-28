@@ -21,17 +21,8 @@ import { completarPerfil } from "@/modules/users/actions";
 type Campo = "firstName" | "lastName" | "phone";
 
 /**
- * Parte el nombre que entregó el proveedor social en nombre y apellido,
- * cuando no llegan por separado (`separado`: Google los da por la API de
- * People, `modules/users/datos-de-google.ts`).
- *
- * ES UNA ADIVINANZA, y acá está bien que lo sea: GoTrue guarda un solo
- * campo, y esto solo llena los valores por omisión de un formulario
- * que la persona tiene delante y puede corregir. Es lo contrario de adivinar
- * en el servidor, callado, al guardar — que es lo que se sacó del alta el
- * 2026-09-10.
- *
- * Se declara fuera del componente para no rearmarla en cada render.
+ * Adivina nombre y apellido del nombre que dio el proveedor. Acá está bien
+ * adivinar: solo llena un formulario que la persona puede corregir.
  */
 function partirNombre(sugerido: string | null) {
   const partes = (sugerido ?? "").trim().split(/\s+/).filter(Boolean);
@@ -40,9 +31,8 @@ function partirNombre(sugerido: string | null) {
 }
 
 /**
- * Paso que falta tras el primer ingreso por Google o Facebook (RF-06, §13.4).
- * Ningún proveedor social entrega teléfono, y sin teléfono no se coordina una
- * venta: hasta completarlo se puede navegar, pero no operar.
+ * Paso que falta tras el primer ingreso con un proveedor social (RF-06):
+ * ninguno entrega teléfono, y hasta completarlo no se puede operar.
  */
 export function CompletarPerfilForm({
   email,
@@ -79,7 +69,7 @@ export function CompletarPerfilForm({
         return;
       }
 
-      // Solo destinos de la tienda: `//otro.com` también empieza con `/`.
+      // `//otro.com` también empieza con `/`.
       router.push(destinoInterno(volver) ?? "/");
       router.refresh();
     });

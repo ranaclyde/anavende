@@ -5,15 +5,10 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
 /**
- * ¿Verificó el email? Leído de `auth.users`, que es lo que escribe GoTrue al
- * confirmar el enlace — F10.5, RF-11.
- *
- * **No sale de la sesión a propósito.** En esta versión de GoTrue el token
- * trae `email_verified` solo dentro de `user_metadata`, y ese bloque lo puede
- * escribir el propio usuario con `supabase.auth.updateUser({ data })`:
- * comprobado en el stack local el 2026-10-17. Para mostrar un aviso alcanza
- * con la sesión (`identity.emailVerified`); para dejar confirmar un pedido,
- * no.
+ * Se lee de `auth.users` y no de la sesión a propósito: en esta versión de
+ * GoTrue el token trae `email_verified` solo en `user_metadata`, que el propio
+ * usuario puede escribir con `updateUser({ data })`. Para un aviso alcanza la
+ * sesión; para dejar confirmar un pedido, no.
  */
 export async function emailConfirmado(userId: string): Promise<boolean> {
   const [fila] = await db.execute<{ confirmado: boolean }>(sql`

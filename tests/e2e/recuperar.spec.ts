@@ -5,27 +5,21 @@ import { datosDePrueba, sufijo, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * F10.5 — Recuperar la contraseña, sin decir si el email existe. FS RF-05,
- * RF-06; TS §16.
+ * Recuperar la contraseña sin decir si el email existe (FS RF-05, RF-06).
  *
- * El pedido pasa por una Server Action desde F10.5 (antes iba del navegador
- * directo a GoTrue), y eso es lo que más se puede romper: que el enlace del
- * email deje de abrir la sesión. Por eso se recorre entero —pedir, abrir el
- * enlace del buzón local, elegir otra contraseña y entrar con ella—.
+ * El pedido pasa por una Server Action: lo que más se puede romper es que el
+ * enlace del email deje de abrir la sesión, y por eso se recorre entero.
  *
- * Y lo que RF-06 pide: la pantalla dice lo mismo para un email que no
- * existe, y también al pedir dos veces seguidas, que es el freno que GoTrue
- * solo le pone a una cuenta que existe.
+ * La pantalla dice lo mismo para un email que no existe y al pedir dos veces
+ * seguidas, que es el freno que GoTrue solo le pone a una cuenta que existe.
  *
  * El doble pedido va **después** de seguir el enlace: en el stack local la
- * plantilla es la de Supabase, con PKCE, y el segundo pedido reemplaza la
- * clave de la cookie. La de producción usa `token_hash` y no depende de eso.
+ * plantilla usa PKCE y el segundo pedido reemplaza la clave de la cookie. La
+ * de producción usa `token_hash` y no depende de eso.
  *
- * El freno de GoTrue es de un minuto por omisión —el de producción, si nadie
- * cambió `GOTRUE_SMTP_MAX_FREQUENCY`— y de un segundo en el stack local
- * (`max_frequency`), así que acá el segundo pedido puede caer adentro o no:
- * que el freno existe y solo para una cuenta real se comprobó a mano contra
- * GoTrue el 2026-10-17.
+ * El freno es de un minuto en producción (`GOTRUE_SMTP_MAX_FREQUENCY`) y de
+ * un segundo en el stack local (`max_frequency`): acá el segundo pedido
+ * puede caer adentro o no, y el freno se comprobó a mano.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -65,7 +59,6 @@ test("recupera la contraseña con el enlace del email", async ({
   await page.getByRole("button", { name: "Guardar contraseña" }).click();
   await expect(page).toHaveURL(/\/mi-cuenta/);
 
-  // Y entra con la nueva, desde otro navegador.
   const otro = await (await browser.newContext()).newPage();
   try {
     await ingresar(otro, { ...cuenta, password: nueva });
@@ -82,6 +75,5 @@ test("dice lo mismo exista o no, y al pedir dos veces seguidas", async ({
   await pedirEnlace(page, cuenta.email);
   await pedirEnlace(page, cuenta.email);
 
-  // Al que no existe no le llegó nada.
   await expect(enlaceDelEmail(inexistente)).rejects.toThrow(/No llegó/);
 });

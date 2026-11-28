@@ -8,47 +8,20 @@ import { db } from "@/db";
 import { userProfiles, type Role, type UserProfile } from "@/db/schema";
 import { createClient } from "@/lib/supabase/server";
 
-/**
- * Resolución de sesión — TECHNICAL-SPEC §13.3.
- *
- *   1. getClaims()          → verifica el JWT LOCALMENTE contra el JWKS
- *                             cacheado. Da el id sin salir del servidor APP.
- *   2. SELECT user_profiles → rol, teléfono y bloqueo FRESCOS de la base.
- *
- * Por qué las mutaciones no se conforman con el JWT: un rol o un bloqueo
- * escritos en el token quedan CONGELADOS hasta que el token se renueve.
- * RF-27 exige que bloquear invalide las sesiones activas; si la autorización
- * se apoyara solo en el JWT, alguien recién bloqueado podría seguir operando
- * hasta una hora.
- *
- * Consecuencia honesta: la verificación local ahorra la ida a la red en las
- * guardias de página, no en las mutaciones. Es el precio correcto.
- *
- * **Las dos van envueltas en `cache` de React** (F5.3). Desde que «Mi cuenta»
- * tiene layout propio, el layout de la tienda, el de la cuenta y la página
- * piden la sesión en el mismo pedido; sin `cache` eran tres lecturas del
- * perfil. `cache` dura un pedido y nada más, así que el perfil sigue siendo
- * fresco en cada uno, que es lo que §13.3 exige.
- */
+// TECHNICAL-SPEC §13.3: el JWT se verifica localmente, pero rol y bloqueo se
+// leen frescos de la base; en el token quedarían congelados hasta renovarlo.
+// `cache` de React dura un pedido: el perfil sigue fresco en cada uno.
 
 export type Identity = {
   userId: string;
   email: string | null;
   emailVerified: boolean;
-  /**
-   * Nombre que trae el proveedor social, para precargar «completá tu perfil»
-   * (RF-06). No reemplaza al del perfil: es solo una sugerencia del alta.
-   */
+  /** El del proveedor social: solo una sugerencia para el alta (RF-06). */
   nombreSugerido: string | null;
   /**
-   * ¿Entra con contraseña? Decide si «Mis datos» la **cambia** —pidiendo la
-   * actual— o la **define**, que es lo que RF-06 le promete a quien se dio de
-   * alta con Google o Facebook.
-   *
-   * GoTrue anota en `app_metadata.providers` cada vía de ingreso de la cuenta,
-   * y `email` es la de contraseña. **Ante la duda, se asume que sí**: pedirle
-   * la actual a quien no tiene lo manda a «¿No la recordás?», y no pedírsela a
-   * quien sí tiene deja cambiarla a cualquiera que encuentre la sesión abierta.
+   * Decide si «Mis datos» cambia la contraseña (pidiendo la actual) o la
+   * define. Ante la duda, sí: no pedírsela a quien tiene deja cambiarla a
+   * cualquiera que encuentre la sesión abierta.
    */
   tieneContrasena: boolean;
 };
@@ -59,10 +32,7 @@ export type Session = {
   role: Role;
 };
 
-/**
- * Paso 1 solo. Para guardias de página que no necesitan el rol y para
- * lecturas de datos propios, que se filtran por este id.
- */
+/** Solo el JWT, sin ir a la base: para lo que no necesita el rol. */
 export const getIdentity = cache(async (): Promise<Identity | null> => {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -79,17 +49,13 @@ export const getIdentity = cache(async (): Promise<Identity | null> => {
   return {
     userId: claims.sub,
     email: typeof claims.email === "string" ? claims.email : null,
-    // GoTrue lo publica como email_verified suelto o dentro de user_metadata,
-    // según la versión; se acepta cualquiera de las dos formas. **Sirve para
-    // mostrar, no para decidir**: `user_metadata` lo escribe el propio
-    // usuario. Lo que exige RF-11 se mira con `emailConfirmado` (F10.5).
+    // Para mostrar, no para decidir: `user_metadata` lo escribe el propio
+    // usuario. RF-11 se mira con `emailConfirmado`.
     emailVerified:
       claims.email_verified === true || metadata?.email_verified === true,
     nombreSugerido: metadata?.full_name ?? metadata?.name ?? null,
-    // Solo es «no» cuando GoTrue dice qué vías tiene, ninguna es `email`, y
-    // nadie la definió desde «Mis datos»: GoTrue no suma `email` a
-    // `providers` cuando la define una cuenta de Google, así que eso lo anota
-    // la aplicación (`anotarContrasenaDefinida`, en `modules/users/actions`).
+    // GoTrue no suma `email` a `providers` cuando una cuenta de Google define
+    // contraseña: eso lo anota la aplicación (`anotarContrasenaDefinida`).
     tieneContrasena:
       !proveedores ||
       proveedores.includes("email") ||
@@ -97,13 +63,7 @@ export const getIdentity = cache(async (): Promise<Identity | null> => {
   };
 });
 
-/**
- * Pasos 1 y 2. Devuelve null si no hay identidad O si no hay perfil.
- *
- * SIN PERFIL NO SE OPERA (§13.4): una identidad sin fila en `user_profiles`
- * —el caso de OAuth antes de completar el teléfono— puede navegar, pero no
- * confirmar órdenes ni entrar al panel del comprador.
- */
+/** `null` también sin perfil: sin perfil no se opera (§13.4). */
 export const getSession = cache(async (): Promise<Session | null> => {
   const identity = await getIdentity();
   if (!identity) return null;
@@ -119,7 +79,6 @@ export const getSession = cache(async (): Promise<Session | null> => {
   return { identity, profile, role: profile.role as Role };
 });
 
-/** ¿Hay identidad pero todavía no hay perfil? Dispara «Completá tu perfil». */
 export async function needsProfile(): Promise<boolean> {
   const identity = await getIdentity();
   if (!identity) return false;
@@ -134,29 +93,16 @@ export async function needsProfile(): Promise<boolean> {
 }
 
 /**
- * El control de rol del panel — TECHNICAL-SPEC §13.3 y §16. F10.5.
- *
- * **Va en el layout de `/admin` y además al principio de cada página**, y la
- * página tiene que llamarlo antes de leer nada. El layout solo no alcanza, y
- * se comprobó con un comprador de prueba el 2026-10-17: Next renderiza el
- * layout y la página **en paralelo**, así que el `notFound()` del layout
- * cambia la respuesta a 404 pero los datos de la página ya viajaron adentro
- * —el HTML del 404 traía el email de otra cuenta—. Y una petición RSC que
- * dice tener el layout ya montado (`Next-Router-State-Tree`, que es lo que
- * manda cualquier navegación dentro del panel) ni siquiera lo ejecuta:
- * recibía un 200 con la página entera. La guía de Next lo advierte en
- * «Layouts and auth checks».
- *
- * Que ninguna página se lo olvide lo controla
- * `tests/unit/panel/control-de-rol.test.ts`.
+ * Va en el layout de `/admin` y además al principio de cada página, antes de
+ * leer nada: Next renderiza layout y página en paralelo, y los datos de la
+ * página viajan aunque el layout dé 404 (TECHNICAL-SPEC §16).
  */
 export async function exigirAdmin(): Promise<Session> {
   const session = await getSession();
 
   if (!session) redirect("/ingresar?volver=/admin");
 
-  // 404 y no 403: un comprador que sondea el panel no recibe la confirmación
-  // de que la ruta existe (§13.3, RF-14).
+  // 404 y no 403: no confirma que la ruta existe (§13.3).
   if (session.role !== "admin" || session.profile.isBanned) notFound();
 
   return session;

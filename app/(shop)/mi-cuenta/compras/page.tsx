@@ -19,12 +19,6 @@ export const metadata: Metadata = { title: "Mis compras" };
 
 const RUTA = "/mi-cuenta/compras";
 
-/**
- * La guía del listado (F6.6, RF-36): qué se hace desde un pedido y qué dice
- * su estado. Señala la primera compra; sin compras no hay guía, porque la
- * pantalla vacía ya dice qué va a aparecer. El orden y los precios no se
- * explican: los dice la bajada de la pantalla.
- */
 const PASOS_DEL_LISTADO: PasoDeAyuda[] = [
   {
     elemento: "compra",
@@ -41,16 +35,8 @@ const PASOS_DEL_LISTADO: PasoDeAyuda[] = [
 ];
 
 /**
- * «Mis compras» — RF-07. Tarea F6.5.
- *
- * El historial completo, de la más nueva a la más vieja, con **los precios de
- * cada orden y no los de hoy**: lo que se muestra sale del snapshot (RN-12),
- * así que una compra de hace tres meses sigue diciendo lo que costó.
- *
- * **Cancelar no está acá sino en el detalle**, aunque sea un clic más. RF-23
- * lo pide a la vista, y a la vista no quiere decir repetido en cada renglón de
- * una lista: un botón destructivo al lado de cada compra es el que se toca sin
- * querer. En el detalle está solo, con el pedido enfrente.
+ * Cancelar no está en el listado sino en el detalle: un botón destructivo en
+ * cada renglón es el que se toca sin querer.
  */
 
 type Props = {
@@ -84,7 +70,7 @@ export default async function MisCompras({ searchParams }: Props) {
   });
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
-  // Una página que ya no existe —un enlace viejo— lleva a la última que sí.
+  // Una página que ya no existe (un enlace viejo) lleva a la última que sí.
   if (pagina > paginas) redirect(urlDePagina(paginas));
 
   return (
@@ -127,19 +113,13 @@ export default async function MisCompras({ searchParams }: Props) {
   );
 }
 
-/**
- * Un renglón del historial.
- *
- * **La tarjeta entera es el enlace**, no un «Ver detalle» al costado: es la
- * única acción que tiene el renglón, y un área táctil del alto de la tarjeta
- * se acierta con el pulgar (§9).
- */
+/** La tarjeta entera es el enlace: es la única acción y se acierta con el pulgar. */
 function RenglonDeCompra({
   compra,
   primera,
 }: {
   compra: CompraDelHistorial;
-  /** La que señala la guía (F6.6). */
+  /** La que señala la guía. */
   primera: boolean;
 }) {
   return (
@@ -177,12 +157,8 @@ function RenglonDeCompra({
 }
 
 /**
- * La fecha, en `es-AR` y en el servidor.
- *
- * **Se formatea acá y no en el navegador** a propósito: hacerlo en el cliente
- * significa que el servidor pinta una cosa y la hidratación pinta otra, que es
- * el parpadeo que §8 pide evitar. La zona horaria es la del servidor y no la
- * de quien mira, y para «12 de septiembre» eso no cambia nada.
+ * En el servidor a propósito: formateada en el cliente, la hidratación pinta
+ * otra cosa y parpadea. La zona horaria del servidor no cambia el día mostrado.
  */
 function Fecha({ iso }: { iso: string }) {
   const formateada = new Date(iso).toLocaleDateString("es-AR", {
@@ -193,7 +169,6 @@ function Fecha({ iso }: { iso: string }) {
   return <time dateTime={iso}>{formateada}</time>;
 }
 
-/** §8: explicar qué falta y ofrecer la acción. */
 function SinCompras() {
   return (
     <div className="flex flex-col items-center gap-3 rounded-card bg-surface px-6 py-16 text-center shadow-md">

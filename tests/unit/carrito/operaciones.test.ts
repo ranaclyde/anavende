@@ -15,24 +15,15 @@ import { limpiar, unaVariante } from "@/tests/apoyo/catalogo";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 
 /**
- * F5.5 — el carrito. RF-08 · §5.5, §7.1, §13.8.
- *
- * «Hecho cuando»: agregar, quitar, cambiar cantidad, vaciar. No existe
- * carrito sin sesión.
- *
- * La mitad de «sin sesión» no se prueba acá: la sostiene el envoltorio de
- * §6.2, que rechaza una acción `customer` sin sesión antes de llegar a estas
- * funciones, y ya está probado desde F1.10. Lo que sí se prueba es la otra
- * cara de esa regla: que un comprador no alcance el carrito de otro (§13.8,
- * y §17.2 caso 6 para el carrito).
+ * «Sin sesión» no se prueba acá: el envoltorio de §6.2 rechaza la acción
+ * antes de llegar a estas funciones. Sí la otra cara: que un comprador no
+ * alcance el carrito de otro (§13.8).
  */
-
 afterEach(async () => {
   await limpiarCompradores();
   await limpiar();
 });
 
-/** Los renglones del carrito de un comprador, en orden de llegada. */
 async function renglones(userId: string) {
   return [
     ...(await db.execute<{ variantId: string; quantity: number }>(sql`
@@ -105,18 +96,17 @@ describe("agregar", () => {
     ).rejects.toMatchObject({
       code: "INSUFFICIENT_STOCK",
       // Sin «este color»: un producto de un solo modelo no tiene color que
-      // nombrar, y el mensaje se ve de verdad desde F5.7.
+      // nombrar.
       message: "Se quedó sin stock.",
     });
-    // El carrito se crea en la misma transacción que falla: se revierte con
-    // ella. Todo o nada, como el resto de las operaciones de dinero y stock.
+    // El carrito se crea en la misma transacción que falla y se revierte con
+    // ella.
     expect(await carritosDe(userId)).toBe(0);
   });
 
   test("el stock negativo (RF-24) cuenta como cero", async () => {
     const { userId } = await unComprador();
-    // Una venta cargada sobre unidades que el sistema no tenía: la migración
-    // `0003` deja el total por debajo de cero, y lo disponible da -1.
+    // Una venta cargada sobre unidades que el sistema no tenía.
     const { variantId } = await unaVariante({ total: -1 });
 
     await expect(
@@ -277,7 +267,6 @@ describe("aislamiento entre compradores (§13.8)", () => {
     expect((await leerCarrito(otro.userId)).items).toEqual([]);
     expect(await contarUnidades(otro.userId)).toBe(0);
 
-    // Y el de Ana sigue exactamente como estaba.
     expect(await renglones(ana.userId)).toEqual([{ variantId, quantity: 2 }]);
   });
 });

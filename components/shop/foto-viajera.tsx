@@ -5,53 +5,36 @@ import { usePathname, useRouter } from "next/navigation";
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 
 /**
- * La foto que viaja de la tarjeta a la ficha (2026-10-20).
+ * La foto que viaja de la tarjeta a la ficha, con View Transitions del
+ * navegador. Sin soporte o con `prefers-reduced-motion`, navega como siempre.
  *
- * Al tocar una tarjeta, su foto vuela hasta el lugar de la foto grande de la
- * ficha: es el mismo producto, y el movimiento lo dice sin que haya que
- * buscarlo en la pantalla nueva. Lo anima el navegador con View Transitions;
- * sin soporte, o con `prefers-reduced-motion`, el enlace navega como siempre.
+ * La arranca el enlace y no el `<ViewTransition>` de React: React solo anima
+ * lo que está dentro de la pantalla, y la galería de la ficha nueva queda
+ * fuera de la vista hasta que Next sube el scroll.
  *
- * **La transición la arranca el enlace, y no el `<ViewTransition>` de
- * React.** Se probó primero con React y fallaba según dónde estuviera la
- * tarjeta: React solo anima la entrada de lo que está DENTRO de la pantalla al
- * cambiar, y al tocar una tarjeta de más abajo en el catálogo, la galería de
- * la ficha nueva todavía está arriba, fuera de la vista —Next sube el scroll
- * después—. Acá el enlace navega adentro de `document.startViewTransition` y
- * espera a que aparezca el lugar donde aterriza la foto; los nombres van como
- * estilo en línea, así que la pareja la arma el navegador.
- *
- * **Aterriza en el esqueleto o en la galería**, lo que llegue primero. Al
- * tocar, Next suele dibujar `loading.tsx` antes que la ficha: por eso el
- * enlace anota qué foto tenía —la URL que el navegador ya bajó, sin segunda
- * descarga— y el esqueleto la dibuja en el cuadrado grande. Si la ficha llega
- * en el mismo cuadro, la recibe la galería.
- *
- * **El nombre se le pone a la tarjeta tocada, al tocarla**, y no a todas de
- * entrada: en la home un producto puede estar en dos secciones, y dos
- * elementos con el mismo nombre cortan la transición.
+ * Aterriza en el esqueleto (`loading.tsx`) o en la galería, lo que llegue
+ * primero. El nombre se pone solo a la tarjeta tocada: en la home un producto
+ * puede estar dos veces, y dos nombres iguales cortan la transición.
  */
 
-/** El nombre de la transición de un producto. El prefijo evita que un slug que empiece con un número sea un nombre inválido. */
+/** El prefijo evita que un slug que empiece con un número sea un nombre inválido. */
 function nombreDeFoto(slug: string): string {
   return `foto-${slug}`;
 }
 
 /**
- * Cuánto se espera a que aparezca el lugar de llegada. Mientras tanto la
- * pantalla queda congelada en la foto vieja —así funcionan las View
- * Transitions—, así que el tope es corto: si el servidor tarda más, la
- * navegación sigue sin la foto volando.
+ * Tope de espera del lugar de llegada: mientras tanto la pantalla queda
+ * congelada, así que es corto. Si el servidor tarda más, sigue sin animar.
  */
 const ESPERA_MAXIMA = 400;
 
-/** La última foto tocada. Vive en el módulo: es de esta pestaña y de esta navegación. */
+/** La última foto tocada; vive en el módulo porque es de esta pestaña. */
 let ultima: { slug: string; src: string } | null = null;
 
 /**
  * Los atributos del lugar donde aterriza la foto de `slug`, o nada si no se
- * llegó tocando su tarjeta. En el servidor y en la primera carga `ultima`
- * está vacía, así que no cambia nada al hidratar.
+ * llegó tocando su tarjeta. En el servidor `ultima` está vacía: no rompe la
+ * hidratación.
  */
 export function llegadaDeLaFoto(slug: string): {
   style?: CSSProperties;
@@ -59,8 +42,7 @@ export function llegadaDeLaFoto(slug: string): {
 } {
   if (ultima?.slug !== slug) return {};
   return {
-    // `view-transition-class` todavía no está en los tipos de React, y es lo
-    // que toma `::view-transition-group(.foto)` en `globals.css`.
+    // `viewTransitionClass` todavía no está en los tipos de React.
     style: {
       viewTransitionName: nombreDeFoto(slug),
       viewTransitionClass: "foto",
@@ -73,10 +55,7 @@ function sinMovimiento(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/**
- * El enlace estirado de la tarjeta (`tarjeta-producto.tsx`). Es el único
- * pedazo de cliente de la tarjeta, que sigue siendo servidor.
- */
+/** El enlace estirado de la tarjeta, su único pedazo de cliente. */
 export function EnlaceDeTarjeta({
   href,
   slug,
@@ -91,7 +70,6 @@ export function EnlaceDeTarjeta({
   const router = useRouter();
 
   function alTocar(e: MouseEvent<HTMLAnchorElement>) {
-    // Abrir en otra pestaña no es esta navegación: no hay nada que animar.
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
       return;
     if (!document.startViewTransition || sinMovimiento()) return;
@@ -101,8 +79,7 @@ export function EnlaceDeTarjeta({
       ?.querySelector<HTMLImageElement>("img[data-foto-tarjeta]");
     if (!foto?.currentSrc) return;
 
-    // Desde acá la navegación es nuestra: `Link` no navega si el clic ya
-    // está atendido.
+    // `Link` no navega si el clic ya está atendido.
     e.preventDefault();
     ultima = { slug, src: foto.currentSrc };
     foto.style.setProperty("view-transition-name", nombreDeFoto(slug));
@@ -113,8 +90,8 @@ export function EnlaceDeTarjeta({
         new Promise<void>((listo) => {
           router.push(href);
           const limite = performance.now() + ESPERA_MAXIMA;
-          // `setTimeout` y no `requestAnimationFrame`: mientras dura esta
-          // espera el navegador no dibuja, y los cuadros no corren.
+          // `setTimeout` y no `requestAnimationFrame`: durante la espera el
+          // navegador no dibuja, y los cuadros no corren.
           const buscar = () => {
             const llego = document.querySelector(
               `[data-foto-llega="${CSS.escape(slug)}"]`,
@@ -147,9 +124,8 @@ export function EnlaceDeTarjeta({
 }
 
 /**
- * El cuadrado grande del esqueleto de la ficha. Si se llegó tocando la
- * tarjeta de ESTE producto, dibuja su foto; si no —un enlace compartido, una
- * recarga—, el esqueleto de siempre.
+ * El cuadrado grande del esqueleto de la ficha: la foto si se llegó tocando
+ * la tarjeta de este producto, o el esqueleto de siempre.
  */
 export function FotoQueLlega({
   className,
@@ -163,10 +139,7 @@ export function FotoQueLlega({
 
   return (
     <div className={className} {...llegadaDeLaFoto(slug)}>
-      {/*
-        `<img>` y no `next/image`: la URL es la que ya bajó la tarjeta, tal
-        cual, y el optimizador pediría otra.
-      */}
+      {/* `<img>`: la URL es la que ya bajó la tarjeta; `next/image` pediría otra. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={ultima.src} alt="" className="size-full object-contain" />
     </div>

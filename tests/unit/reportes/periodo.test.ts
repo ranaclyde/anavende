@@ -10,10 +10,8 @@ import {
 } from "@/modules/reports/periodo";
 
 /**
- * F9.1 — el período de los reportes y su anterior equivalente. RF-28.
- *
- * Sin base: son cuentas de calendario, y «hoy» se pasa a mano para que el
- * test no dependa del día en que corre.
+ * El período de los reportes y su anterior equivalente (RF-28). «Hoy» se pasa
+ * a mano para que el test no dependa del día en que corre.
  */
 
 const HOY = "2026-10-15";

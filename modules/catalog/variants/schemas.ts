@@ -2,23 +2,11 @@ import { z } from "zod";
 
 import { MAXIMO_POR_VARIANTE } from "@/modules/media/tamanos";
 
-/**
- * Validación de variantes de color — RF-16, RN-11b, §5.4.
- *
- * A diferencia de `products/schemas.ts`, este módulo NO es `server-only`: no
- * sanitiza nada, y el formulario necesita el tope de imágenes y el máximo de
- * stock para poder avisar antes de enviar.
- */
+// No es `server-only`: el formulario lo usa para avisar antes de enviar.
 
 /**
- * El stock que se escribe a mano NO PUEDE SER NEGATIVO, aunque la columna sí
- * lo admita.
- *
- * No es una contradicción con §5.4: ahí el total negativo es la SEÑAL de que
- * se vendió más de lo que el sistema creía —una venta ya ocurrida que RF-24
- * deja registrar igual—, y eso lo produce una operación de stock, no un campo
- * de formulario. Escribir «-3» a mano no registra ninguna discrepancia: es un
- * error de tipeo que después hay que perseguir.
+ * A mano no puede ser negativo aunque la columna lo admita: el negativo lo
+ * produce una venta (RF-24), no un campo de formulario.
  */
 const stock = z
   .number({ error: "Poné cuántas unidades hay, en números enteros." })
@@ -27,27 +15,19 @@ const stock = z
     0,
     "El stock no puede ser negativo. Se ajusta con una venta o una devolución, no a mano.",
   )
-  // Un tope alto que igual atrapa el resbalón de teclado —pegar el precio en
-  // el campo del stock— antes de que quede guardado como si fuera cierto.
+  // Atrapa pegar el precio en el campo del stock.
   .max(1_000_000, "Ese número es demasiado grande. Revisalo.");
 
 /** `null` = variante única: el producto no se vende por color (RF-16). */
 const colorId = z.uuid("Elegí un color.").nullable();
 
-/**
- * El segundo color de una variante de dos («Negro/Rojo»). `null` = de un solo
- * color. Opcional en la entrada para que quien no lo conoce —el alta manual
- * de una orden, los tests viejos— siga mandando lo mismo de siempre.
- */
+/** `null` = de un solo color. Opcional para quien no lo manda. */
 const secondaryColorId = z
   .uuid("Elegí el segundo color.")
   .nullable()
   .default(null);
 
-/**
- * Lo mismo que el CHECK `secondary_color_valid`, dicho antes de llegar a la
- * base y con una frase: sin primer color no hay segundo, y no se repite.
- */
+/** Lo mismo que el CHECK `secondary_color_valid`, con un mensaje. */
 function segundoValido<
   T extends { colorId: string | null; secondaryColorId: string | null },
 >(v: T, ctx: z.RefinementCtx) {
@@ -92,13 +72,8 @@ export const soloVariante = z.object({ id: z.uuid() });
 export const soloProducto = z.object({ productId: z.uuid() });
 
 /**
- * Reponer desde el listado — el globo de «Reponer» de `/admin/productos`.
- *
- * Manda **todas** las variantes del producto y no solo las que cambiaron: la
- * vendedora abre el globo, corrige los números que quiere y guarda una vez.
- * Filtrar acá cuáles cambiaron sería adivinar contra una foto vieja; del lado
- * del servidor `ajustar()` ya no asienta un movimiento cuando la diferencia
- * es cero, así que mandar de más no ensucia el libro.
+ * Manda todas las variantes, no solo las que cambiaron: `ajustar()` no asienta
+ * movimiento cuando la diferencia es cero.
  */
 export const reposicion = z.object({
   productId: z.uuid(),
@@ -108,20 +83,13 @@ export const reposicion = z.object({
     .max(50),
 });
 
-/**
- * Reutilizar las imágenes de otra variante — RF-16, §9.5.
- * `sourceId: null` = dejar de reutilizarlas y volver a las propias.
- */
+/** `sourceId: null` = volver a las imágenes propias. */
 export const fuenteDeImagenes = z.object({
   id: z.uuid(),
   sourceId: z.uuid().nullable(),
 });
 
-/**
- * El orden COMPLETO de las imágenes de una variante, no un movimiento
- * (RF-17). La lista de abajo es la que se va a escribir tal cual: si no
- * coincide con lo que hay en la base, la acción la rechaza entera.
- */
+/** El orden completo, no un movimiento: si no coincide con la base, se rechaza. */
 export const ordenDeImagenes = z.object({
   variantId: z.uuid(),
   ids: z.array(z.uuid()).min(1).max(MAXIMO_POR_VARIANTE),

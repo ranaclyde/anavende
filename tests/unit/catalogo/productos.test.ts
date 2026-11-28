@@ -14,13 +14,10 @@ import {
 } from "@/tests/apoyo/transaccion";
 
 /**
- * F2.3 — las reglas que no se ven leyendo el código: RN-04b sobre los dos
- * campos a la vez, la sanitización como parte de la validación, y RN-11b al
- * revés (no activar un producto de marca o categoría inactiva).
- *
- * Migrado de `scripts/verificar-productos.mts` (F4.0b).
+ * RN-04b sobre los dos campos a la vez, la sanitización como parte de la
+ * validación, y RN-11b al revés: no activar un producto de marca o categoría
+ * inactiva.
  */
-
 const base = {
   name: "Teclado mecánico K120",
   brandId: crypto.randomUUID(),
@@ -42,8 +39,8 @@ describe("el precio (RF-15)", () => {
     expect(r.success && r.data.price).toBe("1000.50");
   });
 
-  // F2.15: en es-AR el punto separa miles. Solo cuando agrupa de a tres:
-  // «1.50» sigue siendo uno con cincuenta.
+  // En es-AR el punto separa miles, pero solo cuando agrupa de a tres: «1.50»
+  // sigue siendo uno con cincuenta.
   test.each([
     ["89.900", "89900.00"],
     ["1.250.000", "1250000.00"],
@@ -60,8 +57,6 @@ describe("el precio (RF-15)", () => {
   });
 
   test("sin descuento, el descuento es cero: no hay oferta (RN-04b)", () => {
-    // Que sea "0.00" y no `null` ni `undefined` es lo que deja a la vista
-    // que «sin oferta» es un valor y no un hueco.
     const r = crearProducto.safeParse({ ...base, price: "1000,50" });
     expect(r.success && r.data.discount).toBe("0.00");
   });
@@ -87,8 +82,8 @@ describe("el descuento, que necesita mirar el precio (RN-04b)", () => {
     expect(errorDe(r, "discount")).toBe(
       "El descuento tiene que ser menor que el precio.",
     );
-    // El precio NO se marca: marcar los dos campos manda a corregir uno que
-    // está bien, y la vendedora no tiene forma de saber cuál de los dos era.
+    // El precio no se marca: con los dos marcados, la vendedora no sabría
+    // cuál corregir.
     expect(errorDe(r, "price")).toBeNull();
   });
 
@@ -120,8 +115,8 @@ describe("el descuento, que necesita mirar el precio (RN-04b)", () => {
 
 describe("la descripción se sanitiza AL VALIDAR (§16)", () => {
   test("sale sanitizada de la validación, no de un paso aparte", () => {
-    // Que sea el MISMO paso importa: un saneo posterior es un paso que algún
-    // camino del código puede saltearse, y basta con uno.
+    // En el mismo paso: un saneo posterior es un paso que algún camino del
+    // código puede saltearse.
     const r = crearProducto.safeParse({
       ...base,
       price: "1000",
@@ -195,8 +190,7 @@ describe("RN-11b al revés: no activar contra algo inactivo", () => {
     await enTransaccionRevertida(async (tx) => {
       const { marca, categoria } = await marcaApagadaYCategoriaEncendida(tx);
 
-      // Es la MISMA consulta que corre la Server Action. Una copia parecida
-      // probaría otra cosa que se le da un aire.
+      // La misma consulta que corre la Server Action, no una copia parecida.
       const [f] = await tx.execute<{ marca: boolean; categoria: boolean }>(sql`
         SELECT (SELECT NOT is_active FROM brands     WHERE id = ${marca})     AS marca,
                (SELECT NOT is_active FROM categories WHERE id = ${categoria}) AS categoria`);
@@ -209,9 +203,8 @@ describe("RN-11b al revés: no activar contra algo inactivo", () => {
     await enTransaccionRevertida(async (tx) => {
       const { marca, categoria } = await marcaApagadaYCategoriaEncendida(tx);
 
-      // RN-11b solo prohíbe la combinación activo + inactivo. Guardar el
-      // borrador tiene que poder: si no, no habría forma de preparar un
-      // producto antes de activar su marca.
+      // RN-11b solo prohíbe activo + inactivo: el borrador se tiene que poder
+      // guardar para preparar un producto antes de activar su marca.
       const [p] = await tx.execute<{ isActive: boolean }>(sql`
         INSERT INTO products (name, slug, brand_id, category_id, price, is_active)
         VALUES ('Probando Producto', 'probando-producto', ${marca}, ${categoria},
@@ -231,8 +224,8 @@ describe("RN-11b al revés: no activar contra algo inactivo", () => {
                 '1000.00', false)
         RETURNING id`);
 
-      // El CHECK es la última barrera: la validación de Zod es la primera, y
-      // entre las dos hay todo el código que puede equivocarse.
+      // El CHECK es la última barrera; entre él y Zod está todo el código que
+      // puede equivocarse.
       await rechaza(
         tx,
         (sp) =>

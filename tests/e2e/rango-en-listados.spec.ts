@@ -5,12 +5,8 @@ import { datosDePrueba, sufijo, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * Los listados del panel dicen qué tramo se está viendo: «Del 1 al 40 de 45
- * productos» (pedido del 2026-11-03). Desde el 2026-11-05 lo dice el contador
- * de arriba, y abajo va la paginación de la tienda, con un número por página.
- * Con una sola página la paginación no se dibuja, y eso no cambió.
- *
- * Se prueba en productos, filtrado por una marca propia del test, para que el
+ * El contador de los listados del panel dice qué tramo se ve («Del 1 al 40
+ * de 45 productos»). Se filtra por una marca propia del test para que el
  * total sea exacto aunque la base tenga otros productos.
  */
 
@@ -38,7 +34,6 @@ test.beforeAll(async () => {
       stock: 3,
     });
   }
-  // Una marca con un solo producto: una página, sin paginación.
   const otra = `Otra ${palabra}`;
   soloUno = await datos.unaMarca(otra);
   await datos.unProducto({
@@ -67,7 +62,6 @@ test("el contador dice qué tramo se ve, y la paginación lleva a cada página",
   await expect(
     page.getByText(`Del 1 al 40 de ${CUANTOS} productos`, { exact: true }),
   ).toBeVisible();
-  // El tramo no se repite abajo.
   await expect(paginacion).not.toContainText("Del ");
   await expect(
     paginacion.getByRole("link", { name: "Página 1" }),
@@ -75,7 +69,6 @@ test("el contador dice qué tramo se ve, y la paginación lleva a cada página",
   await expect(
     paginacion.getByRole("link", { name: "Página 2" }),
   ).toBeVisible();
-  // En la primera no hay «Anterior»: el tramo ya dice que es el principio.
   await expect(paginacion.getByRole("link", { name: /Anterior/ })).toHaveCount(
     0,
   );
@@ -97,13 +90,12 @@ test("el contador dice qué tramo se ve, y la paginación lleva a cada página",
   await expect(
     paginacion.getByRole("link", { name: /Anterior/ }),
   ).toBeVisible();
-  // Axe sobre la paginación dibujada: en `accesibilidad.spec.ts` aparece o no
-  // según cuántas filas tenga la base ese día.
+  // En `accesibilidad.spec.ts` la paginación aparece o no según cuántas filas
+  // tenga la base ese día.
   expect(await hallazgosDeAxe(page, 'nav[aria-label="Paginación"]')).toEqual(
     [],
   );
 
-  // Una sola página: no se dibuja nada.
   await page.goto(`/admin/productos?marca=${soloUno}`);
   await expect(
     page.getByRole("link", { name: `Teclado ${palabra}`, exact: true }).first(),
@@ -116,9 +108,7 @@ test("el contador dice qué tramo se ve, y la paginación lleva a cada página",
 test("a 320px, las tarjetas y la paginación no ensanchan la página", async ({
   page,
 }) => {
-  // `accesibilidad.spec.ts` mide los 320px solo en la tienda. En el panel, la
-  // fila de «Reponer» y los cuatro íconos ensanchaba cada tarjeta y se cortaba
-  // el borrar (2026-11-03).
+  // `accesibilidad.spec.ts` mide los 320px solo en la tienda.
   await page.setViewportSize({ width: 390, height: 800 });
   await ingresar(page, admin);
   await page.setViewportSize({ width: 320, height: 800 });

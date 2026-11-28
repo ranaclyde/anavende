@@ -19,17 +19,7 @@ import {
 } from "@/modules/returns/filtros";
 
 /**
- * Reposición y rango de fechas del listado de devoluciones — RF-25, §10.2.
- * Tarea F7.5. El estado va en solapas, arriba, como en órdenes (F2.15).
- *
- * Todo se escribe en la URL, como en el listado de órdenes: la barra no guarda
- * nada, compartir la pantalla es copiar el enlace y el botón atrás deshace un
- * filtro en vez de salir.
- *
- * **Sin búsqueda por texto, y no por olvido**: RF-25 pide filtros por fecha y
- * por reposición. A una devolución concreta se llega por su orden, que es como
- * se la busca —«la de la señora que trajo el auricular»— y ahí está, en el
- * detalle. Un buscador acá sería una segunda forma de encontrar lo mismo.
+ * Sin búsqueda por texto, a propósito: a una devolución se llega por su orden.
  */
 export function BarraDeFiltros({
   filtros,
@@ -39,14 +29,12 @@ export function BarraDeFiltros({
   filtros: FiltrosDeDevoluciones;
   /** Cuántas hay con estos filtros, no cuántas entran en esta página. */
   total: number;
-  /** Para el tramo: «Del 41 al 80 de 95». */
   porPagina: number;
 }) {
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
 
-  // Cualquier cambio vuelve a la página 1: filtrar estando en la 4 y quedarse
-  // ahí es el camino corto a una tabla vacía que parece un error.
+  // Cualquier cambio vuelve a la página 1: quedarse en la 4 da una tabla vacía.
   const aplicar = (cambios: Partial<FiltrosDeDevoluciones>) =>
     iniciar(() =>
       router.push(urlDeFiltros({ ...filtros, ...cambios, pagina: 1 })),
@@ -80,8 +68,7 @@ export function BarraDeFiltros({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        {/* El resultado se anuncia: quien no ve la lista tiene que enterarse
-            igual de cuántas quedaron (§9). */}
+        {/* Se anuncia a lectores de pantalla (§9). */}
         <ContadorDeResultados pendiente={pendiente}>
           {tramo({
             pagina: filtros.pagina,

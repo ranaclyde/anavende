@@ -26,13 +26,8 @@ import {
 import type { UsuarioDelListado } from "@/modules/users/panel/queries";
 
 /**
- * Listado de usuarios — FS RF-26. Tarea F7.6.
- *
- * **Componente de servidor**: los filtros y la paginación son enlaces, y todo
- * lo que se le puede hacer a una cuenta vive en su ficha, con la persona
- * enfrente. Es el mismo reparto que el listado de órdenes.
- *
- * En móvil la tabla se vuelve tarjetas, no scroll horizontal (§6.9).
+ * Listado de usuarios — RF-26. Componente de servidor: lo que se le puede
+ * hacer a una cuenta vive en su ficha.
  */
 export function ListadoDeUsuarios({
   usuarios,
@@ -50,10 +45,8 @@ export function ListadoDeUsuarios({
         <Table className="table-fixed">
           <TableHeader>
             <TableRow className="hover:bg-surface-sunken">
-              {/* Las fijas, al ancho de lo que llevan (F2.15): un teléfono
-                  con código de país entra en 160px, y rol y estado se apilan
-                  si no entran juntos. En una tablet de 820px, con 64px más,
-                  el nombre y el email dejan de cortarse a la mitad. */}
+              {/* Las fijas, al ancho de lo que llevan: así el nombre y el
+                  email no se cortan en una tablet. */}
               <TableHead>Nombre</TableHead>
               <TableHead className="w-40">Teléfono</TableHead>
               <TableHead className="w-44">Rol y estado</TableHead>
@@ -111,8 +104,7 @@ export function ListadoDeUsuarios({
         </Table>
       </div>
 
-      {/* Móvil: la tarjeta entera es el enlace a la ficha, que es lo único
-          que se puede hacer desde acá. */}
+      {/* Móvil: la tarjeta entera es el enlace a la ficha. */}
       <ul className="flex flex-col gap-2 md:hidden">
         {usuarios.map((usuario) => (
           <li key={usuario.id}>
@@ -152,10 +144,7 @@ export function ListadoDeUsuarios({
   );
 }
 
-/**
- * Sin resultados (§8): hay usuarios y ninguno coincide. Se repite lo buscado
- * para ver el error de tipeo sin volver al campo.
- */
+/** Sin resultados (§8): se repite lo buscado para ver el error de tipeo. */
 function SinResultados({ filtros }: { filtros: FiltrosDeUsuarios }) {
   return (
     <VacioDelPanel

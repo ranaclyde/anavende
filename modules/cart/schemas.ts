@@ -1,19 +1,9 @@
 import { z } from "zod";
 
-/**
- * Validación del carrito — RF-08 · TECHNICAL-SPEC §6.2, paso 3.
- *
- * No es `server-only`: la ficha y el carrito usan el tope para no ofrecer un
- * número que el servidor va a rechazar. Quien decide sigue siendo el
- * servidor, que vuelve a correr estos esquemas en el envoltorio.
- */
+// No es `server-only`: la ficha y el carrito usan el tope para no ofrecer un
+// número que el servidor va a rechazar.
 
-/**
- * Cuántas unidades de una misma variante entran en el carrito, aunque haya
- * más stock. Es el 99 del ejemplo de §6.2: una tienda chica no vende cien
- * teclados iguales a una persona por la web, y sin tope un campo numérico
- * acepta lo que se tipee.
- */
+/** Tope por variante en el carrito, aunque haya más stock (TECHNICAL-SPEC §6.2). */
 export const TOPE_POR_ITEM = 99;
 
 const variantId = z.uuid();

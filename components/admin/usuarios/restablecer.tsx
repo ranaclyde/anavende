@@ -15,16 +15,9 @@ import {
 import { mandarRestablecerContrasena } from "@/modules/users/panel/actions";
 
 /**
- * Restablecer la contraseña — FS RF-26. Tarea F7.6.
- *
- * **Manda el mismo email que «¿Olvidaste tu contraseña?»** (E2): la vendedora
- * no llega a saber la contraseña de nadie, ni le inventa una. Lo único que
- * hace este botón es disparar el pedido por la persona, que es lo que se
- * necesita cuando alguien llama porque no puede entrar.
- *
- * **La contraseña actual sigue funcionando** hasta que la persona use el
- * enlace, y el diálogo lo dice: sin eso, apretar esto parece dejar a alguien
- * afuera de su cuenta.
+ * Restablecer la contraseña — RF-26. Manda el mismo email que «¿Olvidaste tu
+ * contraseña?» (E2). La contraseña actual sigue funcionando hasta que la
+ * persona use el enlace, y el diálogo lo dice.
  */
 export function RestablecerContrasena({
   id,

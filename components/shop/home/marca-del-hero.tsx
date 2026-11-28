@@ -11,51 +11,25 @@ import {
 } from "@/lib/marca";
 
 /**
- * «AnaVende» en el hero de la home, y la animación de la primera carga —
- * DESIGN-REFERENCE §2.3 y §7.1, F10.7c.
- *
- * **Lo que se ve quieto es la palabra**, en la letra del logo. La primera vez
- * que alguien abre la home en una visita, la palabra arranca siendo el
- * isotipo: el marco, el joystick y los auriculares se apagan, la A y la V
- * crecen hasta su lugar en la palabra, y de cada una sale el resto, «na» y
- * «ende». Dura unos 4,2 segundos y no se repite.
- *
- * **Todo es CSS** (`marca-del-hero` en `globals.css`): arranca con el primer
- * pintado, sin esperar a que React hidrate, y no vuelve a dibujar nada. Lo
- * que se ve en reposo es el estado final; la animación solo lo recorre desde
- * la grilla. Así, con `prefers-reduced-motion` o con la animación ya vista,
- * alcanza con no correrla.
- *
- * **Una vez por visita.** «Vista» es `data-marca-vista` en `<html>`: lo pone
- * este componente cuando la animación termina, y como `<html>` sobrevive a la
- * navegación de Next, volver al inicio no la repite. (Si alguien se va antes
- * de que termine, al volver la ve entera: no la vio.) Una recarga sí empezaría de cero, así que también se anota en
- * `sessionStorage`, y el script de `app/layout.tsx` repone el atributo antes
- * del primer pintado. Una pestaña nueva es una visita nueva.
+ * La animación es CSS (`marca-del-hero` en `globals.css`), para que arranque
+ * antes de hidratar; en reposo se ve el estado final. Una vez por visita
+ * (docs/MARCA.md): `data-marca-vista` en `<html>` sobrevive a la navegación, y
+ * para la recarga el script de `app/layout.tsx` lo repone desde `sessionStorage`.
  */
 
 function marcarComoVista() {
   document.documentElement.setAttribute("data-marca-vista", "");
 }
 
-// ── Geometría, en las unidades de la palabra (mayúscula de 1000) ──────────
-
+// En las unidades de la palabra (mayúscula de 1000).
 const [x, y, , alto] = PALABRA.caja;
 
-/**
- * La grilla arranca un 25 % más alta que la palabra, centrada en alto y
- * apoyada en su borde izquierdo: el hero está alineado a la izquierda
- * (F10.7d), así que la palabra se abre hacia la derecha desde donde empieza.
- * Centrada a lo ancho aparecía sobre la «V», en medio de la nada.
- */
+/** Un 25 % más alta que la palabra, centrada en alto y apoyada a la izquierda. */
 const LADO_DE_LA_GRILLA = alto * 1.25;
 const ESCALA_DE_LA_GRILLA = LADO_DE_LA_GRILLA / LADO_DEL_ISOTIPO;
 const ORIGEN_DE_LA_GRILLA = [x, y + alto / 2 - LADO_DE_LA_GRILLA / 2];
 
-/**
- * El `transform` que lleva una letra de la palabra a su celda de la grilla:
- * misma letra, más chica y en otro lugar. La animación va de ahí a nada.
- */
+/** El `transform` que lleva una letra de la palabra a su celda de la grilla. */
 function desdeLaGrilla(
   caja: readonly [number, number, number, number],
   [cx, cy]: readonly [number, number],
@@ -89,8 +63,7 @@ export function MarcaDelHero() {
   }, []);
 
   return (
-    // La caja mide lo que medía la palabra en texto, para que el eslogan y
-    // el buscador no se muevan: la palabra va centrada adentro.
+    // La caja mide lo que la palabra en texto, para que lo de abajo no se mueva.
     <span className="flex h-(--text-display) items-center sm:h-(--text-marca)">
       <svg
         aria-hidden

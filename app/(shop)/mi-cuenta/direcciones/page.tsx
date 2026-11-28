@@ -19,16 +19,9 @@ import {
 export const metadata: Metadata = { title: "Direcciones" };
 
 /**
- * La libreta de direcciones — RF-09. Tarea F5.3.
- *
- * Hasta 3 (decisión del 2026-09-13). Con 3, «Agregar» no desaparece: se
- * muestra apagado y con el motivo a la vista (§8), porque un botón que se va
- * sin explicación se lee como un error.
- *
- * **Una tarjeta por fila, siempre.** Son 3 como mucho, y en dos columnas
- * —con el menú al costado— cada una quedaba de unos 460px: «Usar como
- * predeterminada», «Editar» y «Eliminar» no entraban en un renglón. A lo
- * ancho, la dirección va a la izquierda y las acciones a la derecha.
+ * Con la libreta llena, «Agregar» no desaparece: se apaga con el motivo a la
+ * vista, porque un botón que se va sin explicación se lee como un error. Una
+ * tarjeta por fila: en dos columnas las tres acciones no entran en un renglón.
  */
 export default async function Direcciones() {
   const sesion = await getSession();
@@ -40,7 +33,7 @@ export default async function Direcciones() {
 
   const direcciones = await listarDirecciones(sesion.profile.id);
   const llena = direcciones.length >= MAXIMO_DE_DIRECCIONES;
-  // Con la baja pedida (F5.8) la libreta se mira y no se cambia.
+  // Con la baja pedida la libreta se mira y no se cambia.
   const enPausa = sesion.profile.closureRequestedAt !== null;
 
   // La lista viene con la predeterminada primero y después por antigüedad:
@@ -151,7 +144,6 @@ function TarjetaDeDireccion({
   );
 }
 
-/** El vacío explica para qué sirve y ofrece la acción (§8). */
 function SinDirecciones({ enPausa }: { enPausa: boolean }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-card bg-surface px-6 py-16 text-center shadow-md">

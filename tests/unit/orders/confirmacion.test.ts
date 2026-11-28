@@ -17,15 +17,8 @@ import {
 import { limpiarOrdenes } from "@/tests/apoyo/ordenes";
 
 /**
- * F6.3 — la pantalla de confirmación y su mensaje de WhatsApp.
- * RF-12 · DESIGN-REFERENCE §7.5.
- *
- * «Hecho cuando»: número de orden, resumen y botón de WhatsApp como acción
- * principal; recargar no duplica.
- *
- * **Lo que recargar no duplica no se prueba acá**: la pantalla sólo lee, y
- * que dos confirmaciones con la misma clave devuelvan la misma orden ya está
- * probado en `crear.test.ts` (§8.5), que es donde vive esa garantía.
+ * La pantalla de confirmación y su mensaje de WhatsApp (RF-12). Que recargar
+ * no duplica se prueba en `crear.test.ts` (§8.5): la pantalla solo lee.
  */
 
 afterEach(async () => {
@@ -79,7 +72,7 @@ describe("lo que la pantalla necesita leer", () => {
     // Cuatro unidades en dos renglones: el contador cuenta unidades, no
     // renglones, igual que el resumen del checkout.
     expect(orden!.unidades).toBe(4);
-    // El del pedido, que puede no ser el de la cuenta (F6.1).
+    // El del pedido, que puede no ser el de la cuenta.
     expect(orden!.customerName).toBe("Rosa Pereyra");
 
     expect(orden!.items).toHaveLength(2);
@@ -145,8 +138,7 @@ describe("el mensaje de WhatsApp del pedido", () => {
   test("lleva el número, el nombre, qué se compró y el total", () => {
     const mensaje = mensajeDeOrden(1043, "Rosa Pereyra", items, "$ 49.000,00");
 
-    // El número es lo que la vendedora usa para buscar en el panel, así que
-    // va en su propio renglón y no escondido en una frase.
+    // En su propio renglón: es lo que se busca en el panel.
     expect(mensaje).toContain("Pedido #1043, a nombre de Rosa Pereyra");
     expect(mensaje).toContain("2 × Teclado K120 (Logitech), negro");
     expect(mensaje).toContain("Total: $ 49.000,00");
@@ -174,7 +166,6 @@ describe("el mensaje de WhatsApp del pedido", () => {
     // Ni un carácter crudo de los tres que rompen el enlace.
     const texto = enlace.slice("https://wa.me/5491155550000?text=".length);
     expect(texto).not.toMatch(/[\n$¡]/);
-    // Y vuelve entero.
     expect(decodeURIComponent(texto)).toContain("Pedido #1043");
   });
 });

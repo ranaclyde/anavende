@@ -11,29 +11,9 @@ import {
 } from "@/lib/errors";
 import { getIdentity, getSession, type Session } from "@/lib/session";
 
-/**
- * Envoltorio de Server Actions — TECHNICAL-SPEC §6.2.
- *
- * TODAS las mutaciones pasan por acá, de modo que autenticación, rol,
- * validación y traducción de errores no dependan de que alguien se acuerde de
- * escribirlas. Una guardia que hay que recordar es una guardia que un día se
- * olvida, y ese día es el que importa.
- *
- * Garantiza, en este orden:
- *   1. Identidad y perfil FRESCOS de la base (§13.3). Sin perfil, se rechaza.
- *   2. Usuario bloqueado: rechazado en toda acción (RF-27).
- *   2b. Comprador con la baja pedida: su cuenta es de solo lectura (RF-34,
- *      decisión del 2026-09-14). Se rechaza toda acción `customer` salvo las
- *      que se declaran con `.aunConBajaPendiente()` —retirar el pedido,
- *      elegir cómo se ve una lista—. Va acá y no en cada acción por el mismo
- *      motivo que todo lo demás: una acción nueva queda cubierta sola.
- *   3. Validación con Zod EN EL SERVIDOR, aunque el formulario ya haya
- *      validado en el cliente.
- *   4. Ejecución en try/catch que distingue errores de dominio de inesperados.
- *   5. Respuesta uniforme. Nunca se propaga un mensaje de Postgres ni un
- *      stack trace al cliente.
- *   6. Sentry solo para lo inesperado: un «sin stock» no es un incidente.
- */
+// El envoltorio de Server Actions (TECHNICAL-SPEC §6.2): todas las mutaciones
+// pasan por acá, para que sesión, rol, validación y errores no dependan de
+// que alguien se acuerde.
 
 export type ActionOk<T> = { ok: true; data: T };
 
@@ -41,13 +21,11 @@ export type ActionErr = {
   ok: false;
   code: DomainErrorCode;
   message: string;
-  /** Errores por campo, cuando el código es VALIDATION. */
   details?: Record<string, unknown>;
 };
 
 export type ActionResult<T> = ActionOk<T> | ActionErr;
 
-/** `public` no exige sesión; `customer` y `admin` sí. */
 export type AuthLevel = "public" | "customer" | "admin";
 
 type Ctx<L extends AuthLevel> = L extends "public"
@@ -82,8 +60,8 @@ class ActionBuilder<TInput, L extends AuthLevel> {
   }
 
   /**
-   * La acción se puede usar con la baja pedida (paso 2b). Es la excepción y
-   * se declara a mano: lo que no la declara queda bloqueado.
+   * Con la baja pedida, la cuenta es de solo lectura (RF-34) salvo lo que
+   * declara esto.
    */
   aunConBajaPendiente(): ActionBuilder<TInput, L> {
     return new ActionBuilder<TInput, L>(this.schema, this.level, true);
@@ -95,16 +73,11 @@ class ActionBuilder<TInput, L extends AuthLevel> {
     const { schema, level, conBajaPendiente } = this;
 
     return async (raw: TInput): Promise<ActionResult<TOutput>> => {
-      // ── 1 y 2. Identidad, perfil y bloqueo ───────────────────────────
       let session: Session | null = null;
 
       if (level !== "public") {
         session = await getSession();
 
-        // Sin sesión o sin perfil: para el envoltorio son lo mismo, falta de
-        // autorización (§13.4), y la acción no corre. **Lo que cambia es el
-        // mensaje**: quien entró con Google y no completó el perfil ya inició
-        // sesión, y decirle que lo haga es falso y no le dice qué hacer.
         // `getIdentity` está en `cache()` y `getSession` ya la pidió: no es
         // otra verificación.
         if (!session) {
@@ -122,16 +95,9 @@ class ActionBuilder<TInput, L extends AuthLevel> {
           });
         }
 
-        // **Dada de baja: afuera de todo, y antes de mirar el nivel** (RF-34,
-        // F7.9). Va acá arriba y no junto al paso 2b porque aquello es la
-        // cuenta en solo lectura mientras la baja está PEDIDA —con sus
-        // excepciones declaradas— y esto es una cuenta que ya no está: ni
-        // siquiera retirar el pedido, que es lo que quedaría a mano si esto
-        // cayera más abajo. Llega hasta acá quien tiene un token emitido antes
-        // de la baja, hasta que el proxy le cierre la sesión (§13.3).
-        // `!= null` y no `!== null`: la comprobación se inclina hacia dejar
-        // pasar. Una fila leída sin esa columna vale `undefined`, y con la
-        // comparación estricta toda la tienda quedaría dada de baja.
+        // Antes de mirar el nivel: una cuenta dada de baja no puede ni retirar
+        // el pedido. `!= null` a propósito: una fila leída sin esa columna vale
+        // `undefined`, y con `!==` toda la tienda quedaría dada de baja.
         if (session.profile.closedAt != null) {
           return fallo("ACCOUNT_CLOSED", domainMessage("ACCOUNT_CLOSED"));
         }
@@ -151,11 +117,9 @@ class ActionBuilder<TInput, L extends AuthLevel> {
           );
         }
       } else {
-        // Una acción pública igual quiere saber quién es, si hay alguien.
         session = await getSession();
       }
 
-      // ── 3. Validación en el servidor ─────────────────────────────────
       let input = raw;
       if (schema) {
         const resultado = await schema.safeParseAsync(raw);
@@ -163,15 +127,12 @@ class ActionBuilder<TInput, L extends AuthLevel> {
           return fallo(
             "VALIDATION",
             "Revisá los datos: hay algo que no está bien.",
-            // treeifyError da la forma anidada que el formulario necesita
-            // para colgar cada mensaje de su campo.
             { fields: z.treeifyError(resultado.error) },
           );
         }
         input = resultado.data;
       }
 
-      // ── 4, 5 y 6. Ejecución y traducción de errores ──────────────────
       try {
         const data = await fn({
           input,
@@ -180,16 +141,11 @@ class ActionBuilder<TInput, L extends AuthLevel> {
         return { ok: true, data };
       } catch (e) {
         if (isDomainError(e)) {
-          // Resultado del negocio, no incidente: no va a Sentry.
           return fallo(e.code, e.message, e.details);
         }
 
-        // Inesperado. Se reporta con contexto, pero el cliente recibe una
-        // frase, jamás el mensaje de Postgres ni un stack trace.
-        //
-        // En desarrollo además se imprime: sin esto el error queda invisible
-        // —Sentry no está configurado en local— y depurar una acción se
-        // vuelve adivinar.
+        // Al cliente, nunca el mensaje de Postgres ni el stack trace. En local
+        // se imprime porque Sentry no está configurado.
         if (process.env.NODE_ENV !== "production") {
           console.error("[server action] error inesperado:", e);
         }
@@ -209,7 +165,7 @@ class ActionBuilder<TInput, L extends AuthLevel> {
 }
 
 /**
- * Punto de entrada. Uso:
+ * Uso:
  *
  *   export const addToCart = action
  *     .input(z.object({ variantId: z.uuid(), quantity: z.number().int().min(1).max(99) }))

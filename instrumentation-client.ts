@@ -8,7 +8,7 @@ Sentry.init({
   enabled: Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN),
   environment: process.env.NODE_ENV,
   tracesSampleRate: 0.1,
-  // El reproductor de sesión graba la pantalla del comprador: fuera (§16).
+  // El reproductor de sesión grabaría la pantalla del comprador (§16).
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 0,
   sendDefaultPii: false,

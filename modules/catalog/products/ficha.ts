@@ -7,78 +7,46 @@ import { db } from "@/db";
 import type { Money } from "@/lib/money";
 import { rutaDeVistaPrevia, urlDeImagen } from "@/modules/media/subir";
 
-/**
- * La ficha de producto — F3.5, RF-03, §7.3, §10.1.
- *
- * **Una sola consulta, con las variantes y sus imágenes adentro.** Podrían
- * ser tres —producto, variantes, imágenes— y serían tres viajes encadenados:
- * hasta no saber el `id` del producto no se pueden pedir sus variantes, y
- * hasta no tener las variantes no se piden las imágenes. Es el waterfall
- * clásico, y acá se paga entero porque la ficha no puede pintar nada sin las
- * tres cosas.
- *
- * Por qué NO filtra por `b.is_active` ni `c.is_active`: el mismo motivo que
- * el catálogo (`tienda.ts`). RN-11b prohíbe que un producto activo tenga
- * marca, categoría o color inactivos, y esa invariante la sostiene la base.
- */
+// Una sola consulta con variantes e imágenes adentro, para no encadenar tres
+// viajes. No filtra por marca o categoría activas: RN-11b lo sostiene la base.
 
-/** Una imagen ya resuelta a URLs: la vista no arma claves de Storage (§9.4). */
+/** Ya resuelta a URLs: la vista no arma claves de Storage. */
 export type ImagenDeFicha = {
-  /** 1400px (§9.2) — la principal y la ampliada del modal. */
+  /** 1400px. */
   grande: string;
-  /** 200px — la tira de miniaturas de §6.8. */
+  /** 200px. */
   miniatura: string;
-  /** 1200×630 en JPEG — la vista previa al compartir (F3.9). No se muestra
-   *  en ninguna pantalla: existe solo para `og:image`. Es una ruta de la
-   *  tienda y no una URL de Storage (`rutaDeVistaPrevia`). */
+  /** Para `og:image`: una ruta de la tienda, no una URL de Storage. */
   og: string;
-  /** Lo que escribió la vendedora, o `null`: lo completa quien lo muestra. */
+  /** `null`: lo completa quien lo muestra. */
   alt: string | null;
 };
 
 export type VarianteDeFicha = {
-  /** Lo que agrega al carrito (F5.5): el renglón del carrito es la variante. */
   id: string;
-  /**
-   * Lo que va en `?color=`. `null` si el producto no viene en colores. En una
-   * variante de dos colores es `negro-rojo` y el nombre es «Negro/Rojo»: los
-   * arma la vista `variant_colors`.
-   */
+  /** Lo que va en `?color=`; en una de dos colores lo arma la vista `variant_colors`. */
   colorSlug: string | null;
   colorNombre: string | null;
   colorHex: string | null;
-  /** El segundo color, para partir la esfera. `null` = de un solo color. */
+  /** `null` = de un solo color. */
   colorHex2: string | null;
-  /** `stock_total − reserved_stock` (§8.1). Puede ser NEGATIVO — ver RF-24. */
+  /** Puede ser negativo (RF-24). */
   disponible: number;
-  /**
-   * Las de la variante, o las de su respaldo (§9.5, RF-16). Puede venir
-   * vacía: F2.4 da de alta en dos pasos, así que una variante sin fotos
-   * todavía existe de verdad.
-   */
+  /** Las propias o las de la variante que reutiliza. Puede venir vacía. */
   imagenes: ImagenDeFicha[];
 };
 
 export type Ficha = {
-  /** Lo que guarda «Guardar» (F5.4): el favorito es del producto, no del color. */
   id: string;
   slug: string;
   nombre: string;
-  /** Markdown ya sanitizado al guardar; se vuelve a filtrar al pintar (§16). */
+  /** Markdown sanitizado al guardar; se vuelve a filtrar al pintar. */
   descripcion: string;
-  /**
-   * La misma descripción sin marcadores: es la columna generada
-   * `description_text` de §5.4, que existe para que la búsqueda encuentre
-   * `Cable **HDMI**`. Acá sirve para la descripción de los metadatos, y por
-   * eso se trae en vez de volver a limpiar el Markdown en JavaScript: ya está
-   * limpia, y una segunda limpieza es una segunda opinión sobre lo mismo.
-   */
+  /** La columna generada `description_text`, sin marcadores. */
   descripcionTexto: string;
   marca: string;
-  /** Opcional (2026-11-05): va entre el nombre y el precio, con «Copiar». */
   sku: string | null;
   categoria: string;
-  /** Para la miga y el «Ver todo»: la página de la categoría va por slug. */
   categoriaSlug: string;
   precio: Money;
   descuento: Money;
@@ -97,15 +65,9 @@ type FilaDeVariante = {
 };
 
 /**
- * **Envuelta en `cache()` de React**, que deduplica por pedido: la página y
- * `generateMetadata` piden la misma ficha y sin esto serían dos consultas
- * idénticas contra la base en cada visita. `fetch` lo hace solo; una consulta
- * por Drizzle no.
- *
- * `null` cuando el producto no existe o está desactivado. Los dos casos dan
- * lo mismo hacia afuera y tienen que darlo: RN-05 dice que un producto
- * inactivo no es visible en el sitio público, y distinguirlo de uno
- * inexistente contaría que existe.
+ * `null` si no existe o está inactivo: hacia afuera no se distinguen (RN-05).
+ * Con `cache` porque la piden la página y `generateMetadata`; Drizzle no
+ * deduplica como `fetch`.
  */
 export const leerFicha = cache(async function leerFicha(
   slug: string,
@@ -187,9 +149,7 @@ export const leerFicha = cache(async function leerFicha(
       colorHex: v.colorHex,
       colorHex2: v.colorHex2,
       disponible: v.disponible,
-      // Las URLs se arman ACÁ y no en el componente: `urlDeImagen` necesita
-      // el adaptador de almacenamiento, que es código de servidor, y la
-      // galería es una isla de cliente.
+      // Acá y no en la galería: `urlDeImagen` es de servidor.
       imagenes: v.imagenes.map((i) => ({
         grande: urlDeImagen(i.key, "detail"),
         miniatura: urlDeImagen(i.key, "thumb"),
@@ -201,15 +161,8 @@ export const leerFicha = cache(async function leerFicha(
 });
 
 /**
- * Qué variante mostrar al abrir, según el `?color=` de la dirección.
- *
- * Un color que no existe —enlace viejo, o escrito a mano— **no es un 404**:
- * el producto existe y se muestra en su primera variante. Devolver 404 por
- * un parámetro de consulta castigaría a quien guardó el enlace de un color
- * que la vendedora dio de baja, y lo que quiere ver sigue estando ahí.
- *
- * Devuelve `-1` si el producto no tiene ninguna variante activa, que es un
- * estado real: F2.4 da de alta en dos pasos.
+ * Un `?color=` que no existe no es un 404: muestra la primera variante.
+ * `-1` si el producto no tiene ninguna variante activa.
  */
 export function varianteInicial(
   variantes: VarianteDeFicha[],

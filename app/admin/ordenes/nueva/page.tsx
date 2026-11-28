@@ -7,11 +7,6 @@ import { exigirAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Nueva orden" };
 
-/**
- * La guía de la orden manual (F6.7, RF-37). Dos pasos, porque el resto del
- * formulario se explica solo: la bajada, el aviso de que el precio se puede
- * cambiar y lo que hace cada estado ya están en pantalla.
- */
 const PASOS_DE_LA_ORDEN_NUEVA: PasoDeAyuda[] = [
   {
     elemento: "agregar-productos",
@@ -28,16 +23,8 @@ const PASOS_DE_LA_ORDEN_NUEVA: PasoDeAyuda[] = [
 ];
 
 /**
- * Cargar una venta hecha fuera de la web — FS RF-24. Tarea F7.4.
- *
- * **La página no trae datos**: el catálogo y los compradores se buscan
- * mientras se escribe, y precargarlos sería mandar el catálogo entero al
- * navegador para que se use una fila. Lo único que hay acá es el encabezado
- * y la isla del formulario.
- *
- * **La guardia es el layout de `/admin`**, que verifica el rol contra la base
- * en cada petición; las acciones que este formulario llama la repiten con
- * `.auth("admin")`, porque una Server Action es una puerta propia (§6.2).
+ * Venta fuera de la web (RF-24). No trae datos: catálogo y compradores se
+ * buscan mientras se escribe, para no mandar el catálogo entero al navegador.
  */
 export default async function NuevaOrden() {
   await exigirAdmin();

@@ -11,10 +11,7 @@ import {
   TOPE_DEL_TEXTO_DE_CATEGORIA,
 } from "@/modules/catalog/schemas";
 
-/**
- * F3.11 — el texto de la página de una categoría, y la lectura que decide si
- * la página existe.
- */
+/** El texto de la página de una categoría, y la lectura que decide si la página existe. */
 
 describe("el texto, al validarlo", () => {
   const id = randomUUID();

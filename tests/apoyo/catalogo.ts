@@ -5,20 +5,9 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
 /**
- * Datos de prueba mínimos para los tests de F4.
- *
- * Una variante no existe sola: cuelga de un producto, que cuelga de una marca
- * y de una categoría. Lo que hace falta para probar stock es eso y nada más,
- * así que esto crea la cadena más corta posible y se olvida del resto del
- * catálogo.
- *
- * **La limpieza va por borrado y no por transacción que se revierte**, y es
- * una decisión, no una comodidad: la Compuerta F4 necesita DOS transacciones
- * de verdad corriendo a la vez sobre la misma fila, y eso no se puede armar
- * adentro de una sola que después se deshace. Envolver todo en una transacción
- * dejaría justamente el test que importa fuera del patrón.
- *
- * El borrado se lleva todo en cascada: producto → variantes → movimientos.
+ * La limpieza va por borrado y no por transacción revertida: los tests de
+ * concurrencia necesitan dos transacciones reales sobre la misma fila.
+ * Borrar el producto se lleva en cascada variantes y movimientos.
  */
 
 const creados: { productos: string[]; marcas: string[]; categorias: string[] } =
@@ -30,12 +19,8 @@ export type VariantePrueba = {
 };
 
 /**
- * Una variante con el stock que se le pida.
- *
- * `reservedStock` se escribe DIRECTO, sin pasar por `reservar()`: acá se está
- * preparando un escenario, no probando una operación. Si el escenario se
- * armara con la misma función que se prueba, un test de reserva rota podría
- * pasar en verde porque el escenario también salió mal.
+ * `reservedStock` se escribe directo, sin `reservar()`: armar el escenario con
+ * la función que se prueba podría dar verde con una reserva rota.
  */
 export async function unaVariante(
   stock: { total: number; reservado?: number } = { total: 0 },
@@ -51,11 +36,8 @@ export async function unaVariante(
 }
 
 /**
- * Un producto con su marca y su categoría, sin ninguna variante.
- *
- * Existe porque `variant_product_color_key` no deja dos variantes sin color
- * en el mismo producto: el test que inserta una variante a mano necesita un
- * producto virgen, no el que ya trae la suya.
+ * Sin variantes: `variant_product_color_key` no deja dos variantes sin color
+ * en el mismo producto, y hay tests que insertan la suya a mano.
  */
 export async function unProducto(): Promise<string> {
   const sufijo = randomUUID().slice(0, 8);
@@ -80,7 +62,6 @@ export async function unProducto(): Promise<string> {
   return producto.id;
 }
 
-/** Los dos contadores, tal como están en la base ahora mismo. */
 export async function contadores(
   variantId: string,
 ): Promise<{ stockTotal: number; reservedStock: number }> {
@@ -103,7 +84,6 @@ export type Asiento = {
   note: string | null;
 };
 
-/** El libro mayor de una variante, del más viejo al más nuevo. */
 export async function movimientos(variantId: string): Promise<Asiento[]> {
   return [
     ...(await db.execute<Asiento>(sql`
@@ -120,10 +100,8 @@ export async function movimientos(variantId: string): Promise<Asiento[]> {
   ];
 }
 
-/** Se llama desde un `afterEach`. Deja la base como la encontró. */
 export async function limpiar(): Promise<void> {
-  // El orden importa: los productos referencian marca y categoría con
-  // RESTRICT, así que primero se van ellos.
+  // Primero los productos: referencian marca y categoría con RESTRICT.
   for (const id of creados.productos.splice(0)) {
     await db.execute(sql`DELETE FROM products WHERE id = ${id}`);
   }

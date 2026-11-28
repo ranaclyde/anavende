@@ -2,13 +2,8 @@ import { formatMoney } from "@/lib/money";
 import type { Aviso } from "@/modules/cart/revision";
 
 /**
- * Lo que cambió desde la última vez (RF-08): precio y stock. Sale una sola
- * vez —la revisión deja el carrito al día— y no frena nada: lo de abajo ya
- * está corregido.
- *
- * Lo usan el carrito (F5.6) y el checkout (F6.1): los dos revisan el carrito
- * al abrirse, y un precio que cambió mientras el comprador confirmaba se
- * cuenta igual en los dos lados.
+ * Lo que cambió en precio y stock (RF-08). Sale una sola vez —la revisión deja
+ * el carrito al día— y no frena nada: lo de abajo ya está corregido.
  */
 export function Avisos({ avisos }: { avisos: Aviso[] }) {
   return (

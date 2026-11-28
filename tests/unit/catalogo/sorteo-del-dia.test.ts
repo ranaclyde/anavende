@@ -4,8 +4,8 @@ import { diaDeArgentina } from "@/lib/escenas";
 import { sorteoDelDia } from "@/lib/sorteo-del-dia";
 
 /**
- * F10.7d — TS §10.5. Las seis categorías del hero: las mismas todo el día,
- * otras al siguiente, y con el día de Argentina.
+ * Las seis categorías del hero (TS §10.5): las mismas todo el día, otras al
+ * siguiente, y con el día de Argentina.
  */
 
 const categorias = Array.from({ length: 31 }, (_, i) => ({

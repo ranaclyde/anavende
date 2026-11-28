@@ -19,43 +19,25 @@ import type {
   Totales,
 } from "@/modules/reports/queries";
 
-/**
- * La exportación de los reportes a Excel — FS RF-28 · TS §15. Tarea F9.2.
- *
- * **Un libro con una hoja por reporte**, en el orden de la pantalla. RF-28
- * pide que «cada reporte pueda exportarse»: un solo archivo con todas las
- * hojas lo cumple con un clic, y evita juntar seis descargas para mirar un
- * mes.
- *
- * **Los números van como números**, no como texto con formato: una celda que
- * dice «$ 12.500,00» como texto no se suma ni se filtra, que es para lo que se
- * baja una planilla. El formato de moneda y de fecha es de la celda (`numFmt`),
- * y Excel lo pinta con los separadores de quien la abre. Los montos llegan ya
- * sumados de SQL y se convierten una sola vez, al escribirlos (`paraPlanilla`).
- *
- * **Las fechas son fechas del calendario**, y se escriben a la medianoche UTC
- * de ese día: Excel no tiene zonas, y así el 1° de octubre se lee 1° de
- * octubre en cualquier máquina.
- *
- * Es una función pura sobre datos ya leídos: la consulta es de la ruta
- * (`app/admin/reportes/export/route.ts`), y así esto se prueba sin base.
- */
+// Los números van como números y el formato es de la celda (`numFmt`): un
+// texto «$ 12.500,00» no se suma ni se filtra. Las fechas van a la medianoche
+// UTC: Excel no tiene zonas, y así el día se lee igual en cualquier máquina.
 
 export type DatosDeLaPlanilla = {
   periodo: Periodo;
   totales: Totales;
   anteriores: Totales;
   serie: PuntoDeVentas[];
-  /** Todos los productos vendidos, no sólo los diez de la pantalla. */
+  /** Todos, no solo los diez de la pantalla. */
   productos: ProductoVendido[];
   categorias: FilaAgrupada[];
   marcas: FilaAgrupada[];
   origenes: PorOrigen[];
-  /** Cuándo se generó, para el encabezado. Se pasa para poder probarlo. */
+  /** Se pasa para poder probarlo. */
   generada: Date;
 };
 
-/** Pesos con dos decimales; los negativos con signo, no entre paréntesis. */
+/** Los negativos con signo, no entre paréntesis. */
 const MONEDA = '"$" #,##0.00;-"$" #,##0.00';
 const ENTERO = "#,##0";
 const PORCENTAJE = "0%";
@@ -64,7 +46,6 @@ const MES = "mmmm yyyy";
 
 const NOMBRE_DEL_ORIGEN = { web: "Web", manual: "Carga manual" } as const;
 
-/** El nombre del archivo: dice el período, para que dos bajadas no se pisen. */
 export function nombreDelArchivo({ desde, hasta }: Rango): string {
   return desde === hasta
     ? `reportes-de-ventas-${desde}.xlsx`
@@ -88,11 +69,7 @@ function nombreDelRango({ desde, hasta }: Rango): string {
     : DIA_LARGO.formatRange(aFecha(desde), aFecha(hasta));
 }
 
-/**
- * Una hoja con su tabla: encabezado en negrita sobre gris, fijo al bajar, y
- * con filtros. Los anchos van a mano: ExcelJS no los calcula, y una columna de
- * montos angosta se ve como «########».
- */
+/** Anchos a mano: ExcelJS no los calcula, y un monto angosto sale «########». */
 function hojaConTabla(
   libro: ExcelJS.Workbook,
   nombre: string,
@@ -129,7 +106,7 @@ function hojaConTabla(
   return hoja;
 }
 
-/** Cambio contra el período anterior, como fracción para `0%`; o vacío. */
+/** Como fracción, para el formato `0%`. */
 function cambio(actual: number, anterior: number): number | null {
   return anterior > 0 ? (actual - anterior) / anterior : null;
 }
@@ -145,9 +122,7 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
   libro.creator = "AnaVende";
   libro.created = datos.generada;
 
-  // ── Totales ──────────────────────────────────────────────────────────
-  // La primera hoja dice qué es el archivo: quien lo abre dentro de un mes no
-  // tiene la URL a mano para saber qué período bajó.
+  // La primera hoja dice qué período es: quien lo abre después no tiene la URL.
   const totalesHoja = libro.addWorksheet("Totales");
   totalesHoja.columns = [
     { width: 26 },
@@ -225,7 +200,6 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
     fila.getCell(4).numFmt = PORCENTAJE;
   }
 
-  // ── Ventas en el tiempo ──────────────────────────────────────────────
   const porDia = periodo.agrupado === "dia";
   hojaConTabla(
     libro,
@@ -246,11 +220,7 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
     ]),
   );
 
-  // ── Más vendidos ─────────────────────────────────────────────────────
-  // **Todos, no los diez de la pantalla**: en una planilla el corte no hace
-  // falta, y es justo donde se busca el producto que no aparece arriba. El
-  // orden es el que estaba elegido —por ingresos o por unidades—, y el
-  // desglose por color va en su propia hoja para que se pueda filtrar.
+  // El desglose por color va en su propia hoja, para poder filtrarlo.
   hojaConTabla(
     libro,
     "Más vendidos",
@@ -291,7 +261,6 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
     ),
   );
 
-  // ── Por categoría y por marca ────────────────────────────────────────
   for (const [nombre, columna, filas] of [
     ["Por categoría", "Categoría", datos.categorias],
     ["Por marca", "Marca", datos.marcas],
@@ -308,8 +277,7 @@ export async function armarPlanilla(datos: DatosDeLaPlanilla): Promise<Buffer> {
     );
   }
 
-  // ── Web y carga manual ───────────────────────────────────────────────
-  // Dos montos que ya vinieron de SQL: `sum` es la suma exacta de lib/money.
+  // `sum` es la suma exacta de `lib/money`.
   const total = sum(datos.origenes.map((o) => o.vendido));
   hojaConTabla(
     libro,

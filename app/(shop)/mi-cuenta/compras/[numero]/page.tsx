@@ -18,12 +18,7 @@ import { numeroDeWhatsApp } from "@/modules/settings/queries";
 
 type Props = { params: Promise<{ numero: string }> };
 
-/**
- * La guía del detalle (F6.6, RF-36), para un pedido en preparación: cómo
- * sigue y dónde se cancela. El estado no se explica: la frase de abajo de la
- * etiqueta ya lo dice. Sin número de WhatsApp configurado el botón no
- * existe, y ese paso se saltea.
- */
+// Sin número de WhatsApp configurado el botón no existe y ese paso se saltea.
 const PASOS_DEL_DETALLE: PasoDeAyuda[] = [
   {
     elemento: "seguir-whatsapp",
@@ -46,20 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * El detalle de una compra — FS RF-07, RF-23, RF-34 · TS §13.8. Tarea F6.5.
- *
- * **No es la pantalla de confirmación.** `/orden/[numero]` es el momento de
- * haber comprado y se lee una vez: felicita, dice que el stock quedó guardado
- * y empuja a coordinar. Esta es el registro, y se vuelve a ella semanas
- * después para otra cosa — ver en qué anda, releer qué se pidió, arrepentirse.
- * Comparten los datos y no el tono, y por eso son dos páginas: hacer una sola
- * con un `if` la habría dejado a medio camino de las dos.
- *
- * **Cancelar está acá, a la vista.** RF-34 dejó escrito que para quien tiene
- * sesión, cancelar su orden `activa` *es* el derecho de arrepentimiento, y
- * RF-23 que su visibilidad es parte del requisito: no va detrás de un menú.
- *
- * Una orden ajena es un 404, igual que una que no existe (§13.8).
+ * No es la pantalla de confirmación (`/orden/[numero]`): comparten los datos y
+ * no el tono, y por eso son dos páginas. Cancelar va a la vista, no detrás de
+ * un menú: es el derecho de arrepentimiento (RF-23, RF-34). Una orden ajena es
+ * un 404, igual que una que no existe.
  */
 export default async function DetalleDeLaCompra({ params }: Props) {
   const [{ numero: crudo }, sesion] = await Promise.all([params, getSession()]);
@@ -111,11 +96,8 @@ export default async function DetalleDeLaCompra({ params }: Props) {
         <EstadoDeLaOrden estado={orden.estado} />
       </header>
 
-      {/*
-        Qué significa ese estado para quien mira, que la etiqueta sola no dice.
-        Una cancelada explica además que el stock volvió: si no, queda la duda
-        de si el pedido sigue reservado en algún lado.
-      */}
+      {/* Una cancelada dice que el stock volvió: si no, queda la duda de si
+          sigue reservado. */}
       <div className="flex flex-col gap-1">
         <p className="text-body text-ink-secondary">
           {orden.estado === "activa"
@@ -127,14 +109,7 @@ export default async function DetalleDeLaCompra({ params }: Props) {
                 : "Cancelaste este pedido y liberamos el stock. No se cobró nada."}
         </p>
 
-        {/*
-          El motivo que escribió la vendedora, cuando lo escribió — RF-23 lo
-          deja opcional. **Se muestra acá y no sólo en el panel** (decisión
-          del 2026-09-16): a quien le cancelaron un pedido, «por qué» es la
-          única pregunta que le queda, y tenerla contestada le ahorra
-          escribir. El propio arrepentimiento no lleva motivo, así que esto
-          aparece únicamente cuando canceló la tienda.
-        */}
+        {/* Solo hay motivo cuando canceló la tienda: el arrepentimiento no lleva. */}
         {orden.cancelacion?.motivo ? (
           <p className="text-body-sm text-ink-secondary">
             Motivo: {orden.cancelacion.motivo}
@@ -174,11 +149,7 @@ export default async function DetalleDeLaCompra({ params }: Props) {
         </dl>
       </div>
 
-      {/*
-        Las dos acciones de una orden abierta, y solo mientras esté abierta:
-        retomar la conversación (RF-07) y arrepentirse (RF-23). Sobre una
-        entregada o una cancelada no hay nada que hacer desde acá.
-      */}
+      {/* Sobre una entregada o una cancelada no hay nada que hacer desde acá. */}
       {activa ? (
         <div className="flex flex-col gap-3">
           {whatsapp ? (

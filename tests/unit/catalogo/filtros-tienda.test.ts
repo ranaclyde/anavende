@@ -20,25 +20,14 @@ import {
 } from "@/modules/catalog/products/filtros-tienda";
 
 /**
- * F3.4 — RF-02, §10.2.
- *
- * **Esta es la única fuente del estado del catálogo**, y hasta hoy no tenía
- * un solo test: lo que se lee de la dirección y lo que se escribe en ella
- * tienen que ser la misma cosa, y cuando no lo son el síntoma no es un error
- * sino un filtro que queda puesto y no se puede sacar.
- *
- * Lo que se prueba es lo que no se ve leyendo el módulo: que un parámetro
- * repetido llegue como lista, que la basura pegada en la barra de direcciones
- * no llegue a Postgres, que el tope de valores exista de verdad, y que ir y
- * volver por la URL no pierda ni invente nada.
+ * La única fuente del estado del catálogo: lo que se lee de la dirección y lo
+ * que se escribe en ella tienen que coincidir, o queda un filtro puesto que no
+ * se puede sacar.
  */
-
-// Slugs, como desde el 2026-10-14: `?marca=logitech`.
 const A = "logitech";
 const B = "hyperx";
 const C = "cooler-master";
 
-/** Los parámetros de una URL, tal como los entrega Next. */
 function params(url: string): Record<string, string | string[]> {
   const busqueda = new URL(url, "http://x").searchParams;
   const salida: Record<string, string | string[]> = {};
@@ -64,15 +53,13 @@ describe("multiselección", () => {
   });
 
   test("los slugs se normalizan a minúsculas", () => {
-    // Los slugs se guardan en minúscula, y el chip compara por igualdad: en
-    // mayúsculas el filtro quedaría aplicado y sin chip que lo saque.
+    // El chip compara por igualdad: en mayúsculas el filtro quedaría aplicado
+    // y sin chip que lo saque.
     expect(leerFiltrosDeTienda({ color: A.toUpperCase() }).color).toEqual([A]);
   });
 
   test("lo que no tiene forma de slug se descarta y no llega a la consulta", () => {
-    // La forma de `slugificar`: minúsculas, números y guiones simples, hasta
-    // 60. Lo demás no puede ser una marca, y no hace falta preguntárselo a la
-    // base.
+    // La forma de `slugificar`: minúsculas, números y guiones simples, hasta 60.
     const f = leerFiltrosDeTienda({
       marca: [
         "cooler master",
@@ -98,12 +85,10 @@ describe("multiselección", () => {
   test("`alternar` pone, saca, y respeta el tope", () => {
     expect(alternar([], A)).toEqual([A]);
     expect(alternar([A, B], C)).toEqual([A, B, C]);
-    // Volver a tocar el chip encendido lo apaga.
     expect(alternar([A, B], A)).toEqual([B]);
 
     const lleno = Array.from({ length: MAXIMO_POR_FILTRO }, () => randomUUID());
     expect(alternar(lleno, A)).toHaveLength(MAXIMO_POR_FILTRO);
-    // Pero sacar uno de una lista llena sigue funcionando.
     expect(alternar(lleno, lleno[0])).toHaveLength(MAXIMO_POR_FILTRO - 1);
   });
 });
@@ -133,9 +118,8 @@ describe("rango de precio", () => {
   });
 
   test("un número más grande que la columna se descarta", () => {
-    // `numeric(12,2)` admite diez dígitos enteros, y `formatMoney` —que pinta
-    // el chip— tira una excepción con once. Sin este corte, `?precioMax=` con
-    // once dígitos rompe la página en vez de no filtrar nada.
+    // `formatMoney`, que pinta el chip, tira una excepción con once dígitos
+    // enteros: sin este corte, la página se rompe en vez de no filtrar.
     expect(leerFiltrosDeTienda({ precioMax: "9999999999" }).precioMax).toBe(
       9_999_999_999,
     );
@@ -200,8 +184,7 @@ describe("el contador del botón «Filtros»", () => {
   });
 
   test("cuenta valores y no grupos", () => {
-    // Contando grupos, sacar una de las dos marcas dejaría el número quieto y
-    // parecería que el clic no hizo nada.
+    // Contando grupos, sacar una de dos marcas dejaría el número quieto.
     expect(contarFiltrosDeTienda(con({ marca: [A, B] }))).toBe(2);
     expect(contarFiltrosDeTienda(con({ marca: [A], color: [B, C] }))).toBe(3);
   });
@@ -225,10 +208,9 @@ describe("el contador del botón «Filtros»", () => {
 });
 
 /**
- * F3.11: la página de una categoría es el catálogo con la categoría fija. Lo
- * que no se ve leyendo el módulo es que esa categoría **no es un filtro**: si
- * se colara en la dirección o en el contador, la página aparecería filtrada
- * por sí misma, con un chip para sacarse y `noindex`.
+ * La categoría de la página no es un filtro: si se colara en la dirección o
+ * en el contador, la página aparecería filtrada por sí misma, con un chip
+ * para sacarse y `noindex`.
  */
 describe("la página de una categoría", () => {
   test("todo lo que se arma desde ahí se queda en la categoría", () => {
@@ -277,10 +259,8 @@ describe("la página de una categoría", () => {
 });
 
 /**
- * El buscador del catálogo relee la dirección del navegador para conservar
- * los filtros. Con `Object.fromEntries` se quedaba con el último valor de cada
- * parámetro repetido: buscar con dos marcas, dos categorías o dos colores
- * puestos borraba uno.
+ * `Object.fromEntries` se queda con el último valor de cada parámetro
+ * repetido: buscar con dos marcas puestas borraría una.
  */
 describe("leer la dirección del navegador", () => {
   test("los parámetros repetidos llegan enteros", () => {
@@ -304,9 +284,8 @@ describe("leer la dirección del navegador", () => {
 });
 
 /**
- * F3.11, decisión del 2026-11-05: en la página de una categoría, el grupo
- * «Categoría» del drawer suma y saca como en `/productos`, con la categoría de
- * la página como un chip marcado más.
+ * En la página de una categoría, el grupo «Categoría» del drawer suma y saca
+ * como en `/productos`, con la de la página como un chip marcado más.
  */
 describe("el grupo «Categoría» en la página de una categoría", () => {
   const enAuriculares = leerFiltrosDeTienda(

@@ -1,14 +1,4 @@
-/**
- * Filtros del listado de devoluciones — FS RF-25, §10.2. Tarea F7.5.
- *
- * RF-25 pide el listado «con filtros por fecha y por reposición». El de estado
- * se suma por lo mismo que las solapas del listado de órdenes: una anulada y
- * una vigente conviven en la tabla, y en algún momento hay que poder mirar
- * sólo las que valen.
- *
- * **No es `server-only`**: la consulta lee estos valores y la barra los
- * escribe, como en el listado de órdenes (F7.1).
- */
+// No es `server-only`: la consulta lee estos valores y la barra los escribe.
 
 import {
   fecha,
@@ -20,12 +10,8 @@ import {
 export type { ParametrosDeBusqueda };
 
 /**
- * **«Todas» de fábrica, y las anuladas se ven.**
- *
- * Es la decisión contraria a esconderlas: una devolución anulada no se borra
- * —revertir el stock deja rastro, y de eso se trata RF-25—, así que sacarla
- * del listado por omisión haría que quien la registró por error no la
- * encuentre para entender qué pasó. Va etiquetada, que es lo que la distingue.
+ * «Todas» por omisión: una anulada no se borra, y quien la registró por error
+ * tiene que poder encontrarla.
  */
 export const ESTADOS = [
   { valor: "todas", etiqueta: "Todas" },
@@ -35,12 +21,7 @@ export const ESTADOS = [
 
 export type FiltroDeEstado = (typeof ESTADOS)[number]["valor"];
 
-/**
- * **Una devolución «con reposición» es la que repone algo**, aunque no sea
- * todo: la misma devolución puede traer un auricular en caja y otro roto.
- * «Sin reposición» es la que no repone nada, que es la que pregunta por
- * mercadería que se descartó.
- */
+/** «Con reposición» es la que repone algo, aunque no sea todo. */
 export const REPOSICIONES = [
   { valor: "todas", etiqueta: "Repongan o no" },
   { valor: "con", etiqueta: "Con reposición" },
@@ -66,15 +47,9 @@ export const FILTROS_VACIOS: FiltrosDeDevoluciones = {
   pagina: 1,
 };
 
-/** El mismo tope que las órdenes: es la misma tabla de filas de 44px (§6.9). */
 export const POR_PAGINA = 40;
 
-/**
- * **Las fechas dadas vuelta se enderezan** en vez de devolver cero
- * resultados, igual que en las órdenes: pedir «del 30 al 1» es evidentemente
- * un rango, y contestarlo con una tabla vacía deja creyendo que no hubo
- * ninguna devolución.
- */
+/** Las fechas dadas vuelta se enderezan en vez de devolver cero resultados. */
 export function leerFiltros(
   params: ParametrosDeBusqueda,
 ): FiltrosDeDevoluciones {
@@ -95,10 +70,7 @@ export function leerFiltros(
   };
 }
 
-/**
- * La URL que representa estos filtros. Lo que coincide con el valor de siempre
- * no se escribe: el listado sin tocar es `/admin/devoluciones` a secas.
- */
+/** Lo que coincide con el valor por omisión no se escribe en la URL. */
 export function urlDeFiltros(
   filtros: FiltrosDeDevoluciones,
   base = "/admin/devoluciones",
@@ -116,7 +88,6 @@ export function urlDeFiltros(
   return cadena ? `${base}?${cadena}` : base;
 }
 
-/** Si hay algo que limpiar. */
 export function hayFiltros(filtros: FiltrosDeDevoluciones): boolean {
   return (
     filtros.estado !== "todas" ||

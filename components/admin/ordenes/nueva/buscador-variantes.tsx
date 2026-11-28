@@ -28,22 +28,8 @@ async function buscar(q: string) {
 }
 
 /**
- * Buscar un producto para agregarlo a una orden — FS RF-24. Tarea F7.4.
- *
- * **Es el cuerpo de un diálogo, no un campo de la página** (2026-09-30):
- * con la lista debajo del campo, cada búsqueda empujaba el formulario o la
- * orden hacia abajo. Lo usan la orden manual (`AgregarProductos`, abajo) y
- * agregar a una orden activa (F7.2a, `agregar-item.tsx`).
- *
- * **Busca variantes, no productos**: lo que entra en una orden es un color
- * concreto, y elegir primero el producto y después el color serían dos pasos
- * donde alcanza con uno.
- *
- * **Muestra el disponible de cada uno**, que es el número con el que se
- * decide. Lo dado de baja aparece marcado y se puede elegir igual: una venta
- * a mano puede ser la del último que quedaba de algo que ya se sacó del
- * catálogo — el requisito no la prohíbe y esconderla obligaría a reactivar un
- * producto para poder anotar que se vendió.
+ * Lo dado de baja aparece marcado y se puede elegir igual: puede ser la venta
+ * del último que quedaba.
  */
 export function BuscadorDeVariantes({
   alElegir,
@@ -51,9 +37,9 @@ export function BuscadorDeVariantes({
   id,
 }: {
   alElegir: (variante: VarianteParaLaOrden) => void;
-  /** Cuántos renglones de cada color ya tiene la orden, para marcarlos. */
+  /** Cuántos renglones de cada color ya tiene la orden. */
   enLaOrden?: ReadonlyMap<string, number>;
-  /** El id del campo, para que quien lo contiene pueda devolverle el foco. */
+  /** Para que quien lo contiene pueda devolverle el foco. */
   id?: string;
 }) {
   const [termino, setTermino] = useState("");
@@ -82,17 +68,13 @@ export function BuscadorDeVariantes({
           >
             <button
               type="button"
-              // **Elegir no vacía la búsqueda** (2026-09-30). Antes sí, porque
-              // la lista vivía en la página y había que sacarla del medio;
-              // en el diálogo no molesta, y quedarse deja ver la marca de
-              // «Ya en la orden» como confirmación y elegir otro color de lo
-              // mismo sin volver a escribirlo.
+              // Elegir no vacía la búsqueda: se ve «Ya en la orden» y se puede
+              // elegir otro color sin volver a escribir.
               onClick={() => alElegir(v)}
               className={RENGLON_DE_RESULTADO}
             >
               <span className="flex min-w-0 flex-1 flex-col">
-                {/* Sin `truncate`: a 390px se comía el color, que es justo lo
-                    que distingue un renglón del de abajo. */}
+                {/* Sin `truncate`: a 390px se comía el color. */}
                 <span className="text-body-sm text-ink">
                   {v.nombre}
                   {v.color ? (
@@ -136,17 +118,7 @@ export function BuscadorDeVariantes({
   );
 }
 
-/**
- * «Agregar productos» de la orden manual: el botón y el diálogo.
- *
- * **El diálogo queda abierto después de elegir** (decisión del 2026-09-30):
- * una venta a mano suele ser de varios productos, y cerrarlo con cada uno
- * obligaría a abrirlo otra vez para el siguiente. Lo ya elegido queda
- * marcado en la lista y el pie dice cuántos renglones lleva la orden.
- *
- * El precio no se edita acá: se edita en el renglón, en el formulario, que
- * es donde se ve al lado del total.
- */
+/** Queda abierto al elegir: una venta a mano suele ser de varios productos. */
 export function AgregarProductos({
   id,
   renglones,
@@ -201,8 +173,7 @@ export function AgregarProductos({
           }}
         />
 
-        {/* En una fila también en el teléfono: el primitivo apila el pie
-            para dos botones, y acá hay uno solo y una línea de estado. */}
+        {/* En una fila también en el teléfono: hay un solo botón. */}
         <DialogFooter className="flex-row items-center justify-between">
           <p aria-live="polite" className="text-body-sm text-ink-secondary">
             {ultimo ||

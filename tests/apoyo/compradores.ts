@@ -5,18 +5,10 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
 /**
- * Compradores de prueba: identidad, perfil, carrito y dirección.
- *
- * **Se escribe en `auth.users` a mano, y es la única vez que este proyecto lo
- * hace.** Ese esquema lo administra GoTrue y el código de la aplicación no lo
- * toca ni lo lee (§5.3). Pero una orden web exige `user_id` por el CHECK
- * `web_order_has_user`, `user_profiles.id` tiene una clave foránea contra
- * `auth.users` desde la migración `0002`, y crear la identidad por la API de
- * GoTrue metería la red y medio Supabase adentro de un test de dominio. La
- * fila mínima que acepta la tabla son cinco columnas.
- *
- * Borrar la identidad se lleva todo: perfil, carrito, ítems, direcciones y
- * favoritos van en cascada.
+ * Único lugar que escribe en `auth.users` a mano (el esquema es de GoTrue,
+ * §5.3): `user_profiles.id` tiene clave foránea contra esa tabla, y crearla
+ * por la API de GoTrue metería la red en un test de dominio. Borrar la
+ * identidad se lleva en cascada perfil, carrito, direcciones y favoritos.
  */
 
 const creados: string[] = [];
@@ -66,8 +58,8 @@ export async function agregarAlCarrito(
   variantId: string,
   quantity: number,
 ): Promise<void> {
-  // Con el precio vigente como «visto», que es lo que haría `agregar`: un
-  // renglón armado a mano no tiene por qué arrancar con un aviso (F5.6).
+  // Con el precio vigente como «visto», como `agregar`, para no arrancar con
+  // el aviso de cambio de precio.
   await db.execute(sql`
     INSERT INTO cart_items (cart_id, variant_id, quantity, last_seen_price)
     SELECT ${cartId}, v.id, ${quantity}, p.final_price
@@ -138,18 +130,7 @@ export async function laOrden(orderId: string): Promise<{
   return fila;
 }
 
-/**
- * Se llama desde el mismo `afterEach` que las otras limpiezas.
- *
- * **Las órdenes se borran ANTES que la identidad, y no es un detalle de
- * orden.** `orders.user_id` es `ON DELETE SET NULL`, pero el CHECK
- * `web_order_has_user` exige que toda orden web tenga usuario: al borrar la
- * identidad, la cascada intenta poner el `user_id` en NULL y el CHECK la
- * rechaza. O sea que **un comprador con órdenes web no se puede borrar**, y
- * eso es una contradicción del modelo de datos, no una regla que alguien haya
- * decidido. Está anotada en PROGRESO como pendiente sin tarea propia; acá se
- * esquiva borrando las órdenes primero, que es lo que un test tiene que hacer.
- */
+/** Las órdenes van antes que la identidad: `orders.user_id` es RESTRICT. */
 export async function limpiarCompradores(): Promise<void> {
   for (const id of creados.splice(0)) {
     await db.execute(sql`DELETE FROM orders WHERE user_id = ${id}`);

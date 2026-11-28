@@ -15,26 +15,19 @@ import {
 import { slugificar } from "@/lib/slug";
 
 /**
- * F3.4 — RF-02, §10.1, §10.2.
+ * Contra Postgres de verdad: si la suma dentro de un grupo, el cruce entre
+ * grupos o el precio final fallan, no hay error, hay una grilla con productos
+ * de más o de menos.
  *
- * La consulta del catálogo se prueba contra Postgres de verdad porque lo que
- * hay que verificar es SQL: que dentro de un grupo las opciones se sumen, que
- * entre grupos se crucen, y que el rango de precio mire el precio FINAL y no
- * el de lista. Las tres son silenciosas — cuando fallan no hay error, hay una
- * grilla con productos de más o de menos.
- *
- * **Todos los casos llevan puesta la búsqueda por un token propio.** La base
- * de desarrollo tiene el catálogo sembrado y el de Ana, así que contar
- * resultados sin acotar a lo que este archivo creó daría números que dependen
- * de con qué se corrió el seed la última vez.
+ * Todos los casos buscan por un token propio: la base local tiene catálogo
+ * sembrado, y contar sin acotar depende del último seed.
  */
 
 const T = `zzt${randomUUID().slice(0, 8)}`;
 
 /**
- * El slug de cada marca, categoría y color creados, por id. Los productos se
- * insertan con ids, pero el filtro de la tienda va por slug desde el
- * 2026-10-14 (`?categoria=teclados`): `buscar` traduce, como lo haría la URL.
+ * El slug de cada marca, categoría y color, por id. El filtro de la tienda va
+ * por slug: `buscar` traduce, como lo haría la URL.
  */
 const slugDe = new Map<string, string>();
 const slug = (nombre: string) => slugificar(`${nombre}-${T}`);
@@ -197,8 +190,7 @@ describe("multiselección", () => {
   });
 
   test("entre grupos SE CRUZAN", async () => {
-    // «(Rubro A) y (Marca Y)» = uno solo. Si se sumaran entre grupos serían
-    // tres, y el filtro no filtraría nada.
+    // Si se sumaran entre grupos serían tres, y el filtro no filtraría nada.
     expect(await buscar({ categoria: [catA], marca: [marcaY] })).toEqual([
       "dos",
     ]);
@@ -212,9 +204,8 @@ describe("multiselección", () => {
   });
 
   test("el color mira las variantes, y no repite el producto", async () => {
-    // «tres» tiene rojo Y verde: pedir los dos colores tiene que traerlo UNA
-    // vez. Con un JOIN en vez del EXISTS saldría dos veces en la grilla y
-    // contaría dos en el total.
+    // «tres» tiene rojo y verde: con un JOIN en vez del EXISTS saldría dos
+    // veces en la grilla y en el total.
     expect(await buscar({ color: [rojo, verde] })).toEqual([
       "dos",
       "tres",
@@ -264,10 +255,7 @@ describe("oferta", () => {
   });
 });
 
-/**
- * Variantes de dos colores (2026-10-05). Va al final y arma su propio
- * producto: agregarlo arriba cambiaría los conteos de todo lo anterior.
- */
+/** Va al final y con su propio producto: arriba cambiaría todos los conteos. */
 describe("una variante de dos colores", () => {
   let azul: string, amarillo: string;
 
@@ -305,13 +293,10 @@ describe("una variante de dos colores", () => {
 });
 
 /**
- * El drawer de filtros muestra las 8 primeras opciones de cada grupo y
- * esconde el resto detrás de «Ver todas» (2026-11-03), así que el orden decide
- * qué se ve sin abrir nada: las que más productos tienen, primero, y las
- * categorías destacadas antes que todo.
+ * El drawer muestra las 8 primeras opciones de cada grupo, así que el orden
+ * decide qué se ve sin abrir «Ver todas».
  *
- * Con un token propio y no `T`: estos productos no pueden aparecer en las
- * búsquedas de arriba, que cuentan exactamente cuatro.
+ * Token propio y no `T`: las búsquedas de arriba cuentan exactamente cuatro.
  */
 describe("el orden de las opciones del filtro", () => {
   const T2 = `zzo${randomUUID().slice(0, 8)}`;
@@ -392,9 +377,8 @@ describe("el orden de las opciones del filtro", () => {
 });
 
 /**
- * F3.11: la página de una categoría recorta la grilla igual que el filtro, y
- * además recorta lo que ofrece el drawer. Una marca que no tiene nada en la
- * categoría, ofrecida ahí, lleva a un vacío.
+ * La página de una categoría recorta también lo que ofrece el drawer: una
+ * marca sin nada en la categoría, ofrecida ahí, lleva a un vacío.
  */
 describe("la página de una categoría", () => {
   // Una categoría propia: las de arriba ganan productos en otros casos.
@@ -459,14 +443,11 @@ describe("la página de una categoría", () => {
 });
 
 /**
- * Las opciones se ajustan a lo elegido (2026-11-05): cada grupo se calcula con
- * los filtros de los otros. Acá están los productos de los casos de arriba:
+ * Cada grupo se calcula con los filtros de los otros. Los productos de arriba:
  *
  *   A: uno (X, rojo, 1000) · dos (Y, verde, 4000) · cinco (X, azul/amarillo, 3000)
  *   B: tres (X, rojo y verde, 20000) · cuatro (Y, sin variantes, 50000)
  *   C: c-uno (X, rojo, 3000) · c-dos (Y, sin variantes, 8000)
- *
- * Todo con la búsqueda por el token, para no contar el catálogo sembrado.
  */
 describe("las opciones se ajustan a lo elegido", () => {
   // Un id creado acá, o un slug tal cual: el azul y la categoría C se
@@ -528,13 +509,9 @@ describe("las opciones se ajustan a lo elegido", () => {
 });
 
 /**
- * F3.3 — la búsqueda tolera errores de tipeo (§10.1). Los nombres son de
- * verdad, porque lo que se prueba es el parecido entre palabras, y la marca
- * lleva su propio token y no `T`: con `T` en el nombre, estos productos
- * aparecerían en las búsquedas de arriba, que cuentan exactamente cuatro.
- *
- * Cada búsqueda filtra por esta marca: la base de desarrollo tiene el
- * catálogo sembrado, con sus propios adaptadores y teclados.
+ * Nombres de verdad, porque se prueba el parecido entre palabras. Marca con
+ * token propio y no `T`, para no aparecer en las búsquedas de arriba; cada
+ * búsqueda filtra por ella porque la base local tiene catálogo sembrado.
  */
 describe("la búsqueda tolera errores de tipeo", () => {
   const T3 = `zzb${randomUUID().slice(0, 8)}`;
@@ -570,7 +547,6 @@ describe("la búsqueda tolera errores de tipeo", () => {
     }
   });
 
-  /** Los nombres, en el orden en que los devuelve el catálogo. */
   async function nombres(q: string): Promise<string[]> {
     const pagina = await leerPaginaDelCatalogo({
       ...FILTROS_DE_TIENDA_VACIOS,

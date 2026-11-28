@@ -2,11 +2,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
-/**
- * DESIGN-REFERENCE §8 y §10: dice qué pasó y ofrece la acción, sin código
- * ni jerga. Es también lo que ve un comprador que intenta entrar a /admin:
- * para él, esa sección no existe (TECHNICAL-SPEC §13.7).
- */
+/** También lo ve un comprador que intenta entrar a /admin (§13.7). */
 export default function NoEncontrado() {
   return (
     <main className="mx-auto flex min-h-svh max-w-shop flex-col items-center justify-center gap-6 px-4 text-center">

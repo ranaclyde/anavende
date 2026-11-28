@@ -6,13 +6,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { retirarElPedidoDeBaja } from "@/modules/users/baja/actions";
 
-/**
- * Retirar el pedido de baja — RF-34, F5.8 (decisión del 2026-09-14).
- *
- * Mientras la administradora no la ejecutó, arrepentirse es un botón y no un
- * trámite. No pregunta antes: deshacer una baja no rompe nada, y quien llegó
- * hasta acá ya decidió volver.
- */
+/** Sin confirmación a propósito: deshacer una baja no rompe nada. */
 export function RetirarPedidoDeBaja() {
   const [enCurso, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);

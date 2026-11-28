@@ -11,32 +11,9 @@ export type SolapaDelPanel = {
 };
 
 /**
- * Las solapas del panel — DR §6.9.
- *
- * **Son dos formas, y la diferencia significa algo** (decisión tuya del
- * 2026-09-21). Hasta ese día existían las dos sin que nadie lo hubiera
- * escrito, así que divergían en todo lo demás —alto, color de la activa,
- * elemento contenedor— y parecían dos gustos en vez de dos trabajos:
- *
- * - **Segmentado**: cambia **qué se ve del mismo listado**. Píldora blanca
- *   sobre fondo hundido, porque se lee como «elegí uno de estos». **Lleva el
- *   número de cada una**, que es lo que contesta «¿tengo algo que hacer?» sin
- *   entrar. Órdenes y usuarios.
- * - **Subrayado**: cambia **en qué pantalla se está**. Se lee como «esta es
- *   la sección», igual que una pestaña de navegador. **No lleva número**: no
- *   hay un total que contestar, porque cada solapa es otra tabla. Catálogo.
- *
- * **Las dos miden 40px de alto**, para que el renglón no salte entre
- * pantallas: el segmentado son 4 + 32 + 4 y el subrayado es un ítem de 40 que
- * se apoya sobre el borde.
- *
- * **Son enlaces y no botones, y por eso esto no es un componente de cliente.**
- * Cada solapa tiene su dirección: se comparte, se abre en otra pestaña y el
- * botón atrás vuelve a la anterior. Con botones habría que reimplementar las
- * tres cosas y mandar JavaScript para algo que el navegador ya sabe hacer.
- *
- * **La activa se marca con forma y peso, no solo con color** (§9): pastilla y
- * medium en el segmentado, subrayado y medium en el otro.
+ * Las solapas del panel — DR §6.9. Segmentado cuando cambia qué se ve del
+ * mismo listado (con número); subrayado cuando cambia la pantalla (sin
+ * número). Son enlaces: cada solapa tiene su dirección.
  */
 export function SolapasDelPanel({
   etiqueta,
@@ -49,18 +26,15 @@ export function SolapasDelPanel({
   variante: "segmentado" | "subrayado";
   solapas: readonly SolapaDelPanel[];
   /**
-   * Cómo se lee el número en voz alta: «3 órdenes», «1 persona». El número
-   * suelto se esconde de los lectores, que si no leen «Activas 10» sin decir
-   * diez qué.
+   * Cómo se lee el número en voz alta: «3 órdenes». El número suelto se
+   * esconde de los lectores.
    */
   nombraElConteo?: (n: number) => string;
 }) {
   const segmentado = variante === "segmentado";
 
   return (
-    // En el teléfono, una sola tira que se desliza (F2.15): partidas en dos
-    // renglones, la última quedaba sola abajo y la barra de órdenes ocupaba
-    // media pantalla antes de la primera orden.
+    // En el teléfono, una sola tira que se desliza.
     <nav aria-label={etiqueta} className="max-w-full max-md:overflow-x-auto">
       <ul
         className={cn(
@@ -80,8 +54,7 @@ export function SolapasDelPanel({
                 "text-body-sm transition-colors duration-150",
                 segmentado
                   ? cn(
-                      // 32px en escritorio, 44 abajo de `md` (§9): es un
-                      // enlace que se toca, no una etiqueta.
+                      // 44px abajo de `md`: es un enlace que se toca.
                       "h-8 max-md:h-11 rounded-panel-control",
                       solapa.activa
                         ? "bg-surface font-medium text-ink shadow-sm"
@@ -100,9 +73,7 @@ export function SolapasDelPanel({
                 <>
                   <span
                     aria-hidden
-                    // El conteo pesa igual en la solapa activa y en la
-                    // inactiva: lo que distingue a la activa es su fondo y su
-                    // borde, no un gris más claro que no llega a AA (§3.1).
+                    // El conteo pesa igual en la activa: un gris más claro no llega a AA.
                     className="text-caption tabular-nums text-ink-secondary"
                   >
                     {solapa.cuantos}

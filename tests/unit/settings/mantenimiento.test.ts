@@ -25,16 +25,10 @@ import {
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 
 /**
- * F2.7b — el modo mantenimiento.
- *
- * Como `configuracion.test.ts`, escribe de verdad y sin transacción revertida:
- * lo que se prueba son funciones de la aplicación que abren su propia conexión
- * por el pool. La fila de configuración que hubiera se guarda y se repone.
- *
- * Lo que NO se prueba acá es el proxy entero —el 503, el `Retry-After`, la
- * reescritura—: eso necesita un servidor de Next andando, y se comprueba con
- * `curl` contra `next dev` y después contra producción. Acá está todo lo que
- * el proxy decide, que es lo que se puede equivocar en silencio.
+ * Como `configuracion.test.ts`, escribe de verdad y sin transacción revertida;
+ * la fila de configuración que hubiera se guarda y se repone. El proxy entero
+ * (el 503, el `Retry-After`) necesita un servidor de Next y se comprueba con
+ * `curl`; acá está lo que el proxy decide.
  */
 
 describe("qué rutas pasan con la tienda cerrada", () => {
@@ -65,11 +59,7 @@ describe("qué rutas pasan con la tienda cerrada", () => {
     expect(pasaSiempre(ruta)).toBe(false);
   });
 
-  /**
-   * La excepción que pediste el 2026-09-11 a la regla del plan, que dejaba
-   * pasar todo `(auth)`. Con la tienda cerrada nadie tiene para qué crear una
-   * cuenta.
-   */
+  /** Con la tienda cerrada nadie tiene para qué crear una cuenta. */
   test("«/registro» y «/registro/verificar» se cierran, aunque son de (auth)", () => {
     expect(pasaSiempre("/registro")).toBe(false);
     expect(pasaSiempre("/registro/verificar")).toBe(false);
@@ -77,8 +67,7 @@ describe("qué rutas pasan con la tienda cerrada", () => {
 
   /**
    * Un `startsWith` a secas abriría cualquier ruta que empiece con las mismas
-   * letras que una de la lista. Hoy no existe ninguna; el día que exista, esto
-   * es lo que evita que nazca abierta sin que nadie lo decida.
+   * letras que una de la lista.
    */
   test("el prefijo es de segmento: «/administrar» y «/apiarios» no pasan", () => {
     expect(pasaSiempre("/administrar")).toBe(false);
@@ -172,9 +161,8 @@ describe("el interruptor (§5.9)", () => {
   });
 
   /**
-   * El UPSERT de la configuración no nombra la columna, y esto es lo que
-   * cuida que siga sin nombrarla: si un día lo hiciera, cambiar el número de
-   * WhatsApp con la tienda cerrada la reabriría en medio de la carga.
+   * El UPSERT de la configuración no nombra la columna: si la nombrara,
+   * cambiar el WhatsApp con la tienda cerrada la reabriría.
    */
   test("guardar la configuración NO reabre la tienda", async () => {
     await sinFila();
@@ -187,9 +175,8 @@ describe("el interruptor (§5.9)", () => {
   });
 
   /**
-   * La memoria es lo que ahorra una consulta por pedido, y también lo que hace
-   * que el cambio tarde en notarse en el proxy. Se prueba de los dos lados:
-   * sin olvidar se sigue viendo lo viejo, y olvidando se ve lo nuevo.
+   * La memoria ahorra una consulta por pedido, y por eso el cambio tarda en
+   * notarse en el proxy.
    */
   test("el proxy recuerda el interruptor hasta que se lo olvida", async () => {
     await sinFila();
@@ -225,10 +212,7 @@ describe("quién ve la tienda cerrada", () => {
     expect(await puedeVerLaTiendaCerrada(userId)).toBe(false);
   });
 
-  /**
-   * RF-27: bloquear corta todo. Una administradora bloqueada no entra al
-   * panel, y tampoco puede mirar la tienda que el resto no ve.
-   */
+  /** RF-27: bloquear corta todo, también mirar la tienda cerrada. */
   test("una administradora bloqueada no", async () => {
     const { userId } = await unComprador();
     await db.execute(sql`

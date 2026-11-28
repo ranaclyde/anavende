@@ -10,24 +10,15 @@ import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 import { limpiarOrdenes, unaOrdenActiva } from "@/tests/apoyo/ordenes";
 
 /**
- * F7.6 — Gestión de usuarios. RF-26 · TS §13.2, §13.4.
- *
- * «Hecho cuando»: crear, editar, resetear contraseña; un admin no puede
- * quitarse el rol ni bloquearse.
- *
- * **Habla con el GoTrue del stack local**, y es el primer archivo que lo hace:
- * el alta de RF-26 no es un `INSERT`, es una invitación que crea una identidad
- * y manda un email. Lo que puede romperse en silencio está justo ahí —que la
- * identidad y el perfil queden los dos o ninguno (§13.4)—, así que probarlo
- * contra un doble no probaría nada. El entorno de tests ya exige que la API
- * sea la del stack local (`tests/setup/entorno.ts`).
+ * RF-26 · TS §13.2, §13.4. Habla con el GoTrue del stack local: el alta es
+ * una invitación que crea una identidad, y lo que se rompe en silencio es que
+ * la identidad y el perfil no queden los dos o ninguno.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
 vi.mock("@/lib/session", () => ({
   getSession: async () => sesion.actual,
-  // Sin sesión es sin cuenta: lo de una cuenta sin perfil lo prueba
-  // `tests/unit/seguridad/accion-sin-perfil.test.ts`.
+  // La cuenta sin perfil se prueba en `seguridad/accion-sin-perfil.test.ts`.
   getIdentity: async () => null,
 }));
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
@@ -152,7 +143,7 @@ describe("quién puede administrar cuentas", () => {
       }),
     ).toMatchObject({ ok: false, code: "FORBIDDEN" });
 
-    // Para sus propios datos está «Mis datos» (F5.2), que filtra por sesión.
+    // Para sus propios datos está «Mis datos», que filtra por sesión.
     expect(
       await cambiarRol({ id: comprador.userId, rol: "admin" }),
     ).toMatchObject({ ok: false, code: "FORBIDDEN" });
@@ -315,11 +306,8 @@ describe("cambiar el rol (RF-26)", () => {
   });
 
   test("a la última administradora no se le quita el rol", async () => {
-    // La regla habla de **cuántas quedan**, así que hay que dejar una sola en
-    // toda la base. Las que ya estaban se anotan y se devuelven a su rol al
-    // terminar: la base de desarrollo es la misma con la que se mira el panel,
-    // y un test que la deja sin ninguna administradora deja a quien la use
-    // afuera, con un `UPDATE` a mano como única salida. Pasó una vez.
+    // La regla habla de CUÁNTAS QUEDAN: se deja una sola en toda la base y las
+    // demás vuelven a su rol al terminar, o la base local queda sin ninguna.
     const previas = await db.execute<{ id: string }>(sql`
       SELECT id FROM user_profiles WHERE role = 'admin'`);
 

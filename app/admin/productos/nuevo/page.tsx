@@ -12,9 +12,8 @@ export default async function NuevoProducto() {
 
   const { marcas, categorias } = await opcionesDeProducto();
 
-  // Sin marcas ni categorías el formulario se pinta igual (F2.13): cada
-  // selector ofrece crear la que falta sin salir de acá. Hasta entonces esta
-  // pantalla mandaba a Catálogo y había que volver a empezar.
+  // Sin marcas ni categorías se pinta igual: cada selector ofrece crear la
+  // que falta.
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">
       <EncabezadoDePanel

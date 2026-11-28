@@ -4,8 +4,8 @@ import { datosDePrueba, sufijo, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * F3.11: el texto de una categoría se carga en el panel y sale en su página,
- * debajo del título y en la descripción para Google.
+ * El texto de una categoría sale en su página, debajo del título y en la
+ * descripción para Google.
  */
 
 const datos = datosDePrueba();
@@ -41,7 +41,6 @@ test.afterAll(async () => {
 test("el texto se carga en el panel y sale en la página de la categoría", async ({
   page,
 }) => {
-  // Sin texto, la página dice la frase de siempre.
   await page.goto(`/categorias/${slug}`);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(nombre);
   await expect(page.getByText("Periféricos y accesorios.")).toBeVisible();
@@ -57,7 +56,6 @@ test("el texto se carga en el panel y sale en la página de la categoría", asyn
     page.getByText(`Guardaste la categoría «${nombre}».`),
   ).toBeVisible();
 
-  // Al volver a abrirla, el texto está.
   await page.getByRole("button", { name: `Editar ${nombre}` }).click();
   await expect(
     page.getByRole("textbox", { name: "Texto de la página (opcional)" }),

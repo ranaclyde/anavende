@@ -24,25 +24,14 @@ import {
 } from "@/modules/catalog/products/filtros-tienda";
 
 type Props = {
-  // En Next 16 `params` y `searchParams` son promesas.
   params: Promise<{ slug: string }>;
   searchParams: Promise<ParametrosDeBusqueda>;
 };
 
 /**
- * Metadatos de la página de una categoría — F3.11, RNF-04.
- *
- * **El título nombra la zona**, «Auriculares en Viedma y Patagones», porque
- * es lo que se busca: nadie escribe «auriculares AnaVende». El `template` del
- * sitio le suma «· AnaVende».
- *
- * **La descripción es el texto de la vendedora** si lo escribió, recortado
- * a lo que Google muestra; si no, una frase con la categoría y la zona.
- *
- * **Se indexa sin filtros y nada más**, con la misma regla del catálogo
- * (`catalogoIndexable`): la categoría no es un filtro, así que
- * `/categorias/auriculares` se indexa y `/categorias/auriculares?marca=hyperx`
- * no. El `canonical` es la dirección normalizada.
+ * El título nombra la zona porque es lo que se busca («auriculares en
+ * Viedma»); el `template` del sitio le suma «· AnaVende». La categoría no
+ * cuenta como filtro: se indexa sin filtros, como el catálogo.
  */
 export async function generateMetadata({
   params,
@@ -76,22 +65,8 @@ export async function generateMetadata({
 }
 
 /**
- * La página de una categoría — F3.11, RF-02, RNF-04.
- *
- * **Es el catálogo con la categoría fija** (`filtros.seccion`): la misma
- * barra, los mismos filtros, la misma grilla (`VistaDelCatalogo`). Cambian
- * cuatro cosas, las del boceto aprobado el 2026-11-03:
- *
- *   · **Migas «Categorías › Auriculares»** en lugar de la etiqueta
- *     «CATÁLOGO».
- *   · **El texto de la vendedora** debajo del título; sin texto, la frase de
- *     siempre.
- *   · **Sin chip de la categoría**: es la página, no un filtro. «Filtros»
- *     arranca en cero y «Limpiar todo» deja en la misma categoría.
- *   · **En el menú se marca «Categorías»** (`navegacion-principal.tsx`).
- *
- * Existe para los buscadores: con la categoría como filtro de `/productos`,
- * «teclados en Viedma» no tenía a dónde llegar, porque todo lo filtrado es
+ * El catálogo con la categoría fija (`filtros.seccion`). Existe para los
+ * buscadores: en `/productos` la categoría es un filtro, y lo filtrado es
  * `noindex`.
  */
 export default async function PaginaDeCategoria({
@@ -107,21 +82,13 @@ export default async function PaginaDeCategoria({
 
   return (
     <div className="mx-auto w-full max-w-shop px-4 py-10 sm:px-6 lg:px-8">
-      {/*
-        F3.9 — el rastro de migas, para quien lee el HTML sin ojos. Es el
-        mismo camino que se ve arriba del título.
-      */}
+      {/* Las mismas migas de arriba del título, para los buscadores. */}
       <DatosEstructurados datos={[migasDeCategoria(categoria)]} />
 
       <header className="flex flex-col gap-2 pb-7">
         <Migas nombre={categoria.nombre} />
         <h1 className="text-title text-ink">{categoria.nombre}</h1>
-        {/*
-          `max-w-prose`: el texto de la vendedora puede llegar a tres
-          renglones, y a lo ancho de la tienda cada renglón se haría
-          ilegible. La frase de siempre es una sola línea y no lo necesita,
-          pero tampoco le molesta.
-        */}
+        {/* El texto de la vendedora puede llegar a tres renglones. */}
         <p className="max-w-prose text-body text-ink-secondary">
           {categoria.texto ??
             "Periféricos y accesorios. Entrega en Viedma, Carmen de Patagones y alrededores."}
@@ -142,19 +109,12 @@ export default async function PaginaDeCategoria({
   );
 }
 
-/**
- * «Categorías › Auriculares». El último escalón es la página en la que se
- * está: no es un enlace, y lo dice con `aria-current`.
- */
 function Migas({ nombre }: { nombre: string }) {
   return (
     <nav aria-label="Miga de pan">
       <ol className="flex flex-wrap items-center gap-1 text-body-sm text-ink-secondary">
         <li>
-          {/*
-            El texto de la miga mide 17px de alto: se le estira la zona
-            sensible a 44 sin tocar el dibujo (§9), como en la ficha.
-          */}
+          {/* La zona sensible se estira a 44px sin tocar el dibujo (§9). */}
           <Link
             href="/categorias"
             className={cn("relative rounded-pill hover:text-ink", AREA_TACTIL)}

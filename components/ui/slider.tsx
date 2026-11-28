@@ -5,12 +5,7 @@ import * as SliderPrimitive from "@radix-ui/react-slider";
 
 import { cn } from "@/lib/utils";
 
-/**
- * Slider de shadcn/ui sobre Radix (2026-11-04, para el rango de precio de los
- * filtros). Con dos valores dibuja dos manijas. Radix trae el teclado
- * —flechas, Inicio, Fin, Re Pág— y el rol `slider` con su valor; cada manija
- * necesita su propio nombre, que se pasa en `etiquetas`.
- */
+/** Con dos valores dibuja dos manijas; cada una necesita su nombre en `etiquetas`. */
 function Slider({
   className,
   etiquetas,

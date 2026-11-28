@@ -2,28 +2,17 @@ import { z } from "zod";
 
 import { slugificar } from "@/lib/slug";
 
-/**
- * Validación del catálogo — RF-18.
- *
- * Se valida acá y no en el formulario: el envoltorio de Server Actions corre
- * estos esquemas en el SERVIDOR aunque el cliente ya haya validado (§6.2,
- * paso 3). El formulario los repite para avisar antes de enviar, no para
- * decidir.
- */
-
 const nombre = z
   .string()
   .trim()
   .min(2, "El nombre necesita al menos 2 caracteres.")
   .max(60, "El nombre no puede pasar de 60 caracteres.")
-  // Un nombre hecho solo de signos —«···»— deja la dirección vacía y el
-  // ítem sin URL. Se rechaza acá y no al guardar, para que el mensaje diga
-  // qué pasa en vez de fallar con una clave duplicada vacía.
+  // Uno hecho solo de signos deja el slug vacío.
   .refine((v) => slugificar(v).length > 0, {
     message: "El nombre necesita al menos una letra o un número.",
   });
 
-/** `#a1b2c3`. Se acepta con o sin `#` y con 3 o 6 dígitos; se normaliza. */
+/** Con o sin `#`, 3 o 6 dígitos; se guarda siempre en minúscula y largo. */
 const hex = z
   .string()
   .trim()
@@ -33,8 +22,6 @@ const hex = z
   })
   .transform((v) => {
     const cuerpo = v.slice(1).toLowerCase();
-    // #abc y #aabbcc son el mismo color: se guarda siempre la forma larga,
-    // así comparar dos colores es comparar dos textos.
     return cuerpo.length === 3
       ? `#${cuerpo[0]}${cuerpo[0]}${cuerpo[1]}${cuerpo[1]}${cuerpo[2]}${cuerpo[2]}`
       : `#${cuerpo}`;
@@ -43,18 +30,11 @@ const hex = z
 export const TIPOS = ["marca", "categoria", "color"] as const;
 export type TipoDeItem = (typeof TIPOS)[number];
 
-/**
- * RF-18: destacar adelanta la categoría en la tienda. Es opcional al crear
- * —una categoría nueva no se destaca sola— y explícito al editar.
- */
 const destacada = z.boolean();
 
 /**
- * RF-31: las relacionadas, EN ORDEN —el índice es la prioridad al armar los
- * recomendados—. Recíproca por omisión, como pide la especificación.
- *
- * Es opcional: sin el campo, las relaciones no se tocan. Con una lista vacía,
- * se quitan todas.
+ * En orden: el índice es la prioridad en los recomendados. Sin el campo, las
+ * relaciones no se tocan; con una lista vacía, se quitan todas.
  */
 const relacionadas = z
   .array(z.object({ id: z.uuid(), reciproca: z.boolean().default(true) }))
@@ -64,16 +44,7 @@ const relacionadas = z
   })
   .optional();
 
-/**
- * F3.11: el texto de la página de la categoría. Opcional, y vacío es «sin
- * texto» (`null`), no una cadena vacía guardada: así la página pregunta por
- * un solo caso.
- *
- * **300 caracteres**: «dos o tres renglones», que es lo que pide la página,
- * y unos dos resultados de Google de largo (se recorta a 155 ahí). El tope
- * está para que el texto no empuje la grilla fuera de la pantalla, no para
- * cuidar la base.
- */
+/** Vacío se guarda como `null`. */
 export const TOPE_DEL_TEXTO_DE_CATEGORIA = 300;
 const textoDeCategoria = z
   .string()
@@ -99,7 +70,6 @@ export const editarCategoria = z.object({
   id: z.uuid(),
   name: nombre,
   isFeatured: destacada,
-  // Sin el campo, el texto no se toca (como las relacionadas).
   description: textoDeCategoria,
   relacionadas,
 });
@@ -116,17 +86,12 @@ export const referencia = z.object({
 
 export const cambioDeEstado = referencia.extend({ activo: z.boolean() });
 
-/**
- * Destacar no lleva `tipo`: sólo las categorías se destacan. Un esquema con
- * `tipo` obligaría al servidor a rechazar dos de los tres valores en tiempo
- * de ejecución; sin él, pedir destacar una marca no compila.
- */
+/** Sin `tipo`: solo las categorías se destacan. */
 export const cambioDeDestacada = z.object({
   id: z.uuid(),
   destacada: destacada,
 });
 
-/** Para las acciones que solo necesitan saber sobre cuál operan. */
 export const soloId = z.object({ id: z.uuid() });
 
 export type CrearColor = z.infer<typeof crearColor>;

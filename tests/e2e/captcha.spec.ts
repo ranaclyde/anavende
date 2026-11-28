@@ -5,18 +5,10 @@ import { expect, test } from "./apoyo/test";
 import { sufijo } from "./apoyo/datos";
 
 /**
- * F10.5b — Sin Turnstile no hay alta, ni ingreso, ni recuperación, ni
- * reenvío. TS §16; DEVELOPMENT-PLAN F10.5b: «un alta sin token de Turnstile
- * se rechaza».
- *
- * El captcha lo hace cumplir GoTrue (`[auth.captcha]` en
- * `supabase/config.toml`, con el secreto de prueba de Cloudflare), no la
- * pantalla: por eso la primera mitad le pega a GoTrue directo, como lo haría
- * un programa que se saltea la tienda. La segunda mira que las cuatro
- * pantallas tengan el widget y que el botón espere su token.
- *
- * El resto de la suite pasa por el widget de verdad cada vez que ingresa o da
- * de alta: si el token no viajara, esos recorridos fallarían.
+ * Sin Turnstile no hay alta, ni ingreso, ni recuperación, ni reenvío (TS
+ * §16). El captcha lo hace cumplir GoTrue (`[auth.captcha]` en
+ * `supabase/config.toml`), no la pantalla: por eso el primer test le pega a
+ * GoTrue directo, como un programa que se saltea la tienda.
  */
 
 const SCRIPT_DE_TURNSTILE =
@@ -57,19 +49,18 @@ test("las pantallas cargan el widget y el botón se habilita con el token", asyn
     ["/registro", "Crear cuenta"],
     ["/recuperar", "Mandame el enlace"],
   ] as const) {
-    // El iframe de Turnstile vive en un shadow DOM cerrado, que Playwright
-    // no ve: lo que se mira es que la pantalla cargue su script.
+    // El iframe de Turnstile vive en un shadow DOM cerrado que Playwright no
+    // ve: se mira que la pantalla cargue su script.
     const script = page.waitForRequest(SCRIPT_DE_TURNSTILE);
     await page.goto(ruta);
     await script;
 
-    // Con la clave de prueba el token llega solo, y el botón se habilita.
+    // Con la clave de prueba el token llega solo.
     await expect(page.getByRole("button", { name: boton }), ruta).toBeEnabled({
       timeout: 15_000,
     });
   }
 
-  // El reenvío de «Revisá tu email».
   const script = page.waitForRequest(SCRIPT_DE_TURNSTILE);
   await page.goto("/registro/verificar?email=alguien%40ejemplo.test");
   await script;
@@ -81,7 +72,7 @@ test("las pantallas cargan el widget y el botón se habilita con el token", asyn
 test("sin el script de Cloudflare el botón no se habilita, y se dice por qué", async ({
   page,
 }) => {
-  // Lo que pasa con un bloqueador de anuncios o sin conexión a Cloudflare.
+  // Como con un bloqueador de anuncios.
   await page.route(SCRIPT_DE_TURNSTILE, (ruta) => ruta.abort());
   await page.goto("/ingresar");
 
@@ -90,7 +81,6 @@ test("sin el script de Cloudflare el botón no se habilita, y se dice por qué",
     page.getByText("No pudimos cargar la verificación", { exact: false }),
   ).toBeVisible();
   await expect(boton).toBeDisabled();
-  // El aviso está atado al botón: un lector de pantalla lo lee con él.
   await expect(boton).toHaveAccessibleDescription(
     /No pudimos cargar la verificación/,
   );

@@ -9,33 +9,17 @@ import { publicarFotoDePerfil } from "@/modules/media/subir";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
 
 /**
- * Subir la foto de perfil — RF-07, F5.9.
+ * Route Handler por lo mismo que `app/api/admin/upload`: los controles del
+ * envoltorio de §6.2 se repiten acá a mano. Ruta aparte para no aflojar el
+ * control de rol de aquella con una excepción por destino.
  *
- * **Por qué un Route Handler y no una Server Action**: el mismo motivo que la
- * subida del panel (`app/api/admin/upload/route.ts`) — una acción pasaría la
- * foto a base64 por el camino. Y como ahí, al no pasar por el envoltorio de
- * §6.2, sus controles se repiten acá a mano y en el mismo orden: sesión,
- * bloqueo, baja ejecutada, baja pedida.
- *
- * **Una ruta aparte y no un destino más de aquella**: aquella es solo de
- * administradoras y responde 404 a cualquier otra cuenta para no confirmar
- * que existe. Meter acá una excepción por destino es la forma de que un día
- * el control de rol se afloje para todos.
- *
- * **Siempre sobre la cuenta de la sesión**: no recibe un id. Nadie sube la
- * foto de otro (§13.8).
+ * Siempre sobre la cuenta de la sesión: no recibe un id (§13.8).
  *
  * Corre en Node, no en Edge: sharp es un binario nativo.
  */
 export const runtime = "nodejs";
 
-/**
- * 10 cada 10 minutos por cuenta (§16). La de la administradora es de 30 por
- * minuto porque carga productos enteros; acá alcanza para equivocarse de foto
- * varias veces seguidas, y cualquier cuenta registrada puede llegar a esta
- * ruta, así que el tope es lo que impide que una sola ponga a sharp a
- * trabajar sin parar.
- */
+/** Cualquier cuenta llega acá: el tope impide que una sola sature sharp. */
 const SUBIDAS = { tope: 10, ventanaMs: 10 * 60_000 };
 
 function fallo(status: number, message: string, headers?: HeadersInit) {
@@ -51,12 +35,10 @@ export async function POST(request: NextRequest) {
   if (session.profile.isBanned) {
     return fallo(403, domainMessage("USER_BANNED"));
   }
-  // `!= null`, como el envoltorio: una fila leída sin la columna no deja a
-  // todo el mundo dado de baja.
+  // `!= null`: una fila leída sin la columna no deja a todos dados de baja.
   if (session.profile.closedAt != null) {
     return fallo(403, domainMessage("ACCOUNT_CLOSED"));
   }
-  // Con la baja pedida la cuenta es de solo lectura (RF-34).
   if (session.profile.closureRequestedAt != null) {
     return fallo(403, domainMessage("ACCOUNT_CLOSURE_PENDING"));
   }
@@ -98,15 +80,13 @@ export async function POST(request: NextRequest) {
       archivo: Buffer.from(await archivo.arrayBuffer()),
     });
 
-    // La foto está en el encabezado de toda la tienda y en el menú del
-    // panel, no solo en «Mi cuenta». La otra mitad es el `router.refresh()`
-    // de quien llama, como en la subida del panel.
+    // La foto está en el encabezado de toda la tienda. La otra mitad es el
+    // `router.refresh()` de quien llama.
     revalidatePath("/", "layout");
 
     return NextResponse.json({ ok: true, data }, { status: 201 });
   } catch (e) {
-    // Un archivo que no era una imagen es un resultado esperado, no un
-    // incidente: se responde y no se reporta (§6.3).
+    // Esperado, no un incidente: no va a Sentry (§6.3).
     if (isDomainError(e)) {
       return fallo(400, e.message);
     }

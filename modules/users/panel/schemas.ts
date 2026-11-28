@@ -3,14 +3,8 @@ import { z } from "zod";
 import { telefonoArgentino } from "@/lib/telefono";
 
 /**
- * Validación de la gestión de usuarios del panel — FS RF-26. Tarea F7.6.
- *
- * **Mensajes propios y no los de `modules/users/schemas.ts`**, aunque las
- * reglas sean las mismas: aquéllos le hablan a quien se está registrando —«
- * Escribí tu nombre»— y acá la vendedora está cargando a otra persona. Es el
- * mismo criterio que tomó la orden manual de F7.4.
- *
- * No es `server-only`: los formularios validan con esto antes de enviar.
+ * Mensajes propios y no los de `modules/users/schemas.ts`: aquéllos le hablan
+ * a quien se registra, y acá la vendedora carga a otra persona.
  */
 
 export const ROLES_ASIGNABLES = [
@@ -49,15 +43,6 @@ const email = z
   .toLowerCase()
   .pipe(z.email("Ese email no parece válido."));
 
-/**
- * **El teléfono es obligatorio también acá** (decisión tuya del 2026-09-16).
- *
- * RF-26 nombra «nombre, email y rol», pero RF-05 lo pide en las tres vías de
- * alta y la columna es `NOT NULL`: una cuenta sin teléfono es una persona con
- * la que no se puede coordinar una entrega, que es como se coordina todo acá.
- * Dejarlo vacío habría sido guardar una cadena vacía, que es un dato que
- * miente.
- */
 const telefono = telefonoArgentino({
   requerido: "Escribí un teléfono para poder coordinar.",
   invalido:
@@ -74,11 +59,7 @@ export const altaDeUsuario = z.object({
 
 export type EntradaDeAlta = z.input<typeof altaDeUsuario>;
 
-/**
- * **El email no se edita**, igual que en «Mis datos» (F5.2): lo guarda GoTrue,
- * cambiarlo exige confirmar la dirección nueva con un email que RF-30 no
- * tiene, y la copia de `user_profiles` quedaría desincronizada.
- */
+/** El email no se edita, igual que en «Mis datos» (ver `perfil.ts`). */
 export const edicionDeUsuario = z.object({
   id: z.uuid(),
   firstName: nombre,
@@ -93,16 +74,7 @@ export const cambioDeRol = z.object({
 
 export const restablecerContrasena = z.object({ id: z.uuid() });
 
-/**
- * Bloqueo y desbloqueo — RF-27. Tarea F7.7.
- *
- * **El motivo es obligatorio y no es una nota interna**: es el texto que la
- * persona lee cuando intenta entrar (§13.5). Por eso el mensaje de error habla
- * de eso y no de un campo incompleto.
- *
- * El tope es el mismo que el del pedido de baja (F5.8): alcanza para
- * explicarse y no invita a pegar un documento.
- */
+/** No es una nota interna: es lo que la persona lee al entrar (§13.5). */
 export const MAXIMO_DEL_MOTIVO = 500;
 
 export const bloqueoDeUsuario = z.object({
@@ -116,12 +88,5 @@ export const bloqueoDeUsuario = z.object({
 
 export const desbloqueoDeUsuario = z.object({ id: z.uuid() });
 
-/**
- * Ejecutar y revertir una baja — RF-34. Tarea F7.9.
- *
- * **Sin motivo, ni en una ni en otra.** El de la baja lo escribió el comprador
- * al pedirla (F5.8) y es el que queda registrado: la administradora ejecuta lo
- * pedido, no lo redacta. Y revertir es devolverle la cuenta a alguien que la
- * quiere de vuelta, que tampoco necesita explicación escrita.
- */
+/** Sin motivo: el de la baja lo escribió el comprador al pedirla. */
 export const bajaDeUsuario = z.object({ id: z.uuid() });

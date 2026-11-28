@@ -44,37 +44,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Ficha de un usuario — FS RF-26, RF-27, RF-34. Tareas F7.6, F7.7 y F7.9.
- *
- * Es la hoja de trabajo de una cuenta: los datos que se corrigen, el rol que
- * se cambia, el email de contraseña nueva que se dispara, el bloqueo, la baja,
- * y **sus órdenes**, que es lo que contesta quién es esta persona para la
- * tienda.
- *
- * **La tarjeta de estado está siempre**, también cuando no pasa nada: es de
- * donde se bloquea (F7.7), así que esconderla mientras la cuenta está sana
- * escondería el botón. Antes aparecía sólo con algo que contar, porque no
- * había nada que hacer ahí.
- *
- * **El bloque de la baja aparece cuando hay una** —pedida o ejecutada—, y no
- * antes: no se puede dar de baja a quien no la pidió (F7.9), así que un botón
- * permanente prometería algo que no existe.
- *
- * **Y no hay «eliminar»**, que tampoco va a venir: un comprador con órdenes no
- * se borra ni se puede borrar (§5.6, F4.5b).
+ * Ficha de un usuario (RF-26, RF-27, RF-34). No hay «eliminar» a propósito:
+ * un comprador con órdenes no se puede borrar (§5.6).
  */
 export default async function FichaDeUsuario({ params }: Props) {
   await exigirAdmin();
 
   const { id } = await params;
 
-  // Un `id` con otra forma no llega a la base: el driver lo rechazaría con un
-  // error de Postgres en vez de un 404 honesto.
+  // Un `id` que no es UUID daría un error de Postgres en vez de un 404.
   if (!UUID.test(id)) notFound();
 
-  // Las tres son independientes: encadenarlas agregaría idas a la base por
-  // cada carga. `getSession` está cacheada por petición —el layout ya la
-  // pidió—, así que acá no cuesta nada.
+  // `getSession` está cacheada por petición: el layout ya la pidió.
   const [usuario, administradoras, sesion] = await Promise.all([
     leerUsuarioDelPanel(id),
     contarAdministradoras(),
@@ -165,8 +146,7 @@ export default async function FichaDeUsuario({ params }: Props) {
                     : ""}
                   {usuario.bloqueadoPor ? ` por ${usuario.bloqueadoPor}` : ""}.
                 </p>
-                {/* RF-27: el motivo es obligatorio y lo garantiza un CHECK,
-                    así que si hay bloqueo hay motivo. */}
+                {/* Un CHECK garantiza el motivo si hay bloqueo (RF-27). */}
                 <p className="text-body-sm text-ink-secondary">
                   <span className="text-ink-secondary">Motivo: </span>
                   {usuario.motivoDelBloqueo}
@@ -176,12 +156,8 @@ export default async function FichaDeUsuario({ params }: Props) {
                 </p>
               </div>
             ) : (
-              // Con una baja encima no se dice «entra y compra con
-              // normalidad»: el bloque de abajo cuenta que no, y se
-              // contradirían a tres renglones de distancia. Lo que sí se dice
-              // es lo que esta mitad de la tarjeta contesta —si está
-              // bloqueada—, porque si no el botón queda pegado al título sin
-              // nada que lo ubique.
+              // Con una baja encima, «compra con normalidad» contradiría al
+              // bloque de la baja.
               <p className="text-body-sm text-ink-secondary">
                 {usuario.dadoDeBaja || usuario.bajaPedida
                   ? "No está bloqueada."
@@ -210,23 +186,7 @@ export default async function FichaDeUsuario({ params }: Props) {
   );
 }
 
-/**
- * La baja de la cuenta — RF-34, RN-13. Tarea F7.9.
- *
- * **Tres situaciones y no dos.** Sin baja no se dibuja nada: la baja la pide
- * la persona, así que acá no hay nada que ofrecer. Pedida, se lee el motivo
- * que escribió y el botón la ejecuta. Ejecutada, se lee quién y cuándo, y el
- * botón la revierte.
- *
- * **El motivo se sigue mostrando después de ejecutarla**: es lo que contesta
- * por qué esa cuenta ya no está, y es lo primero que se va a querer saber
- * cuando alguien pregunte. Lo que lo borra es revertir.
- */
-/**
- * La cara de la cuenta — F5.9. Con foto propia, tocarla la abre ampliada en
- * un diálogo, sin salir de la ficha (`FotoAmpliada`). Con el blobatar no hay
- * nada más que ver, y no es un botón.
- */
+/** Con foto propia se amplía al tocarla; el blobatar no es un botón. */
 function Retrato({ usuario }: { usuario: UsuarioDelPanel }) {
   if (!usuario.tieneFoto)
     return <Avatar src={usuario.cara} tamano={64} arriba />;
@@ -239,6 +199,10 @@ function Retrato({ usuario }: { usuario: UsuarioDelPanel }) {
   );
 }
 
+/**
+ * Sin baja no se dibuja (la pide la persona, no se ofrece). Pedida, el botón
+ * la ejecuta; ejecutada, la revierte (RF-34).
+ */
 function LaBaja({ usuario }: { usuario: UsuarioDelPanel }) {
   if (!usuario.bajaPedida && !usuario.dadoDeBaja) return null;
 
@@ -268,8 +232,7 @@ function LaBaja({ usuario }: { usuario: UsuarioDelPanel }) {
           </p>
         )}
 
-        {/* RF-34: el motivo es obligatorio y lo garantiza un CHECK, así que si
-            hay baja hay motivo. */}
+        {/* Un CHECK garantiza el motivo si hay baja (RF-34). */}
         <p className="text-body-sm text-ink-secondary">
           <span className="text-ink-secondary">Motivo: </span>
           {usuario.motivoDeLaBaja}
@@ -291,7 +254,6 @@ function LaBaja({ usuario }: { usuario: UsuarioDelPanel }) {
   );
 }
 
-/** Cómo se lee cada fila del historial. */
 const MOVIMIENTOS: Record<MovimientoDeEstado["evento"], string> = {
   bloqueo: "Bloqueada",
   desbloqueo: "Desbloqueada",
@@ -300,19 +262,8 @@ const MOVIMIENTOS: Record<MovimientoDeEstado["evento"], string> = {
 };
 
 /**
- * Lo que le pasó a la cuenta — RF-27: «se puede desbloquear, quedando también
- * registrado», y RF-34, que pide lo mismo de la baja. Tareas F7.7 y F7.9.
- *
- * **Sin nada que contar no hay tarjeta.** Es el caso de casi todas las
- * cuentas, y un «todavía no pasó nada» ocupando lugar en la columna del
- * costado no le contesta nada a nadie. Distinto de la tarjeta de estado de
- * arriba, que está siempre porque tiene el botón.
- *
- * **Se lee del más nuevo al más viejo** y cada fila dice quién y cuándo, que
- * es lo que §13.5 pide auditar. El motivo se repite en la fila aunque arriba
- * también esté: arriba está el de lo que pasa hoy, y acá el de cada una de las
- * veces que pasó. **Es lo único que queda de una baja revertida**, que borra
- * el pedido y su motivo.
+ * Quién y cuándo, como pide §13.5. Es lo único que queda de una baja
+ * revertida, que borra el pedido y su motivo.
  */
 function HistorialDeEstado({
   movimientos,
@@ -330,8 +281,8 @@ function HistorialDeEstado({
               {MOVIMIENTOS[m.evento]}
               {" el "}
               <time dateTime={m.fecha}>{fechaConHora(m.fecha)}</time>
-              {/* El autor puede faltar: `actor_user_id` es SET NULL, así que
-                  si esa cuenta se borró queda el hecho sin el nombre. */}
+              {/* `actor_user_id` es SET NULL: si se borró esa cuenta, no hay
+                  autor. */}
               {m.autor ? ` por ${m.autor}` : ""}.
             </p>
             {m.motivo ? (
@@ -347,15 +298,7 @@ function HistorialDeEstado({
   );
 }
 
-/**
- * Las últimas cinco órdenes — RF-26: «ver las órdenes de un usuario desde su
- * ficha» (decisión tuya del 2026-09-16).
- *
- * **Cinco y un enlace, no el listado entero**: contesta «¿quién es esta
- * persona?» de un vistazo sin repetir acá las solapas, los filtros y la
- * paginación que `/admin/ordenes` ya tiene. El total va al lado del título,
- * porque «las últimas cinco» no dice si hay seis o seiscientas.
- */
+/** Las últimas cinco y un enlace al listado (RF-26). */
 function SusOrdenes({ usuario }: { usuario: UsuarioDelPanel }) {
   if (usuario.ordenes === 0) {
     return (
@@ -382,8 +325,7 @@ function SusOrdenes({ usuario }: { usuario: UsuarioDelPanel }) {
       acciones={
         usuario.ordenes > usuario.ultimasOrdenes.length ? (
           <Button asChild variant="tertiary" size="sm" className="-mr-2">
-            {/* Al listado de órdenes, buscando por su email: es la búsqueda
-                que RF-21 ya tiene, y así se llega con solapas y filtros. */}
+            {/* Al listado, buscando por su email. */}
             <Link
               href={`/admin/ordenes?estado=todas&q=${encodeURIComponent(usuario.email)}`}
             >

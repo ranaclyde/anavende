@@ -28,31 +28,12 @@ import {
 } from "@/modules/catalog/schemas";
 import { guardarRelaciones } from "@/modules/catalog/relaciones";
 
-/**
- * ABM de marcas, categorías y colores — RF-18, RN-11, RN-11b.
- *
- * Las tres entidades comparten las mismas dos reglas, y por eso comparten
- * código:
- *
- *   · **Borrar** exige que NADIE la use (RN-11). La clave foránea es
- *     `ON DELETE RESTRICT`, así que la base lo impediría igual; se verifica
- *     antes para poder decir cuántos productos son y ofrecer desactivar, en
- *     vez de devolver un error de integridad.
- *   · **Desactivar** exige que no quede ningún producto ACTIVO usándola
- *     (RN-11b). Es la invariante que permite que `products.is_active` sea la
- *     única verdad sobre la visibilidad de un producto, y que las consultas
- *     públicas (§10.1, §11.2) no tengan que mirar el estado de la marca.
- *
- * Activar, en cambio, nunca se rechaza: una marca activa con productos
- * inactivos no rompe nada.
- */
+// Desactivar exige que ningún producto activo use el ítem (RN-11b): eso deja
+// a `products.is_active` como única verdad sobre la visibilidad, y las
+// consultas públicas no miran el estado de la marca ni de la categoría.
 
 const TABLAS = { marca: brands, categoria: categories, color: colors } as const;
 
-/**
- * Concordancia: «color» es masculino y las otras dos femeninas. Sin el
- * pronombre, los mensajes terminan diciendo «el color… que la usa».
- */
 const NOMBRES: Record<
   TipoDeItem,
   { singular: string; el: string; lo: string }
@@ -62,21 +43,14 @@ const NOMBRES: Record<
   color: { singular: "color", el: "el color", lo: "lo" },
 };
 
-/** Cuenta los productos que usan el ítem, separando activos de inactivos. */
 async function contarUso(tipo: TipoDeItem, id: string) {
   const condicion =
     tipo === "marca"
       ? sql`SELECT is_active FROM products WHERE brand_id = ${id}`
       : tipo === "categoria"
         ? sql`SELECT is_active FROM products WHERE category_id = ${id}`
-        : // Un producto por fila, y «activo» significa lo que dice RN-11b:
-          // que tenga una variante ACTIVA de este color, estando él activo.
-          // Contarlo sin mirar `v.is_active` bloquearía desactivar un color
-          // que ya nadie muestra —su variante está apagada— sin ninguna
-          // forma de saber por qué desde la pantalla.
-          //
-          // Cuenta también como SEGUNDO color (2026-10-05): el rojo de una
-          // variante «Negro/Rojo» está tan en uso como el de una «Rojo».
+        : // Activo = una variante activa de este color (primero o segundo)
+          // en un producto activo (RN-11b).
           sql`SELECT bool_or(v.is_active AND p.is_active) AS is_active
                 FROM product_variants v
                 JOIN products p ON p.id = v.product_id
@@ -92,11 +66,7 @@ async function contarUso(tipo: TipoDeItem, id: string) {
   return fila ?? { activos: 0, total: 0 };
 }
 
-/**
- * Postgres devuelve 23505 al violar un índice único. Drizzle envuelve el
- * error, así que hay que recorrer la cadena de causas: mirar solo el error de
- * arriba no encuentra nada.
- */
+/** Drizzle envuelve el 23505 de Postgres: hay que recorrer la cadena de `cause`. */
 function esDuplicado(e: unknown): boolean {
   let actual: unknown = e;
   for (let i = 0; i < 5 && actual; i++) {
@@ -112,14 +82,11 @@ function esDuplicado(e: unknown): boolean {
   return false;
 }
 
-/** Convierte la colisión de índice único en el mensaje que la vendedora lee. */
 function siEsDuplicado(e: unknown, tipo: TipoDeItem): never {
   if (esDuplicado(e)) {
     throw domainError("VALIDATION", {
       message: `Ya existe ${tipo === "color" ? "un" : "una"} ${NOMBRES[tipo].singular} con ese nombre.`,
-      // El envoltorio cuelga los mensajes de cada campo desde `fields`
-      // (§6.2, paso 3); acá se arma la misma forma a mano para que el error
-      // aparezca debajo del campo y no como un cartel suelto.
+      // La misma forma que arma el envoltorio, para que salga bajo el campo.
       fields: {
         properties: { name: { errors: ["Ese nombre ya está usado."] } },
       },
@@ -131,8 +98,6 @@ function siEsDuplicado(e: unknown, tipo: TipoDeItem): never {
 function refrescar() {
   revalidatePath("/admin/catalogo", "layout");
 }
-
-// ── Alta ────────────────────────────────────────────────────────────────
 
 export const crearUnaMarca = action
   .input(crearMarca)
@@ -155,9 +120,6 @@ export const crearUnaCategoria = action
   .auth("admin")
   .handler(async ({ input }) => {
     try {
-      // El nombre y las relacionadas (RF-31) van juntos o no va ninguno: una
-      // categoría creada a medias, sin las relaciones que se eligieron en el
-      // mismo diálogo, se ve guardada y no lo está.
       const id = await db.transaction(async (tx) => {
         const [fila] = await tx
           .insert(categories)
@@ -200,11 +162,7 @@ export const crearUnColor = action
     }
   });
 
-// ── Edición ─────────────────────────────────────────────────────────────
-//
-// El SLUG NO SE TOCA al renombrar. Es la dirección pública del ítem: si
-// cambiara, todo enlace compartido por WhatsApp dejaría de funcionar sin
-// aviso. Corregir un nombre es frecuente; romper enlaces, irreversible.
+// El slug no se toca al renombrar: rompería enlaces ya compartidos.
 
 export const editarUnaMarca = action
   .input(editarMarca)
@@ -272,8 +230,6 @@ export const editarUnColor = action
     }
   });
 
-// ── Activar y desactivar (RN-11b) ───────────────────────────────────────
-
 export const cambiarEstado = action
   .input(cambioDeEstado)
   .auth("admin")
@@ -306,19 +262,8 @@ export const cambiarEstado = action
     return { id, activo };
   });
 
-// ── Destacar (RF-18) ────────────────────────────────────────────────────
-//
-// Destacar NO SE RECHAZA NUNCA, ni siquiera sobre una categoría inactiva:
-// no publica nada. `is_active` sigue siendo la única verdad sobre la
-// visibilidad —la misma invariante que sostiene RN-11b—, y destacar sólo
-// decide el orden entre las que ya se ven. Una categoría inactiva y
-// destacada es una preferencia guardada para cuando se reactive, no una
-// contradicción que haya que impedir.
-//
-// Tampoco hay tope de destacadas: destacarlas todas equivale a no destacar
-// ninguna, que es una consecuencia visible en el acto y reversible con un
-// clic. Un límite en el servidor sería una regla que la vendedora choca sin
-// haberla pedido.
+// Destacar no se rechaza nunca, ni sobre una inactiva: no publica nada. Sin
+// tope a propósito.
 
 export const cambiarDestacada = action
   .input(cambioDeDestacada)
@@ -336,11 +281,8 @@ export const cambiarDestacada = action
     return { id: input.id, destacada: input.destacada };
   });
 
-// ── Logo de marca (RF-18) ───────────────────────────────────────────────
-//
-// SUBIRLO no pasa por acá: va por `POST /api/admin/upload`, porque una Server
-// Action serializa su entrada y mandarle un archivo de 8 MB significa pasarlo
-// a base64 (§9.1). QUITARLO sí, que es un booleano y no un binario.
+// Subir el logo va por `POST /api/admin/upload`: una Server Action pasaría el
+// archivo a base64 (TECHNICAL-SPEC §9.1). Quitarlo sí va acá.
 
 export const quitarElLogo = action
   .input(soloId)
@@ -351,7 +293,6 @@ export const quitarElLogo = action
     return { id: input.id };
   });
 
-/** Lo mismo para la imagen de categoría (FA-21), que sube por el mismo camino. */
 export const quitarLaImagenDeCategoria = action
   .input(soloId)
   .auth("admin")
@@ -360,8 +301,6 @@ export const quitarLaImagenDeCategoria = action
     refrescar();
     return { id: input.id };
   });
-
-// ── Baja (RN-11) ────────────────────────────────────────────────────────
 
 export const eliminar = action
   .input(referencia)
@@ -377,17 +316,12 @@ export const eliminar = action
             ? `No se puede borrar ${NOMBRES[tipo].el}: hay 1 producto que ${NOMBRES[tipo].lo} usa.`
             : `No se puede borrar ${NOMBRES[tipo].el}: hay ${total} productos que ${NOMBRES[tipo].lo} usan.`,
         total,
-        // La vista ofrece desactivar en su lugar, pero solo tiene sentido
-        // ofrecerlo si desactivar es posible: con productos activos, RN-11b
-        // también lo rechazaría.
+        // La vista ofrece desactivar solo si no hay activos (RN-11b).
         activos,
       });
     }
 
-    // Las claves del logo se leen ANTES del DELETE: después la fila ya no
-    // está y se perdieron con ella. Es la única forma de que borrar una marca
-    // —o una categoría con imagen (FA-21)— no deje sus archivos dando
-    // vueltas en Storage (RF-18).
+    // Antes del DELETE: la fila es la única referencia a los archivos.
     const archivos = tipo === "color" ? [] : await clavesDelLogo(tipo, id);
 
     const tabla = TABLAS[tipo];
@@ -398,9 +332,7 @@ export const eliminar = action
 
     if (!filas.length) throw domainError("NOT_FOUND");
 
-    // Después del DELETE, y sin poder fallar hacia afuera: la marca ya no
-    // existe: un archivo que sobreviva es basura, no un motivo para decirle a
-    // la vendedora que no se pudo borrar algo que sí se borró.
+    // Después del DELETE y sin fallar hacia afuera: el ítem ya se borró.
     if (archivos.length) await borrarArchivos(archivos);
 
     refrescar();

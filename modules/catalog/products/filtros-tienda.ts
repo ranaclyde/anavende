@@ -1,22 +1,5 @@
-/**
- * Filtros, orden y paginación del catálogo público — F3.4, RF-02, §10.2.
- *
- * Hermano de `filtros.ts`, que hace lo mismo para el panel, y separado a
- * propósito: **las preguntas no son las mismas**. La vendedora filtra por
- * estado y por stock —qué hay que reponer, qué está desactivado—; el comprador
- * no sabe que existe el concepto «inactivo» y le importan cosas que al panel no
- * le importan, como ver solo lo que está en oferta.
- *
- * Tampoco es `server-only`: el estado vive en la URL, así que lo lee la
- * consulta y lo escribe la barra de filtros. Una sola copia de los nombres de
- * los parámetros, o el día que uno cambie el otro deja de encontrar sin avisar.
- *
- * **Categoría, marca y color son multiselección desde el 2026-09-08**, que es
- * lo que RF-02 pedía desde el principio. Van repetidos en la dirección
- * —`?marca=a&marca=b`— y no separados por comas: es la forma que entienden
- * `URLSearchParams.getAll`, un formulario con varios campos del mismo nombre y
- * el `searchParams` de Next, los tres sin código de por medio.
- */
+// No es `server-only`: la consulta lee la URL y la barra la escribe. Los
+// filtros multiselección van repetidos (`?marca=a&marca=b`), no con comas.
 
 export const ORDENES_DE_TIENDA = [
   { valor: "relevancia", etiqueta: "Destacados" },
@@ -30,49 +13,31 @@ export type OrdenDeTienda = (typeof ORDENES_DE_TIENDA)[number]["valor"];
 
 export type FiltrosDeTienda = {
   /**
-   * La categoría de la página, en `/categorias/[slug]` (F3.11). `null` en
-   * `/productos`.
-   *
-   * **No es un filtro, es dónde se está parado**: no va en la dirección
-   * —la lleva la ruta—, no tiene chip, no cuenta en el botón «Filtros» y
-   * «Limpiar todo» la conserva. Por eso es un campo aparte y no un valor
-   * más de `categoria`, que en la página de una categoría queda vacío.
+   * El slug de `/categorias/[slug]`; `null` en `/productos`. No es un filtro:
+   * no va en la query, no tiene chip ni cuenta, y «Limpiar todo» la conserva.
    */
   seccion: string | null;
   q: string;
-  /** Slugs de categorías (`?categoria=teclados`). Vacío = todas. */
+  /** Slugs. Vacío = todas. */
   categoria: readonly string[];
-  /** Slugs de marcas. Vacío = todas. */
+  /** Slugs. Vacío = todas. */
   marca: readonly string[];
-  /**
-   * Slugs de colores. RF-02: el producto entra si **alguna** de sus variantes
-   * tiene **alguno** de estos colores.
-   */
+  /** Entra si alguna variante tiene alguno de estos colores (RF-02). */
   color: readonly string[];
-  /** Pesos enteros sobre el precio FINAL (RN-04b). `null` = sin tope. */
+  /** Pesos enteros sobre el precio final. `null` = sin tope. */
   precioMin: number | null;
   precioMax: number | null;
-  /** Solo lo que tiene descuento (RN-04b). */
   oferta: boolean;
   orden: OrdenDeTienda;
-  /** 1-based. Fuera de rango se corrige a 1: la URL la escribe cualquiera. */
   pagina: number;
 };
 
-/** §10.2: «paginación por LIMIT/OFFSET con 24 por página». */
 export const POR_PAGINA = 24;
 
-/**
- * Cuántos valores se aceptan por filtro.
- *
- * No es una limitación de producto —nadie elige veinte marcas a mano—: es que
- * la dirección la escribe cualquiera, y `?marca=` repetido quinientas veces
- * arma un `IN` de quinientos elementos con una sola pegada de texto. Veinte
- * está por encima de cualquier uso real y por debajo de cualquier abuso.
- */
+/** Tope contra una URL con `?marca=` repetido cientos de veces. */
 export const MAXIMO_POR_FILTRO = 20;
 
-/** Diez dígitos enteros: lo que entra en `numeric(12,2)`. Ver `pesos`. */
+/** Lo que entra en `numeric(12,2)`. */
 const TOPE_DE_PRECIO = 9_999_999_999;
 
 export const FILTROS_DE_TIENDA_VACIOS: FiltrosDeTienda = {
@@ -94,13 +59,8 @@ export type ParametrosDeBusqueda = Record<
 >;
 
 /**
- * Los parámetros de una dirección, con la forma de `searchParams` de Next:
- * **un parámetro repetido llega como lista**.
- *
- * Para el cliente, que tiene un `URLSearchParams` y no lo que entrega Next.
- * `Object.fromEntries(params.entries())` parece lo mismo y no lo es: de
- * `?marca=a&marca=b` se queda con la última, y buscar con dos marcas
- * puestas borraba una sin avisar.
+ * Con la forma de `searchParams` de Next: un parámetro repetido llega como
+ * lista. `Object.fromEntries(params.entries())` se queda solo con el último.
  */
 export function parametrosDeLaDireccion(
   params: URLSearchParams,
@@ -113,29 +73,17 @@ export function parametrosDeLaDireccion(
   return salida;
 }
 
-/**
- * La forma de un slug, la que produce `slugificar` (`lib/slug.ts`):
- * minúsculas, números y guiones simples, hasta 60.
- */
+/** La forma que produce `slugificar`. */
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LARGO_DE_SLUG = 60;
 
 function texto(valor: string | string[] | undefined): string {
-  // `?q=a&q=b` llega como arreglo. Se toma el primero en vez de fallar.
   return (Array.isArray(valor) ? valor[0] : valor)?.trim() ?? "";
 }
 
 /**
- * Los slugs válidos de un parámetro repetido, sin repetidos y con tope.
- *
- * **Slugs y no ids desde el 2026-10-14**: `?categoria=teclados` se lee y se
- * comparte; un UUID no. Es la dirección pública que RF-18 ya les daba —no
- * cambia al renombrar—, y la ficha ya los usaba para `?color=`. Un enlace
- * viejo con UUID no se reconoce y muestra el catálogo sin ese filtro: no hay
- * catálogo real todavía, así que no hay enlaces que cuidar.
- *
- * Se pasan a minúsculas para que `?marca=Logitech` siga coincidiendo con la
- * opción de la lista en vez de quedar aplicado pero sin chip que lo saque.
+ * Los slugs válidos, sin repetidos y con tope. En minúsculas: si no,
+ * `?marca=Logitech` quedaría aplicado pero sin chip que lo saque.
  */
 function lista(valor: string | string[] | undefined): string[] {
   const crudos =
@@ -144,8 +92,6 @@ function lista(valor: string | string[] | undefined): string[] {
 
   for (const crudo of crudos) {
     const slug = crudo.trim().toLowerCase();
-    // Se validan antes de la consulta: lo que no tiene forma de slug no puede
-    // ser una categoría, y no hace falta preguntárselo a la base.
     if (slug.length <= LARGO_DE_SLUG && SLUG.test(slug)) vistos.add(slug);
     if (vistos.size >= MAXIMO_POR_FILTRO) break;
   }
@@ -153,39 +99,20 @@ function lista(valor: string | string[] | undefined): string[] {
   return [...vistos];
 }
 
-/**
- * Un precio de la dirección, en pesos enteros.
- *
- * **Enteros y no decimales**, aunque RN-02 diga que los precios se muestran con
- * centavos: acá el número lo escribe una persona en una caja de texto, y
- * «desde 12.000,50» no es un filtro que alguien quiera poner. Los centavos
- * siguen estando en el precio y en la comparación; lo que se acota es el borde.
- */
+/** En pesos enteros: el borde no lleva centavos, la comparación sí. */
 function pesos(valor: string | string[] | undefined): number | null {
   const crudo = texto(valor);
   if (crudo === "") return null;
 
   const n = Number.parseInt(crudo, 10);
-  // El tope es el de la COLUMNA, `numeric(12,2)`: diez dígitos enteros. No es
-  // una precaución teórica —`formatMoney` tira una excepción con once, y el
-  // chip del filtro lo llama—, así que `?precioMax=99999999999` rompería la
-  // página en vez de no filtrar nada.
+  // Sin el tope, `formatMoney` lanza en el chip y rompe la página.
   if (!Number.isSafeInteger(n) || n < 0 || n > TOPE_DE_PRECIO) return null;
   return n;
 }
 
-/**
- * Lee la URL sin fallar nunca.
- *
- * Es la misma decisión que el panel y por el mismo motivo: la dirección es
- * compartible y editable a mano, así que un valor que no se reconoce se
- * descarta y queda el de siempre. Un catálogo que devuelve un error porque
- * alguien recortó el enlace al pegarlo en WhatsApp es un callejón sin salida,
- * y en la tienda esa persona además se va.
- */
+/** Nunca falla: un valor que no reconoce queda en el de siempre. */
 export function leerFiltrosDeTienda(
   params: ParametrosDeBusqueda,
-  /** El slug de la ruta en `/categorias/[slug]`; `null` en `/productos`. */
   seccion: string | null = null,
 ): FiltrosDeTienda {
   const orden = texto(params.orden);
@@ -193,9 +120,7 @@ export function leerFiltrosDeTienda(
 
   let precioMin = pesos(params.precioMin);
   let precioMax = pesos(params.precioMax);
-  // Un rango al revés es un error de tipeo, y se da vuelta en vez de
-  // descartarse: «de 5000 a 1000» quiere decir lo mismo al derecho, y tirar el
-  // tope dejaría un «desde 5000» que nadie pidió.
+  // Un rango al revés se da vuelta en vez de descartarse.
   if (precioMin !== null && precioMax !== null && precioMin > precioMax) {
     [precioMin, precioMax] = [precioMax, precioMin];
   }
@@ -203,9 +128,7 @@ export function leerFiltrosDeTienda(
   return {
     seccion,
     q: texto(params.q),
-    // En la página de una categoría, `?categoria=` no se lee: la categoría
-    // ya la dice la ruta, y las demás son otras páginas («Otras
-    // categorías»), no un filtro que se suma.
+    // En la página de una categoría, `?categoria=` no se lee.
     categoria: seccion ? [] : lista(params.categoria),
     marca: lista(params.marca),
     color: lista(params.color),
@@ -220,17 +143,8 @@ export function leerFiltrosDeTienda(
 }
 
 /**
- * La URL que representa estos filtros.
- *
- * Lo que vale lo de siempre NO se escribe: un catálogo sin tocar es
- * `/productos` a secas. Y **la página se cae al cambiar cualquier filtro**, que
- * es la trampa clásica: estar en la página 3 de «todo», filtrar por una marca
- * con nueve productos y caer en un «sin resultados» que no es cierto.
- *
- * Con `seccion`, la base es la página de esa categoría (F3.11). Todo lo que
- * arma direcciones del catálogo pasa por acá, así que los chips, la
- * paginación, el orden, el precio y el buscador se quedan en la categoría sin
- * saber que existe.
+ * Lo que vale lo de siempre no se escribe. Con `seccion`, la base es la página
+ * de esa categoría: todo lo que arma direcciones del catálogo pasa por acá.
  */
 export function urlDeTienda(filtros: Partial<FiltrosDeTienda>): string {
   const f = { ...FILTROS_DE_TIENDA_VACIOS, ...filtros };
@@ -251,23 +165,15 @@ export function urlDeTienda(filtros: Partial<FiltrosDeTienda>): string {
   return cadena ? `${base}?${cadena}` : base;
 }
 
-/**
- * La página de una categoría — F3.11.
- *
- * La única forma de escribirla: la home, `/categorias`, la ficha, los
- * recomendados y los datos estructurados la piden acá, y el día que cambie la
- * ruta cambia en un solo lugar.
- */
 export function urlDeCategoria(slug: string): string {
   return `/categorias/${slug}`;
 }
 
-/** Sin filtros: `/productos`, o la página de la categoría. */
 export function rutaDeTienda(seccion: string | null): string {
   return seccion ? urlDeCategoria(seccion) : "/productos";
 }
 
-/** Cambiar un filtro vuelve a la página 1. Ver `urlDeTienda`. */
+/** Vuelve a la página 1: en la 3, un filtro nuevo daría un falso «sin resultados». */
 export function urlCambiando(
   filtros: FiltrosDeTienda,
   cambio: Partial<FiltrosDeTienda>,
@@ -276,58 +182,33 @@ export function urlCambiando(
 }
 
 /**
- * Los mismos filtros, con la categoría de la página convertida en un filtro
- * de `/productos` — F3.11, decisión tuya del 2026-11-05.
- *
- * Es lo que arma el grupo «Categoría» del drawer en la página de una
- * categoría: elegir otra la SUMA y lleva a `/productos` con las dos y con todo
- * lo demás puesto, y destildar la de la página lleva a `/productos` con el
- * resto. Sumar una categoría amplía el resultado, así que los filtros que
- * vienen puestos nunca dejan un vacío.
- *
- * En `/productos` devuelve lo mismo que recibe.
+ * La categoría de la página pasa a ser un filtro de `/productos`: elegir otra
+ * en el drawer la suma. En `/productos` devuelve lo mismo.
  */
 export function comoFiltroDeCategoria(f: FiltrosDeTienda): FiltrosDeTienda {
   if (!f.seccion) return f;
   return { ...f, seccion: null, categoria: [f.seccion, ...f.categoria] };
 }
 
-/** Ir a otra página conserva todo lo demás. */
 export function urlDePagina(filtros: FiltrosDeTienda, pagina: number): string {
   return urlDeTienda({ ...filtros, pagina });
 }
 
-/**
- * Pone o saca un valor de un filtro multiselección.
- *
- * Es lo que hace que **volver a tocar un chip encendido lo apague**, que es el
- * gesto que la gente prueba primero. El tope se aplica también acá: sin él, la
- * validación de la lectura se saltea eligiendo a mano.
- */
+/** Respeta `MAXIMO_POR_FILTRO` también acá, no solo al leer la URL. */
 export function alternar(lista: readonly string[], id: string): string[] {
   if (lista.includes(id)) return lista.filter((x) => x !== id);
   if (lista.length >= MAXIMO_POR_FILTRO) return [...lista];
   return [...lista, id];
 }
 
-/** Si hay algo que limpiar: búsqueda o filtros, no el orden ni la página. */
+/** Búsqueda o filtros; el orden y la página no cuentan. */
 export function hayFiltrosDeTienda(f: FiltrosDeTienda): boolean {
   return contarFiltrosDeTienda(f) > 0 || f.q !== "";
 }
 
 /**
- * Cuántos filtros hay puestos, para el contador del botón «Filtros».
- *
- * **Cuenta VALORES, no grupos**: con dos marcas elegidas dice 2, que es lo que
- * se ve en el panel abierto y lo que se ve en los chips de arriba de la grilla.
- * Contando grupos, sacar una de las dos marcas dejaría el número quieto y
- * parecería que el clic no hizo nada.
- *
- * **La búsqueda no cuenta.** Tiene su propio campo a la vista al lado del
- * botón: sumarla haría que el contador diga «2» con un solo filtro elegido.
- *
- * **El precio cuenta UNA vez** aunque tenga los dos bordes puestos: es un
- * filtro solo, y su chip también es uno.
+ * Cuenta valores, no grupos, como los chips. La búsqueda no cuenta y el precio
+ * cuenta una vez.
  */
 export function contarFiltrosDeTienda(f: FiltrosDeTienda): number {
   return (
@@ -339,45 +220,18 @@ export function contarFiltrosDeTienda(f: FiltrosDeTienda): number {
   );
 }
 
-/**
- * Limpia búsqueda y filtros; conserva el orden elegido (§10.2) y la
- * categoría de la página: «Limpiar todo» en «Auriculares» deja en
- * «Auriculares» (F3.11).
- */
+/** Conserva el orden y la categoría de la página. */
 export function sinFiltrosDeTienda(f: FiltrosDeTienda): FiltrosDeTienda {
   return { ...FILTROS_DE_TIENDA_VACIOS, orden: f.orden, seccion: f.seccion };
 }
 
-/** La dirección de «Limpiar todo». Ver `sinFiltrosDeTienda`. */
 export function urlSinFiltros(f: FiltrosDeTienda): string {
   return urlDeTienda(sinFiltrosDeTienda(f));
 }
 
 /**
- * Si esta vista del catálogo pide entrar al índice de los buscadores — F3.9,
- * RNF-04.
- *
- * **Solo el catálogo sin tocar**, en cualquiera de sus páginas. Todo lo demás
- * —una búsqueda, una marca elegida, un rango de precio, otro orden— muestra
- * los mismos productos recortados o dados vuelta, y son infinitas: cada
- * combinación de filtros es una dirección distinta con el contenido de las
- * otras. Indexarlas reparte entre cientos de páginas casi iguales lo que
- * tendría que ir a una sola, y le gasta a Google el tiempo que le dedica al
- * sitio en recorrer combinaciones que nadie buscó.
- *
- * **No se prohíbe el rastreo, solo el índice.** Esas páginas salen
- * `noindex, follow`: no entran al índice, pero los enlaces a las fichas que
- * tienen adentro sí se siguen. Es lo contrario de un `Disallow`, que cerraría
- * el camino.
- *
- * **La página de una categoría sin filtrar sí se indexa** (F3.11): la
- * categoría no es un filtro (`seccion`), así que `/categorias/teclados` es tan
- * indexable como `/productos`, y le suma cualquier filtro y deja de serlo.
- *
- * **La paginación sí se indexa**, con su propia dirección. Es lo que Google
- * recomienda desde que dejó de existir `rel=next`: la página 2 es contenido
- * distinto de la página 1, y marcarla `noindex` esconde productos que no
- * aparecen en ninguna otra parte.
+ * Solo el catálogo sin filtros ni otro orden, en cualquier página y también
+ * en la página de una categoría. Lo demás sale `noindex, follow`, no `Disallow`.
  */
 export function catalogoIndexable(f: FiltrosDeTienda): boolean {
   return !hayFiltrosDeTienda(f) && f.orden === FILTROS_DE_TIENDA_VACIOS.orden;

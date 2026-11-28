@@ -1,4 +1,4 @@
-/** F1.4: el cliente de la aplicación se conecta y lee el esquema. */
+/** El cliente de la aplicación se conecta y lee el esquema (`.env.local`). */
 try {
   process.loadEnvFile(".env.local");
 } catch {}

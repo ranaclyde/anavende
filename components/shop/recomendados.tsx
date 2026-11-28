@@ -22,27 +22,8 @@ import {
 import { idsDeFavoritos } from "@/modules/users/favoritos/queries";
 
 /**
- * Los bloques de recomendados — RF-32: los dos de la ficha (F8.2, DR §7.3) y
- * «Completá tu setup» del carrito (F8.3, DR §7.4). Las dos pantallas los
- * envuelven en `<Suspense>` con `EsqueletoDeRecomendados`.
- *
- * Los de la ficha:
- *
- * Van a lo ancho, debajo de las dos columnas, y **llegan después**: la página
- * los envuelve en `<Suspense>`, así que la ficha se dibuja sin esperarlos y
- * estos entran por el mismo flujo cuando su consulta termina. Es el criterio
- * «no degradan el tiempo de carga de la ficha» de RF-32 resuelto por
- * construcción: lo que está arriba del pliegue nunca espera a lo que está
- * abajo.
- *
- * **La pieza es la de la home**: título, «Ver todo» y la grilla de cuatro. Una
- * sección de tarjetas es la misma en toda la tienda (§6.1).
- *
- * **Cada bloque lleva a su listado.** «Productos similares», al catálogo de
- * la categoría —la pregunta que sigue a «¿hay algo parecido?» es «mostrame
- * todos»—; «También te puede interesar», al catálogo con TODAS las
- * relacionadas filtradas a la vez, que el filtro suma (RF-02). Un bloque sin
- * candidatos no se dibuja (RF-32).
+ * Los bloques de recomendados de la ficha (RF-32). Quien los usa los envuelve
+ * en `<Suspense>` con `EsqueletoDeRecomendados`, para no demorar la ficha.
  */
 export async function Recomendados({
   productoId,
@@ -56,7 +37,6 @@ export async function Recomendados({
   categoria: { slug: string; nombre: string };
   userId: string | null;
 }) {
-  // Independientes: los favoritos son de quien mira y los recomendados no.
   const [{ complementos, similares }, favoritos] = await Promise.all([
     leerRecomendados(productoId),
     userId ? idsDeFavoritos(userId) : null,
@@ -95,19 +75,8 @@ export async function Recomendados({
 }
 
 /**
- * «Completá tu setup» — F8.3, RF-32, DR §7.4.
- *
- * **Va a lo ancho debajo del carrito, no en la columna del resumen.** §7.4 lo
- * pone «debajo del resumen», y en el teléfono es literal: el resumen es lo
- * último de la lista y el bloque sigue. En escritorio la columna mide 352px y
- * es `sticky`: cuatro tarjetas ahí serían dos columnas de 160px, y algo
- * debajo de una columna pegada se esconde detrás de ella al desplazar. Es la
- * misma decisión que la ficha: los recomendados son otra pantalla dentro de la
- * página.
- *
- * Es un bloque de complementos, como «También te puede interesar»: uno de
- * cada relacionada, deslizable si son más de cuatro, y «Ver todo» con las
- * relacionadas filtradas.
+ * «Completá tu setup», del carrito. Va a lo ancho y no en la columna del
+ * resumen: es `sticky`, y lo que va debajo se esconde detrás al desplazar.
  */
 export async function CompletaTuSetup({
   variantes,
@@ -143,15 +112,7 @@ function enumerar(nombres: string[]): string {
     : (nombres[0] ?? "");
 }
 
-/**
- * Un bloque de complementos, en la ficha o en el carrito.
- *
- * **Hasta cuatro, la grilla de siempre; con más, la fila se desliza.** Más de
- * cuatro solo pasa cuando hay más de cuatro relacionadas —una tarjeta por
- * cada una, hasta ocho—, y dos filas de grilla empujarían «Productos
- * similares» y el pie de página una pantalla más abajo por algo que es una
- * sugerencia.
- */
+/** Un bloque de complementos: hasta cuatro en grilla; con más, se desliza. */
 function BloqueDeComplementos({
   titulo,
   complementos: { productos, categorias },
@@ -181,8 +142,6 @@ function BloqueDeComplementos({
       enlace={
         categorias.length > 0
           ? {
-              // Una sola categoría tiene su página (F3.11); varias son el
-              // catálogo filtrado por todas.
               href:
                 categorias.length === 1
                   ? urlDeCategoria(categorias[0].slug)
@@ -240,16 +199,11 @@ export function Tarjetas({
   ));
 }
 
-/** 64px entre lo de arriba y el primer bloque, y entre bloque y bloque (§7.3). */
 export function Bloques({ children }: { children: React.ReactNode }) {
   return <div className="mt-16 flex flex-col gap-16">{children}</div>;
 }
 
-/**
- * Mientras llegan: los bloques con la forma real (§8), para que lo que entra
- * no empuje el pie de página de golpe. Si al final uno no tiene candidatos,
- * se cierra ese hueco; está debajo del pliegue, donde no se ve moverse nada.
- */
+/** Mientras llegan: la forma real, para no empujar el pie de página de golpe. */
 export function EsqueletoDeRecomendados({ bloques = 2 }: { bloques?: number }) {
   return (
     <Bloques>
@@ -258,8 +212,6 @@ export function EsqueletoDeRecomendados({ bloques = 2 }: { bloques?: number }) {
           <Skeleton className="h-6 w-56 max-w-full" />
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: POR_BLOQUE }, (_, i) => (
-              // Las mismas columnas que la grilla de verdad: en tableta son
-              // tres, y la cuarta baja a una segunda fila.
               <li
                 key={i}
                 className="flex flex-col gap-3 rounded-card bg-surface p-3 shadow-md"

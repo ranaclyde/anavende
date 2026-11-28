@@ -18,22 +18,12 @@ import type {
 } from "@/modules/catalog/queries";
 
 /**
- * Las categorías relacionadas de una categoría — RF-31.
+ * Las categorías relacionadas de una categoría — RF-31. Dos piezas del mismo
+ * drawer que nunca se ven a la vez (DR §6.14.2): `ListaDeRelacionadas` y
+ * `EleccionDeRelacionadas`.
  *
- * Son dos piezas del mismo drawer, que nunca se ven a la vez (§6.14.2: si
- * elegir lleva a un segundo paso, el paso va adentro, nunca un diálogo encima
- * de otro):
- *
- *   · `ListaDeRelacionadas`, la sección del formulario: lo elegido, en orden,
- *     con su «Recíproca», subir, bajar y quitar.
- *   · `EleccionDeRelacionadas`, el paso de elegir: un buscador y todas las
- *     activas con casillas, para marcar varias de una vez. Las nuevas entran
- *     al final de la lista y se ordenan después, en el formulario.
- *
- * Las dos son controladas: la lista vive en el formulario, que la manda junto
- * con el nombre al guardar. Nada se escribe antes, y por eso lo que le pasa a
- * la OTRA categoría se avisa al lado de lo que lo provoca (RF-31: «informándolo
- * antes»).
+ * Son controladas: nada se escribe hasta guardar el formulario, y por eso lo
+ * que le pasa a la otra categoría se avisa al lado de lo que lo provoca.
  */
 
 export function ListaDeRelacionadas({
@@ -104,9 +94,8 @@ export function ListaDeRelacionadas({
           {lista.map((r, i) => (
             <li key={r.id} className="flex flex-col gap-1 py-2">
               <div className="flex items-center gap-3">
-                {/* En el teléfono «Recíproca» baja debajo del nombre: en una
-                    sola línea, con tres botones de 44px, el nombre se quedaba
-                    con 90px. */}
+                {/* En el teléfono «Recíproca» baja debajo del nombre, o el
+                    nombre se queda sin lugar. */}
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="flex min-w-0 items-center gap-2">
@@ -235,8 +224,7 @@ export function EleccionDeRelacionadas({
     const posibles = new Set(disponibles.map((c) => c.id));
     return elegidas.filter((e) => posibles.has(e));
   });
-  // Son pocas y están todas en memoria: filtrar es instantáneo, pero con 100
-  // renglones el diferido deja que el campo responda primero.
+  // El diferido deja que el campo responda primero con muchos renglones.
   const busqueda = normalizar(useDeferredValue(termino));
   const visibles = busqueda
     ? disponibles.filter((c) => normalizar(c.name).includes(busqueda))
@@ -264,8 +252,7 @@ export function EleccionDeRelacionadas({
             onChange={(e) => setTermino(e.target.value)}
             autoFocus
             autoComplete="off"
-            // `admin:pl-9` y no `pl-9`: el campo trae `admin:px-3`, que con
-            // la variante gana y dejaba la lupa encima del texto.
+            // `admin:pl-9` y no `pl-9`: el `admin:px-3` del campo le gana (DR §6.2.1).
             className="admin:pl-9"
           />
         </div>

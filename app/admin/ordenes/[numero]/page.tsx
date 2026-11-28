@@ -42,9 +42,8 @@ import { exigirAdmin } from "@/lib/session";
 type Props = { params: Promise<{ numero: string }> };
 
 /**
- * La guía de la orden (F6.7, RF-37), solo con la orden activa: es cuando
- * existen las acciones. No repite el párrafo de arriba de la tabla, que ya
- * dice qué pasa con el stock al ajustar, finalizar o cancelar.
+ * Solo con la orden activa, que es cuando hay acciones. No repite el párrafo
+ * de arriba de la tabla sobre el stock.
  */
 const PASOS_DE_LA_ORDEN: PasoDeAyuda[] = [
   {
@@ -79,24 +78,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Detalle de una orden — RF-21, DR §6.9. Tarea F7.1.
- *
- * Tiene lo que RF-21 pide y en ese orden: los ítems con precio unitario y
- * subtotal, el total, los datos del comprador, la dirección de envío, el
- * historial de estados y el acceso directo a su WhatsApp.
- *
- * **No es el detalle del comprador** (`/mi-cuenta/compras/[numero]`, F6.5).
- * Aquél cuenta en qué anda su pedido; éste es la hoja de trabajo: lleva el
- * teléfono, el email, la dirección entera y quién movió qué cosa cuándo.
- *
- * **Las acciones viven acá, y cada estado tiene las suyas.** Mientras la orden
- * está activa se edita renglón por renglón en la tabla —quitar, bajar y subir
- * (F7.2 y F7.2a)—, se agrega un producto al pie de esa misma tabla, y se
- * finaliza o se cancela en la cabecera (F7.3). **Una vez finalizada lo único
- * que puede pasarle es una devolución** (RF-25, F7.5), y por eso el botón
- * aparece recién ahí: lo que todavía no se entregó no se devuelve, se edita o
- * se cancela. Sobre una cancelada no hay nada que hacer (RF-13), así que no
- * hay controles apagados: simplemente no están.
+ * Detalle de una orden (RF-21). Cada estado tiene sus acciones: la activa se
+ * edita, finaliza o cancela; la finalizada solo admite devoluciones (RF-25);
+ * la cancelada no muestra controles.
  */
 export default async function DetalleDeLaOrden({ params }: Props) {
   await exigirAdmin();
@@ -108,20 +92,15 @@ export default async function DetalleDeLaOrden({ params }: Props) {
 
   const numero = Number.parseInt(crudo, 10);
 
-  // **En paralelo, y las devoluciones se piden siempre.** Esperar a la orden
-  // para sacarle el `id` y recién entonces buscar sus devoluciones sería una
-  // cascada en la pantalla que más se abre del panel; y preguntarlas sólo si
-  // está finalizada obligaría a la misma espera. Una orden sin devoluciones
-  // —que son casi todas— contesta con una lista vacía.
+  // Las devoluciones se piden siempre y en paralelo, por número: esperar a la
+  // orden para filtrarlas sería una cascada.
   const [orden, devoluciones] = await Promise.all([
     leerOrdenDelPanel(numero),
     devolucionesDeLaOrden(numero),
   ]);
   if (!orden) notFound();
 
-  // Lo ya devuelto de cada renglón, contando sólo las devoluciones vigentes:
-  // anular libera el cupo (RF-25). Es el mismo criterio que el tope del
-  // dominio, calculado sobre lo que ya se leyó.
+  // Solo cuentan las devoluciones vigentes: anular libera el cupo (RF-25).
   const devueltas = devueltasPorRenglon(devoluciones);
   const paraDevolver = orden.items
     .map((item) => ({
@@ -132,8 +111,6 @@ export default async function DetalleDeLaOrden({ params }: Props) {
       yaDevueltas: devueltas.get(item.id) ?? 0,
       stock: item.stock,
     }))
-    // Un renglón devuelto del todo no se puede volver a devolver: ofrecerlo
-    // sería ofrecer un error (RF-25).
     .filter((item) => item.cantidad > item.yaDevueltas);
 
   const direccion = orden.shippingAddress;
@@ -141,9 +118,7 @@ export default async function DetalleDeLaOrden({ params }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* El volver va al listado a secas, sin los filtros que traía: el botón
-          atrás del navegador sí los conserva, y esto es la salida de
-          emergencia. */}
+      {/* Volver va al listado sin filtros: el atrás del navegador los conserva. */}
       <EncabezadoDePanel
         titulo={`Orden #${orden.numero}`}
         volver={{ href: "/admin/ordenes", etiqueta: "Órdenes" }}
@@ -155,11 +130,8 @@ export default async function DetalleDeLaOrden({ params }: Props) {
         }
         acciones={
           <div className="flex flex-wrap items-center gap-2">
-            {/* El atajo de RF-21. El teléfono del pedido es obligatorio en las
-                tres vías de alta (RF-05), así que el botón siempre puede estar.
-                **Dejó de ser el de marca** cuando llegó «Finalizar» (F7.3): de
-                esta pantalla se sale finalizando o cancelando, escribirle es el
-                paso previo, y §6.3 admite un solo botón de marca por pantalla. */}
+            {/* Siempre está: el teléfono es obligatorio en toda alta (RF-05).
+                Secundario porque el de marca es «Finalizar» (§6.3). */}
             <Button asChild variant="secondary" size="sm">
               <a
                 href={enlaceDeWhatsApp(
@@ -175,21 +147,17 @@ export default async function DetalleDeLaOrden({ params }: Props) {
               </a>
             </Button>
 
-            {/* RF-25. Sólo sobre una finalizada, y sólo si queda algo por
-                devolver: un diálogo que se abre para decir que no hay nada es
-                el que sobra. */}
+            {/* RF-25: solo si queda algo por devolver. */}
             {orden.estado === "finalizada" && paraDevolver.length > 0 ? (
               <DevolverDeLaOrden numero={orden.numero} items={paraDevolver} />
             ) : null}
 
-            {/* RF-23. Sólo desde `activa`: es lo que dice `TRANSICIONES`, y de
-                las otras dos no sale ninguna flecha. */}
+            {/* RF-23: solo desde `activa`, como dice `TRANSICIONES`. */}
             {orden.estado === "activa" ? (
               <ResolverLaOrden
                 numero={orden.numero}
-                // Sólo lo que los diálogos usan (§ rendimiento: lo que viaja al
-                // cliente se serializa entero). Los precios están en la tabla y
-                // no cambian con esto.
+                // Solo lo que usan los diálogos: lo que viaja al cliente se
+                // serializa entero.
                 items={orden.items.map((item) => ({
                   id: item.id,
                   nombre: item.nombre,
@@ -202,7 +170,7 @@ export default async function DetalleDeLaOrden({ params }: Props) {
               />
             ) : null}
 
-            {/* Al final: es la acción que menos pesa de la cabecera. */}
+            {/* Al final: la acción que menos pesa. */}
             {orden.estado === "activa" ? (
               <AyudaGuiada
                 id="panel-orden"
@@ -217,9 +185,8 @@ export default async function DetalleDeLaOrden({ params }: Props) {
       <p className="text-body-sm text-ink-secondary">
         Creada el {fechaConHora(orden.creadaEn)}
         {orden.finalizadaEn
-          ? // Una manual cargada tarde (RF-24, F7.4b) tiene la venta ANTES
-            // de la carga, y a las 12:00 porque la hora no se preguntó: se
-            // dice el día y no una hora inventada.
+          ? // Una manual cargada tarde (RF-24) tiene la venta antes de la
+            // carga y a las 12:00 inventadas: se dice solo el día.
             new Date(orden.finalizadaEn) < new Date(orden.creadaEn)
             ? ` · venta del ${fechaCorta(orden.finalizadaEn)}`
             : ` · finalizada el ${fechaConHora(orden.finalizadaEn)}`
@@ -228,9 +195,8 @@ export default async function DetalleDeLaOrden({ params }: Props) {
             : ""}
       </p>
 
-      {/* Fondo hundido y no borde punteado (F2.15): en el panel, el punteado
-          dice «soltá archivos acá». Y «de abajo» y no «la tabla»: en el
-          teléfono los renglones son tarjetas. */}
+      {/* Fondo hundido y no punteado: en el panel el punteado dice «soltá
+          archivos acá». */}
       {orden.estado === "activa" ? (
         <p className="rounded-panel-card bg-surface-sunken px-4 py-3 text-body-sm text-ink-secondary">
           Podés ajustar el pedido desde los renglones de abajo: quitar, bajar o
@@ -241,15 +207,9 @@ export default async function DetalleDeLaOrden({ params }: Props) {
         </p>
       ) : null}
 
-      {/* Dos columnas en escritorio: los ítems mandan y ocupan el ancho, y
-          los datos del comprador acompañan al costado.
-          **Apilados, el historial va al final** (F2.15): estaba entre el
-          pedido y el comprador, y con veinte cambios de cantidad la dirección
-          quedaba a 1500px en el teléfono, que es donde el panel garantiza
-          atender órdenes. El orden del DOM es el de la columna única —pedido,
-          entrega, historial—, así el teclado y el lector siguen lo que se ve
-          en el teléfono; en escritorio la grilla sube el historial a la
-          izquierda, debajo del pedido. */}
+      {/* El DOM sigue la columna del teléfono (pedido, entrega, historial al
+          final) para el teclado y el lector; en escritorio la grilla sube el
+          historial debajo del pedido. */}
       <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:grid-rows-[auto_1fr] xl:items-start">
         <div className="flex flex-col gap-4 xl:col-start-1 xl:row-start-1">
           <Renglones orden={orden} />
@@ -265,12 +225,8 @@ export default async function DetalleDeLaOrden({ params }: Props) {
               valor={orden.customerEmail}
               vacio="Sin email"
             />
-            {/*
-              La cuenta, cuando la hay, es OTRO dato que el nombre de arriba:
-              el del pedido vale sólo para ese pedido (F6.1), y quien compró
-              para un tercero puso los datos del tercero. Verlas juntas es lo
-              que evita escribirle al que no era.
-            */}
+            {/* La cuenta puede no ser la persona del pedido (compra para un
+                tercero): verlas juntas evita escribirle al que no era. */}
             <Dato
               titulo="Cuenta"
               valor={
@@ -330,25 +286,15 @@ export default async function DetalleDeLaOrden({ params }: Props) {
 }
 
 /**
- * Los renglones con precio unitario y subtotal — RF-21.
- *
- * Todo sale del snapshot (RN-12): el producto pudo cambiar de nombre o de
- * precio, y esta orden tiene que seguir diciendo lo que se vendió. Por eso
- * tampoco hay enlace a la ficha del producto.
+ * Todo sale del snapshot (RN-12), que dice lo que se vendió aunque el producto
+ * haya cambiado; por eso no enlaza a su ficha.
  */
 function Renglones({ orden }: { orden: OrdenDelPanel }) {
-  // RF-22: sólo las activas se editan. La regla la hace cumplir el dominio
-  // con un `FOR UPDATE` (`editar.ts`); acá se decide qué se dibuja, que no es
-  // lo mismo — un botón escondido no es una guardia.
+  // Solo decide qué se dibuja: la regla (RF-22) la hace cumplir `editar.ts`.
   const editable = orden.estado === "activa";
   const esElUnico = orden.items.length === 1;
 
-  /**
-   * Una orden puede quedarse sin renglones, y sólo de una manera: se le quitó
-   * el último (RF-22), lo que la cancela. Una tabla con la cabecera puesta y
-   * nada debajo no explica eso (§8), y el historial de al lado sí — pero está
-   * más abajo. Se dice acá.
-   */
+  // Quitar el último renglón cancela la orden (RF-22): se explica acá.
   if (orden.items.length === 0) {
     return (
       <section className="rounded-panel-card border border-border bg-surface px-4 py-6 text-center">
@@ -373,10 +319,8 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
       <Table className="hidden md:table">
         <TableHeader>
           <TableRow className="hover:bg-surface-sunken">
-            {/* El color va debajo del nombre y no en su columna (F2.15),
-                como en el teléfono. Con la columna lateral de 22rem, a 1366px
-                «Producto» se quedaba con 100px y el nombre se partía en tres
-                renglones al lado de dos columnas casi vacías. */}
+            {/* El color va debajo del nombre: con su columna, «Producto» no
+                entraba al lado de la columna lateral. */}
             <TableHead>Producto</TableHead>
             <TableHead data-align="right" className="w-24">
               Cantidad
@@ -460,8 +404,7 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
         ))}
       </ul>
 
-      {/* RF-22: agregar va con los renglones y no en la cabecera — es una
-          operación sobre esta lista, y se lee al lado de lo que ya tiene. */}
+      {/* RF-22: agregar va con los renglones, no en la cabecera. */}
       {editable ? <AgregarALaOrden numero={orden.numero} /> : null}
 
       <div className="flex items-baseline justify-between gap-4 border-t border-border bg-surface-sunken px-3 py-3">
@@ -481,18 +424,6 @@ function Renglones({ orden }: { orden: OrdenDelPanel }) {
   );
 }
 
-/**
- * Las devoluciones de esta orden — RF-25. Tarea F7.5.
- *
- * **Va entre los renglones y el historial**, que es el lugar que le
- * corresponde por lo que cuenta: qué se vendió, qué volvió de eso, y recién
- * después quién movió la orden y cuándo. Sin esto, una orden con media
- * devolución registrada se leería como si se hubiera entregado entera.
- *
- * **Cuando no hay ninguna no se dibuja nada.** Una sección vacía titulada
- * «Devoluciones» en cada una de las órdenes del año es ruido: lo que no pasó
- * no ocupa lugar (§8).
- */
 function Devoluciones({ devoluciones }: { devoluciones: Devolucion[] }) {
   if (devoluciones.length === 0) return null;
 
@@ -524,8 +455,6 @@ function Ficha({
   texto?: boolean;
   children: React.ReactNode;
 }) {
-  // Lo único propio es el `<dl>`: estas tarjetas son listas de definiciones
-  // —rótulo y dato—, y la caja ya la pone la compartida.
   return (
     <TarjetaDeSeccion id={id} titulo={titulo}>
       {texto ? children : <dl className="flex flex-col gap-2.5">{children}</dl>}
@@ -533,14 +462,7 @@ function Ficha({
   );
 }
 
-/**
- * Un dato del comprador o de la entrega.
- *
- * Lo que falta **se dice**, no se esconde: un email en blanco y un email
- * ausente se ven igual si el renglón desaparece, y son dos cosas distintas
- * cuando hay que avisarle algo a alguien. Salvo que no haya nada que decir —
- * unas indicaciones vacías no son una ausencia, y ahí sí se omite.
- */
+/** Con `vacio`, lo que falta se dice; sin él, el renglón se omite. */
 function Dato({
   titulo,
   valor,

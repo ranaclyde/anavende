@@ -3,17 +3,8 @@ import { EsqueletoDeFormularioDeProducto } from "@/components/admin/productos/es
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Carga de la edición de un producto — DR §8. Tarea F2.3.
- *
- * El mismo formulario que el alta, **más la tarjeta de colores y stock**, que
- * en esta pantalla es hermana del `<form>` y no hija (F2.4). Sin ella el
- * esqueleto mediría bastante menos que la página y el pie saltaría.
- *
- * **Repite el reparto en dos columnas de la ficha**, no una aproximación: si
- * el esqueleto se dibujara en una sola, al llegar el contenido la tarjeta de
- * stock saltaría de abajo de todo al costado, que es el salto que un
- * esqueleto existe para evitar. Incluida la consulta de contenedor, que es la
- * que decide si hay una columna o dos.
+ * Repite el reparto en dos columnas de la ficha, con la misma consulta de
+ * contenedor, o la tarjeta de stock saltaría al llegar el contenido.
  */
 export default function CargandoLaEdicion() {
   return (

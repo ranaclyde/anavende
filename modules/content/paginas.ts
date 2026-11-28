@@ -1,14 +1,5 @@
-/**
- * Las cuatro páginas legales — RF-29, F9.3.
- *
- * Son fijas y por eso viven en el código: el pie, el panel y el mapa del
- * sitio necesitan saber cuáles hay sin preguntarle a la base. Lo que se
- * edita desde el panel es el TEXTO de cada una (`legal_pages.content`), no
- * cuáles existen ni cómo se llaman; una quinta página es una decisión de
- * producto, no un renglón que se agrega.
- *
- * No es `server-only`: el pie y las solapas del panel lo importan.
- */
+// Fijas en el código: desde el panel se edita solo el texto. Sin `server-only`
+// porque lo importan el pie y las solapas del panel.
 
 export const PAGINAS_LEGALES = [
   { slug: "como-comprar", titulo: "Cómo comprar" },

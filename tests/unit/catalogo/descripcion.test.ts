@@ -5,18 +5,11 @@ import { db } from "@/db";
 import { enTransaccionRevertida, type Tx } from "@/tests/apoyo/transaccion";
 
 /**
- * F2.3 — la mitad del «Hecho cuando» que vive en la base: buscar «cable hdmi»
- * encuentra un producto cuya descripción dice `Cable **HDMI** 2.1`.
- *
- * Migrado de `scripts/verificar-descripcion.mts` (F4.0b).
- *
- * Es la parte que no se ve leyendo el código. `description` guarda Markdown
- * (RF-15) y la sintaxis PARTE la subcadena —«**HDMI**» no contiene «cable
- * hdmi»—, así que la consulta de §10.1 mira `description_text`, la proyección
- * generada. Si esa columna o su índice se cayeran, la búsqueda seguiría
- * compilando y devolvería de menos: el peor modo de falla, porque no falla.
+ * `description` guarda Markdown y la sintaxis parte la subcadena («**HDMI**»
+ * no contiene «cable hdmi»), así que §10.1 busca en `description_text`, la
+ * proyección generada. Si esa columna o su índice se cayeran, la búsqueda
+ * devolvería de menos sin fallar.
  */
-
 const DESCRIPCION = [
   "Cable **HDMI** 2.1 de *alta* velocidad.",
   "",
@@ -47,11 +40,8 @@ async function unCableConDescripcion(tx: Tx) {
 }
 
 /**
- * La consulta de §10.1, recortada a lo que esta prueba mira.
- *
- * El término viaja como PARÁMETRO, nunca interpolado (§16) — y eso importa
- * incluso en un test: uno que interpolara estaría probando una consulta que
- * no es la que corre en producción.
+ * La consulta de §10.1, recortada. El término va como parámetro, como en
+ * producción: interpolarlo sería probar otra consulta.
  */
 function buscar(tx: Tx, termino: string) {
   return tx.execute<{ id: string }>(sql`
@@ -78,8 +68,7 @@ describe("la proyección se calcula en la base, no en JavaScript", () => {
   });
 
   test("el índice trigrama está sobre la proyección, no sobre el Markdown", async () => {
-    // Sobre `description` indexaría el texto que §10.1 ya no consulta: todo
-    // el costo de escritura del índice, y ninguna lectura que lo use.
+    // Sobre `description` indexaría un texto que §10.1 no consulta.
     const [f] = await db.execute<{ indexdef: string }>(sql`
       SELECT indexdef FROM pg_indexes
        WHERE indexname = 'products_description_trgm_idx'`);
@@ -128,10 +117,8 @@ describe("la búsqueda de §10.1", () => {
   });
 
   /**
-   * La contraprueba, y es la que le da sentido a toda la columna: sobre
-   * `description` la misma búsqueda NO encuentra nada. Si algún día alguien
-   * devuelve la consulta al Markdown crudo, este test lo delata — sin él, los
-   * dos de arriba seguirían en verde por el ILIKE sobre el nombre.
+   * La contraprueba: sin ella, los dos de arriba seguirían en verde por el
+   * ILIKE sobre el nombre aunque la consulta volviera al Markdown crudo.
    */
   test("sobre `description` NO lo encontraría: por eso existe la proyección", async () => {
     await enTransaccionRevertida(async (tx) => {

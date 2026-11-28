@@ -1,32 +1,4 @@
-/**
- * La tarjeta de sección del panel — DR §4, §6.9 y §9.
- *
- * Estaba escrita **cinco veces**: `Seccion` en `components/admin/formulario.tsx`,
- * `Tarjeta` en la ficha de usuario, `Ficha` en la de orden, una suelta en el
- * historial y ocho más a mano en los formularios. El informe del 2026-09-18
- * contó tres; mirando todas las `<section>` del panel eran **quince tarjetas
- * con tres paddings, tres separaciones y tres tamaños de título**.
- *
- * Lo que se unificó, y por qué cada cosa quedó donde quedó:
- *
- * - **`p-4`, 16px.** §4 fija 12–16px para el panel, y nueve de las quince
- *   estaban en 20px (`p-5` o `sm:p-5`) sin que la desviación estuviera
- *   anotada en ningún lado. Gana lo escrito.
- * - **El título en `body` de 16px con medium** (decisión tuya del 2026-09-21).
- *   Los formularios lo tenían en 20px y las fichas en 14, para el mismo nivel
- *   jerárquico; a 14px el título de una sección medía lo mismo que el rótulo
- *   de un campo y dejaba de separar. Es además el tamaño del título de
- *   `VacioDelPanel`, así que el panel tiene una sola voz para «esto es una
- *   sección».
- * - **Se anuncia como región** (`aria-labelledby`, decisión tuya del mismo
- *   día). Antes lo hacían cuatro de quince: las otras once eran un `<section>`
- *   sin nombre accesible, que para un lector de pantalla no es una región
- *   sino un contenedor más. Con nombre, se salta entre «Comprador», «Envío» e
- *   «Historial» sin recorrer el contenido.
- * - **La alineación del encabezado la decide la ayuda**, igual que en el
- *   encabezado de pantalla (§6.12): con ayuda son dos renglones y va
- *   `items-start`; sin ayuda es uno y va `items-center`.
- */
+/** La tarjeta de sección del panel — DR §6.13. */
 export function TarjetaDeSeccion({
   id,
   titulo,
@@ -37,19 +9,16 @@ export function TarjetaDeSeccion({
   children,
 }: {
   /**
-   * El identificador del título, único en la pantalla. Se pide en vez de
-   * generarlo porque estas tarjetas se pintan en el servidor, donde `useId`
-   * no corre — y de paso el id queda legible y estable.
+   * El identificador del título, único en la pantalla. Se pide porque estas
+   * tarjetas se pintan en el servidor, donde `useId` no corre.
    */
   id: string;
   titulo: React.ReactNode;
-  /** Las píldoras de estado, al lado del título — el mismo hueco que §6.12. */
+  /** Las píldoras de estado, al lado del título. */
   insignias?: React.ReactNode;
-  /** Una frase sobre qué es esta sección. */
   ayuda?: React.ReactNode;
-  /** Lo que se puede hacer sobre la sección entera, arriba a la derecha. */
   acciones?: React.ReactNode;
-  /** El paso de una guía de uso que señala esta sección (F6.7). */
+  /** El paso de una guía de uso que señala esta sección. */
   "data-ayuda"?: string;
   children: React.ReactNode;
 }) {
@@ -66,9 +35,8 @@ export function TarjetaDeSeccion({
       >
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            {/* El margen es para los enlaces que llevan hasta acá: en el
-                teléfono y la tablet la barra de arriba es fija y tapaba el
-                título. */}
+            {/* El margen es para los enlaces a esta sección: en el teléfono la
+                barra de arriba es fija y tapaba el título. */}
             <h2
               id={id}
               className="scroll-mt-20 text-body font-medium text-ink lg:scroll-mt-6"
@@ -90,14 +58,8 @@ export function TarjetaDeSeccion({
 }
 
 /**
- * Una parte de una tarjeta que se guarda con un botón: título, una frase y
- * sus campos, separada de la anterior por una línea. Es un grupo con nombre
- * y no una región: las regiones son las tarjetas, y ésta es una sola.
- *
- * Nació en Configuración (2026-11-11) y pasó acá cuando la regla de DESIGN.md
- * —lo que se guarda con un botón es una tarjeta, con el botón adentro y al
- * pie— se llevó al producto, la orden nueva, el usuario nuevo y Legales
- * (2026-11-13).
+ * Una parte de una tarjeta que se guarda con un botón (DESIGN.md, «Guardar»).
+ * Es un grupo con nombre y no una región: la región es la tarjeta.
  */
 export function Apartado({
   primero = false,
@@ -112,7 +74,7 @@ export function Apartado({
   id: string;
   titulo: string;
   ayuda?: string;
-  /** El paso de una guía de uso que señala este apartado (F6.7). */
+  /** El paso de una guía de uso que señala este apartado. */
   "data-ayuda"?: string;
   children: React.ReactNode;
 }) {

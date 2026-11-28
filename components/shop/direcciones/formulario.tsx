@@ -36,20 +36,8 @@ type Campo =
 export type ValoresDeDireccion = Record<Campo, string>;
 
 /**
- * Cargar o editar una dirección — RF-09. Tarea F5.3.
- *
- * El mismo formulario para las dos cosas, y el que va a usar el checkout
- * cuando se cargue una dirección nueva desde ahí (RF-11, F6.1).
- *
- * **La localidad es una lista, y no hay provincia ni código postal**
- * (2026-09-13): se entrega en Viedma, Carmen de Patagones y alrededores
- * (RN-10), y los dos datos se deducen de la localidad. Solo «Otra localidad
- * cercana» pide nombre y provincia.
- *
- * Lo opcional se marca «(opcional)» y lo obligatorio no lleva nada (§6.6).
- * Cada campo lleva su `autoComplete`: el navegador ya sabe la dirección de
- * la persona, y escribirla de nuevo en un teléfono es lo que hace abandonar
- * un formulario.
+ * Cargar o editar una dirección; también lo usa el checkout. Sin provincia ni
+ * código postal: se deducen de la localidad, salvo con «Otra localidad cercana».
  */
 export function FormularioDeDireccion({
   id,
@@ -60,16 +48,11 @@ export function FormularioDeDireccion({
   /** Con id, edita esa dirección; sin id, carga una nueva. */
   id?: string;
   inicial: ValoresDeDireccion;
-  /**
-   * Solo al cargar una nueva: en vez de volver a la libreta, avisa el id de
-   * la que se guardó. Es lo que usa el checkout (F6.1) para elegirla ahí
-   * mismo, sin salir de la compra.
-   */
+  /** Solo al cargar una nueva: en vez de volver a la libreta, avisa el id. */
   alGuardar?: (id: string) => void;
   /**
-   * Cancelar sin navegar. Si el formulario avisa al guardar y no trae esto,
-   * no hay «Cancelar»: en el checkout sin direcciones, cancelar no tiene a
-   * dónde volver.
+   * Cancelar sin navegar. Con `alGuardar` y sin esto no hay «Cancelar»: en el
+   * checkout sin direcciones no tiene a dónde volver.
    */
   alCancelar?: () => void;
 }) {
@@ -292,7 +275,6 @@ export function FormularioDeDireccion({
   );
 }
 
-/** Dos campos lado a lado desde `sm`; uno debajo del otro en el teléfono. */
 function Fila({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-5 sm:flex-row sm:gap-4">{children}</div>
