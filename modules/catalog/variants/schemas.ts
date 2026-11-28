@@ -108,11 +108,6 @@ export const reposicion = z.object({
     .max(50),
 });
 
-export const cambioDeEstadoDeVariante = z.object({
-  id: z.uuid(),
-  activo: z.boolean(),
-});
-
 /**
  * Reutilizar las imágenes de otra variante — RF-16, §9.5.
  * `sourceId: null` = dejar de reutilizarlas y volver a las propias.

@@ -20,7 +20,7 @@ let admin: Cuenta;
 let negro: Color;
 let producto: { id: string };
 let antes: { activa: boolean; capas: Record<string, unknown>[] };
-const CAPTURAS = process.env.CAPTURAS;
+const CAPTURA = process.env.CAPTURA;
 
 test.beforeAll(async () => {
   const marca = `Marca ${palabra}`;
@@ -189,19 +189,19 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   await expect(capas.getByRole("slider", { name: "Opacidad" })).toHaveCount(1);
   expect(await hallazgosDeAxe(page)).toEqual([]);
 
-  if (CAPTURAS) {
+  if (CAPTURA) {
     await expect(previa.getByText("Actualizando")).toBeHidden();
     for (const ancho of [1280, 1497]) {
       await page.setViewportSize({ width: ancho, height: 900 });
       await expect(previa.getByText("Actualizando")).toBeHidden();
       await page.screenshot({
-        path: `${CAPTURAS}/marca-${ancho}.png`,
+        path: `${CAPTURA}-marca-${ancho}.png`,
         fullPage: true,
       });
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({
-      path: `${CAPTURAS}/marca-390.png`,
+      path: `${CAPTURA}-marca-390.png`,
       fullPage: true,
     });
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -226,10 +226,10 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
     name: "La marca de agua está activada",
   });
   await expect(enElInicio).toBeVisible();
-  if (CAPTURAS) {
+  if (CAPTURA) {
     for (const ancho of [1280, 390]) {
       await page.setViewportSize({ width: ancho, height: 900 });
-      await page.screenshot({ path: `${CAPTURAS}/inicio-${ancho}.png` });
+      await page.screenshot({ path: `${CAPTURA}-inicio-${ancho}.png` });
     }
     await page.setViewportSize({ width: 1280, height: 800 });
   }

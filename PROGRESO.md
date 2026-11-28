@@ -3067,6 +3067,36 @@ Tres cosas que hacen que esto sea seguro, y que conviene no redescubrir:
 
 ## Pendiente detectado, sin tarea propia
 
+**Código muerto: lo que queda por decidir** (2026-11-27). Salió de un repaso
+con `knip` y un barrido a mano; lo seguro se borró en el mismo PR que anota
+esto. Queda:
+
+- **Facebook, fuera del MVP (FA-23), sigue en el código.**
+  `PROVEEDORES_SOCIALES = ["google", "facebook"]` en
+  `modules/users/proveedores.ts`, el nombre en
+  `components/shop/proveedores-sociales.tsx`, un texto que se ve en «Mi
+  cuenta» («Entraste con Google o Facebook…», `app/(shop)/mi-cuenta/page.tsx`)
+  y comentarios en seis archivos. El botón no aparece porque GoTrue no lo
+  tiene prendido. Decisión tuya: sacarlo todo o dejarlo preparado.
+- **La máquina de estados de las órdenes solo la usan los tests.**
+  `TRANSICIONES` y `transicionPermitida` (`modules/orders/estados.ts`): las
+  transiciones las hace cumplir el `UPDATE` condicional (TS §8.3, regla 6).
+  O se borran con su test, o el código las usa de verdad.
+- **Dos sondas sin documentar.** `scripts/sondear-auth.mts` y
+  `scripts/verificar-drizzle.mts` (`npm run db:drizzle`): F4.0b decidió
+  conservarlas, pero `docs/` no dice cuándo usarlas. Documentarlas o borrarlas.
+- **El CLI de Supabase prende lo que la tienda no usa**: `realtime`,
+  `storage.vector` y `storage.s3_protocol` en `supabase/config.toml`. Solo
+  afecta al stack local.
+- **Exportaciones de shadcn sin usar** en `components/ui` (`DropdownMenuSub…`,
+  `DialogTrigger`, `CardFooter`, `ChartLegend`, `TableCaption`,
+  `badgeVariants`): vienen con la receta. Lo normal es dejarlas.
+- **Va con F10.7f, no antes**: unas 90 constantes, funciones y tipos
+  exportados que solo se usan dentro de su archivo —les sobra el `export`,
+  no son código muerto— y unos 40 tipos exportados que nadie usa, la mayoría
+  `$inferSelect` de `db/schema`. Esos archivos se van a tocar igual al pasar
+  los nombres a inglés. Para encontrarlos: `npx -y knip@5`.
+
 **La vista previa al compartir una ficha estaba rota por DOS motivos, y el
 segundo no se veía hasta arreglar el primero** (2026-09-22, probándolo con vos
 por WhatsApp). Lo que se compartía era el enlace pelado: ni foto, ni nombre, ni

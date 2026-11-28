@@ -185,10 +185,8 @@ export async function procesarImagen(
   // como medidas de una imagen de 300×200. La galería habría reservado un
   // lugar que la foto no ocupa.
   //
-  // El respaldo de abajo tampoco es por las dudas:
-  // `scripts/derivar-og-productos.mts` llama con `TAMANOS_OG` sola —solo
-  // quiere rehacer esa versión— y ahí NO hay ninguna de galería. Sin él,
-  // reducir un arreglo vacío revienta.
+  // El respaldo de abajo: si se piden solo versiones de lienzo fijo, no hay
+  // ninguna de galería, y reducir un arreglo vacío revienta.
   const deGaleria = new Set(
     tamanos.filter((t) => !t.alto).map((t) => t.sufijo),
   );

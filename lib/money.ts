@@ -123,22 +123,6 @@ export function isPositive(monto: Money): boolean {
 }
 
 /**
- * Precio final (RN-04b, §7.2).
- *
- * En la base esto es la columna generada `final_price` y NO se recalcula acá
- * (§7.1). Esta función existe para la previsualización en vivo del formulario
- * de producto (F2.3), donde todavía no hay fila en la base que consultar.
- */
-export function finalPrice(precio: Money, descuento: Money): Money {
-  if (compare(descuento, precio) >= 0) {
-    throw new RangeError(
-      "El descuento tiene que ser menor que el precio (RN-04b).",
-    );
-  }
-  return subtract(precio, descuento);
-}
-
-/**
  * El valor de una cuota — RF-40, F2.17.
  *
  * `precio × (1 + recargo / 100) / cuotas`, **redondeado al centavo hacia

@@ -14,11 +14,6 @@ export function RolDelUsuario({ rol }: { rol: RolDeUsuario }) {
   return <Badge tone="brand">Administradora</Badge>;
 }
 
-/** La misma palabra, para un texto corrido. */
-export function nombreDelRol(rol: RolDeUsuario): string {
-  return rol === "admin" ? "Administradora" : "Comprador";
-}
-
 /**
  * El estado de la cuenta.
  *

@@ -40,7 +40,7 @@ function marcarComoVista() {
 
 // ── Geometría, en las unidades de la palabra (mayúscula de 1000) ──────────
 
-const [x, y, ancho, alto] = PALABRA.caja;
+const [x, y, , alto] = PALABRA.caja;
 
 /**
  * La grilla arranca un 25 % más alta que la palabra, centrada en alto y

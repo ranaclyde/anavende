@@ -93,15 +93,6 @@ export const TAMANOS_LOGO = TAMANOS.filter(
 ) as unknown as readonly Tamano[];
 
 /**
- * Solo la versión de Open Graph, para regenerarla sin tocar las otras tres.
- * La usa `scripts/derivar-og-productos.mts`, que le da de comer el `-detail`
- * que ya está en Storage: el original no se guarda nunca (§9.0).
- */
-export const TAMANOS_OG = TAMANOS.filter(
-  (t) => t.sufijo === "og",
-) as unknown as readonly Tamano[];
-
-/**
  * La foto de perfil — F5.9. **Una sola versión**, y chica: se muestra a 32px
  * en el encabezado y a 96px en «Mi cuenta», y 256px cubre las dos al doble de
  * densidad. Pesa del orden de 10 a 20 KB, contra los ~350 KB de los cuatro
