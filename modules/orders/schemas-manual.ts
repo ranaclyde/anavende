@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { hoyEnArgentina } from "@/lib/fechas";
-import { comoMonto, isMoney, money } from "@/lib/money";
-import { telefonoArgentino } from "@/lib/telefono";
+import { todayInArgentina } from "@/lib/dates";
+import { normalizeAmount, isMoney, money } from "@/lib/money";
+import { argentinePhone } from "@/lib/phone";
 import { problemasDeUbicacion } from "@/modules/users/direcciones/schemas";
 
 // Sin `server-only`: el formulario usa los topes. El stock no se valida acá,
@@ -14,7 +14,7 @@ export const MAXIMO_DE_NOTAS = 500;
 /** Acepta la coma decimal y se valida como texto, nunca como `number` (§7.1). */
 const monto = z
   .string()
-  .transform(comoMonto)
+  .transform(normalizeAmount)
   .refine(isMoney, { message: "Poné un precio, con hasta dos decimales." })
   .transform(money);
 
@@ -45,9 +45,9 @@ export const direccionDeOrdenManual = z.object({
     .trim()
     .min(2, "Escribí quién la recibe.")
     .max(80, "Ese nombre es demasiado largo."),
-  phone: telefonoArgentino({
-    requerido: "Escribí un teléfono para coordinar la entrega.",
-    invalido:
+  phone: argentinePhone({
+    required: "Escribí un teléfono para coordinar la entrega.",
+    invalid:
       "Ese teléfono no parece válido. Escribilo con característica, por ejemplo 2920 55 5555.",
   }),
   street: z
@@ -90,9 +90,9 @@ const campos = z.object({
     .trim()
     .min(2, "Escribí el nombre del comprador.")
     .max(80, "Ese nombre es demasiado largo."),
-  telefono: telefonoArgentino({
-    requerido: "El teléfono es obligatorio, también en las órdenes manuales.",
-    invalido:
+  telefono: argentinePhone({
+    required: "El teléfono es obligatorio, también en las órdenes manuales.",
+    invalid:
       "Ese teléfono no parece válido. Escribilo con característica, por ejemplo 2920 55 5555.",
   }),
   email: z
@@ -120,7 +120,7 @@ export const ordenManualSchema = campos.superRefine((v, ctx) => {
         path: ["fechaDeVenta"],
         message: "Elegí la fecha de la venta.",
       });
-    } else if (v.fechaDeVenta > hoyEnArgentina()) {
+    } else if (v.fechaDeVenta > todayInArgentina()) {
       ctx.addIssue({
         code: "custom",
         path: ["fechaDeVenta"],

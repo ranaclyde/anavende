@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fechaCorta } from "@/lib/fechas";
+import { shortDate } from "@/lib/dates";
 import {
   FILTROS_VACIOS,
   hayFiltros,
@@ -95,7 +95,7 @@ export function ListadoDeUsuarios({
                 <TableCell data-align="right">{usuario.ordenes}</TableCell>
                 <TableCell className="text-ink-secondary tabular-nums">
                   <time dateTime={usuario.creadoEn}>
-                    {fechaCorta(usuario.creadoEn)}
+                    {shortDate(usuario.creadoEn)}
                   </time>
                 </TableCell>
               </TableRow>

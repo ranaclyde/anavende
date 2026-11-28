@@ -1,5 +1,5 @@
 export async function register() {
-  await import("./lib/zod-castellano");
+  await import("./lib/zod-spanish");
   if (process.env.NEXT_RUNTIME === "nodejs") {
     await import("./sentry.server.config");
   }

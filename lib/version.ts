@@ -12,7 +12,7 @@ import { join } from "node:path";
  */
 let version: string | null | undefined;
 
-export function versionDelBuild(): string | null {
+export function buildVersion(): string | null {
   if (version === undefined) {
     try {
       version =

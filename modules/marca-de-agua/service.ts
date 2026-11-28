@@ -10,7 +10,7 @@ import {
   watermarkSettings,
 } from "@/db/schema/settings";
 import { domainError } from "@/lib/errors";
-import { almacenamiento } from "@/lib/storage";
+import { getStorage } from "@/lib/storage";
 import type { Capa, CapaLista } from "@/modules/media/marca-de-agua";
 import { MAXIMO_DE_CAPAS } from "@/modules/media/marca-de-agua";
 import { clave } from "@/modules/media/tamanos";
@@ -42,7 +42,7 @@ async function bytesDe(storageKey: string): Promise<Buffer> {
   const ya = recordadas.get(storageKey);
   if (ya) return ya;
 
-  const bytes = await almacenamiento().get(archivoDeMarca(storageKey));
+  const bytes = await getStorage().get(archivoDeMarca(storageKey));
   if (recordadas.size >= TOPE_RECORDADAS) {
     recordadas.delete(recordadas.keys().next().value!);
   }
@@ -118,7 +118,7 @@ export async function subirImagenDeMarca(
 
   const id = crypto.randomUUID();
   const base = claveDeMarcaDeAgua(id);
-  const store = almacenamiento();
+  const store = getStorage();
   await store.put(archivoDeMarca(base), resultado.data, "image/webp");
 
   try {
@@ -172,7 +172,7 @@ export async function borrarImagenDeMarca(
 
   // Después de la fila (§9.1): un archivo de más es basura; una fila sin
   // archivo es una capa rota.
-  await almacenamiento()
+  await getStorage()
     .delete(archivoDeMarca(resultado.storageKey))
     .catch(() => {});
   recordadas.delete(resultado.storageKey);

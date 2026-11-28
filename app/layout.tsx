@@ -1,27 +1,27 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-import { urlDelSitio } from "@/lib/env";
-import { inter } from "@/lib/fuente";
-import { SCRIPT_MARCA_VISTA } from "@/lib/marca";
-import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE, ZONA_DE_ENTREGA } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/env";
+import { inter } from "@/lib/font";
+import { LOGO_SEEN_SCRIPT } from "@/lib/logo";
+import { SITE_NAME, OPEN_GRAPH_BASE, DELIVERY_AREA } from "@/lib/seo";
 
-const siteUrl = urlDelSitio();
+const siteUrl = getSiteUrl();
 
-const DESCRIPCION = `Teclados, mouses, auriculares, cables y memorias. ${ZONA_DE_ENTREGA}`;
+const DESCRIPCION = `Teclados, mouses, auriculares, cables y memorias. ${DELIVERY_AREA}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: NOMBRE_DEL_SITIO,
-    template: `%s · ${NOMBRE_DEL_SITIO}`,
+    default: SITE_NAME,
+    template: `%s · ${SITE_NAME}`,
   },
   description: DESCRIPCION,
   // Sin `url`: heredado, apuntaría a la raíz desde todas las páginas. La
   // imagen la pone `app/opengraph-image.png`.
   openGraph: {
     ...OPEN_GRAPH_BASE,
-    title: NOMBRE_DEL_SITIO,
+    title: SITE_NAME,
     description: DESCRIPCION,
   },
 };
@@ -38,7 +38,7 @@ export default function RootLayout({
       <body>
         {/* Antes del primer pintado, para que una recarga no repita la
             animación del hero (`marca-del-hero.tsx`). */}
-        <script dangerouslySetInnerHTML={{ __html: SCRIPT_MARCA_VISTA }} />
+        <script dangerouslySetInnerHTML={{ __html: LOGO_SEEN_SCRIPT }} />
         {children}
       </body>
     </html>

@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AREA_TACTIL, cn } from "@/lib/utils";
+import { TOUCH_AREA, cn } from "@/lib/utils";
 
 /** Una promoción, ya formateada en el servidor. */
 export type OpcionDeCuotas = {
@@ -45,7 +45,7 @@ export function OtrasOpcionesDeCuotas({
         className={cn(
           "relative w-fit cursor-pointer rounded-pill text-left font-medium text-brand",
           "underline underline-offset-4 hover:text-brand-hover",
-          AREA_TACTIL,
+          TOUCH_AREA,
         )}
       >
         Ver otras opciones

@@ -17,13 +17,13 @@ export type Identity = {
   email: string | null;
   emailVerified: boolean;
   /** El del proveedor social: solo una sugerencia para el alta (RF-06). */
-  nombreSugerido: string | null;
+  suggestedName: string | null;
   /**
    * Decide si «Mis datos» cambia la contraseña (pidiendo la actual) o la
    * define. Ante la duda, sí: no pedírsela a quien tiene deja cambiarla a
    * cualquiera que encuentre la sesión abierta.
    */
-  tieneContrasena: boolean;
+  hasPassword: boolean;
 };
 
 export type Session = {
@@ -44,7 +44,7 @@ export const getIdentity = cache(async (): Promise<Identity | null> => {
     { email_verified?: boolean; full_name?: string; name?: string } | undefined;
   const app = claims.app_metadata as
     { providers?: string[]; contrasena_definida?: boolean } | undefined;
-  const proveedores = app?.providers;
+  const providers = app?.providers;
 
   return {
     userId: claims.sub,
@@ -53,12 +53,12 @@ export const getIdentity = cache(async (): Promise<Identity | null> => {
     // usuario. RF-11 se mira con `emailConfirmado`.
     emailVerified:
       claims.email_verified === true || metadata?.email_verified === true,
-    nombreSugerido: metadata?.full_name ?? metadata?.name ?? null,
+    suggestedName: metadata?.full_name ?? metadata?.name ?? null,
     // GoTrue no suma `email` a `providers` cuando una cuenta de Google define
     // contraseña: eso lo anota la aplicación (`anotarContrasenaDefinida`).
-    tieneContrasena:
-      !proveedores ||
-      proveedores.includes("email") ||
+    hasPassword:
+      !providers ||
+      providers.includes("email") ||
       app?.contrasena_definida === true,
   };
 });
@@ -97,7 +97,7 @@ export async function needsProfile(): Promise<boolean> {
  * leer nada: Next renderiza layout y página en paralelo, y los datos de la
  * página viajan aunque el layout dé 404 (TECHNICAL-SPEC §16).
  */
-export async function exigirAdmin(): Promise<Session> {
+export async function requireAdmin(): Promise<Session> {
   const session = await getSession();
 
   if (!session) redirect("/ingresar?volver=/admin");

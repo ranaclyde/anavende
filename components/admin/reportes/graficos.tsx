@@ -18,15 +18,15 @@ import {
 } from "@/components/ui/chart";
 import {
   formatMoney,
-  formatMoneyCorto,
-  paraDibujar,
+  formatMoneyShort,
+  toChartNumber,
   type Money,
 } from "@/lib/money";
 import type { PuntoDeVentas } from "@/modules/reports/queries";
 
 /**
  * Colores y reglas: DR §6.16. Los montos se pasan a número solo para dibujar
- * (`paraDibujar`); el número que se lee sale siempre de `formatMoney`.
+ * (`toChartNumber`); el número que se lee sale siempre de `formatMoney`.
  */
 
 const BARRA = "var(--ink-secondary)";
@@ -80,7 +80,7 @@ export function GraficoDeVentas({
 }) {
   const datos: ColumnaDeVentas[] = puntos.map((p) => ({
     fecha: p.fecha,
-    vendido: hasta && p.fecha > hasta ? null : paraDibujar(p.vendido),
+    vendido: hasta && p.fecha > hasta ? null : toChartNumber(p.vendido),
     monto: p.vendido,
     ordenes: p.ordenes,
   }));
@@ -118,7 +118,7 @@ export function GraficoDeVentas({
             width={64}
             tickCount={4}
             tickFormatter={(v: number) =>
-              v === 0 ? "$ 0" : formatMoneyCorto(v)
+              v === 0 ? "$ 0" : formatMoneyShort(v)
             }
           />
           <ChartTooltip
@@ -241,7 +241,7 @@ export function GraficoDeRanking({
 }) {
   const datos = barras.map((b) => ({
     ...b,
-    alto: typeof b.valor === "number" ? b.valor : paraDibujar(b.valor),
+    alto: typeof b.valor === "number" ? b.valor : toChartNumber(b.valor),
   }));
 
   return (
@@ -326,8 +326,8 @@ export function BarraWebYManual({
   const datos = [
     {
       fila: "origen",
-      web: Math.max(0, paraDibujar(web)),
-      manual: Math.max(0, paraDibujar(manual)),
+      web: Math.max(0, toChartNumber(web)),
+      manual: Math.max(0, toChartNumber(manual)),
     },
   ];
 

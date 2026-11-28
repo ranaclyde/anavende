@@ -16,13 +16,13 @@ import {
   POR_PAGINA,
   leerFiltros,
   urlDeFiltros,
-  type ParametrosDeBusqueda,
+  type SearchParamsRecord,
 } from "@/modules/orders/filtros-panel";
 import {
   contarPorEstado,
   listarOrdenesDelPanel,
 } from "@/modules/orders/queries-panel";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Órdenes" };
 
@@ -33,9 +33,9 @@ export const metadata: Metadata = { title: "Órdenes" };
 export default async function OrdenesDelPanel({
   searchParams,
 }: {
-  searchParams: Promise<ParametrosDeBusqueda>;
+  searchParams: Promise<SearchParamsRecord>;
 }) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const filtros = leerFiltros(await searchParams);
 

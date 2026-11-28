@@ -8,9 +8,9 @@ import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
 import { Avisos } from "@/components/shop/carrito/avisos";
 import { Checkout } from "@/components/shop/checkout/checkout";
 import { formatMoney, type Money } from "@/lib/money";
-import { FUERA_DEL_INDICE } from "@/lib/seo";
+import { NO_INDEX } from "@/lib/seo";
 import { getIdentity, getSession } from "@/lib/session";
-import { telefonoLocal } from "@/lib/telefono";
+import { localPhone } from "@/lib/phone";
 import { leerCarrito, type ItemDelCarrito } from "@/modules/cart/queries";
 import { revisarCarrito } from "@/modules/cart/revision";
 import { urlDeImagen } from "@/modules/media/subir";
@@ -20,7 +20,7 @@ import { listarDirecciones } from "@/modules/users/direcciones/operaciones";
 
 export const metadata: Metadata = {
   title: "Confirmá tu pedido",
-  robots: FUERA_DEL_INDICE,
+  robots: NO_INDEX,
 };
 
 // Los medios de pago son opcionales: sin ninguno cargado la sección no existe.
@@ -107,7 +107,7 @@ export default async function PaginaDelCheckout() {
         email={identity.email ?? profile.email}
         emailVerificado={identity.emailVerified}
         nombreInicial={profile.fullName}
-        telefonoInicial={telefonoLocal(profile.phone)}
+        telefonoInicial={localPhone(profile.phone)}
         direcciones={direcciones.map((d) => ({
           id: d.id,
           nombre: d.label,
@@ -120,7 +120,7 @@ export default async function PaginaDelCheckout() {
         nuevaDireccion={{
           label: "",
           recipientName: profile.fullName,
-          phone: telefonoLocal(profile.phone),
+          phone: localPhone(profile.phone),
           street: "",
           number: "",
           apartment: "",

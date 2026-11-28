@@ -1,13 +1,13 @@
 import sharp from "sharp";
 
-import { almacenamiento } from "@/lib/storage";
+import { getStorage } from "@/lib/storage";
 
 /**
- * La misma instancia que usa la aplicación (`almacenamiento()` la cachea): el
+ * La misma instancia que usa la aplicación (`getStorage()` la cachea): el
  * test de «sin huérfanos» le rompe `put`, y en otra instancia el fallo no
  * llegaría al código que se prueba.
  */
-export const almacen = almacenamiento();
+export const almacen = getStorage();
 
 /** Con ruido y no de un color: un color plano se comprime a casi nada. */
 export async function png(ancho = 300, alto = 200): Promise<Buffer> {

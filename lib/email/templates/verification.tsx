@@ -1,10 +1,10 @@
 import {
-  Ayuda,
-  Boton,
-  Firma,
-  Marco,
-  Parrafo,
-  PieDeEnlace,
+  Help,
+  Button,
+  Signature,
+  Frame,
+  Paragraph,
+  LinkFooter,
 } from "@/lib/email/base";
 
 /**
@@ -16,50 +16,50 @@ import {
  * hay dónde escribirlo.
  */
 
-export type PropsDeEnlace = {
-  sitio: string;
-  enlace: string;
+export type LinkProps = {
+  site: string;
+  link: string;
   /** Lo que va después de «¡Hola». */
-  saludo: string;
+  greeting: string;
 };
 
 /**
- * Export nombrado y no `default`: `generar.mts` (ES) recibe estos `.tsx`
+ * Export nombrado y no `default`: `generate.mts` (ES) recibe estos `.tsx`
  * compilados a CommonJS, y un `default` llega envuelto y React lo rechaza.
  */
-export function Verificacion({
+export function Verification({
   // Para la previsualización local (`npm run email`).
-  sitio = "http://localhost:3000",
-  enlace = "http://localhost:3000/api/auth/confirmar",
-  saludo = ", Matías",
-}: Partial<PropsDeEnlace> = {}) {
+  site = "http://localhost:3000",
+  link = "http://localhost:3000/api/auth/confirmar",
+  greeting = ", Matías",
+}: Partial<LinkProps> = {}) {
   return (
-    <Marco
-      sitio={sitio}
-      adelanto="Te queda un paso para acceder a tu cuenta de AnaVende."
-      pie={
-        <PieDeEnlace href={enlace}>
+    <Frame
+      site={site}
+      preview="Te queda un paso para acceder a tu cuenta de AnaVende."
+      footer={
+        <LinkFooter href={link}>
           Si no fuiste vos, podés ignorar este mensaje: sin confirmar, la cuenta
           no se activa.
-        </PieDeEnlace>
+        </LinkFooter>
       }
     >
-      <Parrafo>¡Hola{saludo}!</Parrafo>
+      <Paragraph>¡Hola{greeting}!</Paragraph>
 
-      <Parrafo>
+      <Paragraph>
         Solo te queda un paso más para acceder a tu cuenta de AnaVende. Hacé
         clic en el botón de abajo para verificar tu email.
-      </Parrafo>
+      </Paragraph>
 
-      <Boton href={enlace}>Confirmar mi email</Boton>
+      <Button href={link}>Confirmar mi email</Button>
 
-      <Ayuda />
+      <Help />
 
-      <Firma>
+      <Signature>
         Gracias,
         <br />
         el equipo de AnaVende
-      </Firma>
-    </Marco>
+      </Signature>
+    </Frame>
   );
 }

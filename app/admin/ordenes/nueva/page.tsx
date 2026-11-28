@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { AltaDeOrdenManual } from "@/components/admin/ordenes/nueva/alta";
 import { AyudaGuiada, type PasoDeAyuda } from "@/components/ui/ayuda-guiada";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Nueva orden" };
 
@@ -27,7 +27,7 @@ const PASOS_DE_LA_ORDEN_NUEVA: PasoDeAyuda[] = [
  * buscan mientras se escribe, para no mandar el catálogo entero al navegador.
  */
 export default async function NuevaOrden() {
-  await exigirAdmin();
+  await requireAdmin();
 
   return (
     <div className="flex w-full max-w-admin-form flex-col gap-4">

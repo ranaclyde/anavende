@@ -4,7 +4,7 @@ import { sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db";
 import type { ShippingAddressSnapshot } from "@/db/schema/orders";
-import { ZONA_HORARIA } from "@/lib/fechas";
+import { TIME_ZONE } from "@/lib/dates";
 import type { Money } from "@/lib/money";
 import type { EstadoOrden } from "@/modules/orders/estados";
 import {
@@ -84,11 +84,11 @@ function condiciones(filtros: FiltrosDeOrdenes): SQL {
   if (filtros.q) partes.push(condicionDeBusqueda(filtros.q));
   if (filtros.desde) {
     partes.push(sql`${cuando} >=
-      (${filtros.desde}::date)::timestamp AT TIME ZONE ${ZONA_HORARIA}`);
+      (${filtros.desde}::date)::timestamp AT TIME ZONE ${TIME_ZONE}`);
   }
   if (filtros.hasta) {
     partes.push(sql`${cuando} <
-      (${filtros.hasta}::date + 1)::timestamp AT TIME ZONE ${ZONA_HORARIA}`);
+      (${filtros.hasta}::date + 1)::timestamp AT TIME ZONE ${TIME_ZONE}`);
   }
 
   return partes.length

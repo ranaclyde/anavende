@@ -17,7 +17,7 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Textarea } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { leerErrores } from "@/lib/form";
+import { readErrors } from "@/lib/form";
 import { pedirLaBaja } from "@/modules/users/baja/actions";
 import { MAXIMO_DEL_MOTIVO } from "@/modules/users/baja/schemas";
 
@@ -59,7 +59,7 @@ export function FormularioDeBaja() {
 
       if (r.code === "VALIDATION") {
         setConfirmando(false);
-        setErrorDelMotivo(leerErrores<"motivo">(r).campos.motivo ?? r.message);
+        setErrorDelMotivo(readErrors<"motivo">(r).fields.motivo ?? r.message);
         return;
       }
 

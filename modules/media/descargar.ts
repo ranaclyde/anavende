@@ -4,9 +4,9 @@ import { sql } from "drizzle-orm";
 import sharp from "sharp";
 
 import { db } from "@/db";
-import { slugificar } from "@/lib/slug";
-import { almacenamiento } from "@/lib/storage";
-import { armarZip, type ArchivoDelZip } from "@/lib/zip";
+import { slugify } from "@/lib/slug";
+import { getStorage } from "@/lib/storage";
+import { buildZip, type ZipEntry } from "@/lib/zip";
 import { clave } from "@/modules/media/tamanos";
 
 // Las fotos de un producto en un zip (TECHNICAL-SPEC §9.7). Solo las propias
@@ -57,7 +57,7 @@ export function nombresEnElZip(fotos: readonly FotoDelProducto[]): string[] {
     if (color !== null) {
       let elegida = carpetaDe.get(color);
       if (elegida === undefined) {
-        const base = slugificar(color) || "color";
+        const base = slugify(color) || "color";
         elegida = base;
         for (let i = 2; usadas.has(elegida); i++) elegida = `${base}-${i}`;
         usadas.add(elegida);
@@ -87,20 +87,18 @@ export async function zipDeFotos({
 }: FotosDelProducto): Promise<Buffer | null> {
   if (fotos.length === 0) return null;
   const nombres = nombresEnElZip(fotos);
-  const archivos: ArchivoDelZip[] = new Array(fotos.length);
+  const archivos: ZipEntry[] = new Array(fotos.length);
 
   for (let desde = 0; desde < fotos.length; desde += EN_PARALELO) {
     await Promise.all(
       fotos.slice(desde, desde + EN_PARALELO).map(async (foto, i) => {
-        const webp = await almacenamiento().get(
-          clave(foto.storageKey, "detail"),
-        );
+        const webp = await getStorage().get(clave(foto.storageKey, "detail"));
         archivos[desde + i] = {
-          nombre: nombres[desde + i],
-          datos: await aJpg(webp),
+          name: nombres[desde + i],
+          data: await aJpg(webp),
         };
       }),
     );
   }
-  return armarZip(archivos);
+  return buildZip(archivos);
 }

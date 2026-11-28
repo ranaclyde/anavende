@@ -2,8 +2,8 @@
  * RF-18. Sin acentos: una dirección con `ñ` o `á` sobrevive mal al copiar y
  * pegar.
  */
-export function slugificar(texto: string): string {
-  return texto
+export function slugify(text: string): string {
+  return text
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()

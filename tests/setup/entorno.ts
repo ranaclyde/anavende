@@ -3,7 +3,7 @@ import { parseEnv } from "node:util";
 
 import { afterAll } from "vitest";
 
-import { cerrarConexion } from "@/db";
+import { closeConnection } from "@/db";
 // Con extensión porque es `.mts` (`allowImportingTsExtensions` en el tsconfig).
 import {
   dondeApunta,
@@ -67,5 +67,5 @@ if (!api || !esApiDelStackLocal(api)) {
 
 // Con el pool abierto, Vitest no termina.
 afterAll(async () => {
-  await cerrarConexion();
+  await closeConnection();
 });

@@ -7,7 +7,7 @@ import {
   RangoDeFechas,
   ContadorDeResultados,
 } from "@/components/admin/filtros";
-import { tramo } from "@/components/admin/paginacion";
+import { rangeLabel } from "@/components/admin/paginacion";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
@@ -70,11 +70,11 @@ export function BarraDeFiltros({
       <div className="flex flex-wrap items-center gap-3">
         {/* Se anuncia a lectores de pantalla (§9). */}
         <ContadorDeResultados pendiente={pendiente}>
-          {tramo({
-            pagina: filtros.pagina,
-            porPagina,
+          {rangeLabel({
+            page: filtros.pagina,
+            perPage: porPagina,
             total,
-            cosa: { singular: "devolución", plural: "devoluciones" },
+            noun: { singular: "devolución", plural: "devoluciones" },
           })}
         </ContadorDeResultados>
         {hayFiltros(filtros) ? (

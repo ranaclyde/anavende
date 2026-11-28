@@ -5,9 +5,9 @@ import { Check, ChevronDown } from "lucide-react";
 import { useId, useState } from "react";
 
 import { EsperaDelFiltro } from "@/components/shop/filtrando";
-import { normalizar } from "@/lib/texto";
-import { TIPO_FILTRO } from "@/lib/transiciones";
-import { AREA_TACTIL, cn } from "@/lib/utils";
+import { normalizeText } from "@/lib/text";
+import { FILTER_TYPE } from "@/lib/transitions";
+import { TOUCH_AREA, cn } from "@/lib/utils";
 
 /**
  * Cuántas opciones se ven sin abrir el grupo; pasado este número lleva «Ver
@@ -46,13 +46,13 @@ export function GrupoDeFiltro({
   if (opciones.length === 0) return null;
 
   const sobran = opciones.length > VISIBLES;
-  const buscado = normalizar(busqueda);
+  const buscado = normalizeText(busqueda);
 
   // El buscador mira la lista entera, esté abierto el grupo o no.
   const visibles = !sobran
     ? opciones
     : buscado
-      ? opciones.filter((o) => normalizar(o.nombre).includes(buscado))
+      ? opciones.filter((o) => normalizeText(o.nombre).includes(buscado))
       : abierto
         ? opciones
         : // Lo elegido se ve siempre: si no, no se podría sacar desde acá.
@@ -109,7 +109,7 @@ export function GrupoDeFiltro({
             "relative flex w-fit items-center gap-1.5 rounded-pill py-1 text-body-sm font-medium text-brand",
             "transition-colors duration-150 hover:text-brand-hover",
             "focus-visible:shadow-focus focus-visible:outline-none",
-            AREA_TACTIL,
+            TOUCH_AREA,
           )}
         >
           {abierto ? "Ver menos" : `Ver las ${opciones.length} ${plural}`}
@@ -130,14 +130,14 @@ function Chip({ opcion: o }: { opcion: OpcionDelGrupo }) {
   return (
     <Link
       href={o.href}
-      transitionTypes={TIPO_FILTRO}
+      transitionTypes={FILTER_TYPE}
       aria-current={o.activo ? "true" : undefined}
       className={cn(
         "relative flex items-center gap-2 rounded-full border py-2 pr-3 pl-3",
         "text-body-sm whitespace-nowrap transition-colors duration-150",
         "focus-visible:shadow-focus focus-visible:outline-none",
         // Los 3px que el área táctil sobresale caben en el `gap-2` de la lista.
-        AREA_TACTIL,
+        TOUCH_AREA,
         // Tinte y no relleno sólido: con la cara del botón principal se leía
         // como una acción.
         o.activo

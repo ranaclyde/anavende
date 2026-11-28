@@ -33,7 +33,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
 /**
  * El `className` va a la caja y no al campo: se usa para el ancho, y el
  * prefijo tiene que quedar adentro. El prefijo es `aria-hidden` y no se envía.
- * Va escrito y no importado de `lib/telefono.ts`, que trae zod.
+ * Va escrito y no importado de `lib/phone.ts`, que trae zod.
  */
 function InputTelefono({
   className,

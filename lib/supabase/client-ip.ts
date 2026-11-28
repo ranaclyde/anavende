@@ -8,18 +8,18 @@
  */
 
 /** Una IPv4 o IPv6, por la forma: nada que pueda armar otra cabecera. */
-const FORMA_DE_IP = /^[0-9a-fA-F:.]{2,45}$/;
+const IP_SHAPE = /^[0-9a-fA-F:.]{2,45}$/;
 
-export function cabecerasParaGoTrue(
-  delPedido: Pick<Headers, "get">,
+export function goTrueHeaders(
+  requestHeaders: Pick<Headers, "get">,
 ): Record<string, string> {
-  const clave = process.env.SUPABASE_CLAVE_CLIENTE_IP;
-  const ip = delPedido.get("cf-connecting-ip")?.trim();
+  const key = process.env.SUPABASE_CLAVE_CLIENTE_IP;
+  const ip = requestHeaders.get("cf-connecting-ip")?.trim();
 
-  if (!clave || !ip || !FORMA_DE_IP.test(ip)) return {};
+  if (!key || !ip || !IP_SHAPE.test(ip)) return {};
 
   return {
-    "X-Anavende-Clave": clave,
+    "X-Anavende-Clave": key,
     "X-Anavende-Cliente-Ip": ip,
   };
 }

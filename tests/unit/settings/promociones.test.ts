@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
 import { db } from "@/db";
 import { paymentMethods } from "@/db/schema";
-import { cuota } from "@/lib/money";
+import { installment } from "@/lib/money";
 import {
   conQuien,
   promocionesParaElPrecio,
@@ -28,25 +28,25 @@ import { crearPromocion } from "@/modules/settings/schemas";
 describe("la cuota (RF-40)", () => {
   test("sin recargo, se redondea al centavo hacia arriba", () => {
     // 37000 / 3 = 12333,333… → 12333,34, y tres de esas no quedan cortas.
-    expect(cuota("37000.00", "0.00", 3)).toBe("12333.34");
+    expect(installment("37000.00", "0.00", 3)).toBe("12333.34");
   });
 
   test("con recargo, sobre el precio con el recargo", () => {
     // 37000 × 1,15 / 3 = 14183,333… → 14183,34
-    expect(cuota("37000.00", "15.00", 3)).toBe("14183.34");
+    expect(installment("37000.00", "15.00", 3)).toBe("14183.34");
   });
 
   test("una división exacta no suma un centavo", () => {
-    expect(cuota("36000.00", "0.00", 3)).toBe("12000.00");
+    expect(installment("36000.00", "0.00", 3)).toBe("12000.00");
   });
 
   test("recargo con decimales", () => {
     // 10000 × 1,125 / 6 = 1875
-    expect(cuota("10000.00", "12.50", 6)).toBe("1875.00");
+    expect(installment("10000.00", "12.50", 6)).toBe("1875.00");
   });
 
   test("menos de 2 cuotas no es una promoción de cuotas", () => {
-    expect(() => cuota("1000.00", "0.00", 1)).toThrow(RangeError);
+    expect(() => installment("1000.00", "0.00", 1)).toThrow(RangeError);
   });
 });
 

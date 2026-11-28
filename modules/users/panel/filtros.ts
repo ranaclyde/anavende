@@ -1,13 +1,13 @@
 // No es `server-only`: la consulta lee estos valores y la barra los escribe.
 
 import {
-  pagina as leerPagina,
-  texto,
-  unaDe,
-  type ParametrosDeBusqueda,
-} from "@/lib/filtros-url";
+  pageParam as leerPagina,
+  paramText,
+  oneOf,
+  type SearchParamsRecord,
+} from "@/lib/url-filters";
 
-export type { ParametrosDeBusqueda };
+export type { SearchParamsRecord };
 
 export const ROLES = [
   { valor: "todos", etiqueta: "Todos los roles" },
@@ -47,11 +47,11 @@ export const FILTROS_VACIOS: FiltrosDeUsuarios = {
 
 export const POR_PAGINA = 40;
 
-export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeUsuarios {
+export function leerFiltros(params: SearchParamsRecord): FiltrosDeUsuarios {
   return {
-    q: texto(params.q),
-    rol: unaDe(params.rol, ROLES, FILTROS_VACIOS.rol),
-    estado: unaDe(params.estado, ESTADOS, FILTROS_VACIOS.estado),
+    q: paramText(params.q),
+    rol: oneOf(params.rol, ROLES, FILTROS_VACIOS.rol),
+    estado: oneOf(params.estado, ESTADOS, FILTROS_VACIOS.estado),
     pagina: leerPagina(params.pagina),
   };
 }

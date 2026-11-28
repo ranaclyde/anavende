@@ -4,10 +4,10 @@ import { notFound } from "next/navigation";
 import { EncabezadoDePanel } from "@/components/admin/encabezado";
 import { FormularioDeTextoLegal } from "@/components/admin/legales/formulario";
 import { SolapasDeLegales } from "@/components/admin/legales/solapas";
-import { fechaConHora } from "@/lib/fechas";
+import { dateWithTime } from "@/lib/dates";
 import { leerTextoLegal } from "@/modules/content/legales";
 import { paginaLegal } from "@/modules/content/paginas";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Legales" };
 
@@ -15,7 +15,7 @@ type Props = { params: Promise<{ slug: string }> };
 
 /** Los textos legales, editables sin deploy (RF-29). */
 export default async function EditarTextoLegal({ params }: Props) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const { slug } = await params;
   const pagina = paginaLegal(slug);
@@ -37,7 +37,7 @@ export default async function EditarTextoLegal({ params }: Props) {
         titulo={pagina.titulo}
         contenido={texto?.contenido ?? ""}
         actualizada={
-          texto ? fechaConHora(texto.actualizada.toISOString()) : "nunca"
+          texto ? dateWithTime(texto.actualizada.toISOString()) : "nunca"
         }
       />
     </div>

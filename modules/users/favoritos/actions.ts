@@ -32,7 +32,7 @@ export const cambiarFavorito = action
 export const elegirVistaDeFavoritos = action
   .input(eleccionDeVista)
   .auth("customer")
-  .aunConBajaPendiente()
+  .evenWithPendingClosure()
   .handler(async ({ input }) => {
     await guardarVista(input.vista);
     refresh();

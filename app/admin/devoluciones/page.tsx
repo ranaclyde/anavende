@@ -15,13 +15,13 @@ import {
   POR_PAGINA,
   leerFiltros,
   urlDeFiltros,
-  type ParametrosDeBusqueda,
+  type SearchParamsRecord,
 } from "@/modules/returns/filtros";
 import {
   contarDevolucionesPorEstado,
   listarDevoluciones,
 } from "@/modules/returns/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Devoluciones" };
 
@@ -55,9 +55,9 @@ const PASOS_DE_DEVOLUCIONES: PasoDeAyuda[] = [
 export default async function DevolucionesDelPanel({
   searchParams,
 }: {
-  searchParams: Promise<ParametrosDeBusqueda>;
+  searchParams: Promise<SearchParamsRecord>;
 }) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const filtros = leerFiltros(await searchParams);
 

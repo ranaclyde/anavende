@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { db } from "@/db";
-import { ZONA_HORARIA } from "@/lib/fechas";
+import { TIME_ZONE } from "@/lib/dates";
 import {
   contadores,
   limpiar,
@@ -590,7 +590,7 @@ describe("lo que la pantalla lee", () => {
     // El día va en la zona de la tienda, no en UTC: el filtro usa `AT TIME
     // ZONE`, y con `toISOString()` de 21 a 24 sería el día siguiente.
     const hoy = new Intl.DateTimeFormat("en-CA", {
-      timeZone: ZONA_HORARIA,
+      timeZone: TIME_ZONE,
     }).format(new Date());
     const enElRango = async (desde: string, hasta: string) =>
       (

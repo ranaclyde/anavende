@@ -11,7 +11,7 @@ import {
   NavegacionPrincipal,
 } from "@/components/shop/navegacion-principal";
 import { SearchBox } from "@/components/shop/search-box";
-import type { Escena } from "@/lib/escenas";
+import type { Scene } from "@/lib/scenes";
 import { cn } from "@/lib/utils";
 
 /**
@@ -28,7 +28,7 @@ export function SiteHeader({
   userName?: string | null;
   /** La cara de quien entró, ya armada en el servidor. */
   userCara?: React.ReactNode;
-  escena?: Escena | null;
+  escena?: Scene | null;
 }) {
   const [conSombra, setConSombra] = useState(false);
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);

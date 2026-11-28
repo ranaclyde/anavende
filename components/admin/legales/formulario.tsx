@@ -15,7 +15,7 @@ import { PieDeGuardado, TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import { guardarUnTextoLegal } from "@/modules/content/actions";
 import { LIMITE_DE_TEXTO_LEGAL } from "@/modules/content/limites";
 import type { SlugLegal } from "@/modules/content/paginas";
@@ -36,8 +36,7 @@ export function FormularioDeTextoLegal({
 }) {
   const router = useRouter();
   const editor = useRef<LexicalEditor | null>(null);
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
   const [enviando, iniciar] = useTransition();
   // Guardar sin cambios movería la fecha de «Última modificación».
   const [tocado, setTocado] = useState(false);
@@ -47,11 +46,11 @@ export function FormularioDeTextoLegal({
 
   const idDelCampo = `legal-${slug}`;
   const idDelError = `${idDelCampo}-error`;
-  const error = errores.campos.contenido ?? errores.general;
+  const error = errores.fields.contenido ?? errores.general;
 
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     const datos = { slug, contenido: leerMarkdown(editor.current) };
 
@@ -59,7 +58,7 @@ export function FormularioDeTextoLegal({
       const resultado = await guardarUnTextoLegal(datos);
 
       if (!resultado.ok) {
-        setErrores(leerErrores<Campo>(resultado));
+        setErrores(readErrors<Campo>(resultado));
         return;
       }
 

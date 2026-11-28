@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-import { destinoInterno } from "@/lib/destino";
-import { telefonoArgentino } from "@/lib/telefono";
+import { internalRedirectTarget } from "@/lib/redirect-target";
+import { argentinePhone } from "@/lib/phone";
 
-export const telefono = telefonoArgentino({
-  requerido: "Necesitamos tu teléfono para coordinar la entrega.",
-  invalido:
+export const telefono = argentinePhone({
+  required: "Necesitamos tu teléfono para coordinar la entrega.",
+  invalid:
     "Ese teléfono no parece válido. Escribilo con característica, por ejemplo 11 5555 5555.",
 });
 
@@ -38,7 +38,10 @@ export const contrasena = z
  * haría del email un redirector abierto, pero rechazarlo frenaría un alta
  * legítima por un parámetro que la persona no ve.
  */
-export const rutaDeRegreso = z.string().transform(destinoInterno).optional();
+export const rutaDeRegreso = z
+  .string()
+  .transform(internalRedirectTarget)
+  .optional();
 
 /**
  * Turnstile: lo valida GoTrue, acá solo se acota. Opcional porque sin

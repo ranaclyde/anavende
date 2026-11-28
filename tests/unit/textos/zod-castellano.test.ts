@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
 
-import "@/lib/zod-castellano";
+import "@/lib/zod-spanish";
 import { cambioDeContrasenaSchema } from "@/modules/users/schemas";
 
 /** DESIGN-REFERENCE §10. */

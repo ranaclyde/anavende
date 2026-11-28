@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { LogoHorizontal } from "@/components/shop/logo";
-import { FUERA_DEL_INDICE } from "@/lib/seo";
+import { NO_INDEX } from "@/lib/seo";
 
 // Se hereda campo por campo: las páginas siguen poniendo su título.
-export const metadata: Metadata = { robots: FUERA_DEL_INDICE };
+export const metadata: Metadata = { robots: NO_INDEX };
 
 /** `<LogoHorizontal>` y no `<Logo>`, que oculta la palabra debajo de `sm`. */
 export default function AuthLayout({

@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { LogoHorizontal } from "@/components/shop/logo";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
-import { FUERA_DEL_INDICE } from "@/lib/seo";
-import { enlaceDeWhatsApp } from "@/lib/whatsapp";
+import { NO_INDEX } from "@/lib/seo";
+import { whatsappLink } from "@/lib/whatsapp";
 import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
 import { numeroDeWhatsApp } from "@/modules/settings/queries";
 
@@ -21,7 +21,7 @@ import { numeroDeWhatsApp } from "@/modules/settings/queries";
 export const metadata: Metadata = {
   title: "Volvemos en un rato",
   // Por si alguien llega a la dirección directa, que responde 200 y no 503.
-  robots: FUERA_DEL_INDICE,
+  robots: NO_INDEX,
 };
 
 // Sin esto `next build` la prerrenderiza y consulta la base al compilar, donde
@@ -63,10 +63,7 @@ export default async function Mantenimiento() {
         <div className="flex flex-col items-center gap-2">
           <Button asChild variant="whatsapp" size="lg">
             <a
-              href={enlaceDeWhatsApp(
-                numero,
-                "Hola, quería hacer una consulta.",
-              )}
+              href={whatsappLink(numero, "Hola, quería hacer una consulta.")}
               target="_blank"
               rel="noopener noreferrer"
             >

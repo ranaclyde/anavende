@@ -8,13 +8,9 @@ import {
   leerElCatalogo,
   VistaDelCatalogo,
 } from "@/components/shop/vista-del-catalogo";
-import { migasDeCategoria } from "@/lib/datos-estructurados";
-import {
-  OPEN_GRAPH_BASE,
-  resumenDeMetadatos,
-  ZONA_DE_ENTREGA,
-} from "@/lib/seo";
-import { AREA_TACTIL, cn } from "@/lib/utils";
+import { categoryBreadcrumbsJsonLd } from "@/lib/structured-data";
+import { OPEN_GRAPH_BASE, metaDescription, DELIVERY_AREA } from "@/lib/seo";
+import { TOUCH_AREA, cn } from "@/lib/utils";
 import { leerCategoriaConPagina } from "@/modules/catalog/products/categorias-de-la-tienda";
 import {
   catalogoIndexable,
@@ -45,8 +41,8 @@ export async function generateMetadata({
   const ruta = urlDeTienda(filtros);
   const titulo = `${categoria.nombre} en Viedma y Patagones`;
   const descripcion = categoria.texto
-    ? resumenDeMetadatos(categoria.texto)
-    : `${categoria.nombre} en AnaVende. ${ZONA_DE_ENTREGA}`;
+    ? metaDescription(categoria.texto)
+    : `${categoria.nombre} en AnaVende. ${DELIVERY_AREA}`;
 
   return {
     title: titulo,
@@ -83,7 +79,7 @@ export default async function PaginaDeCategoria({
   return (
     <div className="mx-auto w-full max-w-shop px-4 py-10 sm:px-6 lg:px-8">
       {/* Las mismas migas de arriba del título, para los buscadores. */}
-      <DatosEstructurados datos={[migasDeCategoria(categoria)]} />
+      <DatosEstructurados datos={[categoryBreadcrumbsJsonLd(categoria)]} />
 
       <header className="flex flex-col gap-2 pb-7">
         <Migas nombre={categoria.nombre} />
@@ -117,7 +113,7 @@ function Migas({ nombre }: { nombre: string }) {
           {/* La zona sensible se estira a 44px sin tocar el dibujo (§9). */}
           <Link
             href="/categorias"
-            className={cn("relative rounded-pill hover:text-ink", AREA_TACTIL)}
+            className={cn("relative rounded-pill hover:text-ink", TOUCH_AREA)}
           >
             Categorías
           </Link>

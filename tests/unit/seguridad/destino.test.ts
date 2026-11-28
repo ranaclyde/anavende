@@ -1,13 +1,13 @@
 import { describe, expect, test } from "vitest";
 
-import { destinoInterno } from "@/lib/destino";
+import { internalRedirectTarget } from "@/lib/redirect-target";
 
 /** Las vueltas solo llevan a la tienda — redirección abierta, §16. */
-describe("destinoInterno", () => {
+describe("internalRedirectTarget", () => {
   test.each(["/", "/productos/mouse-g203?color=negro", "/mi-cuenta/compras"])(
     "acepta %s",
     (v) => {
-      expect(destinoInterno(v)).toBe(v);
+      expect(internalRedirectTarget(v)).toBe(v);
     },
   );
 
@@ -19,6 +19,6 @@ describe("destinoInterno", () => {
     ["con barra invertida", "/\\otro.com"],
     ["relativo", "productos"],
   ])("rechaza %s", (_, v) => {
-    expect(destinoInterno(v)).toBeUndefined();
+    expect(internalRedirectTarget(v)).toBeUndefined();
   });
 });

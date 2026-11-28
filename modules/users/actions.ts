@@ -8,9 +8,9 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { userProfiles } from "@/db/schema";
 import { action } from "@/lib/action";
-import { urlDelSitio } from "@/lib/env";
+import { getSiteUrl } from "@/lib/env";
 import { domainError } from "@/lib/errors";
-import { frenarSiInsiste } from "@/lib/limite";
+import { rateLimitOrThrow } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { quitarFotoDePerfil } from "@/modules/media/subir";
@@ -53,7 +53,7 @@ const CUPOS = {
 };
 
 function urlDeConfirmacion(volver?: string) {
-  const base = urlDelSitio();
+  const base = getSiteUrl();
   const destino = volver ?? "/mi-cuenta";
   return `${base}/api/auth/confirmar?next=${encodeURIComponent(destino)}`;
 }
@@ -62,7 +62,7 @@ export const registrar = action
   .input(registroSchema)
   .auth("public")
   .handler(async ({ input }) => {
-    await frenarSiInsiste("alta", CUPOS.alta);
+    await rateLimitOrThrow("alta", CUPOS.alta);
     const supabase = await createClient();
 
     // `signUp` y no `admin.createUser` + `resend`: ver `mandarVerificacion`.
@@ -149,7 +149,7 @@ export const enviarVerificacion = action
   .input(reenvioSchema)
   .auth("public")
   .handler(async ({ input }) => {
-    await frenarSiInsiste("reenvio", CUPOS.reenvio);
+    await rateLimitOrThrow("reenvio", CUPOS.reenvio);
     // Se responde igual haya o no cuenta, y también ante el freno por email:
     // GoTrue solo frena a una cuenta que existe, así que avisarlo la delataría.
     const { error } = await mandarVerificacion(
@@ -169,7 +169,7 @@ export const pedirRecuperacion = action
   .input(recuperacionSchema)
   .auth("public")
   .handler(async ({ input }) => {
-    await frenarSiInsiste("recuperacion", CUPOS.recuperacion);
+    await rateLimitOrThrow("recuperacion", CUPOS.recuperacion);
     const supabase = await createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(input.email, {
       redirectTo: urlDeConfirmacion("/recuperar/nueva-contrasena"),
@@ -194,7 +194,7 @@ export const ingresar = action
   .input(ingresoSchema)
   .auth("public")
   .handler(async ({ input }) => {
-    await frenarSiInsiste("ingreso", CUPOS.ingreso);
+    await rateLimitOrThrow("ingreso", CUPOS.ingreso);
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email: input.email,
@@ -395,7 +395,7 @@ export const definirContrasena = action
 
     if (!error) {
       const { identity } = ctx.session;
-      if (!identity.tieneContrasena) await anotarContrasenaDefinida(identity);
+      if (!identity.hasPassword) await anotarContrasenaDefinida(identity);
       return { definida: true };
     }
 
@@ -419,7 +419,7 @@ export const cambiarContrasena = action
   .handler(async ({ input, ctx }) => {
     const { identity } = ctx.session;
 
-    if (identity.tieneContrasena) {
+    if (identity.hasPassword) {
       if (!input.actual) {
         throw errorEnCampo("actual", "Escribí tu contraseña actual.");
       }
@@ -427,7 +427,7 @@ export const cambiarContrasena = action
         throw new Error("sesión con contraseña y sin email");
       }
       // El tope de GoTrue no aplica a `coincideLaContrasena`: va el propio.
-      await frenarSiInsiste("contrasena-actual", CUPOS.contrasenaActual);
+      await rateLimitOrThrow("contrasena-actual", CUPOS.contrasenaActual);
       if (!(await coincideLaContrasena(identity.email, input.actual))) {
         throw errorEnCampo("actual", "Esa no es tu contraseña actual.");
       }
@@ -437,7 +437,7 @@ export const cambiarContrasena = action
     const { error } = await supabase.auth.updateUser({ password: input.nueva });
 
     if (!error) {
-      if (!identity.tieneContrasena) await anotarContrasenaDefinida(identity);
+      if (!identity.hasPassword) await anotarContrasenaDefinida(identity);
       return { cambiada: true };
     }
 

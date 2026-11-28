@@ -13,7 +13,7 @@ import { Campo, Opcion } from "@/components/admin/formulario";
 import { avisar } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
-import { type ErroresDeFormulario, leerErrores, SIN_ERRORES } from "@/lib/form";
+import { type FormErrors, readErrors, NO_ERRORS } from "@/lib/form";
 import { darDeAltaUsuario } from "@/modules/users/panel/actions";
 import {
   ROLES_ASIGNABLES,
@@ -29,8 +29,7 @@ export function AltaDeUsuario() {
   const router = useRouter();
   const idBase = useId();
   const [guardando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<CampoDelAlta>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<CampoDelAlta>>(NO_ERRORS);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -41,8 +40,8 @@ export function AltaDeUsuario() {
   /** Adónde va el foco cuando el envío falla: anunciar el error no es llevar hasta él. */
   const errorGeneral = useRef<HTMLDivElement | null>(null);
 
-  function irAlPrimerError(nuevos: ErroresDeFormulario<CampoDelAlta>) {
-    const primero = CAMPOS.find((c) => nuevos.campos[c]);
+  function irAlPrimerError(nuevos: FormErrors<CampoDelAlta>) {
+    const primero = CAMPOS.find((c) => nuevos.fields[c]);
     const control = primero
       ? document.getElementById(`${idBase}-${primero}`)
       : null;
@@ -53,7 +52,7 @@ export function AltaDeUsuario() {
 
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     iniciar(async () => {
       const r = await darDeAltaUsuario({
@@ -65,7 +64,7 @@ export function AltaDeUsuario() {
       });
 
       if (!r.ok) {
-        const nuevos = leerErrores<CampoDelAlta>(r);
+        const nuevos = readErrors<CampoDelAlta>(r);
         setErrores(nuevos);
         irAlPrimerError(nuevos);
         return;
@@ -76,7 +75,7 @@ export function AltaDeUsuario() {
     });
   }
 
-  const e = errores.campos;
+  const e = errores.fields;
 
   return (
     // Una sola tarjeta con el botón al pie (DESIGN.md, «Guardar»).

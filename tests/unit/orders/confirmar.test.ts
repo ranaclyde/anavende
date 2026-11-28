@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { domainError } from "@/lib/errors";
-import { leerErrores } from "@/lib/form";
+import { readErrors } from "@/lib/form";
 
 /**
  * La acción que confirma el pedido (RF-11 · TS §6.2, §8.4), sobre la creación
@@ -114,7 +114,7 @@ describe("lo que no deja confirmar", () => {
 
     expect(r.ok).toBe(false);
     if (r.ok) return;
-    expect(leerErrores(r).campos).toMatchObject({
+    expect(readErrors(r).fields).toMatchObject({
       addressId: "Elegí a dónde te lo enviamos.",
     });
     expect(crear.fn).not.toHaveBeenCalled();
@@ -125,7 +125,7 @@ describe("lo que no deja confirmar", () => {
 
     expect(r.ok).toBe(false);
     if (r.ok) return;
-    expect(leerErrores(r).campos).toMatchObject({
+    expect(readErrors(r).fields).toMatchObject({
       telefono: "Necesitamos tu teléfono para coordinar la entrega.",
     });
   });
@@ -137,9 +137,9 @@ describe("lo que no deja confirmar", () => {
 
     expect(r).toMatchObject({ ok: false, code: "NOT_FOUND" });
     if (r.ok) return;
-    expect(leerErrores(r)).toMatchObject({
+    expect(readErrors(r)).toMatchObject({
       general: null,
-      campos: {
+      fields: {
         addressId:
           "Esa dirección ya no está en tu libreta. Elegí otra o cargá una nueva.",
       },

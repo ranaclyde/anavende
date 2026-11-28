@@ -2,15 +2,15 @@
 // `server-only`: la consulta lee la página y la pantalla escribe los enlaces.
 
 import {
-  pagina as leerPagina,
-  type ParametrosDeBusqueda,
-} from "@/lib/filtros-url";
+  pageParam as leerPagina,
+  type SearchParamsRecord,
+} from "@/lib/url-filters";
 
-export type { ParametrosDeBusqueda };
+export type { SearchParamsRecord };
 
 export const POR_PAGINA = 40;
 
-export function leerPaginaDeCatalogo(params: ParametrosDeBusqueda): number {
+export function leerPaginaDeCatalogo(params: SearchParamsRecord): number {
   return leerPagina(params.pagina);
 }
 

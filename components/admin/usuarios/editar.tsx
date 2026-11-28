@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 
 import { Campo } from "@/components/admin/formulario";
 import { Button } from "@/components/ui/button";
-import { leerErrores, SIN_ERRORES } from "@/lib/form";
-import { telefonoLocal } from "@/lib/telefono";
+import { readErrors, NO_ERRORS } from "@/lib/form";
+import { localPhone } from "@/lib/phone";
 import { guardarDatosDelUsuario } from "@/modules/users/panel/actions";
 
 /**
@@ -24,13 +24,13 @@ export function EditarDatosDelUsuario({
   };
 }) {
   const [guardando, iniciar] = useTransition();
-  const [errores, setErrores] = useState(SIN_ERRORES);
+  const [errores, setErrores] = useState(NO_ERRORS);
   const [guardado, setGuardado] = useState(false);
 
   const [firstName, setFirstName] = useState(usuario.firstName);
   const [lastName, setLastName] = useState(usuario.lastName);
   // Sin el `+549`: el campo ya muestra el +54 (`Input`, `type="tel"`).
-  const [phone, setPhone] = useState(telefonoLocal(usuario.telefono));
+  const [phone, setPhone] = useState(localPhone(usuario.telefono));
 
   /**
    * Con qué se compara para saber si hay algo sin guardar: lo que confirmó el
@@ -40,7 +40,7 @@ export function EditarDatosDelUsuario({
   const [guardadoEnLaBase, setGuardadoEnLaBase] = useState({
     firstName: usuario.firstName,
     lastName: usuario.lastName,
-    phone: telefonoLocal(usuario.telefono),
+    phone: localPhone(usuario.telefono),
   });
 
   const cambio =
@@ -49,7 +49,7 @@ export function EditarDatosDelUsuario({
     phone !== guardadoEnLaBase.phone;
 
   function guardar() {
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
     setGuardado(false);
 
     iniciar(async () => {
@@ -61,12 +61,12 @@ export function EditarDatosDelUsuario({
       });
 
       if (!r.ok) {
-        setErrores(leerErrores<"firstName" | "lastName" | "phone">(r));
+        setErrores(readErrors<"firstName" | "lastName" | "phone">(r));
         return;
       }
 
       // Los campos muestran lo guardado: el teléfono normalizado, sin el `+549`.
-      const guardados = { ...r.data, phone: telefonoLocal(r.data.phone) };
+      const guardados = { ...r.data, phone: localPhone(r.data.phone) };
       setFirstName(guardados.firstName);
       setLastName(guardados.lastName);
       setPhone(guardados.phone);
@@ -85,7 +85,7 @@ export function EditarDatosDelUsuario({
             setFirstName(v);
             setGuardado(false);
           }}
-          error={errores.campos.firstName}
+          error={errores.fields.firstName}
         />
         <Campo
           etiqueta="Apellido"
@@ -94,7 +94,7 @@ export function EditarDatosDelUsuario({
             setLastName(v);
             setGuardado(false);
           }}
-          error={errores.campos.lastName}
+          error={errores.fields.lastName}
         />
       </div>
 
@@ -106,7 +106,7 @@ export function EditarDatosDelUsuario({
           setPhone(v);
           setGuardado(false);
         }}
-        error={errores.campos.phone}
+        error={errores.fields.phone}
         ayuda="Con característica, por ejemplo 11 5555 5555."
       />
 

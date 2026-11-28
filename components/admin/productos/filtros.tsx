@@ -8,7 +8,7 @@ import {
   BuscadorDelPanel,
   ContadorDeResultados,
 } from "@/components/admin/filtros";
-import { tramo } from "@/components/admin/paginacion";
+import { rangeLabel } from "@/components/admin/paginacion";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
@@ -135,11 +135,11 @@ export function BarraDeFiltros({
           <ContadorDeResultados pendiente={pendiente}>
             {/* «Del 1 al 40 de 52 productos», «3 de 52…» o «52…». */}
             {mostrados > porPagina
-              ? tramo({
-                  pagina: filtros.pagina,
-                  porPagina,
+              ? rangeLabel({
+                  page: filtros.pagina,
+                  perPage: porPagina,
                   total: mostrados,
-                  cosa: { singular: "producto", plural: "productos" },
+                  noun: { singular: "producto", plural: "productos" },
                 })
               : filtrado
                 ? `${mostrados} de ${cuantos(total)}`

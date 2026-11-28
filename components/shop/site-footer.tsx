@@ -106,7 +106,7 @@ export function SiteFooter({
                 <h2 className={TITULO_DE_GRUPO}>{grupo.titulo}</h2>
                 {/*
                   40px por fila en teléfono y no 44, a propósito (sobra para
-                  WCAG 2.5.8). Sin `AREA_TACTIL`: se metería en la fila vecina.
+                  WCAG 2.5.8). Sin `TOUCH_AREA`: se metería en la fila vecina.
                 */}
                 <ul className="flex flex-col gap-2 max-md:gap-0">
                   {grupo.enlaces.map((l) => (

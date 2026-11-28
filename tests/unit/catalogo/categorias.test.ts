@@ -5,11 +5,11 @@ import { afterAll, describe, expect, test } from "vitest";
 
 import { db } from "@/db";
 import {
-  enlaceDeWhatsApp,
-  mensajeDeBusquedaSinResultados,
-  mensajeDeConsultaGeneral,
+  whatsappLink,
+  noResultsMessage,
+  generalInquiryMessage,
 } from "@/lib/whatsapp";
-import { normalizar } from "@/lib/texto";
+import { normalizeText } from "@/lib/text";
 import {
   cantidadDeProductos,
   repartirCategorias,
@@ -109,7 +109,7 @@ function una(
 ): CategoriaDeLaPagina {
   return {
     id: nombre,
-    slug: normalizar(nombre),
+    slug: normalizeText(nombre),
     nombre,
     cantidad,
     destacada,
@@ -176,22 +176,22 @@ describe("cantidadDeProductos", () => {
 
 describe("mensajes de la página de categorías (RF-35)", () => {
   test("los dos textos de la especificación", () => {
-    expect(mensajeDeBusquedaSinResultados("  sillas ")).toBe(
+    expect(noResultsMessage("  sillas ")).toBe(
       "¡Hola! Busqué «sillas» entre las categorías y no lo encontré. ¿Lo tienen o piensan traerlo?",
     );
-    expect(mensajeDeConsultaGeneral()).toBe(
+    expect(generalInquiryMessage()).toBe(
       "¡Hola! Quería consultar por algo que no encontré entre las categorías de la tienda.",
     );
   });
 
   test("viajan codificados: comillas, acentos y signos de pregunta", () => {
-    const enlace = enlaceDeWhatsApp(
+    const enlace = whatsappLink(
       "+5492920408825",
-      mensajeDeBusquedaSinResultados("micrófono"),
+      noResultsMessage("micrófono"),
     );
     expect(enlace.startsWith("https://wa.me/5492920408825?text=")).toBe(true);
     expect(decodeURIComponent(enlace.split("text=")[1])).toBe(
-      mensajeDeBusquedaSinResultados("micrófono"),
+      noResultsMessage("micrófono"),
     );
     expect(enlace).not.toMatch(/[«»¿ ]/);
   });

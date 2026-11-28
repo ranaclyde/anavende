@@ -23,10 +23,10 @@ import { EsferaDeColor } from "@/components/ui/esfera-de-color";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { cn } from "@/lib/utils";
 import {
-  enlaceDeWhatsApp,
-  mensajeDeCompra,
-  mensajeDeDisponibilidad,
-  type ProductoParaMensaje,
+  whatsappLink,
+  purchaseMessage,
+  availabilityMessage,
+  type ProductForMessage,
 } from "@/lib/whatsapp";
 import {
   agregarAlCarrito,
@@ -465,7 +465,7 @@ function ConStock({
   cantidad: number;
   onCantidad: (n: number) => void;
   whatsapp: string | null;
-  mensaje: ProductoParaMensaje;
+  mensaje: ProductForMessage;
   precioUnitario: string;
 }) {
   return (
@@ -498,9 +498,9 @@ function ConStock({
         {whatsapp ? (
           <BotonDeWhatsApp
             ayuda="comprar-whatsapp"
-            href={enlaceDeWhatsApp(
+            href={whatsappLink(
               whatsapp,
-              mensajeDeCompra(mensaje, cantidad, precioUnitario),
+              purchaseMessage(mensaje, cantidad, precioUnitario),
             )}
           >
             Comprá ya por WhatsApp
@@ -609,7 +609,7 @@ function SinStock({
 }: {
   color: string | null;
   whatsapp: string | null;
-  mensaje: ProductoParaMensaje;
+  mensaje: ProductForMessage;
   aviso: ReactNode;
 }) {
   return (
@@ -626,7 +626,7 @@ function SinStock({
 
       {whatsapp ? (
         <BotonDeWhatsApp
-          href={enlaceDeWhatsApp(whatsapp, mensajeDeDisponibilidad(mensaje))}
+          href={whatsappLink(whatsapp, availabilityMessage(mensaje))}
         >
           Consultar disponibilidad
         </BotonDeWhatsApp>
@@ -645,7 +645,7 @@ function TodaviaNo({
   mensaje,
 }: {
   whatsapp: string | null;
-  mensaje: ProductoParaMensaje;
+  mensaje: ProductForMessage;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -658,7 +658,7 @@ function TodaviaNo({
       </p>
       {whatsapp ? (
         <BotonDeWhatsApp
-          href={enlaceDeWhatsApp(whatsapp, mensajeDeDisponibilidad(mensaje))}
+          href={whatsappLink(whatsapp, availabilityMessage(mensaje))}
         >
           Consultá por WhatsApp
         </BotonDeWhatsApp>

@@ -10,7 +10,7 @@ import {
   parametrosDeLaDireccion,
   urlCambiando,
 } from "@/modules/catalog/products/filtros-tienda";
-import { TIPO_FILTRO } from "@/lib/transiciones";
+import { FILTER_TYPE } from "@/lib/transitions";
 import { cn } from "@/lib/utils";
 
 /** Buscador (DESIGN-REFERENCE §6.2). */
@@ -82,7 +82,7 @@ export function SearchBox({
     );
     iniciar(() => {
       router.push(urlCambiando(actuales, { q }), {
-        transitionTypes: TIPO_FILTRO,
+        transitionTypes: FILTER_TYPE,
       });
     });
   };

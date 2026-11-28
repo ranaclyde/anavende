@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fechaCorta } from "@/lib/fechas";
+import { shortDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import {
   hayFiltros,
@@ -146,7 +146,7 @@ function Comprador({ orden }: { orden: OrdenDelListado }) {
  * no coincidiría.
  */
 function Fecha({ iso }: { iso: string }) {
-  return <time dateTime={iso}>{fechaCorta(iso)}</time>;
+  return <time dateTime={iso}>{shortDate(iso)}</time>;
 }
 
 /** Sin resultados (§8): hay órdenes, pero ninguna coincide. */

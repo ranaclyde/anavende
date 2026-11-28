@@ -22,7 +22,7 @@ export type DomainErrorCode =
   | "INTERNAL";
 
 // Voseo, sin jerga y con la acción a seguir (DESIGN-REFERENCE §8 y §10).
-const MENSAJES: Record<DomainErrorCode, string> = {
+const MESSAGES: Record<DomainErrorCode, string> = {
   INSUFFICIENT_STOCK:
     "No queda stock suficiente de ese producto. Ajustá la cantidad y probá de nuevo.",
   PRICE_CHANGED:
@@ -62,7 +62,7 @@ export class DomainError extends Error {
     code: DomainErrorCode,
     options?: { message?: string; details?: Record<string, unknown> },
   ) {
-    super(options?.message ?? MENSAJES[code]);
+    super(options?.message ?? MESSAGES[code]);
     this.name = "DomainError";
     this.code = code;
     this.details = options?.details;
@@ -79,9 +79,9 @@ export function isDomainError(e: unknown): e is DomainError {
  */
 export function domainError(
   code: DomainErrorCode,
-  detalles?: Record<string, unknown> & { message?: string },
+  context?: Record<string, unknown> & { message?: string },
 ): DomainError {
-  const { message, ...details } = detalles ?? {};
+  const { message, ...details } = context ?? {};
   return new DomainError(code, {
     message,
     details: Object.keys(details).length ? details : undefined,
@@ -89,5 +89,5 @@ export function domainError(
 }
 
 export function domainMessage(code: DomainErrorCode): string {
-  return MENSAJES[code];
+  return MESSAGES[code];
 }

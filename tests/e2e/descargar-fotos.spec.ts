@@ -7,7 +7,7 @@ import { expect, test } from "./apoyo/test";
 import { hallazgosDeAxe } from "./apoyo/accesibilidad";
 import { datosDePrueba, sufijo, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
-import { slugificar } from "@/lib/slug";
+import { slugify } from "@/lib/slug";
 
 /**
  * «Descargar fotos»: un zip con las fotos del producto, en JPG y con una
@@ -92,7 +92,7 @@ test("baja un zip con las fotos del producto en JPG", async ({ page }) => {
 
   expect(
     JSON.parse(zipfile(ruta, "print(__import__('json').dumps(z.namelist()))")),
-  ).toEqual([`${slugificar(color)}/1.jpg`]);
+  ).toEqual([`${slugify(color)}/1.jpg`]);
   // Del tamaño de la `-detail`: la de 900 no se agranda.
   const foto = await sharp(
     execFileSync("python3", [
@@ -100,7 +100,7 @@ test("baja un zip con las fotos del producto en JPG", async ({ page }) => {
       "-c",
       "import sys,zipfile; sys.stdout.buffer.write(zipfile.ZipFile(sys.argv[1]).read(sys.argv[2]))",
       ruta,
-      `${slugificar(color)}/1.jpg`,
+      `${slugify(color)}/1.jpg`,
     ]),
   ).metadata();
   expect(foto).toMatchObject({ format: "jpeg", width: 900, height: 600 });

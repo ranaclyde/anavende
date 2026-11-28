@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { telefonoArgentino } from "@/lib/telefono";
+import { argentinePhone } from "@/lib/phone";
 import {
   LOCALIDADES,
   OTRA_LOCALIDAD,
@@ -31,9 +31,9 @@ const campos = z.object({
     .trim()
     .min(2, "Escribí quién la recibe.")
     .max(80, "Ese nombre es demasiado largo."),
-  phone: telefonoArgentino({
-    requerido: "Necesitamos un teléfono para coordinar la entrega.",
-    invalido:
+  phone: argentinePhone({
+    required: "Necesitamos un teléfono para coordinar la entrega.",
+    invalid:
       "Ese teléfono no parece válido. Escribilo con característica, por ejemplo 2920 55 5555.",
   }),
   street: obligatorio(

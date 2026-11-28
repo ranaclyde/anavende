@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
-import { inter } from "@/lib/fuente";
+import { inter } from "@/lib/font";
 
 import "./globals.css";
 

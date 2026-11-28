@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { destinoInterno } from "@/lib/destino";
-import { urlDelSitio } from "@/lib/env";
+import { internalRedirectTarget } from "@/lib/redirect-target";
+import { getSiteUrl } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { needsProfile } from "@/lib/session";
@@ -25,13 +25,13 @@ export async function GET(request: NextRequest) {
 
   // De la configuración y no de `request.url`: detrás del proxy, esa
   // dirección es `0.0.0.0:3000`.
-  const origin = urlDelSitio();
+  const origin = getSiteUrl();
   const code = searchParams.get("code");
   const volverCrudo = searchParams.get("volver");
 
   // Solo destinos internos: un `volver` con host lo convertiría en un
   // redirector abierto.
-  const volver = destinoInterno(volverCrudo) ?? "/";
+  const volver = internalRedirectTarget(volverCrudo) ?? "/";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/error?motivo=enlace-invalido`);

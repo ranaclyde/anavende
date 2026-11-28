@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 import { cache } from "react";
 
 import { db } from "@/db";
-import { TODAS_PERMITIDAS, type EscenasPermitidas } from "@/lib/escenas";
+import { ALL_ALLOWED, type AllowedScenes } from "@/lib/scenes";
 import { POR_PAGINA } from "@/modules/catalog/filtros-panel";
 import { urlDeLogo } from "@/modules/media/subir";
 import type { PromocionVigente } from "@/modules/settings/promociones";
@@ -33,7 +33,7 @@ export async function umbralDeStockBajo(): Promise<number> {
 }
 
 export type ConfiguracionDelSitio = {
-  /** Normalizado a `+549…` (`lib/telefono.ts`). */
+  /** Normalizado a `+549…` (`lib/phone.ts`). */
   whatsappNumber: string;
   adminNotificationEmail: string;
   lowStockThreshold: number;
@@ -184,7 +184,7 @@ export type RedesSociales = {
 
 export type ConfiguracionDeLaTienda = {
   redes: RedesSociales;
-  escenas: EscenasPermitidas;
+  escenas: AllowedScenes;
 };
 
 /**
@@ -193,7 +193,7 @@ export type ConfiguracionDeLaTienda = {
  */
 export const configuracionDeLaTienda = cache(
   async (): Promise<ConfiguracionDeLaTienda> => {
-    const [fila] = await db.execute<RedesSociales & EscenasPermitidas>(sql`
+    const [fila] = await db.execute<RedesSociales & AllowedScenes>(sql`
       SELECT facebook_url    AS facebook,
              instagram_url   AS instagram,
              halloween_scene AS halloween,
@@ -204,7 +204,7 @@ export const configuracionDeLaTienda = cache(
     if (!fila) {
       return {
         redes: { facebook: null, instagram: null },
-        escenas: TODAS_PERMITIDAS,
+        escenas: ALL_ALLOWED,
       };
     }
     return {

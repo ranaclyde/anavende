@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 import { EditorDeMarcaDeAgua } from "@/components/admin/marca-de-agua/editor";
 import { leerLaMarcaDeAgua } from "@/modules/marca-de-agua/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Marca de agua" };
 
 export default async function MarcaDeAgua() {
-  await exigirAdmin();
+  await requireAdmin();
   const marca = await leerLaMarcaDeAgua();
 
   // El encabezado lo pinta el editor: su interruptor tiene que saber si hay

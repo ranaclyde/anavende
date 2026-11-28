@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { domainMessage, isDomainError } from "@/lib/errors";
-import { consumir } from "@/lib/limite";
+import { consume } from "@/lib/rate-limit";
 import { getSession } from "@/lib/session";
 import { publicarFotoDePerfil } from "@/modules/media/subir";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
@@ -44,12 +44,12 @@ export async function POST(request: NextRequest) {
   }
 
   // Antes de leer el cuerpo: una subida rechazada no llega a memoria.
-  const limite = consumir(`foto:${session.profile.id}`, SUBIDAS);
-  if (!limite.permitido) {
+  const limite = consume(`foto:${session.profile.id}`, SUBIDAS);
+  if (!limite.allowed) {
     return fallo(
       429,
-      `Cambiaste la foto muchas veces seguidas. Esperá ${Math.ceil(limite.reintentarEnSegundos / 60)} minutos y probá de nuevo.`,
-      { "Retry-After": String(limite.reintentarEnSegundos) },
+      `Cambiaste la foto muchas veces seguidas. Esperá ${Math.ceil(limite.retryAfterSeconds / 60)} minutos y probá de nuevo.`,
+      { "Retry-After": String(limite.retryAfterSeconds) },
     );
   }
 

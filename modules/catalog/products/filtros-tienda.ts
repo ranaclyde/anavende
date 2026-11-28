@@ -73,7 +73,7 @@ export function parametrosDeLaDireccion(
   return salida;
 }
 
-/** La forma que produce `slugificar`. */
+/** La forma que produce `slugify`. */
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LARGO_DE_SLUG = 60;
 

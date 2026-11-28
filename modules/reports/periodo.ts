@@ -2,10 +2,10 @@
 // lo escribe. Las fechas son días de acá (`AAAA-MM-DD`, extremos incluidos); el
 // corte a instantes lo hace la consulta con `AT TIME ZONE`.
 
-import { ZONA_HORARIA } from "@/lib/fechas";
-import { fecha, unaDe, type ParametrosDeBusqueda } from "@/lib/filtros-url";
+import { TIME_ZONE } from "@/lib/dates";
+import { dateParam, oneOf, type SearchParamsRecord } from "@/lib/url-filters";
 
-export type { ParametrosDeBusqueda };
+export type { SearchParamsRecord };
 
 export const ATAJOS = [
   { valor: "hoy", etiqueta: "Hoy" },
@@ -40,7 +40,7 @@ const DIAS_POR_DIA = 62;
 
 /** `en-CA` es la que escribe `AAAA-MM-DD`. */
 const HOY = new Intl.DateTimeFormat("en-CA", {
-  timeZone: ZONA_HORARIA,
+  timeZone: TIME_ZONE,
   year: "numeric",
   month: "2-digit",
   day: "2-digit",
@@ -147,12 +147,12 @@ export function elMesEntero(hoy: string): Rango {
  * completa, y dadas vuelta se enderezan.
  */
 export function leerPeriodo(
-  params: ParametrosDeBusqueda,
+  params: SearchParamsRecord,
   hoy: string = hoyEnLaZona(),
 ): Periodo {
-  const ranking = unaDe(params.ranking, RANKINGS, "ingresos");
-  let desde = fecha(params.desde);
-  let hasta = fecha(params.hasta);
+  const ranking = oneOf(params.ranking, RANKINGS, "ingresos");
+  let desde = dateParam(params.desde);
+  let hasta = dateParam(params.hasta);
 
   let atajo: Atajo;
   if (desde || hasta) {
@@ -161,7 +161,7 @@ export function leerPeriodo(
     if (!desde) desde = hasta;
     if (desde > hasta) [desde, hasta] = [hasta, desde];
   } else {
-    atajo = unaDe(params.periodo, ATAJOS, ATAJO_DE_FABRICA);
+    atajo = oneOf(params.periodo, ATAJOS, ATAJO_DE_FABRICA);
     ({ desde, hasta } = rangoDelAtajo(atajo, hoy));
   }
 

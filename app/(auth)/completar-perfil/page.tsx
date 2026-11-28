@@ -25,7 +25,7 @@ export default async function CompletarPerfil({
   return (
     <CompletarPerfilForm
       email={identidad.email}
-      nombreSugerido={identidad.nombreSugerido}
+      nombreSugerido={identidad.suggestedName}
       separado={deGoogle}
       volver={volver}
     />

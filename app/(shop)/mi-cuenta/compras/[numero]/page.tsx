@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { formatMoney } from "@/lib/money";
 import { getIdentity, getSession } from "@/lib/session";
-import { enlaceDeWhatsApp, mensajeDeOrden } from "@/lib/whatsapp";
+import { whatsappLink, orderMessage } from "@/lib/whatsapp";
 import { formaDeEntrega } from "@/modules/orders/entrega";
 import { leerOrdenDelComprador } from "@/modules/orders/queries";
 import { numeroDeWhatsApp } from "@/modules/settings/queries";
@@ -156,9 +156,9 @@ export default async function DetalleDeLaCompra({ params }: Props) {
             <Button asChild variant="whatsapp" size="lg" className="w-full">
               <a
                 data-ayuda="seguir-whatsapp"
-                href={enlaceDeWhatsApp(
+                href={whatsappLink(
                   whatsapp,
-                  mensajeDeOrden(
+                  orderMessage(
                     orden.numero,
                     orden.customerName,
                     orden.items,

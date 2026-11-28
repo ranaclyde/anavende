@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { paginasALaVista } from "@/lib/paginacion";
+import { visiblePages } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 
 /**
@@ -24,7 +24,7 @@ export function Paginacion({
 }) {
   if (paginas <= 1) return null;
 
-  const numeros = paginasALaVista(pagina, paginas);
+  const numeros = visiblePages(pagina, paginas);
 
   return (
     <nav

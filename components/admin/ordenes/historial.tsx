@@ -1,6 +1,6 @@
 import { TarjetaDeSeccion } from "@/components/admin/tarjeta";
 import { nombreDelEstado } from "@/components/admin/ordenes/estado";
-import { fechaConHora } from "@/lib/fechas";
+import { dateWithTime } from "@/lib/dates";
 import type { EntradaDelHistorial } from "@/modules/orders/queries-panel";
 
 /**
@@ -60,7 +60,7 @@ function Entrada({ entrada: e }: { entrada: EntradaDelHistorial }) {
     <li className="flex flex-col gap-0.5 border-l-2 border-border pl-3">
       <p className="text-body-sm text-ink">{quePaso(e)}</p>
       <p className="text-caption text-ink-secondary tabular-nums">
-        {fechaConHora(e.cuando)}
+        {dateWithTime(e.cuando)}
         {e.autor ? ` · ${e.autor}` : ""}
         {e.esElComprador ? " (el comprador)" : ""}
       </p>

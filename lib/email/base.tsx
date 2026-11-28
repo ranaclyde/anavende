@@ -16,41 +16,41 @@ import type { ReactNode } from "react";
 // clara, con cada fondo declarado: el modo oscuro en email no es confiable.
 
 // Los clientes de email casi nunca cargan fuentes web.
-const TIPOGRAFIA =
+const FONT_STACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 export const COLOR = {
-  marca: "#832833",
-  lienzo: "#f2f4f5",
-  superficie: "#ffffff",
-  texto: "#16181a",
-  textoSecundario: "#6b6f73",
-  textoTerciario: "#9aa0a5",
-  borde: "#e6e9ea",
+  brand: "#832833",
+  canvas: "#f2f4f5",
+  surface: "#ffffff",
+  ink: "#16181a",
+  inkSecondary: "#6b6f73",
+  inkTertiary: "#9aa0a5",
+  border: "#e6e9ea",
 } as const;
 
-export type MarcoProps = {
+export type FrameProps = {
   /**
    * Raíz absoluta: Gmail bloquea las imágenes en `data:`, el logo va por HTTP.
    */
-  sitio: string;
-  adelanto: string;
+  site: string;
+  preview: string;
   children: ReactNode;
-  pie?: ReactNode;
+  footer?: ReactNode;
 };
 
-export function Marco({ sitio, adelanto, children, pie }: MarcoProps) {
+export function Frame({ site, preview, children, footer }: FrameProps) {
   return (
     <Html lang="es">
       <Head />
-      <Preview>{adelanto}</Preview>
+      <Preview>{preview}</Preview>
       <Body
         lang="es"
         style={{
           margin: 0,
           padding: "32px 16px",
-          backgroundColor: COLOR.lienzo,
-          fontFamily: TIPOGRAFIA,
+          backgroundColor: COLOR.canvas,
+          fontFamily: FONT_STACK,
         }}
       >
         <Container
@@ -58,14 +58,14 @@ export function Marco({ sitio, adelanto, children, pie }: MarcoProps) {
             maxWidth: "560px",
             margin: "0 auto",
             padding: "40px",
-            backgroundColor: COLOR.superficie,
+            backgroundColor: COLOR.surface,
             borderRadius: "24px",
           }}
         >
           <Section style={{ textAlign: "center", paddingBottom: "28px" }}>
             {/* En imagen: el correo no tiene la letra del logo. */}
             <Img
-              src={`${sitio}/marca/logo-horizontal.png`}
+              src={`${site}/marca/logo-horizontal.png`}
               width="176"
               height="40"
               alt="AnaVende"
@@ -79,11 +79,11 @@ export function Marco({ sitio, adelanto, children, pie }: MarcoProps) {
             style={{
               margin: "32px 0 20px",
               border: "none",
-              borderTop: `1px solid ${COLOR.borde}`,
+              borderTop: `1px solid ${COLOR.border}`,
             }}
           />
 
-          {pie}
+          {footer}
 
           {/* La forma canónica del eslogan (DESIGN-REFERENCE §2.4). */}
           <Text
@@ -91,7 +91,7 @@ export function Marco({ sitio, adelanto, children, pie }: MarcoProps) {
               margin: "16px 0 0",
               fontSize: "13px",
               lineHeight: "1.5",
-              color: COLOR.textoTerciario,
+              color: COLOR.inkTertiary,
             }}
           >
             Ana vende, vos elegís la tecnología.
@@ -102,14 +102,14 @@ export function Marco({ sitio, adelanto, children, pie }: MarcoProps) {
   );
 }
 
-export function Parrafo({ children }: { children: ReactNode }) {
+export function Paragraph({ children }: { children: ReactNode }) {
   return (
     <Text
       style={{
         margin: "0 0 16px",
         fontSize: "16px",
         lineHeight: "1.6",
-        color: COLOR.texto,
+        color: COLOR.ink,
       }}
     >
       {children}
@@ -121,7 +121,7 @@ export function Parrafo({ children }: { children: ReactNode }) {
  * Sin el `Button` de React Email: el `href` tiene que salir tal cual para que
  * GoTrue sustituya sus variables.
  */
-export function Boton({
+export function Button({
   href,
   children,
 }: {
@@ -135,7 +135,7 @@ export function Boton({
         style={{
           display: "inline-block",
           padding: "14px 28px",
-          backgroundColor: COLOR.marca,
+          backgroundColor: COLOR.brand,
           color: "#ffffff",
           fontSize: "16px",
           fontWeight: 600,
@@ -149,7 +149,7 @@ export function Boton({
   );
 }
 
-export function Enlace({
+export function Link({
   href,
   children,
 }: {
@@ -157,7 +157,7 @@ export function Enlace({
   children: ReactNode;
 }) {
   return (
-    <a href={href} style={{ color: COLOR.marca, textDecoration: "underline" }}>
+    <a href={href} style={{ color: COLOR.brand, textDecoration: "underline" }}>
       {children}
     </a>
   );
@@ -167,25 +167,25 @@ export function Enlace({
  * Constante y no de `site_settings`: GoTrue arma E1, E2 y E3 sin consultar la
  * base. Si cambia, regenerar.
  */
-export const CASILLA_DE_AYUDA = "ana_vende@outlook.com";
+export const HELP_EMAIL = "ana_vende@outlook.com";
 
-export function Ayuda() {
+export function Help() {
   return (
-    <Parrafo>
+    <Paragraph>
       ¿Necesitás ayuda? Escribinos a{" "}
-      <Enlace href={`mailto:${CASILLA_DE_AYUDA}`}>{CASILLA_DE_AYUDA}</Enlace>.
-    </Parrafo>
+      <Link href={`mailto:${HELP_EMAIL}`}>{HELP_EMAIL}</Link>.
+    </Paragraph>
   );
 }
 
-export function Firma({ children }: { children: ReactNode }) {
+export function Signature({ children }: { children: ReactNode }) {
   return (
     <Text
       style={{
         margin: "0",
         fontSize: "16px",
         lineHeight: "1.6",
-        color: COLOR.texto,
+        color: COLOR.ink,
       }}
     >
       {children}
@@ -193,14 +193,14 @@ export function Firma({ children }: { children: ReactNode }) {
   );
 }
 
-export function Menor({ children }: { children: ReactNode }) {
+export function SmallPrint({ children }: { children: ReactNode }) {
   return (
     <Text
       style={{
         margin: "0 0 12px",
         fontSize: "13px",
         lineHeight: "1.5",
-        color: COLOR.textoSecundario,
+        color: COLOR.inkSecondary,
       }}
     >
       {children}
@@ -209,7 +209,7 @@ export function Menor({ children }: { children: ReactNode }) {
 }
 
 /** No es redundante: hay clientes que no pintan el botón. */
-export function EnlaceDeRespaldo({ href }: { href: string }) {
+export function FallbackLink({ href }: { href: string }) {
   return (
     <>
       <Text
@@ -217,7 +217,7 @@ export function EnlaceDeRespaldo({ href }: { href: string }) {
           margin: "0 0 6px",
           fontSize: "13px",
           lineHeight: "1.5",
-          color: COLOR.textoTerciario,
+          color: COLOR.inkTertiary,
         }}
       >
         Si el botón no te funciona, copiá y pegá esta dirección en el navegador:
@@ -230,7 +230,7 @@ export function EnlaceDeRespaldo({ href }: { href: string }) {
           marginBottom: "16px",
           fontSize: "13px",
           lineHeight: "1.5",
-          color: COLOR.textoSecundario,
+          color: COLOR.inkSecondary,
           wordBreak: "break-all",
         }}
       >
@@ -240,7 +240,7 @@ export function EnlaceDeRespaldo({ href }: { href: string }) {
   );
 }
 
-export function PieDeEnlace({
+export function LinkFooter({
   href,
   children,
 }: {
@@ -249,8 +249,8 @@ export function PieDeEnlace({
 }) {
   return (
     <>
-      <EnlaceDeRespaldo href={href} />
-      <Menor>{children}</Menor>
+      <FallbackLink href={href} />
+      <SmallPrint>{children}</SmallPrint>
     </>
   );
 }

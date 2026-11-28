@@ -37,15 +37,15 @@ import {
   type OpcionDelSelector,
 } from "@/components/ui/selector-con-buscador";
 import {
-  comoMonto,
+  normalizeAmount,
   compare,
   formatMoney,
   isMoney,
-  paraEditar,
+  toEditable,
   subtract,
 } from "@/lib/money";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
-import { slugificar } from "@/lib/slug";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
+import { slugify } from "@/lib/slug";
 import {
   crearUnProducto,
   editarUnProducto,
@@ -103,8 +103,8 @@ function CampoDePesos({ children }: { children: React.ReactNode }) {
 }
 
 function calcularVista(precio: string, descuento: string): Vista {
-  const p = comoMonto(precio);
-  const d = comoMonto(descuento.trim() || "0");
+  const p = normalizeAmount(precio);
+  const d = normalizeAmount(descuento.trim() || "0");
 
   if (!isMoney(p) || compare(p, "0.00") <= 0) return { estado: "incompleto" };
   if (!isMoney(d)) return { estado: "incompleto" };
@@ -148,8 +148,7 @@ export function FormularioDeProducto({
   const router = useRouter();
   const idBase = useId();
   const [enviando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
 
   const [nombre, setNombre] = useState(producto?.name ?? "");
   const [sku, setSku] = useState(producto?.sku ?? "");
@@ -157,11 +156,11 @@ export function FormularioDeProducto({
   const [categoriaId, setCategoriaId] = useState(producto?.categoryId ?? "");
   // «89900» y no «89900.00», que en es-AR se lee como error de tipeo.
   const [precio, setPrecio] = useState(
-    producto ? paraEditar(producto.price) : "",
+    producto ? toEditable(producto.price) : "",
   );
   const [descuento, setDescuento] = useState(
     producto && compare(producto.discount, "0.00") > 0
-      ? paraEditar(producto.discount)
+      ? toEditable(producto.discount)
       : "",
   );
   const [destacado, setDestacado] = useState(producto?.isFeatured ?? false);
@@ -176,10 +175,10 @@ export function FormularioDeProducto({
     sku === (producto.sku ?? "") &&
     marcaId === producto.brandId &&
     categoriaId === producto.categoryId &&
-    precio === paraEditar(producto.price) &&
+    precio === toEditable(producto.price) &&
     descuento ===
       (compare(producto.discount, "0.00") > 0
-        ? paraEditar(producto.discount)
+        ? toEditable(producto.discount)
         : "") &&
     destacado === producto.isFeatured &&
     activo === producto.isActive;
@@ -235,8 +234,8 @@ export function FormularioDeProducto({
 
   const errorGeneral = useRef<HTMLDivElement | null>(null);
 
-  function irAlPrimerError(nuevos: ErroresDeFormulario<Campo>) {
-    const primero = CAMPOS.find((c) => nuevos.campos[c]);
+  function irAlPrimerError(nuevos: FormErrors<Campo>) {
+    const primero = CAMPOS.find((c) => nuevos.fields[c]);
 
     if (primero) {
       document.getElementById(`${idBase}-${primero}`)?.focus();
@@ -253,15 +252,15 @@ export function FormularioDeProducto({
 
   const campo = (nombreDelCampo: Campo) => ({
     id: `${idBase}-${nombreDelCampo}`,
-    "aria-invalid": Boolean(errores.campos[nombreDelCampo]) || undefined,
-    "aria-describedby": errores.campos[nombreDelCampo]
+    "aria-invalid": Boolean(errores.fields[nombreDelCampo]) || undefined,
+    "aria-describedby": errores.fields[nombreDelCampo]
       ? `${idBase}-${nombreDelCampo}-error`
       : undefined,
   });
 
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     const datos = {
       name: nombre,
@@ -293,7 +292,7 @@ export function FormularioDeProducto({
       }
 
       if (!resultado.ok) {
-        const nuevos = leerErrores<Campo>(resultado);
+        const nuevos = readErrors<Campo>(resultado);
         setErrores(nuevos);
         irAlPrimerError(nuevos);
         return;
@@ -360,7 +359,7 @@ export function FormularioDeProducto({
               autoComplete="off"
             />
             <FieldError id={`${idBase}-name-error`}>
-              {errores.campos.name}
+              {errores.fields.name}
             </FieldError>
 
             {/* La dirección se lee, no se completa: «slug» es jerga. */}
@@ -373,9 +372,7 @@ export function FormularioDeProducto({
             ) : nombre.trim() ? (
               <FieldHint>
                 Enlace:{" "}
-                <span className="text-ink">
-                  /productos/{slugificar(nombre)}
-                </span>
+                <span className="text-ink">/productos/{slugify(nombre)}</span>
               </FieldHint>
             ) : (
               // Acá y no como marcador: adentro parecía un nombre ya cargado.
@@ -398,7 +395,7 @@ export function FormularioDeProducto({
               autoComplete="off"
             />
             <FieldError id={`${idBase}-sku-error`}>
-              {errores.campos.sku}
+              {errores.fields.sku}
             </FieldError>
           </div>
 
@@ -419,7 +416,7 @@ export function FormularioDeProducto({
                 crear={ofrecerCrear("marca")}
               />
               <FieldError id={`${idBase}-brandId-error`}>
-                {errores.campos.brandId}
+                {errores.fields.brandId}
               </FieldError>
             </div>
 
@@ -439,7 +436,7 @@ export function FormularioDeProducto({
                 crear={ofrecerCrear("categoria")}
               />
               <FieldError id={`${idBase}-categoryId-error`}>
-                {errores.campos.categoryId}
+                {errores.fields.categoryId}
               </FieldError>
             </div>
           </div>
@@ -461,7 +458,7 @@ export function FormularioDeProducto({
                   />
                 </CampoDePesos>
                 <FieldError id={`${idBase}-price-error`}>
-                  {errores.campos.price}
+                  {errores.fields.price}
                 </FieldError>
               </div>
 
@@ -482,7 +479,7 @@ export function FormularioDeProducto({
                   />
                 </CampoDePesos>
                 <FieldError id={`${idBase}-discount-error`}>
-                  {errores.campos.discount}
+                  {errores.fields.discount}
                 </FieldError>
                 <FieldHint>Dejalo vacío si no hay oferta.</FieldHint>
               </div>
@@ -502,15 +499,15 @@ export function FormularioDeProducto({
               valorInicial={producto?.description ?? ""}
               refEditor={editor}
               alCambiar={tocarDescripcion}
-              invalido={Boolean(errores.campos.description)}
+              invalido={Boolean(errores.fields.description)}
               describedBy={
-                errores.campos.description
+                errores.fields.description
                   ? `${idBase}-description-error`
                   : undefined
               }
             />
             <FieldError id={`${idBase}-description-error`}>
-              {errores.campos.description}
+              {errores.fields.description}
             </FieldError>
           </Apartado>
 

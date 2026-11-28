@@ -2,8 +2,8 @@
  * La misma regla que el catálogo aplica en la base con
  * `immutable_unaccent(lower(…))`.
  */
-export function normalizar(texto: string): string {
-  return texto
+export function normalizeText(text: string): string {
+  return text
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase()

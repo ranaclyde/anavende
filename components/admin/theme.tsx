@@ -3,7 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useSyncExternalStore } from "react";
 
-import { crearPreferencia } from "@/lib/preferencia-local";
+import { createPreference } from "@/lib/local-preference";
 import { cn } from "@/lib/utils";
 
 /**
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  */
 
 const CLAVE = "anavende:admin-theme";
-const preferencia = crearPreferencia(CLAVE);
+const preferencia = createPreference(CLAVE);
 
 export type Tema = "light" | "dark";
 
@@ -47,8 +47,8 @@ export function ThemeToggle({
   // `null` en el servidor y en la hidratación: todavía no se sabe qué eligió
   // la persona. Con el almacenamiento bloqueado se queda en claro.
   const tema = useSyncExternalStore<Tema | null>(
-    preferencia.suscribir,
-    () => (preferencia.leer() === "dark" ? "dark" : "light"),
+    preferencia.subscribe,
+    () => (preferencia.read() === "dark" ? "dark" : "light"),
     () => null,
   );
 
@@ -65,7 +65,7 @@ export function ThemeToggle({
   );
 
   const cambiar = () => {
-    preferencia.escribir(tema === "dark" ? "light" : "dark");
+    preferencia.write(tema === "dark" ? "light" : "dark");
   };
 
   // Hasta saber qué eligió la persona no se dibuja el estado.

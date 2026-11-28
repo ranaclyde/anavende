@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { telefonoLocal } from "@/lib/telefono";
+import { localPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 import { getIdentity, getSession } from "@/lib/session";
 
@@ -70,7 +70,7 @@ export default async function MiCuenta({
             firstName={profile.firstName}
             lastName={profile.lastName}
             // Se guarda como +549…; se muestra como lo escribe la gente.
-            telefono={telefonoLocal(profile.phone)}
+            telefono={localPhone(profile.phone)}
           />
         </CardContent>
       </Card>
@@ -79,7 +79,7 @@ export default async function MiCuenta({
         <CardHeader>
           <CardTitle>Contraseña</CardTitle>
           <CardDescription>
-            {identity.tieneContrasena
+            {identity.hasPassword
               ? "Para cambiarla te pedimos la actual"
               : "Entraste con Google o Facebook. Si definís una, también vas a poder entrar con tu email"}
           </CardDescription>
@@ -92,7 +92,7 @@ export default async function MiCuenta({
           ) : null}
           <CambiarContrasenaForm
             email={profile.email}
-            tieneContrasena={identity.tieneContrasena}
+            tieneContrasena={identity.hasPassword}
           />
         </CardContent>
       </Card>

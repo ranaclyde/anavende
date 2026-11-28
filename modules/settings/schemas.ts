@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { comoMonto, compare, isMoney, money } from "@/lib/money";
-import { telefonoArgentino } from "@/lib/telefono";
+import { normalizeAmount, compare, isMoney, money } from "@/lib/money";
+import { argentinePhone } from "@/lib/phone";
 import {
   AYUDA_DEL_UMBRAL,
   UMBRAL_MAXIMO,
@@ -83,7 +83,7 @@ const fecha = z.iso.date({ error: "Elegí una fecha." });
 const montoMinimo = z
   .string()
   .trim()
-  .transform((v) => (v === "" ? null : comoMonto(v)))
+  .transform((v) => (v === "" ? null : normalizeAmount(v)))
   .refine((v) => v === null || isMoney(v), {
     message: "Poné el monto con hasta dos decimales.",
   })
@@ -139,9 +139,9 @@ export const cambioDeEstadoDePromocion = z.object({
 export type CrearPromocion = z.input<typeof crearPromocion>;
 
 /** Normalizado a `+549…`, para que `wa.me` se arme concatenando. */
-const numeroDeWhatsapp = telefonoArgentino({
-  requerido: "Escribí el número de WhatsApp por el que vendés.",
-  invalido:
+const numeroDeWhatsapp = argentinePhone({
+  required: "Escribí el número de WhatsApp por el que vendés.",
+  invalid:
     "Ese número no parece válido. Escribilo con característica, por ejemplo 11 5555 5555.",
 });
 

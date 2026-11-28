@@ -2,7 +2,7 @@ import type { ErrorEvent } from "@sentry/nextjs";
 
 // Datos personales fuera de Sentry (TECHNICAL-SPEC §16, §19). Por nombre de
 // clave y en profundidad, no por rutas: la ruta que se olvide filtra el dato.
-const CLAVES_SENSIBLES = [
+const SENSITIVE_KEYS = [
   "email",
   "phone",
   "telefono",
@@ -30,25 +30,25 @@ const CLAVES_SENSIBLES = [
   "postalcode",
 ];
 
-const OCULTO = "[filtrado]";
+const REDACTED = "[filtrado]";
 
-function esSensible(clave: string): boolean {
-  const k = clave.toLowerCase();
-  return CLAVES_SENSIBLES.some((s) => k.includes(s));
+function isSensitive(key: string): boolean {
+  const k = key.toLowerCase();
+  return SENSITIVE_KEYS.some((s) => k.includes(s));
 }
 
-function limpiar(valor: unknown, profundidad = 0): unknown {
-  if (profundidad > 8 || valor === null || typeof valor !== "object") {
-    return valor;
+function scrub(value: unknown, depth = 0): unknown {
+  if (depth > 8 || value === null || typeof value !== "object") {
+    return value;
   }
-  if (Array.isArray(valor)) {
-    return valor.map((v) => limpiar(v, profundidad + 1));
+  if (Array.isArray(value)) {
+    return value.map((v) => scrub(v, depth + 1));
   }
-  const salida: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(valor as Record<string, unknown>)) {
-    salida[k] = esSensible(k) ? OCULTO : limpiar(v, profundidad + 1);
+  const output: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    output[k] = isSensitive(k) ? REDACTED : scrub(v, depth + 1);
   }
-  return salida;
+  return output;
 }
 
 export function scrubEvent(event: ErrorEvent): ErrorEvent | null {
@@ -60,7 +60,7 @@ export function scrubEvent(event: ErrorEvent): ErrorEvent | null {
     delete event.request.cookies;
     delete event.request.data;
     if (event.request.headers) {
-      event.request.headers = limpiar(event.request.headers) as Record<
+      event.request.headers = scrub(event.request.headers) as Record<
         string,
         string
       >;
@@ -70,15 +70,15 @@ export function scrubEvent(event: ErrorEvent): ErrorEvent | null {
   }
 
   if (event.extra) {
-    event.extra = limpiar(event.extra) as Record<string, unknown>;
+    event.extra = scrub(event.extra) as Record<string, unknown>;
   }
   if (event.contexts) {
-    event.contexts = limpiar(event.contexts) as typeof event.contexts;
+    event.contexts = scrub(event.contexts) as typeof event.contexts;
   }
   if (event.breadcrumbs) {
     event.breadcrumbs = event.breadcrumbs.map((b) => ({
       ...b,
-      data: limpiar(b.data) as Record<string, unknown> | undefined,
+      data: scrub(b.data) as Record<string, unknown> | undefined,
     }));
   }
 

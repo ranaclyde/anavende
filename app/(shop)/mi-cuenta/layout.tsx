@@ -5,11 +5,11 @@ import type { Metadata } from "next";
 import { Avatar } from "@/components/ui/avatar";
 import { caraDe } from "@/modules/users/avatar";
 import { getSession } from "@/lib/session";
-import { FUERA_DEL_INDICE } from "@/lib/seo";
+import { NO_INDEX } from "@/lib/seo";
 
 // En el layout alcanza: los metadatos se heredan campo por campo y las
 // páginas siguen poniendo su título.
-export const metadata: Metadata = { robots: FUERA_DEL_INDICE };
+export const metadata: Metadata = { robots: NO_INDEX };
 
 /**
  * **No es la guardia.** Sin sesión deja pasar la página, que redirige al

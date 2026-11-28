@@ -12,7 +12,7 @@ import {
 import { paymentMethods } from "@/db/schema/settings";
 import { userProfiles } from "@/db/schema/users";
 import { domainError } from "@/lib/errors";
-import { almacenamiento } from "@/lib/storage";
+import { getStorage } from "@/lib/storage";
 import { marcaParaSubir } from "@/modules/marca-de-agua/service";
 import { procesarImagen } from "@/modules/media/procesar";
 import {
@@ -37,7 +37,7 @@ async function subirVersiones(
   base: string,
   versiones: { sufijo: string; cuerpo: Buffer }[],
 ): Promise<string[]> {
-  const store = almacenamiento();
+  const store = getStorage();
   const subidas: string[] = [];
 
   try {
@@ -57,7 +57,7 @@ async function subirVersiones(
 
 /** Borra sin quejarse: en la limpieza, la excepción que importa es otra. */
 async function borrarClaves(claves: string[]): Promise<void> {
-  const store = almacenamiento();
+  const store = getStorage();
   await Promise.all(claves.map((k) => store.delete(k).catch(() => {})));
 }
 
@@ -271,7 +271,7 @@ export async function clavesDeProducto(productId: string): Promise<string[]> {
 }
 
 export function urlDeImagen(storageKey: string, sufijo: string): string {
-  return almacenamiento().publicUrl(clave(storageKey, sufijo));
+  return getStorage().publicUrl(clave(storageKey, sufijo));
 }
 
 /**
@@ -424,7 +424,7 @@ export function urlDeLogo(
   logoKey: string | null,
   sufijo: "thumb" | "card" = "thumb",
 ): string | null {
-  return logoKey ? almacenamiento().publicUrl(clave(logoKey, sufijo)) : null;
+  return logoKey ? getStorage().publicUrl(clave(logoKey, sufijo)) : null;
 }
 
 // Foto de perfil: el mismo orden que un logo, pero fuera de `LOGOS` porque la
@@ -492,6 +492,6 @@ export async function borrarArchivosDeFoto(avatarKey: string): Promise<void> {
 
 export function urlDeFotoDePerfil(avatarKey: string | null): string | null {
   return avatarKey
-    ? almacenamiento().publicUrl(clave(avatarKey, TAMANOS_PERFIL[0].sufijo))
+    ? getStorage().publicUrl(clave(avatarKey, TAMANOS_PERFIL[0].sufijo))
     : null;
 }

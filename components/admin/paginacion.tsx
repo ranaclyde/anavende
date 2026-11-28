@@ -1,6 +1,6 @@
 import { Paginacion } from "@/components/ui/paginacion";
 
-export { tramo } from "@/lib/paginacion";
+export { rangeLabel } from "@/lib/pagination";
 
 /**
  * Paginación del panel — DR §6.9. El tramo («Del 41 al 80 de 95») va en el

@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { isDomainError } from "@/lib/errors";
-import { consumir } from "@/lib/limite";
+import { consume } from "@/lib/rate-limit";
 import { getSession } from "@/lib/session";
 import { subirImagenDeMarca } from "@/modules/marca-de-agua/service";
 import { publicarImagenDeVariante, publicarLogo } from "@/modules/media/subir";
@@ -65,16 +65,16 @@ export async function POST(request: NextRequest) {
   }
 
   // Antes de leer el cuerpo: una subida rechazada no llega a memoria.
-  const limite = consumir(`subida:${session.profile.id}`, SUBIDAS);
-  if (!limite.permitido) {
+  const limite = consume(`subida:${session.profile.id}`, SUBIDAS);
+  if (!limite.allowed) {
     return NextResponse.json(
       {
         ok: false,
-        message: `Subiste muchas imágenes seguidas. Esperá ${limite.reintentarEnSegundos} segundos y probá de nuevo.`,
+        message: `Subiste muchas imágenes seguidas. Esperá ${limite.retryAfterSeconds} segundos y probá de nuevo.`,
       },
       {
         status: 429,
-        headers: { "Retry-After": String(limite.reintentarEnSegundos) },
+        headers: { "Retry-After": String(limite.retryAfterSeconds) },
       },
     );
   }

@@ -5,7 +5,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import type { ShippingAddressSnapshot } from "@/db/schema/orders";
 import { domainError, isDomainError } from "@/lib/errors";
-import { hoyEnArgentina, ZONA_HORARIA } from "@/lib/fechas";
+import { todayInArgentina, TIME_ZONE } from "@/lib/dates";
 import type { Money } from "@/lib/money";
 import {
   reservar,
@@ -76,7 +76,7 @@ async function snapshotDeLasVariantes(
 function cuandoSeVendio(datos: DatosDeOrdenManual): SQL {
   if (datos.estado !== "finalizada") return sql`NULL`;
 
-  const hoy = hoyEnArgentina();
+  const hoy = todayInArgentina();
   const fecha = datos.fechaDeVenta;
   if (!fecha || fecha === hoy) return sql`now()`;
 
@@ -85,7 +85,7 @@ function cuandoSeVendio(datos: DatosDeOrdenManual): SQL {
       message: "La fecha de la venta no puede ser futura.",
     });
   }
-  return sql`(${fecha}::date + time '12:00') AT TIME ZONE ${ZONA_HORARIA}`;
+  return sql`(${fecha}::date + time '12:00') AT TIME ZONE ${TIME_ZONE}`;
 }
 
 /** Abre su propia transacción: la orden entera, o ninguna. */

@@ -137,7 +137,7 @@ Una cuadrícula de cuatro celdas —**A**, un joystick, unos auriculares y una *
 
 > **Redibujado en F10.7c (2026-11-13).** El original era un PNG de 1180×1128 sin versión horizontal, y la palabra iba en Inter, que no tiene nada que ver con la A y la V del dibujo. Se rehízo sobre el mismo dibujo: caja cuadrada con medidas exactas, la A y la V en **Figtree ExtraBold** —la fuente de Google Fonts que mejor calza con las originales: 90,7 % de superposición a igual alto—, el joystick y los auriculares simétricos, y la palabra «AnaVende» en la misma letra. Cómo se construyó y con qué medidas está en `docs/MARCA.md`. **Figtree es la letra del logo, no de la interfaz**: los textos siguen en Inter (§1.2), y la palabra va convertida en trazo, así que no se carga ninguna fuente.
 
-La fuente de verdad son los trazos de `lib/marca.ts`. Los componentes los dibujan en línea (`components/shop/logo.tsx`); lo que no puede dibujarlos —la pestaña, los correos, Google, la vista previa al compartir— usa archivos que `scripts/derivar-logo.mts` y `derivar-og.mts` sacan de ahí.
+La fuente de verdad son los trazos de `lib/logo.ts`. Los componentes los dibujan en línea (`components/shop/logo.tsx`); lo que no puede dibujarlos —la pestaña, los correos, Google, la vista previa al compartir— usa archivos que `scripts/derivar-logo.mts` y `derivar-og.mts` sacan de ahí.
 
 | Uso | Tamaño | Tratamiento |
 |---|---|---|
@@ -859,7 +859,7 @@ Color:  Negro
 | Ayuda | `caption` 12px, `--ink-secondary`, debajo del campo |
 | Error | Borde `--danger`, mensaje en `--danger` **con ícono**, debajo |
 | Obligatorio | Se marcan los **opcionales** con «(opcional)», no los obligatorios con asterisco |
-| Teléfono | **Bandera argentina y «+54» adentro, a la izquierda**, en `--ink-secondary` (2026-10-21). Lo pone `Input` solo con `type="tel"`, en la tienda y en el panel. Es dibujo: no se envía ni se lee. Se escriben los diez dígitos —característica y número—, y lo guardado (`+549…`) se muestra sin el `+549` (`telefonoLocal`) |
+| Teléfono | **Bandera argentina y «+54» adentro, a la izquierda**, en `--ink-secondary` (2026-10-21). Lo pone `Input` solo con `type="tel"`, en la tienda y en el panel. Es dibujo: no se envía ni se lee. Se escriben los diez dígitos —característica y número—, y lo guardado (`+549…`) se muestra sin el `+549` (`localPhone`) |
 
 **Las listas que crecen con el catálogo se eligen con buscador** (2026-10-27, F2.11). Marca, categoría y color pasaron del `<select>` nativo a `SelectorConBuscador`: con veinte o más opciones la rueda del teléfono no busca por una parte del nombre, y el `<select>` no puede pintar la esfera de un color al lado del nombre. El campo cerrado cumple esta misma tabla; abierto, es un globo con un buscador arriba que filtra sin tildes. Las listas cortas y cerradas —estado, rol, orden, localidad— siguen en el `<select>` nativo.
 

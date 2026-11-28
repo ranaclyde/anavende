@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SheetBody, SheetFooter } from "@/components/ui/sheet";
-import { normalizar } from "@/lib/texto";
+import { normalizeText } from "@/lib/text";
 import type {
   CategoriaRelacionable,
   CategoriaRelacionada,
@@ -225,9 +225,9 @@ export function EleccionDeRelacionadas({
     return elegidas.filter((e) => posibles.has(e));
   });
   // El diferido deja que el campo responda primero con muchos renglones.
-  const busqueda = normalizar(useDeferredValue(termino));
+  const busqueda = normalizeText(useDeferredValue(termino));
   const visibles = busqueda
-    ? disponibles.filter((c) => normalizar(c.name).includes(busqueda))
+    ? disponibles.filter((c) => normalizeText(c.name).includes(busqueda))
     : disponibles;
   const marcada = new Set(marcadas);
 

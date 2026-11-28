@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { db } from "@/db";
-import { hoyEnArgentina } from "@/lib/fechas";
+import { todayInArgentina } from "@/lib/dates";
 import { contadores, limpiar, unaVariante } from "@/tests/apoyo/catalogo";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 import { limpiarOrdenes } from "@/tests/apoyo/ordenes";
@@ -51,7 +51,7 @@ function loQueSeCarga(
   return {
     items: [{ variantId, cantidad: 1, precio: "1000.00" }],
     estado: "finalizada" as const,
-    fechaDeVenta: hoyEnArgentina(),
+    fechaDeVenta: todayInArgentina(),
     nombre: "Rosa Pereyra",
     telefono: "2920555555",
     entrega: "retiro" as const,
@@ -161,7 +161,7 @@ describe("lo que escribe una persona (RF-24)", () => {
     const r = await crearLaOrdenManualDelPanel({
       items: [],
       estado: "finalizada",
-      fechaDeVenta: hoyEnArgentina(),
+      fechaDeVenta: todayInArgentina(),
       nombre: "Rosa Pereyra",
       telefono: "2920555555",
       entrega: "retiro",
@@ -343,7 +343,7 @@ describe("los buscadores", () => {
 describe("la fecha de la venta (RF-24)", () => {
   /** `AAAA-MM-DD` de hace `dias` días, en Argentina. */
   function haceDias(dias: number): string {
-    const [a, m, d] = hoyEnArgentina().split("-").map(Number);
+    const [a, m, d] = todayInArgentina().split("-").map(Number);
     return new Date(Date.UTC(a, m - 1, d - dias)).toISOString().slice(0, 10);
   }
 
@@ -373,7 +373,7 @@ describe("la fecha de la venta (RF-24)", () => {
     if (!r.ok) return;
     const orden = (await leerOrdenDelPanel(r.data.numero))!;
     expect(await diaEnArgentina(orden.finalizadaEn!)).toBe(haceDias(6));
-    expect(await diaEnArgentina(orden.creadaEn)).toBe(hoyEnArgentina());
+    expect(await diaEnArgentina(orden.creadaEn)).toBe(todayInArgentina());
   });
 
   test("con la fecha de hoy, la venta es de ahora", async () => {

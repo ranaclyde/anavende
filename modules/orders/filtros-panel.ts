@@ -1,15 +1,15 @@
 // Sin `server-only`: la consulta lee los filtros de la URL y la barra los escribe.
 
 import {
-  fecha,
-  pagina as leerPagina,
-  texto,
-  unaDe,
-  type ParametrosDeBusqueda,
-} from "@/lib/filtros-url";
+  dateParam,
+  pageParam as leerPagina,
+  paramText,
+  oneOf,
+  type SearchParamsRecord,
+} from "@/lib/url-filters";
 import type { EstadoOrden } from "@/modules/orders/estados";
 
-export type { ParametrosDeBusqueda };
+export type { SearchParamsRecord };
 
 export const SOLAPAS = [
   { valor: "activas", etiqueta: "Activas", estado: "activa" },
@@ -63,16 +63,16 @@ export const POR_PAGINA = 40;
  * Lee los filtros de la URL sin fallar nunca: lo que no se reconoce queda en
  * el valor de siempre, y un rango de fechas dado vuelta se endereza.
  */
-export function leerFiltros(params: ParametrosDeBusqueda): FiltrosDeOrdenes {
-  const desde = fecha(params.desde);
-  const hasta = fecha(params.hasta);
+export function leerFiltros(params: SearchParamsRecord): FiltrosDeOrdenes {
+  const desde = dateParam(params.desde);
+  const hasta = dateParam(params.hasta);
   const alReves = desde && hasta && desde > hasta;
   const pagina = leerPagina(params.pagina);
 
   return {
-    solapa: unaDe(params.estado, SOLAPAS, FILTROS_VACIOS.solapa),
-    q: texto(params.q),
-    origen: unaDe(params.origen, ORIGENES, FILTROS_VACIOS.origen),
+    solapa: oneOf(params.estado, SOLAPAS, FILTROS_VACIOS.solapa),
+    q: paramText(params.q),
+    origen: oneOf(params.origen, ORIGENES, FILTROS_VACIOS.origen),
     desde: alReves ? hasta : desde,
     hasta: alReves ? desde : hasta,
     pagina,

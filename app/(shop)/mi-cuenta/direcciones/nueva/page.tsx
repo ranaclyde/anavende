@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getIdentity, getSession } from "@/lib/session";
-import { telefonoLocal } from "@/lib/telefono";
+import { localPhone } from "@/lib/phone";
 import { MAXIMO_DE_DIRECCIONES } from "@/modules/users/direcciones/constantes";
 import { listarDirecciones } from "@/modules/users/direcciones/operaciones";
 
@@ -54,7 +54,7 @@ export default async function NuevaDireccion() {
           inicial={{
             label: "",
             recipientName: profile.fullName,
-            phone: telefonoLocal(profile.phone),
+            phone: localPhone(profile.phone),
             street: "",
             number: "",
             apartment: "",

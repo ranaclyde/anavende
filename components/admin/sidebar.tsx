@@ -29,7 +29,7 @@ import {
 import { ThemeToggle } from "@/components/admin/theme";
 import { Isotipo, LogoHorizontal } from "@/components/shop/logo";
 import { Avatar } from "@/components/ui/avatar";
-import { crearPreferencia } from "@/lib/preferencia-local";
+import { createPreference } from "@/lib/local-preference";
 import { cn } from "@/lib/utils";
 import { salir } from "@/modules/users/actions";
 
@@ -60,7 +60,7 @@ const SECCIONES: Seccion[] = [
   { href: "/admin/configuracion", etiqueta: "Configuración", Icono: Settings },
 ];
 
-const preferenciaDeColapso = crearPreferencia("anavende:admin-menu");
+const preferenciaDeColapso = createPreference("anavende:admin-menu");
 
 export function AdminSidebar({
   nombre,
@@ -72,9 +72,9 @@ export function AdminSidebar({
 }) {
   const pathname = usePathname();
   const colapsado = useSyncExternalStore(
-    preferenciaDeColapso.suscribir,
+    preferenciaDeColapso.subscribe,
     () => {
-      const guardado = preferenciaDeColapso.leer();
+      const guardado = preferenciaDeColapso.read();
       return guardado !== null
         ? guardado === "1"
         : window.matchMedia("(max-width: 1279px)").matches;
@@ -139,7 +139,7 @@ export function AdminSidebar({
     )?.etiqueta ?? "Panel";
 
   const alternarColapso = () => {
-    preferenciaDeColapso.escribir(colapsado ? "0" : "1");
+    preferenciaDeColapso.write(colapsado ? "0" : "1");
   };
 
   return (
@@ -337,7 +337,7 @@ export function AdminSidebar({
               <span className="truncate text-body-sm font-medium text-ink">
                 {nombre}
               </span>
-              {/* Todo el que entra es administrador: `exigirAdmin`. */}
+              {/* Todo el que entra es administrador: `requireAdmin`. */}
               <span className="truncate text-caption text-ink-secondary">
                 Administradora
               </span>

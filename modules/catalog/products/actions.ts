@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { products } from "@/db/schema/catalog";
 import { action } from "@/lib/action";
 import { domainError } from "@/lib/errors";
-import { slugificar } from "@/lib/slug";
+import { slugify } from "@/lib/slug";
 import { borrarArchivos, clavesDeProducto } from "@/modules/media/subir";
 import {
   cambioDeDestacadoDeProducto,
@@ -137,7 +137,7 @@ export const crearUnProducto = action
     try {
       const [fila] = await db
         .insert(products)
-        .values({ ...input, slug: slugificar(input.name) })
+        .values({ ...input, slug: slugify(input.name) })
         .returning({ id: products.id });
       refrescar();
       return { id: fila.id };

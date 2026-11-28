@@ -5,7 +5,7 @@ import { useTransition } from "react";
 
 import { useAvisarFiltrando } from "@/components/shop/filtrando";
 import { Select } from "@/components/ui/select";
-import { TIPO_FILTRO } from "@/lib/transiciones";
+import { FILTER_TYPE } from "@/lib/transitions";
 import {
   ORDENES_DE_TIENDA,
   urlCambiando,
@@ -30,7 +30,7 @@ export function SelectorDeOrden({ filtros }: { filtros: FiltrosDeTienda }) {
           iniciar(() => {
             router.push(
               urlCambiando(filtros, { orden: e.target.value as OrdenDeTienda }),
-              { transitionTypes: TIPO_FILTRO },
+              { transitionTypes: FILTER_TYPE },
             );
           });
         }}

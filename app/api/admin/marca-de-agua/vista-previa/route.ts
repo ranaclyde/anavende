@@ -5,9 +5,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/db";
 import { variantImages } from "@/db/schema/catalog";
 import { isDomainError } from "@/lib/errors";
-import { consumir } from "@/lib/limite";
+import { consume } from "@/lib/rate-limit";
 import { getSession } from "@/lib/session";
-import { almacenamiento } from "@/lib/storage";
+import { getStorage } from "@/lib/storage";
 import { prepararCapas } from "@/modules/marca-de-agua/service";
 import { capas as esquemaDeCapas } from "@/modules/marca-de-agua/schemas";
 import { procesarImagen } from "@/modules/media/procesar";
@@ -41,7 +41,7 @@ async function bytesDeMuestra(id: string): Promise<Buffer | null> {
     .where(and(eq(variantImages.id, id), eq(variantImages.hasWatermark, false)))
     .limit(1);
   if (!fila) return null;
-  return almacenamiento().get(clave(fila.storageKey, "detail"));
+  return getStorage().get(clave(fila.storageKey, "detail"));
 }
 
 export async function POST(request: NextRequest) {
@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
     return error("No pudimos armar la vista previa. Actualizá la página.", 404);
   }
 
-  const limite = consumir(`vista-marca:${session.profile.id}`, VISTAS);
-  if (!limite.permitido) {
+  const limite = consume(`vista-marca:${session.profile.id}`, VISTAS);
+  if (!limite.allowed) {
     return error(
-      `Demasiadas vistas seguidas. Esperá ${limite.reintentarEnSegundos} segundos.`,
+      `Demasiadas vistas seguidas. Esperá ${limite.retryAfterSeconds} segundos.`,
       429,
     );
   }

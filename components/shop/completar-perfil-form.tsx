@@ -14,8 +14,8 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { destinoInterno } from "@/lib/destino";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { internalRedirectTarget } from "@/lib/redirect-target";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import { completarPerfil } from "@/modules/users/actions";
 
 type Campo = "firstName" | "lastName" | "phone";
@@ -49,13 +49,12 @@ export function CompletarPerfilForm({
   const router = useRouter();
   const sugerido = separado ?? partirNombre(nombreSugerido);
   const [enviando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
 
   const enviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const datos = new FormData(e.currentTarget);
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     iniciar(async () => {
       const r = await completarPerfil({
@@ -65,12 +64,12 @@ export function CompletarPerfilForm({
       });
 
       if (!r.ok) {
-        setErrores(leerErrores<Campo>(r));
+        setErrores(readErrors<Campo>(r));
         return;
       }
 
       // `//otro.com` también empieza con `/`.
-      router.push(destinoInterno(volver) ?? "/");
+      router.push(internalRedirectTarget(volver) ?? "/");
       router.refresh();
     });
   };
@@ -96,9 +95,9 @@ export function CompletarPerfilForm({
                 autoComplete="given-name"
                 defaultValue={sugerido.nombre}
                 required
-                aria-invalid={!!errores.campos.firstName || undefined}
+                aria-invalid={!!errores.fields.firstName || undefined}
               />
-              <FieldError>{errores.campos.firstName}</FieldError>
+              <FieldError>{errores.fields.firstName}</FieldError>
             </div>
 
             <div className="flex flex-1 flex-col gap-2">
@@ -109,9 +108,9 @@ export function CompletarPerfilForm({
                 autoComplete="family-name"
                 defaultValue={sugerido.apellido}
                 required
-                aria-invalid={!!errores.campos.lastName || undefined}
+                aria-invalid={!!errores.fields.lastName || undefined}
               />
-              <FieldError>{errores.campos.lastName}</FieldError>
+              <FieldError>{errores.fields.lastName}</FieldError>
             </div>
           </div>
 
@@ -125,10 +124,10 @@ export function CompletarPerfilForm({
               autoComplete="tel"
               placeholder="11 5555 5555"
               required
-              aria-invalid={!!errores.campos.phone || undefined}
+              aria-invalid={!!errores.fields.phone || undefined}
             />
-            {errores.campos.phone ? (
-              <FieldError>{errores.campos.phone}</FieldError>
+            {errores.fields.phone ? (
+              <FieldError>{errores.fields.phone}</FieldError>
             ) : (
               <FieldHint>Por acá coordinamos la entrega y el pago.</FieldHint>
             )}

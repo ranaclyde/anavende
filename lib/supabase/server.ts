@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
 
-import { cabecerasParaGoTrue } from "@/lib/supabase/cliente-ip";
+import { goTrueHeaders } from "@/lib/supabase/client-ip";
 
 /**
  * No guardarlo en una variable global: uno nuevo en cada función que lo use.
@@ -14,7 +14,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       // Para que GoTrue cuente los intentos por comprador y no por tienda.
-      global: { headers: cabecerasParaGoTrue(await headers()) },
+      global: { headers: goTrueHeaders(await headers()) },
       cookies: {
         getAll() {
           return cookieStore.getAll();

@@ -19,18 +19,18 @@ import { Precio } from "@/components/shop/precio";
 import { Sku } from "@/components/shop/ficha/sku";
 import { Button } from "@/components/ui/button";
 import {
-  migas,
-  producto as productoEstructurado,
-} from "@/lib/datos-estructurados";
+  breadcrumbsJsonLd,
+  productJsonLd as productoEstructurado,
+} from "@/lib/structured-data";
 import { formatMoney } from "@/lib/money";
 import {
   OPEN_GRAPH_BASE,
-  resumenDeMetadatos,
-  urlAbsoluta,
-  ZONA_DE_ENTREGA,
+  metaDescription,
+  absoluteUrl,
+  DELIVERY_AREA,
 } from "@/lib/seo";
 import { getSession } from "@/lib/session";
-import { AREA_TACTIL, cn } from "@/lib/utils";
+import { TOUCH_AREA, cn } from "@/lib/utils";
 import { mirar } from "@/modules/cart/pendiente";
 import { urlDeCategoria } from "@/modules/catalog/products/filtros-tienda";
 import {
@@ -116,8 +116,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ruta = `/productos/${ficha.slug}`;
   const titulo = `${ficha.nombre} — ${ficha.marca}`;
   const descripcion =
-    resumenDeMetadatos(ficha.descripcionTexto) ||
-    `${ficha.nombre} de ${ficha.marca}. ${ZONA_DE_ENTREGA}`;
+    metaDescription(ficha.descripcionTexto) ||
+    `${ficha.nombre} de ${ficha.marca}. ${DELIVERY_AREA}`;
   const conPrecio = `${formatMoney(ficha.precioFinal)} · ${descripcion}`;
   const fotos = fotoDelProducto(ficha);
 
@@ -187,7 +187,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
       <DatosEstructurados
         datos={[
           productoEstructurado(ficha, fotosEstructuradas(ficha)),
-          migas(ficha),
+          breadcrumbsJsonLd(ficha),
         ]}
       />
 
@@ -215,7 +215,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
           nombre: ficha.nombre,
           marca: ficha.marca,
           // Absoluta: viaja adentro de un mensaje de WhatsApp.
-          url: urlAbsoluta(`/productos/${ficha.slug}`),
+          url: absoluteUrl(`/productos/${ficha.slug}`),
           ruta: `/productos/${ficha.slug}`,
           precioFinalFormateado: formatMoney(ficha.precioFinal),
         }}
@@ -290,7 +290,7 @@ function Migas({
           {/* La zona sensible se estira a 44px sin tocar el dibujo (§9). */}
           <Link
             href="/productos"
-            className={cn("relative rounded-pill hover:text-ink", AREA_TACTIL)}
+            className={cn("relative rounded-pill hover:text-ink", TOUCH_AREA)}
           >
             Productos
           </Link>
@@ -301,7 +301,7 @@ function Migas({
         <li>
           <Link
             href={urlDeCategoria(categoriaSlug)}
-            className={cn("relative rounded-pill hover:text-ink", AREA_TACTIL)}
+            className={cn("relative rounded-pill hover:text-ink", TOUCH_AREA)}
           >
             {categoria}
           </Link>

@@ -3,8 +3,8 @@ import { AvisoDeVersion } from "@/components/admin/aviso-de-version";
 import { scriptDeTema } from "@/components/admin/theme";
 import { MarcoDeEscala } from "@/components/ui/escala";
 import { Toaster } from "@/components/ui/sonner";
-import { exigirAdmin } from "@/lib/session";
-import { versionDelBuild } from "@/lib/version";
+import { requireAdmin } from "@/lib/session";
+import { buildVersion } from "@/lib/version";
 import { caraDe } from "@/modules/users/avatar";
 
 /**
@@ -20,7 +20,7 @@ export default async function AdminLayout({
 }) {
   // Cada página lo repite: acá solo no alcanza, porque Next renderiza
   // layout y página en paralelo.
-  const session = await exigirAdmin();
+  const session = await requireAdmin();
 
   return (
     <>
@@ -48,7 +48,7 @@ export default async function AdminLayout({
 
         {/* Avisa si hubo un despliegue con el panel abierto: desde ahí
             «Guardar» falla (`lib/version.ts`). */}
-        <AvisoDeVersion version={versionDelBuild()} />
+        <AvisoDeVersion version={buildVersion()} />
       </MarcoDeEscala>
     </>
   );

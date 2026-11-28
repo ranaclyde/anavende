@@ -14,7 +14,7 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import { definirContrasena } from "@/modules/users/actions";
 
 type Campo = "nueva" | "repetida";
@@ -26,25 +26,24 @@ type Campo = "nueva" | "repetida";
 export function UpdatePasswordForm() {
   const [password, setPassword] = useState("");
   const [repetida, setRepetida] = useState("");
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
   const [enviando, iniciar] = useTransition();
   const router = useRouter();
 
   const noCoinciden = repetida.length > 0 && password !== repetida;
   const errorRepetida = noCoinciden
     ? "Las dos contraseñas tienen que ser iguales."
-    : errores.campos.repetida;
+    : errores.fields.repetida;
 
   const guardar = (e: React.FormEvent) => {
     e.preventDefault();
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     iniciar(async () => {
       const r = await definirContrasena({ nueva: password, repetida });
 
       if (!r.ok) {
-        setErrores(leerErrores<Campo>(r));
+        setErrores(readErrors<Campo>(r));
         return;
       }
 
@@ -72,16 +71,16 @@ export function UpdatePasswordForm() {
               autoComplete="new-password"
               minLength={8}
               required
-              aria-invalid={errores.campos.nueva ? true : undefined}
+              aria-invalid={errores.fields.nueva ? true : undefined}
               aria-describedby={
-                errores.campos.nueva ? "password-error" : "password-ayuda"
+                errores.fields.nueva ? "password-error" : "password-ayuda"
               }
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            {errores.campos.nueva ? (
+            {errores.fields.nueva ? (
               <FieldError id="password-error">
-                {errores.campos.nueva}
+                {errores.fields.nueva}
               </FieldError>
             ) : (
               <FieldHint id="password-ayuda">Al menos 8 caracteres.</FieldHint>

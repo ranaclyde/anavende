@@ -6,16 +6,16 @@ import { RenglonDelPedido } from "@/components/shop/compras/renglon";
 import { Button } from "@/components/ui/button";
 import { IconoWhatsApp } from "@/components/ui/icono-whatsapp";
 import { formatMoney } from "@/lib/money";
-import { FUERA_DEL_INDICE } from "@/lib/seo";
+import { NO_INDEX } from "@/lib/seo";
 import { getIdentity, getSession } from "@/lib/session";
-import { enlaceDeWhatsApp, mensajeDeOrden } from "@/lib/whatsapp";
+import { whatsappLink, orderMessage } from "@/lib/whatsapp";
 import { formaDeEntrega } from "@/modules/orders/entrega";
 import { leerOrdenDelComprador } from "@/modules/orders/queries";
 import { emailDeAvisos, numeroDeWhatsApp } from "@/modules/settings/queries";
 
 export const metadata: Metadata = {
   title: "Pedido registrado",
-  robots: FUERA_DEL_INDICE,
+  robots: NO_INDEX,
 };
 
 type Props = { params: Promise<{ numero: string }> };
@@ -135,9 +135,9 @@ export default async function PaginaDeLaOrden({ params }: Props) {
         {whatsapp ? (
           <Button asChild variant="whatsapp" size="lg" className="w-full">
             <a
-              href={enlaceDeWhatsApp(
+              href={whatsappLink(
                 whatsapp,
-                mensajeDeOrden(
+                orderMessage(
                   orden.numero,
                   orden.customerName,
                   orden.items,

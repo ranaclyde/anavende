@@ -103,38 +103,40 @@ describe("lo que dice el aviso", () => {
     const orderId = await unaOrdenDePrueba();
     const aviso = (await datosDelAviso(orderId))!;
 
-    expect(aviso.para).toBe(CASILLA);
+    expect(aviso.to).toBe(CASILLA);
     // El número primero: es por lo que se busca en una bandeja llena.
-    expect(aviso.asunto).toMatch(/^Pedido #\d+ de Rosa Pereyra — \$/);
+    expect(aviso.subject).toMatch(/^Pedido #\d+ de Rosa Pereyra — \$/);
     // Y la referencia que va a Sentry NO lleva el nombre (§16).
-    expect(aviso.referencia).toMatch(/^orden #\d+$/);
-    expect(aviso.referencia).not.toContain("Rosa");
+    expect(aviso.reference).toMatch(/^orden #\d+$/);
+    expect(aviso.reference).not.toContain("Rosa");
   });
 
   test("lleva comprador, teléfono, ítems y total (RF-30)", async () => {
     const orderId = await unaOrdenDePrueba();
     const { props } = (await datosDelAviso(orderId))!;
 
-    expect(props.comprador).toBe("Rosa Pereyra");
-    expect(props.telefono).toBe("+5492920111111");
+    expect(props.customer).toBe("Rosa Pereyra");
+    expect(props.phone).toBe("+5492920111111");
     expect(props.email).toBe("rosa@ejemplo.test");
     expect(props.total).toBe(formatMoney("3000.00"));
     expect(props.items).toHaveLength(1);
     expect(props.items[0]).toMatchObject({
-      cantidad: 2,
-      precioUnitario: formatMoney("1500.00"),
+      quantity: 2,
+      unitPrice: formatMoney("1500.00"),
       subtotal: formatMoney("3000.00"),
     });
     // Los montos llegan formateados: la plantilla no hace aritmética (§7.1).
     expect(props.total).toMatch(/^\$/);
     // RF-30: enlace al detalle, por número, como el asunto.
-    expect(props.enlace.endsWith(`/admin/ordenes/${props.numero}`)).toBe(true);
+    expect(props.link.endsWith(`/admin/ordenes/${props.orderNumber}`)).toBe(
+      true,
+    );
   });
 
   test("con envío dice la dirección entera; con retiro no dice dónde", async () => {
     const conEnvio = (await datosDelAviso(await unaOrdenDePrueba("envio")))!;
     // Entera: es lo que se le copia al mensajero.
-    expect(conEnvio.props.entrega).toBe(
+    expect(conEnvio.props.delivery).toBe(
       "Envío a Av. Siempreviva 742, Rosario, Santa Fe, S2000",
     );
 
@@ -144,7 +146,7 @@ describe("lo que dice el aviso", () => {
 
     const conRetiro = (await datosDelAviso(await unaOrdenDePrueba("retiro")))!;
     // RN-10: el punto de entrega lo pasa ella por WhatsApp, no el email.
-    expect(conRetiro.props.entrega).toBe("Retira en el punto de entrega");
+    expect(conRetiro.props.delivery).toBe("Retira en el punto de entrega");
   });
 });
 

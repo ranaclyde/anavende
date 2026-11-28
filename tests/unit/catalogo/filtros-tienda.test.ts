@@ -59,7 +59,7 @@ describe("multiselección", () => {
   });
 
   test("lo que no tiene forma de slug se descarta y no llega a la consulta", () => {
-    // La forma de `slugificar`: minúsculas, números y guiones simples, hasta 60.
+    // La forma de `slugify`: minúsculas, números y guiones simples, hasta 60.
     const f = leerFiltrosDeTienda({
       marca: [
         "cooler master",

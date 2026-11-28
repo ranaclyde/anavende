@@ -157,7 +157,7 @@ y se entra a <http://localhost:8000> con el usuario y la contraseña del
 dashboard. Ctrl+C cierra el túnel.
 
 **Cambiar una plantilla de email de la cuenta** (confirmación, recuperación,
-invitación, reenvío): se edita en `lib/email/plantillas/`, se corre
+invitación, reenvío): se edita en `lib/email/templates/`, se corre
 `npm run email` y se commitea el HTML que queda en `public/emails/`. GoTrue
 descarga las plantillas de la tienda por URL, así que llegan con el
 despliegue. En local se ven en Mailpit (<http://localhost:54324>).
@@ -177,7 +177,7 @@ público ve una página con un 503 y quien administra ve la tienda normal.
 adorno en el próximo pedido.
 
 **Sumar una fecha especial**: es código, no panel. Lleva su período en
-`lib/escenas.ts`, su adorno en `components/shop/adorno-de-temporada.tsx` y
+`lib/scenes.ts`, su adorno en `components/shop/adorno-de-temporada.tsx` y
 su interruptor en `site_settings`.
 
 **Sumar una administradora**: desde el panel, «Usuarios» → nuevo, que manda

@@ -1,18 +1,18 @@
 import Link from "next/link";
 
 import { AdornoDeTemporada } from "@/components/shop/adorno-de-temporada";
-import type { Escena } from "@/lib/escenas";
-import { LADO_DEL_ISOTIPO, PALABRA, PIEZAS } from "@/lib/marca";
-import { AREA_TACTIL_CUADRADA, cn } from "@/lib/utils";
+import type { Scene } from "@/lib/scenes";
+import { MARK_SIZE, WORDMARK, PIECES } from "@/lib/logo";
+import { SQUARE_TOUCH_AREA, cn } from "@/lib/utils";
 
 /**
  * Isotipo, palabra y logo (DESIGN-REFERENCE §2.3), en línea desde
- * `lib/marca.ts` y con el color del texto.
+ * `lib/logo.ts` y con el color del texto.
  */
 
-const VISTA_DEL_ISOTIPO = `0 0 ${LADO_DEL_ISOTIPO} ${LADO_DEL_ISOTIPO}`;
-const VISTA_DE_LA_PALABRA = PALABRA.caja.join(" ");
-const TRAZOS = Object.values(PIEZAS);
+const VISTA_DEL_ISOTIPO = `0 0 ${MARK_SIZE} ${MARK_SIZE}`;
+const VISTA_DE_LA_PALABRA = WORDMARK.box.join(" ");
+const TRAZOS = Object.values(PIECES);
 
 /** El isotipo solo, sin enlace. */
 export function Isotipo({
@@ -42,7 +42,7 @@ export function Isotipo({
   );
 }
 
-/** «AnaVende» en trazo, medida contra `--isotipo` (`HORIZONTAL` en `lib/marca.ts`). */
+/** «AnaVende» en trazo, medida contra `--isotipo` (`HORIZONTAL` en `lib/logo.ts`). */
 function Palabra({ claro = false }: { claro?: boolean }) {
   return (
     <svg
@@ -56,7 +56,7 @@ function Palabra({ claro = false }: { claro?: boolean }) {
         claro ? "text-ink-inverse" : "text-logo",
       )}
     >
-      <path fill="currentColor" d={PALABRA.d} />
+      <path fill="currentColor" d={WORDMARK.d} />
     </svg>
   );
 }
@@ -89,7 +89,7 @@ export function Logo({
   className,
 }: {
   href?: string;
-  escena?: Escena | null;
+  escena?: Scene | null;
   className?: string;
 }) {
   return (
@@ -97,7 +97,7 @@ export function Logo({
       href={href}
       className={cn(
         "relative inline-flex shrink-0 items-center rounded-pill",
-        AREA_TACTIL_CUADRADA,
+        SQUARE_TOUCH_AREA,
         className,
       )}
       aria-label="AnaVende, ir al inicio"

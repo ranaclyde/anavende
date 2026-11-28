@@ -5,7 +5,7 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { productVariants, products, variantImages } from "@/db/schema/catalog";
 import { watermarkImages } from "@/db/schema/settings";
-import { almacenamiento } from "@/lib/storage";
+import { getStorage } from "@/lib/storage";
 import {
   archivoDeMarca,
   estaActiva,
@@ -53,7 +53,7 @@ export async function leerLaMarcaDeAgua(): Promise<MarcaDeAguaDelPanel> {
     ultimaFotoSinMarca(),
   ]);
 
-  const store = almacenamiento();
+  const store = getStorage();
   return {
     activa,
     capas,

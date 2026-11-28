@@ -1,7 +1,7 @@
 // Sin `server-only` a propósito: el buscador filtra en el navegador y la
 // página filtra igual en el servidor cuando se llega con `?q=`.
 
-import { normalizar } from "@/lib/texto";
+import { normalizeText } from "@/lib/text";
 
 export type CategoriaDeLaPagina = {
   id: string;
@@ -38,9 +38,9 @@ export function repartirCategorias(
   busqueda: string,
   topeDeDestacadas: number,
 ): CategoriasRepartidas {
-  const buscado = normalizar(busqueda);
+  const buscado = normalizeText(busqueda);
   const coinciden = buscado
-    ? categorias.filter((c) => normalizar(c.nombre).includes(buscado))
+    ? categorias.filter((c) => normalizeText(c.nombre).includes(buscado))
     : categorias;
 
   // La consulta ya trae solo las que tienen productos; el filtro queda por

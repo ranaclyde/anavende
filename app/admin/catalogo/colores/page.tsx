@@ -6,10 +6,10 @@ import {
   cuantasPaginas,
   leerPaginaDeCatalogo,
   urlDePagina,
-  type ParametrosDeBusqueda,
+  type SearchParamsRecord,
 } from "@/modules/catalog/filtros-panel";
 import { listarColores } from "@/modules/catalog/queries";
-import { exigirAdmin } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Colores" };
 
@@ -18,9 +18,9 @@ const BASE = "/admin/catalogo/colores";
 export default async function ColoresDelCatalogo({
   searchParams,
 }: {
-  searchParams: Promise<ParametrosDeBusqueda>;
+  searchParams: Promise<SearchParamsRecord>;
 }) {
-  await exigirAdmin();
+  await requireAdmin();
 
   const pagina = leerPaginaDeCatalogo(await searchParams);
   const { items, total } = await listarColores(pagina);

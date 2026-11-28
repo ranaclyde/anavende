@@ -142,12 +142,12 @@ Hay dos roles, `customer` y `admin`, en `user_profiles.role` (TS §13).
   `/admin`, `/mi-cuenta`, `/carrito`, `/checkout` u `/orden`. Es una
   comodidad, **no el control de acceso**.
 - **El control de acceso** está en el layout de `/admin` y al principio de
-  cada página del panel (`exigirAdmin()`), en el envoltorio de cada acción y
+  cada página del panel (`requireAdmin()`), en el envoltorio de cada acción y
   en el filtro por usuario de cada consulta del comprador.
 - **Contra las altas falsas** (TS §16): Turnstile en el alta, el ingreso, el
   reenvío y la recuperación, validado por GoTrue; límites de intentos por
   persona, con la IP real del comprador que la tienda le pasa a GoTrue
-  (`lib/supabase/cliente-ip.ts`); y una tarea que borra a las 48 horas las
+  (`lib/supabase/client-ip.ts`); y una tarea que borra a las 48 horas las
   cuentas que nunca confirmaron el email (`scripts/limpiar-cuentas.mjs`).
 
 ## Stock: el núcleo delicado
@@ -209,7 +209,7 @@ en la página, porque ahí se mueve al pasar el mouse
   Resend. Las plantillas están en `lib/email/`, y `npm run email` las
   convierte en el HTML que GoTrue descarga de `public/emails/`.
 - **El aviso de nueva orden a Ana** (E4) lo manda la tienda por la API de
-  Resend (`lib/email/enviar.ts`). Sale después de que la orden quedó
+  Resend (`lib/email/send.ts`). Sale después de que la orden quedó
   guardada, y un fallo de envío nunca la revierte: queda registrado en
   Sentry.
 

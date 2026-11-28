@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { AREA_TACTIL_CUADRADA, cn } from "@/lib/utils";
+import { SQUARE_TOUCH_AREA, cn } from "@/lib/utils";
 
 /**
  * «Copiado» dura el doble que en «Compartir»: el código se mira antes de
@@ -52,7 +52,7 @@ export function Sku({ sku }: { sku: string }) {
           aria-label="Copiar SKU"
           className={cn(
             "relative px-2",
-            AREA_TACTIL_CUADRADA,
+            SQUARE_TOUCH_AREA,
             copiado && "text-success hover:text-success",
           )}
         >

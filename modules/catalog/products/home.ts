@@ -3,8 +3,8 @@ import "server-only";
 import { sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { diaDeArgentina } from "@/lib/escenas";
-import { sorteoDelDia } from "@/lib/sorteo-del-dia";
+import { argentinaDayNumber } from "@/lib/scenes";
+import { dailyPick } from "@/lib/daily-pick";
 import type { ProductoEnTarjeta } from "@/components/shop/tarjeta-producto";
 import { urlDeLogo } from "@/modules/media/subir";
 import {
@@ -168,10 +168,10 @@ export async function leerHome(): Promise<DatosDeLaHome> {
       ...categoria,
       imagenUrl: urlDeLogo(imageKey, "card"),
     })),
-    delHero: sorteoDelDia(
+    delHero: dailyPick(
       conProductosActivos,
       CATEGORIAS_DEL_HERO,
-      diaDeArgentina(),
+      argentinaDayNumber(),
     ).map(({ imageKey, ...categoria }) => ({
       ...categoria,
       imagenUrl: urlDeLogo(imageKey, "card"),

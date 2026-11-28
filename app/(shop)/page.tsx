@@ -19,8 +19,8 @@ import {
 } from "@/components/shop/tarjeta-de-categoria";
 import { TarjetaProducto } from "@/components/shop/tarjeta-producto";
 import { VistosRecientemente } from "@/components/shop/vistos";
-import { organizacion, sitio } from "@/lib/datos-estructurados";
-import { NOMBRE_DEL_SITIO, OPEN_GRAPH_BASE } from "@/lib/seo";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/structured-data";
+import { SITE_NAME, OPEN_GRAPH_BASE } from "@/lib/seo";
 import { getIdentity } from "@/lib/session";
 import {
   urlDeCategoria,
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   openGraph: {
     ...OPEN_GRAPH_BASE,
     url: "/",
-    title: NOMBRE_DEL_SITIO,
+    title: SITE_NAME,
     description: DESCRIPCION,
   },
 };
@@ -143,7 +143,7 @@ export default async function Home() {
       </HeroDeLaHome>
       <div className="mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8">
         {/* En la home y no en el layout: es la declaración del sitio, una vez. */}
-        <DatosEstructurados datos={[organizacion(), sitio()]} />
+        <DatosEstructurados datos={[organizationJsonLd(), websiteJsonLd()]} />
 
         {/* El aviso de zona. */}
         <section className="flex flex-col items-center gap-5 pb-10 text-center">

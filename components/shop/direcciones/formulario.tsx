@@ -9,7 +9,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { Input, Textarea } from "@/components/ui/input";
 import { FieldHint, Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { leerErrores, SIN_ERRORES, type ErroresDeFormulario } from "@/lib/form";
+import { readErrors, NO_ERRORS, type FormErrors } from "@/lib/form";
 import { cn } from "@/lib/utils";
 import {
   guardarCambiosDeDireccion,
@@ -58,8 +58,7 @@ export function FormularioDeDireccion({
 }) {
   const router = useRouter();
   const [guardando, iniciar] = useTransition();
-  const [errores, setErrores] =
-    useState<ErroresDeFormulario<Campo>>(SIN_ERRORES);
+  const [errores, setErrores] = useState<FormErrors<Campo>>(NO_ERRORS);
   // Controlada solo para mostrar u ocultar los campos de «Otra».
   const [localidad, setLocalidad] = useState(inicial.localidad);
   const esOtra = localidad === OTRA_LOCALIDAD;
@@ -68,7 +67,7 @@ export function FormularioDeDireccion({
     e.preventDefault();
     const formulario = new FormData(e.currentTarget);
     const valor = (campo: Campo) => String(formulario.get(campo) ?? "");
-    setErrores(SIN_ERRORES);
+    setErrores(NO_ERRORS);
 
     const datos = {
       label: valor("label"),
@@ -87,13 +86,13 @@ export function FormularioDeDireccion({
       if (id) {
         const r = await guardarCambiosDeDireccion({ id, ...datos });
         if (!r.ok) {
-          setErrores(leerErrores<Campo>(r));
+          setErrores(readErrors<Campo>(r));
           return;
         }
       } else {
         const r = await guardarDireccionNueva(datos);
         if (!r.ok) {
-          setErrores(leerErrores<Campo>(r));
+          setErrores(readErrors<Campo>(r));
           return;
         }
         if (alGuardar) {
@@ -106,7 +105,7 @@ export function FormularioDeDireccion({
     });
   };
 
-  const e = errores.campos;
+  const e = errores.fields;
 
   return (
     <form onSubmit={enviar} className="flex flex-col gap-5" noValidate>
