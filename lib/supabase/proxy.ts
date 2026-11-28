@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { hasSupabaseEnvVars } from "@/lib/env";
-import { cabecerasParaGoTrue } from "@/lib/supabase/cliente-ip";
+import { goTrueHeaders } from "@/lib/supabase/client-ip";
 import {
   estaEnMantenimiento,
   pasaSiempre,
@@ -15,7 +15,7 @@ import { tieneElAccesoCortado } from "@/modules/users/acceso";
 // alguien sin cookie pinte una pantalla privada. La autorización real va en
 // cada acción, página y consulta.
 
-const RUTAS_PRIVADAS = [
+const PRIVATE_ROUTES = [
   "/admin",
   "/mi-cuenta",
   "/carrito",
@@ -35,7 +35,7 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       // La renovación de la sesión, contada al comprador y no a la tienda.
-      global: { headers: cabecerasParaGoTrue(request.headers) },
+      global: { headers: goTrueHeaders(request.headers) },
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -56,33 +56,33 @@ export async function updateSession(request: NextRequest) {
   // No se ejecuta nada entre createServerClient y getClaims(): un descuido acá
   // produce cierres de sesión aleatorios muy difíciles de depurar.
   const { data } = await supabase.auth.getClaims();
-  const hayIdentidad = Boolean(data?.claims);
+  const hasIdentity = Boolean(data?.claims);
 
   const { pathname } = request.nextUrl;
-  const esPrivada = RUTAS_PRIVADAS.some(
-    (prefijo) => pathname === prefijo || pathname.startsWith(`${prefijo}/`),
+  const isPrivate = PRIVATE_ROUTES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 
-  if (esPrivada && !hayIdentidad) {
-    return alIngreso(request, pathname);
+  if (isPrivate && !hasIdentity) {
+    return toSignIn(request, pathname);
   }
 
   // Cuenta bloqueada o dada de baja (RF-27, RF-34): la única capa que cierra la
   // sesión. El token ya emitido se verifica localmente y sigue valiendo hasta
   // que vence. Solo en rutas privadas, para no pagar una consulta por visita.
-  if (esPrivada && typeof data?.claims?.sub === "string") {
+  if (isPrivate && typeof data?.claims?.sub === "string") {
     if (await tieneElAccesoCortado(data.claims.sub)) {
-      return alIngreso(request, pathname, { cerrandoSesion: true });
+      return toSignIn(request, pathname, { signingOut: true });
     }
   }
 
   // De la pregunta más barata a la más cara.
   if (!pasaSiempre(pathname) && (await estaEnMantenimiento())) {
     const userId = data?.claims?.sub;
-    const puedeVer =
+    const canView =
       typeof userId === "string" && (await puedeVerLaTiendaCerrada(userId));
 
-    if (!puedeVer) return tiendaCerrada(request, response);
+    if (!canView) return closedShop(request, response);
   }
 
   // El objeto de respuesta se devuelve tal cual: si se arma uno nuevo hay que
@@ -91,44 +91,44 @@ export async function updateSession(request: NextRequest) {
 }
 
 /**
- * Con `cerrandoSesion` se borran las cookies: si no, `/ingresar` y «Mi cuenta»
+ * Con `signingOut` se borran las cookies: si no, `/ingresar` y «Mi cuenta»
  * se rebotarían para siempre. Por nombre y no con `signOut`, que GoTrue le
  * rechaza a una cuenta bloqueada. Por prefijo: el token puede venir partido
  * (`…-auth-token.0`, `.1`).
  */
-function alIngreso(
+function toSignIn(
   request: NextRequest,
   pathname: string,
-  opciones?: { cerrandoSesion?: boolean },
+  options?: { signingOut?: boolean },
 ) {
   const url = request.nextUrl.clone();
   url.pathname = "/ingresar";
   url.search = "";
   url.searchParams.set("volver", pathname + request.nextUrl.search);
 
-  const respuesta = NextResponse.redirect(url);
+  const redirectResponse = NextResponse.redirect(url);
 
-  if (opciones?.cerrandoSesion) {
+  if (options?.signingOut) {
     for (const cookie of request.cookies.getAll()) {
       if (/^sb-.*-auth-token/.test(cookie.name)) {
-        respuesta.cookies.delete(cookie.name);
+        redirectResponse.cookies.delete(cookie.name);
       }
     }
   }
 
-  return respuesta;
+  return redirectResponse;
 }
 
 /**
  * Reescritura y no redirección, con 503: un 307 es «se mudó» y un 200
  * desindexaría el sitio. La respuesta es nueva: se le copian las cookies.
  */
-function tiendaCerrada(request: NextRequest, sesion: NextResponse) {
-  const destino = request.nextUrl.clone();
-  destino.pathname = "/mantenimiento";
-  destino.search = "";
+function closedShop(request: NextRequest, sessionResponse: NextResponse) {
+  const target = request.nextUrl.clone();
+  target.pathname = "/mantenimiento";
+  target.search = "";
 
-  const cerrada = NextResponse.rewrite(destino, {
+  const closed = NextResponse.rewrite(target, {
     status: 503,
     headers: {
       "Retry-After": String(REINTENTAR_EN_SEGUNDOS),
@@ -137,6 +137,8 @@ function tiendaCerrada(request: NextRequest, sesion: NextResponse) {
     },
   });
 
-  sesion.cookies.getAll().forEach((cookie) => cerrada.cookies.set(cookie));
-  return cerrada;
+  sessionResponse.cookies
+    .getAll()
+    .forEach((cookie) => closed.cookies.set(cookie));
+  return closed;
 }

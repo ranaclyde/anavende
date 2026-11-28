@@ -147,7 +147,7 @@ Hay dos roles, `customer` y `admin`, en `user_profiles.role` (TS §13).
 - **Contra las altas falsas** (TS §16): Turnstile en el alta, el ingreso, el
   reenvío y la recuperación, validado por GoTrue; límites de intentos por
   persona, con la IP real del comprador que la tienda le pasa a GoTrue
-  (`lib/supabase/cliente-ip.ts`); y una tarea que borra a las 48 horas las
+  (`lib/supabase/client-ip.ts`); y una tarea que borra a las 48 horas las
   cuentas que nunca confirmaron el email (`scripts/limpiar-cuentas.mjs`).
 
 ## Stock: el núcleo delicado

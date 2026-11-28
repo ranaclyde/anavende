@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { cabecerasParaGoTrue } from "@/lib/supabase/cliente-ip";
+import { goTrueHeaders } from "@/lib/supabase/client-ip";
 
 /** La IP del comprador viaja a GoTrue con la clave. TS §16. */
 
@@ -13,11 +13,11 @@ function pedido(cabeceras: Record<string, string>) {
   return new Headers(cabeceras);
 }
 
-describe("cabecerasParaGoTrue", () => {
+describe("goTrueHeaders", () => {
   test("con la clave y la IP de Cloudflare, manda las dos", () => {
     vi.stubEnv("SUPABASE_CLAVE_CLIENTE_IP", CLAVE);
     expect(
-      cabecerasParaGoTrue(pedido({ "cf-connecting-ip": "203.0.113.7" })),
+      goTrueHeaders(pedido({ "cf-connecting-ip": "203.0.113.7" })),
     ).toEqual({
       "X-Anavende-Clave": CLAVE,
       "X-Anavende-Cliente-Ip": "203.0.113.7",
@@ -27,30 +27,28 @@ describe("cabecerasParaGoTrue", () => {
   test("también una IPv6", () => {
     vi.stubEnv("SUPABASE_CLAVE_CLIENTE_IP", CLAVE);
     expect(
-      cabecerasParaGoTrue(pedido({ "cf-connecting-ip": "2001:db8::1" })),
+      goTrueHeaders(pedido({ "cf-connecting-ip": "2001:db8::1" })),
     ).toMatchObject({ "X-Anavende-Cliente-Ip": "2001:db8::1" });
   });
 
   test("sin la clave no manda nada: en desarrollo y en los tests", () => {
     vi.stubEnv("SUPABASE_CLAVE_CLIENTE_IP", "");
     expect(
-      cabecerasParaGoTrue(pedido({ "cf-connecting-ip": "203.0.113.7" })),
+      goTrueHeaders(pedido({ "cf-connecting-ip": "203.0.113.7" })),
     ).toEqual({});
   });
 
   test("sin Cloudflare no manda nada, ni toma X-Forwarded-For", () => {
     vi.stubEnv("SUPABASE_CLAVE_CLIENTE_IP", CLAVE);
-    expect(
-      cabecerasParaGoTrue(pedido({ "x-forwarded-for": "203.0.113.7" })),
-    ).toEqual({});
+    expect(goTrueHeaders(pedido({ "x-forwarded-for": "203.0.113.7" }))).toEqual(
+      {},
+    );
   });
 
   test("lo que no tiene forma de IP no se manda", () => {
     vi.stubEnv("SUPABASE_CLAVE_CLIENTE_IP", CLAVE);
     for (const raro of ["1.2.3.4, 5.6.7.8", "<script>", "x".repeat(60)]) {
-      expect(cabecerasParaGoTrue(pedido({ "cf-connecting-ip": raro }))).toEqual(
-        {},
-      );
+      expect(goTrueHeaders(pedido({ "cf-connecting-ip": raro }))).toEqual({});
     }
   });
 });
