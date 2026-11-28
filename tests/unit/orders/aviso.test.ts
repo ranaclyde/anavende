@@ -17,19 +17,9 @@ import {
 import { limpiarOrdenes } from "@/tests/apoyo/ordenes";
 
 /**
- * F6.4 — E4, el aviso de nueva orden a la administradora.
- * RF-30 · TS §14, §8.4 paso 10.
- *
- * «Hecho cuando»: llega con el detalle completo y enlace al panel, y **si
- * falla, la orden se crea igual**.
- *
- * Se prueba `datosDelAviso` y no el envío ni el HTML. El envío es un `fetch`
- * con dos campos contra Resend, y probarlo sería probar a `fetch`. El HTML no
- * se puede renderizar acá: `react-dom/server` no existe bajo la condición
- * `react-server` con la que corren los tests (ver `avisar.tsx`), y en la
- * aplicación sí anda — se comprobó confirmando un pedido de verdad. Lo que
- * queda, que es lo que puede romperse sin que nadie lo note, son los datos:
- * a quién le llega, qué dice el asunto y qué valores entran en la plantilla.
+ * E4, el aviso de nueva orden (RF-30 · TS §14): si falla, la orden se crea
+ * igual. Se prueban los datos y no el HTML: `react-dom/server` no existe bajo
+ * la condición `react-server` con la que corren los tests (ver `avisar.tsx`).
  */
 
 const CASILLA = "avisos-de-prueba@ejemplo.test";
@@ -137,15 +127,13 @@ describe("lo que dice el aviso", () => {
     });
     // Los montos llegan formateados: la plantilla no hace aritmética (§7.1).
     expect(props.total).toMatch(/^\$/);
-    // El enlace directo al detalle que pide RF-30, ya con F7.1 existiendo.
-    // Por número, que es la dirección del panel y la que dice el asunto.
+    // RF-30: enlace al detalle, por número, como el asunto.
     expect(props.enlace.endsWith(`/admin/ordenes/${props.numero}`)).toBe(true);
   });
 
   test("con envío dice la dirección entera; con retiro no dice dónde", async () => {
     const conEnvio = (await datosDelAviso(await unaOrdenDePrueba("envio")))!;
-    // La que arma `unComprador()`: calle, número, localidad, provincia y CP.
-    // Entera, porque es lo que Ana le copia al mensajero.
+    // Entera: es lo que se le copia al mensajero.
     expect(conEnvio.props.entrega).toBe(
       "Envío a Av. Siempreviva 742, Rosario, Santa Fe, S2000",
     );
@@ -176,11 +164,8 @@ describe("lo que no puede hacer nunca", () => {
   });
 
   /**
-   * **Acá adentro el aviso falla en el `render`**, porque `react-dom/server`
-   * no existe bajo la condición de los tests, y no en el envío. Da igual, y
-   * por eso el test se llama así: lo que RF-30 exige no es que falle en un
-   * lugar determinado, sino que **falle donde falle, no salga para afuera**.
-   * Este es el único lugar donde se puede comprobar con algo roto de verdad.
+   * Acá el aviso falla en el `render` (no hay `react-dom/server` en los
+   * tests), no en el envío: RF-30 pide que falle donde falle, no salga afuera.
    */
   test("pase lo que pase adentro, la orden queda y nadie ve una excepción", async () => {
     await configurarLaCasilla();

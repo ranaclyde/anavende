@@ -24,17 +24,8 @@ import {
 } from "@/modules/returns/registrar";
 
 /**
- * F4.6 — la Compuerta F4.
- *
- * `DEVELOPMENT-PLAN.md` lo dice sin vueltas: «el test de concurrencia pasa.
- * Dos confirmaciones simultáneas sobre la última unidad producen UNA orden y
- * un `INSUFFICIENT_STOCK`, nunca dos órdenes. Sin esto verificado, no se
- * avanza.»
- *
- * Los demás casos que pide §17.1 —stock insuficiente, transiciones inválidas,
- * devolución excesiva— viven con la tarea que los produjo, que es donde se
- * leen. Acá quedan los dos que son de toda la fase y de ninguna tarea: la
- * carrera por la última unidad, y que el libro mayor cuadre con los
+ * Compuerta F4: dos reservas simultáneas sobre la última unidad dan una orden
+ * y un `INSUFFICIENT_STOCK`, nunca dos; y el libro mayor cuadra con los
  * contadores.
  */
 
@@ -50,15 +41,8 @@ function enTransaccion<T>(
 }
 
 /**
- * Una variante que nace en cero y recibe su stock **por `ajustar()`**, que es
- * exactamente lo que hace el alta del panel desde F4.1.
- *
- * El andamiaje de siempre escribe los contadores directo, a propósito: para
- * armar un escenario no conviene usar la función que se está probando. Pero
- * acá lo que se prueba es el LIBRO, y un libro sólo cuadra si registra toda la
- * vida de la variante — incluida la primera carga. Una variante con stock que
- * nunca pasó por el módulo arranca con una diferencia que no es culpa de nadie
- * y taparía las que sí importan.
+ * El stock entra por `ajustar()` y no escrito directo, como en el alta del
+ * panel: el libro solo cuadra si también registra la primera carga.
  */
 async function unaVarianteConLibro(total: number): Promise<string> {
   const { variantId } = await unaVariante({ total: 0 });
@@ -69,8 +53,6 @@ async function unaVarianteConLibro(total: number): Promise<string> {
   }
   return variantId;
 }
-
-// ── La compuerta ────────────────────────────────────────────────────────
 
 test("COMPUERTA F4 — dos reservas sobre la última unidad: una gana, una falla", async () => {
   const variantId = await unaVarianteConLibro(1);
@@ -89,8 +71,7 @@ test("COMPUERTA F4 — dos reservas sobre la última unidad: una gana, una falla
     reason: { code: "INSUFFICIENT_STOCK" },
   });
 
-  // La unidad se reservó una sola vez. Si esto diera 2, el sistema vendió dos
-  // veces lo mismo y alguien se entera cuando hay que llamarlo por teléfono.
+  // Si esto diera 2, se vendió dos veces la misma unidad.
   expect(await contadores(variantId)).toEqual({
     stockTotal: 1,
     reservedStock: 1,
@@ -99,8 +80,7 @@ test("COMPUERTA F4 — dos reservas sobre la última unidad: una gana, una falla
 });
 
 test("y con más de una unidad, entra el que cabe y no el que sobra", async () => {
-  // 3 disponibles, dos pedidos de 2: uno entra, el otro no. El caso que un
-  // «hay stock, sí» sin condición dejaría pasar los dos.
+  // Un «hay stock» sin condición dejaría pasar los dos pedidos de 2.
   const variantId = await unaVarianteConLibro(3);
 
   const resultados = await dosALaVez(
@@ -120,7 +100,7 @@ test("y con más de una unidad, entra el que cabe y no el que sobra", async () =
 });
 
 test("dos que sí entran no se estorban", async () => {
-  // La otra mitad de la compuerta: el bloqueo no puede rechazar lo legítimo.
+  // El bloqueo no puede rechazar lo legítimo.
   const variantId = await unaVarianteConLibro(5);
 
   const resultados = await dosALaVez(
@@ -136,20 +116,11 @@ test("dos que sí entran no se estorban", async () => {
   await expect(cuadraElLibro(variantId)).resolves.toBe(true);
 });
 
-// ── El libro mayor cuadra con los contadores ────────────────────────────
-
 /**
- * Las dos comprobaciones que hacen del libro mayor algo en lo que se puede
- * confiar. Devuelve `true` o explota diciendo qué no cerró.
- *
- * **1. La suma da el total.** `stock_total = SUM(quantity)` sobre los
- * movimientos que mueven el total: `ajuste`, `venta` y `devolucion`. Si no da,
- * algún asiento se escribió con el signo o la cantidad equivocada.
- *
- * **2. El último asiento dice el estado de ahora.** `stock_after` y
- * `reserved_after` del movimiento más reciente tienen que ser los contadores
- * actuales. Esta es la que detecta el cambio hecho SIN asentar, que es la
- * falla que rompe la auditoría entera y que la suma sola no ve.
+ * Devuelve `true` o falla diciendo qué no cerró: la suma de los movimientos
+ * que mueven el total da `stock_total` (signo o cantidad mal asentados), y el
+ * último asiento coincide con los contadores (un cambio hecho SIN asentar, que
+ * la suma sola no ve).
  */
 async function cuadraElLibro(variantId: string): Promise<boolean> {
   const actual = await contadores(variantId);
@@ -203,9 +174,7 @@ test("el libro cuadra después de las seis operaciones seguidas", async () => {
 });
 
 test("el libro cuadra después de una vida entera de la variante", async () => {
-  // El recorrido real: se carga stock, se reserva, se vende, se devuelve, se
-  // anula esa devolución, y en el medio la vendedora corrige el número a mano.
-  // Todo por el módulo, que es lo que hace que el libro tenga que cuadrar.
+  // Todo por el módulo, incluida la corrección a mano en el medio.
   const variantId = await unaVarianteConLibro(12);
   await enTransaccion((tx) => reservar(tx, { variantId, quantity: 5 }));
   const { orderId } = await unaOrdenActiva([{ variantId, quantity: 5 }]);
@@ -239,9 +208,7 @@ test("el libro cuadra después de una vida entera de la variante", async () => {
 });
 
 test("un cambio hecho SIN asentar rompe el cuadre, que es lo que se le pide", async () => {
-  // La comprobación tiene que servir para algo: se le mueve el contador por
-  // afuera, como haría un UPDATE suelto que se saltee `modules/stock`, y el
-  // libro tiene que delatarlo.
+  // Un UPDATE suelto que se saltea `modules/stock` tiene que quedar delatado.
   const variantId = await unaVarianteConLibro(10);
   await enTransaccion((tx) => reservar(tx, { variantId, quantity: 2 }));
   await expect(cuadraElLibro(variantId)).resolves.toBe(true);

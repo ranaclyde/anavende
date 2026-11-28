@@ -6,10 +6,8 @@ import { leerPeriodo } from "@/modules/reports/periodo";
 import type { Totales } from "@/modules/reports/queries";
 
 /**
- * F9.2 — la exportación a Excel. RF-28 · TS §15.
- *
- * Sin base: `armarPlanilla` recibe datos ya leídos, y acá se arma el libro y
- * se vuelve a abrir con ExcelJS para mirar lo que de verdad quedó adentro.
+ * Exportación a Excel (RF-28 · TS §15). Sin base: se arma el libro y se vuelve
+ * a abrir con ExcelJS para mirar lo que de verdad quedó adentro.
  */
 
 const periodo = leerPeriodo({}, "2026-10-15");

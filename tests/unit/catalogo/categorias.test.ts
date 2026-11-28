@@ -18,7 +18,7 @@ import {
 import { leerCategoriasDeLaTienda } from "@/modules/catalog/products/categorias-de-la-tienda";
 import { limpiar, unProducto } from "@/tests/apoyo/catalogo";
 
-/** Página de categorías — RF-35, DR §7.6. Tarea F3.10. */
+/** Página de categorías — RF-35. */
 
 const sueltas = { productos: [] as string[], categorias: [] as string[] };
 

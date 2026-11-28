@@ -13,32 +13,17 @@ import { leerFicha, varianteInicial } from "@/modules/catalog/products/ficha";
 import { limpiar, unProducto } from "@/tests/apoyo/catalogo";
 
 /**
- * F3.5 y F3.6 — RF-03, RF-04, RN-05, §9.5.
- *
- * Lo que se prueba es lo que no se ve leyendo el componente: la consulta de
- * la ficha tiene un LATERAL con un agregado adentro de otro, y tres reglas
- * viven ahí y en ningún otro lado —el orden de los colores, el respaldo de
- * imágenes de §9.5 y la exclusión de variantes desactivadas—. Las tres son
- * silenciosas: cuando fallan no hay error, hay una ficha que muestra el
- * color equivocado o una galería vacía.
- *
- * Los mensajes de WhatsApp se prueban acá y no aparte porque son la otra
- * mitad de la misma pantalla, y porque su criterio de RF-04 —«bien
- * codificado: acentos, saltos de línea, el `$`»— es exactamente la clase de
- * cosa que se rompe sin que nadie lo note hasta que un cliente recibe un
- * mensaje cortado.
+ * La consulta de la ficha guarda tres reglas que fallan en silencio: el orden
+ * de los colores, el respaldo de imágenes (§9.5) y la exclusión de variantes
+ * desactivadas. Los mensajes de WhatsApp van acá porque son la otra mitad de
+ * la pantalla.
  */
-
 const creados: string[] = [];
 
 /**
- * Un color propio por test.
- *
- * El NOMBRE lleva sufijo, no solo el slug: `colors_name_key` es único por
- * `lower(name)`, así que un test que insertara «Negro» chocaría con el que ya
- * cargó el seed —o con el que cargó Ana— y fallaría por el entorno y no por
- * lo que prueba. El sufijo va al final para que el orden alfabético de los
- * nombres siga siendo el del prefijo, que es lo que un test de acá compara.
+ * El nombre lleva sufijo, no solo el slug: `colors_name_key` es único por
+ * `lower(name)` y chocaría con los colores del seed. Va al final para que el
+ * orden alfabético siga siendo el del prefijo.
  */
 async function unColor(
   nombre: string,
@@ -77,11 +62,8 @@ async function unaVarianteDe(
 }
 
 /**
- * Una fila de `variant_images` sin subir nada a Storage.
- *
- * La consulta solo lee `storage_key` y `alt_text`, y armar la URL es
- * concatenar (§9.4). Subir archivos de verdad probaría `publicarImagenDeVariante`,
- * que ya tiene sus tests en F2.4, y volvería lento un test que no habla de eso.
+ * Una fila de `variant_images` sin subir nada a Storage: la consulta solo lee
+ * `storage_key` y `alt_text`.
  */
 async function unaImagen(
   variantId: string,
@@ -113,9 +95,8 @@ describe("leerFicha (RF-03)", () => {
   });
 
   /**
-   * RN-05: un producto inactivo NO es visible en el sitio público. Devuelve
-   * lo mismo que uno inexistente a propósito — distinguirlos contaría que
-   * existe, que es justo lo que la baja quiso ocultar.
+   * RN-05. Igual que uno inexistente a propósito: distinguirlos contaría que
+   * existe, que es lo que la baja quiso ocultar.
    */
   test("un producto desactivado devuelve null, igual que uno inexistente", async () => {
     const productId = await unProducto();
@@ -131,11 +112,8 @@ describe("leerFicha (RF-03)", () => {
   });
 
   /**
-   * El orden del selector de color. Con `sort_order` empatado desempata el
-   * nombre, y eso NO es un detalle: sin desempate el orden lo decide el UUID
-   * de la variante, así que el color que se abre por omisión cambiaba entre
-   * dos cargas de la misma pantalla — y la tarjeta del catálogo, que usa el
-   * mismo orden, podía mostrar otro.
+   * Sin desempate el orden lo decide el UUID de la variante, y el color que
+   * se abre por omisión cambia entre dos cargas de la misma pantalla.
    */
   test("las variantes salen por sort_order y el nombre desempata", async () => {
     const productId = await unProducto();
@@ -143,15 +121,13 @@ describe("leerFicha (RF-03)", () => {
     const azul = await unColor("Azul", "#26456e");
     const verde = await unColor("Verde", "#2b8f4b");
 
-    // Se insertan a propósito en desorden y con dos empatados en 0.
+    // A propósito en desorden y con dos empatados en 0.
     await unaVarianteDe(productId, { colorId: verde.id, orden: 1 });
     await unaVarianteDe(productId, { colorId: rojo.id, orden: 0 });
     await unaVarianteDe(productId, { colorId: azul.id, orden: 0 });
 
     const ficha = await leerFicha(await slugDe(productId));
 
-    // Azul y Rojo empatan en sort_order 0 y los ordena el nombre; Verde va
-    // último porque su sort_order es 1, aunque alfabéticamente iría ahí igual.
     expect(ficha?.variantes.map((v) => v.colorNombre)).toEqual([
       azul.nombre,
       rojo.nombre,
@@ -174,10 +150,8 @@ describe("leerFicha (RF-03)", () => {
   });
 
   /**
-   * §9.5 y RF-16: una variante puede mostrar las fotos de otra. Sin el
-   * `coalesce(images_source_id, id)` la que reutiliza sale con la galería
-   * vacía, que es un estado que existe de verdad —una variante recién creada
-   * no tiene fotos— y por eso no se distingue de un error mirando la pantalla.
+   * §9.5: sin el `coalesce(images_source_id, id)` la que reutiliza sale con la
+   * galería vacía, que es un estado real y no se distingue de un error.
    */
   test("una variante que reutiliza imágenes muestra las de su fuente", async () => {
     const productId = await unProducto();
@@ -202,11 +176,10 @@ describe("leerFicha (RF-03)", () => {
 
     expect(conFotos.imagenes).toHaveLength(2);
     expect(reutiliza.imagenes).toHaveLength(2);
-    // Las mismas URLs, no unas parecidas: es la misma foto servida dos veces.
     expect(reutiliza.imagenes.map((i) => i.grande)).toEqual(
       conFotos.imagenes.map((i) => i.grande),
     );
-    // Y son dos tamaños distintos del MISMO archivo (§9.2).
+    // Dos tamaños del mismo archivo (§9.2).
     expect(conFotos.imagenes[0].grande).toContain("detail");
     expect(conFotos.imagenes[0].miniatura).toContain("thumb");
   });
@@ -233,10 +206,8 @@ describe("leerFicha (RF-03)", () => {
   });
 
   /**
-   * RF-24 permite stock NEGATIVO —una venta cargada sobre unidades que el
-   * sistema no tenía—. La consulta lo devuelve tal cual y es la vista la que
-   * lo lleva a cero: si lo acotara acá, el panel y la tienda leerían números
-   * distintos de la misma fila.
+   * RF-24 permite stock negativo. La vista lo lleva a cero, no la consulta:
+   * si lo acotara acá, el panel y la tienda leerían números distintos.
    */
   test("el disponible llega crudo, negativo incluido", async () => {
     const productId = await unProducto();
@@ -296,11 +267,7 @@ describe("varianteInicial (?color= de RF-03)", () => {
     expect(varianteInicial(variantes, "blanco")).toBe(1);
   });
 
-  /**
-   * Un color que ya no existe NO es un 404: el producto sigue estando y es lo
-   * que la persona fue a ver. Castigar un enlace viejo con una página de
-   * error es perder una visita por un parámetro de consulta.
-   */
+  /** Un enlace viejo no merece un 404: el producto sigue estando. */
   test("un color que no existe cae en la primera, no falla", () => {
     expect(varianteInicial(variantes, "fucsia")).toBe(0);
   });
@@ -336,12 +303,7 @@ describe("enlaces de WhatsApp (RF-04, RF-03)", () => {
     expect(mensajeDeDisponibilidad(sinColor)).not.toContain("Color:");
   });
 
-  /**
-   * El criterio literal de RF-04. Los tres viajan escapados: sin eso el `$`
-   * corta el texto en algunos clientes y los saltos de línea se pierden, y el
-   * mensaje llega como un renglón corrido que la vendedora tiene que
-   * descifrar.
-   */
+  /** Sin escapar, el `$` corta el texto en algunos clientes y los saltos de línea se pierden. */
   test("acentos, saltos de línea y el $ viajan escapados", () => {
     const enlace = enlaceDeWhatsApp(
       "+5491122334455",
@@ -353,16 +315,14 @@ describe("enlaces de WhatsApp (RF-04, RF-03)", () => {
     expect(enlace).toContain("%C3%A1"); // la á de «Mecánico»
     expect(enlace).not.toContain("\n");
 
-    // Y vuelve entero del otro lado.
     const texto = decodeURIComponent(new URL(enlace).searchParams.get("text")!);
     expect(texto).toContain("Teclado Mecánico K120");
     expect(texto.split("\n").length).toBeGreaterThan(3);
   });
 
   /**
-   * `wa.me` quiere dígitos y nada más. El número se guarda normalizado a
-   * `+549…` (RF-20, `lib/telefono.ts`), pero limpiarlo acá es lo que hace que
-   * una fila escrita a mano con guiones no rompa el enlace en silencio.
+   * `wa.me` quiere solo dígitos. El número se guarda normalizado, pero una
+   * fila escrita a mano con guiones rompería el enlace en silencio.
    */
   test("el número se limpia: sin +, sin espacios, sin guiones", () => {
     const esperado = "https://wa.me/5491122334455";

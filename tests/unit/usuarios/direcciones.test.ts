@@ -18,10 +18,8 @@ import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 import { dosCompitiendo } from "@/tests/apoyo/concurrencia";
 
 /**
- * La libreta de direcciones — RF-09, TS §5.5. Tarea F5.3.
- *
- * `unComprador()` ya trae una dirección predeterminada, «Casa»: la mayoría de
- * los casos arrancan de ahí, que es como arranca un comprador de verdad.
+ * La libreta de direcciones — RF-09, TS §5.5. `unComprador()` ya trae una
+ * dirección predeterminada, «Casa».
  */
 
 afterEach(limpiarCompradores);

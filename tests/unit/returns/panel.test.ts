@@ -17,21 +17,9 @@ import {
 } from "@/tests/apoyo/ordenes";
 
 /**
- * F7.5 — Devoluciones en el panel. RF-25 · TS §5.7, §8.1.
- *
- * «Hecho cuando»: selección de ítems, cantidades y si repone stock, con motivo.
- *
- * **La puerta y no la lógica.** El dominio está probado contra Postgres en
- * `registrar.test.ts` desde F4.5: el tope de «ni más de lo vendido ni de lo ya
- * devuelto» con la orden bloqueada, la reposición, la anulación que revierte y
- * libera el cupo. Lo que F7.5 agrega y puede romperse sin que nadie lo note es
- * el envoltorio: que sólo entre la administradora, que el número de la URL
- * lleve a la orden correcta, que el motivo obligatorio lo sea de verdad, y que
- * un motivo de renglón no quede guardado contra un producto que sí volvió al
- * stock.
- *
- * Y las lecturas de la pantalla, que son nuevas: lo ya devuelto por renglón
- * —que es el tope que el diálogo ofrece— y los filtros del listado.
+ * Devoluciones en el panel (RF-25). El dominio se prueba en
+ * `registrar.test.ts`; acá, el envoltorio (permisos, número de la URL, motivo
+ * obligatorio) y las lecturas de la pantalla.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
@@ -43,7 +31,7 @@ vi.mock("@/lib/session", () => ({
 }));
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
 
-/** `refresh()` lanza fuera de una Server Action de verdad (precedente: F5.3). */
+/** `refresh()` lanza fuera de una Server Action de verdad. */
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 
 const { anularUnaDevolucion, registrarUnaDevolucion } =
@@ -151,8 +139,7 @@ describe("quién puede devolver", () => {
 
     comoSesion(comprador.userId, "customer");
 
-    // FA-15: las devoluciones las registra la administradora. Lo del
-    // comprador es cancelar mientras la orden esté activa (RF-23).
+    // FA-15: las registra la administradora; el comprador solo cancela (RF-23).
     expect(
       await registrarUnaDevolucion({
         numero: orden.numero,
@@ -258,9 +245,7 @@ describe("registrar (RF-25)", () => {
     const orden = await ordenVendida();
 
     comoSesion(ana.userId, "admin");
-    // La pantalla esconde ese campo al marcar «vuelve al stock», pero el texto
-    // pudo quedar escrito de antes: guardarlo dejaría en la base la
-    // explicación de algo que no pasó.
+    // La pantalla esconde el campo, pero el texto pudo quedar escrito de antes.
     await registrarUnaDevolucion({
       numero: orden.numero,
       motivo: "Se arrepintió",
@@ -311,8 +296,7 @@ describe("registrar (RF-25)", () => {
     const orden = await ordenVendida();
 
     comoSesion(ana.userId, "admin");
-    // `returns.reason` es NOT NULL: sin el esquema, esto sería un error de
-    // Postgres traducido a «no pudimos completar la acción».
+    // Sin el esquema, el NOT NULL de `returns.reason` daría un error genérico.
     const r = await registrarUnaDevolucion({
       numero: orden.numero,
       motivo: "   ",
@@ -434,8 +418,7 @@ describe("anular (RF-25)", () => {
     });
     expect(anulada.anuladaEn).not.toBeNull();
 
-    // El cupo quedó libre: se vuelve a cargar entera, que es lo que RF-25
-    // quiere al decir «se anula y se vuelve a cargar».
+    // El cupo quedó libre: RF-25, «se anula y se vuelve a cargar».
     expect(
       await registrarUnaDevolucion({
         numero: orden.numero,
@@ -527,8 +510,7 @@ describe("lo que la pantalla lee", () => {
     const devoluciones = await devolucionesDeLaOrden(orden.numero);
     expect(devueltasPorRenglon(devoluciones).get(itemId)).toBe(3);
 
-    // Anular la de dos deja el tope en una sola devuelta, que es el mismo
-    // criterio que usa el dominio (`status = 'registrada'`).
+    // Mismo criterio que el dominio: solo cuenta `status = 'registrada'`.
     const laDeDos = devoluciones.find((d) => d.unidades === 2)!;
     await anularUnaDevolucion({ returnId: laDeDos.id, motivo: "Error" });
 
@@ -562,10 +544,8 @@ describe("lo que la pantalla lee", () => {
       ],
     });
 
-    // **Sólo las de esta orden.** El listado no filtra por orden —no tiene
-    // por qué—, y la base de pruebas arrastra devoluciones de corridas
-    // anteriores: un test que mire el total global afirmaría algo sobre la
-    // máquina de quien lo corre y no sobre el código.
+    // Solo las de esta orden: la base de pruebas arrastra devoluciones de
+    // corridas anteriores.
     const deEstaOrden = async (filtros: Partial<typeof FILTROS_VACIOS> = {}) =>
       (await listarDevoluciones({ ...FILTROS_VACIOS, ...filtros })).devoluciones
         .filter((d) => d.numero === orden.numero)
@@ -574,8 +554,7 @@ describe("lo que la pantalla lee", () => {
     const todas = await listarDevoluciones(FILTROS_VACIOS);
     const mias = todas.devoluciones.filter((d) => d.numero === orden.numero);
     expect(mias).toHaveLength(2);
-    // La orden y el comprador viajan con cada fila: RF-25 los pide en el
-    // listado.
+    // RF-25 pide la orden y el comprador en el listado.
     expect(mias[0]).toMatchObject({
       numero: orden.numero,
       customerName: "Cliente de prueba",
@@ -608,11 +587,8 @@ describe("lo que la pantalla lee", () => {
       ],
     });
 
-    // El día se pregunta EN LA ZONA DE LA TIENDA y no en UTC: el filtro
-    // recorta con `AT TIME ZONE` (`lib/fechas.ts`), así que entre las 21 y
-    // las 24 `toISOString()` devolvía el día siguiente y este test fallaba
-    // solo en ese rato. Encontrado el 2026-09-16, corriendo la batería de
-    // F7.7 a las 23:09.
+    // El día va en la zona de la tienda, no en UTC: el filtro usa `AT TIME
+    // ZONE`, y con `toISOString()` de 21 a 24 sería el día siguiente.
     const hoy = new Intl.DateTimeFormat("en-CA", {
       timeZone: ZONA_HORARIA,
     }).format(new Date());

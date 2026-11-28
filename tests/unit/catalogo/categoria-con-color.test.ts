@@ -10,9 +10,8 @@ import {
 } from "@/modules/catalog/variants/queries";
 
 /**
- * 2026-11-05 — el aviso de «Único» se deduce de lo cargado: avisa si la
- * mayoría de los demás productos activos de la categoría tiene color, y son
- * al menos `MINIMO_CON_COLOR`.
+ * El aviso de «Único» avisa si la mayoría de los demás productos activos de la
+ * categoría tiene color, y son al menos `MINIMO_CON_COLOR`.
  */
 
 const T = `zzu${randomUUID().slice(0, 8)}`;

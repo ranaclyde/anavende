@@ -15,12 +15,9 @@ import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 import { limpiarOrdenes, unaOrdenActiva } from "@/tests/apoyo/ordenes";
 
 /**
- * F9.1 — los reportes de ventas. RF-28 · TS §15.
- *
- * **Todo pasa en marzo de 2001**, donde la base de desarrollo no tiene nada:
- * los reportes no filtran por dueño, y en un mes con ventas de verdad un
- * número absoluto dependería de con qué quedó la base. Así cada test arma su
- * mes entero y lo mide exacto.
+ * Reportes de ventas (RF-28 · TS §15). Todo pasa en marzo de 2001, vacío en la
+ * base de desarrollo: los reportes no filtran por dueño, y en un mes con ventas
+ * los números dependerían de lo que quedó en la base.
  */
 
 const MARZO = { desde: "2001-03-01", hasta: "2001-03-31" };

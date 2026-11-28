@@ -14,16 +14,9 @@ import {
 import { historial, limpiarOrdenes } from "@/tests/apoyo/ordenes";
 
 /**
- * F6.5 — «Mis compras» y la cancelación por el comprador.
- * RF-07, RF-23, RF-34 · TS §8.1, §13.8.
- *
- * «Hecho cuando»: historial con los precios de la orden (snapshot) y cancelar
- * libera la reserva.
- *
- * **La sesión se simula y la base es de verdad.** Armar una sesión real pediría
- * GoTrue y cookies (como en `confirmar.test.ts`), pero lo que hay que probar
- * acá —que la reserva vuelva, que el historial diga quién canceló, que la
- * orden de otro no exista— vive en Postgres y no se reproduce con un doble.
+ * «Mis compras» y la cancelación por el comprador (RF-07, RF-23, RF-34 · TS
+ * §8.1, §13.8). La sesión se simula (una real pediría GoTrue y cookies); la
+ * base es de verdad, que es donde vive lo que se prueba.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
@@ -31,11 +24,8 @@ vi.mock("@/lib/session", () => ({ getSession: async () => sesion.actual }));
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));
 
 /**
- * `refresh()` lanza si no lo llaman desde una Server Action de verdad, y acá
- * la acción se invoca como una función. Se simula por lo mismo que la sesión:
- * lo que importa es lo que pasa en Postgres, y que la pantalla se vuelva a
- * pedir es asunto de Next. Es la misma convención que ya usan las acciones de
- * direcciones (F5.3).
+ * `refresh()` lanza fuera de una Server Action de verdad, y acá la acción se
+ * invoca como una función.
  */
 vi.mock("next/cache", () => ({ refresh: () => undefined }));
 
@@ -219,8 +209,8 @@ describe("el arrepentimiento (RF-23, RF-34)", () => {
     comoSesionDe(comprador.userId);
     await cancelarMiOrden({ numero });
 
-    // El autor es lo que después, en el panel, distingue un arrepentimiento
-    // de una cancelación de la administradora (RF-23).
+    // El autor distingue un arrepentimiento de una cancelación del panel
+    // (RF-23).
     expect(await historial(orderId)).toMatchObject([
       { fromStatus: null, toStatus: "activa" },
       {
@@ -242,7 +232,6 @@ describe("el arrepentimiento (RF-23, RF-34)", () => {
 
     expect(r.ok).toBe(false);
     expect(r).toMatchObject({ code: "NOT_FOUND" });
-    // Y la reserva del dueño sigue en pie.
     expect(await contadores(variantId)).toMatchObject({ reservedStock: 2 });
 
     // Un número que no existe da exactamente lo mismo: no se puede distinguir

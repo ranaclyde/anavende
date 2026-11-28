@@ -18,24 +18,6 @@ import {
 } from "@/modules/catalog/products/queries";
 import { umbralDeStockBajo } from "@/modules/settings/queries";
 
-/**
- * F2.5 — RF-15, RF-20, §10.2.
- *
- * Migrado de `scripts/verificar-listado.mts` (F4.0b).
- *
- * Lo que se prueba es lo que NO se ve leyendo el código:
- *
- *   · Que los tres números de stock salgan de la SUMA de las variantes,
- *     incluido el caso que no se nota: un color en −3 y otro en +10 suman 7,
- *     así que la discrepancia de RF-24 hay que contarla por variante o
- *     desaparece.
- *   · Que el filtro de stock viva en HAVING y no en WHERE. En WHERE se evalúa
- *     variante por variante, y un producto con un color en cero y otro con
- *     diez aparecería como «sin stock».
- *   · Que `%` y `_` sean lo que dicen y no comodines.
- *   · Que la URL sobreviva a que alguien la edite a mano.
- */
-
 type Filtros = Parameters<typeof listarProductos>[0];
 
 const con = (cambios: Partial<Filtros>): Filtros => ({
@@ -43,11 +25,6 @@ const con = (cambios: Partial<Filtros>): Filtros => ({
   ...cambios,
 });
 
-/**
- * Solo las filas. `listarProductos` devuelve `{ productos, total }` desde que
- * el listado pagina; lo que estos tests miran es el contenido de la página, y
- * el total tiene su propio bloque más abajo.
- */
 const filas = async (...args: Parameters<typeof listarProductos>) =>
   (await listarProductos(...args)).productos;
 
@@ -58,8 +35,6 @@ describe("la URL (§10.2)", () => {
   });
 
   test("un valor que no existe se descarta en vez de romper la pantalla", () => {
-    // Toda la lectura de la URL parte de que alguien la va a editar a mano, o
-    // a compartir una vieja: caerse ahí sería caerse por un enlace.
     expect(leerFiltros({ orden: "carisimo", estado: "borrados" }).orden).toBe(
       "destacados",
     );
@@ -117,13 +92,7 @@ describe("la URL (§10.2)", () => {
     ).toBe("precio");
   });
 
-  /**
-   * Desde el 2026-09-22 el estado es una solapa y no un desplegable (§6.9),
-   * y eso lo saca de la cuenta de «hay filtros puestos»: estar parada en
-   * «Inactivos» no es un filtro encima de un listado, es qué listado se está
-   * mirando. Si contara, «Limpiar todo» devolvería a otra solapa sin que
-   * nadie la tocara.
-   */
+  /** Estar en una solapa no es un filtro: si contara, «Limpiar todo» cambiaría de solapa sola. */
   test("la solapa tampoco es un filtro: no enciende «Limpiar todo»", () => {
     expect(hayFiltros(con({ estado: "inactivos" }))).toBe(false);
     expect(hayFiltros(con({ stock: "reponer" }))).toBe(true);
@@ -148,12 +117,8 @@ describe("la URL (§10.2)", () => {
 });
 
 /**
- * El catálogo de prueba se arma UNA vez y lo comparten todas las lecturas de
- * abajo: son consultas, no mutaciones, así que rearmarlo por test sería el
- * mismo resultado quince veces más lento.
- *
- * Cada nombre lleva el sufijo `marca` —un timestamp—, y buscar por ese sufijo
- * es lo que aísla estos productos de los que ya haya en la base local.
+ * El catálogo se arma una vez y lo comparten todas las lecturas. El sufijo
+ * `marca` en cada nombre lo aísla de lo que ya haya en la base local.
  */
 describe("contra la base", () => {
   const marca = String(Date.now());
@@ -239,7 +204,6 @@ describe("contra la base", () => {
       VALUES (${`Blanco ${marca}`}, ${`blanco-${marca}`}, '#FFFFFF') RETURNING id`);
     creado.colores.push(negro, blanco);
 
-    // Un teclado destacado con stock de sobra.
     teclado = await producto(`Teclado Mecánico ${marca}`, {
       brand: marcaA,
       cat: catA,
@@ -249,7 +213,7 @@ describe("contra la base", () => {
     });
     await variante(teclado, negro, 10, 2);
 
-    // Un cable barato cuya descripción es la única que nombra «USB-C».
+    // La única descripción que nombra «USB-C».
     cable = await producto(`Cable ${marca}`, {
       brand: marcaA,
       cat: catB,
@@ -259,7 +223,6 @@ describe("contra la base", () => {
     });
     await variante(cable, negro, 2);
 
-    // Un mouse inactivo y sin nada disponible.
     mouse = await producto(`Mouse ${marca}`, {
       brand: marcaB,
       cat: catA,
@@ -269,8 +232,8 @@ describe("contra la base", () => {
     });
     await variante(mouse, negro, 0);
 
-    // Un monitor con un color en negativo y otro con stock: la discrepancia
-    // que la suma esconde (RF-24, §5.4).
+    // Un color en negativo y otro con stock: la discrepancia que la suma
+    // esconde (RF-24).
     monitor = await producto(`Monitor ${marca}`, {
       brand: marcaB,
       cat: catB,
@@ -280,8 +243,7 @@ describe("contra la base", () => {
     await variante(monitor, negro, -3);
     await variante(monitor, blanco, 10);
 
-    // Recién cargado, todavía sin colores. F2.4 hace el alta en dos pasos, así
-    // que este estado existe de verdad y no es un caso inventado.
+    // Sin colores: el alta en dos pasos deja este estado de verdad.
     auricular = await producto(`Auricular ${marca}`, {
       brand: marcaA,
       cat: catA,
@@ -291,13 +253,9 @@ describe("contra la base", () => {
   });
 
   /**
-   * Se borra con el constructor de Drizzle y no con SQL a mano: en una
-   * plantilla `sql`, un array de JS se expande como LISTA DE PARÁMETROS
-   * —`($1, $2, …)`— y no como un array de Postgres, así que `= ANY(...)`
-   * falla con «requires array on right side». `inArray` arma el `IN` bien.
-   *
-   * El orden importa: los productos referencian marca y categoría con
-   * RESTRICT, así que primero se van ellos.
+   * Con `inArray` y no con SQL a mano: en `sql`, un array de JS se expande
+   * como lista de parámetros y `= ANY(...)` falla. Los productos van primero
+   * porque referencian marca y categoría con RESTRICT.
    */
   afterAll(async () => {
     if (creado.productos.length) {
@@ -330,8 +288,7 @@ describe("contra la base", () => {
       const todos = await filas(con({ q: marca }), 3);
       const m = todos.find((p) => p.id === monitor)!;
       expect(m).toMatchObject({ stockTotal: 7, disponible: 7 });
-      // Por eso se cuenta aparte: el producto queda marcado igual, y sin este
-      // contador la discrepancia de RF-24 no se ve en ninguna pantalla.
+      // Sin este contador la discrepancia no se ve en ninguna pantalla.
       expect(m.variantesEnNegativo).toBe(1);
     });
 
@@ -365,12 +322,7 @@ describe("contra la base", () => {
       expect(r.map((p) => p.id)).toEqual([cable]);
     });
 
-    /**
-     * `%` y `_` son comodines de ILIKE. Si el término no se escapa, buscar
-     * «%» devuelve el catálogo entero y buscar «cabl_» trae «cable»: la
-     * búsqueda parecería andar mejor de lo que anda, hasta que alguien busca
-     * un porcentaje de verdad.
-     */
+    /** `%` y `_` son comodines de ILIKE: sin escaparlos, «%» trae todo y «cabl_» trae «cable». */
     test("«%» busca un por ciento, no todo", async () => {
       const r = await filas(con({ q: "%", marca: marcaA }), 3);
       expect(r.map((p) => p.id)).toEqual([cable]);
@@ -413,10 +365,8 @@ describe("contra la base", () => {
     });
 
     /**
-     * El corazón de la tarea: el filtro vive en HAVING, sobre la suma. En
-     * WHERE se evaluaría variante por variante y el monitor —un color en −3,
-     * otro con 10— entraría en «sin stock» teniendo diez unidades en el
-     * depósito.
+     * El filtro vive en HAVING, sobre la suma: en WHERE el monitor entraría
+     * en «sin stock» teniendo diez unidades.
      */
     test("el monitor NO es «sin stock» aunque tenga un color en cero o menos", async () => {
       expect(await ids({ stock: "sin" })).not.toContain(monitor);
@@ -486,22 +436,14 @@ describe("contra la base", () => {
 
   describe("lo que separa «vacío» de «sin resultados» (§8)", () => {
     /**
-     * `contarPorEstado()` ignora los filtros a propósito: su `todos` es lo que
-     * decide si la pantalla dice «todavía no cargaste nada» o «no hay
-     * resultados para esta búsqueda». Con el conteo filtrado, un catálogo
-     * lleno con una búsqueda sin resultados diría que está vacío.
+     * Ignora los filtros a propósito: con el conteo filtrado, una búsqueda
+     * sin resultados diría que el catálogo está vacío.
      */
     test("el total cuenta todos los productos, sin mirar los filtros", async () => {
       const conteo = await contarPorEstado();
       expect(conteo.todos).toBeGreaterThanOrEqual(5);
     });
 
-    /**
-     * Las tres solapas son una partición, al revés que las de usuarios: un
-     * producto está activo o no lo está, así que los dos números tienen que
-     * dar el total. Si algún día dejaran de sumar, la solapa estaría
-     * prometiendo un listado que no existe.
-     */
     test("activos e inactivos suman el total", async () => {
       const conteo = await contarPorEstado();
       expect(conteo.activos + conteo.inactivos).toBe(conteo.todos);
@@ -509,11 +451,8 @@ describe("contra la base", () => {
     });
 
     /**
-     * Lo que no se ve leyendo la consulta: que el número de la solapa sea
-     * exactamente el que el listado de esa solapa va a mostrar. Son dos
-     * lugares repitiendo la misma condición —`FILTER (WHERE is_active)` en el
-     * conteo y `p.is_active` en el `WHERE` del listado—, y si se separan la
-     * solapa dice 25 y la tabla trae 24.
+     * La condición está repetida en el conteo y en el `WHERE` del listado:
+     * si se separan, la solapa dice 25 y la tabla trae 24.
      */
     test("cada solapa dice el número que su listado va a mostrar", async () => {
       const conteo = await contarPorEstado();
@@ -553,7 +492,6 @@ describe("contra la base", () => {
   });
 
   describe("la paginación (§6.9)", () => {
-    /** Los cinco de esta suite, ordenados por nombre para que no bailen. */
     const pagina = async (n: number, porPagina = 2) => {
       const todos = await filas(
         con({ q: marca, orden: "nombre", dir: "asc" }),
@@ -567,10 +505,8 @@ describe("contra la base", () => {
         con({ q: marca, orden: "nombre", dir: "asc" }),
         3,
       );
-      // Cinco productos y el tope es 40, así que entran todos en una página:
-      // el total y el largo coinciden. Lo que se fija es que `total` cuente
-      // las filas YA agrupadas —el filtro de stock vive en un HAVING— y no
-      // las de `products`.
+      // Lo que se fija es que `total` cuente las filas ya agrupadas: el filtro
+      // de stock vive en HAVING.
       expect(total).toBe(5);
       expect(productos).toHaveLength(5);
     });
@@ -585,8 +521,7 @@ describe("contra la base", () => {
     });
 
     test("el orden desempata, así que las páginas no se pisan", async () => {
-      // Sin criterio único, un producto puede caer en dos páginas o en
-      // ninguna. Se comprueba sobre el corte, que es lo que hace el LIMIT.
+      // Sin un criterio único, un producto puede caer en dos páginas o en ninguna.
       const primera = await pagina(1);
       const segunda = await pagina(2);
       const tercera = await pagina(3);
@@ -604,8 +539,8 @@ describe("contra la base", () => {
         3,
       );
       expect(productos).toHaveLength(0);
-      // El total sigue siendo el de los filtros: es lo que la pantalla usa
-      // para mandar a la última página que sí existe.
+      // El total sigue siendo el de los filtros: la pantalla lo usa para
+      // mandar a la última página que existe.
       expect(total).toBe(5);
     });
   });

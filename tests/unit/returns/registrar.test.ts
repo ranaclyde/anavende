@@ -20,12 +20,7 @@ import {
   unaOrdenDeUnItem,
 } from "@/tests/apoyo/ordenes";
 
-/**
- * F4.5 — devoluciones con y sin reposición. RF-25 · §5.7, §8.1.
- *
- * «Hecho cuando»: no permite devolver más de lo vendido, y la anulación
- * revierte el efecto en stock.
- */
+/** Devoluciones con y sin reposición. RF-25 · §5.7, §8.1. */
 
 afterEach(async () => {
   await limpiarOrdenes();
@@ -42,10 +37,8 @@ function enTransaccion<T>(
  * Una orden ya finalizada: es la única sobre la que se devuelve.
  * Con `total: 10` y `cantidad: 4`, la venta deja el stock en 6.
  *
- * En el libro mayor de la variante queda UN solo asiento previo, el de la
- * venta: el andamiaje pone la reserva escribiendo el contador directo, sin
- * pasar por `reservar()`, porque acá se arma un escenario y no se prueba esa
- * operación.
+ * El libro mayor tiene UN solo asiento previo, el de la venta: el andamiaje
+ * escribe la reserva directo, sin pasar por `reservar()`.
  */
 async function ordenVendida(cantidad = 4) {
   const { orderId, variantId } = await unaOrdenDeUnItem({
@@ -293,8 +286,7 @@ describe("anular (RF-25)", () => {
     expect(devolucion.voidReason).toBe("Era otra orden");
     expect(devolucion.voidedAt).not.toBeNull();
 
-    // El stock volvió a lo que era, y el libro lo cuenta con el mismo tipo de
-    // asiento y el signo dado vuelta: la devolución de la devolución.
+    // Mismo tipo de asiento con el signo dado vuelta.
     expect((await contadores(variantId)).stockTotal).toBe(6);
     expect(await movimientos(variantId)).toMatchObject([
       { type: "venta" },

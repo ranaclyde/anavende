@@ -16,9 +16,7 @@ import {
 import { crearPromocion } from "@/modules/settings/schemas";
 
 /**
- * F2.17 — RF-40. Promociones de cuotas por medio de pago.
- *
- * Lo que no se ve leyendo el código:
+ * RF-40. Lo que no se ve leyendo el código:
  *
  *   · Que la cuota se redondee HACIA ARRIBA, y que sea la única cuenta del
  *     sistema que lo hace: tres cuotas tienen que sumar al menos el precio.

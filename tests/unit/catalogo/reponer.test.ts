@@ -12,20 +12,10 @@ import {
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 
 /**
- * Reponer el stock desde el listado — RF-16, RF-20 · TS §8.1, §8.3.
- *
- * El globo de «Reponer» de `/admin/productos` escribe varias variantes de una
- * vez, y eso trae tres cosas que no se ven leyendo el código:
- *
- *   · **Que sea una sola transacción.** Si el segundo color es rechazado, el
- *     primero no puede haber quedado guardado: la vendedora vería números a
- *     medias y no sabría cuáles se aplicaron.
- *   · **Que cada ajuste asiente su movimiento** (§8.3, regla 3), con la nota
- *     que dice de dónde vino. Un ajuste sin asiento es una discrepancia que
- *     después no se puede auditar.
- *   · **Que no se pueda mover el stock de otro producto** pasando el id de
- *     una variante ajena: el `productId` y los `variantId` llegan los dos del
- *     cliente.
+ * El globo de «Reponer» escribe varias variantes de una vez. Se prueba que sea
+ * una sola transacción, que cada ajuste asiente su movimiento (§8.3) y que no
+ * se pueda mover el stock de otro producto: `productId` y `variantId` llegan
+ * los dos del cliente.
  */
 
 const sesion = vi.hoisted(() => ({ actual: null as unknown }));
@@ -50,7 +40,6 @@ function comoSesion(userId: string, role: "admin" | "customer") {
   };
 }
 
-/** Los colores que crea este archivo, para borrarlos al terminar. */
 const colores: string[] = [];
 
 afterEach(async () => {
@@ -63,12 +52,8 @@ afterEach(async () => {
 });
 
 /**
- * Dos variantes del mismo producto, cada una con su color y su stock.
- *
- * **Los colores se crean acá y no se toman de la semilla.** Tomarlos con un
- * `OFFSET` haría que el archivo dependiera de que la base traiga por lo menos
- * dos, que es una condición que nadie declaró y que una base recién creada no
- * cumple.
+ * Los colores se crean acá y no se toman del seed: con un `OFFSET`, el archivo
+ * dependería de que la base traiga por lo menos dos.
  */
 async function unProductoConDosColores(
   a: { total: number; reservado?: number },
@@ -146,7 +131,6 @@ describe("reponer (RF-16)", () => {
     expect((await contadores(primera)).stockTotal).toBe(7);
     expect((await contadores(segunda)).stockTotal).toBe(12);
 
-    // El libro, que es lo que hace auditable el ajuste.
     const asientos = await movimientos(primera);
     expect(asientos).toHaveLength(1);
     expect(asientos[0].quantity).toBe(5);
@@ -166,7 +150,7 @@ describe("reponer (RF-16)", () => {
       { total: 10 },
     );
 
-    // El globo manda SIEMPRE las dos, hayan cambiado o no.
+    // El globo manda siempre las dos, hayan cambiado o no.
     await reponerStock({
       productId,
       ajustes: [
@@ -203,8 +187,7 @@ describe("reponer (RF-16)", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.message).toContain("no puede bajar de 4");
 
-    // **Lo que importa**: la primera, que iba antes en la lista y era válida,
-    // tampoco se guardó.
+    // La primera, válida y antes en la lista, tampoco se guardó.
     expect((await contadores(primera)).stockTotal).toBe(2);
     expect((await contadores(segunda)).stockTotal).toBe(10);
     expect(await movimientos(primera)).toHaveLength(0);
@@ -266,8 +249,6 @@ describe("lo que el globo lee", () => {
 
     expect(r.data.variantes).toHaveLength(2);
     const conReservas = r.data.variantes.find((v) => v.reservedStock === 4)!;
-    // `disponible` es `total − reservado` (§8.1), que es el número que el
-    // listado muestra y el que el globo NO pide que se escriba.
     expect(conReservas.stockTotal).toBe(10);
     expect(conReservas.disponible).toBe(6);
     expect(conReservas.colorName).not.toBeNull();

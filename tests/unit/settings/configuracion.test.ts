@@ -18,20 +18,10 @@ import { limpiar, unaVariante } from "@/tests/apoyo/catalogo";
 import { motivoDel } from "@/tests/apoyo/errores";
 
 /**
- * F2.7 — RF-20, §5.9, §10.3.
- *
- * Migrado de `scripts/verificar-configuracion.mts` (F4.0b).
- *
- * **No usa `enTransaccionRevertida`, y no es un olvido.** Lo que se prueba acá
- * son las FUNCIONES de la aplicación —`escribirLaConfiguracion`,
- * `listarProductos`—, que abren su propia conexión por el pool: desde afuera
- * de una transacción de test no verían nada de lo que esa transacción
- * escribió, y todo daría rojo sin que nada estuviera mal.
- *
- * La contrapartida es que acá SÍ se escribe de verdad, incluida la fila de
- * configuración. Se guarda la que hubiera antes y se repone al terminar: en el
- * stack local no es de nadie, pero el hábito de dejar la base como estaba es
- * lo que hace que estos tests se puedan correr sin pensarlo dos veces.
+ * RF-20, §5.9, §10.3. No usa `enTransaccionRevertida` a propósito: las
+ * funciones de la aplicación abren su propia conexión por el pool y no verían
+ * lo escrito en la transacción del test. Escribe de verdad; la fila de
+ * configuración que hubiera se guarda y se repone al terminar.
  */
 
 const valido = (entrada: unknown) => configuracionDelSitio.safeParse(entrada);
@@ -69,7 +59,6 @@ describe("el número de WhatsApp (RF-20)", () => {
   });
 
   /**
-   * La prueba que sostiene que sean UNA implementación y no dos parecidas.
    * Si se separaran, el número del sitio y el del comprador podrían guardarse
    * distinto y nadie lo notaría hasta que un `wa.me` no abriera.
    */
@@ -86,9 +75,8 @@ describe("el número de WhatsApp (RF-20)", () => {
 
 describe("el email de avisos (RF-20)", () => {
   test("se recorta y se pasa a minúsculas", () => {
-    // Dos formas de escribir la misma casilla tienen que ser una sola: si no,
-    // cambiar el email por uno «distinto» que es el mismo no cambia nada y
-    // parece que no se guardó.
+    // Si no, cambiar el email por uno «distinto» que es el mismo parece que
+    // no se guardó.
     expect(
       valido({ ...base, adminNotificationEmail: "  Ventas@AnaVende.com.ar  " })
         .data?.adminNotificationEmail,
@@ -129,8 +117,7 @@ describe("el umbral de stock bajo (RF-20)", () => {
   });
 
   test("un umbral mal escrito explica la regla, con el MISMO texto del formulario", () => {
-    // Que sea la misma constante y no dos frases parecidas es lo que evita
-    // que el servidor y la pantalla se contradigan al explicar la regla.
+    // La misma constante evita que el servidor y la pantalla se contradigan.
     expect(umbral(0).error?.issues[0]?.message).toBe(AYUDA_DEL_UMBRAL);
     expect(umbral(3.5).error?.issues[0]?.message).toBe(AYUDA_DEL_UMBRAL);
   });
@@ -241,9 +228,8 @@ describe("guardar y leer (§5.9)", () => {
   });
 
   /**
-   * La comprobación que justifica que sea un UPSERT y no un UPDATE. Con un
-   * UPDATE el síntoma sería el peor posible: la pantalla diciendo «se guardó»
-   * sobre una tabla vacía, y nadie mirando la tabla.
+   * Por esto es un UPSERT: con un UPDATE la pantalla diría «se guardó» sobre
+   * una tabla vacía.
    */
   test("la PRIMERA vez CREA la fila", async () => {
     await sinFila();
@@ -255,8 +241,6 @@ describe("guardar y leer (§5.9)", () => {
     expect(primera.whatsappNumber).toBe("+5491155555555");
     expect(primera.lowStockThreshold).toBe(3);
 
-    // Lo que devuelve guardar tiene que ser lo que después se lee: si no,
-    // la pantalla muestra una cosa y la base guarda otra.
     expect((await leerLaConfiguracion())?.whatsappNumber).toBe(
       primera.whatsappNumber,
     );
@@ -292,7 +276,7 @@ describe("guardar y leer (§5.9)", () => {
     expect(segunda.lowStockThreshold).toBe(7);
 
     // El DEFAULT de `updated_at` solo corre al INSERTAR: al pisar hay que
-    // escribirlo a mano, y olvidarse deja una fecha que miente.
+    // escribirlo a mano.
     expect(new Date(despues.updatedAt).getTime()).toBeGreaterThan(
       new Date(antes.updatedAt).getTime(),
     );
@@ -396,10 +380,8 @@ describe("el umbral guardado es el que usa el listado (§10.3)", () => {
   });
 
   /**
-   * Todo el sentido de F2.7: hasta esa tarea el listado leía un 3 escrito en
-   * el código. Un producto con CINCO disponibles es el borde exacto que el
-   * umbral mueve, así que se prueba de los dos lados del borde — con uno solo
-   * no se distingue «usa el umbral» de «siempre dice que sí».
+   * Cinco disponibles es el borde que el umbral mueve: con un solo lado no se
+   * distingue «usa el umbral» de «siempre dice que sí».
    */
   test("con umbral 5 entra en «Para reponer»; con 4 sale", async () => {
     const { productId } = await unaVariante({ total: 5 });

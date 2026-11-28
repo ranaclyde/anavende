@@ -4,13 +4,9 @@ import { describe, expect, test } from "vitest";
 import { db } from "@/db";
 
 /**
- * F0.5 — La base cerrada a los roles de la API de Supabase. TS §13.8, §16;
- * migración `0025_cerrar_postgrest.sql`.
- *
- * La tienda nunca pasa por PostgREST, pero Supabase les da a `anon` y
- * `authenticated` todos los permisos sobre cada tabla nueva de `public`. Hasta
- * el 2026-10-27, con la clave pública se leían y modificaban las tablas por
- * `/rest/v1/`. nginx corta esa ruta en producción; esto prueba la segunda
+ * La base cerrada a los roles de la API de Supabase (TS §13.8, §16). Supabase
+ * les da a `anon` y `authenticated` todos los permisos sobre cada tabla nueva
+ * de `public`. nginx corta `/rest/v1/` en producción; esto prueba la segunda
  * capa, y falla si una tabla nueva nace sin RLS o con permisos.
  */
 

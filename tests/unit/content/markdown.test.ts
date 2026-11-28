@@ -7,17 +7,12 @@ import {
 } from "@/modules/content/markdown";
 
 /**
- * F2.3 — la lista blanca de §16 y RF-15: qué sobrevive al sanitizador y qué
- * no, con lo que de verdad llega al pegar desde Word, Google Docs o una
- * página web.
- *
- * Migrado de `scripts/verificar-markdown.mts` (F4.0b). Es el único de los once
- * que no toca la base: lo que se prueba es EL SERVIDOR, y el servidor acá es
- * una función. Que el editor también filtre es cierto y no garantiza nada —
- * el editor corre en la máquina del que escribe.
+ * La lista blanca de §16 y RF-15, con lo que llega al pegar desde Word, Google
+ * Docs o una página web. Se prueba el servidor: que el editor también filtre
+ * no garantiza nada, porque corre en la máquina del que escribe.
  */
 
-/** El original comparaba recortando las puntas: el serializador agrega un \n. */
+/** El serializador agrega un \n al final. */
 const sale = (entrada: string) => sanitizarMarkdown(entrada).trim();
 
 describe("lo que la vendedora puede usar", () => {
@@ -43,9 +38,8 @@ describe("lo que la vendedora puede usar", () => {
     expect(sale("Uno\n\nDos")).toBe("Uno\n\nDos");
   });
 
-  // Un solo nivel de subtítulo: venga como venga, sale como `###` (DR §6.11).
-  // La ficha arma su propia jerarquía y un `#` de la descripción competiría
-  // con el nombre del producto.
+  // Un solo nivel de subtítulo (DR §6.11): un `#` de la descripción
+  // competiría con el nombre del producto en la ficha.
   test.each(["#", "##", "####", "######"])(
     "«%s Qué trae» se normaliza al único nivel",
     (nivel) => {
@@ -55,9 +49,7 @@ describe("lo que la vendedora puede usar", () => {
 });
 
 describe("lo que se descarta conservando las palabras", () => {
-  // RF-15: «descarta el resto sin romper el resto del texto». Perder la
-  // palabra además del marcado sería descartar contenido de la vendedora.
-
+  // Perder la palabra además del marcado sería descartar contenido.
   test("el enlace se va y las palabras quedan", () => {
     expect(
       sale(
@@ -82,9 +74,7 @@ describe("lo que se descarta conservando las palabras", () => {
 });
 
 describe("lo que se borra entero", () => {
-  // Acá no hay nada legible que rescatar, y RF-16 ya tiene las imágenes del
-  // producto con su canalización, sus tamaños y su orden.
-
+  // No hay nada legible que rescatar; las imágenes del producto van por RF-16.
   test("la imagen se borra entera", () => {
     expect(sale("![Foto del teclado](https://ejemplo.com/foto.jpg)")).toBe("");
   });
@@ -103,8 +93,8 @@ describe("lo que se borra entero", () => {
     expect(sale("Uno\n\n---\n\nDos")).toBe("Uno\n\nDos");
   });
 
-  // Sin la extensión GFM la tabla ni siquiera se parsea: llega como texto
-  // suelto. Lo que importa no es qué queda, sino que NO salga una tabla.
+  // Sin la extensión GFM la tabla llega como texto suelto: lo que importa es
+  // que no salga una tabla.
   test("la tabla no sobrevive como tabla", () => {
     expect(sanitizarMarkdown("| a | b |\n|---|---|\n| 1 | 2 |")).not.toContain(
       "|---",
@@ -168,9 +158,8 @@ describe("pegar desde Word, que es el caso real", () => {
   });
 
   /**
-   * §16 sanitiza también al RENDERIZAR, no solo al guardar. Si la segunda
-   * pasada moviera algo, la ficha mostraría un texto distinto del que se
-   * guardó — y nadie compara esas dos cosas mirando.
+   * §16 sanitiza también al renderizar: si la segunda pasada moviera algo, la
+   * ficha mostraría un texto distinto del guardado.
    */
   test("sanitizar dos veces da lo mismo que sanitizar una", () => {
     expect(sanitizarMarkdown(limpio)).toBe(limpio);
@@ -191,9 +180,8 @@ describe("el límite cuenta texto, no sintaxis (RF-15)", () => {
   });
 
   /**
-   * El servidor cuenta MENOS que el editor, nunca más. Al revés, el contador
-   * de la pantalla diría que entra y el guardado lo negaría: la vendedora
-   * escribe hasta el tope que le muestran y pierde el texto al guardar.
+   * El servidor cuenta menos que el editor, nunca más: al revés, la vendedora
+   * escribiría hasta el tope que le muestran y perdería el texto al guardar.
    */
   test("no cuenta los saltos entre bloques: cuenta menos que el editor", () => {
     expect(longitudDeTexto("Uno\n\nDos")).toBeLessThanOrEqual(
@@ -203,10 +191,8 @@ describe("el límite cuenta texto, no sintaxis (RF-15)", () => {
 });
 
 describe("vacío", () => {
-  // RF-15: «una descripción vacía es válida». Tiene que quedar como cadena
-  // vacía y no como el salto de línea que agrega el serializador, porque
-  // «hay descripción» se decide con una comparación contra "".
-
+  // Cadena vacía y no el salto que agrega el serializador: «hay descripción»
+  // se decide comparando contra "".
   test("una descripción vacía se guarda vacía", () => {
     expect(sanitizarMarkdown("")).toBe("");
   });

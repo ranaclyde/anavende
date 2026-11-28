@@ -25,13 +25,8 @@ import {
 } from "@/tests/apoyo/ordenes";
 
 /**
- * F4.2 — la máquina de estados de la orden. RF-13, RF-23 · §5.6.
- *
- * El «Hecho cuando» son tres cosas: que las transiciones válidas funcionen,
- * que las inválidas se rechacen con `INVALID_ORDER_STATE`, y que cada una
- * escriba en el historial. La cuarta, que no está escrita pero es la que
- * importa, es que dos transiciones simultáneas no descuenten el stock dos
- * veces.
+ * La máquina de estados de la orden (RF-13, RF-23 · §5.6): transiciones,
+ * historial y que dos simultáneas no descuenten el stock dos veces.
  */
 
 afterEach(async () => {
@@ -128,9 +123,8 @@ describe("finalizar", () => {
   });
 
   test("un ítem cuya variante ya no existe no rompe la finalización", async () => {
-    // `order_items.variant_id` es ON DELETE SET NULL (§5.6): el snapshot de la
-    // orden se lee igual, pero ya no hay contador que mover. Que eso reviente
-    // dejaría la orden trabada para siempre.
+    // `order_items.variant_id` es ON DELETE SET NULL (§5.6): si esto
+    // reventara, la orden quedaría trabada para siempre.
     const { orderId, variantId } = await unaOrdenDeUnItem({
       total: 6,
       cantidad: 2,
@@ -141,7 +135,6 @@ describe("finalizar", () => {
     await enTransaccion((tx) => finalizarOrden(tx, { orderId }));
 
     expect((await estadoDeLaOrden(orderId)).status).toBe("finalizada");
-    // La variante quedó como estaba: nadie la tocó, y así tiene que ser.
     expect(await contadores(variantId)).toEqual({
       stockTotal: 6,
       reservedStock: 2,
@@ -182,8 +175,6 @@ describe("cancelar", () => {
 
     await enTransaccion((tx) => cancelarOrden(tx, { orderId }));
 
-    // La única unidad estaba comprometida y ahora no lo está. Es el punto
-    // entero de cancelar.
     const { stockTotal, reservedStock } = await contadores(variantId);
     expect(stockTotal - reservedStock).toBe(1);
   });
@@ -206,7 +197,6 @@ describe("las transiciones que no existen", () => {
     expect(fallo.code).toBe("INVALID_ORDER_STATE");
     expect(fallo.details).toMatchObject({ estadoActual: "finalizada" });
 
-    // Y sobre todo: el stock se descontó UNA vez.
     expect(await contadores(variantId)).toEqual({
       stockTotal: 7,
       reservedStock: 0,
@@ -264,9 +254,8 @@ describe("las transiciones que no existen", () => {
 
 describe("dos administradoras al mismo tiempo", () => {
   test("dos «Finalizar» simultáneos descuentan el stock UNA vez", async () => {
-    // Es el mismo peligro que la Compuerta F4 pero del lado de la orden: con
-    // un SELECT para chequear el estado y un UPDATE después, las dos
-    // transacciones pasarían el chequeo y venderían las mismas unidades.
+    // Con un SELECT para chequear el estado y un UPDATE después, las dos
+    // pasarían el chequeo y venderían las mismas unidades.
     const { orderId, variantId } = await unaOrdenDeUnItem({
       total: 10,
       cantidad: 4,
@@ -315,9 +304,8 @@ describe("dos administradoras al mismo tiempo", () => {
       reason: { code: "INVALID_ORDER_STATE" },
     });
 
-    // Y hay UN solo movimiento: la venta. Lo que no puede pasar es que se
-    // descuente y además se libere, que sería devolver al stock algo que ya
-    // se vendió.
+    // UN solo movimiento: descontar y además liberar devolvería al stock algo
+    // ya vendido.
     expect(await contadores(variantId)).toEqual({
       stockTotal: 5,
       reservedStock: 0,

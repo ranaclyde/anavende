@@ -6,7 +6,7 @@ import { emailConfirmado } from "@/modules/users/verificacion";
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 
 /**
- * F10.5 — RF-11 se decide con la base, no con la sesión.
+ * RF-11 se decide con la base, no con la sesión.
  *
  * El token de GoTrue trae `email_verified` dentro de `user_metadata`, que el
  * usuario puede escribir. Lo que vale es `auth.users.email_confirmed_at`, que
