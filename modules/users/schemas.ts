@@ -84,6 +84,16 @@ export const misDatosSchema = completarPerfilSchema;
  * La actual es opcional acá porque quien entró solo por Google no tiene una;
  * que haga falta lo decide la acción, con la sesión.
  */
+export const definicionDeContrasenaSchema = z
+  .object({
+    nueva: contrasena,
+    repetida: z.string(),
+  })
+  .refine((v) => v.nueva === v.repetida, {
+    path: ["repetida"],
+    error: "Las dos contraseñas tienen que ser iguales.",
+  });
+
 export const cambioDeContrasenaSchema = z
   .object({
     actual: z.string().max(72).optional(),
