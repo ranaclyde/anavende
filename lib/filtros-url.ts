@@ -1,31 +1,14 @@
-/**
- * Leer filtros de la URL sin fallar nunca — §10.2.
- *
- * El estado de los listados del panel vive en la dirección: se comparte,
- * funciona el botón atrás y otra pantalla puede enlazar a una vista concreta.
- * Eso significa que la URL la escribe cualquiera —a mano, o un enlace viejo
- * de hace seis meses—, así que **lo que no se reconoce se descarta y queda el
- * valor de siempre**. Un listado que devuelve un error porque alguien borró
- * media palabra del enlace es un callejón sin salida.
- *
- * **No es `server-only`**: la consulta lee estos valores y la barra de filtros
- * los escribe. Con una copia de cada lado, el día que una cambie la otra deja
- * de encontrar y no lo dice.
- *
- * Vive en `lib/` y no en un módulo porque **lo usan los dos listados** —el de
- * órdenes (F7.1) y el de devoluciones (F7.5)—, y el tercero va a querer las
- * mismas tres reglas.
- */
+// Filtros de la URL sin fallar nunca (TECHNICAL-SPEC §10.2): la URL la escribe
+// cualquiera, así que lo que no se reconoce queda en el valor de siempre.
+// Sin `server-only`: la consulta los lee y la barra de filtros los escribe.
 
-/** Lo que Next entrega tras hacerle `await` a `searchParams` (§10.2). */
 export type ParametrosDeBusqueda = Record<
   string,
   string | string[] | undefined
 >;
 
 export function texto(valor: string | string[] | undefined): string {
-  // Un parámetro repetido —`?q=a&q=b`— llega como arreglo. Se toma el primero
-  // en vez de fallar: la URL la escribe cualquiera, no solo la barra.
+  // `?q=a&q=b` llega como arreglo: se toma el primero.
   return (Array.isArray(valor) ? valor[0] : valor)?.trim() ?? "";
 }
 
@@ -42,10 +25,8 @@ export function unaDe<T extends string>(
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Una fecha del calendario, o `""`.
- *
- * Se valida la **forma y el valor**: `2026-02-31` tiene forma de fecha y no
- * existe, y entraría a Postgres para hacerlo fallar.
+ * Una fecha del calendario, o `""`. `2026-02-31` tiene la forma pero haría
+ * fallar a Postgres.
  */
 export function fecha(valor: string | string[] | undefined): string {
   const v = texto(valor);

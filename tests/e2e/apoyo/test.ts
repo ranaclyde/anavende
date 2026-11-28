@@ -5,38 +5,28 @@ import {
   type BrowserContext,
 } from "@playwright/test";
 
-// Todo lo demás, tal cual: los tipos (`Page`, `Request`…) y `expect`. El
-// `test` de abajo tapa al de Playwright, que es lo único que cambia.
+// El `test` de abajo tapa al de Playwright; el resto se reexporta tal cual.
 export * from "@playwright/test";
 
 /**
- * El `test` de los E2E, con un control más: **la CSP no bloqueó nada** —
- * TECHNICAL-SPEC §16, F10.5.
+ * El `test` de los E2E, con un control más: la CSP no bloqueó nada
+ * (TECHNICAL-SPEC §16). Un origen que falta en `next.config.ts` el navegador
+ * lo bloquea en silencio, solo con un aviso en la consola y sin error del
+ * lado del servidor.
  *
- * La política de `next.config.ts` enumera de dónde se pueden cargar scripts,
- * imágenes y conexiones. Si un día una pantalla necesita un origen que no
- * está —un widget, Turnstile en F10.5b, otro host de fotos—, el navegador lo
- * bloquea en silencio: la consola dice «Refused to…» y la página se ve rota
- * sin ningún error del lado del servidor. Con esto, el test que pasa por esa
- * pantalla falla y dice qué se bloqueó.
- *
- * Mira la consola de **todos** los contextos, no solo el de la fixture
- * `page`: varios recorridos abren otro navegador para la compradora o la
- * visitante (`browser.newContext()`).
+ * Mira la consola de todos los contextos, no solo el de `page`: varios
+ * recorridos abren otro con `browser.newContext()`.
  */
 
 const bloqueos: string[] = [];
 
 /**
- * **Las guías de F6.6 y F6.7 arrancan vistas** en todos los contextos: la
- * primera visita a la ficha, el checkout, «Mis compras» o a una de las
- * cuatro pantallas del panel que tienen la suya abre un globo con el fondo
- * oscurecido, y cada recorrido que pasa por ahí tendría que cerrarlo primero.
- * `ayudas.spec.ts` las prueba con `test.use({ ayudasVistas: false })`.
+ * Las guías arrancan vistas en todos los contextos: si no, su fondo
+ * oscurecido tapa la pantalla. `ayudas.spec.ts` las prueba con
+ * `test.use({ ayudasVistas: false })`.
  *
- * La clave y los ids son los de `components/ui/ayuda-guiada.tsx` y sus
- * pantallas, escritos a mano: si cambian, la guía aparece en los recorridos
- * y el que pase por ahí falla por el fondo que no deja tocar.
+ * La clave y los ids copian los de `components/ui/ayuda-guiada.tsx` y sus
+ * pantallas: si cambian allá, los recorridos fallan por el fondo.
  */
 const GUIAS = [
   "ficha",
@@ -70,8 +60,8 @@ export const test = base.extend<
   { vigilarContexto: void },
   { browser: Browser; ayudasVistas: boolean }
 >({
-  // Del worker y no del test: la fixture `context` de Playwright también
-  // nace de `browser.newContext`, que es donde se marcan.
+  // Del worker: la fixture `context` también nace de `browser.newContext`,
+  // que es donde se marcan.
   ayudasVistas: [true, { option: true, scope: "worker" }],
 
   browser: [

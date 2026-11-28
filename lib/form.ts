@@ -1,14 +1,5 @@
 import type { ActionResult } from "@/lib/action";
 
-/**
- * Traduce la respuesta de una Server Action a lo que el formulario necesita
- * pintar: un mensaje general y los errores colgados de cada campo.
- *
- * El envoltorio devuelve los errores de Zod con `treeifyError`, que es un
- * árbol; acá se aplana a `{ campo: mensaje }` porque un campo muestra un
- * mensaje, no una lista (DESIGN-REFERENCE §6.6).
- */
-
 type ArbolDeErrores = {
   errors?: string[];
   properties?: Record<string, { errors?: string[] } | undefined>;
@@ -17,7 +8,6 @@ type ArbolDeErrores = {
 export type ErroresDeFormulario<C extends string = string> = {
   general: string | null;
   campos: Partial<Record<C, string>>;
-  /** El código de dominio, para cuando la vista reacciona distinto según cuál. */
   codigo: string | null;
   detalles: Record<string, unknown> | null;
 };
@@ -29,6 +19,10 @@ export const SIN_ERRORES: ErroresDeFormulario = {
   detalles: null,
 };
 
+/**
+ * Aplana el árbol de `treeifyError` a `{ campo: mensaje }`: un mensaje por
+ * campo.
+ */
 export function leerErrores<C extends string = string>(
   resultado: Extract<ActionResult<unknown>, { ok: false }>,
 ): ErroresDeFormulario<C> {
@@ -42,8 +36,7 @@ export function leerErrores<C extends string = string>(
   }
 
   return {
-    // Si el problema está en un campo concreto, el mensaje general sobra:
-    // repetirlo arriba y abajo hace que parezcan dos problemas distintos.
+    // Repetido arriba y en el campo parecerían dos problemas distintos.
     general: Object.keys(campos).length ? null : resultado.message,
     campos,
     codigo: resultado.code,
@@ -52,12 +45,8 @@ export function leerErrores<C extends string = string>(
 }
 
 /**
- * Los errores de un objeto anidado dentro de la entrada — la dirección de una
- * orden manual (F7.4), que llega como `direccion.street` y no como `street`.
- *
- * `leerErrores` aplana un solo nivel a propósito: casi todos los formularios
- * son planos, y devolver el árbol entero obligaría a cada uno a recorrerlo.
- * Cuando hay una sección adentro, se pide con esto.
+ * Los errores de un objeto anidado (`direccion.street`): `leerErrores` aplana
+ * un solo nivel.
  */
 export function erroresDeSeccion<C extends string = string>(
   resultado: Extract<ActionResult<unknown>, { ok: false }>,

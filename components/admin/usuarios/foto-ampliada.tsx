@@ -12,16 +12,8 @@ import {
 } from "@/components/ui/dialog";
 
 /**
- * La foto de una cuenta, ampliada sin salir de la ficha — F5.9, pedido tuyo
- * del 2026-10-26. Hasta ese día se abría en otra pestaña: a 64px se reconoce a
- * alguien, pero no se ve bien qué subió, y para mirarla había que irse del
- * panel.
- *
- * **A 256px y no más**: es la única versión que se guarda
- * (`TAMANOS_PERFIL`). Estirarla sería mostrar píxeles inventados.
- *
- * Solo con foto propia: el blobatar no tiene nada más que ver, y no es un
- * botón (lo resuelve `Retrato`, en la ficha).
+ * La foto de una cuenta, ampliada sin salir de la ficha. A 256px y no más: es
+ * la única versión que se guarda (`TAMANOS_PERFIL`). Solo con foto propia.
  */
 export function FotoAmpliada({ src, nombre }: { src: string; nombre: string }) {
   const [abierta, setAbierta] = useState(false);

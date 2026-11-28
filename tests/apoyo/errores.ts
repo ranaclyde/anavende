@@ -1,14 +1,9 @@
 import { expect } from "vitest";
 
 /**
- * Leer el motivo de un error, y exigirlo.
- *
- * **Por qué existe:** Drizzle envuelve el error del driver en un
- * `DrizzleQueryError` cuyo mensaje es solo «Failed query: SELECT …». El motivo
- * de verdad —la restricción violada, el código de Postgres— viaja en `cause`.
- * Un `toThrow(/constraint/)` directo contra ese envoltorio no matchea NUNCA, y
- * la salida cómoda ante eso es sacar el motivo y quedarse con un rechazo que
- * se conforma con que algo falle: pasa igual si la consulta está mal escrita.
+ * Drizzle envuelve el error del driver en un `DrizzleQueryError` que solo dice
+ * «Failed query: …»; el motivo de Postgres viaja en `cause`, así que un
+ * `toThrow(/constraint/)` directo no matchea nunca.
  */
 export function motivoDel(error: unknown): string {
   return [
@@ -20,13 +15,9 @@ export function motivoDel(error: unknown): string {
 }
 
 /**
- * Una llamada que TIENE que fallar, y por el motivo que se dice.
- *
- * Para lo que no pasa por una transacción de test: funciones de la aplicación
- * y SQL suelto. La versión con SAVEPOINT vive en `apoyo/transaccion.ts`, y la
- * diferencia no es estilo: adentro de una transacción, una sentencia que falla
- * la aborta entera, y sin punto de retorno todo lo que venga después falla con
- * `current transaction is aborted` en vez de con lo que pasó.
+ * Para lo que no corre dentro de una transacción de test. Adentro de una, usar
+ * `rechaza` de `apoyo/transaccion.ts`: sin SAVEPOINT, el fallo la aborta y lo
+ * que sigue da `current transaction is aborted`.
  */
 export async function rechazaLlamada(
   fn: () => Promise<unknown>,

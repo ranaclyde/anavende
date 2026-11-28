@@ -13,13 +13,7 @@ export const metadata: Metadata = { title: "Legales" };
 
 type Props = { params: Promise<{ slug: string }> };
 
-/**
- * Las páginas legales del panel — RF-29, F9.3: «el texto legal es editable
- * desde el panel sin necesidad de un deploy».
- *
- * Una sección propia y no una solapa de Configuración: la configuración son
- * tres valores sueltos, y esto son cuatro textos largos con su editor.
- */
+/** Los textos legales, editables sin deploy (RF-29). */
 export default async function EditarTextoLegal({ params }: Props) {
   await exigirAdmin();
 

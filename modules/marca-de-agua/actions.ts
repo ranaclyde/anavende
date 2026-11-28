@@ -14,13 +14,7 @@ import {
   soloImagen,
 } from "@/modules/marca-de-agua/schemas";
 
-/**
- * La marca de agua desde el panel — RF-39.
- *
- * Se invalida el layout de `/admin` entero y no solo esta pantalla: el aviso
- * «Marca de agua activada» vive en el editor de productos, y tiene que decir
- * lo que quedó.
- */
+/** Todo `/admin`: el aviso «Marca de agua activada» vive en el editor de productos. */
 function refrescar() {
   revalidatePath("/admin", "layout");
 }

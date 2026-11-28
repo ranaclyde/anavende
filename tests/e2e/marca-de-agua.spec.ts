@@ -6,12 +6,8 @@ import { datosDePrueba, sufijo, type Color, type Cuenta } from "./apoyo/datos";
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * F2.16 — La marca de agua de punta a punta (RF-39): se sube una imagen a la
- * biblioteca, se arma una capa, se prueba en la vista previa, se guarda y se
- * activa; la ficha del producto avisa que está activada y la foto que se
- * sube queda marcada.
- *
- * La marca es una para toda la tienda: se anota cómo estaba y se deja igual.
+ * La marca de agua de punta a punta (RF-39). Es una para toda la tienda: se
+ * anota cómo estaba y se deja igual.
  */
 
 const datos = datosDePrueba();
@@ -20,7 +16,7 @@ let admin: Cuenta;
 let negro: Color;
 let producto: { id: string };
 let antes: { activa: boolean; capas: Record<string, unknown>[] };
-const CAPTURAS = process.env.CAPTURAS;
+const CAPTURA = process.env.CAPTURA;
 
 test.beforeAll(async () => {
   const marca = `Marca ${palabra}`;
@@ -49,8 +45,8 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-  // Las imágenes que subió el test, también si falló a mitad: el borrado
-  // del final es parte de lo que se prueba y puede no haber llegado.
+  // También si falló a mitad: el borrado del final es parte de lo que se
+  // prueba y puede no haber llegado.
   const subidas = await datos.sql<{ id: string; storage_key: string }[]>`
     DELETE FROM watermark_images WHERE name = ${`logo-${palabra}`}
     RETURNING id, storage_key`;
@@ -66,7 +62,6 @@ test.afterAll(async () => {
   await datos.desarmar();
 });
 
-/** Un logo de prueba: un cuadrado rojo sobre transparente. */
 function logo(): Promise<Buffer> {
   return sharp({
     create: {
@@ -110,19 +105,17 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
       JSON.stringify(["panel-producto", "ficha"]),
     ),
   );
-  // Sin animaciones: axe mide el contraste en el momento, y un aviso a
-  // mitad de aparecer tiene el texto a medio color.
+  // Axe mide el contraste en el momento, y un aviso a mitad de aparecer
+  // tiene el texto a medio color.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await ingresar(page, admin);
   await page.goto("/admin/configuracion/marca-de-agua");
 
-  // El estado y su botón están en el encabezado, y solo si hay imágenes:
-  // sin ninguna, la pantalla es solo «subí tu marca».
   const activar = page.getByRole("button", {
     name: "Activar la marca de agua",
   });
 
-  // Un JPG no entra: no tiene transparencia.
+  // Un JPG no tiene transparencia.
   const biblioteca = page.getByRole("region", { name: "Imágenes" });
   const archivo = biblioteca.locator("input[type=file]");
   await archivo.setInputFiles({
@@ -144,9 +137,7 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   await expect(page.getByText("Desactivada", { exact: true })).toBeVisible();
   await expect(activar).toBeDisabled();
 
-  // Una capa en la esquina, al 30% y sin transparencia de más.
   const capas = page.getByRole("region", { name: "Capas" });
-  // La capa se arma desde la imagen, y queda ligada a ella.
   const agregarCapa = biblioteca.getByRole("button", {
     name: `Agregar una Capa con «${nombre}»`,
   });
@@ -158,7 +149,6 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   await page.keyboard.press("End");
   await expect(capas.getByText("100%, como está la imagen")).toBeVisible();
 
-  // La vista previa la arma el servidor con lo que está en pantalla.
   const previa = page.getByRole("region", { name: "Vista previa" });
   await previa.locator("input[type=file]").setInputFiles({
     name: "prueba.jpg",
@@ -170,12 +160,11 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   });
   await expect(imagen).toBeVisible({ timeout: 20_000 });
 
-  // Con cambios sin guardar no se activa: activaría otra cosa.
+  // Con cambios sin guardar no se activa: activaría otra cosa que la vista.
   await expect(page.getByText("Cambios sin guardar")).toBeVisible();
   await expect(activar).toBeDisabled();
 
-  // Con dos capas se pliegan y se abre una por vez: la nueva se abre, y la
-  // primera queda cerrada y resumida en su cabecera.
+  // Con dos capas se abre una por vez.
   await agregarCapa.click();
   const primera = capas.getByRole("button", { name: /^Capa 1/ });
   await expect(primera).toHaveAttribute("aria-expanded", "false");
@@ -189,25 +178,24 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   await expect(capas.getByRole("slider", { name: "Opacidad" })).toHaveCount(1);
   expect(await hallazgosDeAxe(page)).toEqual([]);
 
-  if (CAPTURAS) {
+  if (CAPTURA) {
     await expect(previa.getByText("Actualizando")).toBeHidden();
     for (const ancho of [1280, 1497]) {
       await page.setViewportSize({ width: ancho, height: 900 });
       await expect(previa.getByText("Actualizando")).toBeHidden();
       await page.screenshot({
-        path: `${CAPTURAS}/marca-${ancho}.png`,
+        path: `${CAPTURA}-marca-${ancho}.png`,
         fullPage: true,
       });
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({
-      path: `${CAPTURAS}/marca-390.png`,
+      path: `${CAPTURA}-marca-390.png`,
       fullPage: true,
     });
     await page.setViewportSize({ width: 1280, height: 800 });
   }
 
-  // Se quita la segunda y la que queda vuelve a estar abierta, sin plegar.
   await capas.getByRole("button", { name: "Quitar la capa 2" }).click();
   await expect(capas.getByRole("slider", { name: "Opacidad" })).toHaveCount(1);
   await expect(capas.getByRole("button", { name: /^Capa 1/ })).toHaveCount(0);
@@ -220,16 +208,15 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
 
   expect(await hallazgosDeAxe(page)).toEqual([]);
 
-  // El inicio del panel también lo dice, y lleva a la pantalla.
   await page.goto("/admin");
   const enElInicio = page.getByRole("region", {
     name: "La marca de agua está activada",
   });
   await expect(enElInicio).toBeVisible();
-  if (CAPTURAS) {
+  if (CAPTURA) {
     for (const ancho of [1280, 390]) {
       await page.setViewportSize({ width: ancho, height: 900 });
-      await page.screenshot({ path: `${CAPTURAS}/inicio-${ancho}.png` });
+      await page.screenshot({ path: `${CAPTURA}-inicio-${ancho}.png` });
     }
     await page.setViewportSize({ width: 1280, height: 800 });
   }
@@ -239,7 +226,6 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
     .click();
   await expect(page).toHaveURL(/\/admin\/configuracion\/marca-de-agua$/);
 
-  // En la ficha del producto se avisa, y la foto sube marcada.
   await page.goto(`/admin/productos/${producto.id}`);
   const seccion = page.getByRole("region", { name: "Colores y stock" });
   await expect(
@@ -267,7 +253,6 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
      WHERE v.product_id = ${producto.id}`;
   expect(subida.marca).toBe(true);
 
-  // Borrar la imagen de la única capa la apaga.
   await page.goto("/admin/configuracion/marca-de-agua");
   await page
     .getByRole("region", { name: "Imágenes" })
@@ -277,7 +262,7 @@ test("se arma, se prueba, se activa y la foto que se sube queda marcada", async 
   await expect(dialogo).toContainText("La usa la capa 1");
   await dialogo.getByRole("button", { name: "Borrar" }).click();
   // Con el diálogo abierto lo de atrás no cuenta como visible: se espera a
-  // la base, que es lo que dice que se borró y se apagó.
+  // la base.
   await expect
     .poll(async () => {
       const [fila] = await datos.sql<{ enabled: boolean }[]>`

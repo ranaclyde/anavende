@@ -8,26 +8,18 @@ import { versionDelBuild } from "@/lib/version";
 import { caraDe } from "@/modules/users/avatar";
 
 /**
- * Layout del panel — DESIGN-REFERENCE §4, §5.2 · TECHNICAL-SPEC §13.7.
- *
- * Segunda capa de autorización (F1.12). El proxy ya redirigió a quien no
- * tiene cookie, pero eso es una redirección rápida, no seguridad: acá se lee
- * el ROL DEL PERFIL contra la base, fresco.
- *
- *   anónimo   → redirigido a /ingresar
- *   customer  → 404, no 403: un panel que responde «prohibido» confirma que
- *               existe. Para quien no es administrador, simplemente no está.
- *
- * La tercera capa —el envoltorio de Server Actions— vuelve a verificar en
- * cada mutación. Esta guardia protege lo que se pinta, no lo que se hace.
+ * Segunda capa de autorización (TECHNICAL-SPEC §13.7): el proxy solo mira la
+ * cookie; acá se lee el rol del perfil contra la base. Un customer recibe 404,
+ * no 403, para no confirmar que el panel existe. Las Server Actions vuelven a
+ * verificar en cada mutación.
  */
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // El mismo control que cada página repite (`exigirAdmin`, F10.5): acá
-  // solo no alcanza, porque Next renderiza la página en paralelo.
+  // Cada página lo repite: acá solo no alcanza, porque Next renderiza
+  // layout y página en paralelo.
   const session = await exigirAdmin();
 
   return (
@@ -36,20 +28,8 @@ export default async function AdminLayout({
           oscuro en el primer render. */}
       <script dangerouslySetInnerHTML={{ __html: scriptDeTema }} />
 
-      {/* `MarcoDeEscala` activa la densidad del panel: 14px de base, radios
-          de 8-12px y filas de 44px, sin duplicar ningún componente (§4).
-          Pone el `data-scale` para el CSS y además lo deja disponible para
-          los diálogos y menús, que se pintan fuera de este árbol.
-
-          **En columna hasta `lg`, y ahí sí en fila.** `AdminSidebar` empieza
-          con la barra del teléfono, que es una franja de 14 de alto pensada
-          para ir ARRIBA del contenido; con `flex` a secas se acomodaba como
-          primera columna y se comía 125 de los 390 píxeles de la pantalla,
-          dejando el contenido en un canuto. Estaba así desde F1.12 y lo
-          encontró el repaso de F7.1, que es la primera pantalla del panel
-          que se mira en serio desde un teléfono (§6.9). El menú de
-          escritorio es `fixed`, así que no participa de esto ni en un caso
-          ni en el otro. */}
+      {/* En columna hasta `lg`: la barra del teléfono de `AdminSidebar` va
+          arriba del contenido, no como primera columna. */}
       <MarcoDeEscala
         escala="admin"
         className="flex min-h-svh flex-col bg-canvas text-ink lg:flex-row"
@@ -60,22 +40,14 @@ export default async function AdminLayout({
         />
         <main className="min-w-0 flex-1 p-4 lg:p-6">{children}</main>
 
-        {/* Los avisos viven acá y no en cada pantalla, por dos motivos. Uno:
-            un `aria-live` tiene que estar en el DOM antes que su contenido, o
-            el lector de pantalla no lo anuncia. Dos: **sobreviven a la
-            navegación** —crear un producto empuja a otra pantalla y la
-            confirmación tiene que llegar ahí—, y el layout es lo único que no
-            se vuelve a montar al navegar dentro del panel.
-
-            Adentro de `MarcoDeEscala` a propósito: `sonner` no usa un portal,
-            así que hereda el `data-scale` y la variante `admin:` funciona sin
-            el truco de `escala.tsx`. */}
+        {/* En el layout porque no se vuelve a montar al navegar: el aviso
+            sobrevive al cambio de pantalla y el `aria-live` ya está en el DOM
+            antes que su contenido. Adentro de `MarcoDeEscala` porque `sonner`
+            no usa portal y así hereda el `data-scale`. */}
         <Toaster />
 
-        {/* Avisa con el aviso de arriba si hubo un despliegue mientras el
-            panel estaba abierto: desde ese momento «Guardar» falla
-            (2026-11-17, `lib/version.ts`). Acá y no en cada pantalla por lo
-            mismo que los avisos: el layout no se vuelve a montar al navegar. */}
+        {/* Avisa si hubo un despliegue con el panel abierto: desde ahí
+            «Guardar» falla (`lib/version.ts`). */}
         <AvisoDeVersion version={versionDelBuild()} />
       </MarcoDeEscala>
     </>

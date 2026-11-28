@@ -6,19 +6,7 @@ import {
   type FiltrosDeOrdenes,
 } from "@/modules/orders/filtros-panel";
 
-/**
- * Las solapas por estado de las órdenes — RF-21, DR §5.2 y §6.9. Tarea F7.1.
- *
- * La forma la pone `SolapasDelPanel`; acá queda lo único propio de órdenes:
- * de dónde sale el número de cada una y a qué dirección lleva.
- *
- * **El conteo es del total y no del filtro puesto**: si cambiara con cada
- * búsqueda, la solapa dejaría de ser un indicador para pasar a ser un
- * resultado más (§6.9).
- *
- * Cambiar de solapa **conserva los filtros y vuelve a la página 1**: la
- * página 3 de las activas no tiene por qué existir entre las canceladas.
- */
+/** El conteo es del total, no del filtro puesto (DR §6.9). */
 export function SolapasDeEstado({
   filtros,
   conteo,

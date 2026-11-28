@@ -3,10 +3,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { cabecerasParaGoTrue } from "@/lib/supabase/cliente-ip";
 
-/**
- * F10.5 — La IP del comprador viaja a GoTrue con la clave. TS §16;
- * `lib/supabase/cliente-ip.ts`.
- */
+/** La IP del comprador viaja a GoTrue con la clave. TS §16. */
 
 const CLAVE = "a".repeat(64);
 

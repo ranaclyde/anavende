@@ -3,14 +3,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Tabla del panel — DESIGN-REFERENCE §6.9.
- * Fila de 44px, cabecera fija en versalitas sobre `--surface-sunken`,
- * separador de 1px, números tabulares a la derecha.
- *
- * En móvil las tablas se vuelven TARJETAS, no scroll horizontal: una tabla
- * de siete columnas en un teléfono es inoperable. Ese cambio lo decide cada
- * pantalla (F7.1), no este componente; acá solo se define la variante de
- * escritorio.
+ * Tabla del panel (DR §6.9), solo la variante de escritorio: en el teléfono
+ * cada pantalla la pasa a tarjetas.
  */
 function Table({
   className,
@@ -19,38 +13,20 @@ function Table({
   ...props
 }: React.ComponentProps<"table"> & {
   /**
-   * `false` en una tabla corta adentro de una tarjeta, que no es el listado de
-   * la pantalla: los reportes (F9.1) ponen varias una debajo de otra, y con
-   * el tope la de «Más vendidos» se cortaba en la fila nueve con una barra de
-   * scroll propia adentro de una página que ya scrollea.
+   * `false` en una tabla corta que no es el listado de la pantalla: con el
+   * tope tendría su propia barra de scroll dentro de una página que scrollea.
    */
   conTope?: boolean;
   /**
-   * El nombre de la tabla, en una que puede quedar más ancha que la pantalla
-   * y no tiene nada adentro que tome el foco —los reportes a 320px, o con el
-   * zoom al 200%—. Sin esto, con el teclado no hay forma de deslizarla
-   * (WCAG 2.1.1): la caja pasa a ser una región con nombre que toma el foco.
+   * Nombre de una tabla que puede quedar más ancha que la pantalla y no tiene
+   * nada que tome el foco: sin esto no se desliza con el teclado (WCAG 2.1.1).
    */
   deslizable?: string;
 }) {
   return (
-    // **Este div es el que scrollea, y por eso existe el tope de alto.**
-    // `sticky` se fija dentro del ancestro que scrollea, y hasta el
-    // 2026-09-21 ése era este mismo div, que no scrolleaba nunca: la página
-    // se deslizaba por debajo y se llevaba la cabecera puesta. Medido en
-    // `/admin/productos` con 26 filas: al scrollear 600px la cabecera
-    // terminaba en y=−398. En órdenes y usuarios *parecía* andar, pero sólo
-    // porque con diez filas la página apenas scrollea 163px.
-    //
-    // El tope deja la tabla del alto de lo que queda de ventana, así que el
-    // encabezado, los filtros y la paginación no se van nunca de la pantalla
-    // y la página deja de medir 1760px. Cuando la tabla es corta no muerde.
-    //
-    // **Las `20rem` están medidas contra el peor caso**, que es órdenes o
-    // usuarios —encabezado, solapas, barra de filtros, contador y paginación
-    // a la vez— en una ventana de 700px. Ahí 19rem dejaban la página
-    // scrolleando 11px, que es justo lo que este tope viene a evitar; con 20
-    // sobran 5. Cuesta una fila: siete en vez de ocho a 700px, doce a 900.
+    // Este div tiene que scrollear, con tope de alto: `sticky` se fija al
+    // ancestro que scrollea, y si no es este la cabecera se va con la página.
+    // Las `20rem` están medidas contra el peor caso (DR §6.9).
     <div
       className={cn(
         "relative w-full overflow-auto",
@@ -73,8 +49,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      // Opaca y por encima de las filas, que es lo que la hace legible
-      // mientras el resto pasa por debajo.
+      // Opaca y por encima: las filas pasan por debajo.
       className={cn("sticky top-0 z-10 bg-surface-sunken", className)}
       {...props}
     />
@@ -106,7 +81,6 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
       className={cn(
         "h-9 px-3 text-left align-middle",
         "text-caption font-medium tracking-wide text-ink-secondary uppercase",
-        // Los números van a la derecha y tabulares (§6.9).
         "data-[align=right]:text-right data-[align=right]:tabular-nums",
         className,
       )}

@@ -7,15 +7,11 @@ import { escribirTextoLegal } from "@/modules/content/legales";
 import { paginaLegal } from "@/modules/content/paginas";
 import { textoLegal } from "@/modules/content/schemas";
 
-/**
- * Guardar el texto de una página legal — RF-29: «editable desde el panel sin
- * necesidad de un deploy».
- */
 export const guardarUnTextoLegal = action
   .input(textoLegal)
   .auth("admin")
   .handler(async ({ input }) => {
-    // El enum del esquema ya garantiza que existe.
+    // El enum del esquema garantiza que existe.
     const { titulo } = paginaLegal(input.slug)!;
 
     const { actualizada } = await escribirTextoLegal({

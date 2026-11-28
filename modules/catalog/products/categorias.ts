@@ -1,30 +1,21 @@
-/**
- * La página de categorías, la parte que corre en los dos lados — RF-35,
- * DR §7.6. Tarea F3.10.
- *
- * Sin `server-only` a propósito: el buscador filtra en el navegador (son
- * decenas de categorías, no hace falta ir a la base) y la página filtra igual
- * en el servidor cuando se llega con `?q=`, para que lo primero que se pinta
- * ya sea el resultado y no la lista entera que después se achica.
- */
+// Sin `server-only` a propósito: el buscador filtra en el navegador y la
+// página filtra igual en el servidor cuando se llega con `?q=`.
 
 import { normalizar } from "@/lib/texto";
 
 export type CategoriaDeLaPagina = {
   id: string;
-  /** Para el enlace a su página, `/categorias/<slug>` (F3.11). */
   slug: string;
   nombre: string;
   /** Productos activos, con o sin stock: lo que muestra el catálogo (RN-05). */
   cantidad: number;
   destacada: boolean;
-  /** La de 200px, para la tarjeta en fila; `null` si no tiene. */
+  /** 200px, para la tarjeta en fila. */
   miniaturaUrl: string | null;
-  /** La de 600px, para la cuadrada de «Destacadas»; `null` si no tiene. */
+  /** 600px, para la cuadrada de «Destacadas». */
   imagenUrl: string | null;
 };
 
-/** «1 producto», «14 productos». */
 export function cantidadDeProductos(cantidad: number): string {
   return cantidad === 1 ? "1 producto" : `${cantidad} productos`;
 }
@@ -34,19 +25,13 @@ export type CategoriasRepartidas = {
   destacadas: CategoriaDeLaPagina[];
   /** Todas las que coinciden, destacadas incluidas. */
   conProductos: CategoriaDeLaPagina[];
-  /** Cuántas coinciden, para el «3 categorías» que se anuncia. */
   total: number;
-  /** `true` si hay texto escrito. */
   buscando: boolean;
 };
 
 /**
- * Reparte las categorías en las dos secciones de §7.6, ya filtradas por lo
- * escrito. Llegan ordenadas de la base y el orden se conserva: filtrar no
- * reordena.
- *
- * `topeDeDestacadas` es el de la home (siete): las destacadas de arriba son
- * las mismas de los chips, y con más dejan de entrar en una fila.
+ * Reparte las categorías en las dos secciones de DR §7.6, conservando el orden
+ * de la base. `topeDeDestacadas` es el de los chips de la home.
  */
 export function repartirCategorias(
   categorias: CategoriaDeLaPagina[],

@@ -24,17 +24,8 @@ import {
 import { cambiarElModoMantenimiento } from "@/modules/settings/actions";
 
 /**
- * Modo mantenimiento — F2.7b.
- *
- * **El estado sale de la página y no de un `useState`.** La acción revalida
- * todo el sitio, así que después de cambiarlo el servidor vuelve a mandar
- * esta pantalla con el valor nuevo. Guardarlo acá también dejaría dos lugares
- * que pueden decir cosas distintas —y el día que alguien guarde la
- * configuración por primera vez, este quedaría diciendo «guardala primero».
- *
- * **Cerrar pide confirmación y reabrir no.** Cerrar cambia lo que ven todos
- * los compradores en el acto; reabrir es volver a lo normal, y un diálogo ahí
- * sería una pregunta que siempre se contesta que sí.
+ * Modo mantenimiento. El estado sale de la página y no de un `useState`: la
+ * acción revalida todo el sitio. Cerrar pide confirmación y reabrir no.
  */
 export function ModoMantenimiento({
   activo,
@@ -49,9 +40,8 @@ export function ModoMantenimiento({
       id="mantenimiento-titulo"
       titulo="Tienda"
       insignias={
-        /* Con texto siempre, no solo el color (§6.4, §9). Se omite sin fila:
-           «abierta» sería cierto, pero es un estado que todavía no se puede
-           cambiar, y la frase de abajo ya lo explica. */
+        /* Con texto, no solo color (§9). Se omite sin fila: la frase de abajo
+           lo explica. */
         activo === null ? null : cerrada ? (
           <Badge tone="warning">
             <Lock aria-hidden />
@@ -77,16 +67,7 @@ export function ModoMantenimiento({
 
 /**
  * La tienda en el inicio del panel: el mismo interruptor que en
- * Configuración, en un renglón.
- *
- * **Está en el inicio porque es lo primero que hay que saber al entrar**: con
- * la tienda cerrada, nada de lo de abajo importa tanto como que los
- * compradores no la pueden ver. La franja de la tienda avisa sólo a quien
- * mira la tienda; acá se ve abriendo el panel.
- *
- * **El ícono cambia de forma y no sólo de color** (§9): un local abierto en
- * verde, una puerta con llave en ámbar. Y el estado va escrito al lado,
- * porque un ícono solo no se lee igual para todos.
+ * Configuración, en un renglón. El ícono cambia de forma, no solo de color.
  */
 export function TiendaEnElInicio({ activo }: { activo: boolean | null }) {
   const cerrada = activo === true;
@@ -122,9 +103,7 @@ export function TiendaEnElInicio({ activo }: { activo: boolean | null }) {
         </div>
       </div>
 
-      {/* Sin fila de configuración no hay dónde anotar el cierre: en vez de
-          un botón apagado con una frase que habla de «la configuración de
-          arriba», se manda a donde se resuelve. */}
+      {/* Sin fila de configuración, se manda a donde se resuelve. */}
       {activo === null ? (
         <Button
           asChild
@@ -144,10 +123,7 @@ export function TiendaEnElInicio({ activo }: { activo: boolean | null }) {
   );
 }
 
-/**
- * El botón, su confirmación y su error: lo que comparten Configuración y el
- * inicio del panel. Lo que cambia entre los dos es cómo se cuenta el estado.
- */
+/** El botón, su confirmación y su error, compartidos por Configuración y el inicio. */
 function InterruptorDeLaTienda({ activo }: { activo: boolean | null }) {
   const [enCurso, iniciar] = useTransition();
   const [confirmando, setConfirmando] = useState(false);
@@ -223,11 +199,7 @@ function InterruptorDeLaTienda({ activo }: { activo: boolean | null }) {
             <Button variant="secondary" onClick={() => setConfirmando(false)}>
               Cancelar
             </Button>
-            {/* `destructive-solid`, como todo confirmar de algo que saca
-                algo de circulación (§6.3): cerrar la tienda deja a cualquiera
-                que entre con «Volvemos en un rato» y con el registro apagado.
-                Su par más cercano es «Sí, bloquear» de una cuenta, que tampoco
-                borra nada y también confirma en rojo. */}
+            {/* `destructive-solid`, como todo lo que saca algo de circulación (§6.3). */}
             <Button variant="destructive-solid" onClick={() => cambiar(true)}>
               Cerrar la tienda
             </Button>

@@ -1,45 +1,27 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/*
- * Sistema de diseño de AnaVende.
- * Contrato: DESIGN-REFERENCE.md §3 (tokens), §4 (escalas), §12.1 (Tailwind 4).
- * Las variables crudas viven en :root y se redefinen en [data-theme="dark"];
- * @theme inline las expone como utilidades de Tailwind.
- */
+/* Contrato: DESIGN-REFERENCE.md §3 (tokens), §4 (escalas), §12.1. */
 
 /* El modo oscuro existe solo en /admin y se activa con data-theme en <html>. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* Las dos escalas de densidad de §4 son una variante, no una prop:
-   el panel marca data-scale="admin" en su raíz y los componentes
-   compartidos se adaptan solos. Así no hay dos Button ni dos Input. */
+/* El panel marca data-scale="admin" en su raíz y los componentes
+   compartidos se adaptan solos. */
 @custom-variant admin (&:where([data-scale="admin"], [data-scale="admin"] *));
 
-/* `sonner` mueve sus avisos en 400ms y §8 pone el techo en 300. Su propia
-   regla de `prefers-reduced-motion` ya los deja quietos, así que acá sólo se
-   corrige la duración.
-
-   El selector va repetido a propósito: la hoja de `sonner` la inyecta el
-   paquete y queda DESPUÉS de ésta, así que con un `[data-sonner-toast]` a
-   secas empatan en peso y gana la suya. Repetirlo sube la especificidad sin
-   recurrir a `!important`, que no se usa en ninguna otra parte del proyecto. */
+/* `sonner` anima en 400ms y §8 pone el techo en 300. El selector va
+   repetido a propósito: la hoja de `sonner` se inyecta después de ésta y, a
+   igual especificidad, ganaría la suya. */
 [data-sonner-toast][data-sonner-toast] {
   transition-duration: 200ms;
 }
 
-/* ═══ Tokens crudos — tienda y panel en claro (§3.1) ═══════════════════ */
 :root {
-  /*
-   * Lo que el navegador pinta y nosotros no: el ícono del calendario de un
-   * `<input type="date">`, el calendario que abre, las barras de scroll y la
-   * lista de un `<select>`. Sin esto los dibuja siempre para fondo claro, y
-   * en el panel en oscuro el ícono del calendario quedaba negro sobre negro
-   * —invisible— aunque el campo estuviera bien pintado (2026-09-22).
-   */
+  /* Para lo que pinta el navegador (calendario de `<input type="date">`,
+     scroll, `<select>`): sin esto, en oscuro queda negro sobre negro. */
   color-scheme: light;
 
-  /* Marca */
   --brand: #832833; /* acción principal, identidad, precio en oferta */
   --brand-hover: #9d3040; /* MÁS CLARO: el color base ya es oscuro */
   --brand-active: #6b202a;
@@ -47,68 +29,41 @@
   --brand-tint-border: #f2dcdf;
   --brand-shadow: rgb(131 40 51 / 0.34);
   --shadow-focus-raw: 0 0 0 3px #f7edef, 0 0 0 1px #832833;
-  /* El logo: burdeos en claro, blanco en oscuro. No sigue a --brand, que en
-     oscuro se aclara a un rosa: §2.3 pide el trazo blanco. */
+  /* No sigue a --brand, que en oscuro se aclara a un rosa: §2.3 pide el
+     trazo blanco. */
   --logo: #832833;
 
-  /*
-   * Segundo color: azul pizarra. Hoy marca LO ELEGIDO, como el checkbox
-   * marcado. Hasta el 2026-10-19 fue también «Comprá ya por WhatsApp», que
-   * pasó al verde de WhatsApp (abajo); su papel nuevo, darle color a la
-   * tienda más allá de las acciones, está por decidirse (§2.5).
-   *
-   * Se eligió por un solo número: 9,05:1 contra blanco, contra los 9,07:1 del
-   * burdeos. Con 0,02 de diferencia los dos botones pesan igual y ninguno
-   * grita por encima del otro, que es lo que hace falta cuando son dos
-   * caminos para lo mismo. El hover ACLARA, igual que el de marca.
-   */
+  /* Marca lo elegido. 9,05:1 contra blanco, casi el 9,07:1 del burdeos:
+     pesan igual. El hover ACLARA, igual que el de marca. */
   --accent: #2f4a6d;
   --accent-hover: #3c5d87;
   --accent-active: #24394f;
   --accent-tint: #eef2f7;
   --accent-tint-border: #d5deea;
 
-  /*
-   * El verde de WhatsApp (§2.6, 2026-10-19). No es un color de la tienda: es
-   * el de la marca ajena, y marca todo lo que abre una conversación. El logo
-   * va siempre en este verde; el relleno, solo donde WhatsApp es la acción
-   * principal o par del carrito.
-   *
-   * `#008069` y no el `#25d366` de siempre: con texto blanco, el claro da
-   * 1,98:1 y este, 4,89:1. Es el verde oscuro que usa la propia WhatsApp. El
-   * hover OSCURECE, al revés que el de marca: aclarar bajaría de 4,5:1.
-   */
+  /* Verde de WhatsApp (§2.6). `#008069` y no `#25d366`: con texto blanco da
+     4,89:1 contra 1,98:1. El hover OSCURECE: aclarar bajaría de 4,5:1. */
   --whatsapp: #008069;
   --whatsapp-hover: #006d59;
   --whatsapp-active: #005c4b;
 
-  /* Superficies */
   --canvas: #f2f4f5; /* fondo de página */
   --surface: #ffffff; /* tarjetas, campos, encabezado */
   --surface-sunken: #fafbfb; /* filas alternadas, bloques embebidos */
 
-  /*
-   * Fondo del logo de una marca (§6.10). NO se redefine en modo oscuro, y esa
-   * es toda la razón por la que existe como token propio en vez de usar
-   * `--canvas`: un logo ajeno llega como trazo sobre transparente, casi
-   * siempre oscuro, y sobre la superficie oscura desaparece. No se lo puede
-   * repintar como al de AnaVende. Claro y no oscuro porque es el fondo que va
-   * a tener en la tienda, que es acromática sobre `--canvas`.
-   */
+  /* Fondo del logo de una marca (§6.10). NO se redefine en oscuro: un logo
+     ajeno suele ser trazo oscuro sobre transparente y desaparecería. */
   --logo-chip: #f2f4f5;
   --logo-chip-ink: #716e6d; /* el ícono de «sin logo», sobre ese fondo */
 
-  /* Texto */
   --ink: #111010; /* primario — casi negro, no negro puro (§3.1) */
   --ink-secondary: #6b6867; /* secundario, etiquetas */
   --ink-tertiary: #8f8b8a; /* decorativo, NUNCA texto (§3.1) */
   --ink-inverse: #ffffff;
 
-  /* Líneas */
   --border: #ebebeb; /* divisorias, contorno de campos */
   --border-strong: #d3d7d9; /* campo con foco, separadores marcados */
 
-  /* Semánticos */
   --success: #15803d;
   --success-tint: #f0fdf4;
   --warning: #b45309;
@@ -119,7 +74,6 @@
   --info-tint: #f0f9ff;
 }
 
-/* ═══ Tokens crudos — modo oscuro del panel (§3.2) ═════════════════════ */
 [data-theme="dark"] {
   color-scheme: dark;
 
@@ -139,8 +93,7 @@
   --accent-tint: #1a2230;
   --accent-tint-border: #2a3648;
 
-  /* El verde claro de siempre: sobre la superficie oscura da 8,38:1, y la
-     tinta inversa encima, 9,28:1. */
+  /* 8,38:1 sobre la superficie oscura; la tinta inversa encima, 9,28:1. */
   --whatsapp: #25d366;
   --whatsapp-hover: #3ee07a;
   --whatsapp-active: #1fb855;
@@ -167,9 +120,7 @@
   --info-tint: #05202e;
 }
 
-/* ═══ Exposición como utilidades de Tailwind (§12.1) ═══════════════════ */
 @theme inline {
-  /* Color */
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-active: var(--brand-active);
@@ -211,31 +162,20 @@
   --color-info-tint: var(--info-tint);
 }
 
-/*
- * El resto NO va inline: `@theme inline` no emite la variable a :root, la
- * sustituye dentro de cada utilidad. Sirve para los colores, que tienen que
- * apuntar a las variables crudas que cambian con el tema, pero deja
- * `var(--font-sans)` sin definir para quien la lea desde CSS propio.
- */
+/* El resto NO va inline: `@theme inline` no emite la variable a :root y
+   dejaría `var(--font-sans)` sin definir para el CSS propio. */
 @theme {
-  /* Tipografía (§3.3) — una sola familia, pesos 400/500/600 */
+  /* Tipografía (§3.3) */
   --font-sans:
     var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  /* Escala tipográfica: tamaño / interlínea / tracking / peso.
-     La firma del sistema es el tracking negativo: lo grande se comprime. */
-  /* 56px — la palabra de la marca en el hero de la home, y nada más (§3.3,
-     §7.1). Existe como escalón y no como número suelto en la clase porque la
-     escala tipográfica es un contrato: un tamaño escrito a mano en una pantalla
-     es el primero de los cuatro criterios que después conviven. Debajo de `sm`
-     la palabra cae a `display`, que es el tope de la escala. */
+  /* 56px — la palabra de la marca en el hero de la home, y nada más. */
   --text-marca: 3.5rem;
   --text-marca--line-height: 1;
   --text-marca--letter-spacing: -0.035em;
   --text-marca--font-weight: 600;
 
-  /* El eslogan del hero de la home (F10.7d, DR §3.3): el único tamaño que
-     escala con el ancho, de 32 a 52px. */
+  /* El eslogan del hero: el único tamaño que escala con el ancho. */
   --text-hero: clamp(2rem, 3.8vw, 3.25rem);
   --text-hero--line-height: 0.98;
   --text-hero--letter-spacing: -0.035em;
@@ -276,10 +216,8 @@
   --text-caption--letter-spacing: 0;
   --text-caption--font-weight: 500;
 
-  /* Espaciado (§3.4) — escala de base 4px */
   --spacing: 0.25rem;
 
-  /* Radios (§3.5) — la tienda es generosa, el panel es denso */
   --radius-card: 28px; /* tarjeta de producto, tienda */
   --radius-image: 20px; /* imagen dentro de tarjeta: ~8px menos (§3.5) */
   --radius-modal: 20px;
@@ -288,7 +226,6 @@
   --radius-panel-control: 8px; /* botón y campo del panel */
   --radius-pill: 9999px; /* botón, campo y buscador de la tienda */
 
-  /* Sombras (§3.6) — las tarjetas se separan por sombra, nunca por borde */
   --shadow-sm: 0 2px 8px rgb(17 16 16 / 0.06);
   --shadow-md:
     0 4px 6px -1px rgb(17 16 16 / 0.1), 0 2px 4px -2px rgb(17 16 16 / 0.1);
@@ -296,12 +233,9 @@
   --shadow-brand: 0 4px 24px var(--brand-shadow);
   --shadow-focus: var(--shadow-focus-raw);
 
-  /* Movimiento (§9) — la única animación propia del sistema.
-     La hilera de medios de pago de la home (§7.1) recorre media lista: la
-     lista va duplicada, así que al llegar al 50% el dibujo es idéntico al del
-     principio y el salto no se ve. Con `prefers-reduced-motion` la regla de
-     más abajo la deja quieta, que es por lo que no hace falta apagarla a mano
-     en cada uso. */
+  /* La hilera de medios de pago recorre media lista porque va duplicada: al
+     50% el dibujo es idéntico y el salto no se ve. Con
+     `prefers-reduced-motion`, la regla global de más abajo la deja quieta. */
   --animate-hilera: hilera 40s linear infinite;
 
   @keyframes hilera {
@@ -313,12 +247,7 @@
     }
   }
 
-  /* La entrada de un bloque del hero cuando el hero cambia de categoría
-     (§7.1). Sube 12px y aparece: es el mismo gesto que la tarjeta de producto
-     hace al pasarle el mouse, así que el hero se mueve como se mueve el resto
-     del sistema. El retraso lo pone cada bloque —escalonados, la tanda entra
-     como una tanda y no como un parpadeo—, y la regla global de más abajo la
-     apaga entera con `prefers-reduced-motion`. */
+  /* Entrada de un bloque del hero; el retraso lo pone cada bloque. */
   --animate-bloque: bloque 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
 
   @keyframes bloque {
@@ -332,14 +261,12 @@
     }
   }
 
-  /* El tilde de «Copiado» se dibuja de un extremo al otro (2026-11-05). El
-     trazo del `Check` de lucide mide unos 23 de su caja de 24, así que con
-     `stroke-dasharray: 24` arranca oculto y termina entero. 300ms, el techo
-     de §8, saliendo rápido y frenando al final. Con `prefers-reduced-motion`
-     la regla global lo muestra entero de una. */
-  --animate-tilde: tilde 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* El tilde de «Copiado»: el trazo del `Check` de lucide mide unos 23, así
+     que con `stroke-dasharray: 24` arranca oculto y termina entero. */
+  --animate-tilde-copiado: tilde-copiado 300ms cubic-bezier(0.16, 1, 0.3, 1)
+    both;
 
-  @keyframes tilde {
+  @keyframes tilde-copiado {
     from {
       stroke-dashoffset: 24;
     }
@@ -348,13 +275,8 @@
     }
   }
 
-  /* El vaiven de los bloques del hero (§7.1): 8px de recorrido en cinco
-     segundos, que es menos de lo que se mueve una hoja. Arranca arriba y baja,
-     y cada bloque entra con su propio retraso y su propia duracion: en
-     sincronia serian un ascensor, desfasados son cosas que flotan. Va en un
-     envoltorio propio y no en el enlace porque la tarjeta ya usa `transform`
-     para levantarse al pasarle el mouse, y una animacion en curso le gana a
-     cualquier `translate` de la misma capa. */
+  /* El vaivén de los bloques del hero va en un envoltorio propio: una
+     animación en curso le gana al `transform` del hover de la tarjeta. */
   --animate-vaiven: vaiven 5s ease-in-out infinite;
 
   @keyframes vaiven {
@@ -367,9 +289,7 @@
     }
   }
 
-  /* La palabra que rota en el eslogan del hero (2026-10-19): sube medio
-     renglón y se enfoca. Curva exponencial de salida: arranca rápido y frena
-     largo, que es como se asienta algo que cae en su lugar. */
+  /* La palabra que rota en el eslogan del hero. */
   --animate-palabra: palabra 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
 
   @keyframes palabra {
@@ -385,11 +305,8 @@
     }
   }
 
-  /* Los adornos del logo en las escenas por fecha (F9.5,
-     `components/shop/adorno-de-temporada.tsx`). Los dos terminan solos antes
-     de los cinco segundos de WCAG 2.2.2: las luces titilan cuatro veces y
-     quedan prendidas, la araña baja una vez y se queda colgada, y las orejas
-     de Pascua asoman una vez, con un rebote chico. */
+  /* Adornos del logo por fecha (`components/shop/adorno-de-temporada.tsx`).
+     Terminan solos antes de los cinco segundos de WCAG 2.2.2. */
   --animate-foquito: foquito 900ms ease-in-out 4 both;
   --animate-arana: arana 1400ms cubic-bezier(0.16, 1, 0.3, 1) 300ms both;
   --animate-orejas: orejas 900ms cubic-bezier(0.34, 1.4, 0.64, 1) 400ms both;
@@ -412,10 +329,7 @@
     }
   }
 
-  /* El salto del número del carrito cuando sube (2026-10-20): en el teléfono
-     el botón de agregar queda lejos del encabezado, y el salto dice a dónde
-     fue a parar lo que se agregó. 200ms, el tiempo de §8 para una
-     transformación. */
+  /* El número del carrito cuando sube. */
   --animate-salto: salto 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
   @keyframes salto {
@@ -424,8 +338,8 @@
     }
   }
 
-  /* El pulso del corazón al MARCAR, no al desmarcar (2026-10-20): con el
-     mismo gesto en los dos sentidos, el movimiento no diría qué pasó. */
+  /* El corazón, solo al MARCAR: con el mismo gesto en los dos sentidos no
+     diría qué pasó. */
   --animate-latido: latido 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
   @keyframes latido {
@@ -434,16 +348,9 @@
     }
   }
 
-  /* El sello del pedido registrado (2026-10-20,
-     `app/(shop)/orden/[numero]/page.tsx`), en tres tiempos que se pisan un
-     poco para leerse como un solo gesto:
-       · el contorno da la vuelta, de 0 a 600 ms;
-       · el círculo se llena, de 500 a 800 ms, creciendo desde el centro;
-       · el tilde se traza, de 750 a 1150 ms.
-     Pasa el techo de 300 ms de §8 a propósito: es la entrada con autoría de
-     la compra. Apretados en 300 los tres tiempos se veían toscos, y en 750
-     todavía bruscos. Curvas suaves de entrada y salida para el contorno, y
-     de salida para lo que llega. */
+  /* El sello del pedido (`app/(shop)/orden/[numero]/page.tsx`): pasa el
+     techo de 300 ms de §8 a propósito, es la entrada con autoría de la
+     compra. */
   --animate-anillo: anillo 600ms cubic-bezier(0.45, 0, 0.25, 1) both;
   --animate-relleno: relleno 300ms cubic-bezier(0.22, 1, 0.36, 1) 500ms both;
   --animate-tilde: tilde 400ms cubic-bezier(0.33, 1, 0.68, 1) 750ms both;
@@ -476,13 +383,10 @@
   /* Anchos máximos (§4) */
   --container-shop: 1200px;
   /* El panel va a ancho completo menos el menú, SALVO los formularios y el
-     tablero, que se topean acá. Existe como token y no como una clase suelta
-     por lo que pasó hasta el 2026-09-21: sin un lugar donde estuviera escrito,
-     cada pantalla inventó el suyo y hubo cuatro criterios conviviendo. */
+     tablero. */
   --container-admin-form: 1024px;
 }
 
-/* ═══ Base ═════════════════════════════════════════════════════════════ */
 @layer base {
   *,
   ::after,
@@ -494,11 +398,7 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  /* La seleccion de texto (§3.7). Venia en el azul de fabrica de Chrome, que
-     es el unico azul de toda la tienda, y aparece cada vez que alguien copia
-     un nombre de producto para pegarlo en WhatsApp —que aca es un gesto
-     habitual, porque la venta se cierra ahi—. En tinte y no en burdeos pleno:
-     la seleccion marca, no grita, y el tinte sirve a los dos temas. */
+  /* La selección de texto (§3.7). */
   ::selection {
     background-color: var(--brand-tint);
     color: var(--ink);
@@ -514,18 +414,14 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* El panel corre a 14px de base (§4). */
   [data-scale="admin"] {
     font-size: var(--text-body-sm);
     line-height: var(--text-body-sm--line-height);
     letter-spacing: var(--text-body-sm--letter-spacing);
   }
 
-  /* Anillo de foco único para todo elemento interactivo (§3.6, §9).
-     Se muestra solo ante teclado: :focus-visible, no :focus.
-
-     El outline transparente no es decorativo: en el modo de alto contraste
-     de Windows las sombras no se pintan y el outline es lo único que queda. */
+  /* El outline transparente no es decorativo: en el alto contraste de
+     Windows las sombras no se pintan y queda solo el outline. */
   :focus-visible {
     box-shadow: var(--shadow-focus);
     outline: 2px solid transparent;
@@ -534,26 +430,12 @@
 }
 
 /*
- * El buscador del encabezado desaparece cuando la página ya trae el suyo
- * (§5.1). Dos buscadores a la vista, uno arriba del otro, es la clase de
- * duplicación que hace dudar de cuál usar.
+ * El buscador del encabezado se oculta cuando la página trae el suyo (§5.1),
+ * salvo que ése salga de la pantalla (`data-fuera-de-vista`).
  *
- * **Va sin `@layer`, y no es un descuido.** Dentro de `@layer base` la regla
- * pierde contra el `md:block` del propio buscador, porque Tailwind emite las
- * utilidades en una capa posterior y la última capa gana sin importar la
- * especificidad. Una regla SIN capa gana sobre cualquiera que esté en una, así
- * que esto evita el `!important` que sería la otra salida.
- *
- * **Es CSS y no estado de React POR EL PARPADEO:** con estado, el encabezado
- * se pinta con su buscador y recién en el efecto se entera de que sobra, así
- * que en el catálogo y en la home aparecería un cuadro y se iría. Acá la regla
- * se resuelve en el primer pintado y ese cuadro no existe.
- *
- * `data-fuera-de-vista` lo pone el propio buscador de la página cuando sale de
- * la pantalla al scrollear: ahí el del encabezado ya no duplica nada, vuelve, y
- * buscar sigue estando a un golpe de vista. Ese atributo sí lo mueve
- * JavaScript, y si no hay, el encabezado no lo muestra en esas dos pantallas —
- * que es la opción segura, porque el de la página está ahí arriba.
+ * Va SIN `@layer` a propósito: dentro de una capa perdería contra el
+ * `md:block` de las utilidades. Y es CSS, no estado de React, para que no
+ * parpadee en el primer pintado.
  */
 body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   [data-buscador-navbar] {
@@ -579,13 +461,8 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   }
 }
 
-/* Quitar un renglón del carrito (2026-10-20). React lo anima con
-   `<ViewTransition>` (`app/(shop)/carrito/page.tsx`): el que se va se apaga
-   en 150ms —salir más rápido que entrar— y los de abajo suben a su lugar en
-   200, en vez de saltar. */
-/* La página no se funde: el navegador hace un fundido de toda la pantalla en
-   cada View Transition, y lo que tiene que moverse es solo lo que React
-   nombró. */
+/* Sin el fundido de toda la pantalla que el navegador hace en cada View
+   Transition: se mueve solo lo que React nombró. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
@@ -597,14 +474,9 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   pointer-events: none;
 }
 
-/* Lo que tiene que quedar quieto y ARRIBA durante una View Transition: el
-   encabezado y el drawer de filtros con su fondo. El navegador dibuja lo que
-   se anima en una capa propia, por encima de toda la página, y sin esto las
-   tarjetas que se reacomodan al filtrar le pasaban por encima al panel
-   abierto —y le pasarían al encabezado al subir—. Nombrados, entran a esa
-   capa con su propia foto; la nueva se muestra tal cual y la vieja no, así
-   que no se mueven ni se funden. El orden es el de la página: el drawer y su
-   fondo tapan el encabezado, en computadora y en el teléfono. */
+/* Quietos y ARRIBA durante una View Transition: el navegador dibuja lo que
+   se anima por encima de toda la página, y sin esto las tarjetas que se
+   reacomodan le pasarían por encima al encabezado y al drawer de filtros. */
 ::view-transition-group(encabezado),
 ::view-transition-group(fondo-filtros),
 ::view-transition-group(panel-filtros),
@@ -632,21 +504,15 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   z-index: 110;
 }
 
-/* La foto que viaja de la tarjeta a la ficha (2026-10-20,
-   `components/shop/foto-viajera.tsx`): 300ms, el techo de §8, porque recorre
-   media pantalla y en 200 no se llega a seguir. Por encima de todo, también
-   del encabezado, que en el teléfono queda en su camino. */
+/* La foto que viaja de la tarjeta a la ficha: por encima también del
+   encabezado, que en el teléfono queda en su camino. */
 ::view-transition-group(.foto) {
   animation-duration: 300ms;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 200;
 }
 
-/* Las tarjetas del catálogo al filtrar, ordenar o buscar (2026-10-20,
-   `app/(shop)/productos/page.tsx`). Las que siguen se deslizan a su lugar en
-   200ms, las que se van se apagan en 150 —salir más rápido que entrar— y las
-   nuevas aparecen en 200. Todas juntas y sin escalonar: la lista no aparece,
-   se reacomoda, y moverse a la vez es lo que dice «es la misma grilla». */
+/* Las tarjetas del catálogo al filtrar, ordenar o buscar. */
 ::view-transition-group(.tarjeta) {
   animation-duration: 200ms;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -683,13 +549,9 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   }
 }
 
-/* La ayuda guiada (F6.6 y F6.7, `components/ui/ayuda-guiada.tsx`). Reemplaza al
+/* La ayuda guiada (`components/ui/ayuda-guiada.tsx`). Reemplaza al
    `driver.css` de la librería, que no se importa: sin capa, le ganaría a las
-   utilidades con las que se visten los botones. Acá va lo que hace andar el
-   recorrido —quién recibe el puntero mientras está abierto— y el globo, que
-   es un diálogo de la tienda: superficie, radio de modal y `shadow-lg`. El
-   fundido dura 200 ms; con movimiento reducido no hay ninguno, porque la
-   regla de arriba lo corta y el componente apaga el que dibuja Driver.js. */
+   utilidades con las que se visten los botones. */
 @layer components {
   .driver-active .driver-overlay,
   .driver-active * {
@@ -736,8 +598,7 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
     color: var(--ink);
   }
 
-  /* En el panel (F6.7) el globo lleva el radio de sus diálogos, como
-     `admin:rounded-panel-image` en `DialogContent`. */
+  /* El radio de los diálogos del panel. */
   .driver-popover[data-scale="admin"] {
     border-radius: var(--radius-panel-image);
   }
@@ -828,12 +689,9 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   }
 }
 
-/* La cara de la cuenta se mueve al pasar el mouse por el CONTROL que la
-   contiene —la píldora de la cuenta, la fila de la foto en «Mis datos»—, y
-   no solo por el dibujo, que en el encabezado mide 32px (F5.9). Es lo mismo
-   que `.mo-root:hover` de `blobatar/motion.css`, colgado de otro ancestro.
-   Con las mismas condiciones que la biblioteca: mouse de verdad y sin
-   «reducir movimiento». */
+/* La cara de la cuenta se anima al pasar por el CONTROL que la contiene, no
+   solo por el dibujo: es `.mo-root:hover` de `blobatar/motion.css` colgado
+   de otro ancestro, con sus mismas condiciones. */
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   [data-anima-cara]:hover .mo-root,
   [data-anima-cara]:focus-visible .mo-root {
@@ -842,13 +700,9 @@ body:has([data-buscador-principal]:not([data-fuera-de-vista]))
   }
 }
 
-/* La palabra del hero y la animación de la primera carga (F10.7c, §2.3,
-   `components/shop/home/marca-del-hero.tsx`). Lo que se ve quieto es el
-   estado final —la palabra—, y la animación lo recorre desde el isotipo: el
-   marco, el joystick y los auriculares se apagan, la A y la V crecen hasta su
-   lugar, y de cada una sale el resto. Una vez por visita (`data-marca-vista`
-   en <html>) y nunca con «reducir movimiento». Ninguna pieza rota ni se
-   estira: solo se mueven y cambian de tamaño entero. */
+/* La palabra del hero (`components/shop/home/marca-del-hero.tsx`). Lo
+   quieto es el estado final; la animación corre una vez por visita
+   (`data-marca-vista` en <html>) y nunca con «reducir movimiento». */
 .marca-del-hero-grilla {
   opacity: 0;
   transform-box: fill-box;

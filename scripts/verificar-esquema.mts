@@ -1,10 +1,6 @@
 /**
- * Comprueba que la base tenga lo que TECHNICAL-SPEC §5 declara.
- *
- * Es la condición de terminado de F1.6 —«base creada desde cero con una sola
- * corrida; pg_trgm, unaccent e immutable_unaccent presentes»— escrita como
- * algo que se puede volver a correr, en vez de una revisión a ojo que hay que
- * repetir a mano. Sirve igual contra el servidor DATA cuando F0.3 esté hecha:
+ * Comprueba que la base tenga lo que TECHNICAL-SPEC §5 declara. Solo lee:
+ * sirve también contra producción por el túnel SSH.
  *   DATABASE_URL=... npm run db:verificar
  */
 import postgres from "postgres";
@@ -51,7 +47,6 @@ const ok = (b: boolean, msg: string) => {
   console.log(`${b ? "✅" : "❌"} ${msg}`);
 };
 
-// ── Tablas y enums ────────────────────────────────────────────────────
 const tablas = (
   await sql<{ tablename: string }[]>`
     SELECT tablename FROM pg_tables
@@ -75,7 +70,6 @@ ok(
   `Enums de §5.2: ${enums.map((e) => `${e.typname}(${e.n})`).join(", ")}`,
 );
 
-// ── Extensiones y búsqueda tolerante (§5.10) ─────────────────────────
 const ext = (
   await sql<{ extname: string }[]>`
     SELECT extname FROM pg_extension WHERE extname IN ('pg_trgm', 'unaccent')`
@@ -89,7 +83,7 @@ ok(
   `immutable_unaccent presente e IMMUTABLE (hace falta para el índice de expresión)`,
 );
 
-// La prueba que pide F0.6: similitud real sobre texto con acentos.
+// Similitud real sobre texto con acentos (§5.10).
 const [sim] = await sql<
   { con_acento: number; sin_acento: number; typo: number }[]
 >`
@@ -106,7 +100,6 @@ ok(
   `«lojitech» se parece a «Logitech» — similitud ${sim.typo.toFixed(3)}`,
 );
 
-// ── Restricciones, columnas generadas e índices ──────────────────────
 const checks = (
   await sql<{ conname: string }[]>`
     SELECT conname FROM pg_constraint
@@ -130,16 +123,11 @@ const gen = (
     WHERE is_generated = 'ALWAYS' AND table_schema = 'public' ORDER BY 1, 2`
 ).map((g) => `${g.table_name}.${g.column_name}`);
 
-// Se comprueban POR NOMBRE y no por cantidad. Contarlas parecía más corto y
-// se rompió sola: F2.3 agregó `products.description_text` (§5.4) y el «2» de
-// esta línea empezó a fallar sin que nada estuviera mal. El nombre además
-// dice cuál falta cuando falta una.
+// Por nombre y no por cantidad: así dice cuál falta.
 for (const columna of [
   "order_items.subtotal",
   "products.description_text",
   "products.final_price",
-  // Nombre para mostrar, derivado de first_name y last_name (migración 0011,
-  // 2026-09-10). Es generada justamente para que no pueda desincronizarse.
   "user_profiles.full_name",
 ]) {
   ok(gen.includes(columna), `Columna generada ${columna}`);
@@ -159,10 +147,6 @@ const gin = await sql<{ indexname: string }[]>`
   WHERE schemaname = 'public' AND indexdef LIKE '%gin%' ORDER BY 1`;
 ok(gin.length === 3, `Índices GIN de búsqueda: ${gin.length}`);
 
-// Por nombre y no por número, por el mismo motivo que las columnas generadas
-// de arriba: el «5» que había acá se rompió solo cuando F4.3 agregó el índice
-// de la clave de idempotencia (§8.5), sin que nada estuviera mal. Una
-// aserción que cuenta envejece; una que nombra, no — y además dice cuál falta.
 const parciales = (
   await sql<{ indexname: string }[]>`
     SELECT indexname FROM pg_indexes
@@ -176,7 +160,6 @@ for (const indice of [
   "products_active_category_idx",
   "products_created_idx",
   "products_final_price_idx",
-  // F2.10 (migración 0019): el segundo color de una variante de dos colores.
   "variant_secondary_color_idx",
 ]) {
   ok(parciales.includes(indice), `Índice parcial ${indice}`);

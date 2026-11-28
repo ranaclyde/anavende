@@ -22,16 +22,6 @@ import type { ImagenDeLaBiblioteca } from "@/modules/marca-de-agua/queries";
 import { subirImagen } from "@/modules/media/cliente";
 import { TAMANO_MAXIMO } from "@/modules/media/tamanos";
 
-/**
- * La biblioteca de marcas de agua — RF-39.
- *
- * Las imágenes quedan hasta que se borran a mano: activar, desactivar o
- * cambiar las capas no las toca.
- *
- * Con imágenes es una tira de miniaturas chicas, arriba de las capas y en la
- * misma tarjeta: se elige de ahí. Sin ninguna es lo único de la pantalla.
- */
-
 /** Solo las que guardan transparencia: un JPG sería un recuadro blanco. */
 const ACEPTADAS = ["image/png", "image/webp"];
 
@@ -48,6 +38,10 @@ function motivoDeRechazo(archivo: File): string | null {
   return null;
 }
 
+/**
+ * La biblioteca de marcas de agua — RF-39. Las imágenes quedan hasta que se
+ * borran a mano: activar o cambiar las capas no las toca.
+ */
 export function BibliotecaDeMarcas({
   biblioteca,
   usadaEn,
@@ -57,10 +51,7 @@ export function BibliotecaDeMarcas({
   biblioteca: ImagenDeLaBiblioteca[];
   /** Qué capas GUARDADAS usa cada imagen, por id: «1, 3». */
   usadaEn: Map<string, number[]>;
-  /**
-   * Arma una capa con esa imagen (2026-11-13). La capa queda ligada a la
-   * imagen con la que se armó: para cambiarla, se quita y se arma otra.
-   */
+  /** Arma una capa con esa imagen; para cambiarla, se quita y se arma otra. */
   alAgregarCapa?: (imageId: string) => void;
   entranMasCapas?: boolean;
 }) {
@@ -80,8 +71,7 @@ export function BibliotecaDeMarcas({
     }
 
     setSubiendo(true);
-    // De a una: el servidor procesa cada imagen y el tope de subidas por
-    // minuto es por persona (`/api/admin/upload`).
+    // De a una: el tope de subidas por minuto es por persona (`/api/admin/upload`).
     for (const archivo of archivos) {
       const r = await subirImagen({ destino: "marca-de-agua" }, archivo);
       if (!r.ok) {
@@ -149,8 +139,7 @@ export function BibliotecaDeMarcas({
       </p>
     );
 
-  // Sin ninguna imagen, la pantalla es solo esto: lo demás —capas,
-  // vista previa, el interruptor— no tiene con qué funcionar todavía.
+  // Sin ninguna imagen, la pantalla es solo esto.
   if (vacia) {
     return (
       <section aria-label="Imágenes" className="flex flex-col gap-3">

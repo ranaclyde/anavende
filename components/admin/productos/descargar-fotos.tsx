@@ -6,13 +6,9 @@ import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
- * «Descargar fotos»: todas las del producto en un zip, en JPG y tal como
- * están, con la marca de agua si la tienen — F2.18.
- *
- * Con `fetch` y no con un enlace: armar el zip tarda unos segundos (cada
- * foto se convierte), y así el botón muestra que está trabajando y, si
- * falla, el error se dice en la sección en vez de bajarse un archivo roto.
- * El error lo pinta quien lo usa, donde ya pinta los de los colores.
+ * Con `fetch` y no con un enlace: el zip tarda unos segundos en armarse, y así
+ * el botón muestra que trabaja y un fallo se dice en vez de bajar un archivo
+ * roto. El error lo pinta quien lo usa.
  */
 export function DescargarFotos({
   productId,

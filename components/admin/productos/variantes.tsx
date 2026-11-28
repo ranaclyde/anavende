@@ -70,58 +70,34 @@ import type {
   VarianteDelPanel,
 } from "@/modules/catalog/variants/queries";
 
-/**
- * Variantes de color — RF-16, RF-17, §9.5.
- *
- * Una variante es LA UNIDAD CON STOCK E IMÁGENES: es lo que se reserva, lo
- * que se vende y lo que se fotografía. Por eso la pantalla la muestra entera
- * —color, stock y galería— en una sola tarjeta, en vez de repartirla en dos
- * pestañas que obligarían a recordar en cuál estaba cada cosa.
- *
- * **Vive en la pantalla de edición y no en la de alta**, y no por comodidad:
- * una imagen se guarda en `productos/{productId}/{variantId}/…` (§9.2), así
- * que antes de que exista el producto no hay dónde ponerla. El alta termina
- * acá: crear un producto lleva a su pantalla de edición, que es donde sigue
- * el trabajo.
- */
+// Solo en la edición: una imagen se guarda en
+// `productos/{productId}/{variantId}/…`, y sin producto no hay dónde.
 
-/**
- * Hasta cuántos colores se muestran enteros. Del cuarto en adelante se
- * pliegan y se abre uno por vez (pedido del 2026-11-03).
- */
+/** Con más colores que estos, se pliegan y se abre uno por vez. */
 const HASTA_SIN_PLEGAR = 3;
 
-/** La tarjeta de un color, plegable o no. */
 const TARJETA =
   "flex flex-col gap-3 rounded-panel-card border border-border bg-surface-sunken p-3";
 
-/** El valor del `<select>` para la variante sin color (RF-16). */
+/** El valor para la variante sin color. */
 const UNICO = "unico";
 
-/** El valor del segundo `<select>` cuando la variante es de un solo color. */
 const SIN_SEGUNDO = "";
 
-/**
- * La combinación de colores, sin orden: «Negro/Rojo» y «Rojo/Negro» son la
- * misma variante (es lo que dice `variant_product_color_key`). Sirve para
- * saber qué combinaciones ya se llevó otra variante del producto.
- */
+/** Sin orden: «Negro/Rojo» y «Rojo/Negro» son la misma variante. */
 function combinacion(primero: string | null, segundo: string | null): string {
   if (!primero) return UNICO;
   return segundo ? [primero, segundo].sort().join("+") : primero;
 }
 
-/** «1 unidad» y no «1 unidades», que es lo que se lee en los avisos. */
 function unidades(n: number): string {
   return n === 1 ? "1 unidad" : `${n} unidades`;
 }
 
-/** Cómo se llama una variante en un cartel. */
 function nombreDe(v: { colorName: string | null }): string {
   return v.colorName ?? "Único";
 }
 
-/** El color con que arranca el drawer: el de la variante, o nada en un alta. */
 function colorInicial(v: VarianteDelPanel | null): string {
   return v ? (v.colorId ?? UNICO) : "";
 }
@@ -139,17 +115,11 @@ export function VariantesDelProducto({
   productoActivo: boolean;
   variantes: VarianteDelPanel[];
   colores: OpcionDeColor[];
-  /**
-   * La categoría del producto, si en ella se vende por color
-   * (`categoriaQueSeVendePorColor`). Con una variante «Único», avisa.
-   */
+  /** La categoría, si en ella se vende por color. */
   categoriaConColor?: string | null;
-  /**
-   * Si las fotos que se suban ahora salen con marca de agua (RF-39). Se
-   * avisa una vez para toda la sección y no bloquea nada.
-   */
+  /** Si las fotos que se suban ahora salen con marca de agua. */
   marcaDeAgua?: boolean;
-  /** Llegó `?agregar=color`: el alta termina acá y sigue sola. */
+  /** Llegó `?agregar=color`. */
   abrirAlta?: boolean;
 }) {
   const [enEdicion, setEnEdicion] = useState<VarianteDelPanel | null>(null);
@@ -160,30 +130,21 @@ export function VariantesDelProducto({
   const router = useRouter();
   const pathname = usePathname();
 
-  /**
-   * El color recién agregado, hasta que su tarjeta aparezca (F2.14). Agregar
-   * un color es la mitad del trabajo: faltan sus fotos, y su tarjeta queda
-   * una o dos pantallas más abajo. Medido en laptop y tablet, cerrar el
-   * drawer dejaba la página donde estaba —arriba de todo, en el primero— y el
-   * foco en ningún lado, así que había que adivinar dónde seguir.
-   */
+  /** El color recién agregado, hasta que su tarjeta aparezca y se la centre. */
   const paraFotos = useRef<string | null>(null);
 
   /**
-   * El color abierto, cuando hay más de tres y se pliegan. Arranca abierto el
-   * primero: la guía del producto señala su «Editar» y, con todos cerrados,
-   * no tendría dónde apoyarse. Vacío es que están todos cerrados.
+   * Arranca abierto el primero: la guía del producto señala su «Editar». Vacío
+   * es todos cerrados.
    */
   const [abierto, setAbierto] = useState(variantes[0]?.id ?? "");
 
   // En un efecto y no al cerrar: la tarjeta no existe hasta que llegan los
-  // datos nuevos, y desplazar la página es tocar el DOM, no estado. En un
-  // ref y no en estado: no se pinta, sólo espera a que `variantes` cambie.
+  // datos nuevos.
   useEffect(() => {
     const id = paraFotos.current;
     if (!id || !variantes.some((v) => v.id === id)) return;
-    // Plegados, el color nuevo llega cerrado y su «Agregar» está escondido:
-    // primero se abre, y el efecto vuelve a correr cuando cambia `abierto`.
+    // Plegado llega cerrado: se abre y el efecto vuelve a correr.
     if (variantes.length > HASTA_SIN_PLEGAR && abierto !== id) {
       setAbierto(id);
       return;
@@ -205,14 +166,8 @@ export function VariantesDelProducto({
       ?.focus({ preventScroll: true });
   }, [variantes, abierto]);
 
-  // El estado arranca con lo que diga la dirección, y además la sigue. Con
-  // sólo el valor inicial alcanza HOY, porque se llega desde `/nuevo`, que es
-  // otro segmento y monta este componente de cero. Pero el día que algo
-  // enlace a `?agregar=color` desde la ficha misma —el listado, por ejemplo—
-  // React reusaría esta instancia y el drawer no se abriría: el valor
-  // inicial de un `useState` se lee una sola vez. Se sigue durante el render,
-  // cuando cambia, y no en un efecto: un efecto pintaría primero la ficha
-  // sin el drawer.
+  // Sigue a `abrirAlta` y no solo lo lee al montar: si se navega a
+  // `?agregar=color` desde la ficha misma, React reusa esta instancia.
   const [abrirAltaVisto, setAbrirAltaVisto] = useState(abrirAlta);
   if (abrirAltaVisto !== abrirAlta) {
     setAbrirAltaVisto(abrirAlta);
@@ -229,9 +184,7 @@ export function VariantesDelProducto({
         setError(r.message);
         return;
       }
-      // La tarjeta del color desapareció: no queda dónde poner la respuesta
-      // en su lugar (DR §6.15). El error sí se queda acá arriba, que es
-      // donde estuvo la acción.
+      // Aviso flotante: la tarjeta del color ya no está.
       if (r.data.resultado === "borrado") {
         avisar(`Sacaste «${nombreDe(v)}».`);
       } else {
@@ -247,11 +200,8 @@ export function VariantesDelProducto({
     setEnEdicion(null);
     setAgregando(false);
 
-    // Con `?agregar=color` puesto, cerrar navega a la dirección sin él: si se
-    // quedara, recargar la pantalla volvería a abrir el alta sobre un color
-    // que ya se cargó. Es una navegación y no un `refresh`, así que trae los
-    // datos nuevos igual; llamar a los dos sería pedir la misma página dos
-    // veces.
+    // Se saca `?agregar=color` para que recargar no reabra el alta. La
+    // navegación ya trae los datos: sumar `refresh` los pediría dos veces.
     if (abrirAlta) {
       router.replace(pathname, { scroll: false });
       return;
@@ -267,14 +217,12 @@ export function VariantesDelProducto({
       ayuda="Cada color lleva su stock y sus fotos."
       acciones={
         variantes.length === 0 ? null : (
-          // F2.18: solo con alguna foto propia; un zip vacío no sirve.
+          // Solo con alguna foto propia: un zip vacío no sirve.
           <div className="flex flex-wrap items-center gap-2">
             {variantes.some((v) => v.propias > 0) ? (
               <DescargarFotos productId={productId} alFallar={setError} />
             ) : null}
-            {/* En pizarra, el par de «Guardar» (2026-11-16): sin colores no
-                hay stock ni fotos, así que pesa casi lo mismo. «Descargar
-                fotos» es una utilidad y queda en contorno. */}
+            {/* En pizarra: sin colores no hay stock ni fotos. */}
             <Button
               variant="pizarra"
               size="sm"
@@ -287,9 +235,7 @@ export function VariantesDelProducto({
         )
       }
     >
-      {/* Las reglas de las fotos, dichas una vez para toda la sección: en cada
-          tarjeta serían dos renglones repetidos por color. Van de ancho
-          completo y no apretadas contra el botón. */}
+      {/* Las reglas de las fotos, una vez para toda la sección. */}
       {variantes.length === 0 ? null : (
         <p className="text-caption text-ink-secondary">
           Hasta 5 fotos por color. Mejor si son de 1400&nbsp;×&nbsp;1400.
@@ -301,9 +247,7 @@ export function VariantesDelProducto({
           {error}
         </p>
       )}
-      {/* 2026-11-05: una variante «Único» no aparece al filtrar por color.
-          En una categoría donde casi todo tiene color, suele ser un error de
-          carga. Avisa y no frena: puede ser un caso que sí lo necesita. */}
+      {/* Avisa y no frena: «Único» puede ser a propósito. */}
       {categoriaConColor && variantes.some((v) => v.colorId === null) ? (
         <p className="flex items-start gap-2 rounded-panel-control bg-warning-tint px-3 py-2 text-body-sm text-warning">
           <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
@@ -316,10 +260,6 @@ export function VariantesDelProducto({
       {variantes.length === 0 ? (
         <Vacio alAgregar={() => setAgregando(true)} />
       ) : variantes.length > HASTA_SIN_PLEGAR ? (
-        // Más de tres colores: cada uno se pliega y se abre de a uno
-        // (2026-11-03). Con seis cargados en producción la lista era
-        // interminable para corregir algo. `type="single"`: abrir uno cierra
-        // el anterior.
         <Accordion
           type="single"
           collapsible
@@ -333,15 +273,13 @@ export function VariantesDelProducto({
                 <li
                   id={`color-${v.id}`}
                   className={TARJETA}
-                  // Las fotos se arrastran a la fila del color: si está
-                  // cerrado, se abre al pasar por encima.
+                  // Arrastrar fotos encima abre el color.
                   onDragEnter={() => {
                     if (abierto !== v.id) setAbierto(v.id);
                   }}
                 >
                   <AccordionHeader className="items-center gap-2">
-                    {/* `-m-1.5 p-1.5`: el área que se toca crece hasta el
-                        borde de la tarjeta sin correr nada de lugar. */}
+                    {/* `-m-1.5 p-1.5`: más área táctil, sin correr nada. */}
                     <AccordionTrigger className="-m-1.5 min-h-11 min-w-0 rounded-panel-control p-1.5 hover:bg-canvas">
                       <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                         <Identidad variante={v} />
@@ -357,9 +295,7 @@ export function VariantesDelProducto({
                       />
                     ) : null}
                   </AccordionHeader>
-                  {/* `forceMount`: cerrado queda montado y escondido. Si se
-                      desmontara, cerrar un color cortaría una subida de fotos
-                      en curso. */}
+                  {/* `forceMount`: desmontar cortaría una subida en curso. */}
                   <AccordionContent
                     forceMount
                     className="flex flex-col gap-3 data-[state=closed]:hidden"
@@ -452,15 +388,7 @@ export function VariantesDelProducto({
   );
 }
 
-/**
- * Los tres números que RF-16 pide siempre a la vista.
- *
- * El cero disponible se destaca porque es la diferencia entre «tengo diez» y
- * «tengo diez y las diez están comprometidas»: el total solo no la cuenta. Un
- * total NEGATIVO también, y por otro motivo — es la señal de discrepancia de
- * §5.4, que se corrige con un ajuste.
- */
-/** La muestra, el nombre y el stock: lo que se ve con el color cerrado. */
+/** Lo que se ve con el color cerrado. */
 function Identidad({ variante: v }: { variante: VarianteDelPanel }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
@@ -473,7 +401,6 @@ function Identidad({ variante: v }: { variante: VarianteDelPanel }) {
   );
 }
 
-/** Las etiquetas de estado. También se ven con el color cerrado. */
 function Estados({ variante: v }: { variante: VarianteDelPanel }) {
   if (v.isActive && v.colorIsActive !== false) return null;
   return (
@@ -486,7 +413,6 @@ function Estados({ variante: v }: { variante: VarianteDelPanel }) {
   );
 }
 
-/** Editar y sacar. Con el color cerrado no están. */
 function Acciones({
   variante: v,
   enCurso,
@@ -525,7 +451,6 @@ function Acciones({
   );
 }
 
-/** Las fotos y «Reutilizar»: lo que se esconde con el color cerrado. */
 function Cuerpo({
   productId,
   variante: v,
@@ -566,8 +491,7 @@ function Stock({ variante }: { variante: VarianteDelPanel }) {
       <span>{reservedStock} reservadas</span>
       <span aria-hidden>·</span>
       <span
-        // Rojo y no ámbar, como en el listado (F2.15): cero disponible es
-        // «Sin stock» allá, y la misma cifra no puede alarmar distinto acá.
+        // Rojo y no ámbar, como «Sin stock» en el listado.
         className={disponible <= 0 ? "font-medium text-danger" : "text-ink"}
       >
         {disponible} disponibles
@@ -576,7 +500,6 @@ function Stock({ variante }: { variante: VarianteDelPanel }) {
   );
 }
 
-/** La muestra de color de §6.5, en chico. Sin color, un ícono. */
 function Muestra({ hex, hex2 }: { hex: string | null; hex2: string | null }) {
   if (!hex) {
     return (
@@ -587,10 +510,8 @@ function Muestra({ hex, hex2 }: { hex: string | null; hex2: string | null }) {
   }
 
   return (
-    // El borde no es decorativo, y va en `border-strong` por los DOS lados
-    // del problema: un color claro desaparece sobre la superficie clara del
-    // panel (§6.5), y uno oscuro —que es la mitad del catálogo de
-    // periféricos— desaparece sobre la del modo oscuro.
+    // `border-strong`: un color claro se pierde en el modo claro y uno
+    // oscuro en el oscuro.
     <EsferaDeColor
       hex={hex}
       hex2={hex2}
@@ -599,10 +520,6 @@ function Muestra({ hex, hex2 }: { hex: string | null; hex2: string | null }) {
   );
 }
 
-/**
- * Un color como opción del selector, con su esfera. Las dos notas pueden ir
- * juntas: un color inactivo que además ya está cargado en otra variante.
- */
 function opcionDeColor(c: OpcionDeColor, tomado: boolean): OpcionDelSelector {
   const notas = [
     tomado ? "ya cargado" : null,
@@ -617,7 +534,6 @@ function opcionDeColor(c: OpcionDeColor, tomado: boolean): OpcionDelSelector {
   };
 }
 
-/** La muestra del renglón del selector: la del texto, no la de la tarjeta. */
 function MuestraChica({ hex }: { hex: string | null }) {
   return hex ? (
     <EsferaDeColor hex={hex} className="size-4 border-border-strong" />
@@ -626,14 +542,7 @@ function MuestraChica({ hex }: { hex: string | null }) {
   );
 }
 
-/**
- * Reutilizar las imágenes de otra variante — RF-16, §9.5.
- *
- * Es un `<select>` y no un interruptor porque la pregunta no es «sí o no»
- * sino «las de cuál». Solo se ofrecen las variantes que tienen imágenes
- * PROPIAS: elegir una que a su vez reutiliza armaría una cadena, y §9.5 dice
- * un solo salto.
- */
+/** Solo las variantes con fotos propias: §9.5 permite un solo salto. */
 function Reutilizar({
   variante,
   variantes,
@@ -652,24 +561,7 @@ function Reutilizar({
 
   if (candidatas.length === 0) return null;
 
-  /**
-   * **El control aparece solo cuando puede hacer algo**, y eso es una
-   * decisión de jerarquía, no una comodidad.
-   *
-   * Reutilizar las fotos de otro color es una configuración poco frecuente.
-   * Dibujar el selector en todas las tarjetas lo dejaba deshabilitado en casi
-   * todas, con un renglón de explicación abajo de por qué no se puede: dos
-   * renglones por color, siempre, para algo que casi nunca se usa.
-   *
-   * Los dos momentos en que sirve son estos:
-   *
-   *   · el color todavía no tiene fotos propias —que es justo cuando la
-   *     vendedora se pregunta si tiene que volver a subir las mismas—;
-   *   · ya está reutilizando, y hay que poder deshacerlo.
-   *
-   * Un color con fotos propias no lo ve, y no pierde nada: para llegar a
-   * reutilizar tendría que borrarlas primero, y ahí el selector aparece solo.
-   */
+  // Solo aparece cuando puede hacer algo: sin fotos propias, o reutilizando.
   const reutilizando = variante.imagesSourceId !== null;
   const puede = variante.propias === 0 && variante.prestadaA === 0;
 
@@ -693,9 +585,8 @@ function Reutilizar({
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={`${idBase}-fuente`}>Fotos</Label>
-      {/* El ancho se limita ACÁ y no en el `Select`: adentro, el chevron va
-          posicionado contra el envoltorio, y achicar solo el campo lo dejaba
-          flotando en el borde derecho de la tarjeta, lejos de su control. */}
+      {/* El ancho acá y no en el `Select`: el chevron se posiciona contra su
+          envoltorio y quedaría lejos del campo. */}
       <div className="max-w-xs">
         <Select
           id={`${idBase}-fuente`}
@@ -725,11 +616,7 @@ function Vacio({ alAgregar }: { alAgregar: () => void }) {
       icono={Palette}
       titulo="Todavía no cargaste ningún color."
       accion={
-        /* Pizarra y no de marca: esta tarjeta convive con «Guardar
-           cambios» del formulario de arriba, y §6.3 admite una sola de
-           marca. Pizarra es su par (2026-11-16): cargar colores es casi tan
-           importante como guardar. Pesa igual que el «Agregar color» de la
-           cabecera, que la reemplaza cuando hay colores. */
+        /* Pizarra y no de marca: §6.3 admite una sola, y es «Guardar». */
         <Button variant="pizarra" size="sm" onClick={alAgregar}>
           <Plus aria-hidden />
           Cargar el primero
@@ -742,11 +629,8 @@ function Vacio({ alAgregar }: { alAgregar: () => void }) {
   );
 }
 
-// ── Alta y edición ──────────────────────────────────────────────────────
-
 type Campo = "colorId" | "secondaryColorId" | "stockTotal";
 
-/** Enteros y nada más: no se venden dos unidades y media de un teclado. */
 const ENTERO = /^\d{1,7}$/;
 
 function EdicionDeVariante({
@@ -767,18 +651,14 @@ function EdicionDeVariante({
   variante: VarianteDelPanel | null;
   variantes: VarianteDelPanel[];
   colores: OpcionDeColor[];
-  /** Se llegó recién creado el producto, y todavía no tiene ningún color. */
+  /** Recién creado el producto, todavía sin colores. */
   desdeElAlta: boolean;
-  /** El id del color que se acaba de agregar, para llevar a sus fotos. */
   alAgregar: (id: string) => void;
   alCerrar: () => void;
 }) {
   const idBase = useId();
-  /**
-   * Agregar un color se lleva el foco a sus fotos. Sin esto, el drawer lo
-   * devolvería a «Agregar color» al cerrarse, y la página saltaría hasta ese
-   * botón antes de bajar a la tarjeta nueva.
-   */
+  // Sin esto, al cerrarse el drawer devolvería el foco a «Agregar color» y la
+  // página saltaría hasta ahí antes de bajar a la tarjeta nueva.
   const focoALasFotos = useRef(false);
   const [enviando, iniciar] = useTransition();
   const [errores, setErrores] =
@@ -790,17 +670,12 @@ function EdicionDeVariante({
   const [stock, setStock] = useState(String(variante?.stockTotal ?? 0));
   const [activa, setActiva] = useState(variante?.isActive ?? true);
 
-  /**
-   * Crear un color sin salir (F2.13). Es un paso adentro de este drawer y no
-   * otro drawer encima (§6.14.2): reemplaza al formulario, que vuelve con lo
-   * que tenía. `para` dice en cuál de los dos selectores queda elegido.
-   */
+  /** Un paso adentro del drawer, no otro encima. `para`: qué selector. */
   const [creando, setCreando] = useState<{
     nombre: string;
     para: "color" | "color2";
   } | null>(null);
-  // Guardar el color no repinta esta pantalla: sin sumarlo acá, quedaría
-  // elegido un color que el selector no conoce.
+  // Guardar el color no repinta esta pantalla.
   const [creados, setCreados] = useState<OpcionDeColor[]>([]);
   const colores = creados.length
     ? [
@@ -809,10 +684,8 @@ function EdicionDeVariante({
       ]
     : delServidor;
 
-  // Cada vez que se abre —o cambia la variante con el drawer abierto—, el
-  // formulario arranca de nuevo con lo que hay guardado. Se ajusta durante el
-  // render y no en un efecto: un efecto pintaría primero el drawer con los
-  // valores de la vez anterior.
+  // Al abrir, arranca de nuevo. Durante el render y no en un efecto, que
+  // pintaría primero los valores de la vez anterior.
   const [visto, setVisto] = useState({ abierto, variante });
   if (visto.abierto !== abierto || visto.variante !== variante) {
     setVisto({ abierto, variante });
@@ -841,11 +714,7 @@ function EdicionDeVariante({
     );
   };
 
-  /**
-   * Las combinaciones que otra variante de este producto ya se llevó. Un
-   * color suelto está tomado si ya hay una variante de ESE color solo:
-   * «Negro» y «Negro/Rojo» conviven, son dos variantes distintas.
-   */
+  // «Negro» y «Negro/Rojo» conviven: son dos variantes distintas.
   const tomadas = new Set(
     variantes
       .filter((v) => v.id !== variante?.id)
@@ -854,7 +723,7 @@ function EdicionDeVariante({
   const segundo = color2 || null;
   const conColor = !!color && color !== UNICO;
 
-  /** Los que se ofrecen: los activos, más los que esta variante ya tiene. */
+  // Los activos, más los que ya tiene: si no, guardar se los cambiaría.
   const ofrecidos = colores.filter(
     (c) =>
       c.isActive ||
@@ -862,10 +731,6 @@ function EdicionDeVariante({
       c.id === variante?.secondaryColorId,
   );
 
-  /**
-   * Los colores que se pueden elegir de verdad. Se mira lo mismo que filtra
-   * el selector: los activos, más el que esta variante ya tenga puesto.
-   */
   const hayColores = colores.some(
     (c) => c.isActive || c.id === variante?.colorId,
   );
@@ -898,12 +763,9 @@ function EdicionDeVariante({
 
     const datos = {
       colorId: color === UNICO ? null : color,
-      // Sin primer color no hay segundo, aunque haya quedado elegido de antes
-      // de pasar a «Único».
+      // El segundo puede haber quedado elegido de antes de pasar a «Único».
       secondaryColorId: conColor ? segundo : null,
-      // `Number.parseInt` explícito, que es lo que pide la regla de lint de
-      // §7.1: acá no hay un monto sino un conteo de unidades, y el patrón que
-      // la regla persigue —convertir `numeric(12,2)` a flotante— no aplica.
+      // `Number.parseInt`: la regla de lint prohíbe `Number` por los montos.
       stockTotal: Number.parseInt(stock.trim(), 10),
       isActive: activa,
     };
@@ -918,9 +780,7 @@ function EdicionDeVariante({
         return;
       }
 
-      // Avisa el drawer y no quien lo cierra: `alCerrar` es también lo que
-      // llama «Cancelar», y cancelar no confirma nada. Acá adentro se sabe
-      // además si fue alta o edición, y con qué color.
+      // Avisa el drawer y no `alCerrar`, que también es «Cancelar».
       const nombre = (id: string | null) =>
         colores.find((c) => c.id === id)?.name ?? "el color";
       const comoSeLlama =
@@ -951,8 +811,7 @@ function EdicionDeVariante({
           e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
-          // Escape en el paso de crear vuelve a la variante: cerrar todo
-          // perdería el stock y lo demás que ya se había cargado.
+          // Escape al crear vuelve a la variante, sin perder lo cargado.
           if (creando) {
             e.preventDefault();
             volverDeCrear();
@@ -987,10 +846,7 @@ function EdicionDeVariante({
                   ? `Editar «${nombreDe(variante)}»`
                   : "Agregar un color"}
               </SheetTitle>
-              {/* Dice adónde se sigue, porque el drawer no tiene fotos: se
-                  suben a una ruta con el id del color, que todavía no existe.
-                  Recién creado el producto, además, confirma el alta: el
-                  aviso flotante de antes caía justo encima de «Agregar». */}
+              {/* Recién creado el producto, confirma el alta. */}
               <SheetDescription>
                 {variante
                   ? "Las fotos se cambian en la tarjeta del color."
@@ -1002,8 +858,7 @@ function EdicionDeVariante({
 
             <SheetForm onSubmit={enviar} noValidate>
               <SheetBody>
-                {/* Dos secciones, por la regla del aire (§3.4.1): qué color es,
-                y cuánto hay y si se ofrece. */}
+                {/* Dos secciones, por la regla del aire. */}
                 <Secciones>
                   <Seccion>
                     <div className="flex flex-col gap-1.5">
@@ -1030,9 +885,6 @@ function EdicionDeVariante({
                             deshabilitada: tomadas.has(UNICO),
                             muestra: <MuestraChica hex={null} />,
                           },
-                          // Los inactivos no se ofrecen, salvo el que la variante ya
-                          // tiene puesto: si desapareciera del selector, guardar se lo
-                          // cambiaría sin que nadie lo hubiera pedido.
                           ...ofrecidos.map((c) =>
                             opcionDeColor(
                               c,
@@ -1051,17 +903,11 @@ function EdicionDeVariante({
                         </FieldError>
                       ) : (
                         <FieldHint id={`${idBase}-ayuda-color`}>
-                          {/* Con cero colores la ayuda tiene que decir otra cosa: que
-                    igual se puede seguir. Si no, el selector ofrece «Único» y
-                    una frase sobre dónde se cargan los colores, y parece que
-                    falta un paso obligatorio que en realidad es opcional
-                    (RF-16: una variante sin color es un producto que no se
-                    vende por color). */}
+                          {/* Sin colores, dice que igual se puede seguir. */}
                           {!hayColores
                             ? "Podés venderlo sin colores, o crear uno desde la lista."
                             : color === UNICO
-                              ? // 2026-11-05: corta a propósito. «Único» deja
-                                // al producto afuera del filtro de color.
+                              ? // Corta a propósito: «Único» saca del filtro.
                                 "Solo si el color no importa, como en una memoria RAM."
                               : "Si no está, escribilo y crealo desde la lista."}
                         </FieldHint>
@@ -1131,9 +977,7 @@ function EdicionDeVariante({
                       <Label htmlFor={`${idBase}-stock`}>Stock</Label>
                       <Input
                         id={`${idBase}-stock`}
-                        // `inputMode` y no `type="number"`: el número del navegador sube
-                        // y baja con la rueda del mouse sobre el campo, y acá eso
-                        // cambiaría el stock sin querer.
+                        // No `type="number"`: la rueda cambiaría el stock.
                         inputMode="numeric"
                         value={stock}
                         onChange={(e) => setStock(e.target.value)}
@@ -1207,16 +1051,7 @@ function EdicionDeVariante({
   );
 }
 
-/**
- * Si las fotos que se suban ahora salen con marca de agua — RF-39.
- *
- * **Avisa, no bloquea**: es todo o nada, y para subir una sin marca se apaga
- * desde su pantalla, que es a donde lleva. Es un enlace con forma de
- * insignia y no una insignia suelta, porque lo siguiente que se quiere hacer
- * al leerla es cambiarla o ver cómo queda. El estado va escrito y con un
- * ícono distinto, no solo en otro color (§9). Verde y rojo, para que se
- * note de un vistazo (2026-11-13).
- */
+/** Avisa y no bloquea; enlaza a su pantalla, que es donde se cambia. */
 function AvisoDeMarcaDeAgua({ activa }: { activa: boolean }) {
   return (
     <Link

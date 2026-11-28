@@ -5,20 +5,10 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
 /**
- * ¿Es esta la contraseña de la cuenta? Comparada en la base contra el hash
- * que guarda GoTrue (bcrypt, `$2a$`), con `crypt()` de `pgcrypto` — F10.5,
- * F10.5b.
- *
- * **Por qué no se le pregunta a GoTrue ingresando**, que era lo que se hacía:
- * - Con el captcha prendido (F10.5b, `GOTRUE_SECURITY_CAPTCHA_*`), GoTrue
- *   exige un token de Turnstile también para ingresar con contraseña, y una
- *   comprobación hecha por el servidor no tiene uno.
- * - A una cuenta bloqueada o dada de baja GoTrue la rechaza **antes** de mirar
- *   la contraseña (`user_banned`), así que ahí no hay a quién preguntarle.
- *
- * Lo que se pierde es el límite de intentos de GoTrue: quien llama pone el
- * suyo (`frenarSiInsiste`). Una cuenta sin contraseña —la de Google o
- * Facebook que nunca la definió— tiene el hash vacío y nunca coincide.
+ * Se compara contra el hash de `auth.users` con `crypt()` y no ingresando en
+ * GoTrue: con el captcha prendido el ingreso exige un token de Turnstile, y a
+ * una cuenta bloqueada la rechaza antes de mirar la contraseña. Se pierde su
+ * límite de intentos: quien llama pone el suyo (`frenarSiInsiste`).
  */
 export async function coincideLaContrasena(
   email: string,

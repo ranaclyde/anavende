@@ -5,10 +5,7 @@ import { SolapasDeCatalogo } from "@/components/admin/catalogo/tabs";
 
 export const metadata: Metadata = { title: "Catálogo" };
 
-/**
- * Catálogo del panel — RF-18.
- * Marcas, categorías y colores comparten encabezado y solapas.
- */
+/** Marcas, categorías y colores comparten encabezado y solapas (RF-18). */
 export default function CatalogoLayout({
   children,
 }: {

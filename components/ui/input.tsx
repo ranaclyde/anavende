@@ -14,15 +14,9 @@ const CLASES_DEL_CAMPO = [
 ];
 
 /**
- * Campo de texto — DESIGN-REFERENCE §6.6.
- * 48px en la tienda, 40px en el panel. Píldora en la tienda, 8px en el panel.
- * El estado de error se marca con `aria-invalid`, que además lo anuncia
- * al lector de pantalla (§9).
- *
- * **Con `type="tel"` lleva la bandera y el +54 adentro, a la izquierda**
- * (2026-10-21): dice de qué país es el número sin que haya que explicarlo, y
- * deja claro que lo que falta escribir es la característica y el número.
- * Está acá y no en cada formulario para que ningún teléfono quede sin él.
+ * El error se marca con `aria-invalid`, que además lo anuncia (DR §9).
+ * Con `type="tel"` lleva la bandera y el +54 adentro; está acá y no en cada
+ * formulario para que ningún teléfono quede sin él.
  */
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   if (type === "tel") return <InputTelefono className={className} {...props} />;
@@ -37,14 +31,9 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
 }
 
 /**
- * El `className` va a la caja y no al campo: quien lo pasa lo usa para el
- * ancho (`sm:max-w-64`), y el prefijo tiene que quedar adentro de ese ancho.
- *
- * El prefijo es `aria-hidden`: el lector de pantalla lee la etiqueta y lo
- * que se escribe, y «bandera de Argentina, más cincuenta y cuatro» antes de
- * cada número es ruido. Tampoco se envía: es parte del dibujo, no del valor.
- * Va escrito y no importado de `lib/telefono.ts`, que trae zod: este campo
- * está en todos los formularios.
+ * El `className` va a la caja y no al campo: se usa para el ancho, y el
+ * prefijo tiene que quedar adentro. El prefijo es `aria-hidden` y no se envía.
+ * Va escrito y no importado de `lib/telefono.ts`, que trae zod.
  */
 function InputTelefono({
   className,
@@ -70,12 +59,7 @@ function InputTelefono({
   );
 }
 
-/**
- * Dibujada y no emoji: en Windows 🇦🇷 se ve como «AR» en dos letras. Las
- * franjas en celeste oficial y el sol como un punto, que a 20px es lo que
- * se distingue. El borde fino es para que la franja blanca no se pierda
- * contra el campo blanco.
- */
+/** Dibujada y no emoji: en Windows 🇦🇷 se ve como «AR». */
 function BanderaArgentina() {
   return (
     <svg
@@ -90,7 +74,6 @@ function BanderaArgentina() {
   );
 }
 
-/** Área de texto. Mismo contrato que Input, sin la píldora: es multilínea. */
 function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
   return (
     <textarea

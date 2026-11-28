@@ -13,14 +13,6 @@ import { Slider } from "@/components/ui/slider";
 import { TIPO_FILTRO } from "@/lib/transiciones";
 import { cn } from "@/lib/utils";
 
-/**
- * El precio, la pieza del panel de filtros que necesita estado. El resto del
- * panel se arma en el servidor (`filtros-catalogo.tsx`) y se abre en el
- * drawer de `drawer-de-filtros.tsx`, que trae el cierre con Escape, tocando
- * afuera y con «Limpiar filtros».
- */
-
-/** Lo que espera el debounce antes de aplicar lo que se está escribiendo. */
 const ESPERA = 700;
 
 /** Pesos enteros, o `null` si el campo está vacío o no es un número. */
@@ -32,14 +24,10 @@ function aPesos(texto: string): number | null {
 
 const aTexto = (n: number | null) => (n === null ? "" : String(n));
 
-/** Los precios finales más bajo y más alto del catálogo, en pesos enteros. */
+/** Los precios finales extremos del catálogo, en pesos enteros. */
 export type LimitesDePrecio = { min: number; max: number };
 
-/**
- * El paso del slider: unos cien pasos entre punta y punta, redondo. Con un
- * catálogo de $ 3.000 a $ 160.000 son $ 1.000; de a $ 1 la manija no se
- * puede dejar en un número que se lea.
- */
+/** Unos cien pasos redondos entre punta y punta: de a $ 1, la manija no se lee. */
 function pasoPara({ min, max }: LimitesDePrecio): number {
   const rango = max - min;
   if (rango <= 100) return 1;
@@ -49,22 +37,12 @@ function pasoPara({ min, max }: LimitesDePrecio): number {
 const pesos = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
 
 /**
- * El rango de precio (RF-02), **sin «Aplicar»** desde el 2026-10-14.
+ * El rango de precio, sin «Aplicar»: se aplica tras la espera, con Enter o al
+ * salir del campo. Con `replace`, para no dejar una entrada del historial por
+ * pausa. Sin JavaScript sigue siendo un formulario GET.
  *
- * Se aplica solo: 700ms después de dejar de escribir, o enseguida con Enter
- * o al salir del campo. Navega sin recargar, como los chips —el botón hacía
- * un envío de formulario, que recargaba la página entera—, y con `replace`:
- * escribir un precio no puede dejar una entrada del historial por pausa.
- *
- * **Con «Desde» mayor que «Hasta» el debounce espera.** `leerFiltrosDeTienda`
- * los da vuelta, y aplicarlo a mitad de escribir —«Hasta 2» camino a 20.000—
- * cambiaría los dos campos debajo de los dedos. Al salir del campo o con
- * Enter sí se aplica, y ahí darlos vuelta es lo que se quiere.
- *
- * Sigue siendo un formulario GET con los demás filtros como campos ocultos:
- * sin JavaScript, Enter lo envía como antes. Para eso queda un botón de envío
- * oculto, porque sin ninguno un formulario de dos campos no se envía con
- * Enter.
+ * Con «Desde» mayor que «Hasta» la espera no aplica: se darían vuelta los dos
+ * campos a mitad de escribir («Hasta 2» camino a 20.000).
  */
 export function RangoDePrecio({
   filtros,
@@ -75,19 +53,16 @@ export function RangoDePrecio({
   limites: LimitesDePrecio | null;
 }) {
   const router = useRouter();
-  // La transición es para enterarse de cuándo termina: mientras tanto, la
-  // grilla se atenúa (`filtrando.tsx`).
+  // La transición avisa cuándo termina: mientras, la grilla se atenúa.
   const [pendiente, iniciar] = useTransition();
   useAvisarFiltrando(pendiente);
   const [desde, setDesde] = useState(aTexto(filtros.precioMin));
   const [hasta, setHasta] = useState(aTexto(filtros.precioMax));
   const espera = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Si el precio cambia desde afuera —«Limpiar filtros», el chip del precio,
-  // el atrás—, los campos lo siguen. Se ajusta al renderizar y no con un
-  // efecto (así lo recomienda React): con un efecto se pintaría una vez el
-  // valor viejo. Cuando el cambio es el que mandaron estos mismos campos, el
-  // texto ya dice eso y no se toca, así no se pisa lo que se está tipeando.
+  // Si el precio cambia desde afuera, los campos lo siguen. Al renderizar y no
+  // con un efecto, que pintaría una vez el valor viejo. Si el cambio salió de
+  // estos campos no se toca, para no pisar lo que se está tipeando.
   const [previo, setPrevio] = useState([filtros.precioMin, filtros.precioMax]);
   if (previo[0] !== filtros.precioMin || previo[1] !== filtros.precioMax) {
     setPrevio([filtros.precioMin, filtros.precioMax]);
@@ -105,8 +80,7 @@ export function RangoDePrecio({
     let max = aPesos(h);
     if (min !== null && max !== null && min > max) {
       if (!aunInvertido) return;
-      // Dados vuelta acá y no solo al leerlos: si no, la dirección quedaría
-      // con «desde 50.000 hasta 2» y los campos diciendo lo contrario.
+      // Acá también, o la dirección y los campos dirían lo contrario.
       [min, max] = [max, min];
     }
     if (min === filtros.precioMin && max === filtros.precioMax) return;
@@ -123,13 +97,8 @@ export function RangoDePrecio({
     espera.current = setTimeout(() => aplicar(d, h, false), ESPERA);
   };
 
-  /*
-   * El slider y los campos dicen lo mismo. Las puntas del slider son los
-   * precios del catálogo redondeados al paso, y **una manija en su punta es
-   * «sin límite»**: el campo queda vacío y la dirección no lleva ese borde.
-   * Si no, mover solo la de abajo dejaría puesto un «hasta $ 160.000» que
-   * nadie eligió, y un producto nuevo más caro quedaría afuera.
-   */
+  // Una manija en su punta es «sin límite»: si no, mover solo la de abajo
+  // dejaría un tope que nadie eligió y un producto nuevo más caro afuera.
   const paso = limites ? pasoPara(limites) : 1;
   const punta = limites
     ? {
@@ -155,11 +124,7 @@ export function RangoDePrecio({
         Precio
       </h3>
 
-      {/*
-        `aria-labelledby` y no un `<fieldset>` con `<legend>`: el legend
-        dejaría a este grupo fuera del recorrido por encabezados mientras los
-        otros tres son `h3`.
-      */}
+      {/* Sin `<legend>`: dejaría al grupo fuera del recorrido por encabezados. */}
       {punta && valor ? (
         <Slider
           min={punta.min}
@@ -168,8 +133,7 @@ export function RangoDePrecio({
           minStepsBetweenThumbs={1}
           value={valor}
           etiquetas={["Precio mínimo", "Precio máximo"]}
-          // Mientras se arrastra solo cambian los campos; se filtra al
-          // soltar, como con Enter en los campos.
+          // Se filtra al soltar.
           onValueChange={([a, b]) => {
             clearTimeout(espera.current);
             setDesde(aManija(a));
@@ -181,8 +145,7 @@ export function RangoDePrecio({
 
       <form
         method="get"
-        // La página de la categoría, si se está en una (F3.11): sin
-        // JavaScript, el envío tiene que volver al mismo lugar.
+        // Sin JavaScript, el envío vuelve a la misma categoría.
         action={rutaDeTienda(filtros.seccion)}
         aria-labelledby="filtro-precio"
         className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2"
@@ -217,8 +180,7 @@ export function RangoDePrecio({
           }}
           alSalir={() => aplicar(desde, hasta, true)}
         />
-        {/* Solo para que Enter envíe sin JavaScript; con JavaScript lo
-          intercepta `onSubmit`. Fuera del recorrido con Tab y del lector. */}
+        {/* Sin ningún botón, Enter no envía un formulario de dos campos. */}
         <button type="submit" tabIndex={-1} aria-hidden className="sr-only">
           Aplicar
         </button>
@@ -227,11 +189,7 @@ export function RangoDePrecio({
   );
 }
 
-/**
- * Los filtros vigentes como campos ocultos, para que el envío sin JavaScript
- * no se los lleve puestos. Los multivalor van repetidos, que es exactamente
- * la forma que `leerFiltrosDeTienda` sabe leer.
- */
+/** Los filtros vigentes como campos ocultos, para el envío sin JavaScript. */
 function Conservados({ filtros }: { filtros: FiltrosDeTienda }) {
   return (
     <>
@@ -254,12 +212,8 @@ function Conservados({ filtros }: { filtros: FiltrosDeTienda }) {
 }
 
 /**
- * Un borde del precio, a todo el ancho de su columna (2026-11-04, pedido tuyo
- * con una referencia). **La etiqueta ya no se ve**: el «–» entre los dos
- * campos y el slider de arriba dicen cuál es cuál, y el marcador muestra la
- * punta del catálogo («3.000», «160.000+»). Para el lector de pantalla sigue
- * siendo «Desde» y «Hasta». Es una excepción a la regla de §8 de etiquetas
- * visibles, anotada en PROGRESO.md.
+ * Un borde del precio. La etiqueta no se ve a propósito (excepción a las
+ * etiquetas visibles, anotada en PROGRESO.md); el lector sí la anuncia.
  */
 function CampoDePrecio({
   nombre,
@@ -296,15 +250,11 @@ function CampoDePrecio({
         onChange={(e) => alCambiar(e.target.value)}
         onBlur={alSalir}
         className={cn(
-          // 44px, que es el mínimo táctil de §9.
           "h-11 w-full rounded-pill border border-border bg-surface",
-          // 16px en teléfono: con menos, iOS Safari amplía la página al
-          // enfocar el campo y no vuelve. Ver `search-box.tsx`.
+          // 16px en teléfono: con menos, iOS Safari amplía la página al enfocar.
           "pr-3 pl-7 text-body-sm max-md:text-body text-ink tabular-nums",
           "placeholder:text-ink-secondary",
           "focus-visible:shadow-focus focus-visible:outline-none",
-          // Las flechitas nativas de `number` no entran en el sistema y
-          // encima empujan el texto contra el borde.
           "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
         )}
       />

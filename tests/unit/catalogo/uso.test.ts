@@ -8,16 +8,10 @@ import {
 } from "@/tests/apoyo/transaccion";
 
 /**
- * F2.1 — las reglas de RF-18 contra Postgres: los conteos del listado y la
- * invariante RN-11b.
- *
- * Migrado de `scripts/verificar-catalogo.mts` (F4.0b).
- *
- * No prueba las Server Actions —eso necesita sesión— sino las CONSULTAS que
- * las sostienen. Si el conteo de uso está mal, la regla que decide si una
- * marca se puede desactivar está mal, y eso no se ve leyendo el código.
+ * Las consultas que sostienen RF-18 y RN-11b, no las Server Actions: si el
+ * conteo de uso está mal, la regla que decide si una marca se puede
+ * desactivar está mal.
  */
-
 type Uso = { activos: number; total: number };
 
 async function usoDeMarca(tx: Tx, id: string): Promise<Uso> {
@@ -39,7 +33,6 @@ async function usoDeColor(tx: Tx, id: string): Promise<Uso> {
   return f;
 }
 
-/** La cadena mínima: marca, categoría y color, sin productos todavía. */
 async function armarCatalogo(tx: Tx) {
   const [marca] = await tx.execute<{ id: string }>(sql`
     INSERT INTO brands (name, slug) VALUES ('Probando Marca', 'probando-marca')
@@ -76,9 +69,8 @@ describe("el uso de una marca (RN-11b)", () => {
 
       expect(await usoDeMarca(tx, marca)).toEqual({ activos: 1, total: 1 });
 
-      // La restricción de la base tiene que impedirlo IGUAL, aunque la
-      // aplicación ya lo haya rechazado antes: la pantalla es la primera
-      // defensa, no la última.
+      // La base tiene que impedirlo aunque la aplicación ya lo rechace: la
+      // pantalla es la primera defensa, no la última.
       await rechaza(
         tx,
         (sp) => sp.execute(sql`DELETE FROM brands WHERE id = ${marca}`),
@@ -97,7 +89,7 @@ describe("el uso de una marca (RN-11b)", () => {
       );
 
       // activos=0 habilita desactivar la marca; total=1 sigue impidiendo
-      // borrarla. Son dos preguntas distintas y por eso el conteo es doble.
+      // borrarla.
       expect(await usoDeMarca(tx, marca)).toEqual({ activos: 0, total: 1 });
     });
   });
@@ -159,8 +151,8 @@ describe("categorías destacadas (RF-18)", () => {
         UPDATE categories SET is_featured = true, is_active = false
          WHERE id = ${categoria}`);
 
-      // `is_active` es la única verdad sobre la visibilidad. Si destacar
-      // publicara de paso, destacar una categoría a medio armar la mostraría.
+      // `is_active` es la única verdad sobre la visibilidad: destacar no
+      // puede publicar una categoría a medio armar.
       const [f] = await tx.execute<{ destacada: boolean; activa: boolean }>(sql`
         SELECT is_featured AS destacada, is_active AS activa
           FROM categories WHERE id = ${categoria}`);
@@ -175,9 +167,8 @@ describe("categorías destacadas (RF-18)", () => {
         sql`UPDATE categories SET is_featured = true WHERE id = ${categoria}`,
       );
 
-      // Los nombres contradicen a propósito al orden alfabético puro: «Zzz»
-      // destacada tiene que salir antes que «Aaa» sin destacar. Con tres
-      // nombres cualesquiera el resultado podría salir bien de casualidad.
+      // Nombres que contradicen el orden alfabético a propósito, para que no
+      // salga bien de casualidad.
       await tx.execute(sql`
         INSERT INTO categories (name, slug, is_featured) VALUES
           ('Zzz Ultima', 'zzz-ultima', true),
@@ -221,9 +212,8 @@ describe("el listado de marcas", () => {
         inactivos: 0,
       });
 
-      // El `::int` del SELECT es lo que se está probando: sin él, `count()`
-      // llega como `bigint`, y el driver lo entrega COMO TEXTO. La pantalla
-      // sumaría "1" + "2" = "12" sin que nada falle.
+      // Sin el `::int`, `count()` llega como `bigint` y el driver lo entrega
+      // como texto: "1" + "2" = "12" sin que nada falle.
       expect(listado.every((f) => typeof f.activos === "number")).toBe(true);
     });
   });

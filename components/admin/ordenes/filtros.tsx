@@ -20,10 +20,7 @@ import {
   type Solapa,
 } from "@/modules/orders/filtros-panel";
 
-/**
- * Qué fecha recorta el rango en cada solapa — F7.8. La regla vive en
- * `queries-panel.ts`; esto es cómo se dice.
- */
+/** La regla vive en `queries-panel.ts`; esto es cómo se dice. */
 const FECHA_DE_LA_SOLAPA: Record<Solapa, string> = {
   activas: "fecha de carga",
   finalizadas: "fecha de entrega",
@@ -32,19 +29,8 @@ const FECHA_DE_LA_SOLAPA: Record<Solapa, string> = {
 };
 
 /**
- * Búsqueda, origen y rango de fechas del listado de órdenes — RF-21, §10.2.
- * Tarea F7.1.
- *
- * Todo se escribe en la URL: la barra no guarda nada. Lo que se ve es lo que
- * dice la dirección, así que compartir la pantalla es copiar el enlace y el
- * botón atrás deshace un filtro en vez de salir de la pantalla.
- *
- * La navegación va dentro de una transición: React deja la tabla anterior a
- * la vista mientras llega la nueva en lugar de vaciarla, y el contador dice
- * que está buscando.
- *
- * **Cualquier cambio vuelve a la página 1.** Filtrar estando en la página 4 y
- * quedarse ahí es el camino corto a una tabla vacía que parece un error.
+ * Todo va en la URL. Cualquier cambio vuelve a la página 1: quedarse en la 4
+ * da una tabla vacía que parece un error.
  */
 export function BarraDeFiltros({
   filtros,
@@ -54,7 +40,6 @@ export function BarraDeFiltros({
   filtros: FiltrosDeOrdenes;
   /** Cuántas hay con estos filtros, no cuántas entran en esta página. */
   total: number;
-  /** Para el tramo: «Del 41 al 80 de 95». */
   porPagina: number;
 }) {
   const router = useRouter();
@@ -67,8 +52,6 @@ export function BarraDeFiltros({
     );
   };
 
-  // Lo llama el buscador con el texto ya recortado, y también con la cadena
-  // vacía cuando se limpia: para la barra son la misma operación.
   const buscar = (q: string) => aplicar({ q });
 
   const limpiarTodo = () => {
@@ -113,8 +96,7 @@ export function BarraDeFiltros({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        {/* El resultado se anuncia: quien no ve la tabla tiene que enterarse
-            igual de cuántas quedaron (§9). */}
+        {/* Se anuncia a lectores de pantalla (§9). */}
         <ContadorDeResultados pendiente={pendiente}>
           {tramo({
             pagina: filtros.pagina,

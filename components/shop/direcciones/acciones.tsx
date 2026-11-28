@@ -23,14 +23,8 @@ import {
 } from "@/modules/users/direcciones/actions";
 
 /**
- * Lo que se puede hacer con una dirección desde la lista — RF-09, F5.3.
- *
- * Una isla chica: la tarjeta —la dirección escrita— se pinta en el
- * servidor, y acá queda solo lo que responde a un clic.
- *
- * **Eliminar pregunta antes**, y dice qué pasa con la predeterminada: que
- * otra tome su lugar sin avisar es exactamente el cambio que después alguien
- * descubre al ver que el pedido salió para la casa equivocada.
+ * Eliminar avisa qué dirección pasa a ser la predeterminada: que cambie sin
+ * avisar es un pedido que sale para la casa equivocada.
  */
 export function AccionesDeDireccion({
   id,
@@ -47,7 +41,7 @@ export function AccionesDeDireccion({
   const [enCurso, iniciar] = useTransition();
   const [confirmando, setConfirmando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Con la baja pedida (F5.8) la libreta se mira y no se cambia.
+  // Con la baja pedida la libreta se mira y no se cambia.
   const enPausa = useCuentaEnPausa();
   const pausa = propsDePausa(enPausa);
 

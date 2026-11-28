@@ -28,17 +28,8 @@ import {
 import type { OpcionDeCatalogo } from "@/modules/catalog/products/queries";
 
 /**
- * Búsqueda, filtros y orden del listado de productos — RF-15, §10.2.
- *
- * Todo se escribe en la URL: la barra no guarda nada. Lo que se ve es
- * exactamente lo que dice la dirección, así que compartir la pantalla es
- * copiar el enlace y el botón atrás deshace un filtro en vez de salir de la
- * pantalla.
- *
- * La navegación va dentro de una transición: React deja la tabla anterior a
- * la vista mientras llega la nueva en lugar de vaciarla, y el contador dice
- * que está buscando. Un listado que parpadea a blanco en cada tecla se
- * siente más lento de lo que es.
+ * Todo vive en la URL. La navegación va en una transición para que React deje
+ * la tabla anterior a la vista mientras llega la nueva, en vez de vaciarla.
  */
 export function BarraDeFiltros({
   filtros,
@@ -53,7 +44,6 @@ export function BarraDeFiltros({
   categorias: OpcionDeCatalogo[];
   mostrados: number;
   total: number;
-  /** Para el tramo: «Del 41 al 80 de 95». */
   porPagina: number;
 }) {
   const router = useRouter();
@@ -61,17 +51,13 @@ export function BarraDeFiltros({
   const [texto, setTexto] = useState(filtros.q);
   const idOrden = useId();
 
-  // Cualquier cambio vuelve a la primera página, como en los otros tres
-  // listados: filtrar estando en la 3 puede dejar dos resultados y una página
-  // vacía, y quien filtró no eligió estar ahí.
+  // Todo cambio vuelve a la página 1: la 3 puede quedar vacía al filtrar.
   const aplicar = (cambios: Partial<FiltrosDeProductos>) => {
     iniciar(() =>
       router.push(urlDeFiltros({ ...filtros, ...cambios, pagina: 1 })),
     );
   };
 
-  // Lo llama el buscador con el texto ya recortado, y también con la cadena
-  // vacía cuando se limpia: para la barra son la misma operación.
   const buscar = (q: string) => aplicar({ q });
 
   const limpiarTodo = () => {
@@ -79,11 +65,7 @@ export function BarraDeFiltros({
     iniciar(() => router.push(urlDeFiltros(sinFiltros(filtros))));
   };
 
-  /**
-   * Cambiar de criterio arranca por su dirección natural en vez de heredar
-   * la anterior: venir de «más nuevos primero» no tiene por qué dejar los
-   * precios de mayor a menor.
-   */
+  // Un criterio nuevo arranca por su dirección natural, no hereda la anterior.
   const cambiarOrden = (orden: OrdenDeProductos) =>
     aplicar({ orden, dir: DIRECCION_NATURAL[orden] });
 
@@ -100,10 +82,7 @@ export function BarraDeFiltros({
           alBuscar={buscar}
         />
 
-        {/* En el teléfono los filtros van en dos columnas: uno debajo del
-            otro deja la tabla fuera de la pantalla antes de empezar.
-            **El estado ya no está acá**: desde el 2026-09-22 es una solapa,
-            arriba de esta barra, como en órdenes y usuarios (§6.9). */}
+        {/* En el teléfono, dos columnas: apilados dejan la tabla afuera. */}
         <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
           <SelectorConBuscador
             aria-label="Filtrar por categoría"
@@ -127,12 +106,8 @@ export function BarraDeFiltros({
             className="md:w-48"
           />
 
-          {/* El `div` es para la grilla y no para el `Select`: `Select`
-              envuelve al `<select>` en un `div` propio —ahí adentro va el
-              chevron—, así que una clase suya cae en el control y no en el
-              ítem de la grilla. Ocupa las dos columnas en el teléfono: cuando
-              el estado pasó a solapa quedaron tres filtros, y el tercero solo
-              en su fila se lee como si faltara algo al lado. */}
+          {/* El `div` es por la grilla: `Select` envuelve al `<select>` en un
+              `div` propio, y su `className` cae en el control. */}
           <div className="col-span-2 md:col-span-1">
             <Select
               aria-label="Filtrar por stock"
@@ -156,12 +131,9 @@ export function BarraDeFiltros({
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex items-center gap-3">
-          {/* El resultado se anuncia: quien no ve la tabla tiene que
-              enterarse igual de cuántos quedaron (§9). */}
+          {/* Se anuncia: quien no ve la tabla se entera igual. */}
           <ContadorDeResultados pendiente={pendiente}>
-            {/* Con más de una página, el tramo (2026-11-05): «Del 1 al 40
-                de 52 productos». Con una sola, cuántos, y filtrado «3 de
-                52 productos». */}
+            {/* «Del 1 al 40 de 52 productos», «3 de 52…» o «52…». */}
             {mostrados > porPagina
               ? tramo({
                   pagina: filtros.pagina,
@@ -199,9 +171,8 @@ export function BarraDeFiltros({
               </option>
             ))}
           </Select>
-          {/* «Destacados primero» es una bandera y no una escala: darla vuelta
-              pondría arriba lo NO destacado. El botón aparece solo cuando
-              puede hacer algo, en vez de quedar apagado sin explicación. */}
+          {/* «Destacados» es una bandera, no una escala: darla vuelta pondría
+              arriba lo no destacado. */}
           {filtros.orden === "destacados" ? null : (
             <Button
               variant="secondary"
@@ -235,11 +206,7 @@ function cuantos(n: number): string {
   return n === 1 ? "1 producto" : `${n} productos`;
 }
 
-/**
- * «Todas» primero —que es sacar el filtro—, y después las opciones. Las
- * inactivas quedan, con la nota: un producto inactivo puede tener marca
- * inactiva, y filtrar por ella es la forma de encontrarlo.
- */
+/** Las inactivas quedan: filtrar por ellas encuentra productos inactivos. */
 function conTodas(
   todas: string,
   opciones: OpcionDeCatalogo[],

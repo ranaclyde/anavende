@@ -14,27 +14,13 @@ import { procesarImagen } from "@/modules/media/procesar";
 import { clave, TAMANO_MAXIMO, TAMANOS } from "@/modules/media/tamanos";
 
 /**
- * Vista previa de la marca de agua — RF-39, TECHNICAL-SPEC §9.6.
- *
- * Recibe una foto de prueba y las capas que están EN PANTALLA —sin guardar—
- * y devuelve la versión `-detail` con la marca, armada por `procesarImagen`:
- * la misma función, con los mismos números, que la subida de verdad. La foto
- * no se guarda en ningún lado.
- *
- * En vez de la foto puede venir `muestra`, el id de una foto de producto ya
- * subida y sin marca: con ella arranca la pantalla, para que la vista previa
- * no aparezca vacía. Se lee su `-detail`, que ya mide lo que va a medir.
- *
- * Route Handler y no Server Action por lo mismo que la subida: entra un
- * binario y sale otro.
+ * Vista previa de la marca de agua (§9.6) con las capas sin guardar, armada
+ * por la misma `procesarImagen` que la subida. La foto no se guarda. En vez
+ * de la foto puede venir `muestra`, el id de una foto de producto sin marca.
  */
 export const runtime = "nodejs";
 
-/**
- * Más holgado que la subida (30 por minuto): cada control que se mueve pide
- * una vista nueva. El navegador espera a que se deje de mover, pero arrastrar
- * un deslizador igual dispara varias.
- */
+/** Más holgado que la subida: arrastrar un deslizador dispara varias. */
 const VISTAS = { tope: 120, ventanaMs: 60_000 };
 
 const DETALLE = TAMANOS.filter((t) => t.sufijo === "detail");

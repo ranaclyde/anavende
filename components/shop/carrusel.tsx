@@ -5,33 +5,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-/**
- * Una fila de tarjetas que se desliza — los complementos de RF-32 cuando son
- * más de cuatro (pedido del 2026-10-14: uno de cada relacionada).
- *
- * Es la pista con encastre de la galería (§6.8) aplicada a tarjetas, con sus
- * mismas reglas: **en el teléfono, el dedo** —sin flechas, y la tarjeta de la
- * derecha asomada para que se note que sigue—; **desde `md`, flechas** que
- * avanzan una pantalla y **se apagan en las puntas** en vez de dar la vuelta.
- *
- * Las tarjetas siguen siendo de servidor: entran como `children` y esto solo
- * pone la pista y las flechas. Cada `<li>` trae su ancho
- * (`ANCHO_EN_CARRUSEL`), el mismo de la grilla en cada tamaño de pantalla.
- *
- * La pista se estira hasta el borde del contenedor de la página (`-mx-*` con
- * el mismo `px-*`): las tarjetas se van por el costado en vez de cortarse en
- * seco contra el margen, y `scroll-px` hace que encastren donde empieza el
- * contenido. El `py-3` es para la sombra de la tarjeta, que una caja con
- * desplazamiento recorta.
- */
+/** El ancho de cada `<li>` del carrusel: el mismo de la grilla en cada tamaño. */
 export const ANCHO_EN_CARRUSEL =
   "w-[42%] shrink-0 snap-start sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-3rem)/4)]";
 
 /**
- * La misma que `comoDesplazar` de la galería, repetida a propósito: importarla
- * de ahí metería la galería entera en el paquete del carrito. §8: bajo
- * `prefers-reduced-motion` no se anima, y la regla de `globals.css` no
- * alcanza al `behavior` que se pasa por JavaScript.
+ * Repetida a propósito de la galería: importarla metería la galería en el
+ * paquete del carrito. La regla de `prefers-reduced-motion` de `globals.css`
+ * no alcanza al `behavior` que se pasa por JavaScript.
  */
 function comoDesplazar(): ScrollBehavior {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -39,6 +20,11 @@ function comoDesplazar(): ScrollBehavior {
     : "smooth";
 }
 
+/**
+ * Una fila de tarjetas que se desliza: con el dedo en el teléfono, con
+ * flechas desde `md`. Las tarjetas entran como `children` y siguen siendo de
+ * servidor. `-my-3 py-3`, para que la pista no recorte la sombra.
+ */
 export function Carrusel({ children }: { children: React.ReactNode }) {
   const pista = useRef<HTMLUListElement>(null);
   const [puntas, setPuntas] = useState({ inicio: true, fin: false });
@@ -46,8 +32,7 @@ export function Carrusel({ children }: { children: React.ReactNode }) {
   const medir = useCallback(() => {
     const el = pista.current;
     if (!el) return;
-    // Un píxel de tolerancia: con zoom, `scrollLeft` llega con decimales y
-    // la punta nunca daría exacta.
+    // Con zoom, `scrollLeft` llega con decimales y la punta nunca da exacta.
     const inicio = el.scrollLeft <= 1;
     const fin = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1;
     setPuntas((p) =>
@@ -95,11 +80,7 @@ export function Carrusel({ children }: { children: React.ReactNode }) {
   );
 }
 
-/**
- * Montada sobre el borde de la pista, mitad afuera: adentro taparía la foto
- * de la primera tarjeta. Desde `md` el margen de la página es de 24px o más,
- * así que la mitad de 40 entra.
- */
+/** Mitad afuera de la pista: adentro taparía la foto de la primera tarjeta. */
 function Flecha({
   hacia,
   disponible,

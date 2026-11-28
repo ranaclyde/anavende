@@ -7,27 +7,16 @@ import { Button } from "@/components/ui/button";
 import { AREA_TACTIL_CUADRADA, cn } from "@/lib/utils";
 
 /**
- * El SKU de la ficha, con el botón para copiarlo (2026-11-05).
- *
- * Va entre el nombre y el precio. El código se copia para pegarlo en un
- * mensaje o compararlo con otra tienda, y de memoria se escribe mal.
- *
- * **El ícono solo, y «Copiado» en verde al tocarlo**, con el tilde que se
- * dibuja (`animate-tilde`). Es el verde de estado (`success`) y no el de
- * WhatsApp: dice que algo salió bien, no que abre WhatsApp. Dura 4 segundos,
- * el doble que «Compartir»: el código se mira antes de pegarlo. Si el
- * portapapeles no existe —la tienda abierta por IP de la LAN, sin contexto
- * seguro—, lo dice en vez de no hacer nada.
+ * «Copiado» dura el doble que en «Compartir»: el código se mira antes de
+ * pegarlo. Sin contexto seguro (IP de la LAN) no hay portapapeles, y se dice.
  */
 export function Sku({ sku }: { sku: string }) {
   const [estado, setEstado] = useState<"listo" | "copiado" | "sin-copiar">(
     "listo",
   );
-  // Tocar de nuevo reinicia la cuenta: sin esto, el temporizador del primer
-  // toque cortaba el «Copiado» del segundo antes de tiempo.
+  // Sin esto, el temporizador del primer toque corta el «Copiado» del segundo.
   const temporizador = useRef<number | undefined>(undefined);
-  // Cuántas veces se copió: es la `key` del tilde, para que se dibuje de
-  // nuevo en cada toque aunque ya estuviera a la vista.
+  // La `key` del tilde, para que se dibuje de nuevo en cada toque.
   const [veces, setVeces] = useState(0);
 
   function mostrar(nuevo: "copiado" | "sin-copiar", ms: number) {
@@ -58,9 +47,8 @@ export function Sku({ sku }: { sku: string }) {
           variant="tertiary"
           size="sm"
           onClick={copiar}
-          // El nombre no cambia al copiar: lo anuncia la región viva de abajo,
-          // igual que en «Compartir». Cambiarlo hace que el lector relea el
-          // botón como si fuera otro.
+          // Fijo: lo anuncia la región viva. Cambiarlo haría que el lector
+          // relea el botón como si fuera otro.
           aria-label="Copiar SKU"
           className={cn(
             "relative px-2",
@@ -72,7 +60,7 @@ export function Sku({ sku }: { sku: string }) {
             <Check
               key={veces}
               aria-hidden
-              className="[&_path]:animate-tilde [&_path]:[stroke-dasharray:24]"
+              className="[&_path]:animate-tilde-copiado [&_path]:[stroke-dasharray:24]"
             />
           ) : (
             <Copy aria-hidden />

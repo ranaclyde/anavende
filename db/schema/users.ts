@@ -11,71 +11,34 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Perfil de usuario — TECHNICAL-SPEC §5.3.
+ * Perfil de usuario (TECHNICAL-SPEC §5.3). La identidad vive en `auth.users`,
+ * que administra GoTrue: ESE ESQUEMA NO SE TOCA NI SE LEE CON DRIZZLE.
  *
- * La identidad (email, hash de contraseña, verificación, identidades de
- * Google y Facebook, banned_until) vive en `auth.users`, que administra
- * GoTrue. ESE ESQUEMA NO SE TOCA NI SE LEE CON DRIZZLE.
- *
- * Todas las tablas de dominio referencian `user_profiles(id)`, nunca
- * `auth.users`: así el esquema de la aplicación es autocontenido.
- *
- * El perfil lo crea nuestro código con compensación explícita (§13.4),
- * jamás un trigger: un trigger que falla bloquea los registros.
+ * El perfil lo crea nuestro código con compensación (§13.4), jamás un
+ * trigger: un trigger que falla bloquea los registros.
  */
 export const userProfiles = pgTable(
   "user_profiles",
   {
-    // Sin .references(): apunta a auth.users(id), que Drizzle no administra.
-    // La clave foránea se declara en la migración a mano (F1.6).
+    // Sin .references(): la clave foránea a auth.users(id) está en la
+    // migración, escrita a mano.
     id: uuid("id").primaryKey(),
-    /**
-     * Nombre y apellido POR SEPARADO, y no un campo libre — decisión del
-     * 2026-09-10.
-     *
-     * El campo único obligaba a adivinar cuál era cuál, y esa adivinanza ya
-     * estaba escrita: el alta partía el nombre por el primer espacio para
-     * saludar en los emails. Con «Sanhueza, Matías» —que es como mucha gente
-     * escribe— el email salía «Hola, Sanhueza,». Se pregunta separado porque
-     * separado es como se usa.
-     *
-     * El apellido acepta varias palabras a propósito: dos apellidos son
-     * normales y no son un error de tipeo.
-     */
     firstName: text("first_name").notNull(),
     lastName: text("last_name").notNull(),
-    /**
-     * Columna GENERADA: es el nombre para mostrar, y se escribe sola.
-     *
-     * Existe para que todo lo que ya lo lee —el encabezado, el saludo de «Mi
-     * cuenta», el menú del panel— siga funcionando sin cambiar una línea, y
-     * sobre todo para que no pueda desincronizarse de las dos columnas de
-     * arriba. Un `full_name` mantenido por la aplicación es una tercera copia
-     * que algún día alguien actualiza a medias.
-     */
+    /** Generada: no puede desincronizarse de las dos de arriba. */
     fullName: text("full_name")
       .notNull()
       .generatedAlwaysAs(sql`btrim(first_name || ' ' || last_name)`),
     /** Copia, para listar y buscar sin cruzar al esquema auth. */
     email: text("email").notNull(),
-    /** RF-05: obligatorio, en las tres vías de alta. */
     phone: text("phone").notNull(),
     role: text("role").notNull().default("customer"),
     /**
-     * La foto de perfil — RF-07, F5.9. CLAVE en Storage, no URL, como los
-     * logos (§9.2): `usuarios/{id}/{imageId}`, sin sufijo.
-     *
-     * Opcional, y sin ella nadie queda sin cara: se dibuja un blobatar a
-     * partir del `id` (`components/ui/avatar.tsx`). Por eso no hay columna
-     * para «el avatar generado»: se calcula, no se guarda.
-     *
-     * Ejecutar la baja la borra (decisión tuya del 2026-10-26): una foto es
-     * un dato personal, y RN-13 dice que la baja no borra **historial**, no
-     * que guarde la cara de quien se fue. Revertirla no la trae de vuelta.
+     * CLAVE en Storage, no URL: `usuarios/{id}/{imageId}`. Sin foto, se
+     * dibuja un blobatar.
      */
     avatarKey: text("avatar_key"),
 
-    // RF-27: el motivo de bloqueo no existe en Supabase Auth. Es nuestro.
     isBanned: boolean("is_banned").notNull().default(false),
     banReason: text("ban_reason"),
     bannedAt: timestamp("banned_at", { withTimezone: true }),
@@ -83,37 +46,13 @@ export const userProfiles = pgTable(
       onDelete: "set null",
     }),
 
-    /**
-     * La baja PEDIDA por el comprador — RF-34, F5.8, TS §13.5b.
-     *
-     * Una marca propia y no `is_banned`: la baja y el bloqueo comparten el
-     * efecto y no el significado (RN-13), y con una sola columna no hay forma
-     * de decirle a quien se fue solo algo distinto de «tu cuenta está
-     * bloqueada». Mientras está pedida, la cuenta queda en solo lectura
-     * (decisión del 2026-09-14) y el comprador puede retirarla.
-     *
-     * Ejecutada, el pedido NO se borra: `closure_requested_at` es la fecha en
-     * que la pidió y `closure_reason` el motivo que escribió, y las dos cosas
-     * son lo que la ficha muestra después. Lo que cambia es que se suma
-     * `closed_at` (F7.9), y desde ahí ya no puede entrar.
-     */
+    /** La baja pedida (RF-34). Ejecutada no se borra: se suma `closed_at`. */
     closureRequestedAt: timestamp("closure_requested_at", {
       withTimezone: true,
     }),
     closureReason: text("closure_reason"),
 
-    /**
-     * La baja EJECUTADA por la administradora — RF-34, F7.9.
-     *
-     * **Separada del pedido y separada de `is_banned`**, por lo mismo que el
-     * pedido: son tres situaciones distintas —pidió, se fue, la echaron— y con
-     * una sola columna no hay forma de decirle a cada una lo que le
-     * corresponde (RN-13, §13.5b).
-     *
-     * Revertirla las limpia a las tres —ésta, el pedido y su motivo—: la
-     * cuenta vuelve a estar como estaba, y lo que pasó queda en
-     * `user_status_history`, igual que con el bloqueo.
-     */
+    /** La baja ejecutada, separada del pedido y de `is_banned` (§13.5b). */
     closedAt: timestamp("closed_at", { withTimezone: true }),
     closedBy: uuid("closed_by").references((): AnyPgColumn => userProfiles.id, {
       onDelete: "set null",
@@ -128,23 +67,18 @@ export const userProfiles = pgTable(
   },
   (t) => [
     check("role_valid", sql`${t.role} IN ('admin', 'customer')`),
-    // RF-27 exige motivo obligatorio. Un CHECK lo vuelve imposible de
-    // olvidar, en vez de confiar en que todo camino del código se acuerde.
+    // RF-27: motivo obligatorio, garantizado por la base.
     check(
       "ban_has_reason",
       sql`NOT ${t.isBanned} OR ${t.banReason} IS NOT NULL`,
     ),
-    // RF-34: el motivo es obligatorio, y lo garantiza la base, igual que el
-    // del bloqueo.
+    // RF-34: ídem para la baja.
     check(
       "closure_has_reason",
       sql`${t.closureRequestedAt} IS NULL OR ${t.closureReason} IS NOT NULL`,
     ),
-    // La baja ejecutada nace siempre de un pedido (decisión tuya del
-    // 2026-09-17): la administradora ejecuta lo que el comprador pidió, y para
-    // sacar a alguien por decisión propia está el bloqueo de RF-27. Sin esto,
-    // un `UPDATE` distraído dejaría una cuenta cerrada sin motivo y sin nadie
-    // que la haya pedido, que es exactamente lo que RN-13 no quiere.
+    // La baja ejecutada nace siempre de un pedido; para sacar a alguien por
+    // decisión propia está el bloqueo (RF-27).
     check(
       "closed_was_requested",
       sql`${t.closedAt} IS NULL OR ${t.closureRequestedAt} IS NOT NULL`,
@@ -156,25 +90,11 @@ export const userProfiles = pgTable(
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type NewUserProfile = typeof userProfiles.$inferInsert;
 
-/** Los dos únicos roles del sistema (§5.3). */
 export type Role = "admin" | "customer";
 
 /**
- * Historial de estado de una cuenta — TECHNICAL-SPEC §5.3, §13.5. Tareas F7.7
- * y F7.9.
- *
- * **Las columnas de `user_profiles` dicen cómo está la cuenta hoy; esta tabla,
- * lo que le pasó.** Son cosas distintas y por eso son dos lugares: desbloquear
- * limpia `ban_reason` —`ban_has_reason` no admite un motivo sin bloqueo—, así
- * que el desbloqueo que RF-27 pide registrar no dejaría rastro de nada.
- *
- * **Con la baja pasa lo mismo y por eso vive acá** (RF-34, F7.9): revertirla
- * limpia el pedido y su motivo, y sin esta tabla una cuenta que se fue y
- * volvió quedaría idéntica a una que nunca se fue.
- *
- * Es la misma pieza que `order_status_history` (§5.6) y por los mismos
- * motivos: P5 pide auditar los cambios de usuarios en la misma transacción que
- * el cambio.
+ * Lo que le pasó a una cuenta (§13.5); `user_profiles` dice cómo está hoy.
+ * Desbloquear o revertir una baja limpia los motivos, y el rastro queda acá.
  */
 export const userStatusHistory = pgTable(
   "user_status_history",
@@ -184,28 +104,14 @@ export const userStatusHistory = pgTable(
       .notNull()
       .references(() => userProfiles.id, { onDelete: "cascade" }),
     event: text("event").notNull(),
-    /**
-     * El del bloqueo, obligatorio (RF-27). El desbloqueo puede no tenerlo.
-     *
-     * En la fila de la baja es **el que escribió el comprador** al pedirla, no
-     * uno de la administradora: ella ejecuta lo pedido, no lo redacta.
-     */
+    /** En la fila de la baja, el que escribió el comprador al pedirla. */
     reason: text("reason"),
-    /**
-     * Quién lo hizo. `SET NULL` como el `actor_user_id` del historial de
-     * órdenes (§5.6): perderlo empobrece la auditoría, no deja la fila
-     * inconsistente.
-     */
     actorUserId: uuid("actor_user_id").references(
       (): AnyPgColumn => userProfiles.id,
       { onDelete: "set null" },
     ),
-    /**
-     * `clock_timestamp()` y no `now()`, por lo mismo que en el historial de
-     * órdenes: dos filas escritas dentro de una misma transacción quedarían
-     * con el timestamp idéntico y el historial se leería en un orden
-     * cualquiera.
-     */
+    // clock_timestamp() y no now(): now() repite la hora en toda la
+    // transacción y dos filas quedarían sin orden.
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`clock_timestamp()`),
@@ -220,9 +126,5 @@ export const userStatusHistory = pgTable(
 ).enableRLS();
 
 export type UserStatusEvent =
-  | "bloqueo"
-  | "desbloqueo"
-  /** RF-34, F7.9: la baja ejecutada y su reversión. */
-  | "baja"
-  | "reversion_de_baja";
+  "bloqueo" | "desbloqueo" | "baja" | "reversion_de_baja";
 export type UserStatusHistoryRow = typeof userStatusHistory.$inferSelect;

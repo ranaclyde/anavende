@@ -24,22 +24,10 @@ import {
 import { MAXIMO_DEL_MOTIVO } from "@/modules/users/panel/schemas";
 
 /**
- * Bloquear y desbloquear una cuenta — FS RF-27 · TS §13.5. Tarea F7.7.
- *
- * **El motivo se pide dentro del diálogo, y no en la tarjeta.** Al revés que
- * el pedido de baja (F5.8), donde el motivo es el contenido de una pantalla
- * entera: acá la tarjeta es un renglón del costado de la ficha, y un campo de
- * texto siempre abierto invita a escribir algo que después no se manda.
- *
- * **Y el motivo no es una nota interna**: es lo que la persona lee cuando
- * intenta entrar (§13.5). El texto de ayuda lo dice, porque de eso depende
- * cómo se redacta —«no paga» está bien para un apunte y es incomprensible
- * para quien lo recibe—.
- *
- * **Sobre la propia cuenta no hay botón, hay una explicación**, igual que el
- * rol (F7.6): RF-26 impide que una administradora se bloquee a sí misma, y un
- * control que rebota sin decir por qué deja pensando que la pantalla falla.
- * Con la cuenta dada de baja pasa lo mismo, por otro motivo (F7.9).
+ * Bloquear y desbloquear una cuenta — RF-27, TS §13.5. El motivo se pide en
+ * el diálogo y no es una nota interna: es lo que la persona lee al intentar
+ * entrar. Sobre la propia cuenta, o una dada de baja, no hay botón sino una
+ * explicación.
  */
 export function BloqueoDeLaCuenta({
   id,
@@ -52,7 +40,7 @@ export function BloqueoDeLaCuenta({
   id: string;
   nombre: string;
   bloqueado: boolean;
-  /** Dada de baja no se bloquea: ya no entra (F7.9). */
+  /** Dada de baja no se bloquea: ya no entra. */
   dadoDeBaja: boolean;
   esMiCuenta: boolean;
   /** Bloquearla dejaría la tienda sin nadie que entre al panel. */
@@ -60,12 +48,9 @@ export function BloqueoDeLaCuenta({
 }) {
   const [abierto, setAbierto] = useState(false);
   /**
-   * Qué preguntaba el diálogo cuando se abrió, y no `bloqueado` a secas.
-   *
-   * El estado cambia en cuanto la acción vuelve, y el diálogo tarda un
-   * instante en irse: leyendo `bloqueado` directamente, mientras se
-   * desvanece se daba vuelta y mostraba la pregunta contraria —recién
-   * bloqueada, «¿Devolverle el acceso?»—. Lo encontró una captura del repaso.
+   * Qué preguntaba el diálogo al abrirse, y no `bloqueado` a secas: el estado
+   * cambia antes de que el diálogo termine de irse, y mientras se desvanece se
+   * daba vuelta y mostraba la pregunta contraria.
    */
   const [preguntando, setPreguntando] = useState<"bloquear" | "desbloquear">(
     "bloquear",
@@ -99,17 +84,15 @@ export function BloqueoDeLaCuenta({
 
       if (!r.ok) {
         // El motivo vacío vuelve como error del campo; la regla de la última
-        // administradora, como un mensaje del diálogo. Los dos son VALIDATION.
+        // administradora, como mensaje del diálogo. Los dos son VALIDATION.
         const delCampo = leerErrores<"motivo">(r).campos.motivo;
         if (delCampo) setErrorDelMotivo(delCampo);
         else setError(r.message);
         return;
       }
 
-      // Dos canales, y no se pisan. El flotante confirma que se hizo; la
-      // caja de abajo se queda cuando Supabase Auth no respondió, que es
-      // información que tiene que sobrevivir a los cuatro segundos (§6.15:
-      // un aviso que se va no sirve para algo que hay que ir a revisar).
+      // El flotante confirma; la caja de abajo se queda si Supabase Auth no
+      // respondió, que hay que ir a revisar (DR §6.15).
       avisar(`Bloqueaste la cuenta de ${nombre}.`);
 
       setAviso(
@@ -155,8 +138,8 @@ export function BloqueoDeLaCuenta({
     );
   }
 
-  // Sin botón, y dicho: la operación lo rechaza, y un control que rebota deja
-  // pensando que la pantalla falla. Lo que sigue estando es revertir la baja.
+  // Sin botón, y dicho: la operación lo rechaza. Lo que sigue estando es
+  // revertir la baja.
   if (dadoDeBaja) {
     return (
       <p className="text-body-sm text-ink-secondary">

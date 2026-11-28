@@ -1,76 +1,40 @@
 import { Decimal } from "decimal.js";
 
-/**
- * Aritmética y formato de montos — TECHNICAL-SPEC §7.1, riesgo R2.
- *
- * `numeric(12,2)` llega desde Drizzle como `string`, a propósito: convertirlo
- * a `number` pierde precisión y ese error no se ve hasta que una factura no
- * cierra por un centavo. Todo monto viaja como string por la aplicación.
- *
- * `parseFloat` y `Number()` sobre montos están PROHIBIDOS fuera de este
- * módulo, y la regla la hace cumplir el lint (eslint.config.mjs), no la buena
- * memoria de quien escribe.
- *
- * La suma de verdad se hace en SQL siempre que se pueda (§7.1): el total de
- * una orden es `SUM(order_items.subtotal)` dentro de la transacción, no una
- * reducción en JavaScript. Lo de acá es para los casos en que el cálculo no
- * puede ocurrir en la base: previsualizaciones en el formulario del panel y
- * subtotales que se muestran antes de confirmar.
- */
+// TECHNICAL-SPEC §7.1: todo monto viaja como string. `parseFloat` y `Number()`
+// sobre montos están prohibidos fuera de este módulo (lo hace cumplir el lint).
+// Las sumas de verdad van en SQL; esto es para lo que no puede ocurrir en la
+// base.
 
-/** Un monto en pesos, tal como lo devuelve y lo espera Postgres. */
 export type Money = string;
 
-/** Dos decimales, sin excepción: la moneda del sistema es ARS. */
 const ESCALA = 2;
 
-// Se corta hacia abajo, nunca hacia arriba: nadie paga de más por un redondeo.
+// Hacia abajo: nadie paga de más por un redondeo.
 Decimal.set({ rounding: Decimal.ROUND_DOWN });
 
-/** `numeric(12,2)`: hasta 10 dígitos enteros y exactamente 2 decimales. */
 const FORMATO_MONTO = /^-?\d{1,10}(\.\d{1,2})?$/;
 
 export function isMoney(valor: unknown): valor is Money {
   return typeof valor === "string" && FORMATO_MONTO.test(valor);
 }
 
-/**
- * De lo que escribe una persona al formato del sistema.
- *
- * **La coma decimal es la de acá**, y rechazarla sería pedirle a la vendedora
- * que escriba como la base. La validación del servidor ya hacía esta misma
- * conversión antes de mirar el formato (el precio de un producto, F2.4); vive
- * acá desde F7.4, cuando el alta manual necesitó que **la pantalla** también
- * la entendiera: el total se calcula mientras se escribe, y con «150000,50»
- * mostraba $ 0 hasta que alguien pusiera un punto.
- */
+/** De lo que escribe una persona («89.900,50») al formato del sistema. */
 export function comoMonto(escrito: string): string {
   const limpio = escrito.trim();
-  // **Y el punto de miles también** (F2.15): «89.900» son ochenta y nueve
-  // mil novecientos, no 89,9 con un decimal de más. Solo cuando los puntos
-  // separan grupos de tres —«1.50» sigue siendo uno con cincuenta—, así que
-  // no hay forma de leer mal un monto que antes se leía bien.
+  // Punto de miles solo si separa grupos de tres: «1.50» sigue siendo uno con
+  // cincuenta.
   if (/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(limpio)) {
     return limpio.replaceAll(".", "").replace(",", ".");
   }
   return limpio.replace(",", ".");
 }
 
-/**
- * Del formato del sistema a lo que se edita en un campo: «89900.00» se
- * muestra «89900», y «89900.50», «89900,50». Con el punto de la base, en un
- * panel que en todos lados dice «$ 89.900,00», el número se leía como un
- * error (F2.15).
- */
+/** «89900.00» → «89900»; «89900.50» → «89900,50». */
 export function paraEditar(monto: Money): string {
   const [enteros, centavos = "00"] = money(monto).split(".");
   return centavos === "00" ? enteros : `${enteros},${centavos}`;
 }
 
-/**
- * Punto de entrada único. Rechaza cualquier cosa que no sea un monto
- * bien formado: es preferible un error acá que un `NaN` propagándose.
- */
 function aDecimal(valor: Money): Decimal {
   if (!isMoney(valor)) {
     throw new TypeError(
@@ -80,7 +44,7 @@ function aDecimal(valor: Money): Decimal {
   return new Decimal(valor);
 }
 
-/** Normaliza a la representación canónica de la base: "1234.50". */
+/** "1234.50". */
 export function money(valor: Money): Money {
   return aDecimal(valor).toFixed(ESCALA);
 }
@@ -95,7 +59,6 @@ export function subtract(a: Money, b: Money): Money {
   return aDecimal(a).minus(aDecimal(b)).toFixed(ESCALA);
 }
 
-/** Monto por cantidad. La cantidad es un entero, no un monto. */
 export function multiply(monto: Money, cantidad: number): Money {
   if (!Number.isInteger(cantidad)) {
     throw new TypeError(`La cantidad debe ser un entero, llegó ${cantidad}.`);
@@ -109,7 +72,6 @@ export function sum(montos: readonly Money[]): Money {
     .toFixed(ESCALA);
 }
 
-/** −1 si a < b, 0 si son iguales, 1 si a > b. */
 export function compare(a: Money, b: Money): -1 | 0 | 1 {
   return aDecimal(a).comparedTo(aDecimal(b)) as -1 | 0 | 1;
 }
@@ -123,32 +85,8 @@ export function isPositive(monto: Money): boolean {
 }
 
 /**
- * Precio final (RN-04b, §7.2).
- *
- * En la base esto es la columna generada `final_price` y NO se recalcula acá
- * (§7.1). Esta función existe para la previsualización en vivo del formulario
- * de producto (F2.3), donde todavía no hay fila en la base que consultar.
- */
-export function finalPrice(precio: Money, descuento: Money): Money {
-  if (compare(descuento, precio) >= 0) {
-    throw new RangeError(
-      "El descuento tiene que ser menor que el precio (RN-04b).",
-    );
-  }
-  return subtract(precio, descuento);
-}
-
-/**
- * El valor de una cuota — RF-40, F2.17.
- *
- * `precio × (1 + recargo / 100) / cuotas`, **redondeado al centavo hacia
- * arriba**: es la única cuenta del sistema que no corta hacia abajo, y es a
- * propósito (decisión del 2026-11-13). Una cuota que se muestra se va a
- * sumar, y tres de $ 12.333,33 dan $ 36.999,99 sobre un precio de $ 37.000:
- * el «mismo precio» de la promoción dejaría de serlo por un centavo.
- *
- * `recargo` es un porcentaje con hasta dos decimales, como lo guarda la base
- * (`surcharge_pct`), no un monto.
+ * RF-40. Hacia arriba a propósito, la única cuenta que no corta hacia abajo:
+ * las cuotas tienen que sumar al menos el precio. `recargo` es un porcentaje.
  */
 export function cuota(precio: Money, recargo: string, cuotas: number): Money {
   if (!Number.isInteger(cuotas) || cuotas < 2) {
@@ -164,9 +102,6 @@ export function cuota(precio: Money, recargo: string, cuotas: number): Money {
     .toFixed(ESCALA);
 }
 
-// ── Formato ────────────────────────────────────────────────────────────
-// La única capa donde un monto se convierte a número, y solo para mostrarlo.
-
 const FORMATEADOR = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -174,23 +109,12 @@ const FORMATEADOR = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: ESCALA,
 });
 
-/**
- * `"12500.5"` → `"$ 12.500,50"`.
- * SIEMPRE con decimales (RN-02). Nunca se aclara nada sobre IVA
- * (DESIGN-REFERENCE §6.7).
- */
+/** `"12500.5"` → `"$ 12.500,50"`, siempre con decimales (RN-02). */
 export function formatMoney(monto: Money): string {
-  // Única conversión a número de todo el sistema. El lint la permite solo
-  // en este archivo (eslint.config.mjs).
   return FORMATEADOR.format(Number(money(monto)));
 }
 
-/**
- * «$ 1,2 M», «$ 350 mil» — las marcas del eje de un gráfico. Tarea F9.1.
- *
- * Al lado de una barra, «$ 1.234.567,89» ocupa más que la barra; el eje sólo
- * tiene que decir la escala. El monto exacto lo dice el globo y la tabla.
- */
+// «$ 1,2 M», «$ 350 mil»: las marcas del eje de un gráfico.
 const COMPACTO = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -204,20 +128,14 @@ export function formatMoneyCorto(monto: Money | number): string {
   );
 }
 
-/**
- * El alto de una barra — F9.1. **Para dibujar, nunca para sumar.**
- *
- * Recharts necesita números, y la regla de §7.1 sigue en pie: lo que sale de
- * acá no vuelve a la aritmética. Las sumas del reporte ya vienen hechas en SQL.
- */
+/** Para dibujar, nunca para sumar: no vuelve a la aritmética. */
 export function paraDibujar(monto: Money): number {
   return Number(money(monto));
 }
 
 /**
- * Cuánto cambió un monto contra el período anterior, en porcentaje entero —
- * RF-28. `null` cuando no hay contra qué comparar: un período anterior en cero
- * o negativo no tiene «un 300 % más», tiene «antes no hubo ventas».
+ * Porcentaje entero contra el período anterior; `null` si el anterior no es
+ * positivo.
  */
 export function variacion(actual: Money, anterior: Money): number | null {
   const base = aDecimal(anterior);
@@ -231,9 +149,7 @@ export function variacion(actual: Money, anterior: Money): number | null {
 }
 
 /**
- * Qué parte de `total` es `parte`, en porcentaje entero — F9.1, web contra
- * manual. `null` si no hay un total positivo del que ser parte, o si la parte
- * es negativa: «−20 % de lo vendido» no es una proporción.
+ * Porcentaje entero; `null` si el total no es positivo o la parte es negativa.
  */
 export function porcentaje(parte: Money, total: Money): number | null {
   const t = aDecimal(total);
@@ -247,10 +163,8 @@ export function porcentaje(parte: Money, total: Money): number | null {
 }
 
 /**
- * El monto como número, para una celda de Excel — F9.2. Una celda numérica
- * es un `double`, y sin número Excel no la puede sumar ni filtrar. Como
- * `paraDibujar`, **nunca vuelve a la aritmética**: lo que se escribe ya viene
- * sumado de SQL.
+ * Para una celda de Excel, que sin número no se suma. Nunca vuelve a la
+ * aritmética.
  */
 export function paraPlanilla(monto: Money): number {
   return Number(money(monto));

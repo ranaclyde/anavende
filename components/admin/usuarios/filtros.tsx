@@ -19,15 +19,8 @@ import {
 } from "@/modules/users/panel/filtros";
 
 /**
- * Búsqueda y rol del listado de usuarios — RF-26, §10.2. Tarea F7.6.
- *
- * **El estado ya no está acá**: desde el 2026-09-21 son solapas (§6.9,
- * `usuarios/solapas.tsx`), que es lo que esta pantalla necesitaba para que
- * «Baja pedida» —trabajo por hacer, RF-34— se vea sin abrir nada.
- *
- * Todo se escribe en la URL, como en los otros listados del panel: la barra no
- * guarda nada, el enlace se comparte y el botón atrás deshace un filtro en vez
- * de salir de la pantalla.
+ * Búsqueda y rol del listado de usuarios — RF-26. El estado va en solapas
+ * (`usuarios/solapas.tsx`). Todo se escribe en la URL.
  */
 export function BarraDeFiltros({
   filtros,
@@ -44,14 +37,11 @@ export function BarraDeFiltros({
   const [pendiente, iniciar] = useTransition();
   const [texto, setTexto] = useState(filtros.q);
 
-  // Cualquier cambio vuelve a la página 1.
   const aplicar = (cambios: Partial<FiltrosDeUsuarios>) =>
     iniciar(() =>
       router.push(urlDeFiltros({ ...filtros, ...cambios, pagina: 1 })),
     );
 
-  // Lo llama el buscador con el texto ya recortado, y también con la cadena
-  // vacía cuando se limpia: para la barra son la misma operación.
   const buscar = (q: string) => aplicar({ q });
 
   return (

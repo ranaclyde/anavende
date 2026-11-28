@@ -1,12 +1,6 @@
 import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/**
- * Carga de la ficha de un usuario — DR §8. Tarea F7.6.
- *
- * Misma grilla de dos columnas que el detalle de una orden: los datos a la
- * izquierda y las acciones sobre la cuenta al costado en `xl`.
- */
 export default function CargandoElUsuario() {
   return (
     <div className="flex flex-col gap-4">

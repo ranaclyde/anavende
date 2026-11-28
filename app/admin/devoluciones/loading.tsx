@@ -1,11 +1,6 @@
 import { EsqueletoDeEncabezado } from "@/components/admin/encabezado";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/**
- * Carga del listado de devoluciones — DR §8: tarjetas fantasma del alto real,
- * no un spinner centrado. Se dibujan también el encabezado y la barra de
- * filtros, así nada salta hacia abajo cuando llegan los datos.
- */
 export default function CargandoDevoluciones() {
   return (
     <div className="flex flex-col gap-4">

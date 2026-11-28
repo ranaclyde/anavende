@@ -12,11 +12,9 @@ import {
 import { enTransaccionRevertida, type Tx } from "@/tests/apoyo/transaccion";
 
 /**
- * F8.4 — RF-33, TS §11.3: «Vistos recientemente».
- *
- * Dos mitades. La cookie, que la escribe el navegador y por eso se lee sin
- * confiar en ella. Y la consulta, que tiene que respetar el orden de la lista
- * —el más reciente primero— y mostrar lo vigente, no lo de la visita.
+ * La cookie la escribe el navegador, así que se lee sin confiar en ella. La
+ * consulta respeta el orden de la lista y muestra lo vigente, no lo de la
+ * visita.
  */
 
 const id = () => randomUUID();

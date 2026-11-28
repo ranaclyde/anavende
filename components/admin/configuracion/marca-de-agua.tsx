@@ -44,13 +44,9 @@ export function MarcaDeAguaEnConfiguracion({ activa }: { activa: boolean }) {
 }
 
 /**
- * La marca de agua en el inicio del panel (pedido tuyo del 2026-11-13): el
- * estado, en verde o en rojo, y el camino a su pantalla. Va debajo de la
- * tienda abierta o cerrada y con su misma forma, porque es lo mismo: algo
- * que está prendido o apagado y cambia lo que pasa sin que se lo mire.
- *
- * **Lleva a la pantalla y no activa desde acá**: activar pide capas guardadas
- * y se decide mirando la vista previa, que vive allá.
+ * La marca de agua en el inicio del panel, con la misma forma que la tienda
+ * abierta o cerrada. Lleva a su pantalla: activarla se decide mirando la
+ * vista previa.
  */
 export function MarcaDeAguaEnElInicio({ activa }: { activa: boolean }) {
   const Icono = activa ? Droplets : DropletOff;

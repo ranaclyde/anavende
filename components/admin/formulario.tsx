@@ -8,13 +8,8 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 /**
- * Mismo patrón que el checkout (F6.1): un radio de verdad, y la tarjeta es la
- * etiqueta.
- *
- * **El `id` va al radio y no a la tarjeta**, por el mismo motivo que en
- * `Campo`: cuando el envío falla el foco tiene que poder aterrizar en la
- * primera opción del grupo que el servidor rechazó, y lo que se enfoca es el
- * control, no el envoltorio.
+ * Un radio de verdad, y la tarjeta es la etiqueta. El `id` va al radio: es lo
+ * que se enfoca cuando el servidor rechaza el grupo.
  */
 export function Opcion({
   id,
@@ -36,9 +31,7 @@ export function Opcion({
       className={cn(
         "flex cursor-pointer gap-2.5 rounded-panel-control border border-border bg-surface p-3",
         "transition-colors duration-150",
-        // Lo elegido es pizarra, como la casilla marcada (F2.15): en burdeos,
-        // «Nueva orden» quedaba con tres cosas del color de la acción, y en
-        // oscuro el borde rosado se leía como un campo con error.
+        // Lo elegido es pizarra y no burdeos, como la casilla marcada.
         "has-checked:border-accent has-checked:bg-accent-tint",
         "has-focus-visible:shadow-focus",
       )}
@@ -62,16 +55,9 @@ export function Opcion({
 /**
  * Un campo con su etiqueta, su ayuda y su error.
  *
- * **El `id` se puede imponer desde afuera** y no es un capricho: quien arma
- * el formulario necesita poder llevar el foco al primer campo que falló, y
- * para eso tiene que saber cómo se llama antes de que el campo exista. Sin
- * `id`, se genera uno y el campo funciona igual.
- *
- * **`aria-describedby` apunta al error cuando lo hay**, y a la ayuda cuando
- * no. Hasta hoy apuntaba siempre a la ayuda, así que el lector de pantalla
- * leía la sugerencia de cómo escribir el teléfono y no el motivo por el que
- * ese teléfono fue rechazado: la ayuda se esconde cuando hay error, y la
- * descripción seguía nombrándola.
+ * El `id` se puede imponer desde afuera para llevar el foco al primer campo
+ * que falló. `aria-describedby` apunta al error cuando lo hay, y a la ayuda
+ * cuando no: la ayuda se esconde con error.
  */
 export function Campo({
   etiqueta,
@@ -114,19 +100,7 @@ export function Campo({
   );
 }
 
-/**
- * Las secciones de un formulario del panel — DESIGN-REFERENCE §3.4.1.
- *
- * El aire hace el agrupamiento, no las cajas: **6px dentro de un campo**
- * (etiqueta, control, ayuda), **20px entre campos de una misma sección** y
- * **una línea fina con 24px de cada lado entre secciones**. Con un solo valor
- * para todo, «Nombre», «Destacada» y «Relacionadas» pesaban igual y el
- * formulario se leía como una lista de cosas sueltas.
- *
- * `Secciones` pone la línea y el aire entre una y otra; cada `Seccion` lleva
- * su título —más aire arriba que abajo, para que se pegue a lo suyo— y sus
- * campos. La primera puede ir sin título: la cubre el del drawer.
- */
+/** Las secciones de un formulario del panel — DR §3.4.1. */
 export function Secciones({
   className,
   ...props
@@ -163,9 +137,6 @@ export function Seccion({
       {...props}
     >
       {titulo ? (
-        // La acción comparte renglón con el título y no con la bajada: al
-        // lado de las dos, en el teléfono, la bajada quedaba en una columna
-        // de 180px y cinco renglones.
         <div className="-mb-1 flex flex-col gap-1">
           <div className="flex min-h-8 items-center justify-between gap-3">
             <h3 id={idTitulo} className="text-body-sm font-semibold text-ink">

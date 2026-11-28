@@ -8,27 +8,15 @@ import {
 } from "@/tests/apoyo/transaccion";
 
 /**
- * F1.5 — las restricciones de §5 RECHAZAN lo que tienen que rechazar.
- *
- * Migrado de `scripts/verificar-restricciones.mts` (F4.0b).
- *
- * Que un CHECK exista no prueba que haga algo, y `db:verificar` solo comprueba
- * que esté declarado. Las especificaciones dicen que estas restricciones son
- * «parte del diseño, no un adorno» (F1.5): esto es lo que lo demuestra.
- *
- * Los casos que se ACEPTAN no se conforman con que no explote: leen la fila de
- * vuelta. Una sentencia que no falla y tampoco escribe se ve igual desde
- * afuera, y es peor que una que falla.
+ * Que un CHECK exista no prueba que rechace, y `db:verificar` solo comprueba
+ * que esté declarado. Los casos aceptados leen la fila de vuelta: una
+ * sentencia que no falla y tampoco escribe se ve igual desde afuera.
  */
 
 /**
- * Un sufijo distinto por corrida.
- *
- * La transacción se revierte, así que nada queda escrito — pero mientras vive,
- * los nombres y slugs SÍ chocan con lo que ya haya en la base, y ahí el test
- * muere con un 23505 que no tiene nada que ver con lo que estaba probando.
- * Pasó con una categoría «Teclados» cargada a mano y con una marca «Logitech»
- * cargada al probar F2.4.
+ * Un sufijo por corrida: aunque la transacción se revierta, mientras vive los
+ * nombres y slugs chocan con lo que ya haya en la base (un 23505 ajeno a lo
+ * que se prueba).
  */
 const n = () => Date.now() + Math.floor(Math.random() * 1000);
 
@@ -104,8 +92,8 @@ describe("products — RN-04b, §7.2", () => {
   test("`final_price` lo calcula la base: 27500 − 3000 = 24500", async () => {
     await enTransaccionRevertida(async (tx) => {
       const p = await unProducto(tx);
-      // Como texto: es `numeric`, y compararlo como número flotante sería
-      // exactamente lo que `lib/money.ts` existe para impedir.
+      // Como texto: es `numeric`, y compararlo como flotante es lo que
+      // `lib/money.ts` existe para impedir.
       expect(p.final_price).toBe("24500.00");
     });
   });
@@ -154,10 +142,8 @@ describe("product_variants — §8.2", () => {
   });
 
   /**
-   * RF-24 y §8.1: una orden manual creada YA FINALIZADA descuenta de
-   * `stock_total`, que «puede quedar negativo» — es la señal de que el stock
-   * del sistema y el del depósito no coinciden, y borrarla escondería el
-   * problema.
+   * RF-24 y §8.1: una orden manual creada ya finalizada puede dejar
+   * `stock_total` negativo; es la señal de discrepancia y no se esconde.
    */
   test("acepta stock_total negativo sin reservas (§5.4: señal de discrepancia)", async () => {
     await enTransaccionRevertida(async (tx) => {
@@ -173,15 +159,9 @@ describe("product_variants — §8.2", () => {
   });
 
   /**
-   * EL CASO QUE JUSTIFICA LA GUARDA, y el que el script original no llegaba a
-   * probar: dejaba `reserved_stock` en 0 en la comprobación anterior —cada
-   * savepoint aceptado persiste— y llegaba acá con reserva cero, donde
-   * `reserved <= total` no hace falta para nada.
-   *
-   * Con reserva viva es distinto: `2 <= -2` es FALSO, así que sin la guarda
-   * `stock_total < 0` el CHECK rechazaría esto, y §5.4 dejó escrito que las
-   * dos restricciones juntas implicaban en silencio `stock_total >= 0` y
-   * rompían RF-24.
+   * El caso que justifica la guarda `stock_total < 0`: con reserva viva,
+   * `2 <= -2` es falso, y sin la guarda el CHECK implicaría en silencio
+   * `stock_total >= 0` y rompería RF-24 (§5.4).
    */
   test("acepta stock_total negativo CON reservas web vivas (§8.1)", async () => {
     await enTransaccionRevertida(async (tx) => {
@@ -225,10 +205,8 @@ describe("product_variants — §8.2", () => {
 
 describe("user_profiles — RF-27", () => {
   /**
-   * Se escribe en `auth.users` con SQL crudo a propósito. El esquema de GoTrue
-   * no se administra con Drizzle (`db/schema/users.ts`), pero la clave foránea
-   * que se está probando apunta ahí: sin la identidad del otro lado no hay
-   * nada que verificar.
+   * `auth.users` con SQL crudo: el esquema de GoTrue no se administra con
+   * Drizzle, pero la clave foránea que se prueba apunta ahí.
    */
   async function unaAdministradora(tx: Tx) {
     const email = `ana-${n()}@test.local`;
@@ -271,9 +249,8 @@ describe("user_profiles — RF-27", () => {
   });
 
   test("un evento de historial que no existe se rechaza", async () => {
-    // RF-27, F7.7: la tabla guarda dos cosas y nada más. Un 'baja' escrito
-    // de más —que es lo que F7.9 va a querer— tiene que romper acá y no
-    // aparecer como una fila muda en la ficha de alguien.
+    // La tabla guarda dos eventos y nada más: uno de más tiene que romper acá
+    // y no aparecer como una fila muda en la ficha de alguien.
     await enTransaccionRevertida(async (tx) => {
       const id = await unaAdministradora(tx);
       await rechaza(
@@ -301,11 +278,8 @@ describe("user_profiles — RF-27", () => {
   });
 
   /**
-   * Borrar la identidad se lleva el perfil por el `ON DELETE CASCADE` de la
-   * migración `0002`. De esto depende la compensación de §13.4 paso 3, que
-   * borra la identidad recién creada cuando el alta del perfil falla: si el
-   * perfil sobreviviera, quedaría huérfano apuntando a un `auth.users` que ya
-   * no existe.
+   * De este `ON DELETE CASCADE` depende la compensación de §13.4 paso 3: si el
+   * perfil sobreviviera a la identidad, quedaría huérfano.
    */
   test("borrar la identidad se lleva el perfil (ON DELETE CASCADE)", async () => {
     await enTransaccionRevertida(async (tx) => {
@@ -348,9 +322,8 @@ describe("orders — §5.6", () => {
 describe("site_settings — §5.9", () => {
   test("no puede haber una segunda fila de configuración", async () => {
     await enTransaccionRevertida(async (tx) => {
-      // La base puede tener ya su fila cargada; se saca DENTRO de la
-      // transacción, que se revierte. Sin esto el test pasa o falla según lo
-      // que haya en la máquina de cada quien.
+      // La base puede tener ya su fila: se saca dentro de la transacción, o el
+      // test depende de la máquina de cada quien.
       await tx.execute(sql`DELETE FROM site_settings`);
       await tx.execute(sql`
         INSERT INTO site_settings (id, whatsapp_number, admin_notification_email)

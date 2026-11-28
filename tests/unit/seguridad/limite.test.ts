@@ -3,10 +3,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { consumir, frenarSiInsiste, reiniciarLimites } from "@/lib/limite";
 
 /**
- * F10.5 — El tope de pedidos por ventana. TS §16; `lib/limite.ts`.
- *
- * El reloj se pasa a mano: con `Date.now()` el test dependería de cuánto
- * tarda en correr.
+ * El tope de pedidos por ventana, TS §16. El reloj se pasa a mano: con
+ * `Date.now()` el test dependería de cuánto tarda en correr.
  */
 
 const TOPE = { tope: 3, ventanaMs: 60_000 };
@@ -54,8 +52,6 @@ describe("consumir", () => {
   });
 });
 
-// ── El tope de las acciones sin sesión (F10.5) ─────────────────────────
-
 const pedido = vi.hoisted(() => ({ cabeceras: new Headers() }));
 vi.mock("next/headers", () => ({ headers: async () => pedido.cabeceras }));
 
@@ -84,7 +80,6 @@ describe("frenarSiInsiste", () => {
     await frenarSiInsiste("ingreso", CUPO);
     await frenarSiInsiste("ingreso", CUPO);
 
-    // Otra acción de la misma persona, y la misma acción de otra persona.
     await expect(frenarSiInsiste("alta", CUPO)).resolves.toBeUndefined();
     pedido.cabeceras = new Headers({ "cf-connecting-ip": "198.51.100.9" });
     await expect(frenarSiInsiste("ingreso", CUPO)).resolves.toBeUndefined();

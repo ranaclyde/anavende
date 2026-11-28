@@ -35,10 +35,6 @@ type Canal = {
   externo: boolean;
 };
 
-/**
- * Lo que suele preguntarse y ya tiene respuesta escrita. «Seguir o cancelar»
- * va a Mis compras y no a una página: ahí es donde se hace (RF-23).
- */
 const AYUDA = [
   {
     href: "/legales/como-comprar",
@@ -58,13 +54,8 @@ const AYUDA = [
 ];
 
 /**
- * Contacto (2026-10-20). Un renglón por canal, con para qué sirve cada uno.
- *
- * Todo sale de la configuración (RF-20): el WhatsApp, el email al que llegan
- * los pedidos —el mismo que usan las páginas legales— y las redes. **Un canal
- * sin cargar no aparece**: un botón que no lleva a ningún lado es peor que no
- * tenerlo. WhatsApp es el único relleno en verde porque es por donde se vende
- * (DR §2.6); el resto va en contorno.
+ * Un canal sin cargar no aparece: un botón que no lleva a ningún lado es peor
+ * que no tenerlo. WhatsApp es el único en verde porque es por donde se vende.
  */
 export default async function Contacto() {
   const configuracion = await leerLaConfiguracion();
@@ -141,8 +132,7 @@ function RenglonDeCanal({ nombre, para, href, accion, Icono, externo }: Canal) {
           <span className="text-body-sm text-ink-secondary">{para}</span>
         </span>
       </span>
-      {/* En el teléfono el botón va debajo, alineado con el texto y no con
-          el ícono: 44 del disco más 16 de separación. */}
+      {/* En el teléfono, alineado con el texto: 44 del disco más 16. */}
       <Button
         asChild
         variant={esWhatsApp ? "whatsapp" : "secondary"}

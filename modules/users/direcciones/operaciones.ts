@@ -8,24 +8,9 @@ import { domainError } from "@/lib/errors";
 import { MAXIMO_DE_DIRECCIONES } from "@/modules/users/direcciones/constantes";
 
 /**
- * La libreta de direcciones — FS RF-09 · TS §5.5, §13.8. Tarea F5.3.
- *
- * **Todas reciben el `userId` de la sesión**, y cada consulta lo lleva en el
- * `WHERE` junto al id de la dirección: sin RLS, es la única barrera entre la
- * libreta de un comprador y la de otro (§13.8). Una dirección ajena responde
- * igual que una que no existe, NOT_FOUND, para no confirmar que el id es de
- * alguien.
- *
- * **Las que escriben más de una fila bloquean al comprador**: su fila de
- * `user_profiles`, con `FOR NO KEY UPDATE`. Agregar lee cuántas hay antes de
- * insertar, y sin el bloqueo dos pestañas con 2 direcciones leerían «2» a la
- * vez y guardarían la cuarta. `NO KEY` y no `FOR UPDATE`: el primero no frena
- * a quien inserta algo que apunta al perfil —un carrito, un favorito—, que
- * solo pide `KEY SHARE`.
- *
- * **Eliminar es una baja lógica** (`deleted_at`), la de §5.5: la orden que
- * usó la dirección guarda su propia copia (RN-12), y la fila se conserva por
- * si hace falta reconstruir algo.
+ * El `userId` sale de la sesión y va en cada `WHERE` junto al id: sin RLS, es
+ * la única barrera entre compradores (§13.8). Una dirección ajena da
+ * NOT_FOUND, igual que una que no existe.
  */
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -62,7 +47,6 @@ const columnas = {
   isDefault: addresses.isDefault,
 };
 
-/** La predeterminada primero; después, en el orden en que se cargaron. */
 export async function listarDirecciones(userId: string): Promise<Direccion[]> {
   return db
     .select(columnas)
@@ -89,6 +73,10 @@ export async function leerDireccion(
   return d ?? null;
 }
 
+/**
+ * Sin esto, dos pestañas leerían «2» a la vez y guardarían la cuarta. `NO KEY`
+ * no frena a quien inserta algo que apunta al perfil (pide `KEY SHARE`).
+ */
 async function bloquearComprador(tx: Tx, userId: string): Promise<void> {
   await tx.execute(sql`
     SELECT 1 FROM user_profiles WHERE id = ${userId} FOR NO KEY UPDATE`);
@@ -101,11 +89,6 @@ async function contarVivas(tx: Tx, userId: string): Promise<number> {
   return fila.n;
 }
 
-/**
- * La primera dirección es la predeterminada, sin preguntar: si hay
- * direcciones, una tiene que serlo (RF-09), y con una sola no hay nada que
- * elegir.
- */
 export async function agregarDireccion(
   userId: string,
   datos: DatosDeDireccion,
@@ -150,10 +133,8 @@ export async function editarDireccion(
 }
 
 /**
- * **Primero se apaga la anterior y después se enciende la nueva.** Al revés,
- * habría un instante con dos predeterminadas, y el índice parcial
- * `one_default_address_per_user` lo rechaza: es la garantía de §5.5
- * haciendo su trabajo.
+ * Primero se apaga la anterior: al revés, el índice parcial
+ * `one_default_address_per_user` rechaza el instante con dos.
  */
 export async function hacerPredeterminada(
   userId: string,
@@ -176,12 +157,7 @@ export async function hacerPredeterminada(
   });
 }
 
-/**
- * Si la que se elimina era la predeterminada, pasa a serlo la más antigua de
- * las que quedan: si hay direcciones, una tiene que serlo (RF-09). Elegir la
- * más antigua es arbitrario, pero es la que el comprador viene usando hace
- * más tiempo, y la puede cambiar con un clic.
- */
+/** Si era la predeterminada, pasa a serlo la más antigua de las que quedan. */
 export async function eliminarDireccion(
   userId: string,
   id: string,
@@ -189,8 +165,8 @@ export async function eliminarDireccion(
   await db.transaction(async (tx) => {
     await bloquearComprador(tx, userId);
 
-    // El `FROM` lee la fila antes del `UPDATE`: así el `RETURNING` dice si
-    // ERA la predeterminada, que es justo lo que el `SET` borra.
+    // El `FROM` lee la fila de antes: el `RETURNING` dice si era la
+    // predeterminada, que es justo lo que el `SET` borra.
     const [baja] = await tx.execute<{ eraPredeterminada: boolean }>(sql`
       UPDATE addresses a
          SET deleted_at = now(), is_default = false

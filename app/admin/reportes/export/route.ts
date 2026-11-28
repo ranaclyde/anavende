@@ -12,21 +12,9 @@ import {
 } from "@/modules/reports/queries";
 
 /**
- * Exportación de los reportes a `.xlsx` — FS RF-28 · TS §15. Tarea F9.2.
- *
- * **Un Route Handler y no una Server Action**, como fija TS §15: lo que vuelve
- * es un archivo, y una Server Action serializa su respuesta para React.
- *
- * **El rol se verifica acá**, porque el layout del panel no envuelve a un
- * `route.ts`: sin esta guardia, la ruta entregaría las ventas de la tienda a
- * cualquiera que la conozca. Un comprador o un visitante reciben 404 y no 403,
- * como la subida de imágenes: no se confirma que la ruta existe (§13.3).
- *
- * **Los filtros son los de la pantalla** porque se leen de los mismos
- * parámetros con la misma función (`leerPeriodo`), y el botón arma la URL con
- * `urlDeExportacion`.
- *
- * Corre en Node: ExcelJS arma el zip con APIs de Node.
+ * Exportación de los reportes a `.xlsx` (TS §15). El rol se verifica acá
+ * porque el layout del panel no envuelve a un `route.ts`; el resto recibe 404,
+ * no 403. Corre en Node porque ExcelJS usa sus APIs.
  */
 export const runtime = "nodejs";
 
@@ -69,7 +57,7 @@ export async function GET(request: NextRequest) {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": `attachment; filename="${nombreDelArchivo(periodo)}"`,
-      // Son las ventas de la tienda: que no quede copia en ningún intermedio.
+      // Que no quede copia de las ventas en ningún intermedio.
       "Cache-Control": "private, no-store",
     },
   });

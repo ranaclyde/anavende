@@ -8,13 +8,10 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { jpeg } from "@/tests/apoyo/imagenes";
 
 /**
- * F1.7 y F5.9 — Lo que se trae de Google al darse de alta: la foto, como
- * primera foto de perfil, y el nombre y el apellido por separado.
- *
- * Lo que habla con Google se prueba reemplazando `fetch` solo para las
- * direcciones de Google: el resto —Storage y GoTrue del stack local— es de
- * verdad, porque lo que puede salir mal es que la foto no quede guardada, o
- * que la anotación quede colgada en la cuenta.
+ * Lo que se trae de Google al darse de alta: la foto y el nombre y el
+ * apellido por separado. Solo se reemplaza `fetch` para Google: Storage y
+ * GoTrue son los de verdad, porque lo que puede salir mal es que la foto no
+ * quede guardada o que la anotación quede colgada en la cuenta.
  */
 
 vi.mock("@sentry/nextjs", () => ({ captureException: () => undefined }));

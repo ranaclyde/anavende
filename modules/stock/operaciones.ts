@@ -5,64 +5,17 @@ import { sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { domainError } from "@/lib/errors";
 
-/**
- * Las cinco operaciones de stock — TECHNICAL-SPEC §8.1, §8.2, §8.3. Tarea F4.1.
- *
- * Es la parte del sistema donde un error no se nota hasta que ya vendiste dos
- * veces la misma unidad (R1). Tres decisiones sostienen todo lo demás:
- *
- * **1. Un solo `UPDATE` condicional, nunca leer-y-después-escribir.** La
- * condición del `WHERE` *es* la regla de negocio. El `UPDATE` toma el bloqueo
- * de fila y evalúa la condición en el mismo paso atómico, así que no hay
- * ventana entre mirar el stock y cambiarlo. Dos compradores confirmando la
- * última unidad al mismo tiempo dan un ganador y un `INSUFFICIENT_STOCK`
- * limpio (§8.2). Con `SELECT` + `UPDATE` darían dos ganadores, y el segundo
- * se descubre cuando hay que llamar a alguien a pedirle disculpas.
- *
- * **2. El estado posterior sale del `RETURNING`, no de una segunda consulta.**
- * `stock_after` y `reserved_after` del libro mayor tienen que ser los valores
- * que dejó *esta* sentencia. Releerlos después sería releer un número que otra
- * transacción ya pudo haber movido, y el libro quedaría contando una historia
- * que no pasó.
- *
- * **3. Nadie toca los contadores sin pasar por acá.** Ni siquiera el ABM de
- * variantes, que ajusta stock desde el panel: llama a `ajustar()`. Un segundo
- * lugar que escriba `stock_total` es un segundo lugar que puede olvidarse del
- * asiento (§8.3, regla 3).
- *
- * ── El signo de `quantity` en el libro mayor ────────────────────────────
- *
- * §5.8 pide «con signo, según el efecto» sin decir sobre cuál de los dos
- * contadores. La regla que se adoptó, y que los tests verifican:
- *
- *   · `ajuste`, `venta`, `devolucion` → el efecto sobre **`stock_total`**
- *   · `reserva`, `liberacion`         → el efecto sobre **`reserved_stock`**
- *
- * Que es lo mismo que decir: cada movimiento firma el contador que mueve, y
- * los dos que mueven el total no son los mismos que mueven la reserva. De ahí
- * sale el invariante que se puede comprobar de una consulta:
- *
- *     stock_total = SUM(quantity) WHERE type IN ('ajuste','venta','devolucion')
- *
- * Y vale también para la venta que nunca estuvo reservada (RF-24, una orden
- * manual cargada como finalizada), que es el caso donde una regla más
- * ingeniosa se habría roto.
- *
- * La reserva no se deriva de una suma parecida a propósito: `venta` consume la
- * reserva sin escribir una `liberacion`, así que la cuenta no cerraría. Para
- * ese lado el libro se cuadra contra `reserved_after` del último movimiento,
- * que además detecta cualquier cambio que se haya hecho SIN asentar.
- */
+// Las operaciones de stock de TECHNICAL-SPEC §8. Nada fuera de este archivo
+// escribe `stock_total` ni `reserved_stock`: el ABM de variantes llama a `ajustar()`.
 
-/** El `tx` de `db.transaction`. Todas las operaciones exigen uno: §8.3 regla 1. */
+/** El `tx` de `db.transaction`. */
 export type Transaccion = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 type Contadores = { stockTotal: number; reservedStock: number };
 
-/** Lo que toda operación necesita saber para dejar su rastro (§5.8). */
 type Rastro = {
   variantId: string;
-  /** Quién lo hizo. NULL cuando lo dispara el comprador y no la vendedora. */
+  /** NULL cuando lo dispara el comprador y no la vendedora. */
   actorUserId?: string | null;
   orderId?: string | null;
   returnId?: string | null;
@@ -72,18 +25,8 @@ type Rastro = {
 type Movimiento = "ajuste" | "reserva" | "liberacion" | "venta" | "devolucion";
 
 /**
- * El `UPDATE` condicional, el `RETURNING` y el asiento, en ese orden y sin
- * nada en el medio. Las cinco operaciones son esta función con otro `SET` y
- * otro `WHERE`.
- *
- * **Los paréntesis alrededor de `donde` no son de estilo.** `AND` tiene
- * precedencia sobre `OR`, así que una condición con un `OR` adentro se leía
- * como `(id = X AND rama1) OR rama2`, y esa segunda rama **no filtra por
- * variante**: el `UPDATE` le descontaba stock a toda variante que la
- * cumpliera. La única condición con `OR` es la de la venta sin reserva
- * (RF-24), que hasta F7.4 no la usaba nadie. Lo encontró el repaso en el
- * navegador, con un producto de dos colores: se vendieron 2 del rojo y el
- * negro bajó 2 también, sin asiento que lo explicara.
+ * Los paréntesis alrededor de `donde` no son de estilo: `AND` precede a `OR`,
+ * y sin ellos una condición con `OR` deja de filtrar por `id` y toca otras variantes.
  */
 async function mover(
   tx: Transaccion,
@@ -92,9 +35,9 @@ async function mover(
     set: ReturnType<typeof sql>;
     donde: ReturnType<typeof sql>;
     type: Movimiento;
-    /** Ya con signo: es lo que se guarda tal cual. */
+    /** Ya con signo, tal como se asienta. */
     quantity: number;
-    /** Qué contar si el `UPDATE` no encuentra fila. */
+    /** Se llama si el `UPDATE` no toca filas y la variante existe. */
     siNoAplica: () => never;
   },
 ): Promise<Contadores> {
@@ -110,17 +53,12 @@ async function mover(
   const despues = filas[0];
 
   if (!despues) {
-    // Cero filas dice «no se pudo», no dice por qué. Una variante que no
-    // existe y una sin stock son dos respuestas distintas para quien las
-    // recibe (RNF-08), así que se separan acá y no en la vista.
     const existe = await tx.execute<{ uno: number }>(sql`
       SELECT 1 AS uno FROM product_variants WHERE id = ${rastro.variantId}`);
     if (existe.length === 0) throw domainError("NOT_FOUND");
     movimiento.siNoAplica();
   }
 
-  // EN LA MISMA TRANSACCIÓN, sin excepción (§8.3 regla 3). Si el asiento no
-  // se puede escribir, el cambio de stock tampoco ocurre.
   await tx.execute(sql`
     INSERT INTO stock_movements
       (variant_id, type, quantity, stock_after, reserved_after,
@@ -134,7 +72,6 @@ async function mover(
   return despues;
 }
 
-/** Las cantidades son unidades: enteras y positivas, siempre. */
 function exigirCantidad(cantidad: number): void {
   if (!Number.isInteger(cantidad) || cantidad <= 0) {
     throw new TypeError(
@@ -143,12 +80,6 @@ function exigirCantidad(cantidad: number): void {
   }
 }
 
-// ── Reservar (RF-12: la orden pasa a activa) ────────────────────────────
-
-/**
- * `reserved_stock += q`, sólo si hay disponible. Es el `UPDATE` textual de
- * §8.2 y el que decide quién se queda con la última unidad.
- */
 export async function reservar(
   tx: Transaccion,
   args: Rastro & { quantity: number },
@@ -165,16 +96,9 @@ export async function reservar(
   });
 }
 
-// ── Liberar (RF-22, RF-23: orden cancelada o ítem quitado) ──────────────
-
 /**
- * `reserved_stock -= q`. La condición existe para que la reserva no se vaya
- * abajo de cero, que es el estado desde el cual ya nada vuelve a cuadrar.
- *
- * Que no dé la cuenta NO es un resultado del negocio: significa que quien
- * llamó cree que hay una reserva que no está. Por eso revienta como error y
- * no como `DomainError` — tiene que llegar a Sentry y arreglarse, no
- * mostrarse en pantalla.
+ * Si no hay tanto reservado, quien llamó se desincronizó: es un bug, no un
+ * resultado del negocio. Por eso `Error` y no `DomainError`, para que llegue a Sentry.
  */
 export async function liberar(
   tx: Transaccion,
@@ -195,17 +119,9 @@ export async function liberar(
   });
 }
 
-// ── Vender (RF-23: finalizar la orden) ──────────────────────────────────
-
 /**
- * `stock_total -= q` y, si venía de una reserva, `reserved_stock -= q`.
- *
- * `desdeReserva: false` es el caso de RF-24: una orden manual cargada
- * directamente como finalizada registra una venta que ya ocurrió y nunca pasó
- * por una reserva. Ahí **el total puede quedar negativo**, y eso no es un
- * error: §5.4 decidió no ponerle CHECK justamente para no obligar a la
- * vendedora a mentirle al sistema. Un total negativo es una señal de
- * discrepancia, se destaca en el panel y se corrige con un ajuste.
+ * Con `desdeReserva: false` (orden manual cargada como finalizada, RF-24) el
+ * total puede quedar negativo, y no es un error: TECHNICAL-SPEC §5.4.
  */
 export async function vender(
   tx: Transaccion,
@@ -221,11 +137,8 @@ export async function vender(
       : sql`stock_total = stock_total - ${args.quantity}`,
     donde: desdeReserva
       ? sql`reserved_stock >= ${args.quantity}`
-      : // Sin reserva que consumir, la guarda es la del CHECK
-        // `reserved_within_total`: el total puede irse abajo de cero, pero no
-        // puede quedar por encima de cero y por debajo de lo comprometido.
-        // Se pone en el WHERE para que salga como resultado del negocio y no
-        // como una violación de integridad que Sentry cuenta como incidente.
+      : // La guarda del CHECK `reserved_within_total`, repetida en el WHERE para
+        // que salga como INSUFFICIENT_STOCK y no como error de integridad en Sentry.
         sql`stock_total - ${args.quantity} < 0
             OR reserved_stock <= stock_total - ${args.quantity}`,
     type: "venta",
@@ -247,15 +160,6 @@ export async function vender(
   });
 }
 
-// ── Reponer (RF-25: devolución con reposición) ──────────────────────────
-
-/**
- * `stock_total += q`. Sin condición, y no es un olvido: subir el total no
- * puede romper ninguno de los dos CHECK de la tabla.
- *
- * La devolución SIN reposición no llama a esta función ni a ninguna otra: no
- * tiene efecto sobre el stock (§8.1). Se registra en `returns` y se termina.
- */
 export async function reponer(
   tx: Transaccion,
   args: Rastro & { quantity: number },
@@ -263,33 +167,18 @@ export async function reponer(
   exigirCantidad(args.quantity);
   return mover(tx, args, {
     set: sql`stock_total = stock_total + ${args.quantity}`,
+    // Sin condición a propósito: subir el total no puede romper ningún CHECK.
     donde: sql`true`,
     type: "devolucion",
     quantity: args.quantity,
     siNoAplica: () => {
-      // Inalcanzable: la condición es `true`, así que cero filas sólo puede
-      // significar que la variante no existe, y eso ya se resolvió arriba.
+      // Inalcanzable: con `true`, cero filas solo es una variante que no existe.
       throw new Error("reponer(): el UPDATE no encontró la fila.");
     },
   });
 }
 
-/**
- * La inversa de `reponer`: `stock_total -= q`, para ANULAR una devolución
- * (RF-25). Tarea F4.5.
- *
- * §8.1 no la lista, y no es un descuido de esa tabla: ahí están las cinco
- * operaciones **directas**, y RF-25 dice aparte que «una devolución
- * registrada no se edita: se anula, revirtiendo el efecto en stock». Sin
- * inversa, esa frase no se puede cumplir.
- *
- * Escribe el MISMO tipo de asiento que la reposición, `devolucion`, con el
- * signo dado vuelta. Así el invariante del libro sigue cerrando
- * —`stock_total = SUM(quantity)` sobre `ajuste`, `venta` y `devolucion`— y la
- * anulación se lee en el historial como lo que es: la devolución de la
- * devolución. Un tipo nuevo la sacaría de esa suma y el libro dejaría de
- * cuadrar.
- */
+/** La inversa de `reponer`, para anular una devolución (TECHNICAL-SPEC §8.1). */
 export async function revertirReposicion(
   tx: Transaccion,
   args: Rastro & { quantity: number },
@@ -297,9 +186,8 @@ export async function revertirReposicion(
   exigirCantidad(args.quantity);
   return mover(tx, args, {
     set: sql`stock_total = stock_total - ${args.quantity}`,
-    // La misma guarda que la venta sin reserva: el total puede irse abajo de
-    // cero —si mientras tanto se vendió lo que había vuelto—, pero no puede
-    // quedar por encima de cero y por debajo de lo ya comprometido.
+    // La misma guarda que `vender` sin reserva: el total puede quedar negativo
+    // si mientras tanto se vendió lo que había vuelto.
     donde: sql`stock_total - ${args.quantity} < 0
                OR reserved_stock <= stock_total - ${args.quantity}`,
     type: "devolucion",
@@ -315,33 +203,16 @@ export async function revertirReposicion(
   });
 }
 
-// ── Ajustar (RF-16: la vendedora corrige el número) ─────────────────────
-
 /**
- * `stock_total = nuevoTotal`. Es una asignación, no una suma: la vendedora
- * cuenta lo que hay en la caja y escribe ese número.
- *
- * **La única que usa `SELECT … FOR UPDATE`, y a propósito.** §8.2 descarta ese
- * patrón para la reserva, que es el camino caliente y donde la condición ES la
- * regla de negocio. Acá el caso es otro: el asiento del libro tiene que llevar
- * la DIFERENCIA —`nuevoTotal` menos lo que había—, así que hay que conocer el
- * valor anterior, y un `UPDATE` a secas no lo devuelve. Leerlo antes sin
- * bloquear deja una ventana en la que otra transacción lo mueve, y el libro
- * queda descuadrado por exactamente lo que pasó en el medio. El `FOR UPDATE`
- * cierra esa ventana: nadie toca la fila hasta que esta transacción termina.
- *
- * Se puede pagar ese bloqueo porque esto lo dispara la vendedora desde el
- * panel, de a una variante por vez, y no dos compradores a la vez.
+ * Asigna el total, no lo suma. Es la única con `SELECT … FOR UPDATE`: el
+ * asiento lleva la diferencia, y el valor anterior no se puede mover entre la
+ * lectura y la escritura (TECHNICAL-SPEC §8.3).
  */
 export async function ajustar(
   tx: Transaccion,
   args: Rastro & { nuevoTotal: number },
 ): Promise<Contadores> {
   if (!Number.isInteger(args.nuevoTotal) || args.nuevoTotal < 0) {
-    // RF-16: el stock que se escribe A MANO no admite negativos. Que la
-    // columna acepte un total negativo (RF-24) es otra cosa: ahí el negativo
-    // lo produce una venta ya ocurrida. Escribir «−3» en el formulario no
-    // registra ninguna discrepancia, es un error de tipeo.
     throw new TypeError(
       `El stock ajustado tiene que ser un entero de cero para arriba, llegó ${args.nuevoTotal}.`,
     );
@@ -356,9 +227,8 @@ export async function ajustar(
   if (!antes) throw domainError("NOT_FOUND");
 
   if (antes.reservedStock > args.nuevoTotal) {
-    // El CHECK `reserved_within_total` rechazaría esto con un error de
-    // integridad, que sale como INTERNAL y llega a Sentry como si fuera un
-    // incidente. Es un resultado del negocio y merece la frase que lo explica.
+    // El CHECK `reserved_within_total` lo rechazaría como error de integridad,
+    // que llega a Sentry como incidente; es un resultado del negocio.
     const n = antes.reservedStock;
     throw domainError("INSUFFICIENT_STOCK", {
       variantId: args.variantId,
@@ -369,10 +239,7 @@ export async function ajustar(
 
   const diferencia = args.nuevoTotal - antes.stockTotal;
 
-  // Un ajuste que no cambia nada no es un movimiento: asentarlo llenaría el
-  // libro de filas en cero cada vez que alguien guarda el formulario sin
-  // haber tocado el stock. Igual se actualiza `updated_at`: la vendedora
-  // guardó, y eso pasó.
+  // Sin diferencia no hay asiento, pero `updated_at` se toca igual: la vendedora guardó.
   await tx.execute(sql`
     UPDATE product_variants
        SET stock_total = ${args.nuevoTotal},

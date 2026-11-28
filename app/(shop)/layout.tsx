@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
-// La animación del blobatar de la cuenta (F5.9). Sin esta hoja el dibujo sale
-// igual, pero quieto. Solo la tienda: en el panel las caras no se mueven.
+// Sin esta hoja el blobatar sale quieto. Solo en la tienda: en el panel las
+// caras no se mueven.
 import "blobatar/motion.css";
 
 import { CaraAnimada } from "@/components/shop/cara-animada";
@@ -18,42 +18,27 @@ import { estaEnMantenimiento } from "@/modules/settings/mantenimiento";
 import { configuracionDeLaTienda } from "@/modules/settings/queries";
 import { hayFavoritoPendiente } from "@/modules/users/favoritos/pendiente";
 
-/**
- * Layout de la tienda — DESIGN-REFERENCE §5.1.
- * Encabezado fijo, contenido sobre el canvas y pie oscuro.
- *
- * El encabezado recibe el nombre de quien está adentro (F1.7c) y las unidades
- * de su carrito (F5.5). Sin sesión no hay carrito (RF-08), así que la píldora
- * dice cero sin preguntarle nada a la base.
- */
 export default async function ShopLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Guardia de página: paso 1 de §13.3, más el perfil para el nombre. No es
-  // control de acceso —eso lo hace cada página y cada acción—, es el saludo
-  // del encabezado.
+  // No es control de acceso (eso lo hace cada página y cada acción): es el
+  // saludo del encabezado.
   const sesion = await getSession();
 
-  // Pidió la baja (F5.8): la cuenta es de solo lectura hasta que la
-  // administradora la ejecute o el comprador la retire.
+  // Con la baja pedida la cuenta es de solo lectura hasta que se ejecute o se
+  // retire.
   const enPausa = sesion?.profile.closureRequestedAt != null;
 
-  // Las dos dependen de la sesión y no entre sí: en paralelo.
+  // El interruptor de mantenimiento lee la misma memoria que el proxy: el
+  // aviso y el bloqueo dicen siempre lo mismo.
   //
-  // Lo barato primero: el rol ya está en la sesión, y el interruptor solo se
-  // pregunta si quien mira es administradora. Es la misma memoria que usa el
-  // proxy, así que el aviso y el bloqueo dicen siempre lo mismo.
+  // El favorito pendiente se mira acá y no en cada página porque quien ingresa
+  // vuelve a la que estaba. Sin sesión, la nota sigue esperando.
   //
-  // El favorito pendiente (F5.4, RF-05) se mira acá y no en cada página: el
-  // corazón está en el catálogo y en la ficha, y quien ingresa vuelve a la que
-  // estaba. Sin sesión no hay nada que retomar y la nota sigue esperando.
-  //
-  // Las redes del pie (2026-10-20) y las escenas por fecha (F9.5) no
-  // dependen de nada y van en la misma tanda, en una sola consulta. Si la
-  // base no contesta, el pie sale sin redes y la tienda sin escena, en vez de
-  // tirarla entera por dos íconos y un adorno.
+  // Si la base no contesta la configuración, el pie sale sin redes y la tienda
+  // sin escena, en vez de tirarla entera.
   const [unidadesEnElCarrito, cerradaParaElResto, favoritoPendiente, tienda] =
     await Promise.all([
       sesion ? contarUnidades(sesion.profile.id) : 0,
@@ -66,10 +51,9 @@ export default async function ShopLayout({
   const escena = tienda ? escenaDeHoy(tienda.escenas) : null;
 
   return (
-    // Radix exige un proveedor arriba de cualquier tooltip, y solo la tienda
-    // los usa. Estuvo en la raíz hasta F10.4: así, Floating UI —unos 19 KB
-    // comprimidos— viajaba también al ingreso, al alta y al panel, que no
-    // tienen ninguno. Si el panel los suma, lleva su propio proveedor.
+    // Radix exige un proveedor arriba de cualquier tooltip. Va acá y no en la
+    // raíz para que Floating UI no viaje al ingreso ni al panel, que no tienen
+    // tooltips; si el panel los suma, lleva su propio proveedor.
     <TooltipProvider>
       <div className="flex min-h-svh flex-col bg-canvas">
         {cerradaParaElResto ? <AvisoDeTiendaCerrada /> : null}
@@ -100,12 +84,8 @@ export default async function ShopLayout({
 }
 
 /**
- * Lo que ve quien pidió la baja, en toda la tienda (F5.8, RF-34).
- *
- * Arriba de todo y en cada página porque la pausa afecta a cada página: sin
- * esto, un botón apagado en la ficha no tendría a quién señalar. Dice qué
- * pasa y ofrece la salida. En el tinte de advertencia (§6.4) y no en tinta,
- * que es el aviso de la administradora: son dos mensajes para dos personas.
+ * En cada página: es a lo que señalan los botones apagados por la pausa. En
+ * tinte de advertencia y no en tinta, que es el aviso de la administradora.
  */
 function AvisoDeBajaPedida() {
   return (
@@ -128,16 +108,8 @@ function AvisoDeBajaPedida() {
 }
 
 /**
- * Lo que ve la administradora mientras la tienda está cerrada (F2.7b).
- *
- * Sin esto es fácil olvidarse de reabrirla: la tienda se ve perfecta desde
- * su sesión, y el síntoma de haberla dejado cerrada es que no entre ninguna
- * venta, sin un solo error a la vista.
- *
- * En tinta y no en color: §2.1 reserva el burdeos para la acción y la
- * identidad, y §11 no quiere fondos de color en contenedores de interfaz. La
- * franja oscura se nota igual —es lo único oscuro arriba de una tienda
- * clara— y repite el pie del sitio en vez de sumar un tono.
+ * Sin esto es fácil olvidarse de reabrirla: desde su sesión la tienda se ve
+ * perfecta. En tinta y no en burdeos, que §2.1 reserva para la acción.
  */
 function AvisoDeTiendaCerrada() {
   return (

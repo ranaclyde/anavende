@@ -33,17 +33,7 @@ import { crearPreferencia } from "@/lib/preferencia-local";
 import { cn } from "@/lib/utils";
 import { salir } from "@/modules/users/actions";
 
-/**
- * Menú lateral del panel — DESIGN-REFERENCE §5.2.
- *
- * 240px con etiquetas visibles, colapsable a 64px de solo íconos. En tablet
- * arranca colapsado; en móvil es un panel deslizable, porque un menú fijo se
- * come la mitad de una pantalla en la que hay que leer tablas.
- *
- * El interruptor de modo oscuro vive al pie del menú. Debajo, aparte, quién
- * está adentro, con «Cerrar sesión»: el panel no tiene otro lugar desde
- * donde salir.
- */
+/** Menú lateral del panel — DR §5.2. */
 
 type Seccion = {
   href: string;
@@ -77,7 +67,7 @@ export function AdminSidebar({
   cara,
 }: {
   nombre: string;
-  /** La foto o el blobatar (F5.9), ya resuelto en el servidor. */
+  /** La foto o el blobatar, ya resuelto en el servidor. */
   cara: string;
 }) {
   const pathname = usePathname();
@@ -85,7 +75,6 @@ export function AdminSidebar({
     preferenciaDeColapso.suscribir,
     () => {
       const guardado = preferenciaDeColapso.leer();
-      // Sin nada guardado, en tablet arranca colapsado (§5.2).
       return guardado !== null
         ? guardado === "1"
         : window.matchMedia("(max-width: 1279px)").matches;
@@ -95,25 +84,22 @@ export function AdminSidebar({
   const [abiertoEnMovil, setAbiertoEnMovil] = useState(false);
   const [saliendo, iniciarSalida] = useTransition();
 
-  // Al navegar se cierra el panel de móvil: si no, tapa lo que se acaba de
-  // abrir. Se ajusta durante el render, cuando cambia la ruta, y no en un
-  // efecto: así no se pinta un cuadro con el panel abierto sobre la página
-  // nueva.
+  // Al navegar se cierra el panel de móvil. Se ajusta durante el render y no
+  // en un efecto, para no pintar un cuadro con el panel abierto sobre la
+  // página nueva.
   const [rutaVista, setRutaVista] = useState(pathname);
   if (rutaVista !== pathname) {
     setRutaVista(pathname);
     setAbiertoEnMovil(false);
   }
 
-  // El foco entra al abrirlo y vuelve a «Abrir el menú» al cerrarlo, como
-  // en un diálogo (F10.3): si no, quien usa teclado sigue parado detrás de
-  // la capa, en lo que acaba de quedar tapado.
+  // El foco entra al abrirlo y vuelve a «Abrir el menú» al cerrarlo, como en
+  // un diálogo.
   const botonAbrir = useRef<HTMLButtonElement>(null);
   const botonCerrar = useRef<HTMLButtonElement>(null);
-  // El foco vuelve DESPUÉS de cerrar, en un efecto: mientras el menú está
-  // abierto la barra de arriba es inerte (F2.15), y un `focus()` en el mismo
-  // momento del cierre no entraba. Al cerrar por cambiar de página no vuelve:
-  // ahí el foco es de la página nueva.
+  // El foco vuelve después de cerrar, en un efecto: con el menú abierto la
+  // barra de arriba es inerte y un `focus()` en el mismo momento no entra. Al
+  // cambiar de página no vuelve: el foco es de la página nueva.
   const devolverFoco = useRef(false);
   const cerrarMenu = () => {
     devolverFoco.current = true;
@@ -125,14 +111,11 @@ export function AdminSidebar({
     botonAbrir.current?.focus();
   }, [abiertoEnMovil]);
 
-  // Escape cierra el panel de móvil, como cualquier capa superpuesta.
   useEffect(() => {
     if (!abiertoEnMovil) return;
     botonCerrar.current?.focus();
-    // Lo de atrás queda inerte mientras el menú está abierto (F2.15): sin
-    // esto, Tab seguía de largo desde el menú hacia la página tapada, y el
-    // lector de pantalla la leía como si estuviera a la vista. Es lo que el
-    // diálogo hace con su capa.
+    // Lo de atrás queda inerte, como con la capa de un diálogo: si no, Tab y
+    // el lector de pantalla siguen en la página tapada.
     const pagina = document.querySelector("main");
     pagina?.setAttribute("inert", "");
     const alTeclear = (e: KeyboardEvent) => {
@@ -147,9 +130,7 @@ export function AdminSidebar({
     };
   }, [abiertoEnMovil]);
 
-  // La barra de arriba dice en qué sección se está, y no «Panel» a secas
-  // (F2.15): en el teléfono y la tablet el menú está escondido, y era lo
-  // único que lo decía.
+  // La barra de arriba dice la sección: en el teléfono el menú está escondido.
   const seccionActual =
     SECCIONES.find(({ href, exacto }) =>
       exacto
@@ -185,8 +166,8 @@ export function AdminSidebar({
       </div>
 
       {abiertoEnMovil && (
-        // Fuera del orden de Tab y de la lectura: es para tocar afuera y
-        // cerrar, y el menú ya tiene su «Cerrar el menú» (F2.15).
+        // Fuera del orden de Tab y de la lectura: el menú ya tiene su «Cerrar
+        // el menú».
         <button
           type="button"
           tabIndex={-1}
@@ -203,16 +184,12 @@ export function AdminSidebar({
           "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-surface",
           "transition-[width,transform] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
           colapsado ? "w-16" : "w-60",
-          // Móvil: entra deslizándose y siempre con las etiquetas visibles.
-          // Cerrado, además de correrse queda invisible: fuera de la pantalla
-          // sus enlaces seguían tomando el foco, y el Tab pasaba por quince
-          // paradas que no se ven antes de llegar a la página (F10.3).
+          // Móvil: cerrado, además de correrse queda invisible, o sus enlaces
+          // siguen tomando el foco fuera de la pantalla.
           abiertoEnMovil
             ? "w-60 translate-x-0"
-            : // La visibilidad solo se anima al cerrar, para que se oculte
-              // al terminar de salir. Al abrir cambia de golpe: en el primer
-              // cuadro de una transición todavía está oculto, y ahí el foco
-              // no entra.
+            : // La visibilidad solo se anima al cerrar: en el primer cuadro de
+              // una transición todavía está oculto, y ahí el foco no entra.
               "-translate-x-full max-lg:invisible max-lg:transition-[width,transform,visibility]",
           "lg:translate-x-0",
         )}
@@ -250,10 +227,8 @@ export function AdminSidebar({
                 : pathname === href || pathname.startsWith(`${href}/`);
               const soloIcono = colapsado && !abiertoEnMovil;
 
-              // Sin pantalla a la que ir no hay enlace: un `<span>` apagado,
-              // con el motivo en el `title` y leído por `aria-disabled`. Es el
-              // mismo criterio que los controles apagados del panel (§8): se
-              // ve que está, y se dice por qué todavía no.
+              // Sin pantalla a la que ir: un `<span>` apagado, con el motivo
+              // en el `title` y `aria-disabled` (DR §8).
               if (pendiente) {
                 return (
                   <li key={href}>
@@ -288,8 +263,7 @@ export function AdminSidebar({
                       "text-body-sm transition-colors duration-150",
                       soloIcono && "justify-center px-0",
                       activa
-                        ? // El estado activo lleva fondo Y color de marca: no se
-                          // comunica solo con color (§9).
+                        ? // Fondo y color: no solo color (§9).
                           "bg-brand-tint font-medium text-brand"
                         : "text-ink-secondary hover:bg-surface-sunken hover:text-ink",
                     )}
@@ -340,8 +314,7 @@ export function AdminSidebar({
                 colapsado && "rotate-180",
               )}
             />
-            {/* Una sola etiqueta a la vez: con las dos, el lector de
-                pantalla decía «Contraer el menú» dos veces. */}
+            {/* Una sola etiqueta a la vez, o el lector la lee dos veces. */}
             {colapsado ? (
               <span className="sr-only">Expandir el menú</span>
             ) : (
@@ -350,37 +323,28 @@ export function AdminSidebar({
           </button>
         </div>
 
-        {/* Quién está adentro, aparte de las acciones del menú: con el nombre
-            en un renglón más, entre botones, se leía como uno que no hacía
-            nada. El rol en la segunda línea lo termina de separar, y
-            «Cerrar sesión» va pegado al nombre porque es de la cuenta y no
-            del panel. Colapsado, el ícono de salir baja debajo del avatar. */}
+        {/* Quién está adentro (DR §5.2). */}
         <div
           className={cn(
             "flex items-center gap-2.5 border-t border-border px-3 py-3",
             colapsado && !abiertoEnMovil && "flex-col gap-2 px-0",
           )}
         >
-          {/* Hasta F5.9 era la inicial en bordó; ahora es la misma cara que
-              en la tienda. */}
+          {/* La misma cara que en la tienda. */}
           <Avatar src={cara} tamano={32} />
           {(!colapsado || abiertoEnMovil) && (
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-body-sm font-medium text-ink">
                 {nombre}
               </span>
-              {/* Todo el que entra al panel es administrador: el layout
-                  rechaza al resto (`exigirAdmin`). */}
+              {/* Todo el que entra es administrador: `exigirAdmin`. */}
               <span className="truncate text-caption text-ink-secondary">
                 Administradora
               </span>
             </span>
           )}
 
-          {/* La misma acción que «Mi cuenta»: cierra la sesión y lleva a la
-              tienda. Apagado mientras sale, para que un segundo toque no
-              mande otra. Solo ícono, con el nombre en el `title` y para el
-              lector de pantalla. */}
+          {/* Apagado mientras sale, para que un segundo toque no mande otra. */}
           <button
             type="button"
             onClick={() => iniciarSalida(() => salir())}

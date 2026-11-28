@@ -9,11 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-/**
- * Error de identidad — DESIGN-REFERENCE §8 y §10.
- * Dice qué pasó y qué hacer. Nunca un código ni el mensaje crudo del
- * proveedor: el motivo llega como una clave conocida y se traduce acá.
- */
+/** Nunca el mensaje crudo del proveedor: el motivo llega como clave. */
 const MOTIVOS: Record<string, { titulo: string; detalle: string }> = {
   "enlace-vencido": {
     titulo: "Ese enlace ya venció",

@@ -10,12 +10,8 @@ import {
 import { limpiarCompradores, unComprador } from "@/tests/apoyo/compradores";
 
 /**
- * «Mis datos» — RF-07, RF-05. Tarea F5.2.
- *
- * La contraseña no se prueba acá: la guarda GoTrue, y comprobarla metería la
- * red y medio Supabase adentro de un test de dominio (lo mismo que decide
- * `tests/apoyo/compradores.ts`). Se prueba lo que es nuestro: qué se guarda,
- * en qué cuenta, y qué deja pasar el formulario.
+ * «Mis datos» — RF-07, RF-05. La contraseña no se prueba acá: la guarda
+ * GoTrue, y comprobarla metería la red adentro de un test de dominio.
  */
 
 afterEach(limpiarCompradores);
@@ -73,8 +69,8 @@ describe("guardar los datos", () => {
 
 describe("lo que llega del formulario", () => {
   test("el teléfono precargado vuelve igual si no se lo toca", () => {
-    // La página lo muestra sin el +549, como lo escribe la gente. Guardar sin
-    // cambiarlo no puede convertirlo en otro número.
+    // La página lo muestra sin el +549: guardar sin cambiarlo no puede
+    // convertirlo en otro número.
     const r = misDatosSchema.parse({
       firstName: "Ana",
       lastName: "Pérez",

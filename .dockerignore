@@ -4,8 +4,8 @@
 
 node_modules
 .next
+.next-verificacion
 .git
-.github
 
 # Los secretos NUNCA entran. Las variables las inyecta Coolify en tiempo de
 # ejecución (TECHNICAL-SPEC §16), y las NEXT_PUBLIC_* se pasan como --build-arg.
@@ -18,6 +18,8 @@ node_modules
 tests
 playwright-report
 test-results
+coverage
+docs
 supabase
 scripts/*.mts
 .claude

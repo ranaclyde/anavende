@@ -3,19 +3,13 @@ import { z } from "zod";
 import { isMoney } from "@/lib/money";
 import { telefonoArgentino } from "@/lib/telefono";
 
-/**
- * Validación de la confirmación del pedido — FS RF-11 · TS §8.4, §8.5.
- * Tarea F6.1. Corre en el servidor, dentro del envoltorio de acciones (§6.2).
- */
-
 export const FORMAS_DE_ENTREGA = ["envio", "retiro"] as const;
 
 export const confirmacionSchema = z
   .object({
-    /** La generó la página al abrirse (§8.5): un reintento trae la misma. */
+    /** La genera la página al abrirse: un reintento trae la misma (§8.5). */
     idempotencyKey: z.uuid(),
-    // Nombre y teléfono son los de ESTE pedido: van al snapshot de la orden
-    // (RN-12) y no tocan la cuenta.
+    // Nombre y teléfono van al snapshot de la orden y no tocan la cuenta.
     nombre: z
       .string()
       .trim()
@@ -31,11 +25,7 @@ export const confirmacionSchema = z
     }),
     /** Solo con envío. Con retiro se ignora aunque llegue. */
     addressId: z.uuid().optional(),
-    /**
-     * Lo que el comprador vio en el resumen (§8.4 paso 3). Si no coincide con
-     * lo vigente, la orden no se crea y se le pide que reconfirme. La cantidad
-     * va porque también cambia el total (F6.2).
-     */
+    /** Lo que el comprador vio en el resumen; si no coincide, reconfirma (§8.4). */
     esperado: z
       .array(
         z.object({

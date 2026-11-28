@@ -4,26 +4,15 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 /**
- * Cliente de Drizzle — TECHNICAL-SPEC §2.1, §18.2, §18.3, §20.
- *
- * La conexión va por la IP PRIVADA del servidor DATA: Postgres no escucha en
- * la interfaz pública (§2.4, F0.4). `DATABASE_URL` es secreto de servidor y
- * nunca lleva el prefijo NEXT_PUBLIC_ (§16).
- *
- * LA CONEXIÓN ES PEREZOSA, y eso no es una optimización: §18.2 exige compilar
- * fuera del servidor, donde no hay LAN privada ni base a la que llegar. Un
- * cliente que se conecta al evaluar el módulo rompe el build en cuanto una
- * página importa el esquema.
- *
- * Una sola instancia por proceso: cada `postgres()` abre su propio pool, y
- * varios pools contra un servidor de 4 GB se comen las conexiones.
+ * LA CONEXIÓN ES PEREZOSA a propósito: el build corre sin base (§18.2), y un
+ * cliente que conecta al evaluar el módulo lo rompe. Una sola instancia por
+ * proceso: cada `postgres()` abre su propio pool.
  */
 
 declare global {
   var __anavendeDb: Conexion | undefined;
 }
 
-/** El cliente de Drizzle y el pool que hay debajo, que es lo que se cierra. */
 type Conexion = {
   db: PostgresJsDatabase<typeof schema>;
   sql: ReturnType<typeof postgres>;
@@ -38,7 +27,6 @@ function conectar(): Conexion {
   }
 
   const sql = postgres(url, {
-    // La LAN privada mide 1-2 ms (§20): no hace falta un pool grande.
     max: 10,
     idle_timeout: 20,
     connect_timeout: 10,
@@ -48,18 +36,9 @@ function conectar(): Conexion {
 }
 
 /**
- * La conexión vive en el GLOBAL del proceso, no en una variable del módulo, y
- * por dos motivos distintos:
- *
- *   · En desarrollo, el recargado en caliente reevalúa el módulo; sin el global
- *     se abriría un pool nuevo en cada cambio hasta agotar las conexiones.
- *   · En producción, por `proxy.ts` (F2.7b). Next lo compila aparte del resto
- *     de la aplicación, y cada compilación trae su propia copia de este
- *     módulo: con una variable de módulo, el proxy abriría su pool de diez al
- *     lado del de las páginas, contra el mismo pooler. El global es uno por
- *     proceso, así que las dos copias comparten el mismo.
- *
- * Hasta F2.7b el global era solo de desarrollo; nada del proxy tocaba la base.
+ * En el GLOBAL del proceso, no en una variable del módulo: el recargado en
+ * caliente reevalúa el módulo, y Next compila `proxy.ts` aparte con su propia
+ * copia. Sin el global, cada copia abriría su pool.
  */
 function obtener(): Conexion {
   globalThis.__anavendeDb ??= conectar();
@@ -67,15 +46,8 @@ function obtener(): Conexion {
 }
 
 /**
- * Cierra el pool y olvida la conexión.
- *
- * Es para PROCESOS QUE TERMINAN: los tests (§17.1) y los scripts de
- * verificación. El servidor de Next no la llama nunca — un pool que se cierra
- * en medio de una petición es un error, no una limpieza.
- *
- * Sin esto un `vitest run` no termina: quedan hasta diez conexiones abiertas
- * y el proceso se cuelga esperándolas, que es justo la fricción por la que un
- * día los tests dejan de correrse.
+ * Para PROCESOS QUE TERMINAN (tests, scripts): sin esto, `vitest run` se
+ * cuelga esperando las conexiones. El servidor de Next no la llama nunca.
  */
 export async function cerrarConexion(): Promise<void> {
   const abierta = globalThis.__anavendeDb;
@@ -83,10 +55,7 @@ export async function cerrarConexion(): Promise<void> {
   await abierta?.sql.end({ timeout: 5 });
 }
 
-/**
- * Se comporta como el cliente de Drizzle, pero no abre la conexión hasta la
- * primera consulta de verdad.
- */
+/** No abre la conexión hasta la primera consulta. */
 export const db = new Proxy({} as PostgresJsDatabase<typeof schema>, {
   get(_target, prop, receiver) {
     return Reflect.get(obtener().db, prop, receiver);

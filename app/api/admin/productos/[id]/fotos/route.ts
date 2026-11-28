@@ -6,12 +6,8 @@ import { getSession } from "@/lib/session";
 import { fotosDelProducto, zipDeFotos } from "@/modules/media/descargar";
 
 /**
- * Las fotos de un producto en un zip — F2.18.
- *
- * Route Handler y no Server Action por lo mismo que la subida: sale un
- * binario. Lo pide el botón «Descargar fotos» con `fetch`, y no un enlace:
- * así, si falla, el error se dice en la pantalla en vez de bajarse un
- * archivo con un JSON adentro.
+ * Las fotos de un producto en un zip. Se pide con `fetch` y no con un enlace:
+ * así un error se muestra en vez de bajarse un archivo con un JSON adentro.
  */
 export const runtime = "nodejs";
 

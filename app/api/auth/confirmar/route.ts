@@ -6,26 +6,16 @@ import { urlDelSitio } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Confirmación por enlace de email — TECHNICAL-SPEC §13, §14.
- * Es el destino de los emails E1 (verificación) y E2 (recuperación).
- *
- * Acepta las DOS formas en que GoTrue puede devolver el enlace:
- *
- *   · `code`                  — flujo PKCE, el que usa `@supabase/ssr` por
- *                               omisión. Es el que llega en la práctica.
- *   · `token_hash` + `type`   — flujo implícito, y el que usan los enlaces
- *                               generados con `generateLink`.
- *
- * Soportar una sola rompe la confirmación sin decir por qué: se descubrió
- * probando el registro de punta a punta, no leyendo el código.
+ * Destino de los enlaces de verificación y recuperación. Acepta las DOS
+ * formas en que GoTrue devuelve el enlace: `code` (PKCE, el de
+ * `@supabase/ssr`) y `token_hash` + `type` (los de `generateLink`). Con una
+ * sola, la confirmación se rompe sin decir por qué.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
-  // El origen sale de la configuración y NO de `request.url`: detrás de
-  // Traefik y Cloudflare, Next arma esa dirección con la que escucha adentro
-  // del contenedor, y en producción las redirecciones iban a
-  // `https://0.0.0.0:3000`. En local no se ve, porque las dos coinciden.
+  // De la configuración y NO de `request.url`: detrás de Traefik y
+  // Cloudflare, Next la arma con `0.0.0.0:3000`. En local no se ve.
   const origin = urlDelSitio();
 
   // Solo destinos internos: un `next` con host convertiría esto en un
@@ -59,8 +49,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/error?motivo=enlace-invalido`);
   }
 
-  // El mensaje crudo de Supabase no se le muestra a nadie: llega en inglés y
-  // con vocabulario de la plataforma (DESIGN-REFERENCE §8, §10).
+  // El mensaje crudo de Supabase no se muestra: llega en inglés.
   if (fallo) {
     return NextResponse.redirect(`${origin}/error?motivo=enlace-vencido`);
   }

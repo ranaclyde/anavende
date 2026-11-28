@@ -2,11 +2,7 @@ import { AlertCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-/**
- * Mensaje de error de un campo — DESIGN-REFERENCE §6.6 y §9.
- * Lleva ícono además del color: el color nunca es el único portador de
- * información. `role="alert"` lo anuncia al lector de pantalla.
- */
+/** Lleva ícono además del color: el color nunca es la única señal (DR §9). */
 export function FieldError({
   id,
   children,

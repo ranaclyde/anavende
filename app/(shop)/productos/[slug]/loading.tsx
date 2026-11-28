@@ -2,18 +2,8 @@ import { FotoQueLlega } from "@/components/shop/foto-viajera";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Carga de la ficha — DESIGN-REFERENCE §8: esqueletos con la FORMA REAL del
- * contenido, no un spinner centrado.
- *
- * Es la pantalla que más lo necesita de la tienda: se llega a ella tocando
- * una tarjeta del catálogo, y esa navegación espera al servidor. Sin esto, la
- * grilla se queda quieta después del toque y el segundo intento es tocar otra
- * vez —o volver—, que es como se pierde a alguien que ya había elegido.
- *
- * El cuadrado de la foto reserva su lugar con `aspect-square`, igual que la
- * ficha: el esqueleto y lo que llega ocupan lo mismo, así que la página no
- * salta cuando aparece la foto. Las miniaturas van a la IZQUIERDA y se
- * dibujan siempre, por el mismo motivo que en la galería de verdad (§6.8).
+ * Esqueleto con la forma real de la ficha (DESIGN-REFERENCE §8): ocupa lo
+ * mismo que lo que llega, así la página no salta al aparecer la foto.
  */
 export default function CargandoFicha() {
   return (
@@ -30,10 +20,7 @@ export default function CargandoFicha() {
               <Skeleton key={i} className="size-16 rounded-panel-image" />
             ))}
           </div>
-          {/*
-            Si se llegó tocando una tarjeta, acá aterriza su foto
-            (`foto-viajera.tsx`). Mismo lugar y misma forma que la galería.
-          */}
+          {/* Acá aterriza la foto de la tarjeta tocada: mismo lugar y forma que la galería. */}
           <FotoQueLlega className="aspect-square min-w-0 flex-1 overflow-hidden rounded-card bg-surface shadow-md">
             <Skeleton className="aspect-square min-w-0 flex-1 rounded-card" />
           </FotoQueLlega>

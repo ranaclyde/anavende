@@ -46,69 +46,37 @@ import {
 } from "@/modules/settings/queries";
 
 /**
- * Ficha de producto — F3.5, RF-03, DESIGN-REFERENCE §6.5, §6.8, §7.3.
- *
- * Es a donde apunta cada tarjeta del catálogo desde F3.1, y hasta hoy era un
- * 404.
- *
- * **Lo que cambia con el color vive en una isla de cliente** (`Compra`), y lo
- * que no —nombre, marca, precio, descripción, información de envío— se pinta
- * en el servidor y le entra como nodo. El precio es el caso que lo justifica
- * solo: formatearlo en el navegador significaría mandarle `decimal.js` entero
- * para poner un punto de miles.
- *
- * **Los recomendados (F8.2) llegan después del resto**, por `<Suspense>`:
- * están debajo del pliegue y su consulta no tiene por qué demorar la foto y
- * el botón de compra. Debajo, «Vistos recientemente» (F8.4), y esta ficha se
- * anota en ese historial al abrirse.
+ * Lo que cambia con el color vive en una isla de cliente (`Compra`); lo demás
+ * se pinta en el servidor y le entra como nodo. El precio llega formateado:
+ * hacerlo en el navegador mandaría `decimal.js` entero.
  */
 
 type Props = {
-  // En Next 16 las dos son promesas.
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ color?: string | string[] }>;
 };
 
-/** El primer valor: `?color=a&color=b` llega como arreglo y no debe fallar. */
+/** `?color=a&color=b` llega como arreglo y no debe fallar. */
 function unColor(valor: string | string[] | undefined): string | undefined {
   return Array.isArray(valor) ? valor[0] : valor;
 }
 
 /**
- * La foto que representa al producto — F3.9.
- *
- * **La primera de la primera variante que tenga alguna**, y no la del color
- * que pidió la dirección: el `canonical` de esta página es la ficha sin
- * `?color=`, así que la vista previa que se comparte tiene que ser siempre la
- * misma. Si cambiara con el color, la misma página tendría dos caras según el
- * enlace por el que se llegó, y el que quede primero en la caché de WhatsApp
- * gana.
- *
- * **UNA y no las cinco, desde el 2026-09-22.** Open Graph admite varias y el
- * primero es el que se usa, así que las otras cuatro no las miraba nadie y
- * sumaban cuatro `og:image` al `<head>` de cada ficha.
- *
- * **Y es la versión `-og.jpg`, no la de la galería**: WhatsApp no dibuja
- * vistas previas en WEBP, que es lo que destapó la prueba en producción de ese
- * día. El detalle está en `modules/media/tamanos.ts`.
- *
- * Puede venir vacía, y es un estado real: F2.4 da de alta el producto y las
- * fotos en dos pasos.
- */
-/**
- * Las fotos para schema.org — F3.9.
- *
- * **Todas, y en WEBP**, que es justo lo contrario de lo que necesita Open
- * Graph. No es una inconsistencia: Google lee WEBP sin problema y `Product`
- * acepta varias imágenes —cuantas más ángulos, mejor entiende qué se vende—,
- * mientras que la vista previa de un chat muestra UNA y no decodifica WEBP.
- * Dos consumidores distintos, dos respuestas distintas.
+ * Todas y en WEBP, al revés que Open Graph, y no es una inconsistencia: Google
+ * lee WEBP y aprovecha varias; la vista previa de un chat muestra una y no
+ * decodifica WEBP.
  */
 function fotosEstructuradas(ficha: Ficha): string[] {
   const conFotos = ficha.variantes.find((v) => v.imagenes.length > 0);
   return (conFotos?.imagenes ?? []).map((i) => i.grande);
 }
 
+/**
+ * Para Open Graph: una sola, en `-og.jpg` (WhatsApp no dibuja WEBP), y la de la
+ * primera variante con fotos y no la del `?color=`, porque el canónico no lo
+ * lleva y la vista previa tiene que ser siempre la misma. Puede venir vacía:
+ * el producto y las fotos se cargan en dos pasos.
+ */
 function fotoDelProducto(
   ficha: Ficha,
 ): { url: string; alt: string; width: number; height: number }[] {
@@ -119,12 +87,10 @@ function fotoDelProducto(
   return [
     {
       url: foto.og,
-      // El texto alternativo lo escribe la vendedora y puede no estar (F2.4).
-      // El respaldo dice lo mismo que diría alguien mirando la foto.
+      // El texto alternativo lo escribe la vendedora y puede no estar.
       alt: foto.alt ?? `${ficha.nombre} — ${ficha.marca}`,
-      // Van declarados porque el lienzo es fijo (TAMANOS.og): sin ellos, quien
-      // arma la tarjeta tiene que bajar la imagen para saber qué forma tiene, y
-      // algunos clientes se caen a la miniatura chica antes que averiguarlo.
+      // El lienzo es fijo (TAMANOS.og). Sin las medidas, algunos clientes se
+      // caen a la miniatura chica antes que bajar la imagen para averiguarlas.
       width: 1200,
       height: 630,
     },
@@ -132,31 +98,13 @@ function fotoDelProducto(
 }
 
 /**
- * Metadatos de la ficha — F3.5 y **F3.9**, RNF-04.
+ * El `canonical` no lleva `?color=`: cada color es una vista del mismo
+ * producto. El precio va solo en la descripción de Open Graph (WhatsApp no
+ * muestra otra cosa); en Google lo pone el dato estructurado. Ojo: WhatsApp
+ * guarda la tarjeta la primera vez y no la vuelve a pedir, así que un mensaje
+ * viejo puede mostrar un precio viejo.
  *
- * Lo que F3.5 dejó anotado como pendiente está acá: el `canonical`, la vista
- * previa de Open Graph y, en la pantalla, los datos estructurados.
- *
- * **El `canonical` no lleva `?color=`.** Cada color es una vista del mismo
- * producto —cambia la foto y el stock, no el producto—, así que las cinco
- * direcciones de un producto de cinco colores son una sola página. Sin esta
- * línea, un buscador las trata como cinco páginas casi idénticas y reparte
- * entre ellas lo que tendría que ir a una.
- *
- * **El precio va adelante de la descripción de Open Graph, y solo ahí.** Es lo
- * que pide el «Hecho cuando» de F3.9: quien recibe el enlace por WhatsApp
- * tiene que ver imagen, nombre y precio sin abrirlo, y WhatsApp solo muestra
- * el título, la descripción y la foto. En la descripción de Google no va: ahí
- * el precio lo pone el dato estructurado, que además dice la moneda y si hay
- * stock, y se actualiza sin depender de ninguna caché.
- *
- * **Y por eso mismo el precio de la vista previa envejece**: WhatsApp guarda
- * la tarjeta la primera vez que alguien manda el enlace y no vuelve a
- * pedirla. Un mensaje viejo puede mostrar un precio viejo. Lo que manda es
- * siempre la página, que se abre a un toque de distancia.
- *
- * `leerFicha` está envuelta en `cache()`, así que esta consulta y la de la
- * página son la misma.
+ * `leerFicha` está en `cache()`: esta consulta y la de la página son la misma.
  */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -182,10 +130,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: ruta,
       title: titulo,
       description: conPrecio,
-      // Sin fotos queda la tarjeta de la marca, que es el respaldo de
-      // `OPEN_GRAPH_BASE`: un producto recién creado todavía no tiene
-      // ninguna (F2.4 da de alta en dos pasos) y mandar el enlace pelado es
-      // peor que mandar el logo.
+      // Sin fotos queda la tarjeta de la marca de `OPEN_GRAPH_BASE`.
       ...(fotos.length > 0 ? { images: fotos } : {}),
     },
     twitter: {
@@ -200,21 +145,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FichaDeProducto({ params, searchParams }: Props) {
   const { slug } = await params;
 
-  // Independientes entre sí: encadenarlas sumaría dos viajes a la base para
-  // datos que no dependen del producto.
-  //
-  // La sesión entera, con perfil, y no solo la identidad (2026-11-17): decide
-  // qué botón se dibuja —«Agregá al carrito» o «Iniciá sesión para comprar»
-  // (RF-08)— y si se retoma la compra pendiente, y las acciones que esos
-  // botones llaman exigen perfil (§13.4). Con la identidad sola, quien entró
-  // con Google y no completó el perfil veía «Agregá al carrito» y recibía
-  // «Necesitás iniciar sesión» al apretarlo, con el encabezado diciendo
-  // «Ingresar». No cuesta otra ida a la base: el layout ya la pidió y
-  // `getSession` está en `cache()`. Quien decide si puede agregar sigue
-  // siendo la acción, con el perfil fresco (§6.2).
-  //
-  // Las promociones de cuotas (RF-40) también: son las de toda la tienda, y
-  // el monto mínimo de cada una se mira después, contra el precio.
+  // La sesión entera, con perfil, y no solo la identidad: las acciones de los
+  // botones exigen perfil, y con la identidad sola quien no completó el perfil
+  // veía «Agregá al carrito» y recibía «Necesitás iniciar sesión». No cuesta
+  // otra ida: el layout ya la pidió y `getSession` está en `cache()`.
   const [ficha, whatsapp, consulta, sesion, vigentes] = await Promise.all([
     leerFicha(slug),
     numeroDeWhatsApp(),
@@ -224,26 +158,13 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
   ]);
   const identidad = sesion?.identity ?? null;
 
-  // RN-05: un producto inactivo no existe para el sitio público, y da el
-  // mismo 404 que uno que nunca existió.
+  // Un producto inactivo da el mismo 404 que uno que nunca existió (RN-05).
   if (!ficha) notFound();
 
-  /*
-   * La compra que quedó pendiente de ingresar (F5.7, RF-08).
-   *
-   * Se mira DESPUÉS de la sesión y solo si hay alguien con perfil: sin sesión
-   * —o sin perfil todavía, el caso de Google antes de `/completar-perfil`— no
-   * hay nada que retomar, y la nota tiene que seguir esperando. Solo mirar, no
-   * tomar: un Server Component puede leer cookies pero no borrarlas, así que
-   * quien la consume es la acción.
-   *
-   * **Y solo si es de este producto.** La nota es una sola y global; si el
-   * comprador llegó a la ficha de otra cosa, acá no hay nada que hacer y la
-   * nota se queda para cuando vuelva a la que sí.
-   *
-   * Si «Guardar» está marcado (F5.4) también depende de la identidad y del
-   * producto, y no de la nota: va en paralelo con ella.
-   */
+  // La compra pendiente de ingresar: sin perfil la nota sigue esperando. Solo
+  // se mira, no se toma: un Server Component puede leer cookies pero no
+  // borrarlas, así que la consume la acción. Es una sola y global: si es de
+  // otro producto, se queda para cuando vuelva a esa ficha.
   const [pendiente, guardado] = identidad
     ? await Promise.all([mirar(), esFavorito(identidad.userId, ficha.id)])
     : [null, false];
@@ -253,12 +174,8 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
 
   const color = unColor(consulta.color);
 
-  /*
-   * El color de la dirección manda; la variante pendiente es el respaldo. El
-   * `volver` que se guardó lleva el `?color=`, así que los dos coinciden — el
-   * respaldo es para el camino largo, donde el enlace del email puede llegar
-   * con la consulta comida.
-   */
+  // El color de la dirección manda; la variante pendiente es el respaldo para
+  // cuando el enlace del email llega con la consulta comida.
   const inicial =
     !color && iPendiente !== -1
       ? iPendiente
@@ -266,11 +183,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
 
   return (
     <div className="group/ficha mx-auto w-full max-w-shop px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-      {/*
-        F3.9 — el producto y su rastro de migas, para quien lee el HTML sin
-        ojos. No se ve ni ocupa lugar: es el mismo contenido de la pantalla,
-        dicho en el vocabulario de schema.org.
-      */}
+      {/* Lo mismo de la pantalla, en schema.org. */}
       <DatosEstructurados
         datos={[
           productoEstructurado(ficha, fotosEstructuradas(ficha)),
@@ -278,8 +191,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         ]}
       />
 
-      {/* Arriba y a la derecha, a la altura de las migas (2026-11-02): al pie,
-          dentro de «¿Cómo sigue?», no la encontraba nadie. */}
+      {/* A la altura de las migas: al pie no la encontraba nadie. */}
       <div className="flex items-center justify-between gap-4 pb-6">
         <Migas
           categoria={ficha.categoria}
@@ -288,30 +200,23 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         <AyudaGuiada
           id="ficha"
           pasos={pasosDeLaFicha(identidad !== null)}
-          // Con CSS y no con el stock del servidor: el stock depende del
-          // color elegido, que cambia en el navegador. Sin el botón del
-          // carrito la guía no se puede armar y tocar el botón no haría nada.
+          // Con CSS y no con el stock del servidor: el stock depende del color
+          // elegido en el navegador, y sin el botón del carrito la guía no arranca.
           className="-my-2 -mr-2 hidden shrink-0 group-has-[[data-ayuda=comprar-carrito]]/ficha:inline-flex"
         />
       </div>
 
       {/*
-        `encabezado` e `informacion` se arman acá y `Compra` los pone junto a
-        sus propios hijos, en la misma lista. Llevan `key` por eso: sin ella,
-        React avisaba «Each child in a list should have a unique "key"» desde
-        `Compra` (arreglado el 2026-10-14). Saltaba en dos fichas —Mouse G203
-        y Teclado K120— y en ninguna de las otras 47; qué tienen en común
-        esas dos no quedó aislado, pero con las dos keys no sale en ninguna.
+        `encabezado` e `informacion` llevan `key` porque `Compra` los pone en
+        la misma lista que sus hijos; sin ella React avisa en algunas fichas.
       */}
       <Compra
         producto={{
           nombre: ficha.nombre,
           marca: ficha.marca,
-          // ABSOLUTA: viaja adentro de un mensaje de WhatsApp, donde una
-          // dirección relativa no lleva a ninguna parte.
+          // Absoluta: viaja adentro de un mensaje de WhatsApp.
           url: urlAbsoluta(`/productos/${ficha.slug}`),
           ruta: `/productos/${ficha.slug}`,
-          // Ya formateado: ver el comentario de arriba sobre `decimal.js`.
           precioFinalFormateado: formatMoney(ficha.precioFinal),
         }}
         variantes={ficha.variantes}
@@ -322,18 +227,13 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         favorito={{ productId: ficha.id, marcado: guardado }}
         encabezado={
           <header key="encabezado" className="flex flex-col gap-2">
-            {/* Sin versalitas y pegada al nombre, igual que en la tarjeta
-                (2026-10-20): en mayúsculas parecía más importante que él. */}
+            {/* Sin versalitas: en mayúsculas parecía más importante que el nombre. */}
             <p className="-mb-1 text-caption text-ink-secondary">
               {ficha.marca}
             </p>
-            {/*
-              El `h1` de la página es el nombre del producto. De ahí sale que
-              «Descripción» sea `h2` y que el subtítulo de adentro sea `h3`
-              (RF-15, DR §6.11): la jerarquía de la ficha se decide acá.
-            */}
+            {/* De este `h1` sale que «Descripción» sea `h2` y su subtítulo `h3`. */}
             <h1 className="text-title text-ink">{ficha.nombre}</h1>
-            {/* Entre el nombre y el precio, con «Copiar» (2026-11-05). */}
+            {/* Entre el nombre y el precio. */}
             {ficha.sku ? <Sku sku={ficha.sku} /> : null}
             <Precio
               className="pt-2"
@@ -342,7 +242,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
               descuento={ficha.descuento}
               precioFinal={ficha.precioFinal}
             />
-            {/* RF-40: debajo del precio, porque divide ese número. */}
+            {/* Debajo del precio, porque divide ese número. */}
             <CuotasDeLaFicha
               promociones={promocionesParaElPrecio(vigentes, ficha.precioFinal)}
             />
@@ -363,7 +263,7 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
         />
       </Suspense>
 
-      {/* F8.4: la ficha se anota en el historial y muestra el resto. */}
+      {/* La ficha se anota en el historial y muestra el resto. */}
       <RegistrarVista productoId={ficha.id} />
       <Suspense fallback={null}>
         <VistosRecientemente
@@ -376,12 +276,6 @@ export default async function FichaDeProducto({ params, searchParams }: Props) {
   );
 }
 
-/**
- * Dónde está parado el producto. RF-03 pide mostrar la categoría, y como
- * enlace además resuelve la pregunta que sigue: «mostrame más de esto».
- *
- * La categoría lleva a su página, `/categorias/<slug>` (F3.11).
- */
 function Migas({
   categoria,
   categoriaSlug,
@@ -393,11 +287,7 @@ function Migas({
     <nav aria-label="Miga de pan">
       <ol className="flex flex-wrap items-center gap-1 text-body-sm text-ink-secondary">
         <li>
-          {/*
-            El texto de la miga mide 17px de alto: se le estira la zona
-            sensible a 44 sin tocar el dibujo (§9). La fila está sola, así que
-            lo que sobresale no pisa nada.
-          */}
+          {/* La zona sensible se estira a 44px sin tocar el dibujo (§9). */}
           <Link
             href="/productos"
             className={cn("relative rounded-pill hover:text-ink", AREA_TACTIL)}
@@ -421,30 +311,9 @@ function Migas({
   );
 }
 
-/**
- * Todo lo que va debajo de las acciones — F3.5, RF-03, RF-15, RF-19, RN-10,
- * DR §7.3 (reescrito el 2026-09-08).
- *
- * Son dos bloques con jerarquía: **la descripción** que escribió la vendedora
- * y **el recuadro** que explica qué pasa después de apretar el botón. Los
- * datos de un vistazo subieron debajo del precio (2026-11-02).
- *
- * Ese último es el que faltaba. La tienda no cobra ni despacha sola (RN-08,
- * RN-10): el pedido termina en una conversación de WhatsApp, y quien no lo
- * sabe de antemano lee «Comprá ya» y espera un carrito con tarjeta. Decirlo
- * ANTES de que aprete es la diferencia entre un proceso raro y un proceso
- * que se entiende.
- *
- * **Ya no dice «PedidosYa».** RN-10 pasó a hablar de entrega local y no de
- * una empresa concreta: la mensajería puede cambiar, y el dato que le sirve a
- * quien compra no es el nombre del cadete sino hasta dónde llegamos.
- */
 function Informacion({ descripcion }: { descripcion: string }) {
-  // La línea queda con el mismo aire arriba y abajo: `mt-8` y `pt-8`. Los
-  // bloques de adentro no traen margen propio y los separa el `gap`. Antes la
-  // descripción sumaba su `pt-8` al `pt-6` de acá y quedaban 32px sobre la
-  // línea y 56 debajo (2026-11-03). Sin descripción pasaba lo mismo con el
-  // `mt-10` de «¿Cómo sigue?».
+  // Mismo aire arriba y abajo de la línea: los bloques de adentro no traen
+  // margen propio y los separa el `gap`.
   return (
     <div className="mt-8 flex flex-col gap-10 border-t border-border pt-8">
       <Descripcion markdown={descripcion} />
@@ -453,12 +322,6 @@ function Informacion({ descripcion }: { descripcion: string }) {
   );
 }
 
-/**
- * Las dos cosas que alguien quiere saber junto al precio: que es nuevo y hasta
- * dónde llegamos (2026-11-02). «Nuevo» va resaltado porque es lo que distingue
- * a la tienda (no se venden reacondicionados). El pago ya no se dice acá: lo
- * explica «¿Cómo sigue después de comprar?».
- */
 function Datos() {
   return (
     <ul className="flex flex-col gap-1.5 pt-2 text-body-sm text-ink-secondary">
@@ -471,25 +334,13 @@ function Datos() {
   );
 }
 
-/**
- * Qué pasa después del botón (RN-08, RN-10).
- *
- * El botón de garantías vive ADENTRO del recuadro y no suelto abajo: es la
- * pregunta que sigue a «coordinamos la entrega» —«¿y si no me sirve?»— y
- * suelto en la página era un enlace más entre otros.
- */
 const PASOS = [
   "Armás el pedido y lo mandás como orden de compra, o nos escribís directo por WhatsApp.",
   "Te confirmamos stock, precio final y forma de pago.",
   "Coordinamos la entrega en Viedma, Carmen de Patagones y alrededores, o pasás a retirarlo.",
 ];
 
-/**
- * La guía de la ficha (F6.6, RF-36). Explica las dos formas de comprar y que
- * acá no se paga. **Solo arranca con stock**: el botón del carrito es el
- * paso obligatorio, y sin stock la única salida es WhatsApp, que ya se
- * explica sola. El segundo paso cambia con la sesión porque cambia el botón.
- */
+/** Solo arranca con stock: el botón del carrito es el paso obligatorio. */
 function pasosDeLaFicha(conSesion: boolean): PasoDeAyuda[] {
   return [
     {
@@ -542,12 +393,7 @@ function ComoSigue() {
       <ol className="mt-4 flex flex-col gap-3 text-body-sm text-ink-secondary">
         {PASOS.map((paso, i) => (
           <li key={paso} className="flex items-start gap-3">
-            {/*
-              El número está DOS veces: como `<li>` de una lista ordenada, que
-              es lo que lee un lector de pantalla, y como círculo dibujado,
-              que es lo que se ve. Por eso el círculo va `aria-hidden` — si
-              no, se anunciaría «uno, uno».
-            */}
+            {/* El `<ol>` ya numera para el lector de pantalla: si no, diría «uno, uno». */}
             <span
               aria-hidden
               className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-tint text-caption font-medium text-brand"

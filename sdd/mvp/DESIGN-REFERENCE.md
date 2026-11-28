@@ -771,7 +771,7 @@ Tres cosas que cada copia tenía que acordarse de traer, y que ahora están escr
 - **La cruz nativa de `type="search"` se retira** (`appearance: none`): no se puede enfocar con el teclado ni tiene nombre accesible. La limpieza es un botón propio, y al tocarlo **el foco vuelve al campo** — si no, se cae al `<body>`, porque el botón que se acaba de tocar deja de existir.
 - **`role="search"` envuelve la búsqueda y nada más.** Alrededor de toda la barra anunciaría los filtros como parte del buscador, que es justo lo que no son.
 
-**El rango no tiene botón de limpiar**: el navegador manda `""` al borrar la fecha, que es exactamente el valor de «sin filtro». **Y se apila en el teléfono**, que no es un gusto: un campo de fecha nativo no baja de unos 130px, y dos con sus rótulos en una línea de 390px desbordaban la pantalla 156px hacia la derecha.
+**El rango no tiene botón de limpiar**: el navegador manda `""` al borrar la fecha, que es exactamente el valor de «sin filtro». **En el teléfono van lado a lado, en dos columnas que se reparten el ancho** (F2.15, 2026-10-28). Apiladas eran dos renglones enteros antes de la primera orden; y en una sola línea, sin grilla, dos campos de fecha nativos —que no bajan de unos 130px— desbordaban la pantalla de 390px.
 
 **El contador se anuncia** (`aria-live="polite"`): quien no ve la lista tiene que enterarse igual de cuántos quedaron (§9). Mientras la navegación está en curso dice «Buscando…» y se atenúa, porque el número anterior ya no es el de ahora y dejarlo firme sería mentir por un instante.
 
@@ -1124,6 +1124,13 @@ sigue confirmándose en diálogo.
   casillas, y **Escape ahí vuelve al formulario** en vez de cerrar todo y perder
   lo escrito. El formulario se esconde sin desmontarse, así el nombre y la
   imagen elegida siguen al volver.
+- **Se monta al abrirse y se desmonta al cerrar.** El estado del formulario
+  arranca de las props y no hay efecto que lo reponga. Dejarlo montado y
+  limpiarlo al abrir parece lo mismo y no lo es: el cierre ocurre dentro de una
+  transición que todavía revalida, y reabrir en ese rato arrancaba con lo
+  escrito la vez anterior —un medio de pago se guardó con la descripción del
+  anterior—. Las promociones de un medio de pago hacen lo mismo con una `key`
+  por promoción.
 - **Lo que sigue en diálogo:** las confirmaciones —borrar, desactivar— y las
   decisiones cortas. Interrumpen a propósito, y un drawer para una pregunta de
   sí o no es una pantalla entera para dos botones.
@@ -1759,6 +1766,8 @@ Un componente no está terminado hasta que sus cinco estados están definidos.
 | **Confirmado** | Toda acción que muta dice que salió bien. Flotante o en su lugar según §6.15; nunca en silencio |
 
 **Transiciones:** 150ms para color y opacidad, 200ms para transformaciones, `cubic-bezier(0.4, 0, 0.2, 1)`. Nada por encima de 300ms. Todo se desactiva bajo `prefers-reduced-motion`.
+
+> **Una excepción: el sello del pedido registrado** (`/orden/[numero]`). El círculo da la vuelta, se llena de verde y el tilde se traza, en unos 1,15 s (`anillo`, `relleno` y `tilde` en `globals.css`). Pasa el techo a propósito: apretados en 300ms los tres tiempos se veían toscos, y en 750 todavía bruscos. Pasa una vez por compra, es CSS sin JavaScript, el texto y el resumen quedan quietos, y con «reducir movimiento» el sello ya aparece completo.
 
 ---
 

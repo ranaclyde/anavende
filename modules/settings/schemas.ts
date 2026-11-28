@@ -8,16 +8,8 @@ import {
   UMBRAL_MINIMO,
 } from "@/modules/settings/limites";
 
-/**
- * Validación de los medios de pago (RF-19) y de la configuración del sitio
- * (RF-20). Comparten archivo porque comparten módulo: los dos son las
- * tablas que la vendedora carga una vez y toca cada tanto (§5.9).
- *
- * No es `server-only` como el de productos: acá no hay nada que sanitizar
- * —la descripción es texto plano— y el formulario repite estos mismos
- * esquemas para avisar antes de enviar. Quien decide sigue siendo el
- * servidor, que los vuelve a correr en el envoltorio (§6.2, paso 3).
- */
+// Sin `server-only`: no hay nada que sanitizar y el formulario los usa para
+// avisar antes de enviar. El servidor los vuelve a correr.
 
 const nombre = z
   .string()
@@ -25,14 +17,7 @@ const nombre = z
   .min(2, "El nombre necesita al menos 2 caracteres.")
   .max(60, "El nombre no puede pasar de 60 caracteres.");
 
-/**
- * La descripción corta de RF-19 —«10% off transfiriendo»—, no un párrafo.
- *
- * Se guarda `null` y no `""` cuando está vacía: la columna es opcional, y
- * dos formas de decir «no hay» obligan a preguntar por las dos en cada
- * consulta y en cada pantalla. El tope de 120 no es arbitrario: es lo que
- * entra en la franja de la tienda sin partir la fila (RF-01).
- */
+/** Vacía se guarda `null`. 120 es lo que entra en la franja de la tienda. */
 const descripcion = z
   .string()
   .trim()
@@ -59,13 +44,6 @@ export const cambioDeEstadoDePago = z.object({
   activo: z.boolean(),
 });
 
-/**
- * Mover es «uno para arriba» o «uno para abajo», no «poné este número».
- *
- * `sort_order` es una posición y no un dato que la vendedora tenga que
- * llevar: pedirle el número la obliga a renumerar a mano cuando quiere meter
- * uno en el medio, que es justo el trabajo que la computadora hace bien.
- */
 export const movimientoDePago = z.object({
   id: z.uuid(),
   direccion: z.enum(["arriba", "abajo"]),
@@ -73,8 +51,6 @@ export const movimientoDePago = z.object({
 
 export type CrearMedioDePago = z.infer<typeof crearMedioDePago>;
 export type EditarMedioDePago = z.infer<typeof editarMedioDePago>;
-
-/* ── Promociones de cuotas — RF-40, F2.17 ─────────────────────────────── */
 
 export const CUOTAS_MINIMAS = 2;
 export const CUOTAS_MAXIMAS = 48;
@@ -86,11 +62,7 @@ const cuotas = z
   .min(CUOTAS_MINIMAS, `Tienen que ser al menos ${CUOTAS_MINIMAS} cuotas.`)
   .max(CUOTAS_MAXIMAS, `Pueden ser hasta ${CUOTAS_MAXIMAS} cuotas.`);
 
-/**
- * El recargo en %, con coma o con punto: «15», «15,5». Vacío es 0, sin
- * interés, que es el caso más común y no tiene por qué obligar a escribir un
- * cero. Se guarda con dos decimales, como lo espera `surcharge_pct`.
- */
+/** En %, con coma o con punto. Vacío es 0, sin interés. */
 const recargo = z
   .string()
   .trim()
@@ -107,7 +79,7 @@ const recargo = z
 
 const fecha = z.iso.date({ error: "Elegí una fecha." });
 
-/** Vacío = sin mínimo, y se guarda `NULL` (lo mismo que la descripción). */
+/** Vacío = sin mínimo. */
 const montoMinimo = z
   .string()
   .trim()
@@ -120,11 +92,7 @@ const montoMinimo = z
     message: "El mínimo tiene que ser mayor que cero, o dejalo vacío.",
   });
 
-/**
- * El plan, cuando la promoción es de una tarjeta o un plan del medio y no del
- * medio entero: «Plan Z». Vacío se guarda `NULL`. El tope es lo que entra en
- * el renglón de la ficha sin partirlo en el teléfono.
- */
+/** «Plan Z». El tope es lo que entra en el renglón de la ficha. */
 const plan = z
   .string()
   .trim()
@@ -136,7 +104,7 @@ const camposDePromocion = {
   cuotas,
   recargo,
   desde: fecha,
-  /** Vacío = no vence (el plan Z de Naranja X no tiene fecha de fin). */
+  /** Vacío = no vence. */
   hasta: z
     .string()
     .trim()
@@ -170,29 +138,13 @@ export const cambioDeEstadoDePromocion = z.object({
 
 export type CrearPromocion = z.input<typeof crearPromocion>;
 
-/* ── Configuración del sitio — RF-20, §5.9 ─────────────────────────────── */
-
-/**
- * El número por el que se coordinan las ventas (RF-04).
- *
- * Es la misma regla que el teléfono del comprador y por eso sale del mismo
- * lugar (`lib/telefono.ts`): se guarda normalizado a `+549…` para que
- * `wa.me` se arme concatenando y no haya que adivinar, en cada enlace, qué
- * forma tenía el que se cargó.
- */
+/** Normalizado a `+549…`, para que `wa.me` se arme concatenando. */
 const numeroDeWhatsapp = telefonoArgentino({
   requerido: "Escribí el número de WhatsApp por el que vendés.",
   invalido:
     "Ese número no parece válido. Escribilo con característica, por ejemplo 11 5555 5555.",
 });
 
-/**
- * A dónde llegan los avisos de órdenes nuevas (E4).
- *
- * No es el email con el que la vendedora entra al panel: puede querer los
- * avisos en otra casilla, y atarlos a la identidad la obligaría a cambiar
- * de cuenta para cambiar de casilla.
- */
 const emailDeAvisos = z
   .string()
   .trim()
@@ -200,15 +152,8 @@ const emailDeAvisos = z
   .pipe(z.email("Ese email no parece válido."));
 
 /**
- * A partir de cuántas unidades se avisa «Quedan N» (RF-20).
- *
- * Llega como número: el formulario ya comprobó la forma, y dejar que el
- * esquema acepte texto sería una segunda gramática que mantener.
- *
- * Los topes y la frase que los explica viven en `limites.ts`, que el
- * formulario también lee. El máximo es el único con mensaje propio: es el
- * único que se puede chocar escribiendo un número perfectamente válido, y
- * ahí lo que hay que decir no es la regla sino por qué existe.
+ * Llega como número: el formulario ya comprobó la forma. El máximo tiene
+ * mensaje propio porque se choca con un número bien escrito.
  */
 const umbralDeStock = z
   .number({ error: AYUDA_DEL_UMBRAL })
@@ -220,18 +165,9 @@ const umbralDeStock = z
   );
 
 /**
- * El perfil de una red social, para el pie de la tienda (2026-10-20).
- *
- * Se escribe **como salga**, igual que el WhatsApp: el enlace copiado del
- * navegador o de la app —con `?igsh=…` y todo—, sin `https://`, o solo el
- * usuario con o sin `@`. Se guarda siempre como `https://www.<red>.com/usuario`,
- * así la tienda lo pone en un `href` tal cual.
- *
- * **Solo se aceptan enlaces de esa red.** El pie los muestra con el logo de
- * Facebook o de Instagram, y un logo que lleva a otro sitio es exactamente lo
- * que no tiene que poder pasar.
- *
- * Vacío es `null`: las dos son opcionales y sin valor el pie no las muestra.
+ * Acepta el enlace copiado de la app, sin `https://` o solo el usuario, y lo
+ * guarda como `https://www.<red>.com/usuario`. Solo enlaces de esa red: el pie
+ * los muestra con su logo. Vacío es `null`.
  */
 function redSocial({
   red,
@@ -306,9 +242,7 @@ export const configuracionDelSitio = z.object({
     dominios: ["instagram.com"],
     ejemplo: "instagram.com/anavende",
   }),
-  // Las escenas por fecha (F9.5, RF-38). Con `default(true)` para que un
-  // envío que no las nombre no apague ninguna: apagarla tiene que ser a
-  // propósito.
+  // Un envío que no las nombre no apaga ninguna.
   halloweenScene: z.boolean().default(true),
   christmasScene: z.boolean().default(true),
   easterScene: z.boolean().default(true),
@@ -316,11 +250,5 @@ export const configuracionDelSitio = z.object({
 
 export type EntradaDeConfiguracion = z.input<typeof configuracionDelSitio>;
 
-/* ── Modo mantenimiento — F2.7b ────────────────────────────────────────── */
-
-/**
- * «Cerrá» o «abrí», no «cambiá»: quien toca el botón vio un estado, y si en
- * otra pestaña ya lo cambiaron, un «cambiá» lo daría vuelta al revés de lo que
- * quería.
- */
+/** El estado deseado y no «cambiá»: otra pestaña pudo haberlo cambiado ya. */
 export const modoMantenimiento = z.object({ activo: z.boolean() });

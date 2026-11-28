@@ -10,18 +10,10 @@ import {
 import { ingresar } from "./apoyo/sesion";
 
 /**
- * F10.2 — La administradora finaliza una orden y el stock se descuenta bien.
- * TS §17.2, caso 4; FS RF-23; TS §8.3.
- *
- * Una orden activa con dos renglones de colores distintos y cantidades
- * distintas —2 y 1—, con el stock reservado como lo deja el checkout. Con
- * cantidades iguales, un descuento que tomara la cantidad del renglón
- * equivocado pasaría igual.
- *
- * «Correctamente» es, en la base: `stock_total` baja en lo vendido, la
- * reserva se libera, el disponible no cambia —esas unidades ya estaban
- * apartadas— y cada variante tiene su asiento de `venta` en el libro (§8.3).
- * Y **un tercer color que no está en la orden queda igual**.
+ * Finalizar una orden descuenta bien el stock (TS §17.2, caso 4; §8.3). Los
+ * dos renglones llevan cantidades distintas (2 y 1): con iguales, un
+ * descuento que tomara la cantidad del renglón equivocado pasaría igual. Un
+ * tercer color que no está en la orden tiene que quedar igual.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -99,7 +91,6 @@ test("la administradora finaliza una orden y el stock se descuenta", async ({
   const dialogo = page.getByRole("dialog", {
     name: `Finalizar la orden #${orden.numero}`,
   });
-  // Antes de confirmar dice qué se va a descontar.
   await expect(dialogo.getByRole("listitem")).toHaveCount(2);
   await dialogo.getByRole("button", { name: "Finalizar la orden" }).click();
   await expect(dialogo).toBeHidden();
@@ -109,7 +100,6 @@ test("la administradora finaliza una orden y el stock se descuenta", async ({
     page.getByRole("button", { name: "Finalizar", exact: true }),
   ).toHaveCount(0);
 
-  // En la base.
   const [{ status }] = await datos.sql<{ status: string }[]>`
     SELECT status FROM orders WHERE id = ${orden.id}`;
   expect(status).toBe("finalizada");
